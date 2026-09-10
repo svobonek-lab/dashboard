@@ -1,0 +1,16 @@
+{
+  "name": "Novák Stavby",
+  "logoUrl": "",
+  "primaryColor": "#0A4EA3",
+  "phone": "+420 777 123 456",
+  "email": "info@novakstavby.cz",
+  "city": "Třinec",
+  "address": "Průmyslová 452, 739 61 Třinec",
+  "services": [
+    "Pergoly",
+    "Střechy",
+    "Rekonstrukce",
+    "Zateplení fasád",
+    "Dřevostavby"
+  ]
+}

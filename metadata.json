@@ -1,0 +1,6 @@
+{
+  "name": "DemoFactory",
+  "description": "Internal sales tool to generate personalized CRM demos for construction companies",
+  "requestFramePermissions": ["microphone"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
