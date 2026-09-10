@@ -13,7 +13,9 @@ import {
   Phone,
   Mail,
   MapPin,
-  ShieldCheck
+  ShieldCheck,
+  Code2,
+  Wand2
 } from 'lucide-react';
 import { CompanyBranding } from '../types';
 
@@ -22,17 +24,20 @@ interface SidebarProps {
   setCurrentTab: (tab: string) => void;
   branding: CompanyBranding;
   onOpenDemoGenerator: () => void;
+  onOpenOnboarding?: () => void;
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({ 
   currentTab, 
   setCurrentTab, 
   branding,
-  onOpenDemoGenerator
+  onOpenDemoGenerator,
+  onOpenOnboarding
 }) => {
   const menuItems = [
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { id: 'inquiry', label: 'AI Inquiry Form', icon: Sparkles },
+    { id: 'widget', label: 'Embed Lead Widget', icon: Code2 },
     { id: 'portal', label: 'Client Portal View', icon: ShieldCheck },
     { id: 'communication', label: 'WhatsApp & SMS Hub', icon: Phone },
     { id: 'leads', label: 'Leads (Kanban)', icon: Kanban },
@@ -104,6 +109,18 @@ export const Sidebar: React.FC<SidebarProps> = ({
             </button>
           );
         })}
+
+        {onOpenOnboarding && (
+          <div className="pt-2">
+            <button
+              onClick={onOpenOnboarding}
+              className="w-full flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl text-xs font-bold text-amber-300 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 transition-all text-left"
+            >
+              <Wand2 className="w-4 h-4 text-amber-400" />
+              <span>Průvodce nastavením</span>
+            </button>
+          </div>
+        )}
       </nav>
 
       {/* Footer Company Contact */}

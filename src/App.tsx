@@ -5,6 +5,7 @@ import { Sidebar } from '@/components/Sidebar';
 import { Header } from '@/components/Header';
 import { AuditCard } from '@/components/AuditCard';
 import { DemoGeneratorModal } from '@/components/DemoGeneratorModal';
+import { OnboardingWizardModal } from '@/components/OnboardingWizardModal';
 import { PhotoLightbox } from '@/components/PhotoLightbox';
 import { VoiceNotesModal } from '@/components/VoiceNotesModal';
 import { CommandPalette } from '@/components/CommandPalette';
@@ -23,8 +24,9 @@ import { MapView } from '@/features/MapView';
 import { InquiryFormPage } from '@/features/InquiryFormPage';
 import { CustomerPortalPage } from '@/features/CustomerPortalPage';
 import { CommunicationCenterPage } from '@/features/CommunicationCenterPage';
+import { EmbedWidgetPage } from '@/features/EmbedWidgetPage';
 
-import { Lead, WebsiteAudit, LeadStatus, CRMNotification } from '@/types';
+import { Lead, WebsiteAudit, LeadStatus, CRMNotification, CompanyBranding } from '@/types';
 
 export default function App() {
   const { branding, updateBranding } = useBranding();
@@ -38,6 +40,7 @@ export default function App() {
   // Flow states
   const [showAudit, setShowAudit] = useState(true);
   const [isDemoModalOpen, setIsDemoModalOpen] = useState(false);
+  const [isOnboardingOpen, setIsOnboardingOpen] = useState(false);
   const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
 
   // Keyboard Shortcuts Listener
@@ -107,8 +110,21 @@ export default function App() {
     updateBranding(newBranding);
     setCurrentAudit(newAudit);
     setLeads(generateRealisticLeads(newBranding));
+    setEmployees(generateRealisticEmployees(newBranding.city));
+    setSelectedLead(null);
     setIsDemoModalOpen(false);
     setShowAudit(true);
+
+    // Add celebration notification
+    const newNotif: CRMNotification = {
+      id: 'notif-' + Date.now(),
+      title: `Personalizované CRM vygenerováno`,
+      message: `Prostředí pro firmu ${newBranding.name} v lokalitě ${newBranding.city} bylo úspěšně vytvořeno s reálnými zakázkami a rozpočty.`,
+      timestamp: 'Právě teď',
+      read: false,
+      type: 'system'
+    };
+    setNotifications(prev => [newNotif, ...prev]);
   };
 
   const handleUpdateLeadStatus = (leadId: string, newStatus: LeadStatus) => {
@@ -142,6 +158,29 @@ export default function App() {
     setNotifications(notifications.map(n => ({ ...n, read: true })));
   };
 
+  const handleCompleteOnboarding = (
+    updatedBranding: CompanyBranding, 
+    updatedEmployees: any[], 
+    generatedLeads: Lead[]
+  ) => {
+    updateBranding(updatedBranding);
+    setEmployees(updatedEmployees);
+    setLeads(generatedLeads);
+    setSelectedLead(null);
+    setCurrentTab('dashboard');
+
+    // Add celebration notification
+    const welcomeNotif: CRMNotification = {
+      id: 'n-' + Date.now(),
+      title: 'Pracovní prostředí nakonfigurováno',
+      message: `Úspěšně nastaveno pro ${updatedBranding.name} v lokalitě ${updatedBranding.city}. Přidáno ${generatedLeads.length} realistických zakázek.`,
+      timestamp: 'Právě teď',
+      read: false,
+      type: 'lead'
+    };
+    setNotifications(prev => [welcomeNotif, ...prev]);
+  };
+
   if (showAudit) {
     return (
       <AuditCard
@@ -164,6 +203,7 @@ export default function App() {
         }}
         branding={branding}
         onOpenDemoGenerator={() => setIsDemoModalOpen(true)}
+        onOpenOnboarding={() => setIsOnboardingOpen(true)}
       />
 
       {/* Main Content Area */}
@@ -173,6 +213,7 @@ export default function App() {
           activeRole={activeRole}
           setActiveRole={setActiveRole}
           onOpenDemoGenerator={() => setIsDemoModalOpen(true)}
+          onOpenOnboarding={() => setIsOnboardingOpen(true)}
           notifications={notifications}
           onMarkAllRead={handleMarkAllRead}
           onOpenCommandPalette={() => setIsCommandPaletteOpen(true)}
@@ -262,6 +303,74 @@ export default function App() {
                     ]);
                   }}
                   onBackToDashboard={() => setCurrentTab('dashboard')}
+                />
+              )}
+              {currentTab === 'widget' && (
+                <EmbedWidgetPage
+                  branding={branding}
+                  onCreateLeadFromWidget={(newInquiry) => {
+                    const priceValue = newInquiry.price || newInquiry.budgetValue || 250000;
+                    const createdLead: Lead = {
+                      id: 'lead-' + Date.now(),
+                      title: `${newInquiry.projectType} — ${newInquiry.fullName}`,
+                      description: newInquiry.description || 'Nová poptávka z Embed Widgetu',
+                      city: branding.city,
+                      address: newInquiry.address,
+                      customerName: newInquiry.fullName,
+                      customerPhone: newInquiry.phone,
+                      customerEmail: newInquiry.email,
+                      preferredDate: newInquiry.preferredDate,
+                      price: priceValue,
+                      status: 'New',
+                      priority: 'High',
+                      assignedEmployeeId: 'emp-1',
+                      assignedEmployeeName: 'Petr Novotný',
+                      thumbnail: newInquiry.photos && newInquiry.photos.length > 0 
+                        ? newInquiry.photos[0] 
+                        : 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&q=80&w=800',
+                      photos: (newInquiry.photos || []).map((url: string, idx: number) => ({
+                        id: `p-${Date.now()}-${idx}`,
+                        url,
+                        name: `Widget Photo ${idx + 1}`,
+                        category: 'Widget Upload'
+                      })),
+                      files: [],
+                      checklist: [
+                        { id: '1', text: 'Zkontrolovat data z Embed Widgetu', completed: false },
+                        { id: '2', text: 'Ověřit dostupnost materiálu v centrálním skladu', completed: false },
+                        { id: '3', text: 'Zaslat PDF rozpočet s digitálním podpisem', completed: false }
+                      ],
+                      aiSummary: {
+                        jobType: newInquiry.projectType,
+                        complexity: newInquiry.aiAnalysis?.complexity || 'Střední složitost (4-5 dní)',
+                        estimatedRange: `${(priceValue * 0.9 / 1000).toFixed(0)}k - ${(priceValue * 1.15 / 1000).toFixed(0)}k CZK`,
+                        assignedEmployee: 'Petr Novotný (Mistr tesař)',
+                        risks: ['Kontrola servisního rádiusu a příjezdové cesty'],
+                        recommendedNextStep: 'Automatické vystavení cenové nabídky.'
+                      },
+                      timeline: [
+                        { id: '1', title: 'Poptávka přijata z Embed Widgetu', status: 'Completed', timestamp: 'Právě teď', responsibleEmployee: 'Embed Widget CDN', notes: `Poptávka na ${newInquiry.projectType} (${newInquiry.fullName})` },
+                        { id: '2', title: 'AI Scoring & Automatické přiřazení', status: 'Completed', timestamp: 'Právě teď', responsibleEmployee: 'AI Engine', notes: 'Skóre 87/100 • Přiřazen Petr Novotný' }
+                      ],
+                      aiChat: [],
+                      history: [
+                        { id: 'h-1', timestamp: 'Právě teď', action: 'Poptávka přijata přes Embed Widget na webu', author: 'Webový formulář' }
+                      ]
+                    };
+                    setLeads([createdLead, ...leads]);
+                    setNotifications(prev => [
+                      {
+                        id: 'notif-' + Date.now(),
+                        title: `Nová poptávka z webu: ${newInquiry.fullName}`,
+                        message: `${newInquiry.projectType} (${(priceValue / 1000).toFixed(0)}k CZK) • SMS a e-mail potvrzeny`,
+                        time: 'Právě teď',
+                        read: false,
+                        type: 'lead'
+                      },
+                      ...prev
+                    ]);
+                  }}
+                  onNavigateTab={(tab) => setCurrentTab(tab)}
                 />
               )}
               {currentTab === 'portal' && (
@@ -355,6 +464,13 @@ export default function App() {
         isOpen={isDemoModalOpen}
         onClose={() => setIsDemoModalOpen(false)}
         onDemoGenerated={handleDemoGenerated}
+      />
+
+      <OnboardingWizardModal
+        isOpen={isOnboardingOpen}
+        onClose={() => setIsOnboardingOpen(false)}
+        currentBranding={branding}
+        onCompleteOnboarding={handleCompleteOnboarding}
       />
 
       <PhotoLightbox

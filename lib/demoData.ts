@@ -302,7 +302,7 @@ export function generateRealisticLeads(company: CompanyBranding): Lead[] {
   ];
 }
 
-export function generateRealisticEmployees(): Employee[] {
+export function generateRealisticEmployees(city: string = 'Třinec'): Employee[] {
   return [
     {
       id: 'emp-1',
@@ -315,7 +315,7 @@ export function generateRealisticEmployees(): Employee[] {
       status: 'Green',
       phone: '+420 777 987 654',
       email: 'novotny@stavby.cz',
-      currentLocation: 'Třinec, Zahradní 12',
+      currentLocation: `${city}, Zahradní 12`,
       distanceKm: 4.5
     },
     {
@@ -329,7 +329,7 @@ export function generateRealisticEmployees(): Employee[] {
       status: 'Orange',
       phone: '+420 602 333 444',
       email: 'kovar@stavby.cz',
-      currentLocation: 'Třinec, K lesu 3',
+      currentLocation: `${city}, K lesu 3`,
       distanceKm: 8.2
     },
     {
@@ -343,7 +343,7 @@ export function generateRealisticEmployees(): Employee[] {
       status: 'Green',
       phone: '+420 725 888 999',
       email: 'vesely@stavby.cz',
-      currentLocation: 'Třinec, Nádražní 45',
+      currentLocation: `${city}, Nádražní 45`,
       distanceKm: 12.0
     },
     {
@@ -357,7 +357,7 @@ export function generateRealisticEmployees(): Employee[] {
       status: 'Red',
       phone: '+420 731 222 333',
       email: 'richter@stavby.cz',
-      currentLocation: 'Třinec, Slezská 10',
+      currentLocation: `${city}, Slezská 10`,
       distanceKm: 15.5
     }
   ];

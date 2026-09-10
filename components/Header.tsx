@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Search, Bell, Shield, UserCheck, Sparkles } from 'lucide-react';
+import { Search, Bell, Shield, UserCheck, Sparkles, Wand2 } from 'lucide-react';
 import { CompanyBranding, CRMNotification } from '../types';
 import { NotificationCenter } from './NotificationCenter';
 
@@ -8,6 +8,7 @@ interface HeaderProps {
   activeRole: 'owner' | 'employee';
   setActiveRole: (role: 'owner' | 'employee') => void;
   onOpenDemoGenerator: () => void;
+  onOpenOnboarding?: () => void;
   notifications: CRMNotification[];
   onMarkAllRead: () => void;
   onOpenCommandPalette: () => void;
@@ -18,6 +19,7 @@ export const Header: React.FC<HeaderProps> = ({
   activeRole,
   setActiveRole,
   onOpenDemoGenerator,
+  onOpenOnboarding,
   notifications,
   onMarkAllRead,
   onOpenCommandPalette
@@ -74,6 +76,17 @@ export const Header: React.FC<HeaderProps> = ({
           <span className="flex-1 truncate">Search leads, clients...</span>
           <kbd className="px-1.5 py-0.5 bg-white border border-slate-200 rounded-md text-[10px] font-mono text-slate-500 shadow-2xs">Ctrl+K</kbd>
         </button>
+
+        {/* Setup Onboarding Wizard CTA */}
+        {onOpenOnboarding && (
+          <button
+            onClick={onOpenOnboarding}
+            className="hidden sm:flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold bg-slate-100 hover:bg-slate-200 text-slate-700 transition-all border border-slate-200"
+          >
+            <Wand2 className="w-3.5 h-3.5 text-blue-600" />
+            <span>Setup Wizard</span>
+          </button>
+        )}
 
         {/* Generate New Demo CTA */}
         <button
