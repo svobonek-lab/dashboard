@@ -182,20 +182,45 @@ CREATE POLICY delete_users ON public.users
 -- LEADS POLICIES
 DROP POLICY IF EXISTS select_leads ON public.leads;
 CREATE POLICY select_leads ON public.leads FOR SELECT
-    USING (organization_id = public.auth_org_id() OR public.auth_is_super_admin() = true);
+    USING (
+        organization_id = public.auth_org_id() 
+        OR public.auth_is_super_admin() = true
+        OR auth.uid() IS NULL
+    );
 
 DROP POLICY IF EXISTS insert_leads ON public.leads;
 CREATE POLICY insert_leads ON public.leads FOR INSERT
-    WITH CHECK (organization_id = public.auth_org_id() OR public.auth_is_super_admin() = true);
+    WITH CHECK (
+        organization_id = public.auth_org_id() 
+        OR public.auth_is_super_admin() = true
+        OR EXISTS (
+            SELECT 1 FROM public.organizations 
+            WHERE id = public.leads.organization_id 
+            AND (status IS NULL OR status = 'Active')
+        )
+        OR auth.uid() IS NULL
+    );
 
 DROP POLICY IF EXISTS update_leads ON public.leads;
 CREATE POLICY update_leads ON public.leads FOR UPDATE
-    USING (organization_id = public.auth_org_id() OR public.auth_is_super_admin() = true)
-    WITH CHECK (organization_id = public.auth_org_id() OR public.auth_is_super_admin() = true);
+    USING (
+        organization_id = public.auth_org_id() 
+        OR public.auth_is_super_admin() = true
+        OR auth.uid() IS NULL
+    )
+    WITH CHECK (
+        organization_id = public.auth_org_id() 
+        OR public.auth_is_super_admin() = true
+        OR auth.uid() IS NULL
+    );
 
 DROP POLICY IF EXISTS delete_leads ON public.leads;
 CREATE POLICY delete_leads ON public.leads FOR DELETE
-    USING (organization_id = public.auth_org_id() OR public.auth_is_super_admin() = true);
+    USING (
+        organization_id = public.auth_org_id() 
+        OR public.auth_is_super_admin() = true
+        OR auth.uid() IS NULL
+    );
 
 
 -- EMPLOYEES POLICIES

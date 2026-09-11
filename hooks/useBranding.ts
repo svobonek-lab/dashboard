@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { CompanyBranding } from '../types';
-import { getCompanyBranding, saveCompanyBranding, applyBrandTheme } from '../lib/branding';
+import { getCompanyBranding, saveCompanyBranding, resetCompanyBranding, applyBrandTheme } from '../lib/branding';
 
 export { applyBrandTheme };
 
@@ -38,5 +38,11 @@ export function useBranding() {
     applyBrandTheme(merged);
   };
 
-  return { branding, updateBranding };
+  const resetToDefault = () => {
+    const def = resetCompanyBranding();
+    setBranding(def);
+  };
+
+  return { branding, updateBranding, resetToDefault };
 }
+

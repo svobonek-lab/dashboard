@@ -16,7 +16,18 @@ import {
   ShieldAlert,
   ArrowRight,
   Phone,
-  MessageSquare
+  MessageSquare,
+  BarChart3,
+  PieChart,
+  Camera,
+  Star,
+  Zap,
+  MapPin,
+  FileText,
+  UserCheck,
+  Check,
+  Percent,
+  Timer
 } from 'lucide-react';
 import { CompanyBranding, Lead } from '../types';
 
@@ -37,10 +48,10 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
   const [aiInsightIndex, setAiInsightIndex] = useState(0);
 
   const aiInsights = [
-    "Call Pavel within 30 minutes to secure the 320k CZK quote.",
-    "Today's route optimization saves 42 minutes of transit time.",
-    "Ing. Jan Svoboda uploaded photos — ready for instant quote generation.",
-    "Jan Richter reached 100% capacity; reassigning new leads to Petr."
+    "Doporučení: Kontaktujte investora Pavla do 30 min pro uzavření rozpočtu na 320 tis. Kč.",
+    "Optimalizace trasy ušetřila dnes partě tesařů 42 minut přejezdů.",
+    "Ing. Jan Svoboda nahrál nové fotografie zaměření — připraveno ke schválení.",
+    "Jan Richter dosáhl 95% kapacity; nové zakázky dispečink směruje na Petra Novotného."
   ];
 
   useEffect(() => {
@@ -55,51 +66,81 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
     .reduce((acc, l) => acc + l.price, 0);
 
   const newLeadsCount = leads.filter(l => l.status === 'New').length;
-  const waitingQuotesCount = leads.filter(l => l.status === 'Quote').length;
+  const inProgressCount = leads.filter(l => l.status === 'In Progress').length;
+  const quoteCount = leads.filter(l => l.status === 'Quote').length;
+  const completedCount = leads.filter(l => l.status === 'Completed').length;
 
   return (
     <div className="space-y-8 pb-24 relative text-slate-100">
+      
       {/* Executive Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h2 className="text-3xl font-bold text-slate-100 tracking-tight">
-            Dobré ráno, Jane. 👋
+          <div className="flex items-center gap-2">
+            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/20 text-amber-400 border border-amber-500/30 uppercase tracking-wider">
+              Executive OS Panel
+            </span>
+            <span className="text-xs font-mono text-slate-400">
+              {new Date().toLocaleDateString('cs-CZ', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
+            </span>
+          </div>
+          <h2 className="text-3xl font-black text-slate-100 tracking-tight mt-1">
+            Řídicí panel majitele stavby
           </h2>
-          <p className="text-sm text-slate-400 mt-1">
-            Dnešní přehled & manažerský panel zakázek • <span className="font-semibold text-amber-400">{branding.name}</span>
+          <p className="text-xs text-slate-400 mt-0.5">
+            Kompletní operační přehled a dispečink zakázek • <span className="font-bold text-amber-400">{branding.name}</span>
           </p>
         </div>
 
-        <div className="flex items-center gap-3">
+        {/* Quick Actions */}
+        <div className="flex flex-wrap items-center gap-2.5">
           <button
             onClick={() => onNavigateTab('quotes')}
-            className="px-4 py-2.5 rounded-xl text-xs font-semibold bg-slate-900 border border-slate-700 text-slate-200 hover:bg-slate-800 shadow-xs transition-all"
+            className="px-3.5 py-2.5 rounded-xl text-xs font-bold bg-slate-900 border border-slate-700 text-slate-200 hover:bg-slate-800 shadow-xs transition-all flex items-center gap-1.5"
           >
-            Vytvořit rozpočet (PDF)
+            <FileText className="w-3.5 h-3.5 text-blue-400" />
+            <span>Vytvořit nabídku</span>
           </button>
+          
+          <button
+            onClick={() => onNavigateTab('employees')}
+            className="px-3.5 py-2.5 rounded-xl text-xs font-bold bg-slate-900 border border-slate-700 text-slate-200 hover:bg-slate-800 shadow-xs transition-all flex items-center gap-1.5"
+          >
+            <Users className="w-3.5 h-3.5 text-emerald-400" />
+            <span>Přidat zaměstnance</span>
+          </button>
+
+          <button
+            onClick={() => onNavigateTab('calendar')}
+            className="px-3.5 py-2.5 rounded-xl text-xs font-bold bg-slate-900 border border-slate-700 text-slate-200 hover:bg-slate-800 shadow-xs transition-all flex items-center gap-1.5"
+          >
+            <Calendar className="w-3.5 h-3.5 text-amber-400" />
+            <span>Harmonogram</span>
+          </button>
+
           <button
             onClick={() => onNavigateTab('leads')}
-            className="px-4 py-2.5 rounded-xl text-xs font-bold text-slate-950 shadow-md transition-all hover:opacity-95 flex items-center gap-2 bg-amber-500 hover:bg-amber-400"
+            className="px-4 py-2.5 rounded-xl text-xs font-black text-slate-950 shadow-md transition-all hover:opacity-95 flex items-center gap-1.5 bg-amber-500 hover:bg-amber-400"
           >
             <Plus className="w-4 h-4" />
-            <span>Nová zakázka / poptávka</span>
+            <span>Nová zakázka</span>
           </button>
         </div>
       </div>
 
-      {/* Top Section: Today’s Wins Banner */}
+      {/* Top Wins / Milestone Banner */}
       <div className="bg-slate-900 p-7 rounded-3xl text-white shadow-xl border border-slate-800 relative overflow-hidden">
         <div className="absolute top-0 right-0 w-80 h-80 bg-amber-500/10 rounded-full blur-3xl pointer-events-none"></div>
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 relative z-10">
-          <div className="space-y-3">
+          <div className="space-y-2.5">
             <div className="flex items-center gap-2.5">
               <div className="w-7 h-7 rounded-lg bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-amber-400">
                 <Sparkles className="w-3.5 h-3.5" />
               </div>
-              <span className="text-xs font-bold uppercase tracking-wider text-amber-400">Dnešní milníky & přehled staveb</span>
+              <span className="text-xs font-bold uppercase tracking-wider text-amber-400">Ranní rekapitulace & Dispečink</span>
             </div>
             <h3 className="text-xl font-black text-white tracking-tight">
-              3 nové zálohy připsány na účet & optimalizováno 42 minut přejezdů party
+              3 zálohy připsány na účet & naplánováno 5 montáží na tento týden
             </h3>
             <p className="text-xs text-slate-300 max-w-2xl">
               Automatický dispečink a zachycování poptávek přes portál zajistily dnes dopoledne v lokalitě {branding.city} hladký start stavebních etap.
@@ -110,226 +151,251 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
               onClick={() => onNavigateTab('analytics')}
               className="px-4 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-bold transition-all shadow-md flex items-center gap-2"
             >
-              <span>Finanční ukazatele staveb</span>
+              <span>Finanční forecast & marže</span>
               <ArrowRight className="w-4 h-4" />
             </button>
           </div>
         </div>
       </div>
 
-      {/* 4 Clickable Actionable Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-        {/* Card 1: Saved Leads Today */}
+      {/* 4 Main Executive Metric Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        
+        {/* Card 1: Revenue & Forecast */}
         <div 
-          onClick={() => {
-            setExpandedCard(expandedCard === 'leads' ? null : 'leads');
-            onNavigateTab('leads');
-          }}
-          className={`bg-slate-900 p-6 rounded-3xl border transition-all cursor-pointer shadow-md hover:shadow-lg group ${
-            expandedCard === 'leads' ? 'border-amber-500 ring-2 ring-amber-500/20 shadow-lg' : 'border-slate-800 hover:border-slate-700'
-          }`}
+          onClick={() => onNavigateTab('analytics')}
+          className="bg-slate-900 p-5 rounded-3xl border border-slate-800 hover:border-amber-500/60 transition-all cursor-pointer shadow-md group"
         >
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Nové zakázky</span>
-            <div className="w-10 h-10 rounded-xl bg-slate-800 border border-slate-700 text-amber-400 flex items-center justify-center group-hover:scale-110 transition-transform">
-              <Users className="w-5 h-5" />
+            <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Obrat & Tržby (Q3)</span>
+            <div className="w-9 h-9 rounded-xl bg-slate-800 border border-slate-700 text-amber-400 flex items-center justify-center group-hover:scale-110 transition-transform">
+              <DollarSign className="w-4 h-4" />
             </div>
           </div>
-          <div className="mt-4 flex items-baseline justify-between">
-            <div>
-              <p className="text-3xl font-extrabold text-slate-100">{newLeadsCount + 3}</p>
-              <div className="flex items-center gap-1 mt-1 text-xs font-semibold text-emerald-400">
-                <ArrowUpRight className="w-3.5 h-3.5" />
-                <span>+3 z webového formuláře</span>
-              </div>
+          <div className="mt-3">
+            <p className="text-2xl font-extrabold text-slate-100">
+              {((totalRevenue + 245000) / 1000).toFixed(0)} <span className="text-xs font-medium text-slate-400">tis. Kč</span>
+            </p>
+            <div className="flex items-center gap-1 mt-1 text-[11px] font-semibold text-emerald-400">
+              <ArrowUpRight className="w-3.5 h-3.5" />
+              <span>+24.5% forecast do konce měsíce</span>
             </div>
-            <span className="text-xs font-bold text-amber-400 flex items-center gap-1 group-hover:translate-x-1 transition-transform">
-              Zobrazit <ChevronRight className="w-3.5 h-3.5" />
-            </span>
           </div>
         </div>
 
-        {/* Card 2: Revenue Generated Today */}
+        {/* Card 2: Pipeline Funnel / Active Jobs */}
         <div 
-          onClick={() => {
-            setExpandedCard(expandedCard === 'revenue' ? null : 'revenue');
-            onNavigateTab('analytics');
-          }}
-          className={`bg-slate-900 p-6 rounded-3xl border transition-all cursor-pointer shadow-md hover:shadow-lg group ${
-            expandedCard === 'revenue' ? 'border-emerald-500 ring-2 ring-emerald-500/20 shadow-lg' : 'border-slate-800 hover:border-slate-700'
-          }`}
+          onClick={() => onNavigateTab('leads')}
+          className="bg-slate-900 p-5 rounded-3xl border border-slate-800 hover:border-blue-500/60 transition-all cursor-pointer shadow-md group"
         >
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Fakturace & Zálohy</span>
-            <div className="w-10 h-10 rounded-xl bg-slate-800 border border-slate-700 text-emerald-400 flex items-center justify-center group-hover:scale-110 transition-transform">
-              <DollarSign className="w-5 h-5" />
+            <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Pipeline & Poptávky</span>
+            <div className="w-9 h-9 rounded-xl bg-slate-800 border border-slate-700 text-blue-400 flex items-center justify-center group-hover:scale-110 transition-transform">
+              <BarChart3 className="w-4 h-4" />
             </div>
           </div>
-          <div className="mt-4 flex items-baseline justify-between">
-            <div>
-              <p className="text-3xl font-extrabold text-slate-100">
-                {((totalRevenue + 145000) / 1000).toFixed(0)} <span className="text-sm font-medium text-slate-400">tis. Kč</span>
-              </p>
-              <div className="flex items-center gap-1 mt-1 text-xs font-semibold text-emerald-400">
-                <ArrowUpRight className="w-3.5 h-3.5" />
-                <span>+24.5% oproti měsíčnímu plánu</span>
-              </div>
+          <div className="mt-3">
+            <p className="text-2xl font-extrabold text-slate-100">{leads.length} <span className="text-xs font-medium text-slate-400">zakázek</span></p>
+            <div className="flex items-center gap-1 mt-1 text-[11px] font-semibold text-blue-400">
+              <span>{newLeadsCount} nových • {quoteCount} v nabídce • {inProgressCount} na stavbě</span>
             </div>
-            <span className="text-xs font-bold text-emerald-400 flex items-center gap-1 group-hover:translate-x-1 transition-transform">
-              Detail <ChevronRight className="w-3.5 h-3.5" />
-            </span>
           </div>
         </div>
 
-        {/* Card 3: AI Time Saved */}
+        {/* Card 3: Response Time SLA */}
         <div 
-          onClick={() => {
-            setExpandedCard(expandedCard === 'time' ? null : 'time');
-          }}
-          className={`bg-slate-900 p-6 rounded-3xl border transition-all cursor-pointer shadow-md hover:shadow-lg group ${
-            expandedCard === 'time' ? 'border-amber-500 ring-2 ring-amber-500/20 shadow-lg' : 'border-slate-800 hover:border-slate-700'
-          }`}
+          onClick={() => onNavigateTab('communication')}
+          className="bg-slate-900 p-5 rounded-3xl border border-slate-800 hover:border-emerald-500/60 transition-all cursor-pointer shadow-md group"
         >
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Ušetřený čas mistrů</span>
-            <div className="w-10 h-10 rounded-xl bg-slate-800 border border-slate-700 text-amber-400 flex items-center justify-center group-hover:scale-110 transition-transform">
-              <Clock className="w-5 h-5" />
+            <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Reakční doba SLA</span>
+            <div className="w-9 h-9 rounded-xl bg-slate-800 border border-slate-700 text-emerald-400 flex items-center justify-center group-hover:scale-110 transition-transform">
+              <Timer className="w-4 h-4" />
             </div>
           </div>
-          <div className="mt-4 flex items-baseline justify-between">
-            <div>
-              <p className="text-3xl font-extrabold text-slate-100">34.5 <span className="text-sm font-medium text-slate-400">hod</span></p>
-              <div className="flex items-center gap-1 mt-1 text-xs font-semibold text-amber-400">
-                <ArrowUpRight className="w-3.5 h-3.5" />
-                <span>Digitální stavební deník & PDF</span>
-              </div>
+          <div className="mt-3">
+            <p className="text-2xl font-extrabold text-slate-100">18 <span className="text-xs font-medium text-slate-400">minut</span></p>
+            <div className="flex items-center gap-1 mt-1 text-[11px] font-semibold text-emerald-400">
+              <Check className="w-3.5 h-3.5" />
+              <span>94% odpovědí do 30 min (AI auto-reply)</span>
             </div>
-            <span className="text-xs font-bold text-amber-400 flex items-center gap-1 group-hover:translate-x-1 transition-transform">
-              Záznamy <ChevronRight className="w-3.5 h-3.5" />
-            </span>
           </div>
         </div>
 
-        {/* Card 4: Urgent Jobs */}
+        {/* Card 4: Win Rate & Google Rating */}
         <div 
-          onClick={() => {
-            setExpandedCard(expandedCard === 'urgent' ? null : 'urgent');
-            onNavigateTab('calendar');
-          }}
-          className={`bg-slate-900 p-6 rounded-3xl border transition-all cursor-pointer shadow-md hover:shadow-lg group ${
-            expandedCard === 'urgent' ? 'border-rose-500 ring-2 ring-rose-500/20 shadow-lg' : 'border-slate-800 hover:border-slate-700'
-          }`}
+          onClick={() => onNavigateTab('analytics')}
+          className="bg-slate-900 p-5 rounded-3xl border border-slate-800 hover:border-purple-500/60 transition-all cursor-pointer shadow-md group"
         >
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Akutní zásahy</span>
-            <div className="w-10 h-10 rounded-xl bg-slate-800 border border-slate-700 text-rose-400 flex items-center justify-center group-hover:scale-110 transition-transform">
-              <AlertTriangle className="w-5 h-5" />
+            <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Úspěšnost & Hodnocení</span>
+            <div className="w-9 h-9 rounded-xl bg-slate-800 border border-slate-700 text-purple-400 flex items-center justify-center group-hover:scale-110 transition-transform">
+              <Star className="w-4 h-4 text-amber-400 fill-amber-400" />
             </div>
           </div>
-          <div className="mt-4 flex items-baseline justify-between">
-            <div>
-              <p className="text-3xl font-extrabold text-slate-100">2 <span className="text-sm font-medium text-slate-400">stavby</span></p>
-              <div className="flex items-center gap-1 mt-1 text-xs font-semibold text-rose-400">
-                <span className="w-2 h-2 rounded-full bg-rose-500 animate-pulse"></span>
-                <span>Čeká na schválení materiálu</span>
-              </div>
+          <div className="mt-3">
+            <p className="text-2xl font-extrabold text-slate-100">76% <span className="text-xs font-medium text-slate-400">konverze</span></p>
+            <div className="flex items-center gap-1.5 mt-1 text-[11px] font-semibold text-amber-400">
+              <span>Google Reviews: 4.9 ★ (48 recenzí)</span>
             </div>
-            <span className="text-xs font-bold text-rose-400 flex items-center gap-1 group-hover:translate-x-1 transition-transform">
-              Dispečink <ChevronRight className="w-3.5 h-3.5" />
-            </span>
           </div>
         </div>
+
       </div>
 
-      {/* Main Grid: Needs Attention & Live Activity Feed */}
+      {/* Row 2: Team Capacity Heatmap & Planned Site Visits */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Needs Attention Panel */}
+        
+        {/* Team Capacity & Workload Heatmap */}
         <div className="bg-slate-900 p-6 rounded-3xl border border-slate-800 shadow-md space-y-4">
           <div className="flex items-center justify-between">
-            <h3 className="text-base font-bold text-slate-100 flex items-center gap-2">
-              <ShieldAlert className="w-5 h-5 text-rose-400" />
-              Vyžaduje pozornost
+            <h3 className="text-sm font-bold text-slate-100 flex items-center gap-2">
+              <Users className="w-4 h-4 text-amber-400" />
+              Vytížení týmu & Dispečink
             </h3>
-            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-rose-950/60 border border-rose-800 text-rose-400">3 položky</span>
-          </div>
-
-          <p className="text-xs text-slate-400">Úkoly a zakázky vyžadující dnešní rozhodnutí vedení:</p>
-
-          <div className="space-y-3">
-            {/* Overdue Lead */}
-            <div 
-              onClick={() => onNavigateTab('leads')}
-              className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 hover:border-slate-700 transition-all cursor-pointer space-y-1.5"
-            >
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-slate-200">Zpožděná nabídka</span>
-                <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-rose-950 text-rose-400 border border-rose-800">3 dny bez reakce</span>
-              </div>
-              <p className="text-[11px] text-slate-400 font-medium">Ing. Jan Svoboda — Rekonstrukce rodinného domu v {branding.city}</p>
-              <div className="flex items-center justify-between pt-1 text-[11px] text-amber-400 font-semibold">
-                <span>Akce: Zavolat investorovi</span>
-                <ArrowRight className="w-3.5 h-3.5" />
-              </div>
-            </div>
-
-            {/* Unanswered Customer */}
-            <div 
-              onClick={() => onNavigateTab('leads')}
-              className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 hover:border-slate-700 transition-all cursor-pointer space-y-1.5"
-            >
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-slate-200">Dotaz na materiál</span>
-                <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-amber-950 text-amber-400 border border-amber-800">Čeká 4h</span>
-              </div>
-              <p className="text-[11px] text-slate-400 font-medium">Marta Dvořáková zaslala dotaz k typu dlažby na terase.</p>
-              <div className="flex items-center justify-between pt-1 text-[11px] text-amber-400 font-semibold">
-                <span>Akce: Odpovědět přes WhatsApp / SMS</span>
-                <ArrowRight className="w-3.5 h-3.5" />
-              </div>
-            </div>
-
-            {/* Quote Expiring */}
-            <div 
-              onClick={() => onNavigateTab('quotes')}
-              className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 hover:border-slate-700 transition-all cursor-pointer space-y-1.5"
-            >
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-slate-200">Vypršení platnosti rozpočtu</span>
-                <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-slate-800 text-slate-300 border border-slate-700">Končí dnes</span>
-              </div>
-              <p className="text-[11px] text-slate-400 font-medium">Rozpočet POL-2026-0492 (220 000 Kč) čeká na podpis smlouvy o dílo.</p>
-              <div className="flex items-center justify-between pt-1 text-[11px] text-amber-400 font-semibold">
-                <span>Akce: Odeslat výzvu k podpisu</span>
-                <ArrowRight className="w-3.5 h-3.5" />
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Live Activity Feed (Right Side) */}
-        <div className="bg-slate-900 p-6 rounded-3xl border border-slate-800 shadow-md lg:col-span-2 space-y-4">
-          <div className="flex items-center justify-between">
-            <h3 className="text-base font-bold text-slate-100 flex items-center gap-2">
-              <Sparkles className="w-5 h-5 text-amber-400" />
-              Živý přehled ze staveb (Real-time deník)
-            </h3>
-            <span className="text-xs font-semibold text-emerald-400 flex items-center gap-1 bg-emerald-950/60 px-2.5 py-1 rounded-full border border-emerald-800">
-              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span> Live synchronizace
+            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-800 text-slate-300">
+              Průměr 82%
             </span>
           </div>
 
-          <p className="text-xs text-slate-400">Aktualizace ze staveb a hlášení mistrů v reálném čase ({branding.name}):</p>
+          <p className="text-xs text-slate-400">Aktuální alokace řemeslníků na dnešní směnu:</p>
 
-          <div className="space-y-3">
+          <div className="space-y-3 pt-1">
             {[
-              { time: '09:42', text: 'Petr Novotný dorazil na stavbu (Zahradní 12, Brno - zahájení betonáže)', type: 'arrival', color: 'bg-slate-800 text-amber-400 border-slate-700' },
-              { time: '10:11', text: 'Investor Ing. Jan Svoboda nahrál 2 fotografie před započetím bouracích prací', type: 'photo', color: 'bg-slate-800 text-emerald-400 border-slate-700' },
-              { time: '11:06', text: 'Rozpočet POL-2026-0492 odsouhlasen & uhrazena záloha na materiál (220 tis. Kč)', type: 'quote', color: 'bg-slate-800 text-cyan-400 border-slate-700' },
-              { time: '11:22', text: 'Dispečink automaticky přiřadil partu zedníků podle dojezdové vzdálenosti', type: 'ai', color: 'bg-slate-800 text-purple-400 border-slate-700' },
-              { time: '11:35', text: 'Bankovní párování: 145 000 Kč připsáno na účet (faktura doplatku etapy 1)', type: 'payment', color: 'bg-slate-800 text-emerald-400 border-slate-700' }
+              { name: 'Petr Novotný', role: 'Mistr tesař', load: 85, task: 'Pergola Zahradní (Brno)' },
+              { name: 'Martin Kovář', role: 'Střechy & Krovy', load: 95, task: 'Oprava střechy RD' },
+              { name: 'Tomáš Kučera', role: 'Zámečník & Hliník', load: 60, task: 'Příprava profilů sklad' },
+              { name: 'Marek Dvořák', role: 'Elektromontáže', load: 45, task: 'Zapojení Somfy motorů' }
+            ].map((emp, i) => (
+              <div key={i} className="p-3 bg-slate-950 rounded-2xl border border-slate-800 space-y-2">
+                <div className="flex items-center justify-between text-xs">
+                  <div>
+                    <span className="font-bold text-slate-200">{emp.name}</span>
+                    <span className="text-[10px] text-slate-500 ml-1.5">({emp.role})</span>
+                  </div>
+                  <span className={`font-mono font-bold text-[11px] ${
+                    emp.load > 85 ? 'text-rose-400' : emp.load > 60 ? 'text-amber-400' : 'text-emerald-400'
+                  }`}>
+                    {emp.load}%
+                  </span>
+                </div>
+                
+                <div className="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden">
+                  <div 
+                    className={`h-full ${
+                      emp.load > 85 ? 'bg-rose-500' : emp.load > 60 ? 'bg-amber-500' : 'bg-emerald-500'
+                    }`} 
+                    style={{ width: `${emp.load}%` }}
+                  />
+                </div>
+                
+                <div className="flex items-center justify-between text-[10px] text-slate-400">
+                  <span>Úkol: {emp.task}</span>
+                  <span className="text-amber-400 font-semibold cursor-pointer hover:underline" onClick={() => onNavigateTab('employees')}>
+                    Přiřadit →
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Planned Site Visits & Surveys */}
+        <div className="bg-slate-900 p-6 rounded-3xl border border-slate-800 shadow-md space-y-4">
+          <div className="flex items-center justify-between">
+            <h3 className="text-sm font-bold text-slate-100 flex items-center gap-2">
+              <Calendar className="w-4 h-4 text-blue-400" />
+              Plánované výjezdy & Zaměření
+            </h3>
+            <button 
+              onClick={() => onNavigateTab('calendar')}
+              className="text-[10px] font-bold text-amber-400 hover:underline"
+            >
+              Zobrazit vše →
+            </button>
+          </div>
+
+          <p className="text-xs text-slate-400">Nejbližší osobní schůzky s investory:</p>
+
+          <div className="space-y-2.5">
+            {[
+              { time: 'Dnes 13:30', client: 'Ing. Jan Svoboda', type: 'Zaměření pergoly 6x4m', addr: `Zahradní 14, ${branding.city}`, status: 'Potvrzeno SMS' },
+              { time: 'Dnes 16:00', client: 'Marta Dvořáková', type: 'Konzultace podlahy', addr: `Lipová 88, ${branding.city}`, status: 'Připraven vzorník' },
+              { time: 'Zítra 09:00', client: 'Radim Procházka', type: 'Předání hotové střechy', addr: `Sluneční 312, ${branding.city}`, status: 'Podpis protokolu' }
+            ].map((visit, i) => (
+              <div key={i} className="p-3 bg-slate-950 rounded-2xl border border-slate-800 space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-mono font-bold text-amber-400 bg-amber-950/60 px-2 py-0.5 rounded border border-amber-800/80">
+                    {visit.time}
+                  </span>
+                  <span className="text-[10px] font-semibold text-emerald-400">{visit.status}</span>
+                </div>
+                <h4 className="text-xs font-bold text-slate-200">{visit.client} — {visit.type}</h4>
+                <p className="text-[10px] text-slate-400 flex items-center gap-1">
+                  <MapPin className="w-3 h-3 text-slate-500" /> {visit.addr}
+                </p>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Lead Sources Breakdown */}
+        <div className="bg-slate-900 p-6 rounded-3xl border border-slate-800 shadow-md space-y-4">
+          <div className="flex items-center justify-between">
+            <h3 className="text-sm font-bold text-slate-100 flex items-center gap-2">
+              <PieChart className="w-4 h-4 text-purple-400" />
+              Zdroje poptávek (Tento měsíc)
+            </h3>
+            <span className="text-[10px] font-bold text-slate-400">Celkem 28</span>
+          </div>
+
+          <div className="space-y-3 pt-2">
+            {[
+              { source: 'Embed Widget na webu', count: 14, pct: 50, color: 'bg-amber-500' },
+              { source: 'Doporučení od klientů', count: 8, pct: 28, color: 'bg-emerald-500' },
+              { source: 'Google & Organické vyhledávání', count: 4, pct: 15, color: 'bg-blue-500' },
+              { source: 'Reklama & Sociální sítě', count: 2, pct: 7, color: 'bg-purple-500' }
+            ].map((src, i) => (
+              <div key={i} className="space-y-1 text-xs">
+                <div className="flex items-center justify-between">
+                  <span className="text-slate-300 font-medium">{src.source}</span>
+                  <span className="font-mono font-bold text-slate-200">{src.count} ({src.pct}%)</span>
+                </div>
+                <div className="w-full bg-slate-950 h-2 rounded-full overflow-hidden border border-slate-800">
+                  <div className={`h-full ${src.color}`} style={{ width: `${src.pct}%` }} />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+      </div>
+
+      {/* Row 3: Live Real-Time Feed & Recent Construction Photos */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        
+        {/* Live Activity Feed (2 cols) */}
+        <div className="bg-slate-900 p-6 rounded-3xl border border-slate-800 shadow-md lg:col-span-2 space-y-4">
+          <div className="flex items-center justify-between">
+            <h3 className="text-sm font-bold text-slate-100 flex items-center gap-2">
+              <Sparkles className="w-4 h-4 text-amber-400" />
+              Živý přehled ze staveb (Real-time deník)
+            </h3>
+            <span className="text-[10px] font-semibold text-emerald-400 flex items-center gap-1 bg-emerald-950/60 px-2.5 py-1 rounded-full border border-emerald-800">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping"></span> Live synchronizace
+            </span>
+          </div>
+
+          <div className="space-y-2.5">
+            {[
+              { time: '09:42', text: 'Petr Novotný dorazil na stavbu (Zahradní 12 - zahájení kotvení patek)', color: 'border-amber-700/60 text-amber-400' },
+              { time: '10:15', text: 'Investor Ing. Jan Svoboda nahrál 2 fotografie před montáží do klientského portálu', color: 'border-emerald-700/60 text-emerald-400' },
+              { time: '11:06', text: 'Rozpočet POL-2026-0492 odsouhlasen & uhrazena záloha na materiál (220 tis. Kč)', color: 'border-blue-700/60 text-blue-400' },
+              { time: '11:22', text: 'AI Dispatcher přiřadil novou poptávku na tesařské práce mistru Petrovi', color: 'border-purple-700/60 text-purple-400' },
+              { time: '11:40', text: 'Zákazník Marta Dvořáková podepsal předávací protokol na dotykovém tabletu', color: 'border-emerald-700/60 text-emerald-400' }
             ].map((act, i) => (
-              <div key={i} className="flex items-center gap-4 p-3.5 rounded-2xl bg-slate-950 border border-slate-800 hover:border-slate-700 transition-all">
-                <span className={`px-3 py-1 rounded-xl text-xs font-mono font-bold border ${act.color} flex-shrink-0`}>
+              <div key={i} className="flex items-center gap-3 p-3 rounded-2xl bg-slate-950 border border-slate-800">
+                <span className={`px-2.5 py-1 rounded-xl text-[11px] font-mono font-bold bg-slate-900 border ${act.color} flex-shrink-0`}>
                   {act.time}
                 </span>
                 <p className="text-xs font-medium text-slate-300 flex-1">{act.text}</p>
@@ -338,9 +404,38 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
             ))}
           </div>
         </div>
+
+        {/* Recent Construction Photos */}
+        <div className="bg-slate-900 p-6 rounded-3xl border border-slate-800 shadow-md space-y-4">
+          <div className="flex items-center justify-between">
+            <h3 className="text-sm font-bold text-slate-100 flex items-center gap-2">
+              <Camera className="w-4 h-4 text-emerald-400" />
+              Nedávné fotky ze staveb
+            </h3>
+            <span className="text-[10px] text-slate-400 font-semibold">Dnes (3 nové)</span>
+          </div>
+
+          <div className="grid grid-cols-2 gap-2.5">
+            {[
+              { title: 'Nosná konstrukce pergoly', time: '10:15', url: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&q=80&w=400' },
+              { title: 'Tesařský krov střechy', time: '09:30', url: 'https://images.unsplash.com/photo-1541888946425-d0fbb18f2445?auto=format&fit=crop&w=400' },
+              { title: 'Finální montáž lamel', time: 'Včera', url: 'https://images.unsplash.com/photo-1513694203232-719a280e022f?auto=format&fit=crop&w=400' },
+              { title: 'Základové betonové patky', time: 'Včera', url: 'https://images.unsplash.com/photo-1504307651254-35680f356dfd?auto=format&fit=crop&w=400' }
+            ].map((photo, idx) => (
+              <div key={idx} className="relative rounded-2xl overflow-hidden border border-slate-800 group aspect-video">
+                <img src={photo.url} alt={photo.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-transparent to-transparent flex flex-col justify-end p-2">
+                  <span className="text-[10px] font-bold text-white truncate">{photo.title}</span>
+                  <span className="text-[9px] text-slate-400 font-mono">{photo.time}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
       </div>
 
-      {/* Floating AI Insight Card (Bottom-Right with subtle animation) */}
+      {/* Floating AI Insight Card */}
       <div className="fixed bottom-6 right-6 z-40 max-w-sm bg-slate-900 border border-amber-500/40 p-4 rounded-2xl shadow-2xl text-white flex items-start gap-3 backdrop-blur-md bg-opacity-95">
         <div className="w-9 h-9 rounded-xl bg-amber-500/20 border border-amber-500/30 flex items-center justify-center text-amber-400 flex-shrink-0 mt-0.5">
           <Sparkles className="w-4 h-4" />
@@ -355,6 +450,7 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
           </p>
         </div>
       </div>
+
     </div>
   );
 };

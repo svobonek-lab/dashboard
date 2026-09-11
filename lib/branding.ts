@@ -59,3 +59,16 @@ export function saveCompanyBranding(branding: CompanyBranding): void {
     console.error('Failed to save branding to storage', e);
   }
 }
+
+export function resetCompanyBranding(): CompanyBranding {
+  try {
+    localStorage.removeItem(STORAGE_KEY);
+  } catch (e) {
+    console.error('Failed to remove branding from storage', e);
+  }
+  const fallback = defaultCompany as CompanyBranding;
+  applyBrandTheme(fallback);
+  window.dispatchEvent(new Event('brandingChanged'));
+  return fallback;
+}
+
