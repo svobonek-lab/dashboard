@@ -355,36 +355,46 @@ export const QuotesPage: React.FC<QuotesPageProps> = ({ branding }) => {
           <div className="flex flex-wrap items-center gap-2">
             <button
               onClick={() => handleCustomerAction('accept')}
-              className="px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold transition-all shadow-md flex items-center gap-1.5"
+              className="px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold transition-all shadow-md flex items-center gap-1.5 active:scale-95"
             >
-              <ThumbsUp className="w-4 h-4" /> Accept Offer
+              <ThumbsUp className="w-4 h-4" /> Schválit a podepsat nabídku (Accept)
             </button>
             <button
               onClick={() => handleCustomerAction('deposit')}
-              className="px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold transition-all shadow-md flex items-center gap-1.5"
+              className="px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold transition-all shadow-md flex items-center gap-1.5 active:scale-95"
             >
-              <CreditCard className="w-4 h-4" /> Pay Deposit (50%)
+              <CreditCard className="w-4 h-4" /> Zaplatit zálohu 50% (Stripe / QR)
             </button>
             <button
               onClick={() => handleCustomerAction('changes')}
               className="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold transition-all border border-slate-700 flex items-center gap-1.5"
             >
-              <MessageSquare className="w-4 h-4" /> Request Changes
+              <MessageSquare className="w-4 h-4" /> Požádat o úpravu položek
             </button>
           </div>
         </div>
+
+        {actionNotice && (
+          <div className="p-4 bg-emerald-900 border border-emerald-500 text-white rounded-2xl text-xs font-bold flex items-center justify-between animate-in fade-in">
+            <div className="flex items-center gap-2">
+              <Check className="w-5 h-5 text-emerald-300" />
+              <span>{actionNotice}</span>
+            </div>
+            <button onClick={() => setActionNotice(null)} className="text-emerald-300 hover:text-white font-mono text-xs">✕</button>
+          </div>
+        )}
 
         {/* Terms & Digital Signature with QR Code */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-6 border-t border-slate-200 text-xs text-slate-500 items-end">
           <div>
             <span className="font-semibold text-slate-700 block mb-1">Platební podmínky a záruka:</span>
-            <p>Záloha 50% při podpisu smlouvy, doplatek 50% po předání díla. Záruka na stavební práce 60 měsíců.</p>
+            <p>Záloha 50% při podpisu smlouvy, doplatek 50% po předání díla. Záruka na stavební práce 60 měsíců. Splatnost faktury 14 dní.</p>
           </div>
 
           <div className="flex flex-col items-center justify-center p-3 bg-slate-50 rounded-2xl border border-slate-200 text-center">
             {/* Simulated QR Code for instant mobile deposit payment & client signing */}
-            <div className="w-16 h-16 bg-slate-900 rounded-lg p-1 flex items-center justify-center text-white text-[8px] font-mono shadow-xs">
-              <div className="grid grid-cols-4 gap-0.5 w-full h-full p-0.5 bg-white text-slate-900 rounded">
+            <div className="w-20 h-20 bg-slate-900 rounded-lg p-1.5 flex items-center justify-center text-white text-[8px] font-mono shadow-xs">
+              <div className="grid grid-cols-4 gap-0.5 w-full h-full p-1 bg-white text-slate-900 rounded">
                 <div className="bg-slate-900 rounded-xs"></div>
                 <div className="bg-white"></div>
                 <div className="bg-slate-900 rounded-xs"></div>
@@ -403,18 +413,24 @@ export const QuotesPage: React.FC<QuotesPageProps> = ({ branding }) => {
                 <div className="bg-slate-900"></div>
               </div>
             </div>
-            <span className="text-[10px] font-bold text-slate-700 mt-1.5">Naskenovat pro QR platbu</span>
-            <span className="text-[9px] text-slate-400">QR Platba / SPAYD Standard</span>
+            <span className="text-[11px] font-bold text-slate-800 mt-1.5">Okamžitá QR platba zálohy</span>
+            <span className="text-[9px] text-slate-500 font-mono">{(grandTotal * 0.5).toLocaleString()} CZK • SPAYD CZ</span>
           </div>
 
           <div className="text-right space-y-2">
             <div>
-              <p className="font-semibold text-slate-700">Digitální podpis & razítko:</p>
-              <div className="h-12 border border-slate-200 bg-slate-50/80 rounded-xl mt-1 p-2 flex items-center justify-between text-[11px] text-emerald-700 font-mono">
-                <span className="font-semibold">✓ Podepsáno online</span>
-                <span className="text-[9px] text-slate-400">SHA256: 8f9b...a102</span>
+              <p className="font-semibold text-slate-700">Digitální podpis klienta & razítko:</p>
+              <div 
+                onClick={() => handleCustomerAction('accept')}
+                className="h-14 border border-dashed border-emerald-500 bg-emerald-50/50 rounded-xl mt-1 p-2.5 flex items-center justify-between text-[11px] text-emerald-800 font-mono cursor-pointer hover:bg-emerald-100/60 transition-all"
+              >
+                <div className="text-left">
+                  <span className="font-bold flex items-center gap-1"><Check className="w-3.5 h-3.5" /> {customerName}</span>
+                  <span className="text-[9px] text-emerald-600">Klikněte pro elektronický podpis</span>
+                </div>
+                <span className="text-[9px] text-emerald-700 bg-emerald-200/70 px-1.5 py-0.5 rounded font-bold">SHA-256</span>
               </div>
-              <p className="text-[10px] text-slate-400 mt-1">Vystavil: Jan Novák ({branding.name})</p>
+              <p className="text-[10px] text-slate-400 mt-1">Zhotovitel: {branding.name} (IČO: 28491022)</p>
             </div>
           </div>
         </div>

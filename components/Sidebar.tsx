@@ -15,7 +15,9 @@ import {
   MapPin,
   ShieldCheck,
   Code2,
-  Wand2
+  Wand2,
+  Rocket,
+  Download
 } from 'lucide-react';
 import { CompanyBranding } from '../types';
 
@@ -25,6 +27,7 @@ interface SidebarProps {
   branding: CompanyBranding;
   onOpenDemoGenerator: () => void;
   onOpenOnboarding?: () => void;
+  onExportZip?: () => void;
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({ 
@@ -32,12 +35,14 @@ export const Sidebar: React.FC<SidebarProps> = ({
   setCurrentTab, 
   branding,
   onOpenDemoGenerator,
-  onOpenOnboarding
+  onOpenOnboarding,
+  onExportZip
 }) => {
   const menuItems = [
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { id: 'inquiry', label: 'AI Inquiry Form', icon: Sparkles },
     { id: 'widget', label: 'Embed Lead Widget', icon: Code2 },
+    { id: 'install', label: 'Install Studio (/admin)', icon: Rocket },
     { id: 'portal', label: 'Client Portal View', icon: ShieldCheck },
     { id: 'communication', label: 'WhatsApp & SMS Hub', icon: Phone },
     { id: 'leads', label: 'Leads (Kanban)', icon: Kanban },
@@ -111,7 +116,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         })}
 
         {onOpenOnboarding && (
-          <div className="pt-2">
+          <div className="pt-2 space-y-1.5">
             <button
               onClick={onOpenOnboarding}
               className="w-full flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl text-xs font-bold text-amber-300 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 transition-all text-left"
@@ -119,6 +124,15 @@ export const Sidebar: React.FC<SidebarProps> = ({
               <Wand2 className="w-4 h-4 text-amber-400" />
               <span>Průvodce nastavením</span>
             </button>
+            {onExportZip && (
+              <button
+                onClick={onExportZip}
+                className="w-full flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl text-xs font-bold text-blue-300 bg-blue-500/10 hover:bg-blue-500/20 border border-blue-500/30 transition-all text-left"
+              >
+                <Download className="w-4 h-4 text-blue-400" />
+                <span>Stáhnout projekt (ZIP)</span>
+              </button>
+            )}
           </div>
         )}
       </nav>

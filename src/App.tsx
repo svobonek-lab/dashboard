@@ -25,8 +25,10 @@ import { InquiryFormPage } from '@/features/InquiryFormPage';
 import { CustomerPortalPage } from '@/features/CustomerPortalPage';
 import { CommunicationCenterPage } from '@/features/CommunicationCenterPage';
 import { EmbedWidgetPage } from '@/features/EmbedWidgetPage';
+import { InstallStudio } from '@/features/InstallStudio';
 
 import { Lead, WebsiteAudit, LeadStatus, CRMNotification, CompanyBranding } from '@/types';
+import { Download, X, Check, FileArchive } from 'lucide-react';
 
 export default function App() {
   const { branding, updateBranding } = useBranding();
@@ -42,6 +44,7 @@ export default function App() {
   const [isDemoModalOpen, setIsDemoModalOpen] = useState(false);
   const [isOnboardingOpen, setIsOnboardingOpen] = useState(false);
   const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
+  const [isExportZipModalOpen, setIsExportZipModalOpen] = useState(false);
 
   // Keyboard Shortcuts Listener
   useEffect(() => {
@@ -204,6 +207,7 @@ export default function App() {
         branding={branding}
         onOpenDemoGenerator={() => setIsDemoModalOpen(true)}
         onOpenOnboarding={() => setIsOnboardingOpen(true)}
+        onExportZip={() => setIsExportZipModalOpen(true)}
       />
 
       {/* Main Content Area */}
@@ -237,6 +241,19 @@ export default function App() {
             />
           ) : (
             <>
+              {currentTab === 'install' && (
+                <InstallStudio
+                  currentBranding={branding}
+                  onDeploy={(newBranding, newEmployees) => {
+                    updateBranding(newBranding);
+                    if (newEmployees && newEmployees.length > 0) {
+                      setEmployees(newEmployees as any);
+                    }
+                    setCurrentTab('dashboard');
+                  }}
+                  onClose={() => setCurrentTab('dashboard')}
+                />
+              )}
               {currentTab === 'inquiry' && (
                 <InquiryFormPage
                   branding={branding}
@@ -414,8 +431,21 @@ export default function App() {
               {currentTab === 'documents' && <DocumentsPage branding={branding} />}
               {currentTab === 'analytics' && <AnalyticsPage branding={branding} />}
               {currentTab === 'settings' && (
-                <div className="space-y-6 max-w-2xl">
-                  <h2 className="text-2xl font-bold text-slate-900">Branding & System Settings</h2>
+                <div className="space-y-6 max-w-3xl">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h2 className="text-2xl font-bold text-slate-900">Branding & System Settings</h2>
+                      <p className="text-xs text-slate-500">Správa identity systému a možnosti exportu projektu.</p>
+                    </div>
+                    <button
+                      onClick={() => setIsExportZipModalOpen(true)}
+                      className="px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold flex items-center gap-2 shadow-sm transition-all"
+                    >
+                      <Download className="w-4 h-4" />
+                      <span>Exportovat projekt (ZIP)</span>
+                    </button>
+                  </div>
+
                   <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-xs space-y-4">
                     <div>
                       <label className="text-xs font-semibold text-slate-700">Company Name</label>
@@ -436,6 +466,46 @@ export default function App() {
                         ))}
                       </div>
                     </div>
+                  </div>
+
+                  {/* ZIP Export Card */}
+                  <div className="bg-slate-900 text-white p-6 rounded-3xl border border-slate-800 shadow-xl space-y-4">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-2xl bg-blue-500/20 border border-blue-500/30 flex items-center justify-center text-blue-400">
+                        <FileArchive className="w-5 h-5" />
+                      </div>
+                      <div>
+                        <h3 className="text-base font-bold text-white">Stažení celého projektu (ZIP / GitHub)</h3>
+                        <p className="text-xs text-slate-400">Jak stáhnout kompletní zdrojový kód se všemi komponentami a daty.</p>
+                      </div>
+                    </div>
+
+                    <p className="text-xs text-slate-300 leading-relaxed">
+                      Ano! Celý projekt lze okamžitě stáhnout ve formátu <strong>.ZIP</strong> přímo z rozhraní Google AI Studio:
+                    </p>
+
+                    <div className="p-4 bg-slate-950/80 rounded-2xl border border-slate-800 text-xs text-slate-300 space-y-2">
+                      <div className="flex items-center gap-2">
+                        <span className="w-5 h-5 rounded-full bg-blue-600 text-white text-[11px] font-bold flex items-center justify-center">1</span>
+                        <span>V pravém horním rohu Google AI Studio klikněte na ikonu <strong>Settings / Export</strong>.</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="w-5 h-5 rounded-full bg-blue-600 text-white text-[11px] font-bold flex items-center justify-center">2</span>
+                        <span>Zvolte možnost <strong>Export to ZIP</strong> nebo propojte přímo se svým <strong>GitHub</strong> repozitářem.</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="w-5 h-5 rounded-full bg-blue-600 text-white text-[11px] font-bold flex items-center justify-center">3</span>
+                        <span>Archiv obsahuje kompletní Vite + React + TypeScript kód připravený k okamžitému spuštění přes <code>npm install && npm run dev</code>.</span>
+                      </div>
+                    </div>
+
+                    <button
+                      onClick={() => setIsExportZipModalOpen(true)}
+                      className="w-full py-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-2xl text-xs font-bold transition-all shadow-md flex items-center justify-center gap-2"
+                    >
+                      <Download className="w-4 h-4" />
+                      <span>Zobrazit podrobný návod ke stažení ZIP</span>
+                    </button>
                   </div>
                 </div>
               )}
@@ -486,6 +556,86 @@ export default function App() {
         onClose={() => setIsVoiceModalOpen(false)}
         onSaveNote={handleSaveVoiceNote}
       />
+
+      {/* Export Project ZIP Modal */}
+      {isExportZipModalOpen && (
+        <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-slate-900 border border-slate-700 rounded-3xl max-w-lg w-full p-6 text-white shadow-2xl relative space-y-5 animate-in fade-in">
+            <button
+              onClick={() => setIsExportZipModalOpen(false)}
+              className="absolute top-5 right-5 text-slate-400 hover:text-white p-1.5 rounded-xl hover:bg-slate-800 transition-all"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            <div className="flex items-center gap-3">
+              <div className="w-11 h-11 rounded-2xl bg-blue-600/20 border border-blue-500/40 flex items-center justify-center text-blue-400">
+                <Download className="w-6 h-6" />
+              </div>
+              <div>
+                <h3 className="text-lg font-black text-white">Stažení celého projektu (ZIP)</h3>
+                <p className="text-xs text-slate-400">Jak získat kompletní zdrojový kód z Google AI Studio</p>
+              </div>
+            </div>
+
+            <div className="space-y-3 text-xs text-slate-300">
+              <div className="p-3.5 bg-slate-950/80 border border-slate-800 rounded-2xl space-y-2">
+                <span className="text-amber-400 font-bold flex items-center gap-1.5 text-xs">
+                  <Check className="w-4 h-4 text-emerald-400" />
+                  Ano, projekt můžete kdykoliv stáhnout jako ZIP!
+                </span>
+                <p className="text-[11px] text-slate-400 leading-relaxed">
+                  V rozhraní Google AI Studio je vestavěná funkce pro kompletní export projektu. Nemusíte nic kopírovat ručně.
+                </p>
+              </div>
+
+              <div className="space-y-2 pt-1">
+                <div className="flex items-start gap-3 p-3 bg-slate-800/60 rounded-xl border border-slate-700/60">
+                  <span className="w-6 h-6 rounded-lg bg-blue-600 text-white font-bold text-xs flex items-center justify-center flex-shrink-0">
+                    1
+                  </span>
+                  <div>
+                    <h4 className="font-bold text-white text-xs">Menu Nastavení vpravo nahoře</h4>
+                    <p className="text-[11px] text-slate-400">Klikněte na ikonu ozubeného kola (Settings) nebo tlačítko v pravém horním panelu AI Studia.</p>
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-3 p-3 bg-slate-800/60 rounded-xl border border-slate-700/60">
+                  <span className="w-6 h-6 rounded-lg bg-blue-600 text-white font-bold text-xs flex items-center justify-center flex-shrink-0">
+                    2
+                  </span>
+                  <div>
+                    <h4 className="font-bold text-white text-xs">Zvolte "Export to ZIP" nebo "Export to GitHub"</h4>
+                    <p className="text-[11px] text-slate-400">Stáhne se standardní archiv .zip obsahující package.json, TypeScript komponenty a konfiguraci.</p>
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-3 p-3 bg-slate-800/60 rounded-xl border border-slate-700/60">
+                  <span className="w-6 h-6 rounded-lg bg-blue-600 text-white font-bold text-xs flex items-center justify-center flex-shrink-0">
+                    3
+                  </span>
+                  <div>
+                    <h4 className="font-bold text-white text-xs">Lokální spuštění projektu</h4>
+                    <p className="text-[11px] text-slate-400">Rozbalte ZIP a ve složce spusťte příkazy:</p>
+                    <code className="block mt-1.5 p-2 bg-slate-950 rounded-lg text-emerald-400 font-mono text-[11px]">
+                      npm install && npm run dev
+                    </code>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="pt-2 flex justify-end">
+              <button
+                onClick={() => setIsExportZipModalOpen(false)}
+                className="px-5 py-2.5 bg-slate-800 hover:bg-slate-700 text-white rounded-xl text-xs font-bold transition-all"
+              >
+                Rozumím, zavřít
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
