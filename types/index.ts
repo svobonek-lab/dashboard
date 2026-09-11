@@ -148,16 +148,34 @@ export interface WebsiteAuditItem {
   title: string;
   description: string;
   severity: 'warning' | 'error' | 'info';
+  category?: 'ux' | 'lead' | 'automation' | 'cx' | string;
+  whyItHurts?: string;
+  howWeFixIt?: string;
+  timeSaved?: string;
+}
+
+export interface WebsiteAuditRecommendation {
+  id: string;
+  title: string;
+  description: string;
+  impact: 'High' | 'Medium' | 'Low' | string;
+  effort: 'Easy' | 'Medium' | 'Hard' | string;
+  category: string;
 }
 
 export interface WebsiteAudit {
   url: string;
   companyName: string;
   score: number;
+  websiteUxScore: number;
   leadCaptureScore: number;
   responseAutomationScore: number;
   customerExperienceScore: number;
+  googleReviewsRating: number;
+  googleReviewsCount: number;
+  googleReviewsSummary: string;
   issues: WebsiteAuditItem[];
+  recommendations: WebsiteAuditRecommendation[];
   upgradedBenefits: string[];
 }
 

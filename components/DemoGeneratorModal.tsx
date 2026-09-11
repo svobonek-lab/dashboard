@@ -589,7 +589,7 @@ export const DemoGeneratorModal: React.FC<DemoGeneratorModalProps> = ({
                       Detekované stavební specializace:
                     </span>
                     <div className="flex flex-wrap gap-1.5">
-                      {generatedData.branding.services.map((srv, sIdx) => (
+                      {(generatedData?.branding?.services || []).map((srv, sIdx) => (
                         <span 
                           key={sIdx}
                           className="px-2.5 py-0.5 rounded-lg text-[11px] font-bold bg-blue-500/15 text-blue-300 border border-blue-500/30"

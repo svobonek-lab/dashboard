@@ -26,14 +26,99 @@ import { CustomerPortalPage } from '@/features/CustomerPortalPage';
 import { CommunicationCenterPage } from '@/features/CommunicationCenterPage';
 import { EmbedWidgetPage } from '@/features/EmbedWidgetPage';
 import { InstallStudio } from '@/features/InstallStudio';
+import { AdminPanel } from '@/features/AdminPanel';
+import { WidgetIframePage } from '@/features/WidgetIframePage';
 
 import { Lead, WebsiteAudit, LeadStatus, CRMNotification, CompanyBranding } from '@/types';
 import { Download, X, Check, FileArchive } from 'lucide-react';
 
+import { useOrganization } from '@/context/OrganizationContext';
+import { LoginPage } from '@/components/LoginPage';
+
 export default function App() {
   const { branding, updateBranding } = useBranding();
+  const { 
+    isConfigured, 
+    user, 
+    isLoading: isAuthLoading, 
+    currentOrg, 
+    fetchLeads, 
+    fetchEmployees, 
+    saveLead, 
+    updateLeadStatus,
+    impersonatingOrgId,
+    stopImpersonation
+  } = useOrganization();
   const [leads, setLeads] = useState<Lead[]>(() => generateRealisticLeads(branding));
   const [employees, setEmployees] = useState(() => generateRealisticEmployees());
+  const [isSyncing, setIsSyncing] = useState(false);
+  const [currentPath, setCurrentPath] = useState(window.location.pathname);
+
+  // Synchronize path and protect routes
+  useEffect(() => {
+    if (isAuthLoading) return;
+    
+    // If user is authenticated and visited /login, redirect to main CRM view
+    if (user && currentPath === '/login') {
+      window.history.pushState(null, '', '/');
+      setCurrentPath('/');
+    }
+    // If user is unauthenticated, and Supabase is configured, and they are not on /login, redirect to /login
+    else if (!user && isConfigured && currentPath !== '/login' && currentPath !== '/widget-iframe' && currentPath !== '/widget-iframe.html') {
+      window.history.pushState(null, '', '/login');
+      setCurrentPath('/login');
+    }
+  }, [user, isConfigured, currentPath, isAuthLoading]);
+
+  // Support back/forward browser navigation
+  useEffect(() => {
+    const handlePopState = () => {
+      setCurrentPath(window.location.pathname);
+    };
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
+
+  // Synchronize leads and employees with Supabase when currentOrg changes
+  useEffect(() => {
+    if (currentOrg) {
+      setIsSyncing(true);
+      Promise.all([fetchLeads(), fetchEmployees()])
+        .then(([dbLeads, dbEmployees]) => {
+          if (dbLeads.length > 0) {
+            setLeads(dbLeads);
+          } else {
+            const initialLeads = generateRealisticLeads({
+              ...branding,
+              name: currentOrg.name,
+              primaryColor: currentOrg.primary_color
+            });
+            Promise.all(initialLeads.map(l => saveLead(l)))
+              .then(saved => setLeads(saved))
+              .catch(() => setLeads(initialLeads));
+          }
+
+          if (dbEmployees.length > 0) {
+            setEmployees(dbEmployees);
+          } else {
+            const initialEmployees = generateRealisticEmployees();
+            setEmployees(initialEmployees);
+          }
+        })
+        .catch(err => {
+          console.error('Error loading Supabase data, falling back to mock:', err);
+          setLeads(generateRealisticLeads(branding));
+          setEmployees(generateRealisticEmployees());
+        })
+        .finally(() => {
+          setIsSyncing(false);
+        });
+    } else {
+      setLeads(generateRealisticLeads(branding));
+      setEmployees(generateRealisticEmployees());
+    }
+  }, [currentOrg]);
+
 
   const [currentTab, setCurrentTab] = useState('dashboard');
   const [activeRole, setActiveRole] = useState<'owner' | 'employee'>('owner');
@@ -86,13 +171,22 @@ export default function App() {
     url: 'https://novakstavby.cz',
     companyName: branding.name,
     score: 63,
+    websiteUxScore: 75,
     leadCaptureScore: 45,
     responseAutomationScore: 20,
     customerExperienceScore: 70,
+    googleReviewsRating: 4.8,
+    googleReviewsCount: 142,
+    googleReviewsSummary: 'Vysoké hodnocení za kvalitu tesařských a pergolových prací, avšak občasné stížnosti na rychlost nacenění a úvodní komunikace.',
     issues: [
-      { id: '1', title: 'Chybějící interaktivní lead formulář', description: 'Web nemá rychlý poptávkový formulář pro okamžitý sběr poptávek.', severity: 'error' },
-      { id: '2', title: 'Žádné automatické potvrzení klientům', description: 'Zákazníci čekají dny na odpověď bez automatické potvrzovací SMS či e-mailu.', severity: 'warning' },
-      { id: '3', title: 'Chybí klientská fotogalerie před/po', description: 'Na webu chybí moderní vizuální ukázky realizovaných projektů.', severity: 'warning' }
+      { id: 'iss-1', title: 'Chybějící interaktivní lead formulář', description: 'Web nemá rychlý poptávkový formulář pro okamžitý sběr poptávek.', severity: 'error', category: 'lead', whyItHurts: 'Zákazníci odcházejí ke konkurenci, pokud nemohou ihned poptat cenu.', howWeFixIt: 'Nainstalujeme náš interaktivní formulář a lead widget s okamžitým zpracováním.', timeSaved: '4 hodiny / týdně' },
+      { id: 'iss-2', title: 'Žádné automatické potvrzení klientům', description: 'Zákazníci čekají dny na odpověď bez automatické potvrzovací SMS či e-mailu.', severity: 'warning', category: 'automation', whyItHurts: 'Leady vychladnou a hledají mezitím jiné firmy na trhu.', howWeFixIt: 'SMS a WhatsApp potvzení do 10 sekund přes automatizovaný dispečink.', timeSaved: '6 hodin / týdně' },
+      { id: 'iss-3', title: 'Chybí klientská fotogalerie před/po', description: 'Na webu chybí moderní vizuální ukázky realizovaných projektů.', severity: 'warning', category: 'ux', whyItHurts: 'Nízká důvěryhodnost kvůli absenci ověřených dokončených staveb.', howWeFixIt: 'Připojíme automaticky synchronizovaný klientský portál s fotkami z terénu.', timeSaved: '3 hodiny / týdně' }
+    ],
+    recommendations: [
+      { id: 'rec-1', title: 'Instalovat interaktivní AI Lead Widget', description: 'Nasazení plovoucího poptávkového asistenta pro okamžitý výpočet odhadu ceny a sběr kontaktů.', impact: 'High', effort: 'Easy', category: 'lead' },
+      { id: 'rec-2', title: 'Aktivovat okamžité SMS potvrzení', description: 'Nastavení automatizovaného workflow, které novému kontaktu odešle SMS do 30 sekund.', impact: 'High', effort: 'Easy', category: 'automation' },
+      { id: 'rec-3', title: 'Vytvořit klientské portály s fotodokumentací', description: 'Spustit sdílené složky před/po s klienty, kde technici fotí průběh prací mobilem.', impact: 'Medium', effort: 'Medium', category: 'cx' }
     ],
     upgradedBenefits: [
       'Zvýšení konverze poptávek o +34% díky okamžitému AI widgetu',
@@ -130,16 +224,26 @@ export default function App() {
     setNotifications(prev => [newNotif, ...prev]);
   };
 
-  const handleUpdateLeadStatus = (leadId: string, newStatus: LeadStatus) => {
+  const handleUpdateLeadStatus = async (leadId: string, newStatus: LeadStatus) => {
     setLeads(leads.map(l => l.id === leadId ? { ...l, status: newStatus } : l));
     if (selectedLead && selectedLead.id === leadId) {
       setSelectedLead({ ...selectedLead, status: newStatus });
     }
+    try {
+      await updateLeadStatus(leadId, newStatus);
+    } catch (e) {
+      console.error('Failed to sync status update to Supabase', e);
+    }
   };
 
-  const handleUpdateLead = (updated: Lead) => {
+  const handleUpdateLead = async (updated: Lead) => {
     setLeads(leads.map(l => l.id === updated.id ? updated : l));
     setSelectedLead(updated);
+    try {
+      await saveLead(updated);
+    } catch (e) {
+      console.error('Failed to sync lead update to Supabase', e);
+    }
   };
 
   const handleSaveVoiceNote = (note: { duration: string; transcript: string }) => {
@@ -184,6 +288,30 @@ export default function App() {
     setNotifications(prev => [welcomeNotif, ...prev]);
   };
 
+  if (currentPath === '/widget-iframe' || currentPath === '/widget-iframe.html') {
+    return <WidgetIframePage />;
+  }
+
+  if (isAuthLoading && isConfigured) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center gap-4">
+        <div className="w-10 h-10 border-4 border-blue-600/20 border-t-blue-600 rounded-full animate-spin"></div>
+        <p className="text-xs font-semibold text-slate-500 animate-pulse">Ověřování přihlášení...</p>
+      </div>
+    );
+  }
+
+  if (currentPath === '/login' || (!user && isConfigured)) {
+    return (
+      <LoginPage 
+        onSuccess={() => {
+          window.history.pushState(null, '', '/');
+          setCurrentPath('/');
+        }} 
+      />
+    );
+  }
+
   if (showAudit) {
     return (
       <AuditCard
@@ -212,6 +340,26 @@ export default function App() {
 
       {/* Main Content Area */}
       <div className="flex-1 ml-72 flex flex-col min-h-screen">
+        {/* Impersonation Alert Banner */}
+        {impersonatingOrgId && (
+          <div className="bg-amber-500 text-white px-6 py-3.5 flex items-center justify-between text-xs font-bold shadow-md select-none shrink-0 border-b border-amber-600 animate-pulse">
+            <div className="flex items-center gap-2">
+              <span className="bg-white/20 px-2.5 py-1 rounded-md text-[10px] font-black uppercase tracking-wider">Impersonace</span>
+              <span>Nyní spravujete a prohlížíte CRM z pohledu firmy: <strong className="text-white underline">{currentOrg?.name}</strong></span>
+            </div>
+            <button 
+              onClick={() => {
+                stopImpersonation();
+                setCurrentTab('admin');
+              }}
+              className="bg-slate-900 hover:bg-slate-800 text-white px-4 py-1.5 rounded-lg text-[11px] font-extrabold transition-all border border-slate-950 flex items-center gap-1.5"
+            >
+              <span>Ukončit impersonaci</span>
+              <span>→</span>
+            </button>
+          </div>
+        )}
+
         <Header
           branding={branding}
           activeRole={activeRole}
@@ -307,6 +455,7 @@ export default function App() {
                       ]
                     };
                     setLeads([createdLead, ...leads]);
+                    saveLead(createdLead).catch(err => console.error('Failed to save inquiry to Supabase:', err));
                     setNotifications(prev => [
                       {
                         id: 'notif-' + Date.now(),
@@ -375,6 +524,7 @@ export default function App() {
                       ]
                     };
                     setLeads([createdLead, ...leads]);
+                    saveLead(createdLead).catch(err => console.error('Failed to save widget inquiry to Supabase:', err));
                     setNotifications(prev => [
                       {
                         id: 'notif-' + Date.now(),
@@ -403,6 +553,7 @@ export default function App() {
                   leads={leads}
                 />
               )}
+              {currentTab === 'admin' && <AdminPanel />}
               {currentTab === 'dashboard' && (
                 <OwnerDashboard
                   branding={branding}
@@ -461,7 +612,7 @@ export default function App() {
                     <div>
                       <label className="text-xs font-semibold text-slate-700">Services</label>
                       <div className="flex flex-wrap gap-2 mt-1">
-                        {branding.services.map((s: string, i: number) => (
+                        {(branding?.services || []).map((s: string, i: number) => (
                           <span key={i} className="px-3 py-1 bg-slate-100 rounded-lg text-xs font-medium text-slate-700">{s}</span>
                         ))}
                       </div>

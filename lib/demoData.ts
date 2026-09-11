@@ -1,6 +1,17 @@
 import { Lead, Employee, CompanyBranding, TimelineStep, AIChatMessage, WeatherInfo } from '../types';
 
 export function generateRealisticLeads(company: CompanyBranding): Lead[] {
+  const safeCompany = {
+    name: company?.name || 'Novák Stavby',
+    logoUrl: company?.logoUrl || '',
+    primaryColor: company?.primaryColor || '#0A4EA3',
+    phone: company?.phone || '+420 777 123 456',
+    email: company?.email || 'info@novakstavby.cz',
+    city: company?.city || 'Třinec',
+    address: company?.address || 'Průmyslová 452, 739 61 Třinec',
+    services: Array.isArray(company?.services) ? company.services : ['Pergoly', 'Střechy', 'Rekonstrukce']
+  };
+  company = safeCompany;
   const services = company.services.length > 0 ? company.services : ['Pergoly', 'Střechy', 'Rekonstrukce'];
 
   const defaultTimeline: TimelineStep[] = [

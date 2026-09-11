@@ -22,6 +22,7 @@ import {
 } from 'lucide-react';
 import { CompanyBranding, Lead } from '../types';
 import { EmbedLeadWidget } from '../components/EmbedLeadWidget';
+import { useOrganization } from '../context/OrganizationContext';
 
 interface EmbedWidgetPageProps {
   branding: CompanyBranding;
@@ -34,6 +35,7 @@ export const EmbedWidgetPage: React.FC<EmbedWidgetPageProps> = ({
   onCreateLeadFromWidget,
   onNavigateTab
 }) => {
+  const { currentOrg } = useOrganization();
   const [selectedSnippetType, setSelectedSnippetType] = useState<'html' | 'wordpress' | 'webflow' | 'react'>('html');
   const [copied, setCopied] = useState(false);
   const [customPrimaryColor, setCustomPrimaryColor] = useState(branding.primaryColor || '#2563eb');
@@ -42,28 +44,31 @@ export const EmbedWidgetPage: React.FC<EmbedWidgetPageProps> = ({
   const [isWidgetModalOpen, setIsWidgetModalOpen] = useState(false);
   const [testLeadNotification, setTestLeadNotification] = useState<string | null>(null);
 
-  const companyKey = `df_${branding.name.toLowerCase().replace(/[^a-z0-9]/g, '')}_${branding.city.toLowerCase()}`;
+  const orgId = currentOrg?.id || 'org-1111-2222-3333-444444444444';
+  const appOrigin = typeof window !== 'undefined' ? window.location.origin : 'https://YOUR_DOMAIN';
 
   const snippetCodes = {
-    html: `<!-- DemoFactory V2 Embeddable Lead Widget -->
+    html: `<!-- CRM Multi-Tenant Embeddable Inquiry Widget -->
 <script 
-  src="https://cdn.demofactory.ai/v2/lead-widget.js" 
-  data-company-id="${companyKey}"
+  src="${appOrigin}/widget.js" 
+  data-org="${orgId}"
   data-color="${customPrimaryColor}"
   data-position="${widgetPosition}"
   data-btn-text="${buttonText}"
   async>
 </script>`,
     wordpress: `// Vložte do functions.php nebo Header/Footer Scripts pluginu
-function add_demofactory_lead_widget() {
-    echo '<script src="https://cdn.demofactory.ai/v2/lead-widget.js" data-company-id="${companyKey}" data-color="${customPrimaryColor}" data-position="${widgetPosition}" async></script>';
+function add_crm_lead_widget() {
+    echo '<script src="${appOrigin}/widget.js" data-org="${orgId}" data-color="${customPrimaryColor}" data-position="${widgetPosition}" data-btn-text="${buttonText}" async></script>';
 }
-add_action('wp_footer', 'add_demofactory_lead_widget');`,
+add_action('wp_footer', 'add_crm_lead_widget');`,
     webflow: `<!-- Vložte do Custom Code v nastavení projektu (Before </body> tag) -->
 <script 
-  src="https://cdn.demofactory.ai/v2/lead-widget.js" 
-  data-company-id="${companyKey}"
+  src="${appOrigin}/widget.js" 
+  data-org="${orgId}"
   data-color="${customPrimaryColor}"
+  data-position="${widgetPosition}"
+  data-btn-text="${buttonText}"
   async>
 </script>`,
     react: `// React / Next.js Component Embed
@@ -74,10 +79,12 @@ export default function RootLayout({ children }) {
     <>
       {children}
       <Script 
-        src="https://cdn.demofactory.ai/v2/lead-widget.js" 
+        src="${appOrigin}/widget.js" 
         strategy="lazyOnload"
-        data-company-id="${companyKey}"
+        data-org="${orgId}"
         data-color="${customPrimaryColor}"
+        data-position="${widgetPosition}"
+        data-btn-text="${buttonText}"
       />
     </>
   );

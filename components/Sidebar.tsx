@@ -17,9 +17,11 @@ import {
   Code2,
   Wand2,
   Rocket,
-  Download
+  Download,
+  ShieldAlert
 } from 'lucide-react';
 import { CompanyBranding } from '../types';
+import { useOrganization } from '../context/OrganizationContext';
 
 interface SidebarProps {
   currentTab: string;
@@ -38,7 +40,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onOpenOnboarding,
   onExportZip
 }) => {
-  const menuItems = [
+  const { dbUser } = useOrganization();
+
+  const baseMenuItems = [
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { id: 'inquiry', label: 'AI Inquiry Form', icon: Sparkles },
     { id: 'widget', label: 'Embed Lead Widget', icon: Code2 },
@@ -54,6 +58,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
     { id: 'analytics', label: 'Analytics', icon: BarChart3 },
     { id: 'settings', label: 'Settings', icon: Settings },
   ];
+
+  const menuItems = [...baseMenuItems];
+  if (dbUser?.role === 'super_admin') {
+    // Add Admin item at the top of the menuItems list for high accessibility
+    menuItems.unshift({ id: 'admin', label: 'Admin Panel', icon: ShieldAlert });
+  }
 
   return (
     <aside className="w-72 bg-slate-900 text-slate-300 flex flex-col h-screen fixed left-0 top-0 z-30 border-r border-slate-800 shadow-xl">
