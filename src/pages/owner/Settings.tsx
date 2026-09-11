@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import { useBranding } from '@/hooks/useBranding';
+import { useOrganization } from '@/context/OrganizationContext';
+import { canManageCompany } from '@/src/app/permissions';
 import { 
   Settings, 
   Palette, 
@@ -23,6 +25,7 @@ import { CompanyBranding } from '@/types';
 import { ExportZipModal } from '@/components/ExportZipModal';
 
 export const OwnerSettingsPage: React.FC = () => {
+  const { dbUser } = useOrganization();
   const { branding, updateBranding, resetToDefault } = useBranding();
 
   const [formData, setFormData] = useState<CompanyBranding>({ ...branding });
@@ -33,6 +36,10 @@ export const OwnerSettingsPage: React.FC = () => {
 
   const handleSave = (e: React.FormEvent) => {
     e.preventDefault();
+    if (!canManageCompany(dbUser?.role)) {
+      alert("Nemáte oprávnění spravovat firmu.");
+      return;
+    }
     updateBranding(formData);
     setSavedSuccess(true);
     setTimeout(() => setSavedSuccess(false), 3000);

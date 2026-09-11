@@ -162,32 +162,32 @@ export const EmployeeLayout: React.FC<EmployeeLayoutProps> = ({ children, leads 
 
       </div>
 
-      {/* Mobile Sticky Bottom Navigation Bar (Touch targets > 48px) */}
-      <nav className="md:hidden fixed bottom-0 inset-x-0 bg-[#111726]/95 backdrop-blur-lg border-t border-slate-800 px-2 py-1.5 z-40 flex items-center justify-around">
-        {[
-          { label: 'Zakázky', path: '/employee', icon: Briefcase, exact: true },
-          { label: 'Plán', path: '/employee/schedule', icon: Calendar },
-          { label: 'Mapa', path: '/employee/map', icon: MapPin },
-          { label: 'Foto', path: '/employee/photos', icon: Camera },
-          { label: 'Checklist', path: '/employee/checklist', icon: CheckSquare },
-          { label: 'Profil', path: '/employee/profile', icon: User },
-        ].map((tab) => {
-          const Icon = tab.icon;
-          const active = isActive(tab.path, tab.exact);
-          return (
-            <Link
-              key={tab.path}
-              to={tab.path}
-              exact={tab.exact}
-              className={`flex flex-col items-center justify-center min-w-[50px] min-h-[48px] py-1 px-2 rounded-xl text-[10px] font-bold transition-all ${
-                active ? 'text-emerald-400 bg-emerald-500/10' : 'text-slate-400 hover:text-slate-200'
-              }`}
-            >
-              <Icon className="w-5 h-5 mb-0.5" />
-              <span>{tab.label}</span>
-            </Link>
-          );
-        })}
+        {/* Mobile Sticky Bottom Navigation Bar (Touch targets > 48px) */}
+      <nav className="md:hidden fixed bottom-0 inset-x-0 bg-[#0B0F19] border-t border-slate-800 pb-safe z-40 shadow-2xl">
+        <div className="flex items-center justify-around px-2 py-2">
+          {[
+            { label: 'Přehled', path: '/employee', icon: Briefcase, exact: true },
+            { label: 'Mapa', path: '/employee/map', icon: MapPin },
+            { label: 'Foto', path: '/employee/photos', icon: Camera },
+            { label: 'Checklist', path: '/employee/checklist', icon: CheckSquare },
+          ].map((tab) => {
+            const Icon = tab.icon;
+            const active = isActive(tab.path, tab.exact);
+            return (
+              <Link
+                key={tab.path}
+                to={tab.path}
+                exact={tab.exact}
+                className={`flex flex-col items-center justify-center min-w-[72px] h-[52px] rounded-2xl transition-all active:scale-95 ${
+                  active ? 'text-emerald-400 bg-emerald-500/10' : 'text-slate-500 hover:text-slate-300'
+                }`}
+              >
+                <Icon className={`w-6 h-6 mb-1 ${active ? 'fill-emerald-500/20' : ''}`} />
+                <span className="text-[10px] font-bold tracking-wide">{tab.label}</span>
+              </Link>
+            );
+          })}
+        </div>
       </nav>
 
       {/* Voice Notes Modal for field speech dictation */}

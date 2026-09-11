@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
 import { Employee } from '../types';
-import { Phone, Mail, MapPin, Sparkles, Shield, CheckCircle2, Clock, Award, Check } from 'lucide-react';
+import { Phone, Mail, MapPin, Sparkles, Shield, CheckCircle2, Clock, Award, Check, Trash2 } from 'lucide-react';
 import { autoAssignEmployee } from '../lib/autoAssignment';
 import { generateRealisticLeads } from '../lib/demoData';
+import { canDeleteEmployees } from '../src/app/permissions';
+import { useOrganization } from '../context/OrganizationContext';
 
 interface EmployeesPageProps {
   employees: Employee[];
@@ -10,6 +12,7 @@ interface EmployeesPageProps {
 }
 
 export const EmployeesPage: React.FC<EmployeesPageProps> = ({ employees, branding }) => {
+  const { dbUser } = useOrganization();
   const [selectedLeadId, setSelectedLeadId] = useState<string>('lead-1');
   const [assignmentResult, setAssignmentResult] = useState<any | null>(null);
 
@@ -19,6 +22,14 @@ export const EmployeesPage: React.FC<EmployeesPageProps> = ({ employees, brandin
   const handleRunAIAssignment = (lead: any) => {
     const result = autoAssignEmployee({ lead, employees });
     setAssignmentResult({ lead, ...result });
+  };
+
+  const handleDeleteEmployee = (id: string) => {
+    if (!canDeleteEmployees(dbUser?.role)) {
+      alert("Nemáte oprávnění odstraňovat zaměstnance z organizace.");
+      return;
+    }
+    alert(`Odstranění zaměstnance s ID: ${id}`);
   };
 
   return (
@@ -121,7 +132,18 @@ export const EmployeesPage: React.FC<EmployeesPageProps> = ({ employees, brandin
             <div key={emp.id} className="bg-slate-900 p-6 rounded-3xl border border-slate-800 shadow-md space-y-4 relative overflow-hidden group hover:border-slate-700 transition-all">
               <div className="flex items-start justify-between">
                 <img src={emp.avatar} alt={emp.name} className="w-16 h-16 rounded-2xl object-cover ring-2 ring-slate-800" />
-                <span className={`w-3.5 h-3.5 rounded-full ${statusBg} ring-4 ring-slate-900 shadow-xs`} title={`Status: ${emp.status}`} />
+                <div className="flex flex-col items-end gap-2">
+                  <span className={`w-3.5 h-3.5 rounded-full ${statusBg} ring-4 ring-slate-900 shadow-xs`} title={`Status: ${emp.status}`} />
+                  {canDeleteEmployees(dbUser?.role) && (
+                    <button
+                      onClick={() => handleDeleteEmployee(emp.id)}
+                      className="p-1.5 rounded-lg text-rose-400 hover:bg-rose-950/50 hover:text-rose-300 transition-colors border border-transparent hover:border-rose-900/50"
+                      title="Odstranit"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  )}
+                </div>
               </div>
 
               <div>

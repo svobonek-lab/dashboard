@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { Lead, LeadStatus } from '../types';
-import { MapPin, DollarSign, User, ChevronRight, Plus, Phone, MessageSquare, Mail, FileText, Calendar, ShieldCheck, AlertTriangle, Camera, Clock, Sparkles } from 'lucide-react';
+import { MapPin, DollarSign, User, ChevronRight, Plus, Phone, MessageSquare, Mail, FileText, Calendar, ShieldCheck, AlertTriangle, Camera, Clock, Sparkles, Trash2 } from 'lucide-react';
+import { canDeleteLead } from '../src/app/permissions';
+import { useOrganization } from '../context/OrganizationContext';
 
 interface LeadsKanbanProps {
   leads: Lead[];
@@ -21,6 +23,18 @@ export const LeadsKanban: React.FC<LeadsKanbanProps> = ({
     { status: 'Completed', label: 'Dokončeno & Předáno', color: 'border-emerald-500 bg-emerald-950/40 text-emerald-400' },
     { status: 'Lost', label: 'Stornováno', color: 'border-slate-700 bg-slate-900 text-slate-400' }
   ];
+
+  const { dbUser } = useOrganization();
+
+  const handleDeleteClick = (e: React.MouseEvent, leadId: string) => {
+    e.stopPropagation();
+    if (!canDeleteLead(dbUser?.role)) {
+      alert("Nemáte oprávnění mazat zakázky.");
+      return;
+    }
+    // Delete action placeholder
+    alert(`Delete lead ID: ${leadId}`);
+  };
 
   return (
     <div className="space-y-6 pb-16 text-slate-100">
@@ -167,6 +181,15 @@ export const LeadsKanban: React.FC<LeadsKanbanProps> = ({
                           >
                             <FileText className="w-3 h-3" />
                           </button>
+                          {canDeleteLead(dbUser?.role) && (
+                            <button
+                              title="Smazat zakázku"
+                              onClick={(e) => handleDeleteClick(e, lead.id)}
+                              className="w-6 h-6 rounded-lg bg-rose-950/40 border border-rose-900/50 text-rose-400 flex items-center justify-center hover:bg-rose-900/60 ml-auto"
+                            >
+                              <Trash2 className="w-3 h-3" />
+                            </button>
+                          )}
                         </div>
                       </div>
                     </div>

@@ -108,7 +108,24 @@ function AppContent() {
       const target = getDefaultRouteForRole(role);
       navigate(target, { replace: true });
     }
-  }, [pathname, dbUser, isAuthLoading, navigate]);
+  }, [pathname, isAuthLoading, dbUser, navigate]);
+
+  // Dynamic White Labeling (Browser Title & Favicon Update)
+  useEffect(() => {
+    if (branding?.name) {
+      document.title = `${branding.name} | Stavební OS`;
+    } else {
+      document.title = 'StavbaCore CRM';
+    }
+
+    if (branding?.logoUrl) {
+      const link: HTMLLinkElement = document.querySelector("link[rel*='icon']") || document.createElement('link');
+      link.type = 'image/png';
+      link.rel = 'icon';
+      link.href = branding.logoUrl;
+      document.head.appendChild(link);
+    }
+  }, [branding?.name, branding?.logoUrl]);
 
   const handleUpdateLeadStatus = async (leadId: string, newStatus: LeadStatus) => {
     setLeads(prev => prev.map(l => l.id === leadId ? { ...l, status: newStatus } : l));

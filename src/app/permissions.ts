@@ -2,7 +2,9 @@ export type UserRole = 'super_admin' | 'owner' | 'employee';
 
 export interface RolePermissions {
   canEditLeads: boolean;
+  canDeleteLeads: boolean;
   canDeleteEmployees: boolean;
+  canManageEmployees: boolean;
   canViewRevenue: boolean;
   canManageCompany: boolean;
   canAccessSuperAdmin: boolean;
@@ -13,12 +15,15 @@ export interface RolePermissions {
   canAccessAnalytics: boolean;
   canManageDocuments: boolean;
   canManageIntegrations: boolean;
+  canSwitchCompany: boolean;
 }
 
 export const ROLE_PERMISSIONS: Record<UserRole, RolePermissions> = {
   super_admin: {
     canEditLeads: true,
+    canDeleteLeads: true,
     canDeleteEmployees: true,
+    canManageEmployees: true,
     canViewRevenue: true,
     canManageCompany: true,
     canAccessSuperAdmin: true,
@@ -29,10 +34,13 @@ export const ROLE_PERMISSIONS: Record<UserRole, RolePermissions> = {
     canAccessAnalytics: true,
     canManageDocuments: true,
     canManageIntegrations: true,
+    canSwitchCompany: true,
   },
   owner: {
     canEditLeads: true,
+    canDeleteLeads: true,
     canDeleteEmployees: true,
+    canManageEmployees: true,
     canViewRevenue: true,
     canManageCompany: true,
     canAccessSuperAdmin: false,
@@ -43,10 +51,13 @@ export const ROLE_PERMISSIONS: Record<UserRole, RolePermissions> = {
     canAccessAnalytics: true,
     canManageDocuments: true,
     canManageIntegrations: true,
+    canSwitchCompany: false,
   },
   employee: {
     canEditLeads: true, // Only own assigned tasks / checklist items
+    canDeleteLeads: false,
     canDeleteEmployees: false,
+    canManageEmployees: false,
     canViewRevenue: false,
     canManageCompany: false,
     canAccessSuperAdmin: false,
@@ -57,6 +68,7 @@ export const ROLE_PERMISSIONS: Record<UserRole, RolePermissions> = {
     canAccessAnalytics: false,
     canManageDocuments: false,
     canManageIntegrations: false,
+    canSwitchCompany: false,
   },
 };
 
@@ -65,9 +77,19 @@ export const canEditLeads = (role?: string | null): boolean => {
   return ROLE_PERMISSIONS[r]?.canEditLeads ?? true;
 };
 
+export const canDeleteLead = (role?: string | null): boolean => {
+  const r = (role as UserRole) || 'owner';
+  return ROLE_PERMISSIONS[r]?.canDeleteLeads ?? false;
+};
+
 export const canDeleteEmployees = (role?: string | null): boolean => {
   const r = (role as UserRole) || 'owner';
   return ROLE_PERMISSIONS[r]?.canDeleteEmployees ?? false;
+};
+
+export const canManageEmployees = (role?: string | null): boolean => {
+  const r = (role as UserRole) || 'owner';
+  return ROLE_PERMISSIONS[r]?.canManageEmployees ?? false;
 };
 
 export const canViewRevenue = (role?: string | null): boolean => {
@@ -82,6 +104,13 @@ export const canManageCompany = (role?: string | null): boolean => {
 
 export const canAccessSuperAdmin = (role?: string | null): boolean => {
   return role === 'super_admin';
+};
+
+export const canAccessAdmin = canAccessSuperAdmin;
+
+export const canSwitchCompany = (role?: string | null): boolean => {
+  const r = (role as UserRole) || 'owner';
+  return ROLE_PERMISSIONS[r]?.canSwitchCompany ?? false;
 };
 
 export const canAccessFieldTools = (role?: string | null): boolean => {
