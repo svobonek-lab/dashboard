@@ -33,41 +33,40 @@ export const MapView: React.FC<MapViewProps> = ({ leads, branding, onSelectLead 
   };
 
   return (
-    <div className="space-y-6 pb-16">
+    <div className="space-y-6 pb-16 text-slate-100">
       {/* Top Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-bold text-slate-900 tracking-tight">Jobs & Field Map</h2>
-          <p className="text-xs text-slate-500 mt-0.5">AI Route Engine, technician heatmap availability zones & emergency lead telemetry in {branding.city}.</p>
+          <h2 className="text-2xl font-bold text-slate-100 tracking-tight">Mapa výjezdů & lokalizace staveb</h2>
+          <p className="text-xs text-slate-400 mt-0.5">Optimalizace tras řemeslnických part, vytížení zón a dispečink v regionu {branding.city}.</p>
         </div>
 
         <button
           onClick={handleOptimizeRoute}
           disabled={isOptimizing}
-          className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-semibold text-white shadow-md transition-all hover:opacity-95 disabled:opacity-50"
-          style={{ backgroundColor: branding.primaryColor }}
+          className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-semibold text-slate-950 bg-amber-500 hover:bg-amber-400 shadow-md transition-all disabled:opacity-50"
         >
           <Navigation className={`w-4 h-4 ${isOptimizing ? 'animate-spin' : ''}`} />
-          <span>{isOptimizing ? 'AI Calculating Route...' : optimizedRoute ? 'Route Optimized (41 min saved)' : 'Optimize Daily Route'}</span>
+          <span>{isOptimizing ? 'AI propočítává trasy...' : optimizedRoute ? 'Trasy optimalizovány (úspora 41 min)' : 'Optimalizovat denní výjezdy'}</span>
         </button>
       </div>
 
       {/* Route Optimization Savings Banner (shown after click) */}
       {optimizedRoute && (
-        <div className="bg-gradient-to-r from-emerald-900 via-slate-900 to-emerald-950 p-5 rounded-2xl text-white shadow-xl border border-emerald-500/40 flex flex-col md:flex-row items-center justify-between gap-4 animate-in fade-in slide-in-from-top-2">
+        <div className="bg-slate-900 p-5 rounded-2xl text-white shadow-xl border border-amber-500/40 flex flex-col md:flex-row items-center justify-between gap-4 animate-in fade-in slide-in-from-top-2">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center text-emerald-400">
+            <div className="w-10 h-10 rounded-xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-amber-400">
               <Sparkles className="w-5 h-5" />
             </div>
             <div>
-              <h4 className="text-sm font-bold text-white">AI Route Optimization Successful</h4>
-              <p className="text-xs text-emerald-300">Transit routes updated for all active technicians in {branding.city}.</p>
+              <h4 className="text-sm font-bold text-white">AI Optimalizace tras úspěšně dokončena</h4>
+              <p className="text-xs text-amber-300">Přeplánovány dojezdové koridory všech aktivních part v regionu {branding.city}.</p>
             </div>
           </div>
-          <div className="flex items-center gap-6 text-xs font-bold bg-slate-900/80 px-4 py-2.5 rounded-xl border border-slate-800">
-            <div>⏱️ Time saved: <span className="text-emerald-400">41 min</span></div>
-            <div>⛽ Fuel saved: <span className="text-emerald-400">4.2 L</span></div>
-            <div>📍 Distance reduced: <span className="text-emerald-400">32 km</span></div>
+          <div className="flex items-center gap-6 text-xs font-bold bg-slate-950 px-4 py-2.5 rounded-xl border border-slate-800">
+            <div>⏱️ Ušetřený čas: <span className="text-amber-400">41 min</span></div>
+            <div>⛽ Ušetřené palivo: <span className="text-amber-400">4.2 L</span></div>
+            <div>📍 Zkrácení tras: <span className="text-amber-400">32 km</span></div>
           </div>
         </div>
       )}
@@ -81,15 +80,15 @@ export const MapView: React.FC<MapViewProps> = ({ leads, branding, onSelectLead 
 
           {/* Technician Heatmap Zones */}
           <div className="absolute top-12 left-12 w-48 h-48 rounded-full bg-emerald-500/15 blur-2xl pointer-events-none border border-emerald-500/30 flex items-center justify-center">
-            <span className="text-[10px] font-bold text-emerald-400 uppercase tracking-widest bg-emerald-950/80 px-2.5 py-1 rounded-full">Zone A: Available</span>
+            <span className="text-[10px] font-bold text-emerald-400 uppercase tracking-widest bg-emerald-950/80 px-2.5 py-1 rounded-full">Zóna A: Volná kapacita</span>
           </div>
 
-          <div className="absolute bottom-16 right-16 w-56 h-56 rounded-full bg-orange-500/15 blur-2xl pointer-events-none border border-orange-500/30 flex items-center justify-center">
-            <span className="text-[10px] font-bold text-orange-400 uppercase tracking-widest bg-orange-950/80 px-2.5 py-1 rounded-full">Zone B: Busy</span>
+          <div className="absolute bottom-16 right-16 w-56 h-56 rounded-full bg-amber-500/15 blur-2xl pointer-events-none border border-amber-500/30 flex items-center justify-center">
+            <span className="text-[10px] font-bold text-amber-400 uppercase tracking-widest bg-amber-950/80 px-2.5 py-1 rounded-full">Zóna B: Aktivní montáž</span>
           </div>
 
           <div className="absolute top-20 right-20 w-40 h-40 rounded-full bg-rose-500/20 blur-2xl pointer-events-none border border-rose-500/40 flex items-center justify-center">
-            <span className="text-[10px] font-bold text-rose-400 uppercase tracking-widest bg-rose-950/80 px-2.5 py-1 rounded-full">Zone C: Overloaded</span>
+            <span className="text-[10px] font-bold text-rose-400 uppercase tracking-widest bg-rose-950/80 px-2.5 py-1 rounded-full">Zóna C: Vyčerpáno</span>
           </div>
 
           {/* Simulated Map Pins */}
@@ -107,7 +106,7 @@ export const MapView: React.FC<MapViewProps> = ({ leads, branding, onSelectLead 
                 onClick={() => setSelectedPin(lead)}
                 className={`absolute p-2.5 rounded-2xl flex items-center gap-2 shadow-2xl transition-all transform hover:scale-110 ${
                   isEmergency ? 'ring-4 ring-rose-500/60 bg-rose-950 text-white border border-rose-500 animate-pulse z-30' :
-                  isSelected ? 'bg-white text-slate-900 ring-4 ring-blue-500/40 z-20' : 'bg-slate-900/90 text-white border border-slate-700 z-10'
+                  isSelected ? 'bg-amber-500 text-slate-950 ring-4 ring-amber-500/40 font-bold z-20' : 'bg-slate-900/95 text-white border border-slate-700 z-10'
                 }`}
                 style={{ top: `${top}%`, left: `${left}%` }}
               >
@@ -115,7 +114,7 @@ export const MapView: React.FC<MapViewProps> = ({ leads, branding, onSelectLead 
                 <div className={`w-3.5 h-3.5 rounded-full ${isEmergency ? 'bg-rose-500' : getStatusColor(lead.status)} ring-2 ring-white`} />
                 <div className="text-left hidden sm:block">
                   <p className="text-xs font-bold truncate max-w-[120px]">{lead.customerName}</p>
-                  <p className="text-[10px] text-slate-300">{(lead.price / 1000).toFixed(0)}k CZK</p>
+                  <p className={`text-[10px] ${isSelected ? 'text-slate-900 font-bold' : 'text-slate-400'}`}>{(lead.price / 1000).toFixed(0)}k Kč</p>
                 </div>
               </button>
             );
@@ -123,59 +122,58 @@ export const MapView: React.FC<MapViewProps> = ({ leads, branding, onSelectLead 
         </div>
 
         {/* Selected Pin / Lead Detail Sidebar */}
-        <div className="bg-white rounded-3xl border border-slate-200 p-6 flex flex-col justify-between shadow-xs">
+        <div className="bg-slate-900 rounded-3xl border border-slate-800 p-6 flex flex-col justify-between shadow-md text-slate-100">
           {selectedPin ? (
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <span className={`px-3 py-1 rounded-full text-[11px] font-semibold ${
-                  selectedPin.status === 'In Progress' ? 'bg-emerald-100 text-emerald-700' : 'bg-blue-100 text-blue-700'
+                  selectedPin.status === 'In Progress' ? 'bg-emerald-950 border border-emerald-800 text-emerald-400' : 'bg-amber-950 border border-amber-800 text-amber-400'
                 }`}>
                   {selectedPin.status}
                 </span>
-                <span className="text-xs font-bold text-slate-500">{(selectedPin.price / 1000).toFixed(0)}k CZK</span>
+                <span className="text-xs font-bold text-amber-400 font-mono">{(selectedPin.price / 1000).toFixed(0)} tis. Kč</span>
               </div>
 
-              <img src={selectedPin.thumbnail} alt="" className="w-full h-40 rounded-2xl object-cover" />
+              <img src={selectedPin.thumbnail} alt="" className="w-full h-40 rounded-2xl object-cover border border-slate-800" />
 
               <div>
-                <h3 className="text-base font-bold text-slate-900">{selectedPin.title}</h3>
-                <p className="text-xs text-slate-500 mt-1 flex items-center gap-1.5">
-                  <MapPin className="w-3.5 h-3.5 text-slate-400" /> {selectedPin.address}
+                <h3 className="text-base font-bold text-slate-100">{selectedPin.title}</h3>
+                <p className="text-xs text-slate-400 mt-1 flex items-center gap-1.5">
+                  <MapPin className="w-3.5 h-3.5 text-amber-400" /> {selectedPin.address}
                 </p>
               </div>
 
-              <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-100 space-y-1.5 text-xs">
+              <div className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 space-y-1.5 text-xs">
                 <div className="flex justify-between">
-                  <span className="text-slate-500">Zákazník:</span>
-                  <span className="font-semibold text-slate-800">{selectedPin.customerName}</span>
+                  <span className="text-slate-400">Zákazník:</span>
+                  <span className="font-semibold text-slate-200">{selectedPin.customerName}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-slate-500">Technik:</span>
-                  <span className="font-semibold text-blue-600">{selectedPin.assignedEmployeeName}</span>
+                  <span className="text-slate-400">Odpovědný mistr:</span>
+                  <span className="font-semibold text-amber-400">{selectedPin.assignedEmployeeName}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-slate-500">Termín:</span>
-                  <span className="font-semibold text-slate-800">{selectedPin.preferredDate}</span>
+                  <span className="text-slate-400">Termín realizace:</span>
+                  <span className="font-semibold text-slate-200">{selectedPin.preferredDate}</span>
                 </div>
               </div>
 
               <button
                 onClick={() => onSelectLead(selectedPin)}
-                className="w-full py-3 rounded-xl text-xs font-bold text-white shadow-md transition-all hover:opacity-95"
-                style={{ backgroundColor: branding.primaryColor }}
+                className="w-full py-3 rounded-xl text-xs font-bold text-slate-950 bg-amber-500 hover:bg-amber-400 shadow-md transition-all"
               >
-                Open Project Detail
+                Otevřít detail zakázky
               </button>
             </div>
           ) : (
-            <div className="h-full flex items-center justify-center text-center p-8 text-slate-400 text-xs">
-              Select a map pin to inspect project details.
+            <div className="h-full flex items-center justify-center text-center p-8 text-slate-500 text-xs">
+              Klepněte na špendlík na mapě pro zobrazení zakázky.
             </div>
           )}
 
           {optimizedRoute && (
-            <div className="mt-4 p-3 rounded-2xl bg-emerald-50 border border-emerald-200 text-xs text-emerald-800 font-medium flex items-center gap-2">
-              <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />
+            <div className="mt-4 p-3 rounded-2xl bg-emerald-950/80 border border-emerald-800 text-xs text-emerald-300 font-medium flex items-center gap-2">
+              <CheckCircle2 className="w-4 h-4 text-emerald-400 flex-shrink-0" />
               <span>Optimalizováno AI: Ušetřeno 32 km dojezdu a 41 minut času techniků.</span>
             </div>
           )}

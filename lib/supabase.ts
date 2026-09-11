@@ -14,13 +14,30 @@ export const supabase = isSupabaseConfigured
     })
   : null;
 
+export function isValidUUID(str?: string | null): boolean {
+  if (!str) return false;
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(str);
+}
+
+export const DEFAULT_DEMO_ORG_ID = '11111111-2222-4333-8444-444444444444';
+
 // Fallback in-memory database representation with initial values
 // to ensure perfect functionality and no crashes when Supabase is not configured yet
 export class LocalSupabaseMock {
   private static getStored<T>(key: string, defaultValue: T): T {
     try {
       const stored = localStorage.getItem(`mock_supabase_${key}`);
-      return stored ? JSON.parse(stored) : defaultValue;
+      if (!stored) return defaultValue;
+      let parsed = JSON.parse(stored);
+      // Automatically sanitize legacy non-hex mock UUIDs like 'org-1111...'
+      if (typeof parsed === 'object') {
+        const str = JSON.stringify(parsed);
+        if (str.includes('org-1111-2222-3333-444444444444')) {
+          parsed = JSON.parse(str.replace(/org-1111-2222-3333-444444444444/g, DEFAULT_DEMO_ORG_ID));
+          localStorage.setItem(`mock_supabase_${key}`, JSON.stringify(parsed));
+        }
+      }
+      return parsed;
     } catch {
       return defaultValue;
     }
@@ -37,7 +54,7 @@ export class LocalSupabaseMock {
   static getOrganizations() {
     return this.getStored('organizations', [
       {
-        id: 'org-1111-2222-3333-444444444444',
+        id: DEFAULT_DEMO_ORG_ID,
         name: 'Pergoly & Terasy Praha s.r.o.',
         slug: 'pergoly-praha',
         primary_color: '#2563eb',
@@ -54,8 +71,8 @@ export class LocalSupabaseMock {
   static getUsers() {
     return this.getStored('users', [
       {
-        id: 'user-default-uid-123456789',
-        organization_id: 'org-1111-2222-3333-444444444444',
+        id: '11111111-1111-4111-8111-111111111111',
+        organization_id: DEFAULT_DEMO_ORG_ID,
         role: 'owner'
       }
     ]);
@@ -69,28 +86,28 @@ export class LocalSupabaseMock {
     return this.getStored('employees', [
       {
         id: 'emp-1',
-        organization_id: 'org-1111-2222-3333-444444444444',
+        organization_id: DEFAULT_DEMO_ORG_ID,
         name: 'Petr Novotný',
         specialization: 'Střechy & Tesařské práce',
         capacity: 85
       },
       {
         id: 'emp-2',
-        organization_id: 'org-1111-2222-3333-444444444444',
+        organization_id: DEFAULT_DEMO_ORG_ID,
         name: 'Martin Kovář',
         specialization: 'Pergoly & Hliníkové konstrukce',
         capacity: 95
       },
       {
         id: 'emp-3',
-        organization_id: 'org-1111-2222-3333-444444444444',
+        organization_id: DEFAULT_DEMO_ORG_ID,
         name: 'Tomáš Veselý',
         specialization: 'Fasády & Zateplování',
         capacity: 60
       },
       {
         id: 'emp-4',
-        organization_id: 'org-1111-2222-3333-444444444444',
+        organization_id: DEFAULT_DEMO_ORG_ID,
         name: 'Jan Richter',
         specialization: 'Rekonstrukce interiérů',
         capacity: 100
@@ -106,7 +123,7 @@ export class LocalSupabaseMock {
     return this.getStored('leads', [
       {
         id: 'lead-1',
-        organization_id: 'org-1111-2222-3333-444444444444',
+        organization_id: DEFAULT_DEMO_ORG_ID,
         customer_name: 'Ing. Jan Svoboda',
         phone: '+420 603 456 789',
         email: 'svoboda.jan@seznam.cz',
@@ -117,7 +134,7 @@ export class LocalSupabaseMock {
       },
       {
         id: 'lead-2',
-        organization_id: 'org-1111-2222-3333-444444444444',
+        organization_id: DEFAULT_DEMO_ORG_ID,
         customer_name: 'Marta Dvořáková',
         phone: '+420 732 998 877',
         email: 'm.dvorakova@gmail.com',
@@ -128,7 +145,7 @@ export class LocalSupabaseMock {
       },
       {
         id: 'lead-3',
-        organization_id: 'org-1111-2222-3333-444444444444',
+        organization_id: DEFAULT_DEMO_ORG_ID,
         customer_name: 'Pavel Říha',
         phone: '+420 721 112 233',
         email: 'riha.p@volny.cz',
@@ -148,14 +165,14 @@ export class LocalSupabaseMock {
     return this.getStored('projects', [
       {
         id: 'proj-1',
-        organization_id: 'org-1111-2222-3333-444444444444',
+        organization_id: DEFAULT_DEMO_ORG_ID,
         lead_id: 'lead-1',
         assigned_employee: 'emp-1',
         status: 'in_progress'
       },
       {
         id: 'proj-2',
-        organization_id: 'org-1111-2222-3333-444444444444',
+        organization_id: DEFAULT_DEMO_ORG_ID,
         lead_id: 'lead-2',
         assigned_employee: 'emp-2',
         status: 'draft'

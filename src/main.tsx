@@ -4,6 +4,7 @@ import * as Sentry from "@sentry/react";
 import App from './App.tsx';
 import './index.css';
 import { OrganizationProvider } from '@/context/OrganizationContext';
+import { ErrorBoundary } from '../components/ErrorBoundary';
 
 Sentry.init({
   dsn: (import.meta as any).env?.VITE_SENTRY_DSN,
@@ -14,9 +15,11 @@ Sentry.init({
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <OrganizationProvider>
-      <App />
-    </OrganizationProvider>
+    <ErrorBoundary>
+      <OrganizationProvider>
+        <App />
+      </OrganizationProvider>
+    </ErrorBoundary>
   </StrictMode>,
 );
 

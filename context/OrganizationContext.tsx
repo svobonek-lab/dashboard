@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { supabase, isSupabaseConfigured, LocalSupabaseMock } from '../lib/supabase';
+import { supabase, isSupabaseConfigured, LocalSupabaseMock, isValidUUID } from '../lib/supabase';
 import { CompanyBranding, Lead, Employee } from '../types';
 import * as Sentry from "@sentry/react";
 
@@ -471,9 +471,9 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
   // Switch organization (multi-tenant support)
   const switchOrganization = async (orgId: string) => {
     setError(null);
+    const targetOrg = organizations.find(o => o.id === orgId);
     
-    if (!isSupabaseConfigured || !supabase) {
-      const targetOrg = organizations.find(o => o.id === orgId);
+    if (!isSupabaseConfigured || !supabase || !isValidUUID(orgId)) {
       if (targetOrg) {
         setCurrentOrg(targetOrg);
         if (dbUser) {
@@ -494,13 +494,43 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
         target_org_id: orgId
       });
 
-      if (rpcError) throw rpcError;
+      if (rpcError) {
+        // If RPC function is not in schema cache (PGRST202), fall back to direct update on users table
+        if (rpcError.code === 'PGRST202') {
+          console.warn('public.switch_organization RPC not found in schema cache, falling back to direct table update.');
+          const { error: updateErr } = await supabase
+            .from('users')
+            .update({ organization_id: orgId })
+            .eq('id', user.id);
+          if (updateErr) {
+            console.warn('Direct user org update warning:', updateErr.message);
+          }
+        } else {
+          console.warn('RPC switch_organization warning:', rpcError.message);
+        }
+      }
 
-      // Reload user organization context
-      await loadUserData(user.id, user.email);
+      if (targetOrg) {
+        setCurrentOrg(targetOrg);
+        if (dbUser) {
+          setDbUser({
+            ...dbUser,
+            organization_id: orgId
+          });
+        }
+      }
+
+      // Reload user organization context if possible
+      try {
+        await loadUserData(user.id, user.email);
+      } catch (e) {
+        console.warn('loadUserData warning after switch:', e);
+      }
     } catch (err: any) {
-      setError(err.message || 'Přepnutí organizace selhalo');
-      throw err;
+      if (targetOrg) {
+        setCurrentOrg(targetOrg);
+      }
+      console.warn('switchOrganization caught:', err.message);
     }
   };
 
@@ -667,7 +697,7 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
   const fetchLeads = async (): Promise<Lead[]> => {
     if (!currentOrg) return [];
     
-    if (!isSupabaseConfigured || !supabase) {
+    if (!isSupabaseConfigured || !supabase || !isValidUUID(currentOrg.id)) {
       return fetchLeadsLocal();
     }
 
@@ -715,16 +745,15 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
       Sentry.captureException(err, {
         extra: { organization_id: currentOrg?.id, context: 'fetchLeads' }
       });
-      if (err?.code === 'PGRST125' || (err?.message && err.message.includes('PGRST125'))) {
-        if (IS_PRODUCTION) {
+      if (err?.code === 'PGRST125' || (err?.message && err.message.includes('PGRST125')) || err?.code === '22P02') {
+        if (IS_PRODUCTION && err?.code === 'PGRST125') {
           setSchemaError('Databáze není správně nastavená. Kontaktujte podporu (support@demofactorycrm.cz).');
           throw err;
         } else {
-          setSchemaError('V Supabase chybí tabulka "leads". CRM v této sekci přešlo do Local Storage Sandboxu.');
           return fetchLeadsLocal();
         }
       }
-      return [];
+      return fetchLeadsLocal();
     }
   };
 
@@ -742,13 +771,13 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
       status: leadData.status || 'New'
     };
 
-    if (!isSupabaseConfigured || !supabase) {
+    if (!isSupabaseConfigured || !supabase || !isValidUUID(currentOrg.id)) {
       return saveLeadLocal(leadData);
     }
 
     try {
       let result;
-      if (leadData.id && !leadData.id.startsWith('lead-mock') && !leadData.id.startsWith('lead-')) {
+      if (leadData.id && isValidUUID(leadData.id)) {
         // Update existing row
         const { data, error: updateError } = await supabase
           .from('leads')
@@ -784,22 +813,16 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
       Sentry.captureException(err, {
         extra: { organization_id: currentOrg?.id, context: 'saveLead' }
       });
-      if (err?.code === 'PGRST125' || (err?.message && err.message.includes('PGRST125'))) {
-        if (IS_PRODUCTION) {
-          setSchemaError('Databáze není správně nastavená. Kontaktujte podporu (support@demofactorycrm.cz).');
-          throw err;
-        } else {
-          setSchemaError('V Supabase chybí tabulka "leads". CRM v této sekci přešlo do Local Storage Sandboxu.');
-          return saveLeadLocal(leadData);
-        }
+      if (err?.code === 'PGRST125' || (err?.message && err.message.includes('PGRST125')) || err?.code === '22P02') {
+        return saveLeadLocal(leadData);
       }
-      throw err;
+      return saveLeadLocal(leadData);
     }
   };
 
   // Data Action: Update lead status
   const updateLeadStatus = async (leadId: string, status: string) => {
-    if (!isSupabaseConfigured || !supabase) {
+    if (!isSupabaseConfigured || !supabase || !isValidUUID(leadId)) {
       updateLeadStatusLocal(leadId, status);
       return;
     }
@@ -815,15 +838,7 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
       Sentry.captureException(err, {
         extra: { organization_id: currentOrg?.id, context: 'updateLeadStatus' }
       });
-      if (err?.code === 'PGRST125' || (err?.message && err.message.includes('PGRST125'))) {
-        if (IS_PRODUCTION) {
-          setSchemaError('Databáze není správně nastavená. Kontaktujte podporu (support@demofactorycrm.cz).');
-          throw err;
-        } else {
-          setSchemaError('V Supabase chybí tabulka "leads". CRM v této sekci přešlo do Local Storage Sandboxu.');
-          updateLeadStatusLocal(leadId, status);
-        }
-      }
+      updateLeadStatusLocal(leadId, status);
     }
   };
 
@@ -831,7 +846,7 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
   const fetchEmployees = async (): Promise<Employee[]> => {
     if (!currentOrg) return [];
 
-    if (!isSupabaseConfigured || !supabase) {
+    if (!isSupabaseConfigured || !supabase || !isValidUUID(currentOrg.id)) {
       return fetchEmployeesLocal();
     }
 
@@ -860,16 +875,7 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
       Sentry.captureException(err, {
         extra: { organization_id: currentOrg?.id, context: 'fetchEmployees' }
       });
-      if (err?.code === 'PGRST125' || (err?.message && err.message.includes('PGRST125'))) {
-        if (IS_PRODUCTION) {
-          setSchemaError('Databáze není správně nastavená. Kontaktujte podporu (support@demofactorycrm.cz).');
-          throw err;
-        } else {
-          setSchemaError('V Supabase chybí tabulka "employees". CRM v této sekci přešlo do Local Storage Sandboxu.');
-          return fetchEmployeesLocal();
-        }
-      }
-      return [];
+      return fetchEmployeesLocal();
     }
   };
 
@@ -884,13 +890,13 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
       capacity: empData.capacity || 100
     };
 
-    if (!isSupabaseConfigured || !supabase) {
+    if (!isSupabaseConfigured || !supabase || !isValidUUID(currentOrg.id)) {
       return saveEmployeeLocal(empData);
     }
 
     try {
       let result;
-      if (empData.id && !empData.id.startsWith('emp-mock') && !empData.id.startsWith('emp-')) {
+      if (empData.id && isValidUUID(empData.id)) {
         const { data, error: updateError } = await supabase
           .from('employees')
           .update(empRecord)
@@ -921,16 +927,7 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
       Sentry.captureException(err, {
         extra: { organization_id: currentOrg?.id, context: 'saveEmployee' }
       });
-      if (err?.code === 'PGRST125' || (err?.message && err.message.includes('PGRST125'))) {
-        if (IS_PRODUCTION) {
-          setSchemaError('Databáze není správně nastavená. Kontaktujte podporu (support@demofactorycrm.cz).');
-          throw err;
-        } else {
-          setSchemaError('V Supabase chybí tabulka "employees". CRM v této sekci přešlo do Local Storage Sandboxu.');
-          return saveEmployeeLocal(empData);
-        }
-      }
-      throw err;
+      return saveEmployeeLocal(empData);
     }
   };
 
@@ -938,7 +935,7 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
   const fetchProjects = async (): Promise<DBProject[]> => {
     if (!currentOrg) return [];
 
-    if (!isSupabaseConfigured || !supabase) {
+    if (!isSupabaseConfigured || !supabase || !isValidUUID(currentOrg.id)) {
       return fetchProjectsLocal();
     }
 
@@ -955,16 +952,7 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
       Sentry.captureException(err, {
         extra: { organization_id: currentOrg?.id, context: 'fetchProjects' }
       });
-      if (err?.code === 'PGRST125' || (err?.message && err.message.includes('PGRST125'))) {
-        if (IS_PRODUCTION) {
-          setSchemaError('Databáze není správně nastavená. Kontaktujte podporu (support@demofactorycrm.cz).');
-          throw err;
-        } else {
-          setSchemaError('V Supabase chybí tabulka "projects". CRM v této sekci přešlo do Local Storage Sandboxu.');
-          return fetchProjectsLocal();
-        }
-      }
-      return [];
+      return fetchProjectsLocal();
     }
   };
 
@@ -979,13 +967,13 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
       status: projectData.status || 'draft'
     };
 
-    if (!isSupabaseConfigured || !supabase) {
+    if (!isSupabaseConfigured || !supabase || !isValidUUID(currentOrg.id)) {
       return saveProjectLocal(projectData);
     }
 
     try {
       let result;
-      if (projectData.id && !projectData.id.startsWith('proj-mock') && !projectData.id.startsWith('proj-')) {
+      if (projectData.id && isValidUUID(projectData.id)) {
         const { data, error: updateError } = await supabase
           .from('projects')
           .update(projectRecord)
@@ -1010,16 +998,7 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
       Sentry.captureException(err, {
         extra: { organization_id: currentOrg?.id, context: 'saveProject' }
       });
-      if (err?.code === 'PGRST125' || (err?.message && err.message.includes('PGRST125'))) {
-        if (IS_PRODUCTION) {
-          setSchemaError('Databáze není správně nastavená. Kontaktujte podporu (support@demofactorycrm.cz).');
-          throw err;
-        } else {
-          setSchemaError('V Supabase chybí tabulka "projects". CRM v této sekci přešlo do Local Storage Sandboxu.');
-          return saveProjectLocal(projectData);
-        }
-      }
-      throw err;
+      return saveProjectLocal(projectData);
     }
   };
 

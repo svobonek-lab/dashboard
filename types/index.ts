@@ -7,6 +7,7 @@ export interface CompanyBranding {
   city: string;
   address: string;
   services: string[];
+  website?: string;
 }
 
 export type LeadStatus = 'New' | 'Contacted' | 'Quote' | 'In Progress' | 'Completed' | 'Lost';

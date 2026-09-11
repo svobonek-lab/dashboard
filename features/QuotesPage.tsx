@@ -95,176 +95,174 @@ export const QuotesPage: React.FC<QuotesPageProps> = ({ branding }) => {
   };
 
   return (
-    <div className="space-y-8 max-w-5xl mx-auto pb-16">
+    <div className="space-y-8 max-w-5xl mx-auto pb-16 text-slate-100">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-bold text-slate-900 tracking-tight">Quick Quote Builder & PDF Generator</h2>
-          <p className="text-xs text-slate-500 mt-0.5">Smart Builder suggestions, customer action buttons, AI summary & version history.</p>
+          <h2 className="text-2xl font-bold text-slate-100 tracking-tight">Tvorba stavebních rozpočtů & nabídek</h2>
+          <p className="text-xs text-slate-400 mt-0.5">Kalkulační šablony, revize nabídek, generování PDF a digitální akceptace investorem.</p>
         </div>
 
         <div className="flex items-center gap-3">
           <button
             onClick={handleSendEmail}
-            className="px-4 py-2.5 rounded-xl text-xs font-semibold bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 shadow-xs flex items-center gap-2 transition-all"
+            className="px-4 py-2.5 rounded-xl text-xs font-semibold bg-slate-900 border border-slate-700 text-slate-200 hover:bg-slate-800 shadow-xs flex items-center gap-2 transition-all"
           >
-            {emailSent ? <Check className="w-4 h-4 text-emerald-600" /> : <Send className="w-4 h-4" />}
-            <span>{emailSent ? 'Email Sent!' : 'Send by Email'}</span>
+            {emailSent ? <Check className="w-4 h-4 text-emerald-400" /> : <Send className="w-4 h-4 text-slate-400" />}
+            <span>{emailSent ? 'Odesláno e-mailem!' : 'Odeslat investorovi'}</span>
           </button>
           <button
             onClick={handleDownload}
-            className="px-4 py-2.5 rounded-xl text-xs font-semibold text-white shadow-md flex items-center gap-2 transition-all hover:opacity-95"
-            style={{ backgroundColor: branding.primaryColor }}
+            className="px-4 py-2.5 rounded-xl text-xs font-bold text-slate-950 shadow-md flex items-center gap-2 transition-all hover:bg-amber-400 bg-amber-500"
           >
             {downloaded ? <Check className="w-4 h-4" /> : <Download className="w-4 h-4" />}
-            <span>{downloaded ? 'PDF Generated!' : 'Export PDF'}</span>
+            <span>{downloaded ? 'PDF vygenerováno!' : 'Stáhnout PDF nabídku'}</span>
           </button>
         </div>
       </div>
 
       {/* Action Notice Banner */}
       {actionNotice && (
-        <div className="bg-emerald-50 border border-emerald-200 p-4 rounded-2xl text-emerald-800 text-xs flex items-center justify-between animate-in fade-in">
+        <div className="bg-emerald-950/90 border border-emerald-800 p-4 rounded-2xl text-emerald-300 text-xs flex items-center justify-between animate-in fade-in">
           <div className="flex items-center gap-2 font-semibold">
-            <Check className="w-4 h-4 text-emerald-600" />
+            <Check className="w-4 h-4 text-emerald-400" />
             <span>{actionNotice}</span>
           </div>
-          <button onClick={() => setActionNotice(null)} className="text-emerald-700 font-bold">Dismiss</button>
+          <button onClick={() => setActionNotice(null)} className="text-emerald-400 font-bold hover:underline">Zavřít</button>
         </div>
       )}
 
       {/* Smart Builder & Version Control Toolbar */}
-      <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-xs space-y-4">
+      <div className="bg-slate-900 p-6 rounded-3xl border border-slate-800 shadow-md space-y-4">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="flex items-center gap-2">
-            <div className="w-7 h-7 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center">
+            <div className="w-7 h-7 rounded-lg bg-amber-500/20 text-amber-400 flex items-center justify-center">
               <Sparkles className="w-4 h-4" />
             </div>
             <div>
-              <h3 className="text-xs font-bold text-slate-900 uppercase tracking-wider">Smart Builder Assistant</h3>
-              <p className="text-[11px] text-slate-500">Instantly populate materials, labor, and accessories:</p>
+              <h3 className="text-xs font-bold text-slate-200 uppercase tracking-wider">Kalkulační šablony</h3>
+              <p className="text-[11px] text-slate-400">Rychlé načtení položek pro typické stavby:</p>
             </div>
           </div>
           <div className="flex items-center gap-2">
             <button
               onClick={() => applySmartBuilder('Pergola')}
-              className="px-3.5 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold transition-all shadow-sm flex items-center gap-1.5"
+              className="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-amber-400 border border-slate-700 text-xs font-bold transition-all shadow-sm flex items-center gap-1.5"
             >
-              <span>+ Pergola (Complete)</span>
+              <span>+ Pergola (komplet)</span>
             </button>
             <button
               onClick={() => applySmartBuilder('Carport')}
-              className="px-3.5 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold transition-all shadow-sm flex items-center gap-1.5"
+              className="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs font-bold transition-all shadow-sm flex items-center gap-1.5"
             >
-              <span>+ Carport Ocel</span>
+              <span>+ Přístřešek na auta</span>
             </button>
           </div>
         </div>
 
-        <div className="pt-3 border-t border-slate-100 flex items-center justify-between text-xs">
+        <div className="pt-3 border-t border-slate-800 flex items-center justify-between text-xs">
           <div className="flex items-center gap-2">
-            <History className="w-4 h-4 text-slate-400" />
-            <span className="text-slate-500 font-semibold">Revision History:</span>
+            <History className="w-4 h-4 text-slate-500" />
+            <span className="text-slate-400 font-semibold">Historie revizí:</span>
             <select
               value={currentVersion}
               onChange={(e) => setCurrentVersion(e.target.value)}
-              className="bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1 text-slate-800 font-medium focus:outline-none"
+              className="bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1 text-slate-200 font-medium focus:outline-none focus:border-amber-500"
             >
               {versions.map((v, i) => (
                 <option key={i} value={v}>{v}</option>
               ))}
             </select>
           </div>
-          <span className="text-emerald-600 font-bold bg-emerald-50 px-2.5 py-1 rounded-md">Status: Active & Valid</span>
+          <span className="text-emerald-400 font-bold bg-emerald-950/80 border border-emerald-800 px-2.5 py-1 rounded-md">Stav: Aktivní & Platná</span>
         </div>
       </div>
 
       {/* Builder Controls */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 bg-white p-6 rounded-3xl border border-slate-200 shadow-xs">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 bg-slate-900 p-6 rounded-3xl border border-slate-800 shadow-md">
         <div>
-          <label className="text-xs font-semibold text-slate-700">Customer Name</label>
+          <label className="text-xs font-semibold text-slate-300">Jméno zákazníka / investora</label>
           <input
             type="text"
             value={customerName}
             onChange={(e) => setCustomerName(e.target.value)}
-            className="w-full mt-1 bg-slate-50 border border-slate-200 rounded-xl p-3 text-xs font-semibold text-slate-800"
+            className="w-full mt-1 bg-slate-950 border border-slate-800 focus:border-amber-500 rounded-xl p-3 text-xs font-semibold text-slate-200"
           />
         </div>
         <div>
-          <label className="text-xs font-semibold text-slate-700">VAT Rate (%)</label>
+          <label className="text-xs font-semibold text-slate-300">Sazba DPH (%)</label>
           <select
             value={vatRate}
             onChange={(e) => setVatRate(Number(e.target.value))}
-            className="w-full mt-1 bg-slate-50 border border-slate-200 rounded-xl p-3 text-xs font-semibold text-slate-800"
+            className="w-full mt-1 bg-slate-950 border border-slate-800 focus:border-amber-500 rounded-xl p-3 text-xs font-semibold text-slate-200"
           >
-            <option value={21}>21% (Standard)</option>
-            <option value={15}>15% (Reduced Construction)</option>
-            <option value={0}>0% (Exempt)</option>
+            <option value={21}>21% (Základní sazba)</option>
+            <option value={15}>15% (Snížená pro bytovou výstavbu)</option>
+            <option value={0}>0% (Režim přenesení daňové povinnosti)</option>
           </select>
         </div>
         <div>
-          <label className="text-xs font-semibold text-slate-700">Client Discount (%)</label>
+          <label className="text-xs font-semibold text-slate-300">Sleva pro investora (%)</label>
           <input
             type="number"
             value={discountPercent}
             onChange={(e) => setDiscountPercent(Number(e.target.value))}
-            className="w-full mt-1 bg-slate-50 border border-slate-200 rounded-xl p-3 text-xs font-semibold text-slate-800"
+            className="w-full mt-1 bg-slate-950 border border-slate-800 focus:border-amber-500 rounded-xl p-3 text-xs font-semibold text-slate-200"
           />
         </div>
       </div>
 
       {/* PDF Document Preview Box */}
-      <div className="bg-white p-10 rounded-3xl border border-slate-200 shadow-2xl space-y-8 text-slate-800 relative overflow-hidden">
+      <div className="bg-slate-900 p-10 rounded-3xl border border-slate-800 shadow-2xl space-y-8 text-slate-200 relative overflow-hidden">
         
         {/* AI Summary Banner at Top of PDF */}
-        <div className="bg-gradient-to-r from-blue-900 to-slate-900 text-white p-4 rounded-2xl flex items-center justify-between shadow-md">
+        <div className="bg-slate-950 border border-slate-800 text-white p-4 rounded-2xl flex items-center justify-between shadow-md">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg bg-blue-500/20 border border-blue-500/40 flex items-center justify-center text-blue-300">
+            <div className="w-8 h-8 rounded-lg bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-amber-400">
               <Sparkles className="w-4 h-4" />
             </div>
             <div>
-              <span className="text-[10px] font-bold uppercase tracking-wider text-blue-300">AI Project Summary</span>
-              <p className="text-xs font-bold text-white">“2-day installation with LED lighting and integrated oak timber framework.”</p>
+              <span className="text-[10px] font-bold uppercase tracking-wider text-amber-400">Shrnutí položkového rozpočtu</span>
+              <p className="text-xs font-bold text-slate-200">„Kompletní montáž pergoly vč. elektroinstalace LED a dubové konstrukce.“</p>
             </div>
           </div>
-          <span className="text-[10px] font-semibold text-emerald-400 bg-emerald-950 px-2 py-1 rounded-md border border-emerald-800">Verified Scope</span>
+          <span className="text-[10px] font-semibold text-emerald-400 bg-emerald-950 px-2 py-1 rounded-md border border-emerald-800">Ověřený rozsah prací</span>
         </div>
 
         {/* PDF Header */}
-        <div className="flex items-start justify-between border-b border-slate-200 pb-6">
+        <div className="flex items-start justify-between border-b border-slate-800 pb-6">
           <div className="flex items-center gap-3">
             <div 
-              className="w-12 h-12 rounded-xl flex items-center justify-center text-white font-bold text-xl shadow-md"
-              style={{ backgroundColor: branding.primaryColor }}
+              className="w-12 h-12 rounded-xl flex items-center justify-center text-slate-950 font-black text-xl shadow-md bg-amber-500"
             >
-              {branding.name ? branding.name.substring(0, 2).toUpperCase() : 'NS'}
+              {branding.name ? branding.name.substring(0, 2).toUpperCase() : 'SC'}
             </div>
             <div>
-              <h3 className="text-lg font-bold text-slate-900">{branding.name}</h3>
-              <p className="text-xs text-slate-500">{branding.address}, {branding.city}</p>
+              <h3 className="text-lg font-bold text-slate-100">{branding.name}</h3>
+              <p className="text-xs text-slate-400">{branding.address}, {branding.city}</p>
               <p className="text-xs text-slate-500">IČO: 28492011 • DIČ: CZ28492011</p>
             </div>
           </div>
 
           <div className="text-right">
-            <h4 className="text-xl font-black text-slate-900">CENOVÁ NABÍDKA</h4>
-            <p className="text-xs text-slate-500 mt-1">Číslo: Q-2026-0492 ({currentVersion})</p>
-            <p className="text-xs text-slate-500">Datum vydání: 10.09.2026</p>
+            <h4 className="text-xl font-black text-amber-400">CENOVÁ NABÍDKA / ROZPOČET</h4>
+            <p className="text-xs text-slate-400 mt-1">Číslo: Q-2026-0492 ({currentVersion})</p>
+            <p className="text-xs text-slate-500">Datum vystavení: 10.09.2026</p>
           </div>
         </div>
 
         {/* Customer & Project info */}
-        <div className="grid grid-cols-2 gap-6 text-xs bg-slate-50 p-6 rounded-2xl border border-slate-200">
+        <div className="grid grid-cols-2 gap-6 text-xs bg-slate-950 p-6 rounded-2xl border border-slate-800">
           <div>
-            <span className="font-semibold text-slate-500 uppercase tracking-wider block mb-1">Odběratel (Zákazník):</span>
-            <p className="font-bold text-slate-900 text-sm">{customerName}</p>
-            <p className="text-slate-600">{customerAddress}</p>
-            <p className="text-slate-600">Tel: +420 603 456 789</p>
+            <span className="font-semibold text-slate-400 uppercase tracking-wider block mb-1">Odběratel (Objednatel):</span>
+            <p className="font-bold text-slate-100 text-sm">{customerName}</p>
+            <p className="text-slate-400">{customerAddress}</p>
+            <p className="text-slate-400">Tel: +420 603 456 789</p>
           </div>
           <div>
-            <span className="font-semibold text-slate-500 uppercase tracking-wider block mb-1">Předmět díla:</span>
-            <p className="font-bold text-slate-900 text-sm">{quoteTitle}</p>
-            <p className="text-slate-600">Místo: {branding.city}</p>
-            <p className="text-slate-600">Platnost nabídky: 30 dnů</p>
+            <span className="font-semibold text-slate-400 uppercase tracking-wider block mb-1">Předmět díla:</span>
+            <p className="font-bold text-slate-100 text-sm">{quoteTitle}</p>
+            <p className="text-slate-400">Lokalita: {branding.city}</p>
+            <p className="text-slate-400">Platnost nabídky: 30 dnů</p>
           </div>
         </div>
 
@@ -272,23 +270,23 @@ export const QuotesPage: React.FC<QuotesPageProps> = ({ branding }) => {
         <div className="space-y-4">
           <table className="w-full text-left text-xs">
             <thead>
-              <tr className="border-b border-slate-200 text-slate-500 font-semibold uppercase">
-                <th className="pb-3">Položka / Popis práce</th>
+              <tr className="border-b border-slate-800 text-slate-400 font-semibold uppercase">
+                <th className="pb-3">Položka / Popis stavební práce</th>
                 <th className="pb-3 text-center">Množství</th>
                 <th className="pb-3 text-right">Cena / MJ</th>
-                <th className="pb-3 text-right">Celkem (CZK)</th>
+                <th className="pb-3 text-right">Celkem</th>
                 <th className="pb-3 text-center w-10"></th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100 text-slate-700">
+            <tbody className="divide-y divide-slate-800 text-slate-300">
               {items.map((item) => (
                 <tr key={item.id} className="group">
-                  <td className="py-3 font-medium text-slate-900">{item.description}</td>
-                  <td className="py-3 text-center">{item.quantity} {item.unit}</td>
-                  <td className="py-3 text-right">{item.unitPrice.toLocaleString()} Kč</td>
-                  <td className="py-3 text-right font-bold text-slate-900">{(item.quantity * item.unitPrice).toLocaleString()} Kč</td>
+                  <td className="py-3 font-medium text-slate-200">{item.description}</td>
+                  <td className="py-3 text-center text-slate-400">{item.quantity} {item.unit}</td>
+                  <td className="py-3 text-right font-mono">{item.unitPrice.toLocaleString()} Kč</td>
+                  <td className="py-3 text-right font-bold text-amber-400 font-mono">{(item.quantity * item.unitPrice).toLocaleString()} Kč</td>
                   <td className="py-3 text-center">
-                    <button onClick={() => removeItem(item.id)} className="text-slate-400 hover:text-rose-600 opacity-0 group-hover:opacity-100 transition-all">
+                    <button onClick={() => removeItem(item.id)} className="text-slate-500 hover:text-rose-400 opacity-0 group-hover:opacity-100 transition-all">
                       <Trash2 className="w-4 h-4" />
                     </button>
                   </td>
@@ -303,97 +301,87 @@ export const QuotesPage: React.FC<QuotesPageProps> = ({ branding }) => {
               type="text"
               value={newItemDesc}
               onChange={(e) => setNewItemDesc(e.target.value)}
-              placeholder="Add new quote item description..."
-              className="flex-1 bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+              placeholder="Zadat novou rozpočtovou položku..."
+              className="flex-1 bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-xs text-slate-200 focus:outline-none focus:border-amber-500"
             />
             <input
               type="number"
               value={newItemPrice}
               onChange={(e) => setNewItemPrice(Number(e.target.value))}
-              placeholder="Price (CZK)"
-              className="w-32 bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+              placeholder="Cena (Kč)"
+              className="w-32 bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-xs text-slate-200 focus:outline-none focus:border-amber-500 font-mono"
             />
             <button
               type="submit"
-              className="px-4 py-2.5 rounded-xl bg-slate-900 text-white text-xs font-bold hover:bg-slate-800 transition-all flex items-center gap-1.5"
+              className="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-amber-400 border border-slate-700 text-xs font-bold transition-all flex items-center gap-1.5"
             >
-              <Plus className="w-4 h-4" /> Add Item
+              <Plus className="w-4 h-4" /> Přidat položku
             </button>
           </form>
 
           {/* Totals Calculation */}
-          <div className="flex justify-end pt-6 border-t border-slate-200">
+          <div className="flex justify-end pt-6 border-t border-slate-800">
             <div className="w-80 space-y-2 text-xs">
-              <div className="flex justify-between text-slate-600">
-                <span>Mezisoučet:</span>
-                <span>{subtotal.toLocaleString()} Kč</span>
+              <div className="flex justify-between text-slate-400">
+                <span>Základ bez DPH:</span>
+                <span className="font-mono text-slate-200">{subtotal.toLocaleString()} Kč</span>
               </div>
               {discountPercent > 0 && (
-                <div className="flex justify-between text-emerald-600 font-semibold">
+                <div className="flex justify-between text-emerald-400 font-semibold">
                   <span>Sleva ({discountPercent}%):</span>
-                  <span>-{(subtotal * (discountPercent / 100)).toLocaleString()} Kč</span>
+                  <span className="font-mono">-{(subtotal * (discountPercent / 100)).toLocaleString()} Kč</span>
                 </div>
               )}
-              <div className="flex justify-between text-slate-600">
+              <div className="flex justify-between text-slate-400">
                 <span>DPH {vatRate}%:</span>
-                <span>{taxAmount.toLocaleString()} Kč</span>
+                <span className="font-mono text-slate-200">{taxAmount.toLocaleString()} Kč</span>
               </div>
-              <div className="flex justify-between text-base font-extrabold text-slate-900 pt-2 border-t border-slate-200">
+              <div className="flex justify-between text-base font-extrabold text-slate-100 pt-2 border-t border-slate-800">
                 <span>Celkem k úhradě:</span>
-                <span style={{ color: branding.primaryColor }}>{grandTotal.toLocaleString()} CZK</span>
+                <span className="font-mono text-amber-400">{grandTotal.toLocaleString()} CZK</span>
               </div>
             </div>
           </div>
         </div>
 
         {/* Customer Action Buttons inside PDF / Preview */}
-        <div className="bg-slate-900 text-white p-6 rounded-2xl flex flex-col sm:flex-row items-center justify-between gap-4 mt-6">
+        <div className="bg-slate-950 text-white p-6 rounded-2xl border border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-4 mt-6">
           <div>
-            <h4 className="text-sm font-bold text-white">Client Interactive Actions</h4>
-            <p className="text-[11px] text-slate-400">Customer can interact directly with this quotation offer:</p>
+            <h4 className="text-sm font-bold text-slate-100">Interaktivní akce investora</h4>
+            <p className="text-[11px] text-slate-400">Možnosti pro investora v online náhledu nabídky:</p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <button
               onClick={() => handleCustomerAction('accept')}
               className="px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold transition-all shadow-md flex items-center gap-1.5 active:scale-95"
             >
-              <ThumbsUp className="w-4 h-4" /> Schválit a podepsat nabídku (Accept)
+              <ThumbsUp className="w-4 h-4" /> Schválit a podepsat nabídku
             </button>
             <button
               onClick={() => handleCustomerAction('deposit')}
-              className="px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold transition-all shadow-md flex items-center gap-1.5 active:scale-95"
+              className="px-4 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-bold transition-all shadow-md flex items-center gap-1.5 active:scale-95"
             >
-              <CreditCard className="w-4 h-4" /> Zaplatit zálohu 50% (Stripe / QR)
+              <CreditCard className="w-4 h-4" /> Zaplatit zálohu 50% (QR / Převod)
             </button>
             <button
               onClick={() => handleCustomerAction('changes')}
-              className="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold transition-all border border-slate-700 flex items-center gap-1.5"
+              className="px-4 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-300 text-xs font-bold transition-all border border-slate-700 flex items-center gap-1.5"
             >
               <MessageSquare className="w-4 h-4" /> Požádat o úpravu položek
             </button>
           </div>
         </div>
 
-        {actionNotice && (
-          <div className="p-4 bg-emerald-900 border border-emerald-500 text-white rounded-2xl text-xs font-bold flex items-center justify-between animate-in fade-in">
-            <div className="flex items-center gap-2">
-              <Check className="w-5 h-5 text-emerald-300" />
-              <span>{actionNotice}</span>
-            </div>
-            <button onClick={() => setActionNotice(null)} className="text-emerald-300 hover:text-white font-mono text-xs">✕</button>
-          </div>
-        )}
-
         {/* Terms & Digital Signature with QR Code */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-6 border-t border-slate-200 text-xs text-slate-500 items-end">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-6 border-t border-slate-800 text-xs text-slate-400 items-end">
           <div>
-            <span className="font-semibold text-slate-700 block mb-1">Platební podmínky a záruka:</span>
-            <p>Záloha 50% při podpisu smlouvy, doplatek 50% po předání díla. Záruka na stavební práce 60 měsíců. Splatnost faktury 14 dní.</p>
+            <span className="font-semibold text-slate-300 block mb-1">Platební podmínky a záruka:</span>
+            <p>Záloha 50% při podpisu smlouvy o dílo, doplatek 50% po předání díla. Záruka na stavební práce 60 měsíců. Splatnost faktury 14 dní.</p>
           </div>
 
-          <div className="flex flex-col items-center justify-center p-3 bg-slate-50 rounded-2xl border border-slate-200 text-center">
+          <div className="flex flex-col items-center justify-center p-3 bg-slate-950 rounded-2xl border border-slate-800 text-center">
             {/* Simulated QR Code for instant mobile deposit payment & client signing */}
-            <div className="w-20 h-20 bg-slate-900 rounded-lg p-1.5 flex items-center justify-center text-white text-[8px] font-mono shadow-xs">
+            <div className="w-20 h-20 bg-slate-900 rounded-lg p-1.5 flex items-center justify-center text-white text-[8px] font-mono shadow-xs border border-slate-700">
               <div className="grid grid-cols-4 gap-0.5 w-full h-full p-1 bg-white text-slate-900 rounded">
                 <div className="bg-slate-900 rounded-xs"></div>
                 <div className="bg-white"></div>
@@ -413,24 +401,24 @@ export const QuotesPage: React.FC<QuotesPageProps> = ({ branding }) => {
                 <div className="bg-slate-900"></div>
               </div>
             </div>
-            <span className="text-[11px] font-bold text-slate-800 mt-1.5">Okamžitá QR platba zálohy</span>
-            <span className="text-[9px] text-slate-500 font-mono">{(grandTotal * 0.5).toLocaleString()} CZK • SPAYD CZ</span>
+            <span className="text-[11px] font-bold text-slate-200 mt-1.5">Okamžitá QR platba zálohy</span>
+            <span className="text-[9px] text-amber-400 font-mono font-semibold">{(grandTotal * 0.5).toLocaleString()} CZK • SPAYD</span>
           </div>
 
           <div className="text-right space-y-2">
             <div>
-              <p className="font-semibold text-slate-700">Digitální podpis klienta & razítko:</p>
+              <p className="font-semibold text-slate-300">Elektronický podpis investora:</p>
               <div 
                 onClick={() => handleCustomerAction('accept')}
-                className="h-14 border border-dashed border-emerald-500 bg-emerald-50/50 rounded-xl mt-1 p-2.5 flex items-center justify-between text-[11px] text-emerald-800 font-mono cursor-pointer hover:bg-emerald-100/60 transition-all"
+                className="h-14 border border-dashed border-emerald-500/70 bg-emerald-950/40 rounded-xl mt-1 p-2.5 flex items-center justify-between text-[11px] text-emerald-300 font-mono cursor-pointer hover:bg-emerald-950/70 transition-all"
               >
                 <div className="text-left">
                   <span className="font-bold flex items-center gap-1"><Check className="w-3.5 h-3.5" /> {customerName}</span>
-                  <span className="text-[9px] text-emerald-600">Klikněte pro elektronický podpis</span>
+                  <span className="text-[9px] text-emerald-400">Klikněte pro elektronický podpis</span>
                 </div>
-                <span className="text-[9px] text-emerald-700 bg-emerald-200/70 px-1.5 py-0.5 rounded font-bold">SHA-256</span>
+                <span className="text-[9px] text-emerald-400 bg-emerald-900/80 px-1.5 py-0.5 rounded font-bold border border-emerald-700">SHA-256</span>
               </div>
-              <p className="text-[10px] text-slate-400 mt-1">Zhotovitel: {branding.name} (IČO: 28491022)</p>
+              <p className="text-[10px] text-slate-500 mt-1">Zhotovitel: {branding.name} (IČO: 28491022)</p>
             </div>
           </div>
         </div>

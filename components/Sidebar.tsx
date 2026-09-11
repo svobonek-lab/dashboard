@@ -43,7 +43,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const { dbUser } = useOrganization();
 
   const baseMenuItems = [
-    { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
+    { id: 'construction', label: 'StavbaCore ERP (3 Role)', icon: Building2 },
+    { id: 'dashboard', label: 'Dashboard CRM', icon: LayoutDashboard },
     { id: 'inquiry', label: 'AI Inquiry Form', icon: Sparkles },
     { id: 'widget', label: 'Embed Lead Widget', icon: Code2 },
     { id: 'install', label: 'Install Studio (/admin)', icon: Rocket },

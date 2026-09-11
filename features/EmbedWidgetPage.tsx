@@ -48,7 +48,7 @@ export const EmbedWidgetPage: React.FC<EmbedWidgetPageProps> = ({
   const appOrigin = typeof window !== 'undefined' ? window.location.origin : 'https://YOUR_DOMAIN';
 
   const snippetCodes = {
-    html: `<!-- CRM Multi-Tenant Embeddable Inquiry Widget -->
+    html: `<!-- CRM Multi-Tenant Embeddable Poptávkový Widget -->
 <script 
   src="${appOrigin}/widget.js" 
   data-org="${orgId}"
@@ -104,44 +104,43 @@ export default function RootLayout({ children }) {
   };
 
   return (
-    <div className="space-y-8 pb-20">
+    <div className="space-y-8 pb-20 text-slate-100">
       {/* Top Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2">
-            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-blue-100 text-blue-800 uppercase tracking-wider flex items-center gap-1">
-              <Code2 className="w-3 h-3" /> One-Line Embed Engine
+            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/20 text-amber-400 border border-amber-500/30 uppercase tracking-wider flex items-center gap-1">
+              <Code2 className="w-3 h-3" /> Jednořádkový Embed modul
             </span>
-            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800">
-              ⚡ Loading: 0.8s
+            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-950 text-emerald-400 border border-emerald-800">
+              ⚡ Načtení: 0.8s
             </span>
           </div>
-          <h2 className="text-2xl font-black text-slate-900 tracking-tight mt-1">Embeddable Lead Widget</h2>
-          <p className="text-xs text-slate-500 mt-0.5">
-            Jakákoliv stavební firma může vložit jeden řádek JavaScriptu do svého webu. Widget automaticky přebírá barvy značky a otevírá prémiový AI poptávkový formulář.
+          <h2 className="text-2xl font-black text-slate-100 tracking-tight mt-1">Webový poptávkový widget</h2>
+          <p className="text-xs text-slate-400 mt-0.5">
+            Jakákoliv stavební firma může vložit jeden řádek JavaScriptu do svého webu. Widget automaticky přebírá barvy značky a otevírá inteligentní poptávkový formulář.
           </p>
         </div>
 
         <button
           onClick={() => setIsWidgetModalOpen(true)}
-          className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-bold text-white shadow-lg transition-all hover:opacity-95"
-          style={{ backgroundColor: customPrimaryColor }}
+          className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-bold text-slate-950 bg-amber-500 hover:bg-amber-400 shadow-lg transition-all"
         >
-          <Play className="w-4 h-4 fill-white" />
-          <span>Otestovat Widget živě</span>
+          <Play className="w-4 h-4 fill-slate-950" />
+          <span>Otestovat widget živě</span>
         </button>
       </div>
 
       {/* Test Lead Notification Toast */}
       {testLeadNotification && (
-        <div className="bg-emerald-600 text-white p-4 rounded-2xl shadow-xl flex items-center justify-between gap-3 animate-in fade-in slide-in-from-top-2">
+        <div className="bg-emerald-950 text-emerald-200 border border-emerald-800/80 p-4 rounded-2xl shadow-xl flex items-center justify-between gap-3 animate-in fade-in slide-in-from-top-2">
           <div className="flex items-center gap-2.5">
-            <CheckCircle2 className="w-5 h-5 text-white" />
+            <CheckCircle2 className="w-5 h-5 text-emerald-400" />
             <span className="text-xs font-bold">{testLeadNotification}</span>
           </div>
           <button 
             onClick={() => onNavigateTab('leads')}
-            className="px-3 py-1 bg-white text-emerald-700 text-xs font-bold rounded-lg hover:bg-emerald-50 transition-colors"
+            className="px-3 py-1 bg-slate-900 border border-emerald-700 text-emerald-300 text-xs font-bold rounded-lg hover:bg-slate-800 transition-colors"
           >
             Zobrazit v Kanbanu
           </button>
@@ -153,44 +152,44 @@ export default function RootLayout({ children }) {
         {/* Left Column: Embed Script Generator & Customizer (5 cols) */}
         <div className="lg:col-span-5 space-y-6">
           {/* Customizer Settings Card */}
-          <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-xs space-y-5">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-              <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider flex items-center gap-2">
-                <Sliders className="w-4 h-4 text-blue-600" />
+          <div className="bg-slate-900 p-6 rounded-3xl border border-slate-800 shadow-md space-y-5">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+              <h3 className="text-sm font-bold text-slate-100 uppercase tracking-wider flex items-center gap-2">
+                <Sliders className="w-4 h-4 text-amber-400" />
                 Nastavení a branding
               </h3>
-              <span className="text-[11px] text-slate-400">Auto-inherit</span>
+              <span className="text-[11px] text-slate-500">Auto-dědění</span>
             </div>
 
             <div className="space-y-4 text-xs">
               <div>
-                <label className="text-slate-600 font-bold block">Primární barva tlačítka a akcentů</label>
+                <label className="text-slate-300 font-bold block">Primární barva tlačítka a akcentů</label>
                 <div className="flex items-center gap-3 mt-1.5">
                   <input
                     type="color"
                     value={customPrimaryColor}
                     onChange={(e) => setCustomPrimaryColor(e.target.value)}
-                    className="w-9 h-9 rounded-xl border border-slate-200 cursor-pointer p-0.5"
+                    className="w-9 h-9 rounded-xl border border-slate-700 cursor-pointer p-0.5 bg-slate-950"
                   />
                   <input
                     type="text"
                     value={customPrimaryColor}
                     onChange={(e) => setCustomPrimaryColor(e.target.value)}
-                    className="flex-1 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-mono font-bold text-slate-800"
+                    className="flex-1 bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs font-mono font-bold text-amber-400 focus:outline-none focus:border-amber-500"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="text-slate-600 font-bold block">Pozice plovoucího tlačítka</label>
+                <label className="text-slate-300 font-bold block">Pozice plovoucího tlačítka</label>
                 <div className="grid grid-cols-2 gap-2 mt-1.5">
                   <button
                     type="button"
                     onClick={() => setWidgetPosition('bottom-right')}
                     className={`p-2.5 rounded-xl border font-bold text-xs transition-all ${
                       widgetPosition === 'bottom-right' 
-                        ? 'bg-blue-50 border-blue-500 text-blue-700 shadow-xs' 
-                        : 'bg-slate-50 border-slate-200 text-slate-600'
+                        ? 'bg-amber-500/20 border-amber-500 text-amber-400' 
+                        : 'bg-slate-950 border-slate-800 text-slate-400 hover:bg-slate-800'
                     }`}
                   >
                     ↘ Vpravo dole
@@ -200,8 +199,8 @@ export default function RootLayout({ children }) {
                     onClick={() => setWidgetPosition('bottom-left')}
                     className={`p-2.5 rounded-xl border font-bold text-xs transition-all ${
                       widgetPosition === 'bottom-left' 
-                        ? 'bg-blue-50 border-blue-500 text-blue-700 shadow-xs' 
-                        : 'bg-slate-50 border-slate-200 text-slate-600'
+                        ? 'bg-amber-500/20 border-amber-500 text-amber-400' 
+                        : 'bg-slate-950 border-slate-800 text-slate-400 hover:bg-slate-800'
                     }`}
                   >
                     ↙ Vlevo dole
@@ -210,12 +209,12 @@ export default function RootLayout({ children }) {
               </div>
 
               <div>
-                <label className="text-slate-600 font-bold block">Text plovoucího spouštěče</label>
+                <label className="text-slate-300 font-bold block">Text plovoucího spouštěče</label>
                 <input
                   type="text"
                   value={buttonText}
                   onChange={(e) => setButtonText(e.target.value)}
-                  className="w-full mt-1.5 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-semibold text-slate-800"
+                  className="w-full mt-1.5 bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs font-semibold text-slate-100 focus:outline-none focus:border-amber-500"
                 />
               </div>
             </div>
@@ -225,11 +224,11 @@ export default function RootLayout({ children }) {
           <div className="bg-slate-900 text-white p-6 rounded-3xl border border-slate-800 shadow-xl space-y-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <Code2 className="w-4 h-4 text-blue-400" />
+                <Code2 className="w-4 h-4 text-amber-400" />
                 <h3 className="text-sm font-bold text-white uppercase tracking-wider">Embed Kód (1 řádek)</h3>
               </div>
-              <span className="text-[10px] bg-blue-600/30 text-blue-300 px-2 py-0.5 rounded-full border border-blue-500/40">
-                CDN Active
+              <span className="text-[10px] bg-amber-500/20 text-amber-300 px-2 py-0.5 rounded-full border border-amber-500/30">
+                CDN aktivní
               </span>
             </div>
 
@@ -237,38 +236,38 @@ export default function RootLayout({ children }) {
             <div className="flex items-center gap-1.5 bg-slate-950 p-1 rounded-xl border border-slate-800 text-[11px] font-semibold">
               <button
                 onClick={() => setSelectedSnippetType('html')}
-                className={`flex-1 py-1.5 rounded-lg transition-colors ${selectedSnippetType === 'html' ? 'bg-blue-600 text-white' : 'text-slate-400 hover:text-white'}`}
+                className={`flex-1 py-1.5 rounded-lg transition-colors ${selectedSnippetType === 'html' ? 'bg-amber-500 text-slate-950 font-bold' : 'text-slate-400 hover:text-white'}`}
               >
                 HTML / JS
               </button>
               <button
                 onClick={() => setSelectedSnippetType('wordpress')}
-                className={`flex-1 py-1.5 rounded-lg transition-colors ${selectedSnippetType === 'wordpress' ? 'bg-blue-600 text-white' : 'text-slate-400 hover:text-white'}`}
+                className={`flex-1 py-1.5 rounded-lg transition-colors ${selectedSnippetType === 'wordpress' ? 'bg-amber-500 text-slate-950 font-bold' : 'text-slate-400 hover:text-white'}`}
               >
                 WordPress
               </button>
               <button
                 onClick={() => setSelectedSnippetType('webflow')}
-                className={`flex-1 py-1.5 rounded-lg transition-colors ${selectedSnippetType === 'webflow' ? 'bg-blue-600 text-white' : 'text-slate-400 hover:text-white'}`}
+                className={`flex-1 py-1.5 rounded-lg transition-colors ${selectedSnippetType === 'webflow' ? 'bg-amber-500 text-slate-950 font-bold' : 'text-slate-400 hover:text-white'}`}
               >
                 Webflow
               </button>
               <button
                 onClick={() => setSelectedSnippetType('react')}
-                className={`flex-1 py-1.5 rounded-lg transition-colors ${selectedSnippetType === 'react' ? 'bg-blue-600 text-white' : 'text-slate-400 hover:text-white'}`}
+                className={`flex-1 py-1.5 rounded-lg transition-colors ${selectedSnippetType === 'react' ? 'bg-amber-500 text-slate-950 font-bold' : 'text-slate-400 hover:text-white'}`}
               >
                 React/Next
               </button>
             </div>
 
             {/* Code Block */}
-            <div className="bg-slate-950 p-4 rounded-2xl border border-slate-800/80 font-mono text-[11px] text-blue-300 relative overflow-x-auto whitespace-pre-wrap leading-relaxed">
+            <div className="bg-slate-950 p-4 rounded-2xl border border-slate-800 font-mono text-[11px] text-amber-300 relative overflow-x-auto whitespace-pre-wrap leading-relaxed">
               {snippetCodes[selectedSnippetType]}
             </div>
 
             <button
               onClick={handleCopyCode}
-              className="w-full py-3 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold shadow-lg transition-all flex items-center justify-center gap-2"
+              className="w-full py-3 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-bold shadow-lg transition-all flex items-center justify-center gap-2"
             >
               {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
               <span>{copied ? 'Kód zkopírován do schránky!' : 'Zkopírovat Embed Script'}</span>
@@ -276,22 +275,22 @@ export default function RootLayout({ children }) {
           </div>
 
           {/* Performance & Spec Badges */}
-          <div className="bg-white p-5 rounded-2xl border border-slate-200 text-xs space-y-2.5">
+          <div className="bg-slate-900 p-5 rounded-2xl border border-slate-800 text-xs space-y-2.5">
             <div className="flex items-center justify-between">
-              <span className="text-slate-500">Čas načtení v prohlížeči:</span>
-              <span className="font-bold text-emerald-600">⚡ 0.8 s (&lt; 2.0 s requirement)</span>
+              <span className="text-slate-400">Čas načtení v prohlížeči:</span>
+              <span className="font-bold text-emerald-400">⚡ 0.8 s (garance do 2.0 s)</span>
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-slate-500">Velikost CDN skriptu:</span>
-              <span className="font-bold text-slate-800">14.2 kB (Gzipped)</span>
+              <span className="text-slate-400">Velikost CDN skriptu:</span>
+              <span className="font-bold text-slate-200">14.2 kB (Gzipped)</span>
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-slate-500">Automatické vytvoření leadu:</span>
-              <span className="font-bold text-blue-600">✓ Okamžitý zápis do CRM</span>
+              <span className="text-slate-400">Automatické vytvoření zakázky:</span>
+              <span className="font-bold text-amber-400">✓ Okamžitý zápis do CRM</span>
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-slate-500">SMS a E-mail potvrzení:</span>
-              <span className="font-bold text-emerald-600">✓ Automaticky aktivní</span>
+              <span className="text-slate-400">SMS a e-mail potvrzení:</span>
+              <span className="font-bold text-emerald-400">✓ Automaticky odesíláno</span>
             </div>
           </div>
         </div>
@@ -299,11 +298,11 @@ export default function RootLayout({ children }) {
         {/* Right Column: Live Website Mockup Simulator (7 cols) */}
         <div className="lg:col-span-7 space-y-4">
           <div className="flex items-center justify-between">
-            <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider flex items-center gap-2">
-              <Eye className="w-4 h-4 text-blue-600" />
-              Živý náhled na webu zákazníka
+            <h3 className="text-sm font-bold text-slate-100 uppercase tracking-wider flex items-center gap-2">
+              <Eye className="w-4 h-4 text-amber-400" />
+              Živý náhled na webu stavební firmy
             </h3>
-            <span className="text-xs text-slate-500">Interaktivní simulace</span>
+            <span className="text-xs text-slate-400">Interaktivní simulace</span>
           </div>
 
           {/* Browser Window Mockup */}
@@ -325,20 +324,19 @@ export default function RootLayout({ children }) {
             </div>
 
             {/* Simulated Website Canvas Content */}
-            <div className="flex-1 bg-white overflow-y-auto relative text-slate-900">
+            <div className="flex-1 bg-slate-950 overflow-y-auto relative text-slate-100">
               {/* Fake Website Navigation */}
-              <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-white/95 backdrop-blur-md sticky top-0 z-10">
+              <div className="px-6 py-4 border-b border-slate-800 flex items-center justify-between bg-slate-950/95 backdrop-blur-md sticky top-0 z-10">
                 <div className="flex items-center gap-2.5">
                   <div 
-                    className="w-7 h-7 rounded-lg flex items-center justify-center text-white font-bold text-xs"
-                    style={{ backgroundColor: customPrimaryColor }}
+                    className="w-7 h-7 rounded-lg flex items-center justify-center text-slate-950 font-bold text-xs bg-amber-500"
                   >
                     {branding.name.substring(0, 2).toUpperCase()}
                   </div>
-                  <span className="font-extrabold text-xs text-slate-900 tracking-tight">{branding.name}</span>
+                  <span className="font-extrabold text-xs text-slate-100 tracking-tight">{branding.name}</span>
                 </div>
 
-                <div className="hidden sm:flex items-center gap-5 text-[11px] font-semibold text-slate-600">
+                <div className="hidden sm:flex items-center gap-5 text-[11px] font-semibold text-slate-400">
                   <span>Realizace</span>
                   <span>Pergoly & Střechy</span>
                   <span>O nás</span>
@@ -347,8 +345,7 @@ export default function RootLayout({ children }) {
 
                 <button
                   onClick={() => setIsWidgetModalOpen(true)}
-                  className="px-3.5 py-1.5 rounded-lg text-[11px] font-bold text-white shadow-xs hover:opacity-90 transition-all"
-                  style={{ backgroundColor: customPrimaryColor }}
+                  className="px-3.5 py-1.5 rounded-lg text-[11px] font-bold text-slate-950 bg-amber-500 shadow-xs hover:bg-amber-400 transition-all"
                 >
                   Poptat nabídku
                 </button>
@@ -356,21 +353,20 @@ export default function RootLayout({ children }) {
 
               {/* Fake Website Hero Section */}
               <div className="p-8 sm:p-12 text-center space-y-4 max-w-xl mx-auto">
-                <span className="px-3 py-1 rounded-full text-[10px] font-bold bg-slate-100 text-slate-700 uppercase tracking-wider">
+                <span className="px-3 py-1 rounded-full text-[10px] font-bold bg-slate-900 border border-slate-800 text-amber-400 uppercase tracking-wider">
                   Profesionální dřevostavby & pergoly {branding.city}
                 </span>
-                <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight leading-tight">
+                <h1 className="text-2xl sm:text-3xl font-black text-slate-100 tracking-tight leading-tight">
                   Stavíme prémiové pergoly a dřevostavby na míru
                 </h1>
-                <p className="text-xs text-slate-500 leading-relaxed">
-                  Získejte okamžitý odhad rozpočtu díky naší AI kalkulačce. Nahrajte fotografii místa realizace a my se vám ozveme s návrhem.
+                <p className="text-xs text-slate-400 leading-relaxed">
+                  Získejte okamžitý odhad rozpočtu díky naší kalkulačce. Nahrajte fotografii místa realizace a my se vám ozveme s návrhem.
                 </p>
 
                 <div className="pt-2 flex justify-center gap-3">
                   <button
                     onClick={() => setIsWidgetModalOpen(true)}
-                    className="px-6 py-3 rounded-xl text-xs font-extrabold text-white shadow-lg flex items-center gap-2 hover:opacity-95 transition-all"
-                    style={{ backgroundColor: customPrimaryColor }}
+                    className="px-6 py-3 rounded-xl text-xs font-extrabold text-slate-950 bg-amber-500 hover:bg-amber-400 shadow-lg flex items-center gap-2 transition-all"
                   >
                     <Sparkles className="w-4 h-4" />
                     <span>Spočítat nezávaznou poptávku</span>
@@ -380,19 +376,19 @@ export default function RootLayout({ children }) {
 
               {/* Simulated Feature Cards */}
               <div className="px-8 grid grid-cols-3 gap-3 max-w-lg mx-auto pb-16 text-center text-xs">
-                <div className="p-4 rounded-2xl bg-slate-50 border border-slate-100 space-y-1">
+                <div className="p-4 rounded-2xl bg-slate-900 border border-slate-800 space-y-1">
                   <span className="text-xl block">🪵</span>
-                  <p className="font-bold text-slate-900 text-[11px]">Pergoly & Terasy</p>
+                  <p className="font-bold text-slate-200 text-[11px]">Pergoly & Terasy</p>
                   <p className="text-[10px] text-slate-500">Záruka 5 let</p>
                 </div>
-                <div className="p-4 rounded-2xl bg-slate-50 border border-slate-100 space-y-1">
+                <div className="p-4 rounded-2xl bg-slate-900 border border-slate-800 space-y-1">
                   <span className="text-xl block">🏠</span>
-                  <p className="font-bold text-slate-900 text-[11px]">Střechy & Krovy</p>
+                  <p className="font-bold text-slate-200 text-[11px]">Střechy & Krovy</p>
                   <p className="text-[10px] text-slate-500">Tesařští mistři</p>
                 </div>
-                <div className="p-4 rounded-2xl bg-slate-50 border border-slate-100 space-y-1">
+                <div className="p-4 rounded-2xl bg-slate-900 border border-slate-800 space-y-1">
                   <span className="text-xl block">⚡</span>
-                  <p className="font-bold text-slate-900 text-[11px]">AI Rychlost</p>
+                  <p className="font-bold text-slate-200 text-[11px]">Rychlost</p>
                   <p className="text-[10px] text-slate-500">Rozpočet do 24h</p>
                 </div>
               </div>
@@ -403,12 +399,11 @@ export default function RootLayout({ children }) {
               >
                 <button
                   onClick={() => setIsWidgetModalOpen(true)}
-                  className="flex items-center gap-2.5 px-5 py-3 rounded-full text-white font-bold text-xs shadow-2xl hover:scale-105 transition-all border border-white/20 animate-bounce-subtle"
-                  style={{ backgroundColor: customPrimaryColor }}
+                  className="flex items-center gap-2.5 px-5 py-3 rounded-full text-slate-950 font-bold text-xs shadow-2xl hover:scale-105 transition-all bg-amber-500 hover:bg-amber-400 border border-amber-300/40 animate-bounce-subtle"
                 >
-                  <Sparkles className="w-4 h-4" />
+                  <Sparkles className="w-4 h-4 text-slate-950" />
                   <span>{buttonText}</span>
-                  <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
+                  <span className="w-2 h-2 rounded-full bg-emerald-950 border border-emerald-400 animate-ping" />
                 </button>
               </div>
             </div>

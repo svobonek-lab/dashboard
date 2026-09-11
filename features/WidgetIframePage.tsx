@@ -127,8 +127,8 @@ export const WidgetIframePage: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-white flex flex-col items-center justify-center gap-3">
-        <div className="w-8 h-8 border-4 border-blue-500/20 border-t-blue-500 rounded-full animate-spin"></div>
+      <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center gap-3">
+        <div className="w-8 h-8 border-4 border-amber-500/20 border-t-amber-500 rounded-full animate-spin"></div>
         <p className="text-[11px] font-semibold text-slate-400">Načítání widgetu...</p>
       </div>
     );
@@ -136,14 +136,14 @@ export const WidgetIframePage: React.FC = () => {
 
   if (!orgData) {
     return (
-      <div className="min-h-screen bg-white flex flex-col items-center justify-center p-4 text-center">
-        <p className="text-xs font-bold text-rose-500">Chyba: Organizace nebyla nalezena.</p>
-        <p className="text-[10px] text-slate-400 mt-1">Ověřte kód embed widgetu na svém webu.</p>
+      <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center p-4 text-center">
+        <p className="text-xs font-bold text-rose-400">Chyba: Organizace nebyla nalezena.</p>
+        <p className="text-[10px] text-slate-500 mt-1">Ověřte kód embed widgetu na svém webu.</p>
       </div>
     );
   }
 
-  const activeColor = orgData.primary_color;
+  const activeColor = orgData.primary_color || '#f59e0b';
 
   const projectTypes = [
     { id: 'Pergola', title: 'Pergola', desc: 'Zastřešení & terasy', icon: '🪵' },
@@ -255,24 +255,23 @@ export const WidgetIframePage: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-white text-slate-900 flex flex-col justify-between font-sans relative antialiased selection:bg-blue-100 select-none">
+    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col justify-between font-sans relative antialiased selection:bg-amber-500/30 select-none">
       {/* Scrollable Content */}
       <div className="flex-1 overflow-y-auto px-5 pt-4 pb-20 space-y-4">
         {/* Top Header */}
-        <div className="flex items-center gap-2.5 pb-2.5 border-b border-slate-100">
+        <div className="flex items-center gap-2.5 pb-2.5 border-b border-slate-800">
           <div 
-            className="w-8 h-8 rounded-lg flex items-center justify-center text-white font-black text-xs shadow-sm flex-shrink-0"
-            style={{ backgroundColor: activeColor }}
+            className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-950 font-black text-xs shadow-sm flex-shrink-0 bg-amber-500"
           >
             {orgData.name.substring(0, 2).toUpperCase()}
           </div>
           <div className="overflow-hidden">
             <div className="flex items-center gap-1.5">
-              <span className="text-[10px] font-bold text-slate-500 truncate max-w-[150px]">{orgData.name}</span>
+              <span className="text-[10px] font-bold text-slate-400 truncate max-w-[150px]">{orgData.name}</span>
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 flex-shrink-0 animate-ping" />
-              <span className="text-[9px] font-bold text-emerald-600">Active</span>
+              <span className="text-[9px] font-bold text-emerald-400">Aktivní</span>
             </div>
-            <h3 className="text-xs font-bold text-slate-900 leading-none mt-0.5">Rychlá nezávazná poptávka</h3>
+            <h3 className="text-xs font-bold text-slate-100 leading-none mt-0.5">Rychlá nezávazná poptávka</h3>
           </div>
         </div>
 
@@ -282,12 +281,11 @@ export const WidgetIframePage: React.FC = () => {
             <span>{submitted ? 'Dokončeno!' : `Krok ${step} ze 7`}</span>
             <span>{submitted ? '100%' : `${Math.round((step / 7) * 100)}%`}</span>
           </div>
-          <div className="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
+          <div className="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden">
             <div 
-              className="h-full transition-all duration-300"
+              className="h-full transition-all duration-300 bg-amber-500"
               style={{ 
-                width: submitted ? '100%' : `${(step / 7) * 100}%`, 
-                backgroundColor: activeColor 
+                width: submitted ? '100%' : `${(step / 7) * 100}%`
               }}
             />
           </div>
@@ -296,31 +294,31 @@ export const WidgetIframePage: React.FC = () => {
         {submitted ? (
           /* Success Screen */
           <div className="py-6 text-center space-y-5 animate-in zoom-in-95 duration-200">
-            <div className="w-14 h-14 bg-emerald-50 text-emerald-600 rounded-2xl flex items-center justify-center mx-auto border border-emerald-100 shadow-xs">
+            <div className="w-14 h-14 bg-emerald-950 text-emerald-400 rounded-2xl flex items-center justify-center mx-auto border border-emerald-800 shadow-xs">
               <CheckCircle2 className="w-7 h-7" />
             </div>
 
             <div className="space-y-1">
-              <h4 className="text-base font-black text-slate-900 tracking-tight">Poptávka byla odeslána!</h4>
-              <p className="text-[11px] text-slate-500 leading-relaxed max-w-sm mx-auto">
-                Děkujeme, <strong className="text-slate-800">{formData.fullName}</strong>. Vaše poptávka byla uložena přímo do CRM systému firmy <strong className="text-slate-800">{orgData.name}</strong>.
+              <h4 className="text-base font-black text-slate-100 tracking-tight">Poptávka byla odeslána!</h4>
+              <p className="text-[11px] text-slate-400 leading-relaxed max-w-sm mx-auto">
+                Děkujeme, <strong className="text-amber-400">{formData.fullName}</strong>. Vaše poptávka byla uložena přímo do CRM systému firmy <strong className="text-slate-200">{orgData.name}</strong>.
               </p>
             </div>
 
             {/* Email & SMS Recap Notification */}
-            <div className="bg-slate-50 rounded-xl p-4 border border-slate-150 text-left space-y-2 text-[10px] max-w-sm mx-auto">
-              <span className="font-extrabold text-slate-500 uppercase tracking-wider text-[9px] block border-b border-slate-200 pb-1.5">Potvrzovací zprávy</span>
-              <div className="flex justify-between items-center text-slate-600">
+            <div className="bg-slate-900 rounded-xl p-4 border border-slate-800 text-left space-y-2 text-[10px] max-w-sm mx-auto">
+              <span className="font-extrabold text-slate-400 uppercase tracking-wider text-[9px] block border-b border-slate-800 pb-1.5">Potvrzovací zprávy</span>
+              <div className="flex justify-between items-center text-slate-300">
                 <span>E-mail s rekapitulací:</span>
-                <span className="font-bold text-emerald-600">✓ Odesláno na {formData.email}</span>
+                <span className="font-bold text-emerald-400">✓ Odesláno na {formData.email}</span>
               </div>
-              <div className="flex justify-between items-center text-slate-600">
+              <div className="flex justify-between items-center text-slate-300">
                 <span>SMS potvrzení:</span>
-                <span className="font-bold text-emerald-600">✓ Odesláno na {formData.phone}</span>
+                <span className="font-bold text-emerald-400">✓ Odesláno na {formData.phone}</span>
               </div>
-              <div className="flex justify-between items-center text-slate-600">
+              <div className="flex justify-between items-center text-slate-300">
                 <span>Zodpovědný technik:</span>
-                <span className="font-bold text-slate-900">Petr Novotný</span>
+                <span className="font-bold text-slate-100">Petr Novotný</span>
               </div>
             </div>
 
@@ -329,8 +327,7 @@ export const WidgetIframePage: React.FC = () => {
                 onClick={() => {
                   window.parent.postMessage('demofactory-widget-close', '*');
                 }}
-                className="px-5 py-2 rounded-xl text-xs font-bold text-white shadow-md hover:opacity-90 transition-all"
-                style={{ backgroundColor: activeColor }}
+                className="px-5 py-2 rounded-xl text-xs font-bold text-slate-950 bg-amber-500 hover:bg-amber-400 shadow-md transition-all"
               >
                 Zavřít okno
               </button>
@@ -342,60 +339,60 @@ export const WidgetIframePage: React.FC = () => {
             {step === 1 && (
               <div className="space-y-3.5 animate-in fade-in duration-200">
                 <div>
-                  <h4 className="text-sm font-bold text-slate-900">1. Kontaktní údaje</h4>
-                  <p className="text-[11px] text-slate-500 mt-0.5">Kam vám zašleme hotovou cenovou nabídku?</p>
+                  <h4 className="text-sm font-bold text-slate-100">1. Kontaktní údaje</h4>
+                  <p className="text-[11px] text-slate-400 mt-0.5">Kam vám zašleme hotovou cenovou nabídku?</p>
                 </div>
 
                 <div className="space-y-3">
                   <div>
-                    <label className="text-[10px] font-bold uppercase tracking-wider text-slate-500 block">Celé jméno / Název firmy</label>
+                    <label className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Celé jméno / Název firmy</label>
                     <div className="relative mt-1">
-                      <User className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
+                      <User className="w-4 h-4 text-slate-500 absolute left-3 top-3" />
                       <input
                         type="text"
                         value={formData.fullName}
                         onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
                         placeholder="Ing. Petr Novák"
-                        className={`w-full bg-slate-50 border rounded-xl py-2.5 pl-9 pr-3 text-xs font-semibold text-slate-900 focus:outline-none focus:ring-2 ${
-                          validationErrors.fullName ? 'border-rose-400 focus:ring-rose-200' : 'border-slate-200 focus:ring-blue-500'
+                        className={`w-full bg-slate-900 border rounded-xl py-2.5 pl-9 pr-3 text-xs font-semibold text-slate-100 focus:outline-none focus:border-amber-500 ${
+                          validationErrors.fullName ? 'border-rose-500' : 'border-slate-800'
                         }`}
                       />
                     </div>
-                    {validationErrors.fullName && <p className="text-[10px] text-rose-500 font-bold mt-1">{validationErrors.fullName}</p>}
+                    {validationErrors.fullName && <p className="text-[10px] text-rose-400 font-bold mt-1">{validationErrors.fullName}</p>}
                   </div>
 
                   <div>
-                    <label className="text-[10px] font-bold uppercase tracking-wider text-slate-500 block">Telefonní číslo</label>
+                    <label className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Telefonní číslo</label>
                     <div className="relative mt-1">
-                      <Phone className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
+                      <Phone className="w-4 h-4 text-slate-500 absolute left-3 top-3" />
                       <input
                         type="tel"
                         value={formData.phone}
                         onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                         placeholder="+420 777 123 456"
-                        className={`w-full bg-slate-50 border rounded-xl py-2.5 pl-9 pr-3 text-xs font-semibold text-slate-900 focus:outline-none focus:ring-2 ${
-                          validationErrors.phone ? 'border-rose-400 focus:ring-rose-200' : 'border-slate-200 focus:ring-blue-500'
+                        className={`w-full bg-slate-900 border rounded-xl py-2.5 pl-9 pr-3 text-xs font-semibold text-slate-100 focus:outline-none focus:border-amber-500 ${
+                          validationErrors.phone ? 'border-rose-500' : 'border-slate-800'
                         }`}
                       />
                     </div>
-                    {validationErrors.phone && <p className="text-[10px] text-rose-500 font-bold mt-1">{validationErrors.phone}</p>}
+                    {validationErrors.phone && <p className="text-[10px] text-rose-400 font-bold mt-1">{validationErrors.phone}</p>}
                   </div>
 
                   <div>
-                    <label className="text-[10px] font-bold uppercase tracking-wider text-slate-500 block">E-mailová adresa</label>
+                    <label className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">E-mailová adresa</label>
                     <div className="relative mt-1">
-                      <Mail className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
+                      <Mail className="w-4 h-4 text-slate-500 absolute left-3 top-3" />
                       <input
                         type="email"
                         value={formData.email}
                         onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                         placeholder="novak@email.cz"
-                        className={`w-full bg-slate-50 border rounded-xl py-2.5 pl-9 pr-3 text-xs font-semibold text-slate-900 focus:outline-none focus:ring-2 ${
-                          validationErrors.email ? 'border-rose-400 focus:ring-rose-200' : 'border-slate-200 focus:ring-blue-500'
+                        className={`w-full bg-slate-900 border rounded-xl py-2.5 pl-9 pr-3 text-xs font-semibold text-slate-100 focus:outline-none focus:border-amber-500 ${
+                          validationErrors.email ? 'border-rose-500' : 'border-slate-800'
                         }`}
                       />
                     </div>
-                    {validationErrors.email && <p className="text-[10px] text-rose-500 font-bold mt-1">{validationErrors.email}</p>}
+                    {validationErrors.email && <p className="text-[10px] text-rose-400 font-bold mt-1">{validationErrors.email}</p>}
                   </div>
                 </div>
               </div>
@@ -405,8 +402,8 @@ export const WidgetIframePage: React.FC = () => {
             {step === 2 && (
               <div className="space-y-3 animate-in fade-in duration-200">
                 <div>
-                  <h4 className="text-sm font-bold text-slate-900">2. Typ stavebního projektu</h4>
-                  <p className="text-[11px] text-slate-500 mt-0.5">Zvolte hlavní kategorii požadované práce.</p>
+                  <h4 className="text-sm font-bold text-slate-100">2. Typ stavebního projektu</h4>
+                  <p className="text-[11px] text-slate-400 mt-0.5">Zvolte hlavní kategorii požadované práce.</p>
                 </div>
 
                 <div className="grid grid-cols-2 gap-2">
@@ -418,14 +415,14 @@ export const WidgetIframePage: React.FC = () => {
                         onClick={() => setFormData({ ...formData, projectType: type.id })}
                         className={`p-3 rounded-xl border-2 cursor-pointer transition-all flex flex-col justify-between ${
                           isSelected 
-                            ? 'border-blue-600 bg-blue-50/20' 
-                            : 'border-slate-100 hover:border-slate-200 bg-slate-50/50'
+                            ? 'border-amber-500 bg-amber-500/10' 
+                            : 'border-slate-800 hover:border-slate-700 bg-slate-900'
                         }`}
                       >
                         <div className="text-xl mb-1">{type.icon}</div>
                         <div>
-                          <h5 className="font-bold text-slate-900 text-[11px]">{type.title}</h5>
-                          <p className="text-[9px] text-slate-500 line-clamp-1 mt-0.5">{type.desc}</p>
+                          <h5 className="font-bold text-slate-100 text-[11px]">{type.title}</h5>
+                          <p className="text-[9px] text-slate-400 line-clamp-1 mt-0.5">{type.desc}</p>
                         </div>
                       </div>
                     );
@@ -438,21 +435,21 @@ export const WidgetIframePage: React.FC = () => {
             {step === 3 && (
               <div className="space-y-3 animate-in fade-in duration-200">
                 <div>
-                  <h4 className="text-sm font-bold text-slate-900">3. Adresa realizace</h4>
-                  <p className="text-[11px] text-slate-500 mt-0.5">Zadejte přesné místo pro plánování dojezdů řemeslníků.</p>
+                  <h4 className="text-sm font-bold text-slate-100">3. Adresa realizace</h4>
+                  <p className="text-[11px] text-slate-400 mt-0.5">Zadejte přesné místo pro plánování dojezdů řemeslníků.</p>
                 </div>
 
                 <div className="space-y-3">
                   <div>
-                    <label className="text-[10px] font-bold uppercase tracking-wider text-slate-500 block">Lokalita realizace</label>
+                    <label className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Lokalita realizace</label>
                     <div className="relative mt-1">
-                      <MapPin className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
+                      <MapPin className="w-4 h-4 text-slate-500 absolute left-3 top-3" />
                       <input
                         type="text"
                         value={formData.address}
                         onChange={(e) => setFormData({ ...formData, address: e.target.value })}
                         placeholder="Pražská 42, Praha"
-                        className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2.5 pl-9 pr-3 text-xs font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-full bg-slate-900 border border-slate-800 rounded-xl py-2.5 pl-9 pr-3 text-xs font-semibold text-slate-100 focus:outline-none focus:border-amber-500"
                       />
                     </div>
                   </div>
@@ -461,15 +458,15 @@ export const WidgetIframePage: React.FC = () => {
                   <div className="h-32 bg-slate-900 rounded-xl relative overflow-hidden flex flex-col justify-between p-3 border border-slate-800">
                     <div className="absolute inset-0 bg-[radial-gradient(#334155_1px,transparent_1px)] [background-size:16px_16px] opacity-40" />
                     <div className="relative z-10 flex items-center justify-between text-[8px] font-bold text-slate-400">
-                      <span className="bg-slate-800/90 border border-slate-700 rounded px-1.5 py-0.5 flex items-center gap-1">
-                        <Navigation className="w-2.5 h-2.5 text-blue-400" /> Servisní oblast {orgData.name.split(' ')[0]}
+                      <span className="bg-slate-950 border border-slate-800 rounded px-1.5 py-0.5 flex items-center gap-1">
+                        <Navigation className="w-2.5 h-2.5 text-amber-400" /> Servisní oblast {orgData.name.split(' ')[0]}
                       </span>
-                      <span className="text-emerald-400">Plné pokrytí</span>
+                      <span className="text-emerald-400 font-bold">Plné pokrytí</span>
                     </div>
 
                     <div className="relative z-10 flex justify-center">
-                      <div className="px-2.5 py-1 bg-white rounded-lg text-[10px] font-extrabold text-slate-800 flex items-center gap-1 border border-slate-200 shadow-md">
-                        <MapPin className="w-3 h-3 text-rose-500 fill-rose-500" />
+                      <div className="px-2.5 py-1 bg-slate-950 rounded-lg text-[10px] font-extrabold text-slate-200 flex items-center gap-1 border border-slate-800 shadow-md">
+                        <MapPin className="w-3 h-3 text-amber-500 fill-amber-500" />
                         <span>{formData.address || 'Region'}</span>
                       </div>
                     </div>
@@ -486,13 +483,13 @@ export const WidgetIframePage: React.FC = () => {
             {step === 4 && (
               <div className="space-y-4 animate-in fade-in duration-200">
                 <div>
-                  <h4 className="text-sm font-bold text-slate-900">4. Odhadovaný rozpočet</h4>
-                  <p className="text-[11px] text-slate-500 mt-0.5">Pomůže nám vybrat ideální jakost materiálu a prvků.</p>
+                  <h4 className="text-sm font-bold text-slate-100">4. Odhadovaný rozpočet</h4>
+                  <p className="text-[11px] text-slate-400 mt-0.5">Pomůže nám vybrat ideální jakost materiálu a prvků.</p>
                 </div>
 
                 <div className="space-y-4 py-2">
                   <div className="text-center">
-                    <span className="text-xl font-black text-slate-900">
+                    <span className="text-xl font-black text-amber-400">
                       {formData.budgetValue.toLocaleString()} CZK
                     </span>
                     <p className="text-[9px] text-slate-400 font-bold mt-1 uppercase tracking-wider">
@@ -508,14 +505,14 @@ export const WidgetIframePage: React.FC = () => {
                     step={10000}
                     value={formData.budgetValue}
                     onChange={(e) => setFormData({ ...formData, budgetValue: Number(e.target.value) })}
-                    className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-blue-600"
+                    className="w-full h-2 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-amber-500"
                   />
 
-                  <div className="grid grid-cols-4 gap-1.5 text-center text-[10px] font-bold text-slate-500">
-                    <button type="button" onClick={() => setFormData({ ...formData, budgetValue: 50000 })} className="p-1.5 bg-slate-50 hover:bg-slate-100 rounded-lg">50k</button>
-                    <button type="button" onClick={() => setFormData({ ...formData, budgetValue: 150000 })} className="p-1.5 bg-slate-50 hover:bg-slate-100 rounded-lg">150k</button>
-                    <button type="button" onClick={() => setFormData({ ...formData, budgetValue: 250000 })} className="p-1.5 bg-slate-50 hover:bg-slate-100 rounded-lg">250k</button>
-                    <button type="button" onClick={() => setFormData({ ...formData, budgetValue: 400000 })} className="p-1.5 bg-slate-50 hover:bg-slate-100 rounded-lg">400k+</button>
+                  <div className="grid grid-cols-4 gap-1.5 text-center text-[10px] font-bold text-slate-300">
+                    <button type="button" onClick={() => setFormData({ ...formData, budgetValue: 50000 })} className="p-1.5 bg-slate-900 hover:bg-slate-800 border border-slate-800 rounded-lg">50k</button>
+                    <button type="button" onClick={() => setFormData({ ...formData, budgetValue: 150000 })} className="p-1.5 bg-slate-900 hover:bg-slate-800 border border-slate-800 rounded-lg">150k</button>
+                    <button type="button" onClick={() => setFormData({ ...formData, budgetValue: 250000 })} className="p-1.5 bg-slate-900 hover:bg-slate-800 border border-slate-800 rounded-lg">250k</button>
+                    <button type="button" onClick={() => setFormData({ ...formData, budgetValue: 400000 })} className="p-1.5 bg-slate-900 hover:bg-slate-800 border border-slate-800 rounded-lg">400k+</button>
                   </div>
                 </div>
               </div>
@@ -525,27 +522,27 @@ export const WidgetIframePage: React.FC = () => {
             {step === 5 && (
               <div className="space-y-3.5 animate-in fade-in duration-200">
                 <div>
-                  <h4 className="text-sm font-bold text-slate-900">5. Plánovaný termín stavby</h4>
-                  <p className="text-[11px] text-slate-500 mt-0.5">Kdy byste chtěli nejpozději zahájit práce?</p>
+                  <h4 className="text-sm font-bold text-slate-100">5. Plánovaný termín stavby</h4>
+                  <p className="text-[11px] text-slate-400 mt-0.5">Kdy byste chtěli nejpozději zahájit práce?</p>
                 </div>
 
                 <div className="space-y-3">
                   <div>
-                    <label className="text-[10px] font-bold uppercase tracking-wider text-slate-500 block">Požadované datum</label>
+                    <label className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Požadované datum</label>
                     <div className="relative mt-1">
-                      <Calendar className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
+                      <Calendar className="w-4 h-4 text-slate-500 absolute left-3 top-3" />
                       <input
                         type="date"
                         value={formData.preferredDate}
                         onChange={(e) => setFormData({ ...formData, preferredDate: e.target.value })}
-                        className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2.5 pl-9 pr-3 text-xs font-semibold text-slate-900 focus:outline-none"
+                        className="w-full bg-slate-900 border border-slate-800 rounded-xl py-2.5 pl-9 pr-3 text-xs font-semibold text-slate-100 focus:outline-none focus:border-amber-500"
                       />
                     </div>
                   </div>
 
-                  <div className="p-3 bg-blue-50/60 border border-blue-100 rounded-xl text-[10px] text-blue-900">
+                  <div className="p-3 bg-amber-500/10 border border-amber-500/20 rounded-xl text-[10px] text-amber-300">
                     <p className="font-bold">Kapacitní kalendář obvodu {formData.address.split(',')[1] || 'střední Čechy'}:</p>
-                    <p className="mt-0.5">Volné kapacity pro zaměření i naskladnění materiálu jsou plně dostupné.</p>
+                    <p className="mt-0.5 text-slate-300">Volné kapacity pro zaměření i naskladnění materiálu jsou plně dostupné.</p>
                   </div>
                 </div>
               </div>
@@ -555,11 +552,11 @@ export const WidgetIframePage: React.FC = () => {
             {step === 6 && (
               <div className="space-y-3.5 animate-in fade-in duration-200">
                 <div>
-                  <h4 className="text-sm font-bold text-slate-900">6. Nahrání fotografií / Nákresu (AI Analýza)</h4>
-                  <p className="text-[11px] text-slate-500 mt-0.5">Nahrajte foto místa realizace. AI okamžitě odhadne složitost montáže.</p>
+                  <h4 className="text-sm font-bold text-slate-100">6. Nahrání fotografií / Nákresu (AI Analýza)</h4>
+                  <p className="text-[11px] text-slate-400 mt-0.5">Nahrajte foto místa realizace. AI okamžitě odhadne složitost montáže.</p>
                 </div>
 
-                <div className="border-2 border-dashed border-slate-200 hover:border-blue-300 rounded-xl p-4 text-center bg-slate-50/40 cursor-pointer transition-all">
+                <div className="border-2 border-dashed border-slate-800 hover:border-amber-500/50 rounded-xl p-4 text-center bg-slate-900/50 cursor-pointer transition-all">
                   <input
                     type="file"
                     multiple
@@ -569,15 +566,15 @@ export const WidgetIframePage: React.FC = () => {
                     id="iframe-photo-upload"
                   />
                   <label htmlFor="iframe-photo-upload" className="cursor-pointer space-y-1 block">
-                    <Upload className="w-6 h-6 text-slate-400 mx-auto" />
-                    <p className="text-[11px] font-bold text-slate-700">Klikněte pro výběr souboru</p>
-                    <p className="text-[9px] text-slate-400">Podporuje JPG, PNG (Max 10MB)</p>
+                    <Upload className="w-6 h-6 text-slate-500 mx-auto" />
+                    <p className="text-[11px] font-bold text-slate-300">Klikněte pro výběr souboru</p>
+                    <p className="text-[9px] text-slate-500">Podporuje JPG, PNG (Max 10MB)</p>
                   </label>
                 </div>
 
                 {analyzingPhotos && (
-                  <div className="bg-blue-50 p-2.5 rounded-xl flex items-center gap-2 text-[10px] text-blue-900 animate-pulse">
-                    <Sparkles className="w-3.5 h-3.5 text-blue-600 animate-spin" />
+                  <div className="bg-amber-500/10 border border-amber-500/20 p-2.5 rounded-xl flex items-center gap-2 text-[10px] text-amber-300 animate-pulse">
+                    <Sparkles className="w-3.5 h-3.5 text-amber-400 animate-spin" />
                     <span>AI analyzuje sklon terénu a podloží...</span>
                   </div>
                 )}
@@ -586,19 +583,19 @@ export const WidgetIframePage: React.FC = () => {
                   <div className="bg-slate-900 text-white p-3 rounded-xl space-y-2 text-[10px] border border-slate-800">
                     <div className="flex items-center justify-between pb-1 border-b border-slate-800">
                       <div className="flex items-center gap-1">
-                        <Sparkles className="w-3 h-3 text-blue-400" />
-                        <span className="font-bold text-[9px] uppercase tracking-wider">AI Vyhodnocení</span>
+                        <Sparkles className="w-3 h-3 text-amber-400" />
+                        <span className="font-bold text-[9px] uppercase tracking-wider text-amber-400">AI Vyhodnocení</span>
                       </div>
                       <span className="text-[8px] bg-emerald-500/20 text-emerald-400 px-1.5 py-0.5 rounded border border-emerald-500/30">
-                        89% Presnost
+                        89% Přesnost
                       </span>
                     </div>
                     <div className="grid grid-cols-2 gap-2">
-                      <div className="bg-slate-800 p-2 rounded-lg">
+                      <div className="bg-slate-950 p-2 rounded-lg border border-slate-800">
                         <span className="text-slate-400 text-[8px] block">Složitost montáže</span>
                         <span className="font-bold text-white leading-tight mt-0.5 block">{aiAnalysisResult.complexity}</span>
                       </div>
-                      <div className="bg-slate-800 p-2 rounded-lg">
+                      <div className="bg-slate-950 p-2 rounded-lg border border-slate-800">
                         <span className="text-slate-400 text-[8px] block">Doporučená skupina</span>
                         <span className="font-bold text-white truncate block mt-0.5">{aiAnalysisResult.suggestedTeam}</span>
                       </div>
@@ -613,15 +610,15 @@ export const WidgetIframePage: React.FC = () => {
               <div className="space-y-3.5 animate-in fade-in duration-200">
                 <div className="flex items-center justify-between">
                   <div>
-                    <h4 className="text-sm font-bold text-slate-900">7. Doplňující popis & Hlas</h4>
-                    <p className="text-[11px] text-slate-500 mt-0.5">Doplňte detaily (rozměry, barvy, specifika).</p>
+                    <h4 className="text-sm font-bold text-slate-100">7. Doplňující popis & Hlas</h4>
+                    <p className="text-[11px] text-slate-400 mt-0.5">Doplňte detaily (rozměry, barvy, specifika).</p>
                   </div>
 
                   <button
                     type="button"
                     onClick={handleVoiceInputToggle}
                     className={`px-2 py-1 rounded-lg text-[10px] font-bold flex items-center gap-1 transition-all ${
-                      isRecordingVoice ? 'bg-rose-600 text-white animate-pulse' : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
+                      isRecordingVoice ? 'bg-rose-600 text-white animate-pulse' : 'bg-slate-800 hover:bg-slate-700 text-slate-300'
                     }`}
                   >
                     <Mic className="w-3 h-3" />
@@ -630,7 +627,7 @@ export const WidgetIframePage: React.FC = () => {
                 </div>
 
                 {isRecordingVoice && (
-                  <div className="p-2.5 bg-rose-50/50 border border-rose-100 rounded-xl flex items-center justify-between text-[10px] text-rose-900">
+                  <div className="p-2.5 bg-rose-950/50 border border-rose-800 rounded-xl flex items-center justify-between text-[10px] text-rose-300">
                     <span className="font-bold animate-pulse">Nyní diktujte stavební záměr česky...</span>
                     <div className="flex gap-0.5 items-center">
                       {[30, 60, 20, 80, 40].map((h, i) => (
@@ -645,7 +642,7 @@ export const WidgetIframePage: React.FC = () => {
                   value={formData.description}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                   placeholder="Zadejte doplňující požadavky k materiálu nebo kotvení..."
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-xs font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full bg-slate-900 border border-slate-800 rounded-xl p-2.5 text-xs font-semibold text-slate-100 focus:outline-none focus:border-amber-500"
                 />
               </div>
             )}
@@ -655,12 +652,12 @@ export const WidgetIframePage: React.FC = () => {
 
       {/* Persistent Bottom Controls Bar */}
       {!submitted && (
-        <div className="absolute bottom-0 left-0 right-0 bg-white border-t border-slate-100 px-5 py-3.5 flex items-center justify-between z-20">
+        <div className="absolute bottom-0 left-0 right-0 bg-slate-950 border-t border-slate-800 px-5 py-3.5 flex items-center justify-between z-20">
           {step > 1 ? (
             <button
               type="button"
               onClick={() => setStep(prev => prev - 1)}
-              className="px-3.5 py-2 rounded-xl text-xs font-bold text-slate-600 bg-slate-50 hover:bg-slate-100 border border-slate-200 flex items-center gap-1"
+              className="px-3.5 py-2 rounded-xl text-xs font-bold text-slate-300 bg-slate-900 hover:bg-slate-800 border border-slate-800 flex items-center gap-1"
             >
               <ArrowLeft className="w-3.5 h-3.5" /> Zpět
             </button>
@@ -670,8 +667,7 @@ export const WidgetIframePage: React.FC = () => {
             <button
               type="button"
               onClick={handleNext}
-              className="px-4 py-2.5 rounded-xl text-xs font-bold text-white shadow-md flex items-center gap-1 hover:opacity-95"
-              style={{ backgroundColor: activeColor }}
+              className="px-4 py-2.5 rounded-xl text-xs font-bold text-slate-950 bg-amber-500 hover:bg-amber-400 shadow-md flex items-center gap-1 transition-all"
             >
               <span>Pokračovat ({step + 1}/7)</span> <ArrowRight className="w-3.5 h-3.5" />
             </button>
@@ -679,8 +675,7 @@ export const WidgetIframePage: React.FC = () => {
             <button
               type="button"
               onClick={handleSubmit}
-              className="px-5 py-2.5 rounded-xl text-xs font-extrabold text-white shadow-lg flex items-center gap-1.5 hover:opacity-95"
-              style={{ backgroundColor: activeColor }}
+              className="px-5 py-2.5 rounded-xl text-xs font-black text-slate-950 bg-amber-500 hover:bg-amber-400 shadow-lg flex items-center gap-1.5 transition-all"
             >
               <Sparkles className="w-4 h-4" /> Odeslat poptávku
             </button>

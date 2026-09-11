@@ -58,60 +58,59 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
   const waitingQuotesCount = leads.filter(l => l.status === 'Quote').length;
 
   return (
-    <div className="space-y-8 pb-24 relative">
+    <div className="space-y-8 pb-24 relative text-slate-100">
       {/* Executive Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h2 className="text-3xl font-bold text-slate-900 tracking-tight">
-            Good morning, Jan. 👋
+          <h2 className="text-3xl font-bold text-slate-100 tracking-tight">
+            Dobré ráno, Jane. 👋
           </h2>
-          <p className="text-sm text-slate-500 mt-1">
-            Today’s Wins & Executive Control Center • <span className="font-semibold text-slate-700">{branding.name}</span>
+          <p className="text-sm text-slate-400 mt-1">
+            Dnešní přehled & manažerský panel zakázek • <span className="font-semibold text-amber-400">{branding.name}</span>
           </p>
         </div>
 
         <div className="flex items-center gap-3">
           <button
             onClick={() => onNavigateTab('quotes')}
-            className="px-4 py-2.5 rounded-xl text-xs font-semibold bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 shadow-xs transition-all"
+            className="px-4 py-2.5 rounded-xl text-xs font-semibold bg-slate-900 border border-slate-700 text-slate-200 hover:bg-slate-800 shadow-xs transition-all"
           >
-            Create Quote PDF
+            Vytvořit rozpočet (PDF)
           </button>
           <button
             onClick={() => onNavigateTab('leads')}
-            className="px-4 py-2.5 rounded-xl text-xs font-semibold text-white shadow-md transition-all hover:opacity-95 flex items-center gap-2"
-            style={{ backgroundColor: branding.primaryColor }}
+            className="px-4 py-2.5 rounded-xl text-xs font-bold text-slate-950 shadow-md transition-all hover:opacity-95 flex items-center gap-2 bg-amber-500 hover:bg-amber-400"
           >
             <Plus className="w-4 h-4" />
-            <span>New Lead</span>
+            <span>Nová zakázka / poptávka</span>
           </button>
         </div>
       </div>
 
       {/* Top Section: Today’s Wins Banner */}
-      <div className="bg-gradient-to-r from-slate-900 via-blue-950 to-slate-900 p-7 rounded-3xl text-white shadow-xl border border-blue-500/30 relative overflow-hidden">
-        <div className="absolute top-0 right-0 w-80 h-80 bg-blue-500/10 rounded-full blur-3xl pointer-events-none"></div>
+      <div className="bg-slate-900 p-7 rounded-3xl text-white shadow-xl border border-slate-800 relative overflow-hidden">
+        <div className="absolute top-0 right-0 w-80 h-80 bg-amber-500/10 rounded-full blur-3xl pointer-events-none"></div>
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 relative z-10">
           <div className="space-y-3">
             <div className="flex items-center gap-2.5">
-              <div className="w-7 h-7 rounded-lg bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center text-emerald-400">
+              <div className="w-7 h-7 rounded-lg bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-amber-400">
                 <Sparkles className="w-3.5 h-3.5" />
               </div>
-              <span className="text-xs font-bold uppercase tracking-wider text-emerald-300">Today’s Wins & AI Milestones</span>
+              <span className="text-xs font-bold uppercase tracking-wider text-amber-400">Dnešní milníky & přehled staveb</span>
             </div>
             <h3 className="text-xl font-black text-white tracking-tight">
-              3 new deposits secured & 42 minutes saved in transit today
+              3 nové zálohy připsány na účet & optimalizováno 42 minut přejezdů party
             </h3>
             <p className="text-xs text-slate-300 max-w-2xl">
-              Your automated dispatch and WhatsApp lead capture have already converted 3 high-value inquiries this morning in {branding.city}.
+              Automatický dispečink a zachycování poptávek přes portál zajistily dnes dopoledne v lokalitě {branding.city} hladký start stavebních etap.
             </p>
           </div>
           <div className="flex items-center gap-3">
             <button
               onClick={() => onNavigateTab('analytics')}
-              className="px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold transition-all shadow-md flex items-center gap-2"
+              className="px-4 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-bold transition-all shadow-md flex items-center gap-2"
             >
-              <span>View Financial BI</span>
+              <span>Finanční ukazatele staveb</span>
               <ArrowRight className="w-4 h-4" />
             </button>
           </div>
@@ -126,26 +125,26 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
             setExpandedCard(expandedCard === 'leads' ? null : 'leads');
             onNavigateTab('leads');
           }}
-          className={`bg-white p-6 rounded-3xl border transition-all cursor-pointer shadow-xs hover:shadow-md group ${
-            expandedCard === 'leads' ? 'border-blue-500 ring-2 ring-blue-500/20 shadow-lg' : 'border-slate-200 hover:border-blue-300'
+          className={`bg-slate-900 p-6 rounded-3xl border transition-all cursor-pointer shadow-md hover:shadow-lg group ${
+            expandedCard === 'leads' ? 'border-amber-500 ring-2 ring-amber-500/20 shadow-lg' : 'border-slate-800 hover:border-slate-700'
           }`}
         >
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Saved Leads Today</span>
-            <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center group-hover:scale-110 transition-transform">
+            <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Nové zakázky</span>
+            <div className="w-10 h-10 rounded-xl bg-slate-800 border border-slate-700 text-amber-400 flex items-center justify-center group-hover:scale-110 transition-transform">
               <Users className="w-5 h-5" />
             </div>
           </div>
           <div className="mt-4 flex items-baseline justify-between">
             <div>
-              <p className="text-3xl font-extrabold text-slate-900">{newLeadsCount + 3}</p>
-              <div className="flex items-center gap-1 mt-1 text-xs font-semibold text-emerald-600">
+              <p className="text-3xl font-extrabold text-slate-100">{newLeadsCount + 3}</p>
+              <div className="flex items-center gap-1 mt-1 text-xs font-semibold text-emerald-400">
                 <ArrowUpRight className="w-3.5 h-3.5" />
-                <span>+3 new via web widget</span>
+                <span>+3 z webového formuláře</span>
               </div>
             </div>
-            <span className="text-xs font-bold text-blue-600 flex items-center gap-1 group-hover:translate-x-1 transition-transform">
-              View <ChevronRight className="w-3.5 h-3.5" />
+            <span className="text-xs font-bold text-amber-400 flex items-center gap-1 group-hover:translate-x-1 transition-transform">
+              Zobrazit <ChevronRight className="w-3.5 h-3.5" />
             </span>
           </div>
         </div>
@@ -156,28 +155,28 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
             setExpandedCard(expandedCard === 'revenue' ? null : 'revenue');
             onNavigateTab('analytics');
           }}
-          className={`bg-white p-6 rounded-3xl border transition-all cursor-pointer shadow-xs hover:shadow-md group ${
-            expandedCard === 'revenue' ? 'border-emerald-500 ring-2 ring-emerald-500/20 shadow-lg' : 'border-slate-200 hover:border-emerald-300'
+          className={`bg-slate-900 p-6 rounded-3xl border transition-all cursor-pointer shadow-md hover:shadow-lg group ${
+            expandedCard === 'revenue' ? 'border-emerald-500 ring-2 ring-emerald-500/20 shadow-lg' : 'border-slate-800 hover:border-slate-700'
           }`}
         >
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Revenue Generated Today</span>
-            <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center group-hover:scale-110 transition-transform">
+            <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Fakturace & Zálohy</span>
+            <div className="w-10 h-10 rounded-xl bg-slate-800 border border-slate-700 text-emerald-400 flex items-center justify-center group-hover:scale-110 transition-transform">
               <DollarSign className="w-5 h-5" />
             </div>
           </div>
           <div className="mt-4 flex items-baseline justify-between">
             <div>
-              <p className="text-3xl font-extrabold text-slate-900">
-                {((totalRevenue + 145000) / 1000).toFixed(0)} <span className="text-sm font-medium text-slate-500">k CZK</span>
+              <p className="text-3xl font-extrabold text-slate-100">
+                {((totalRevenue + 145000) / 1000).toFixed(0)} <span className="text-sm font-medium text-slate-400">tis. Kč</span>
               </p>
-              <div className="flex items-center gap-1 mt-1 text-xs font-semibold text-emerald-600">
+              <div className="flex items-center gap-1 mt-1 text-xs font-semibold text-emerald-400">
                 <ArrowUpRight className="w-3.5 h-3.5" />
-                <span>+24.5% vs daily target</span>
+                <span>+24.5% oproti měsíčnímu plánu</span>
               </div>
             </div>
-            <span className="text-xs font-bold text-emerald-600 flex items-center gap-1 group-hover:translate-x-1 transition-transform">
-              Details <ChevronRight className="w-3.5 h-3.5" />
+            <span className="text-xs font-bold text-emerald-400 flex items-center gap-1 group-hover:translate-x-1 transition-transform">
+              Detail <ChevronRight className="w-3.5 h-3.5" />
             </span>
           </div>
         </div>
@@ -187,26 +186,26 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
           onClick={() => {
             setExpandedCard(expandedCard === 'time' ? null : 'time');
           }}
-          className={`bg-white p-6 rounded-3xl border transition-all cursor-pointer shadow-xs hover:shadow-md group ${
-            expandedCard === 'time' ? 'border-indigo-500 ring-2 ring-indigo-500/20 shadow-lg' : 'border-slate-200 hover:border-indigo-300'
+          className={`bg-slate-900 p-6 rounded-3xl border transition-all cursor-pointer shadow-md hover:shadow-lg group ${
+            expandedCard === 'time' ? 'border-amber-500 ring-2 ring-amber-500/20 shadow-lg' : 'border-slate-800 hover:border-slate-700'
           }`}
         >
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">AI Time Saved</span>
-            <div className="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center group-hover:scale-110 transition-transform">
+            <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Ušetřený čas mistrů</span>
+            <div className="w-10 h-10 rounded-xl bg-slate-800 border border-slate-700 text-amber-400 flex items-center justify-center group-hover:scale-110 transition-transform">
               <Clock className="w-5 h-5" />
             </div>
           </div>
           <div className="mt-4 flex items-baseline justify-between">
             <div>
-              <p className="text-3xl font-extrabold text-slate-900">34.5 <span className="text-sm font-medium text-slate-500">hrs</span></p>
-              <div className="flex items-center gap-1 mt-1 text-xs font-semibold text-indigo-600">
+              <p className="text-3xl font-extrabold text-slate-100">34.5 <span className="text-sm font-medium text-slate-400">hod</span></p>
+              <div className="flex items-center gap-1 mt-1 text-xs font-semibold text-amber-400">
                 <ArrowUpRight className="w-3.5 h-3.5" />
-                <span>Automated dispatch & quotes</span>
+                <span>Digitální stavební deník & PDF</span>
               </div>
             </div>
-            <span className="text-xs font-bold text-indigo-600 flex items-center gap-1 group-hover:translate-x-1 transition-transform">
-              Logs <ChevronRight className="w-3.5 h-3.5" />
+            <span className="text-xs font-bold text-amber-400 flex items-center gap-1 group-hover:translate-x-1 transition-transform">
+              Záznamy <ChevronRight className="w-3.5 h-3.5" />
             </span>
           </div>
         </div>
@@ -217,26 +216,26 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
             setExpandedCard(expandedCard === 'urgent' ? null : 'urgent');
             onNavigateTab('calendar');
           }}
-          className={`bg-white p-6 rounded-3xl border transition-all cursor-pointer shadow-xs hover:shadow-md group ${
-            expandedCard === 'urgent' ? 'border-amber-500 ring-2 ring-amber-500/20 shadow-lg' : 'border-slate-200 hover:border-amber-300'
+          className={`bg-slate-900 p-6 rounded-3xl border transition-all cursor-pointer shadow-md hover:shadow-lg group ${
+            expandedCard === 'urgent' ? 'border-rose-500 ring-2 ring-rose-500/20 shadow-lg' : 'border-slate-800 hover:border-slate-700'
           }`}
         >
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Urgent Jobs</span>
-            <div className="w-10 h-10 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center group-hover:scale-110 transition-transform">
+            <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Akutní zásahy</span>
+            <div className="w-10 h-10 rounded-xl bg-slate-800 border border-slate-700 text-rose-400 flex items-center justify-center group-hover:scale-110 transition-transform">
               <AlertTriangle className="w-5 h-5" />
             </div>
           </div>
           <div className="mt-4 flex items-baseline justify-between">
             <div>
-              <p className="text-3xl font-extrabold text-slate-900">2 <span className="text-sm font-medium text-slate-500">jobs</span></p>
-              <div className="flex items-center gap-1 mt-1 text-xs font-semibold text-amber-600">
-                <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span>
-                <span>Requires immediate dispatch</span>
+              <p className="text-3xl font-extrabold text-slate-100">2 <span className="text-sm font-medium text-slate-400">stavby</span></p>
+              <div className="flex items-center gap-1 mt-1 text-xs font-semibold text-rose-400">
+                <span className="w-2 h-2 rounded-full bg-rose-500 animate-pulse"></span>
+                <span>Čeká na schválení materiálu</span>
               </div>
             </div>
-            <span className="text-xs font-bold text-amber-600 flex items-center gap-1 group-hover:translate-x-1 transition-transform">
-              Dispatch <ChevronRight className="w-3.5 h-3.5" />
+            <span className="text-xs font-bold text-rose-400 flex items-center gap-1 group-hover:translate-x-1 transition-transform">
+              Dispečink <ChevronRight className="w-3.5 h-3.5" />
             </span>
           </div>
         </div>
@@ -245,30 +244,30 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
       {/* Main Grid: Needs Attention & Live Activity Feed */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Needs Attention Panel */}
-        <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-xs space-y-4">
+        <div className="bg-slate-900 p-6 rounded-3xl border border-slate-800 shadow-md space-y-4">
           <div className="flex items-center justify-between">
-            <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
-              <ShieldAlert className="w-5 h-5 text-rose-600" />
-              Needs Attention
+            <h3 className="text-base font-bold text-slate-100 flex items-center gap-2">
+              <ShieldAlert className="w-5 h-5 text-rose-400" />
+              Vyžaduje pozornost
             </h3>
-            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-rose-100 text-rose-700">3 Items</span>
+            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-rose-950/60 border border-rose-800 text-rose-400">3 položky</span>
           </div>
 
-          <p className="text-xs text-slate-500">Action items requiring your immediate intervention today:</p>
+          <p className="text-xs text-slate-400">Úkoly a zakázky vyžadující dnešní rozhodnutí vedení:</p>
 
           <div className="space-y-3">
             {/* Overdue Lead */}
             <div 
               onClick={() => onNavigateTab('leads')}
-              className="p-3.5 rounded-2xl bg-rose-50/70 border border-rose-100 hover:bg-rose-100/60 transition-all cursor-pointer space-y-1.5"
+              className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 hover:border-slate-700 transition-all cursor-pointer space-y-1.5"
             >
               <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-slate-900">Overdue Lead</span>
-                <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-rose-200 text-rose-800">3 days stale</span>
+                <span className="text-xs font-bold text-slate-200">Zpožděná nabídka</span>
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-rose-950 text-rose-400 border border-rose-800">3 dny bez reakce</span>
               </div>
-              <p className="text-[11px] text-slate-700 font-medium">Ing. Jan Svoboda — Pergola installation inquiry in {branding.city}</p>
-              <div className="flex items-center justify-between pt-1 text-[11px] text-rose-600 font-semibold">
-                <span>Action: Call customer</span>
+              <p className="text-[11px] text-slate-400 font-medium">Ing. Jan Svoboda — Rekonstrukce rodinného domu v {branding.city}</p>
+              <div className="flex items-center justify-between pt-1 text-[11px] text-amber-400 font-semibold">
+                <span>Akce: Zavolat investorovi</span>
                 <ArrowRight className="w-3.5 h-3.5" />
               </div>
             </div>
@@ -276,15 +275,15 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
             {/* Unanswered Customer */}
             <div 
               onClick={() => onNavigateTab('leads')}
-              className="p-3.5 rounded-2xl bg-amber-50/70 border border-amber-100 hover:bg-amber-100/60 transition-all cursor-pointer space-y-1.5"
+              className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 hover:border-slate-700 transition-all cursor-pointer space-y-1.5"
             >
               <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-slate-900">Unanswered Customer</span>
-                <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-amber-200 text-amber-800">Waiting 4h</span>
+                <span className="text-xs font-bold text-slate-200">Dotaz na materiál</span>
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-amber-950 text-amber-400 border border-amber-800">Čeká 4h</span>
               </div>
-              <p className="text-[11px] text-slate-700 font-medium">Marta Dvořáková sent a WhatsApp question about materials.</p>
-              <div className="flex items-center justify-between pt-1 text-[11px] text-amber-600 font-semibold">
-                <span>Action: Reply via WhatsApp</span>
+              <p className="text-[11px] text-slate-400 font-medium">Marta Dvořáková zaslala dotaz k typu dlažby na terase.</p>
+              <div className="flex items-center justify-between pt-1 text-[11px] text-amber-400 font-semibold">
+                <span>Akce: Odpovědět přes WhatsApp / SMS</span>
                 <ArrowRight className="w-3.5 h-3.5" />
               </div>
             </div>
@@ -292,15 +291,15 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
             {/* Quote Expiring */}
             <div 
               onClick={() => onNavigateTab('quotes')}
-              className="p-3.5 rounded-2xl bg-blue-50/70 border border-blue-100 hover:bg-blue-100/60 transition-all cursor-pointer space-y-1.5"
+              className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 hover:border-slate-700 transition-all cursor-pointer space-y-1.5"
             >
               <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-slate-900">Quote Expiring</span>
-                <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-blue-200 text-blue-800">Expiring in 4h</span>
+                <span className="text-xs font-bold text-slate-200">Vypršení platnosti rozpočtu</span>
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-slate-800 text-slate-300 border border-slate-700">Končí dnes</span>
               </div>
-              <p className="text-[11px] text-slate-700 font-medium">Quote Q-2026-0492 (220,000 CZK) pending client sign-off.</p>
-              <div className="flex items-center justify-between pt-1 text-[11px] text-blue-600 font-semibold">
-                <span>Action: Send reminder SMS</span>
+              <p className="text-[11px] text-slate-400 font-medium">Rozpočet POL-2026-0492 (220 000 Kč) čeká na podpis smlouvy o dílo.</p>
+              <div className="flex items-center justify-between pt-1 text-[11px] text-amber-400 font-semibold">
+                <span>Akce: Odeslat výzvu k podpisu</span>
                 <ArrowRight className="w-3.5 h-3.5" />
               </div>
             </div>
@@ -308,33 +307,33 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
         </div>
 
         {/* Live Activity Feed (Right Side) */}
-        <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-xs lg:col-span-2 space-y-4">
+        <div className="bg-slate-900 p-6 rounded-3xl border border-slate-800 shadow-md lg:col-span-2 space-y-4">
           <div className="flex items-center justify-between">
-            <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
-              <Sparkles className="w-5 h-5 text-blue-600" />
-              Live Activity Feed
+            <h3 className="text-base font-bold text-slate-100 flex items-center gap-2">
+              <Sparkles className="w-5 h-5 text-amber-400" />
+              Živý přehled ze staveb (Real-time deník)
             </h3>
-            <span className="text-xs font-semibold text-emerald-600 flex items-center gap-1 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-100">
-              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span> Live syncing
+            <span className="text-xs font-semibold text-emerald-400 flex items-center gap-1 bg-emerald-950/60 px-2.5 py-1 rounded-full border border-emerald-800">
+              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span> Live synchronizace
             </span>
           </div>
 
-          <p className="text-xs text-slate-500">Real-time telemetry and team field updates across {branding.name}:</p>
+          <p className="text-xs text-slate-400">Aktualizace ze staveb a hlášení mistrů v reálném čase ({branding.name}):</p>
 
           <div className="space-y-3">
             {[
-              { time: '09:42', text: 'Petr Novotný arrived at site (Zahradní 12, Brno)', type: 'arrival', color: 'bg-blue-50 text-blue-700' },
-              { time: '10:11', text: 'Customer Ing. Jan Svoboda uploaded 2 site photos (Before category)', type: 'photo', color: 'bg-emerald-50 text-emerald-700' },
-              { time: '11:06', text: 'Quote Q-2026-0492 accepted & digital deposit paid (220k CZK)', type: 'quote', color: 'bg-purple-50 text-purple-700' },
-              { time: '11:22', text: 'AI Auto-Assignment Engine assigned technician based on GPS proximity', type: 'ai', color: 'bg-indigo-50 text-indigo-700' },
-              { time: '11:35', text: 'Payment received: 145,000 CZK wire transfer confirmed by bank', type: 'payment', color: 'bg-emerald-50 text-emerald-700' }
+              { time: '09:42', text: 'Petr Novotný dorazil na stavbu (Zahradní 12, Brno - zahájení betonáže)', type: 'arrival', color: 'bg-slate-800 text-amber-400 border-slate-700' },
+              { time: '10:11', text: 'Investor Ing. Jan Svoboda nahrál 2 fotografie před započetím bouracích prací', type: 'photo', color: 'bg-slate-800 text-emerald-400 border-slate-700' },
+              { time: '11:06', text: 'Rozpočet POL-2026-0492 odsouhlasen & uhrazena záloha na materiál (220 tis. Kč)', type: 'quote', color: 'bg-slate-800 text-cyan-400 border-slate-700' },
+              { time: '11:22', text: 'Dispečink automaticky přiřadil partu zedníků podle dojezdové vzdálenosti', type: 'ai', color: 'bg-slate-800 text-purple-400 border-slate-700' },
+              { time: '11:35', text: 'Bankovní párování: 145 000 Kč připsáno na účet (faktura doplatku etapy 1)', type: 'payment', color: 'bg-slate-800 text-emerald-400 border-slate-700' }
             ].map((act, i) => (
-              <div key={i} className="flex items-center gap-4 p-3.5 rounded-2xl bg-slate-50/80 border border-slate-100 hover:bg-slate-100/60 transition-all">
-                <span className={`px-3 py-1 rounded-xl text-xs font-mono font-bold ${act.color} flex-shrink-0`}>
+              <div key={i} className="flex items-center gap-4 p-3.5 rounded-2xl bg-slate-950 border border-slate-800 hover:border-slate-700 transition-all">
+                <span className={`px-3 py-1 rounded-xl text-xs font-mono font-bold border ${act.color} flex-shrink-0`}>
                   {act.time}
                 </span>
-                <p className="text-xs font-medium text-slate-800 flex-1">{act.text}</p>
-                <CheckCircle2 className="w-4 h-4 text-emerald-500 flex-shrink-0" />
+                <p className="text-xs font-medium text-slate-300 flex-1">{act.text}</p>
+                <CheckCircle2 className="w-4 h-4 text-emerald-400 flex-shrink-0" />
               </div>
             ))}
           </div>
@@ -342,16 +341,16 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
       </div>
 
       {/* Floating AI Insight Card (Bottom-Right with subtle animation) */}
-      <div className="fixed bottom-6 right-6 z-40 max-w-sm bg-slate-900 border border-blue-500/40 p-4 rounded-2xl shadow-2xl text-white animate-bounce-subtle flex items-start gap-3 backdrop-blur-md bg-opacity-95">
-        <div className="w-9 h-9 rounded-xl bg-blue-600/30 border border-blue-400/30 flex items-center justify-center text-blue-400 flex-shrink-0 mt-0.5">
-          <Sparkles className="w-4 h-4 animate-spin-slow" />
+      <div className="fixed bottom-6 right-6 z-40 max-w-sm bg-slate-900 border border-amber-500/40 p-4 rounded-2xl shadow-2xl text-white flex items-start gap-3 backdrop-blur-md bg-opacity-95">
+        <div className="w-9 h-9 rounded-xl bg-amber-500/20 border border-amber-500/30 flex items-center justify-center text-amber-400 flex-shrink-0 mt-0.5">
+          <Sparkles className="w-4 h-4" />
         </div>
         <div className="space-y-1 flex-1">
           <div className="flex items-center justify-between">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-blue-400">AI Executive Insight</span>
+            <span className="text-[11px] font-bold uppercase tracking-wider text-amber-400">Asistent stavby (AI)</span>
             <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
           </div>
-          <p className="text-xs text-slate-200 font-medium leading-relaxed">
+          <p className="text-xs text-slate-300 font-medium leading-relaxed">
             {aiInsights[aiInsightIndex]}
           </p>
         </div>

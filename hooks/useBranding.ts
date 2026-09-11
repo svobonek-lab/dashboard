@@ -1,13 +1,25 @@
 import { useState, useEffect } from 'react';
 import { CompanyBranding } from '../types';
-import { getCompanyBranding, saveCompanyBranding } from '../lib/branding';
+import { getCompanyBranding, saveCompanyBranding, applyBrandTheme } from '../lib/branding';
+
+export { applyBrandTheme };
 
 export function useBranding() {
-  const [branding, setBranding] = useState<CompanyBranding>(getCompanyBranding());
+  const [branding, setBranding] = useState<CompanyBranding>(() => {
+    const initial = getCompanyBranding();
+    applyBrandTheme(initial);
+    return initial;
+  });
+
+  useEffect(() => {
+    applyBrandTheme(branding);
+  }, [branding]);
 
   useEffect(() => {
     const handleStorageChange = () => {
-      setBranding(getCompanyBranding());
+      const updated = getCompanyBranding();
+      setBranding(updated);
+      applyBrandTheme(updated);
     };
 
     window.addEventListener('brandingChanged', handleStorageChange);
@@ -19,9 +31,11 @@ export function useBranding() {
     };
   }, []);
 
-  const updateBranding = (newBranding: CompanyBranding) => {
-    saveCompanyBranding(newBranding);
-    setBranding(newBranding);
+  const updateBranding = (newBranding: Partial<CompanyBranding> | CompanyBranding) => {
+    const merged = { ...branding, ...newBranding } as CompanyBranding;
+    saveCompanyBranding(merged);
+    setBranding(merged);
+    applyBrandTheme(merged);
   };
 
   return { branding, updateBranding };

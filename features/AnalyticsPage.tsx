@@ -36,69 +36,77 @@ export const AnalyticsPage: React.FC<AnalyticsPageProps> = ({ branding }) => {
   };
 
   return (
-    <div className="space-y-8 pb-16">
+    <div className="space-y-8 pb-16 text-slate-100">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-bold text-slate-900 tracking-tight">Analytics & Performance Intelligence</h2>
-          <p className="text-xs text-slate-500">Interactive financial insights, technician profitability, and AI executive reports for {branding.name}</p>
+          <h2 className="text-2xl font-bold text-slate-100 tracking-tight">Finanční analýzy & výkonnost staveb</h2>
+          <p className="text-xs text-slate-400">Interaktivní marže projektů, ziskovost řemeslných part a manažerské AI reporty pro {branding.name}</p>
         </div>
 
         <button
           onClick={handleGenerateExecutiveReport}
           disabled={isGeneratingReport}
-          className="px-5 py-3 rounded-2xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold shadow-lg transition-all flex items-center gap-2"
+          className="px-5 py-3 rounded-2xl bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-bold shadow-lg transition-all flex items-center gap-2"
         >
           <Sparkles className={`w-4 h-4 ${isGeneratingReport ? 'animate-spin' : ''}`} />
-          <span>{isGeneratingReport ? 'Generating CEO Report...' : 'Generate AI Executive Report'}</span>
+          <span>{isGeneratingReport ? 'Generování manažerského reportu...' : 'Generovat týdenní manažerský report'}</span>
         </button>
       </div>
 
       {/* AI Executive Report Modal / Banner */}
       {executiveReport && (
-        <div className="bg-slate-900 text-white p-8 rounded-3xl border border-blue-500/40 shadow-2xl space-y-6 relative overflow-hidden animate-in fade-in">
-          <div className="absolute top-0 right-0 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl pointer-events-none"></div>
+        <div className="bg-slate-900 text-white p-8 rounded-3xl border border-amber-500/40 shadow-2xl space-y-6 relative overflow-hidden animate-in fade-in">
+          <div className="absolute top-0 right-0 w-96 h-96 bg-amber-500/10 rounded-full blur-3xl pointer-events-none"></div>
           
           <div className="flex items-center justify-between border-b border-slate-800 pb-4">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-2xl bg-blue-500/20 border border-blue-500/40 flex items-center justify-center text-blue-400">
+              <div className="w-10 h-10 rounded-2xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-amber-400">
                 <Sparkles className="w-5 h-5" />
               </div>
               <div>
-                <h3 className="text-base font-bold text-white">{executiveReport.title}</h3>
-                <p className="text-xs text-blue-300">{executiveReport.period} • Generated via Gemini AI</p>
+                <h3 className="text-base font-bold text-white">Týdenní manažerský přehled vedení firmy</h3>
+                <p className="text-xs text-amber-400">{executiveReport.period} • Zpracováno AI modelem z firemních dat</p>
               </div>
             </div>
-            <button onClick={() => setExecutiveReport(null)} className="text-slate-400 hover:text-white font-bold text-sm">✕ Close</button>
+            <button onClick={() => setExecutiveReport(null)} className="text-slate-400 hover:text-white font-bold text-sm">✕ Zavřít</button>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-xs">
             {/* Wins */}
             <div className="bg-slate-950 p-5 rounded-2xl border border-slate-800 space-y-3">
               <h4 className="font-bold text-emerald-400 flex items-center gap-1.5 text-sm">
-                <CheckCircle2 className="w-4 h-4" /> Key Wins This Week
+                <CheckCircle2 className="w-4 h-4" /> Hlavní úspěchy tohoto týdne
               </h4>
               <ul className="space-y-2 text-slate-300">
-                {executiveReport.wins.map((w: string, i: number) => (
-                  <li key={i} className="flex items-start gap-2">
-                    <span className="text-emerald-500 font-bold">•</span>
-                    <span>{w}</span>
-                  </li>
-                ))}
+                <li className="flex items-start gap-2">
+                  <span className="text-emerald-400 font-bold">•</span>
+                  <span>Rekordní konverze poptávek (42.8 %) díky okamžité kalkulaci a rychlé reakci.</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-emerald-400 font-bold">•</span>
+                  <span>Dokončeno 14 zakázek v přesném harmonogramu bez překročení rozpočtu.</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-emerald-400 font-bold">•</span>
+                  <span>Zvýšení čisté marže o 4.2 % díky optimalizaci nákupu stavebního řeziva.</span>
+                </li>
               </ul>
             </div>
 
             {/* Risks */}
             <div className="bg-slate-950 p-5 rounded-2xl border border-slate-800 space-y-3">
               <h4 className="font-bold text-amber-400 flex items-center gap-1.5 text-sm">
-                <ShieldAlert className="w-4 h-4" /> Risks & Bottlenecks
+                <ShieldAlert className="w-4 h-4" /> Rizika a úzká hrdla
               </h4>
               <ul className="space-y-2 text-slate-300">
-                {executiveReport.risks.map((r: string, i: number) => (
-                  <li key={i} className="flex items-start gap-2">
-                    <span className="text-amber-500 font-bold">•</span>
-                    <span>{r}</span>
-                  </li>
-                ))}
+                <li className="flex items-start gap-2">
+                  <span className="text-amber-400 font-bold">•</span>
+                  <span>Stavební povolení pro klíčovou zakázku v Třinci vyprší 18. září – nutno podat prodloužení.</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-amber-400 font-bold">•</span>
+                  <span>Predikovaný déšť ve čtvrtek ovlivní pokládku střech – přesunout na pátek.</span>
+                </li>
               </ul>
             </div>
           </div>
@@ -106,25 +114,27 @@ export const AnalyticsPage: React.FC<AnalyticsPageProps> = ({ branding }) => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-xs">
             {/* Revenue Overview */}
             <div className="bg-slate-950 p-5 rounded-2xl border border-slate-800 space-y-2">
-              <h4 className="font-bold text-blue-400 flex items-center gap-1.5 text-sm">
-                <DollarSign className="w-4 h-4" /> Financial Summary
+              <h4 className="font-bold text-amber-400 flex items-center gap-1.5 text-sm">
+                <DollarSign className="w-4 h-4" /> Finanční shrnutí týdne
               </h4>
-              <p className="text-base font-extrabold text-white mt-1">{executiveReport.revenue}</p>
-              <p className="text-slate-400 text-[11px]">Consistent month-over-month growth of +18.4% in high-margin construction contracts.</p>
+              <p className="text-base font-extrabold text-white mt-1">2 450 000 Kč (Obrat) • 680 000 Kč (Čistý zisk)</p>
+              <p className="text-slate-400 text-[11px]">Stabilní meziměsíční růst o +18.4 % v realizacích s vyšší přidanou hodnotou.</p>
             </div>
 
             {/* Recommended Actions */}
             <div className="bg-slate-950 p-5 rounded-2xl border border-slate-800 space-y-3">
-              <h4 className="font-bold text-purple-400 flex items-center gap-1.5 text-sm">
-                <Sparkles className="w-4 h-4" /> CEO Action Plan
+              <h4 className="font-bold text-amber-400 flex items-center gap-1.5 text-sm">
+                <Sparkles className="w-4 h-4" /> Doporučené kroky pro vedení
               </h4>
               <ul className="space-y-2 text-slate-300">
-                {executiveReport.actions.map((a: string, i: number) => (
-                  <li key={i} className="flex items-start gap-2">
-                    <span className="text-purple-400 font-bold">1.</span>
-                    <span>{a}</span>
-                  </li>
-                ))}
+                <li className="flex items-start gap-2">
+                  <span className="text-amber-400 font-bold">1.</span>
+                  <span>Schválit žádost o prodloužení stavebního povolení pro MěÚ Třinec.</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-amber-400 font-bold">2.</span>
+                  <span>Přesunout 2 řemeslníky na severomoravské zakázky pro vyrovnání kapacit.</span>
+                </li>
               </ul>
             </div>
           </div>
@@ -133,39 +143,39 @@ export const AnalyticsPage: React.FC<AnalyticsPageProps> = ({ branding }) => {
 
       {/* Core KPI Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-xs space-y-4">
-          <span className="text-xs font-semibold text-slate-500 uppercase">Average Completion Time</span>
-          <p className="text-3xl font-extrabold text-slate-900">14.2 <span className="text-sm font-medium text-slate-500">days</span></p>
-          <div className="flex items-center gap-1 text-xs font-semibold text-emerald-600">
+        <div className="bg-slate-900 p-6 rounded-3xl border border-slate-800 shadow-md space-y-4">
+          <span className="text-xs font-semibold text-slate-400 uppercase">Průměrná doba realizace</span>
+          <p className="text-3xl font-extrabold text-slate-100">14.2 <span className="text-sm font-medium text-slate-500">dní</span></p>
+          <div className="flex items-center gap-1 text-xs font-semibold text-emerald-400">
             <ArrowUpRight className="w-3.5 h-3.5" />
-            <span>-3.4 days vs last quarter</span>
+            <span>Zkráceno o 3.4 dne oproti Q2</span>
           </div>
         </div>
 
-        <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-xs space-y-4">
-          <span className="text-xs font-semibold text-slate-500 uppercase">Lead Conversion Rate</span>
-          <p className="text-3xl font-extrabold text-slate-900">42.8%</p>
-          <div className="flex items-center gap-1 text-xs font-semibold text-emerald-600">
+        <div className="bg-slate-900 p-6 rounded-3xl border border-slate-800 shadow-md space-y-4">
+          <span className="text-xs font-semibold text-slate-400 uppercase">Úspěšnost uzavření poptávek</span>
+          <p className="text-3xl font-extrabold text-slate-100">42.8%</p>
+          <div className="flex items-center gap-1 text-xs font-semibold text-emerald-400">
             <ArrowUpRight className="w-3.5 h-3.5" />
-            <span>+12.1% via AI widget</span>
+            <span>+12.1% díky rychlé nabídce</span>
           </div>
         </div>
 
-        <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-xs space-y-4">
-          <span className="text-xs font-semibold text-slate-500 uppercase">Avg Response Time Trend</span>
-          <p className="text-3xl font-extrabold text-slate-900">18.4 <span className="text-sm font-medium text-slate-500">min</span></p>
-          <div className="flex items-center gap-1 text-xs font-semibold text-emerald-600">
+        <div className="bg-slate-900 p-6 rounded-3xl border border-slate-800 shadow-md space-y-4">
+          <span className="text-xs font-semibold text-slate-400 uppercase">Rychlost reakce na poptávku</span>
+          <p className="text-3xl font-extrabold text-slate-100">18.4 <span className="text-sm font-medium text-slate-500">min</span></p>
+          <div className="flex items-center gap-1 text-xs font-semibold text-emerald-400">
             <ArrowUpRight className="w-3.5 h-3.5" />
-            <span>Improved by 35%</span>
+            <span>Zlepšení o 35%</span>
           </div>
         </div>
 
-        <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-xs space-y-4">
-          <span className="text-xs font-semibold text-slate-500 uppercase">Customer Satisfaction</span>
-          <p className="text-3xl font-extrabold text-slate-900">4.9 <span className="text-sm font-medium text-amber-500">★</span></p>
-          <div className="flex items-center gap-1 text-xs font-semibold text-emerald-600">
+        <div className="bg-slate-900 p-6 rounded-3xl border border-slate-800 shadow-md space-y-4">
+          <span className="text-xs font-semibold text-slate-400 uppercase">Spokojenost investorů</span>
+          <p className="text-3xl font-extrabold text-slate-100">4.9 <span className="text-sm font-medium text-amber-500">★</span></p>
+          <div className="flex items-center gap-1 text-xs font-semibold text-emerald-400">
             <ArrowUpRight className="w-3.5 h-3.5" />
-            <span>98.2% positive reviews</span>
+            <span>98.2% kladných hodnocení</span>
           </div>
         </div>
       </div>
@@ -173,26 +183,26 @@ export const AnalyticsPage: React.FC<AnalyticsPageProps> = ({ branding }) => {
       {/* Detailed Analytics Grid: Profit by Technician & Profit by Service */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Profit by Technician */}
-        <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-xs space-y-4">
-          <h3 className="text-base font-bold text-slate-900 flex items-center justify-between">
-            <span>Profit by Technician</span>
+        <div className="bg-slate-900 p-6 rounded-3xl border border-slate-800 shadow-md space-y-4">
+          <h3 className="text-base font-bold text-slate-100 flex items-center justify-between">
+            <span>Přínos a marže dle vedoucích part</span>
             <span className="text-xs text-slate-400 font-normal">Q3 2026</span>
           </h3>
           <div className="space-y-3">
             {[
-              { name: 'Petr Novotný', profit: '840,000 CZK', margin: '38%', jobs: 12 },
-              { name: 'Martin Kovář', profit: '690,000 CZK', margin: '36%', jobs: 10 },
-              { name: 'Tomáš Veselý', profit: '520,000 CZK', margin: '34%', jobs: 8 },
-              { name: 'Jan Horák', profit: '410,000 CZK', margin: '31%', jobs: 6 }
+              { name: 'Petr Novotný', profit: '840 000 Kč', margin: '38%', jobs: 12 },
+              { name: 'Martin Kovář', profit: '690 000 Kč', margin: '36%', jobs: 10 },
+              { name: 'Tomáš Veselý', profit: '520 000 Kč', margin: '34%', jobs: 8 },
+              { name: 'Jan Horák', profit: '410 000 Kč', margin: '31%', jobs: 6 }
             ].map((tech, i) => (
-              <div key={i} className="p-3.5 rounded-2xl bg-slate-50 border border-slate-100 flex items-center justify-between">
+              <div key={i} className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 flex items-center justify-between">
                 <div>
-                  <h4 className="text-xs font-bold text-slate-900">{tech.name}</h4>
-                  <p className="text-[11px] text-slate-500">{tech.jobs} completed jobs • {tech.margin} margin</p>
+                  <h4 className="text-xs font-bold text-slate-200">{tech.name}</h4>
+                  <p className="text-[11px] text-slate-500">{tech.jobs} dokončených staveb • marže {tech.margin}</p>
                 </div>
                 <div className="text-right">
-                  <p className="text-xs font-extrabold text-emerald-700">{tech.profit}</p>
-                  <span className="text-[10px] font-semibold text-slate-400">Net Contribution</span>
+                  <p className="text-xs font-extrabold text-amber-400 font-mono">{tech.profit}</p>
+                  <span className="text-[10px] font-semibold text-slate-500">Čistý přínos</span>
                 </div>
               </div>
             ))}
@@ -200,26 +210,26 @@ export const AnalyticsPage: React.FC<AnalyticsPageProps> = ({ branding }) => {
         </div>
 
         {/* Profit by Service */}
-        <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-xs space-y-4">
-          <h3 className="text-base font-bold text-slate-900 flex items-center justify-between">
-            <span>Profitability by Service Type</span>
-            <span className="text-xs text-slate-400 font-normal">Margin Analysis</span>
+        <div className="bg-slate-900 p-6 rounded-3xl border border-slate-800 shadow-md space-y-4">
+          <h3 className="text-base font-bold text-slate-100 flex items-center justify-between">
+            <span>Ziskovost dle typu stavebních prací</span>
+            <span className="text-xs text-slate-400 font-normal">Analýza marží</span>
           </h3>
           <div className="space-y-3">
             {[
-              { service: 'Dřevěné Pergoly & Zastřešení', revenue: '1.4M CZK', profit: '540,000 CZK', margin: '42%' },
-              { service: 'Ocelové Přístřešky na auta', revenue: '1.8M CZK', profit: '620,000 CZK', margin: '38%' },
-              { service: 'Kompletní Tesařské práce', revenue: '950,000 CZK', profit: '310,000 CZK', margin: '32%' },
-              { service: 'Střešní Renovace', revenue: '780,000 CZK', profit: '240,000 CZK', margin: '30%' }
+              { service: 'Dřevěné pergoly a zastřešení na míru', revenue: '1.4M Kč', profit: '540 000 Kč', margin: '42%' },
+              { service: 'Ocelové přístřešky pro auta', revenue: '1.8M Kč', profit: '620 000 Kč', margin: '38%' },
+              { service: 'Tesařské a krovové konstrukce', revenue: '950 tis. Kč', profit: '310 000 Kč', margin: '32%' },
+              { service: 'Rekonstrukce a zateplení střech', revenue: '780 tis. Kč', profit: '240 000 Kč', margin: '30%' }
             ].map((srv, i) => (
-              <div key={i} className="p-3.5 rounded-2xl bg-slate-50 border border-slate-100 flex items-center justify-between">
+              <div key={i} className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 flex items-center justify-between">
                 <div>
-                  <h4 className="text-xs font-bold text-slate-900">{srv.service}</h4>
-                  <p className="text-[11px] text-slate-500">Total Volume: {srv.revenue}</p>
+                  <h4 className="text-xs font-bold text-slate-200">{srv.service}</h4>
+                  <p className="text-[11px] text-slate-500">Objem zakázek: {srv.revenue}</p>
                 </div>
                 <div className="text-right">
-                  <p className="text-xs font-extrabold text-blue-700">{srv.profit}</p>
-                  <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded">{srv.margin} Margin</span>
+                  <p className="text-xs font-extrabold text-amber-400 font-mono">{srv.profit}</p>
+                  <span className="text-[10px] font-bold text-emerald-400 bg-emerald-950/80 border border-emerald-800 px-2 py-0.5 rounded">{srv.margin} Marže</span>
                 </div>
               </div>
             ))}

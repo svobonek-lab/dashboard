@@ -28,6 +28,7 @@ import { EmbedWidgetPage } from '@/features/EmbedWidgetPage';
 import { InstallStudio } from '@/features/InstallStudio';
 import { AdminPanel } from '@/features/AdminPanel';
 import { WidgetIframePage } from '@/features/WidgetIframePage';
+import { ConstructionDashboard } from '@/components/ConstructionDashboard';
 
 import { Lead, WebsiteAudit, LeadStatus, CRMNotification, CompanyBranding } from '@/types';
 import { Download, X, Check, FileArchive } from 'lucide-react';
@@ -122,12 +123,12 @@ export default function App() {
   }, [currentOrg]);
 
 
-  const [currentTab, setCurrentTab] = useState('dashboard');
+  const [currentTab, setCurrentTab] = useState('construction');
   const [activeRole, setActiveRole] = useState<'owner' | 'employee'>('owner');
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
 
   // Flow states
-  const [showAudit, setShowAudit] = useState(true);
+  const [showAudit, setShowAudit] = useState(false);
   const [isDemoModalOpen, setIsDemoModalOpen] = useState(false);
   const [isOnboardingOpen, setIsOnboardingOpen] = useState(false);
   const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
@@ -263,6 +264,72 @@ export default function App() {
     handleUpdateLead(updated);
   };
 
+  const handleCreateLeadFromVoice = async (parsed: any) => {
+    const newLead: Lead = {
+      id: 'lead-' + Date.now(),
+      title: `${parsed.projectType} - ${parsed.customerName}`,
+      description: parsed.notes,
+      city: branding.city || 'Praha',
+      address: `Na Stavbě 14, ${branding.city || 'Praha'}`,
+      customerName: parsed.customerName,
+      customerPhone: parsed.phone,
+      customerEmail: 'klient@email.cz',
+      preferredDate: new Date(Date.now() + 7 * 86400000).toISOString().substring(0, 10),
+      price: parsed.budget,
+      status: 'New' as any,
+      priority: 'High' as any,
+      assignedEmployeeId: employees[0]?.id || 'emp-1',
+      assignedEmployeeName: employees[0]?.name || 'Petr Novotný',
+      thumbnail: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=600&q=80',
+      photos: [],
+      files: [],
+      checklist: (parsed.checklist || []).map((text: string, i: number) => ({
+        id: `chk-${Date.now()}-${i}`,
+        text,
+        completed: false
+      })),
+      aiSummary: {
+        jobType: parsed.projectType,
+        complexity: 'Medium' as any,
+        estimatedRange: `${(parsed.budget * 0.9).toLocaleString()} - ${(parsed.budget * 1.1).toLocaleString()} CZK`,
+        assignedEmployee: employees[0]?.name || 'Petr Novotný',
+        risks: ['Ověřit stavební připravenost a statiku'],
+        recommendedNextStep: 'Zkontaktovat zákazníka a potvrdit zaměření.'
+      },
+      timeline: [{
+        id: 't-1',
+        title: 'Zakázka vytvořena z hlasového diktátu AI',
+        status: 'Completed',
+        timestamp: 'Právě teď'
+      }],
+      aiChat: [],
+      history: [],
+      voiceNotes: [{
+        id: 'vn-' + Date.now(),
+        duration: '0:24',
+        timestamp: new Date().toISOString().replace('T', ' ').substring(0, 16),
+        transcript: parsed.notes
+      }]
+    };
+
+    setLeads(prev => [newLead, ...prev]);
+    try {
+      await saveLead(newLead);
+    } catch (e) {
+      console.error('Failed to save voice lead to database', e);
+    }
+
+    const notif: CRMNotification = {
+      id: 'notif-' + Date.now(),
+      title: 'Nová zakázka z hlasového diktátu',
+      message: `${newLead.title} zařazena do fáze "Nový" na Kanbanu (${newLead.price.toLocaleString()} Kč).`,
+      timestamp: 'Právě teď',
+      read: false,
+      type: 'lead'
+    };
+    setNotifications(prev => [notif, ...prev]);
+  };
+
   const handleMarkAllRead = () => {
     setNotifications(notifications.map(n => ({ ...n, read: true })));
   };
@@ -356,7 +423,7 @@ export default function App() {
   }
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] text-slate-900 flex font-sans">
+    <div className="min-h-screen bg-slate-950 text-slate-100 flex font-sans">
       {/* 280px Sidebar */}
       <Sidebar
         currentTab={currentTab}
@@ -371,7 +438,7 @@ export default function App() {
       />
 
       {/* Main Content Area */}
-      <div className="flex-1 ml-72 flex flex-col min-h-screen">
+      <div className="flex-1 ml-72 flex flex-col min-h-screen bg-slate-950">
         {/* Impersonation Alert Banner */}
         {impersonatingOrgId && (
           <div className="bg-amber-500 text-white px-6 py-3.5 flex items-center justify-between text-xs font-bold shadow-md select-none shrink-0 border-b border-amber-600 animate-pulse">
@@ -403,8 +470,10 @@ export default function App() {
           onOpenCommandPalette={() => setIsCommandPaletteOpen(true)}
         />
 
-        <main className="flex-1 p-8 max-w-7xl w-full mx-auto">
-          {activeRole === 'employee' ? (
+        <main className={`flex-1 ${currentTab === 'construction' ? 'p-0 bg-slate-950 text-slate-100' : 'p-8 max-w-7xl w-full mx-auto text-slate-100'}`}>
+          {currentTab === 'construction' ? (
+            <ConstructionDashboard onBackToMain={() => setCurrentTab('dashboard')} />
+          ) : activeRole === 'employee' ? (
             <EmployeeDashboard
               leads={leads}
               branding={branding}
@@ -493,7 +562,7 @@ export default function App() {
                         id: 'notif-' + Date.now(),
                         title: `Nová poptávka: ${newInquiry.fullName}`,
                         message: `${newInquiry.projectType} (${(priceValue / 1000).toFixed(0)}k CZK) • Přiřazen Petr Novotný`,
-                        time: 'Právě teď',
+                        timestamp: 'Právě teď',
                         read: false,
                         type: 'lead'
                       },
@@ -562,7 +631,7 @@ export default function App() {
                         id: 'notif-' + Date.now(),
                         title: `Nová poptávka z webu: ${newInquiry.fullName}`,
                         message: `${newInquiry.projectType} (${(priceValue / 1000).toFixed(0)}k CZK) • SMS a e-mail potvrzeny`,
-                        time: 'Právě teď',
+                        timestamp: 'Právě teď',
                         read: false,
                         type: 'lead'
                       },
@@ -623,35 +692,35 @@ export default function App() {
                 <div className="space-y-6 max-w-3xl">
                   <div className="flex items-center justify-between">
                     <div>
-                      <h2 className="text-2xl font-bold text-slate-900">Branding & System Settings</h2>
-                      <p className="text-xs text-slate-500">Správa identity systému a možnosti exportu projektu.</p>
+                      <h2 className="text-2xl font-bold text-slate-100">Branding & System Settings</h2>
+                      <p className="text-xs text-slate-400">Správa identity systému a možnosti exportu projektu.</p>
                     </div>
                     <button
                       onClick={() => setIsExportZipModalOpen(true)}
-                      className="px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold flex items-center gap-2 shadow-sm transition-all"
+                      className="px-4 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-bold flex items-center gap-2 shadow-sm transition-all"
                     >
                       <Download className="w-4 h-4" />
                       <span>Exportovat projekt (ZIP)</span>
                     </button>
                   </div>
 
-                  <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-xs space-y-4">
+                  <div className="bg-slate-900 p-6 rounded-3xl border border-slate-800 shadow-xl space-y-4">
                     <div>
-                      <label className="text-xs font-semibold text-slate-700">Company Name</label>
-                      <input type="text" readOnly value={branding.name} className="w-full mt-1 bg-slate-50 border border-slate-200 rounded-xl p-3 text-sm font-semibold" />
+                      <label className="text-xs font-semibold text-slate-300">Company Name</label>
+                      <input type="text" readOnly value={branding.name} className="w-full mt-1 bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm font-semibold text-slate-100" />
                     </div>
                     <div>
-                      <label className="text-xs font-semibold text-slate-700">Primary Branding Color</label>
+                      <label className="text-xs font-semibold text-slate-300">Primary Branding Color</label>
                       <div className="flex items-center gap-3 mt-1">
-                        <input type="color" value={branding.primaryColor} disabled className="w-12 h-10 rounded-xl border border-slate-200 cursor-pointer" />
-                        <span className="font-mono text-xs">{branding.primaryColor}</span>
+                        <input type="color" value={branding.primaryColor} disabled className="w-12 h-10 rounded-xl border border-slate-800 cursor-pointer bg-slate-950" />
+                        <span className="font-mono text-xs text-slate-300">{branding.primaryColor}</span>
                       </div>
                     </div>
                     <div>
-                      <label className="text-xs font-semibold text-slate-700">Services</label>
+                      <label className="text-xs font-semibold text-slate-300">Services</label>
                       <div className="flex flex-wrap gap-2 mt-1">
                         {(branding?.services || []).map((s: string, i: number) => (
-                          <span key={i} className="px-3 py-1 bg-slate-100 rounded-lg text-xs font-medium text-slate-700">{s}</span>
+                          <span key={i} className="px-3 py-1 bg-slate-800 border border-slate-700/60 rounded-lg text-xs font-medium text-slate-200">{s}</span>
                         ))}
                       </div>
                     </div>
@@ -744,6 +813,8 @@ export default function App() {
         isOpen={isVoiceModalOpen}
         onClose={() => setIsVoiceModalOpen(false)}
         onSaveNote={handleSaveVoiceNote}
+        onCreateLeadFromVoice={handleCreateLeadFromVoice}
+        hasActiveLead={!!selectedLead}
       />
 
       {/* Export Project ZIP Modal */}

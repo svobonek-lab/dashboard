@@ -463,38 +463,38 @@ export const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({
 
       {/* Today's Jobs Header */}
       <div className="flex items-center justify-between">
-        <h3 className="text-lg font-bold text-slate-900">Dnešní přiřazené zakázky (2)</h3>
-        <span className="text-xs font-semibold text-slate-500">10. září 2026</span>
+        <h3 className="text-lg font-bold text-slate-100">Dnešní přiřazené zakázky (2)</h3>
+        <span className="text-xs font-semibold text-slate-400">10. září 2026</span>
       </div>
 
       {/* Large Active Job Card */}
       {activeLead && (
-        <div className="bg-white rounded-3xl border border-slate-200 shadow-lg overflow-hidden space-y-6 p-6">
+        <div className="bg-slate-900 rounded-3xl border border-slate-800 shadow-xl overflow-hidden space-y-6 p-6">
           <div className="flex items-start justify-between gap-4">
             <div>
-              <span className="inline-block px-3 py-1 rounded-full text-[11px] font-bold bg-blue-100 text-blue-700 mb-2">
+              <span className="inline-block px-3 py-1 rounded-full text-[11px] font-bold bg-amber-500/20 text-amber-400 border border-amber-500/30 mb-2">
                 Aktivní zakázka #1
               </span>
-              <h4 className="text-xl font-extrabold text-slate-900">{activeLead.title}</h4>
-              <p className="text-xs text-slate-500 mt-1 flex items-center gap-1.5">
-                <MapPin className="w-3.5 h-3.5 text-slate-400" /> {activeLead.address}
+              <h4 className="text-xl font-extrabold text-slate-100">{activeLead.title}</h4>
+              <p className="text-xs text-slate-400 mt-1 flex items-center gap-1.5">
+                <MapPin className="w-3.5 h-3.5 text-amber-400" /> {activeLead.address}
               </p>
             </div>
-            <img src={activeLead.thumbnail} alt="" className="w-20 h-20 rounded-2xl object-cover flex-shrink-0 shadow-sm" />
+            <img src={activeLead.thumbnail} alt="" className="w-20 h-20 rounded-2xl object-cover flex-shrink-0 border border-slate-800 shadow-md" />
           </div>
 
           {/* Contact & Navigation Buttons */}
           <div className="grid grid-cols-2 gap-3 pt-2">
             <a
               href={`tel:${activeLead.customerPhone}`}
-              className="p-4 rounded-2xl bg-slate-50 border border-slate-200 hover:bg-slate-100 transition-all flex items-center gap-3 text-xs font-semibold text-slate-800"
+              className="p-4 rounded-2xl bg-slate-950 border border-slate-800 hover:border-slate-700 transition-all flex items-center gap-3 text-xs font-semibold text-slate-200"
             >
-              <div className="w-10 h-10 rounded-xl bg-emerald-100 text-emerald-600 flex items-center justify-center">
+              <div className="w-10 h-10 rounded-xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 flex items-center justify-center">
                 <Phone className="w-5 h-5" />
               </div>
               <div>
-                <p className="text-[10px] text-slate-500 font-normal">Zavolat zákazníkovi</p>
-                <p className="truncate text-sm">{activeLead.customerName}</p>
+                <p className="text-[10px] text-slate-400 font-normal">Zavolat zákazníkovi</p>
+                <p className="truncate text-sm font-bold text-slate-100">{activeLead.customerName}</p>
               </div>
             </a>
 
@@ -502,28 +502,28 @@ export const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({
               href={`https://maps.google.com/?q=${encodeURIComponent(activeLead.address)}`}
               target="_blank"
               rel="noreferrer"
-              className="p-4 rounded-2xl bg-slate-50 border border-slate-200 hover:bg-slate-100 transition-all flex items-center gap-3 text-xs font-semibold text-slate-800"
+              className="p-4 rounded-2xl bg-slate-950 border border-slate-800 hover:border-slate-700 transition-all flex items-center gap-3 text-xs font-semibold text-slate-200"
             >
-              <div className="w-10 h-10 rounded-xl bg-blue-100 text-blue-600 flex items-center justify-center">
+              <div className="w-10 h-10 rounded-xl bg-amber-500/20 text-amber-400 border border-amber-500/30 flex items-center justify-center">
                 <Navigation className="w-5 h-5" />
               </div>
               <div>
-                <p className="text-[10px] text-slate-500 font-normal">Navigovat</p>
-                <p className="text-sm">Google Maps</p>
+                <p className="text-[10px] text-slate-400 font-normal">Navigovat na stavbu</p>
+                <p className="text-sm font-bold text-slate-100">Google Maps</p>
               </div>
             </a>
           </div>
 
           {/* Status Buttons */}
           <div className="space-y-2 pt-2">
-            <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Stav v terénu</label>
+            <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Stav v terénu</label>
             <div className="grid grid-cols-3 gap-2">
               <button
                 onClick={() => setActiveJobStatus('Driving')}
-                className={`py-4 rounded-2xl text-xs font-bold transition-all flex flex-col items-center justify-center gap-1.5 ${
+                className={`py-4 rounded-2xl text-xs font-bold transition-all flex flex-col items-center justify-center gap-1.5 border ${
                   activeJobStatus === 'Driving'
-                    ? 'bg-blue-600 text-white shadow-md'
-                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                    ? 'bg-blue-600 text-white border-blue-500 shadow-md'
+                    : 'bg-slate-950 text-slate-400 border-slate-800 hover:bg-slate-800 hover:text-slate-200'
                 }`}
               >
                 <Car className="w-5 h-5" />
@@ -531,10 +531,10 @@ export const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({
               </button>
               <button
                 onClick={() => setActiveJobStatus('Arrived')}
-                className={`py-4 rounded-2xl text-xs font-bold transition-all flex flex-col items-center justify-center gap-1.5 ${
+                className={`py-4 rounded-2xl text-xs font-bold transition-all flex flex-col items-center justify-center gap-1.5 border ${
                   activeJobStatus === 'Arrived'
-                    ? 'bg-amber-600 text-white shadow-md'
-                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                    ? 'bg-amber-500 text-slate-950 border-amber-400 shadow-md'
+                    : 'bg-slate-950 text-slate-400 border-slate-800 hover:bg-slate-800 hover:text-slate-200'
                 }`}
               >
                 <MapPin className="w-5 h-5" />
@@ -542,10 +542,10 @@ export const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({
               </button>
               <button
                 onClick={() => setActiveJobStatus('Finished')}
-                className={`py-4 rounded-2xl text-xs font-bold transition-all flex flex-col items-center justify-center gap-1.5 ${
+                className={`py-4 rounded-2xl text-xs font-bold transition-all flex flex-col items-center justify-center gap-1.5 border ${
                   activeJobStatus === 'Finished'
-                    ? 'bg-emerald-600 text-white shadow-md'
-                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                    ? 'bg-emerald-600 text-white border-emerald-500 shadow-md'
+                    : 'bg-slate-950 text-slate-400 border-slate-800 hover:bg-slate-800 hover:text-slate-200'
                 }`}
               >
                 <CheckCircle className="w-5 h-5" />
@@ -555,13 +555,13 @@ export const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({
           </div>
 
           {/* Before During After Chronological Photo Timeline */}
-          <div className="space-y-3 pt-4 border-t border-slate-100">
+          <div className="space-y-3 pt-4 border-t border-slate-800">
             <div className="flex items-center justify-between">
-              <h5 className="text-xs font-bold uppercase tracking-wider text-slate-700">Fotodokumentace (Před / Během / Po)</h5>
+              <h5 className="text-xs font-bold uppercase tracking-wider text-slate-300">Fotodokumentace (Před / Během / Po)</h5>
               <div className="flex gap-1">
-                <button onClick={() => handleAddPhoto('Before')} className="px-2 py-1 bg-blue-50 text-blue-700 hover:bg-blue-100 rounded-lg text-[10px] font-bold">+ Před</button>
-                <button onClick={() => handleAddPhoto('During')} className="px-2 py-1 bg-amber-50 text-amber-700 hover:bg-amber-100 rounded-lg text-[10px] font-bold">+ Během</button>
-                <button onClick={() => handleAddPhoto('After')} className="px-2 py-1 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 rounded-lg text-[10px] font-bold">+ Po</button>
+                <button onClick={() => handleAddPhoto('Before')} className="px-2 py-1 bg-blue-950 text-blue-400 border border-blue-800/80 hover:bg-blue-900 rounded-lg text-[10px] font-bold">+ Před</button>
+                <button onClick={() => handleAddPhoto('During')} className="px-2 py-1 bg-amber-950 text-amber-400 border border-amber-800/80 hover:bg-amber-900 rounded-lg text-[10px] font-bold">+ Během</button>
+                <button onClick={() => handleAddPhoto('After')} className="px-2 py-1 bg-emerald-950 text-emerald-400 border border-emerald-800/80 hover:bg-emerald-900 rounded-lg text-[10px] font-bold">+ Po</button>
               </div>
             </div>
 
@@ -569,24 +569,24 @@ export const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({
               {['Before', 'During', 'After'].map((stageName) => {
                 const stagePhotos = timelinePhotos.filter(p => p.stage === stageName);
                 return (
-                  <div key={stageName} className="bg-slate-50 p-3 rounded-2xl border border-slate-200 space-y-2">
-                    <span className={`text-[10px] font-extrabold uppercase px-2 py-0.5 rounded block text-center ${
-                      stageName === 'Before' ? 'bg-blue-100 text-blue-700' :
-                      stageName === 'During' ? 'bg-amber-100 text-amber-700' : 'bg-emerald-100 text-emerald-700'
+                  <div key={stageName} className="bg-slate-950 p-3 rounded-2xl border border-slate-800 space-y-2">
+                    <span className={`text-[10px] font-extrabold uppercase px-2 py-0.5 rounded block text-center border ${
+                      stageName === 'Before' ? 'bg-blue-950/80 border-blue-800 text-blue-400' :
+                      stageName === 'During' ? 'bg-amber-950/80 border-amber-800 text-amber-400' : 'bg-emerald-950/80 border-emerald-800 text-emerald-400'
                     }`}>
                       {stageName === 'Before' ? 'Před montáží' : stageName === 'During' ? 'V průběhu' : 'Hotové dílo'}
                     </span>
                     {stagePhotos.length > 0 ? (
                       <div className="space-y-2">
                         {stagePhotos.map(p => (
-                          <div key={p.id} className="relative group">
-                            <img src={p.url} alt={stageName} className="w-full h-24 object-cover rounded-xl shadow-xs" />
-                            <span className="absolute bottom-1 right-1 px-1.5 py-0.5 rounded bg-black/70 text-[9px] text-white">{p.time}</span>
+                          <div key={p.id} className="relative group rounded-xl overflow-hidden border border-slate-800">
+                            <img src={p.url} alt={stageName} className="w-full h-24 object-cover" />
+                            <span className="absolute bottom-1 right-1 px-1.5 py-0.5 rounded bg-slate-950/80 text-[9px] text-slate-200 border border-slate-800">{p.time}</span>
                           </div>
                         ))}
                       </div>
                     ) : (
-                      <div className="h-24 flex items-center justify-center text-[10px] text-slate-400 border border-dashed border-slate-200 rounded-xl">
+                      <div className="h-24 flex items-center justify-center text-[10px] text-slate-600 border border-dashed border-slate-800 rounded-xl">
                         Žádné foto
                       </div>
                     )}
@@ -597,27 +597,27 @@ export const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({
           </div>
 
           {/* Voice Notes with Speech-to-Text */}
-          <div className="space-y-3 pt-4 border-t border-slate-100">
+          <div className="space-y-3 pt-4 border-t border-slate-800">
             <div className="flex items-center justify-between">
-              <h5 className="text-xs font-bold uppercase tracking-wider text-slate-700 flex items-center gap-1">
-                <Mic className="w-3.5 h-3.5 text-rose-600" /> Hlasové poznámky technika (Speech-to-Text)
+              <h5 className="text-xs font-bold uppercase tracking-wider text-slate-300 flex items-center gap-1">
+                <Mic className="w-3.5 h-3.5 text-rose-400" /> Hlasové poznámky technika (Speech-to-Text)
               </h5>
               <button
                 onClick={handleStartRecording}
                 disabled={isRecording}
-                className={`px-3 py-1.5 rounded-xl text-xs font-bold text-white transition-all flex items-center gap-1.5 ${
-                  isRecording ? 'bg-rose-600 animate-pulse' : 'bg-slate-900 hover:bg-slate-800'
+                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
+                  isRecording ? 'bg-rose-600 text-white animate-pulse' : 'bg-slate-950 hover:bg-slate-800 text-slate-200 border border-slate-800'
                 }`}
               >
-                <Mic className="w-3.5 h-3.5" />
+                <Mic className="w-3.5 h-3.5 text-rose-400" />
                 <span>{isRecording ? 'Poslouchám a přepisuji...' : 'Nahrát hlasovou poznámku'}</span>
               </button>
             </div>
 
             <div className="space-y-2 max-h-40 overflow-y-auto">
               {transcribedNotes.map((note, idx) => (
-                <div key={idx} className="p-3 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-700 flex items-start gap-2">
-                  <span className="w-5 h-5 rounded-full bg-rose-100 text-rose-700 flex items-center justify-center text-[10px] font-bold flex-shrink-0 mt-0.5">#{idx+1}</span>
+                <div key={idx} className="p-3 rounded-xl bg-slate-950 border border-slate-800 text-xs text-slate-300 flex items-start gap-2">
+                  <span className="w-5 h-5 rounded-full bg-rose-500/20 text-rose-400 border border-rose-500/30 flex items-center justify-center text-[10px] font-bold flex-shrink-0 mt-0.5">#{idx+1}</span>
                   <p className="flex-1">{note}</p>
                 </div>
               ))}
@@ -625,15 +625,15 @@ export const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({
           </div>
 
           {/* Material Receipt Scanner (Feature 7) */}
-          <div className="space-y-3 pt-4 border-t border-slate-100">
+          <div className="space-y-3 pt-4 border-t border-slate-800">
             <div className="flex items-center justify-between">
-              <h5 className="text-xs font-bold uppercase tracking-wider text-slate-700 flex items-center gap-1">
-                <Receipt className="w-3.5 h-3.5 text-blue-600" /> AI Skener nákupních účtenek (Receipt Scanner)
+              <h5 className="text-xs font-bold uppercase tracking-wider text-slate-300 flex items-center gap-1">
+                <Receipt className="w-3.5 h-3.5 text-amber-400" /> AI Skener nákupních účtenek (Receipt Scanner)
               </h5>
               <button
                 onClick={handleScanReceipt}
                 disabled={isScanningReceipt}
-                className="px-3 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold transition-all shadow-sm flex items-center gap-1.5"
+                className="px-3 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-bold transition-all shadow-sm flex items-center gap-1.5"
               >
                 <Sparkles className="w-3.5 h-3.5" />
                 <span>{isScanningReceipt ? 'Skenuji účtenku OCR...' : 'Vyfotit účtenku'}</span>
@@ -641,16 +641,16 @@ export const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({
             </div>
 
             {scannedReceipt && (
-              <div className="bg-blue-50 border border-blue-200 p-4 rounded-2xl text-xs space-y-2 animate-in fade-in">
-                <div className="flex items-center justify-between font-bold text-blue-900 border-b border-blue-200 pb-2">
+              <div className="bg-slate-950 border border-amber-500/40 p-4 rounded-2xl text-xs space-y-2 animate-in fade-in">
+                <div className="flex items-center justify-between font-bold text-amber-400 border-b border-slate-800 pb-2">
                   <span>Extrahovaná data z účtenky</span>
-                  <span className="text-emerald-700 flex items-center gap-1"><Check className="w-3.5 h-3.5" /> Zaúčtováno k projektu</span>
+                  <span className="text-emerald-400 flex items-center gap-1"><Check className="w-3.5 h-3.5" /> Zaúčtováno k projektu</span>
                 </div>
-                <div className="grid grid-cols-2 gap-2 text-blue-950">
-                  <div><strong>Dodavatel (Supplier):</strong> {scannedReceipt.supplier}</div>
-                  <div><strong>Částka (Amount):</strong> {scannedReceipt.price.toLocaleString()} CZK</div>
-                  <div><strong>Sazba DPH (VAT):</strong> {scannedReceipt.vat}%</div>
-                  <div><strong>Materiál:</strong> {scannedReceipt.item}</div>
+                <div className="grid grid-cols-2 gap-2 text-slate-300">
+                  <div><strong className="text-slate-100">Dodavatel (Supplier):</strong> {scannedReceipt.supplier}</div>
+                  <div><strong className="text-slate-100">Částka (Amount):</strong> {scannedReceipt.price.toLocaleString()} Kč</div>
+                  <div><strong className="text-slate-100">Sazba DPH (VAT):</strong> {scannedReceipt.vat}%</div>
+                  <div><strong className="text-slate-100">Materiál:</strong> {scannedReceipt.item}</div>
                 </div>
               </div>
             )}
