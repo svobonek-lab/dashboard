@@ -40,6 +40,7 @@ export default function App() {
   const { 
     isConfigured, 
     user, 
+    dbUser,
     isLoading: isAuthLoading, 
     currentOrg, 
     fetchLeads, 
@@ -47,7 +48,8 @@ export default function App() {
     saveLead, 
     updateLeadStatus,
     impersonatingOrgId,
-    stopImpersonation
+    stopImpersonation,
+    schemaError
   } = useOrganization();
   const [leads, setLeads] = useState<Lead[]>(() => generateRealisticLeads(branding));
   const [employees, setEmployees] = useState(() => generateRealisticEmployees());
@@ -290,6 +292,36 @@ export default function App() {
 
   if (currentPath === '/widget-iframe' || currentPath === '/widget-iframe.html') {
     return <WidgetIframePage />;
+  }
+
+  if (schemaError && !!(import.meta as any).env?.PROD) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center p-6 text-slate-800">
+        <div className="bg-white p-8 rounded-3xl shadow-xl max-w-lg w-full text-center border border-slate-100 flex flex-col items-center space-y-6">
+          <div className="w-16 h-16 bg-red-50 text-red-600 rounded-2xl flex items-center justify-center shadow-inner">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-8 h-8">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
+            </svg>
+          </div>
+          <div className="space-y-2">
+            <h1 className="text-2xl font-bold tracking-tight text-slate-900 font-sans">Kritická chyba databáze</h1>
+            <p className="text-slate-600 text-sm leading-relaxed">
+              {schemaError}
+            </p>
+          </div>
+          <div className="w-full bg-slate-50 p-4 rounded-2xl text-xs text-left text-slate-500 space-y-1">
+            <span className="font-semibold block text-slate-700">Podrobnosti chybového stavu:</span>
+            <span>Chybějící tabulky nebo schémata v nakonfigurovaném Supabase projektu (PGRST125).</span>
+          </div>
+          <button 
+            onClick={() => window.location.reload()} 
+            className="w-full bg-slate-900 text-white py-3 rounded-2xl text-sm font-semibold hover:bg-slate-800 active:bg-slate-950 transition shadow-lg shadow-slate-900/10 cursor-pointer"
+          >
+            Zkusit znovu načíst
+          </button>
+        </div>
+      </div>
+    );
   }
 
   if (isAuthLoading && isConfigured) {
@@ -553,7 +585,13 @@ export default function App() {
                   leads={leads}
                 />
               )}
-              {currentTab === 'admin' && <AdminPanel />}
+              {currentTab === 'admin' && dbUser?.role === 'super_admin' && <AdminPanel />}
+              {currentTab === 'admin' && dbUser?.role !== 'super_admin' && (
+                <div className="bg-red-50 border border-red-200 text-red-700 p-6 rounded-2xl flex flex-col items-center justify-center text-center space-y-2 max-w-lg mx-auto my-12">
+                  <span className="font-semibold text-lg text-red-800">Přístup odepřen</span>
+                  <p className="text-sm text-red-600">Nemáte dostatečná oprávnění k zobrazení této stránky. Tato sekce je vyhrazena pouze pro super administrátory systému.</p>
+                </div>
+              )}
               {currentTab === 'dashboard' && (
                 <OwnerDashboard
                   branding={branding}

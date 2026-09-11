@@ -15,20 +15,27 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onSuccess }) => {
   const [orgName, setOrgName] = useState('');
   const [primaryColor, setPrimaryColor] = useState('#2563eb');
   const [error, setError] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+    setSuccessMessage(null);
     setIsLoading(true);
 
     try {
       if (mode === 'login') {
         await login(email, password);
+        onSuccess();
       } else {
         await signUp(email, password, orgName);
+        if (isConfigured) {
+          setSuccessMessage("Zkontrolujte svůj e-mail a potvrďte registraci, poté se budete moci přihlásit.");
+        } else {
+          onSuccess();
+        }
       }
-      onSuccess();
     } catch (err: any) {
       setError(err.message || 'Chyba při přihlašování. Zkontrolujte prosím své údaje.');
     } finally {
@@ -127,6 +134,13 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onSuccess }) => {
               {error && (
                 <div className="p-3 bg-rose-50 border border-rose-100 text-rose-700 rounded-xl text-xs font-semibold">
                   {error}
+                </div>
+              )}
+
+              {successMessage && (
+                <div className="p-4 bg-emerald-50 border border-emerald-100 text-emerald-800 rounded-2xl text-xs font-semibold leading-relaxed space-y-1">
+                  <p className="font-bold text-emerald-900">✓ Registrace byla úspěšná!</p>
+                  <p className="text-emerald-700">{successMessage}</p>
                 </div>
               )}
 

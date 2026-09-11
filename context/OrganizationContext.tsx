@@ -1,6 +1,17 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { supabase, isSupabaseConfigured, LocalSupabaseMock } from '../lib/supabase';
 import { CompanyBranding, Lead, Employee } from '../types';
+import * as Sentry from "@sentry/react";
+
+const IS_PRODUCTION = !!(import.meta as any).env?.PROD;
+
+function generateUUID(): string {
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+    const r = Math.random() * 16 | 0;
+    const v = c === 'x' ? r : (r & 0x3 | 0x8);
+    return v.toString(16);
+  });
+}
 
 export interface Organization {
   id: string;
@@ -124,6 +135,9 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
           }
         } catch (err: any) {
           console.error('Supabase Auth init error:', err);
+          Sentry.captureException(err, {
+            extra: { organization_id: currentOrg?.id, context: 'initAuth' }
+          });
           setError(err.message || 'Chyba při připojování k Supabase');
           setUser(null);
           setDbUser(null);
@@ -258,9 +272,17 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
       });
     } catch (err: any) {
       console.error('Error loading user organization details:', err);
+      Sentry.captureException(err, {
+        extra: { organization_id: currentOrg?.id, context: 'loadUserData' }
+      });
       if (err?.code === 'PGRST125' || (err?.message && err.message.includes('PGRST125'))) {
-        setSchemaError('V Supabase databázi chybí tabulky (např. users, organizations, leads, employees). CRM automaticky spustilo Local Storage Sandbox pro zachování plné funkčnosti.');
-        setupLocalDemoData();
+        if (IS_PRODUCTION) {
+          setSchemaError('Databáze není správně nastavená. Kontaktujte podporu (support@demofactorycrm.cz).');
+          throw err;
+        } else {
+          setSchemaError('V Supabase databázi chybí tabulky (např. users, organizations, leads, employees). CRM automaticky spustilo Local Storage Sandbox pro zachování plné funkčnosti.');
+          setupLocalDemoData();
+        }
       } else {
         setError(err.message || 'Nepodařilo se načíst detaily organizace');
       }
@@ -308,6 +330,10 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
       if (authErr) throw authErr;
       return data.user;
     } catch (err: any) {
+      console.error('login error:', err);
+      Sentry.captureException(err, {
+        extra: { organization_id: currentOrg?.id, context: 'login' }
+      });
       setError(err.message || 'Přihlášení selhalo');
       throw err;
     }
@@ -361,46 +387,27 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
     }
 
     try {
-      // 1. Auth signup
+      // 1. Auth signup with orgName in options metadata
       const { data, error: signUpErr } = await supabase.auth.signUp({
         email,
-        password: pass
+        password: pass,
+        options: {
+          data: { orgName }
+        }
       });
       if (signUpErr) throw signUpErr;
 
       const newUser = data.user;
       if (!newUser) throw new Error('Registrace proběhla bez vytvoření uživatele');
 
-      // 2. Create organization
-      const slug = orgName.toLowerCase().replace(/[^a-z0-9]/g, '-') + '-' + Math.floor(Math.random() * 1000);
-      const { data: newOrg, error: orgError } = await supabase
-        .from('organizations')
-        .insert({
-          name: orgName,
-          slug: slug,
-          primary_color: '#2563eb',
-          logo_url: 'https://images.unsplash.com/photo-1513694203232-719a280e022f?auto=format&fit=crop&w=160&q=80'
-        })
-        .select()
-        .single();
-
-      if (orgError) throw orgError;
-
-      // 3. Link user to organization in database
-      const { error: userError } = await supabase
-        .from('users')
-        .insert({
-          id: newUser.id,
-          organization_id: newOrg.id,
-          role: 'owner'
-        });
-
-      if (userError) throw userError;
-
-      setUser(newUser);
-      await loadUserData(newUser.id, email);
+      // Do NOT create public database records or update local React states here, 
+      // as they are handled asynchronously by the SQL trigger after email confirmation.
       return newUser;
     } catch (err: any) {
+      console.error('signUp error:', err);
+      Sentry.captureException(err, {
+        extra: { organization_id: currentOrg?.id, context: 'signUp' }
+      });
       setError(err.message || 'Registrace selhala');
       throw err;
     }
@@ -482,13 +489,12 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
     try {
       if (!user) throw new Error('Musíte být přihlášeni');
 
-      // Update public.users row with the new organization_id
-      const { error: userUpdateError } = await supabase
-        .from('users')
-        .update({ organization_id: orgId })
-        .eq('id', user.id);
+      // Call switch_organization RPC function safely on Supabase
+      const { error: rpcError } = await supabase.rpc('switch_organization', {
+        target_org_id: orgId
+      });
 
-      if (userUpdateError) throw userUpdateError;
+      if (rpcError) throw rpcError;
 
       // Reload user organization context
       await loadUserData(user.id, user.email);
@@ -706,9 +712,17 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
       }));
     } catch (err: any) {
       console.error('fetchLeads error:', err);
+      Sentry.captureException(err, {
+        extra: { organization_id: currentOrg?.id, context: 'fetchLeads' }
+      });
       if (err?.code === 'PGRST125' || (err?.message && err.message.includes('PGRST125'))) {
-        setSchemaError('V Supabase chybí tabulka "leads". CRM v této sekci přešlo do Local Storage Sandboxu.');
-        return fetchLeadsLocal();
+        if (IS_PRODUCTION) {
+          setSchemaError('Databáze není správně nastavená. Kontaktujte podporu (support@demofactorycrm.cz).');
+          throw err;
+        } else {
+          setSchemaError('V Supabase chybí tabulka "leads". CRM v této sekci přešlo do Local Storage Sandboxu.');
+          return fetchLeadsLocal();
+        }
       }
       return [];
     }
@@ -767,9 +781,17 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
       } as Lead;
     } catch (err: any) {
       console.error('saveLead error:', err);
+      Sentry.captureException(err, {
+        extra: { organization_id: currentOrg?.id, context: 'saveLead' }
+      });
       if (err?.code === 'PGRST125' || (err?.message && err.message.includes('PGRST125'))) {
-        setSchemaError('V Supabase chybí tabulka "leads". CRM v této sekci přešlo do Local Storage Sandboxu.');
-        return saveLeadLocal(leadData);
+        if (IS_PRODUCTION) {
+          setSchemaError('Databáze není správně nastavená. Kontaktujte podporu (support@demofactorycrm.cz).');
+          throw err;
+        } else {
+          setSchemaError('V Supabase chybí tabulka "leads". CRM v této sekci přešlo do Local Storage Sandboxu.');
+          return saveLeadLocal(leadData);
+        }
       }
       throw err;
     }
@@ -790,9 +812,17 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
       if (updateError) throw updateError;
     } catch (err: any) {
       console.error('updateLeadStatus error:', err);
+      Sentry.captureException(err, {
+        extra: { organization_id: currentOrg?.id, context: 'updateLeadStatus' }
+      });
       if (err?.code === 'PGRST125' || (err?.message && err.message.includes('PGRST125'))) {
-        setSchemaError('V Supabase chybí tabulka "leads". CRM v této sekci přešlo do Local Storage Sandboxu.');
-        updateLeadStatusLocal(leadId, status);
+        if (IS_PRODUCTION) {
+          setSchemaError('Databáze není správně nastavená. Kontaktujte podporu (support@demofactorycrm.cz).');
+          throw err;
+        } else {
+          setSchemaError('V Supabase chybí tabulka "leads". CRM v této sekci přešlo do Local Storage Sandboxu.');
+          updateLeadStatusLocal(leadId, status);
+        }
       }
     }
   };
@@ -827,9 +857,17 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
       }));
     } catch (err: any) {
       console.error('fetchEmployees error:', err);
+      Sentry.captureException(err, {
+        extra: { organization_id: currentOrg?.id, context: 'fetchEmployees' }
+      });
       if (err?.code === 'PGRST125' || (err?.message && err.message.includes('PGRST125'))) {
-        setSchemaError('V Supabase chybí tabulka "employees". CRM v této sekci přešlo do Local Storage Sandboxu.');
-        return fetchEmployeesLocal();
+        if (IS_PRODUCTION) {
+          setSchemaError('Databáze není správně nastavená. Kontaktujte podporu (support@demofactorycrm.cz).');
+          throw err;
+        } else {
+          setSchemaError('V Supabase chybí tabulka "employees". CRM v této sekci přešlo do Local Storage Sandboxu.');
+          return fetchEmployeesLocal();
+        }
       }
       return [];
     }
@@ -880,9 +918,17 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
       } as Employee;
     } catch (err: any) {
       console.error('saveEmployee error:', err);
+      Sentry.captureException(err, {
+        extra: { organization_id: currentOrg?.id, context: 'saveEmployee' }
+      });
       if (err?.code === 'PGRST125' || (err?.message && err.message.includes('PGRST125'))) {
-        setSchemaError('V Supabase chybí tabulka "employees". CRM v této sekci přešlo do Local Storage Sandboxu.');
-        return saveEmployeeLocal(empData);
+        if (IS_PRODUCTION) {
+          setSchemaError('Databáze není správně nastavená. Kontaktujte podporu (support@demofactorycrm.cz).');
+          throw err;
+        } else {
+          setSchemaError('V Supabase chybí tabulka "employees". CRM v této sekci přešlo do Local Storage Sandboxu.');
+          return saveEmployeeLocal(empData);
+        }
       }
       throw err;
     }
@@ -906,9 +952,17 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
       return data || [];
     } catch (err: any) {
       console.error('fetchProjects error:', err);
+      Sentry.captureException(err, {
+        extra: { organization_id: currentOrg?.id, context: 'fetchProjects' }
+      });
       if (err?.code === 'PGRST125' || (err?.message && err.message.includes('PGRST125'))) {
-        setSchemaError('V Supabase chybí tabulka "projects". CRM v této sekci přešlo do Local Storage Sandboxu.');
-        return fetchProjectsLocal();
+        if (IS_PRODUCTION) {
+          setSchemaError('Databáze není správně nastavená. Kontaktujte podporu (support@demofactorycrm.cz).');
+          throw err;
+        } else {
+          setSchemaError('V Supabase chybí tabulka "projects". CRM v této sekci přešlo do Local Storage Sandboxu.');
+          return fetchProjectsLocal();
+        }
       }
       return [];
     }
@@ -953,9 +1007,17 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
       return result as DBProject;
     } catch (err: any) {
       console.error('saveProject error:', err);
+      Sentry.captureException(err, {
+        extra: { organization_id: currentOrg?.id, context: 'saveProject' }
+      });
       if (err?.code === 'PGRST125' || (err?.message && err.message.includes('PGRST125'))) {
-        setSchemaError('V Supabase chybí tabulka "projects". CRM v této sekci přešlo do Local Storage Sandboxu.');
-        return saveProjectLocal(projectData);
+        if (IS_PRODUCTION) {
+          setSchemaError('Databáze není správně nastavená. Kontaktujte podporu (support@demofactorycrm.cz).');
+          throw err;
+        } else {
+          setSchemaError('V Supabase chybí tabulka "projects". CRM v této sekci přešlo do Local Storage Sandboxu.');
+          return saveProjectLocal(projectData);
+        }
       }
       throw err;
     }
@@ -1043,6 +1105,9 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
       });
     } catch (err: any) {
       console.error('fetchAllOrganizationsAdmin error:', err);
+      Sentry.captureException(err, {
+        extra: { organization_id: currentOrg?.id, context: 'fetchAllOrganizationsAdmin' }
+      });
       const orgs = LocalSupabaseMock.getOrganizations();
       const emps = LocalSupabaseMock.getEmployees();
       const leads = LocalSupabaseMock.getLeads();
@@ -1078,6 +1143,9 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
       setOrganizations(prev => prev.filter(o => o.id !== orgId));
     } catch (err: any) {
       console.error('deleteOrganizationAdmin error:', err);
+      Sentry.captureException(err, {
+        extra: { organization_id: currentOrg?.id, context: 'deleteOrganizationAdmin' }
+      });
       throw err;
     }
   };
@@ -1117,6 +1185,9 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
       }
     } catch (err: any) {
       console.error('updateBrandingAdmin error:', err);
+      Sentry.captureException(err, {
+        extra: { organization_id: currentOrg?.id, context: 'updateBrandingAdmin' }
+      });
       throw err;
     }
   };
@@ -1146,6 +1217,9 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
       setOrganizations(prev => prev.map(o => o.id === orgId ? { ...o, status } : o));
     } catch (err: any) {
       console.error('suspendOrganizationAdmin error (non-fatal):', err);
+      Sentry.captureException(err, {
+        extra: { organization_id: currentOrg?.id, context: 'suspendOrganizationAdmin' }
+      });
     }
   };
 
@@ -1161,13 +1235,13 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
     employees: Array<{ name: string; specialization: string; phone: string; capacity: number }>;
   }) => {
     const slug = data.name.toLowerCase().replace(/[^a-z0-9]/g, '-') + '-' + Math.floor(Math.random() * 1000);
-    const orgId = 'org-' + Date.now() + '-' + Math.floor(Math.random() * 100);
-    const ownerUserId = 'user-owner-' + Date.now();
+    const orgId = generateUUID();
+    const ownerUserId = generateUUID();
     const ownerEmail = data.email || `owner@${slug}.com`;
 
     const demoLeads = [
       {
-        id: 'lead-demo-1-' + Date.now(),
+        id: generateUUID(),
         organization_id: orgId,
         customer_name: 'Ing. Jan Svoboda',
         phone: '+420 603 456 789',
@@ -1178,7 +1252,7 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
         created_at: new Date().toISOString()
       },
       {
-        id: 'lead-demo-2-' + Date.now(),
+        id: generateUUID(),
         organization_id: orgId,
         customer_name: 'Marta Dvořáková',
         phone: '+420 732 998 877',
@@ -1189,7 +1263,7 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
         created_at: new Date().toISOString()
       },
       {
-        id: 'lead-demo-3-' + Date.now(),
+        id: generateUUID(),
         organization_id: orgId,
         customer_name: 'Pavel Říha',
         phone: '+420 721 112 233',
@@ -1201,29 +1275,29 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
       }
     ];
 
-    const employeesToInsert = data.employees.length > 0 ? data.employees.map((emp, i) => ({
-      id: `emp-demo-${i + 1}-${Date.now()}`,
+    const employeesToInsert = data.employees.length > 0 ? data.employees.map((emp) => ({
+      id: generateUUID(),
       organization_id: orgId,
       name: emp.name,
       specialization: emp.specialization,
       capacity: emp.capacity
     })) : [
-      { id: `emp-demo-1-${Date.now()}`, organization_id: orgId, name: 'Petr Novotný', specialization: 'Pergoly & Terasy', capacity: 85 },
-      { id: `emp-demo-2-${Date.now()}`, organization_id: orgId, name: 'Martin Kovář', specialization: 'Stavební tesař', capacity: 95 },
-      { id: `emp-demo-3-${Date.now()}`, organization_id: orgId, name: 'Tomáš Veselý', specialization: 'Pokrývačské práce', capacity: 60 },
-      { id: `emp-demo-4-${Date.now()}`, organization_id: orgId, name: 'Jan Richter', specialization: 'Zedník & Rekonstrukce', capacity: 100 }
+      { id: generateUUID(), organization_id: orgId, name: 'Petr Novotný', specialization: 'Pergoly & Terasy', capacity: 85 },
+      { id: generateUUID(), organization_id: orgId, name: 'Martin Kovář', specialization: 'Stavební tesař', capacity: 95 },
+      { id: generateUUID(), organization_id: orgId, name: 'Tomáš Veselý', specialization: 'Pokrývačské práce', capacity: 60 },
+      { id: generateUUID(), organization_id: orgId, name: 'Jan Richter', specialization: 'Zedník & Rekonstrukce', capacity: 100 }
     ];
 
     const demoProjects = [
       {
-        id: 'proj-demo-1-' + Date.now(),
+        id: generateUUID(),
         organization_id: orgId,
         lead_id: demoLeads[0].id,
         assigned_employee: employeesToInsert[0].name,
         status: 'in_progress'
       },
       {
-        id: 'proj-demo-2-' + Date.now(),
+        id: generateUUID(),
         organization_id: orgId,
         lead_id: demoLeads[1].id,
         assigned_employee: employeesToInsert[1].name,
@@ -1284,8 +1358,17 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
             organization_id: activeOrgId,
             role: 'owner'
           });
+
+        // Register membership in organization_members
+        await supabase
+          .from('organization_members')
+          .insert({
+            user_id: ownerUserId,
+            organization_id: activeOrgId,
+            role: 'owner'
+          });
       } catch (uErr) {
-        console.error('Users insert failed during admin create:', uErr);
+        console.error('Users or organization_members insert failed during admin create:', uErr);
       }
 
       try {
@@ -1335,6 +1418,9 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
       return { orgId: activeOrgId, ownerEmail };
     } catch (err: any) {
       console.error('createCustomerAdmin error:', err);
+      Sentry.captureException(err, {
+        extra: { organization_id: currentOrg?.id, context: 'createCustomerAdmin' }
+      });
       throw err;
     }
   };

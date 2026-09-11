@@ -1,4 +1,3 @@
-import { GoogleGenAI, Type } from '@google/genai';
 import { CompanyBranding, WebsiteAudit } from '../types';
 
 function getFallbackData(url: string) {
@@ -154,117 +153,23 @@ function getFallbackData(url: string) {
 }
 
 export async function analyzeWebsiteWithGemini(url: string): Promise<{ branding: CompanyBranding; audit: WebsiteAudit }> {
-  const apiKey = (import.meta as any).env?.VITE_GEMINI_API_KEY || process.env.GEMINI_API_KEY;
-
-  if (!apiKey) {
-    await new Promise(r => setTimeout(r, 2000));
-    return getFallbackData(url);
-  }
-
   try {
-    const ai = new GoogleGenAI({
-      apiKey,
-      httpOptions: {
-        headers: {
-          'User-Agent': 'aistudio-build',
-        }
-      }
+    const response = await fetch('/api/analyze-website', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ url })
     });
 
-    const response = await ai.models.generateContent({
-      model: 'gemini-3.8-flash',
-      contents: `Analyze the construction company website URL: ${url}. Perform a digital presence audit and branding extraction.
-      
-      Return strictly a JSON object with the following keys and structure:
-      {
-        "name": "Extracted name of the company",
-        "phone": "Extracted phone number",
-        "email": "Extracted email address",
-        "city": "Operational headquarters city in Czech Republic / Slovakia",
-        "services": ["array of 3-5 extracted construction/renovation services"],
-        "primaryColor": "detected primary HEX color matching the website style (e.g., #2563eb)",
-        "score": 55, // Overall digital score (0-100)
-        "websiteUxScore": 65, // UX score (0-100)
-        "leadCaptureScore": 40, // Lead Capture score (0-100)
-        "responseAutomationScore": 15, // Response Automation score (0-100)
-        "customerExperienceScore": 60, // Customer Experience score (0-100)
-        "googleReviewsRating": 4.7, // Simulated/Extracted Google rating
-        "googleReviewsCount": 84, // Simulated/Extracted reviews count
-        "googleReviewsSummary": "Short Czech text summarizing Google Review sentiments, pros, and cons (e.g., 'Kvalitní práce, ale zákazníci si stěžují na pomalejší komunikaci.')",
-        "issues": [
-          {
-            "id": "iss-1",
-            "title": "Short Czech issue title",
-            "description": "Short Czech description of the issue",
-            "severity": "error", // 'error' or 'warning'
-            "category": "lead", // 'ux' | 'lead' | 'automation' | 'cx'
-            "whyItHurts": "Czech description of how this hurts their revenue/retention",
-            "howWeFixIt": "Czech explanation of how DemoFactory CRM automates and solves it",
-            "timeSaved": "Estimated hours saved per week (e.g. '5 hodin / týdně')"
-          }
-        ],
-        "recommendations": [
-          {
-            "id": "rec-1",
-            "title": "Short Czech title of action",
-            "description": "Czech description of recommended strategy",
-            "impact": "High", // 'High' | 'Medium' | 'Low'
-            "effort": "Easy", // 'Easy' | 'Medium' | 'Hard'
-            "category": "lead"
-          }
-        ],
-        "upgradedBenefits": ["3-4 Czech benefits of migrating to the CRM"]
-      }
+    if (!response.ok) {
+      throw new Error(`Server returned error: ${response.statusText}`);
+    }
 
-      Analyze carefully and tailor all descriptions, issues, and services specifically to construction, roofing, masonry, or pergolas depending on the extracted context. Ensure all texts are in Czech.`,
-      config: {
-        responseMimeType: 'application/json'
-      }
-    });
-
-    const text = response.text || '{}';
-    const cleanJson = text.replace(/```json/g, '').replace(/```/g, '').trim();
-    const data = JSON.parse(cleanJson);
-
-    const branding: CompanyBranding = {
-      name: data.name || 'Nová Stavební Firma',
-      logoUrl: '',
-      primaryColor: data.primaryColor || '#0A4EA3',
-      phone: data.phone || '+420 777 123 456',
-      email: data.email || 'info@stavba.cz',
-      city: data.city || 'Praha',
-      address: `Stavební 1, ${data.city || 'Praha'}`,
-      services: data.services || ['Střechy', 'Pergoly', 'Rekonstrukce']
-    };
-
-    const audit: WebsiteAudit = {
-      url,
-      companyName: branding.name,
-      score: data.score || 52,
-      websiteUxScore: data.websiteUxScore || 65,
-      leadCaptureScore: data.leadCaptureScore || 45,
-      responseAutomationScore: data.responseAutomationScore || 20,
-      customerExperienceScore: data.customerExperienceScore || 70,
-      googleReviewsRating: data.googleReviewsRating || 4.7,
-      googleReviewsCount: data.googleReviewsCount || 85,
-      googleReviewsSummary: data.googleReviewsSummary || 'Kvalitně odvedená tesařská a stavební práce, ale pomalejší reakční doba na e-maily a poptávky.',
-      issues: data.issues || [
-        { id: 'iss-1', title: 'Chybějící lead formulář', description: 'Zákazníci nemají kde pohodlně zadat poptávku.', severity: 'error', category: 'lead', whyItHurts: 'Zákazníci odcházejí ke konkurenci.', howWeFixIt: 'Zavedeme interaktivní popup lead widget.', timeSaved: '4 hodiny / týdně' },
-        { id: 'iss-2', title: 'Pomalý reakční čas', description: 'Chybí okamžité notifikace pro dispečink.', severity: 'warning', category: 'automation', whyItHurts: 'Nízký poměr uzavřených obchodů.', howWeFixIt: 'SMS autoresponder odešle zprávu do 10s.', timeSaved: '6 hodin / týdně' }
-      ],
-      recommendations: data.recommendations || [
-        { id: 'rec-1', title: 'Instalovat interaktivní AI Lead Widget', description: 'Okamžitý sběr poptávek přímo z hlavní strany webu s automatickým ukládáním do CRM.', impact: 'High', effort: 'Easy', category: 'lead' },
-        { id: 'rec-2', title: 'Zprovoznit dispečerské auto-notifikace', description: 'Zkrácení reakční doby na minimum díky okamžitým dispečerským notifikacím do telefonu.', impact: 'High', effort: 'Easy', category: 'automation' }
-      ],
-      upgradedBenefits: data.upgradedBenefits || [
-        'Okamžitý nárůst poptávek díky widgetu',
-        'Automatická dispečerská mapa a přiřazování techniků'
-      ]
-    };
-
-    return { branding, audit };
+    const data = await response.json();
+    return data;
   } catch (err) {
-    console.error('Gemini API analysis failed or quota exceeded, using smart fallback:', err);
+    console.warn('API route failed or backend unconfigured, using smart fallback:', err);
     return getFallbackData(url);
   }
 }

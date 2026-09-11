@@ -223,7 +223,15 @@ export const WidgetIframePage: React.FC = () => {
 
     if (isSupabaseConfigured && supabase) {
       try {
-        await supabase.from('leads').insert(leadRecord);
+        const { error } = await supabase.rpc('submit_public_lead', {
+          p_org_id: orgData.id,
+          p_customer_name: formData.fullName,
+          p_phone: formData.phone,
+          p_email: formData.email,
+          p_project_type: formData.projectType,
+          p_budget: formData.budgetValue
+        });
+        if (error) throw error;
       } catch (err) {
         console.error('Failed to write widget lead to Supabase:', err);
         saveToLocalMock(leadRecord);
