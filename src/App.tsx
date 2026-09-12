@@ -251,6 +251,7 @@ function AppContent() {
             onSelectLead={setSelectedLead} 
             onUpdateLeadStatus={handleUpdateLeadStatus}
             onUpdateLead={handleUpdateLead}
+            onAddLead={handleAddLead}
           />
         ) : pathname === '/projects' ? (
           <OwnerProjectsPage leads={leads} onSelectLead={setSelectedLead} />

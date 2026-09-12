@@ -1,62 +1,44 @@
 import { CompanyBranding, WebsiteAudit } from '../types';
 
 function getFallbackData(url: string) {
-  let domainName = 'Stavby Pro';
-  let city = 'Praha';
-  let primaryColor = '#0A4EA3';
-  let services = ['Pergoly', 'Střechy', 'Rekonstrukce', 'Fasády'];
-  let rating = 4.8;
-  let count = 94;
-  let summary = 'Vysoká kvalita stavebních prací a profesionální přístup na stavbě. Několik zákazníků však zmiňuje delší čekání na úvodní cenovou nabídku a reakci na e-mailové poptávky.';
+  let domainPart = 'mojefirma.cz';
+  let cleanName = 'Stavební firma s.r.o.';
+  let city = 'Praha a Středočeský kraj';
+  let primaryColor = '#2563eb';
+  let services = ['Pergoly & Terasy', 'Dřevostavby na klíč', 'Rekonstrukce'];
 
-  if (url.includes('novak')) {
-    domainName = 'Novák Stavby';
-    city = 'Třinec';
-    primaryColor = '#0A4EA3';
-    services = ['Pergoly', 'Střechy', 'Dřevostavby', 'Zateplení'];
-    rating = 4.9;
-    count = 142;
-    summary = 'Zákazníci si velmi cení rychlosti realizace pergol a tesařských konstrukcí. Slabým místem je absence okamžitého potvrzení přijetí poptávky a delší doba zpracování výkazu výměr.';
-  } else if (url.includes('alfa') || url.includes('stav')) {
-    domainName = 'Alfa Stavitelé s.r.o.';
-    city = 'Brno';
-    primaryColor = '#D97706';
-    services = ['Hrubé stavby', 'Základové desky', 'Zděné domy', 'Betonové ploty'];
-    rating = 4.7;
-    count = 68;
-    summary = 'Skvělá hodnocení za přesnost lití základových desek a dodržování stavebních harmonogramů. Recenze však poukazují na obtížnější telefonickou zastupitelnost během stavební sezóny.';
-  } else if (url.includes('1strechy') || url.includes('strechy')) {
-    domainName = 'Střechy & Pergoly s.r.o.';
-    city = 'Ostrava';
-    primaryColor = '#10B981';
-    services = ['Tesařské práce', 'Střešní krytiny', 'Pergoly', 'Klempířství'];
-    rating = 4.6;
-    count = 52;
-    summary = 'Zákazníci chválí řemeslnou zručnost klempířů a tesařů. Kritika se zaměřuje na nedostatečné průběžné informování o změnách v harmonogramu a chybějící online fotodokumentaci prací.';
-  } else if (url) {
-    try {
-      const u = new URL(url.startsWith('http') ? url : `https://${url}`);
-      const rawName = u.hostname.replace('www.', '').split('.')[0];
-      domainName = rawName.charAt(0).toUpperCase() + rawName.slice(1) + ' Stavby';
-    } catch (e) {
-      // fallback
+  try {
+    const u = new URL(url.startsWith('http') ? url : `https://${url}`);
+    domainPart = u.hostname.replace('www.', '');
+    const nameOnly = domainPart.split('.')[0].replace(/[-_]/g, ' ');
+    cleanName = nameOnly.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ') + ' s.r.o.';
+  } catch {
+    if (url) {
+      const sanitized = url.replace(/https?:\/\//, '').replace('www.', '').split('/')[0];
+      domainPart = sanitized;
+      const nameOnly = sanitized.split('.')[0].replace(/[-_]/g, ' ');
+      cleanName = nameOnly.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ') + ' s.r.o.';
     }
   }
 
   const branding: CompanyBranding = {
-    name: domainName,
-    logoUrl: '',
+    name: cleanName,
+    logoUrl: `https://images.unsplash.com/photo-1541888946425-d0fbb18f0653?auto=format&fit=crop&w=160&q=80`,
     primaryColor,
-    phone: '+420 777 888 999',
-    email: `info@${domainName.toLowerCase().replace(/[^a-z0-9]/g, '')}.cz`,
+    phone: '+420 774 889 100',
+    email: `info@${domainPart}`,
     city,
-    address: `Hlavní 123, ${city}`,
+    address: `Průmyslová 14, ${city}`,
     services
   };
 
+  const rating = 4.8;
+  const count = 86;
+  const summary = 'Zákazníci si cení rychlosti komunikace a kvality řemeslného provedení stavebních prací.';
+
   const audit: WebsiteAudit = {
     url,
-    companyName: domainName,
+    companyName: cleanName,
     score: 54,
     websiteUxScore: 68,
     leadCaptureScore: 45,

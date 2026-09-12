@@ -103,7 +103,7 @@ export const canManageCompany = (role?: string | null): boolean => {
 };
 
 export const canAccessSuperAdmin = (role?: string | null): boolean => {
-  return role === 'super_admin';
+  return role === 'super_admin' || role === 'superadmin';
 };
 
 export const canAccessAdmin = canAccessSuperAdmin;

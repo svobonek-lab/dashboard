@@ -18,7 +18,8 @@ import {
   Phone, 
   Mail, 
   MapPin,
-  RefreshCw
+  RefreshCw,
+  Globe
 } from 'lucide-react';
 
 export const AdminCompaniesPage: React.FC = () => {
@@ -205,22 +206,30 @@ export const AdminCompaniesPage: React.FC = () => {
                   {/* Details stats */}
                   <div className="grid grid-cols-2 gap-2 pt-1 text-xs">
                     <div className="p-2.5 bg-[#090D16] rounded-xl border border-slate-800/80">
-                      <span className="text-[10px] text-slate-500 font-mono block">Řemeslníci</span>
-                      <span className="font-bold text-slate-200">4 členové</span>
+                      <span className="text-[10px] text-slate-500 font-mono block">Město / Region</span>
+                      <span className="font-bold text-slate-200 truncate block">{org.city || 'Česká republika'}</span>
                     </div>
                     <div className="p-2.5 bg-[#090D16] rounded-xl border border-slate-800/80">
-                      <span className="text-[10px] text-slate-500 font-mono block">Zakázky</span>
-                      <span className="font-bold text-slate-200">8 aktivních</span>
+                      <span className="text-[10px] text-slate-500 font-mono block">Kontakt</span>
+                      <span className="font-bold text-slate-200 truncate block">{org.phone || org.email || 'Aktivní'}</span>
                     </div>
                   </div>
 
                   <div className="text-[11px] text-slate-400 space-y-1 font-mono">
+                    {org.website && (
+                      <p className="flex items-center gap-1.5 truncate">
+                        <Globe className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
+                        <a href={org.website.startsWith('http') ? org.website : `https://${org.website}`} target="_blank" rel="noreferrer" className="text-cyan-300 hover:underline truncate">
+                          {org.website.replace(/https?:\/\//, '')}
+                        </a>
+                      </p>
+                    )}
                     <p className="flex items-center gap-1.5">
-                      <Palette className="w-3.5 h-3.5 text-slate-500" />
+                      <Palette className="w-3.5 h-3.5 text-slate-500 shrink-0" />
                       <span>Barva: <strong className="text-slate-300">{primaryColor}</strong></span>
                     </p>
                     <p className="flex items-center gap-1.5">
-                      <Calendar className="w-3.5 h-3.5 text-slate-500" />
+                      <Calendar className="w-3.5 h-3.5 text-slate-500 shrink-0" />
                       <span>Registrace: {new Date(org.created_at || Date.now()).toLocaleDateString('cs-CZ')}</span>
                     </p>
                   </div>
@@ -230,10 +239,10 @@ export const AdminCompaniesPage: React.FC = () => {
                 <div className="pt-3 border-t border-slate-800/80 flex items-center justify-between gap-2">
                   <button
                     onClick={() => handleImpersonate(org.id)}
-                    className="flex-1 py-2 px-3 rounded-xl bg-cyan-500/15 hover:bg-cyan-500/25 text-cyan-300 border border-cyan-500/30 text-xs font-bold transition-all flex items-center justify-center gap-1.5"
+                    className="flex-1 py-2 px-3 rounded-xl bg-gradient-to-r from-cyan-500/20 to-blue-600/20 hover:from-cyan-500/30 hover:to-blue-600/30 text-cyan-300 border border-cyan-500/30 text-xs font-bold transition-all flex items-center justify-center gap-1.5 shadow-sm"
                   >
-                    <span>Otevřít CRM</span>
-                    <ExternalLink className="w-3.5 h-3.5" />
+                    <span>Otevřít Company Workspace</span>
+                    <ExternalLink className="w-3.5 h-3.5 text-cyan-400" />
                   </button>
 
                   <button

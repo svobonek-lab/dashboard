@@ -9,6 +9,7 @@ interface OwnerLeadsPageProps {
   onSelectLead: (lead: Lead | null) => void;
   onUpdateLeadStatus: (leadId: string, newStatus: LeadStatus) => void;
   onUpdateLead: (updatedLead: Lead) => void;
+  onAddLead: (newLead: Lead) => void;
 }
 
 export const OwnerLeadsPage: React.FC<OwnerLeadsPageProps> = ({
@@ -16,7 +17,8 @@ export const OwnerLeadsPage: React.FC<OwnerLeadsPageProps> = ({
   selectedLead,
   onSelectLead,
   onUpdateLeadStatus,
-  onUpdateLead
+  onUpdateLead,
+  onAddLead
 }) => {
   const [photoViewer, setPhotoViewer] = useState<{ url: string; title: string; category: string } | null>(null);
 
@@ -37,6 +39,7 @@ export const OwnerLeadsPage: React.FC<OwnerLeadsPageProps> = ({
       leads={leads}
       onSelectLead={onSelectLead}
       onUpdateLeadStatus={onUpdateLeadStatus}
+      onAddLead={onAddLead}
     />
   );
 };

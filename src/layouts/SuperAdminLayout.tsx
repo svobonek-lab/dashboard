@@ -1,6 +1,7 @@
 import React from 'react';
 import { useOrganization } from '@/context/OrganizationContext';
 import { useRouter, Link } from '../app/router';
+import { CompanySwitcher } from '@/components/CompanySwitcher';
 import { 
   ShieldCheck, 
   Building2, 
@@ -191,13 +192,18 @@ export const SuperAdminLayout: React.FC<SuperAdminLayoutProps> = ({ children }) 
 
         {/* Enterprise Top Header Bar */}
         <header className="h-16 bg-[#0C111D]/80 backdrop-blur-md border-b border-slate-800/80 px-8 flex items-center justify-between sticky top-0 z-20">
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-5">
             <div className="flex items-center gap-2 text-xs font-mono text-slate-400">
               <span className="w-2 h-2 rounded-full bg-cyan-400 animate-ping"></span>
               <span className="text-slate-300 font-bold">SUPERADMIN OS</span>
               <span className="text-slate-600">/</span>
               <span className="text-cyan-400 font-semibold">{pathname}</span>
             </div>
+
+            <div className="h-5 w-px bg-slate-800"></div>
+
+            {/* Top Bar Multi-Tenant Company Switcher */}
+            <CompanySwitcher variant="dark" />
           </div>
 
           <div className="flex items-center gap-4 text-xs font-mono">

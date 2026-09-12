@@ -61,7 +61,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   ];
 
   const menuItems = [...baseMenuItems];
-  if (dbUser?.role === 'super_admin') {
+  if (dbUser?.email?.toLowerCase() === 'svobonek@gmail.com' && (dbUser?.role === 'super_admin' || dbUser?.role === 'superadmin')) {
     // Add Admin item at the top of the menuItems list for high accessibility
     menuItems.unshift({ id: 'admin', label: 'Admin Panel', icon: ShieldAlert });
   }

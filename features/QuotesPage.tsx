@@ -1,14 +1,19 @@
 import React, { useState } from 'react';
 import { FileText, Download, Check, Plus, Trash2, Send, Percent, Calculator, Sparkles, History, CreditCard, ThumbsUp, MessageSquare } from 'lucide-react';
 import { CompanyBranding, QuoteItem } from '../types';
+import { useBranding } from '@/hooks/useBranding';
 
 interface QuotesPageProps {
   branding: CompanyBranding;
 }
 
-export const QuotesPage: React.FC<QuotesPageProps> = ({ branding }) => {
+export const QuotesPage: React.FC<QuotesPageProps> = ({ branding: propBranding }) => {
+  const { branding, palette, brandStyles } = useBranding();
+  const activeCompanyName = branding.name || propBranding.name || 'Stavební Společnost';
+  const activeCity = branding.city || propBranding.city || 'Praha';
+
   const [customerName, setCustomerName] = useState('Ing. Jan Svoboda');
-  const [customerAddress, setCustomerAddress] = useState('Zahradní 12, ' + branding.city);
+  const [customerAddress, setCustomerAddress] = useState('Zahradní 12, ' + activeCity);
   const [vatRate, setVatRate] = useState<number>(21);
   const [discountPercent, setDiscountPercent] = useState<number>(0);
   const [quoteTitle, setQuoteTitle] = useState('Kompletní stavební realizace');
@@ -85,20 +90,20 @@ export const QuotesPage: React.FC<QuotesPageProps> = ({ branding }) => {
 
   const handleCustomerAction = (action: string) => {
     if (action === 'accept') {
-      setActionNotice('Offer successfully accepted by customer! Digital contract generated.');
+      setActionNotice('Nabídka byla úspěšně schválena investorem! Digitální smlouva byla vygenerována.');
     } else if (action === 'deposit') {
-      setActionNotice('50% Deposit payment gateway initiated (110,000 CZK via card/wire).');
+      setActionNotice('Zálohová platba 50% byla iniciována (110 000 Kč platební kartou/QR kódem).');
     } else if (action === 'changes') {
-      setActionNotice('Change request form sent to customer. Revision v3 created.');
+      setActionNotice('Formulář požadavku na změnu byl odeslán. Revize v3 byla vytvořena.');
     }
     setTimeout(() => setActionNotice(null), 5000);
   };
 
   return (
-    <div className="space-y-8 max-w-5xl mx-auto pb-16 text-slate-100">
+    <div className="space-y-8 max-w-5xl mx-auto pb-16 text-slate-100 font-sans">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-bold text-slate-100 tracking-tight">Tvorba stavebních rozpočtů & nabídek</h2>
+          <h2 className="text-2xl font-black text-slate-100 tracking-tight">Tvorba stavebních rozpočtů & nabídek</h2>
           <p className="text-xs text-slate-400 mt-0.5">Kalkulační šablony, revize nabídek, generování PDF a digitální akceptace investorem.</p>
         </div>
 
@@ -112,7 +117,12 @@ export const QuotesPage: React.FC<QuotesPageProps> = ({ branding }) => {
           </button>
           <button
             onClick={handleDownload}
-            className="px-4 py-2.5 rounded-xl text-xs font-bold text-slate-950 shadow-md flex items-center gap-2 transition-all hover:bg-amber-400 bg-amber-500"
+            style={{
+              backgroundColor: palette.primary,
+              color: palette.textOnPrimary,
+              boxShadow: palette.primaryGlow
+            }}
+            className="px-4 py-2.5 rounded-xl text-xs font-bold shadow-md flex items-center gap-2 transition-all active:scale-[0.98]"
           >
             {downloaded ? <Check className="w-4 h-4" /> : <Download className="w-4 h-4" />}
             <span>{downloaded ? 'PDF vygenerováno!' : 'Stáhnout PDF nabídku'}</span>
@@ -132,10 +142,17 @@ export const QuotesPage: React.FC<QuotesPageProps> = ({ branding }) => {
       )}
 
       {/* Smart Builder & Version Control Toolbar */}
-      <div className="bg-slate-900 p-6 rounded-3xl border border-slate-800 shadow-md space-y-4">
+      <div className="bg-slate-900/90 backdrop-blur-md p-6 rounded-[24px] border border-slate-800 shadow-md space-y-4">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="flex items-center gap-2">
-            <div className="w-7 h-7 rounded-lg bg-amber-500/20 text-amber-400 flex items-center justify-center">
+            <div 
+              className="w-7 h-7 rounded-lg flex items-center justify-center border"
+              style={{
+                backgroundColor: palette.primarySubtle,
+                borderColor: palette.primaryBorder,
+                color: palette.primary
+              }}
+            >
               <Sparkles className="w-4 h-4" />
             </div>
             <div>
@@ -146,7 +163,12 @@ export const QuotesPage: React.FC<QuotesPageProps> = ({ branding }) => {
           <div className="flex items-center gap-2">
             <button
               onClick={() => applySmartBuilder('Pergola')}
-              className="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-amber-400 border border-slate-700 text-xs font-bold transition-all shadow-sm flex items-center gap-1.5"
+              style={{
+                backgroundColor: palette.primarySubtle,
+                borderColor: palette.primaryBorder,
+                color: palette.primary
+              }}
+              className="px-3.5 py-2 rounded-xl border text-xs font-bold transition-all shadow-xs flex items-center gap-1.5 hover:opacity-90"
             >
               <span>+ Pergola (komplet)</span>
             </button>
@@ -166,7 +188,7 @@ export const QuotesPage: React.FC<QuotesPageProps> = ({ branding }) => {
             <select
               value={currentVersion}
               onChange={(e) => setCurrentVersion(e.target.value)}
-              className="bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1 text-slate-200 font-medium focus:outline-none focus:border-amber-500"
+              className="bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1 text-slate-200 font-medium focus:outline-none"
             >
               {versions.map((v, i) => (
                 <option key={i} value={v}>{v}</option>
@@ -178,14 +200,14 @@ export const QuotesPage: React.FC<QuotesPageProps> = ({ branding }) => {
       </div>
 
       {/* Builder Controls */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 bg-slate-900 p-6 rounded-3xl border border-slate-800 shadow-md">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 bg-slate-900/90 p-6 rounded-[24px] border border-slate-800 shadow-md">
         <div>
           <label className="text-xs font-semibold text-slate-300">Jméno zákazníka / investora</label>
           <input
             type="text"
             value={customerName}
             onChange={(e) => setCustomerName(e.target.value)}
-            className="w-full mt-1 bg-slate-950 border border-slate-800 focus:border-amber-500 rounded-xl p-3 text-xs font-semibold text-slate-200"
+            className="w-full mt-1 bg-slate-950 border border-slate-800 rounded-xl p-3 text-xs font-semibold text-slate-200 focus:outline-none"
           />
         </div>
         <div>
@@ -193,7 +215,7 @@ export const QuotesPage: React.FC<QuotesPageProps> = ({ branding }) => {
           <select
             value={vatRate}
             onChange={(e) => setVatRate(Number(e.target.value))}
-            className="w-full mt-1 bg-slate-950 border border-slate-800 focus:border-amber-500 rounded-xl p-3 text-xs font-semibold text-slate-200"
+            className="w-full mt-1 bg-slate-950 border border-slate-800 rounded-xl p-3 text-xs font-semibold text-slate-200 focus:outline-none"
           >
             <option value={21}>21% (Základní sazba)</option>
             <option value={15}>15% (Snížená pro bytovou výstavbu)</option>
@@ -206,23 +228,36 @@ export const QuotesPage: React.FC<QuotesPageProps> = ({ branding }) => {
             type="number"
             value={discountPercent}
             onChange={(e) => setDiscountPercent(Number(e.target.value))}
-            className="w-full mt-1 bg-slate-950 border border-slate-800 focus:border-amber-500 rounded-xl p-3 text-xs font-semibold text-slate-200"
+            className="w-full mt-1 bg-slate-950 border border-slate-800 rounded-xl p-3 text-xs font-semibold text-slate-200 focus:outline-none"
           />
         </div>
       </div>
 
       {/* PDF Document Preview Box */}
-      <div className="bg-slate-900 p-10 rounded-3xl border border-slate-800 shadow-2xl space-y-8 text-slate-200 relative overflow-hidden">
-        
+      <div 
+        className="bg-slate-900/95 p-10 rounded-[28px] border border-slate-800 shadow-2xl space-y-8 text-slate-200 relative overflow-hidden"
+        style={{
+          borderTop: `4px solid ${palette.primary}`
+        }}
+      >
         {/* AI Summary Banner at Top of PDF */}
         <div className="bg-slate-950 border border-slate-800 text-white p-4 rounded-2xl flex items-center justify-between shadow-md">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-amber-400">
+            <div 
+              className="w-8 h-8 rounded-lg flex items-center justify-center border"
+              style={{
+                backgroundColor: palette.primarySubtle,
+                borderColor: palette.primaryBorder,
+                color: palette.primary
+              }}
+            >
               <Sparkles className="w-4 h-4" />
             </div>
             <div>
-              <span className="text-[10px] font-bold uppercase tracking-wider text-amber-400">Shrnutí položkového rozpočtu</span>
-              <p className="text-xs font-bold text-slate-200">„Kompletní montáž pergoly vč. elektroinstalace LED a dubové konstrukce.“</p>
+              <span className="text-[10px] font-bold uppercase tracking-wider" style={{ color: palette.primary }}>
+                Shrnutí položkového rozpočtu
+              </span>
+              <p className="text-xs font-bold text-slate-200">„Kompletní montáž díla vč. materiálu a certifikované instalace.“</p>
             </div>
           </div>
           <span className="text-[10px] font-semibold text-emerald-400 bg-emerald-950 px-2 py-1 rounded-md border border-emerald-800">Ověřený rozsah prací</span>
@@ -230,21 +265,31 @@ export const QuotesPage: React.FC<QuotesPageProps> = ({ branding }) => {
 
         {/* PDF Header */}
         <div className="flex items-start justify-between border-b border-slate-800 pb-6">
-          <div className="flex items-center gap-3">
-            <div 
-              className="w-12 h-12 rounded-xl flex items-center justify-center text-slate-950 font-black text-xl shadow-md bg-amber-500"
-            >
-              {branding.name ? branding.name.substring(0, 2).toUpperCase() : 'SC'}
-            </div>
+          <div className="flex items-center gap-3.5">
+            {branding.logoUrl ? (
+              <img src={branding.logoUrl} alt={activeCompanyName} className="w-12 h-12 rounded-2xl object-cover border border-slate-700 bg-white p-1 shadow-md" />
+            ) : (
+              <div 
+                className="w-12 h-12 rounded-2xl flex items-center justify-center font-black text-xl shadow-md"
+                style={{
+                  backgroundColor: palette.primary,
+                  color: palette.textOnPrimary
+                }}
+              >
+                {activeCompanyName.substring(0, 2).toUpperCase()}
+              </div>
+            )}
             <div>
-              <h3 className="text-lg font-bold text-slate-100">{branding.name}</h3>
-              <p className="text-xs text-slate-400">{branding.address}, {branding.city}</p>
+              <h3 className="text-lg font-bold text-slate-100">{activeCompanyName}</h3>
+              <p className="text-xs text-slate-400">{branding.address || 'Průmyslová 100'}, {activeCity}</p>
               <p className="text-xs text-slate-500">IČO: 28492011 • DIČ: CZ28492011</p>
             </div>
           </div>
 
           <div className="text-right">
-            <h4 className="text-xl font-black text-amber-400">CENOVÁ NABÍDKA / ROZPOČET</h4>
+            <h4 className="text-xl font-black" style={{ color: palette.primary }}>
+              CENOVÁ NABÍDKA / ROZPOČET
+            </h4>
             <p className="text-xs text-slate-400 mt-1">Číslo: Q-2026-0492 ({currentVersion})</p>
             <p className="text-xs text-slate-500">Datum vystavení: 10.09.2026</p>
           </div>
@@ -261,7 +306,7 @@ export const QuotesPage: React.FC<QuotesPageProps> = ({ branding }) => {
           <div>
             <span className="font-semibold text-slate-400 uppercase tracking-wider block mb-1">Předmět díla:</span>
             <p className="font-bold text-slate-100 text-sm">{quoteTitle}</p>
-            <p className="text-slate-400">Lokalita: {branding.city}</p>
+            <p className="text-slate-400">Lokalita: {activeCity}</p>
             <p className="text-slate-400">Platnost nabídky: 30 dnů</p>
           </div>
         </div>
@@ -284,7 +329,9 @@ export const QuotesPage: React.FC<QuotesPageProps> = ({ branding }) => {
                   <td className="py-3 font-medium text-slate-200">{item.description}</td>
                   <td className="py-3 text-center text-slate-400">{item.quantity} {item.unit}</td>
                   <td className="py-3 text-right font-mono">{item.unitPrice.toLocaleString()} Kč</td>
-                  <td className="py-3 text-right font-bold text-amber-400 font-mono">{(item.quantity * item.unitPrice).toLocaleString()} Kč</td>
+                  <td className="py-3 text-right font-bold font-mono" style={{ color: palette.primary }}>
+                    {(item.quantity * item.unitPrice).toLocaleString()} Kč
+                  </td>
                   <td className="py-3 text-center">
                     <button onClick={() => removeItem(item.id)} className="text-slate-500 hover:text-rose-400 opacity-0 group-hover:opacity-100 transition-all">
                       <Trash2 className="w-4 h-4" />
@@ -302,18 +349,23 @@ export const QuotesPage: React.FC<QuotesPageProps> = ({ branding }) => {
               value={newItemDesc}
               onChange={(e) => setNewItemDesc(e.target.value)}
               placeholder="Zadat novou rozpočtovou položku..."
-              className="flex-1 bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-xs text-slate-200 focus:outline-none focus:border-amber-500"
+              className="flex-1 bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-xs text-slate-200 focus:outline-none"
             />
             <input
               type="number"
               value={newItemPrice}
               onChange={(e) => setNewItemPrice(Number(e.target.value))}
               placeholder="Cena (Kč)"
-              className="w-32 bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-xs text-slate-200 focus:outline-none focus:border-amber-500 font-mono"
+              className="w-32 bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-xs text-slate-200 focus:outline-none font-mono"
             />
             <button
               type="submit"
-              className="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-amber-400 border border-slate-700 text-xs font-bold transition-all flex items-center gap-1.5"
+              style={{
+                backgroundColor: palette.primarySubtle,
+                borderColor: palette.primaryBorder,
+                color: palette.primary
+              }}
+              className="px-4 py-2.5 rounded-xl border text-xs font-bold transition-all flex items-center gap-1.5"
             >
               <Plus className="w-4 h-4" /> Přidat položku
             </button>
@@ -338,7 +390,9 @@ export const QuotesPage: React.FC<QuotesPageProps> = ({ branding }) => {
               </div>
               <div className="flex justify-between text-base font-extrabold text-slate-100 pt-2 border-t border-slate-800">
                 <span>Celkem k úhradě:</span>
-                <span className="font-mono text-amber-400">{grandTotal.toLocaleString()} CZK</span>
+                <span className="font-mono" style={{ color: palette.primary }}>
+                  {grandTotal.toLocaleString()} CZK
+                </span>
               </div>
             </div>
           </div>
@@ -359,7 +413,12 @@ export const QuotesPage: React.FC<QuotesPageProps> = ({ branding }) => {
             </button>
             <button
               onClick={() => handleCustomerAction('deposit')}
-              className="px-4 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-bold transition-all shadow-md flex items-center gap-1.5 active:scale-95"
+              style={{
+                backgroundColor: palette.primary,
+                color: palette.textOnPrimary,
+                boxShadow: palette.primaryGlow
+              }}
+              className="px-4 py-2.5 rounded-xl text-xs font-bold transition-all shadow-md flex items-center gap-1.5 active:scale-95"
             >
               <CreditCard className="w-4 h-4" /> Zaplatit zálohu 50% (QR / Převod)
             </button>
@@ -402,7 +461,9 @@ export const QuotesPage: React.FC<QuotesPageProps> = ({ branding }) => {
               </div>
             </div>
             <span className="text-[11px] font-bold text-slate-200 mt-1.5">Okamžitá QR platba zálohy</span>
-            <span className="text-[9px] text-amber-400 font-mono font-semibold">{(grandTotal * 0.5).toLocaleString()} CZK • SPAYD</span>
+            <span className="text-[9px] font-mono font-semibold" style={{ color: palette.primary }}>
+              {(grandTotal * 0.5).toLocaleString()} CZK • SPAYD
+            </span>
           </div>
 
           <div className="text-right space-y-2">
@@ -418,7 +479,7 @@ export const QuotesPage: React.FC<QuotesPageProps> = ({ branding }) => {
                 </div>
                 <span className="text-[9px] text-emerald-400 bg-emerald-900/80 px-1.5 py-0.5 rounded font-bold border border-emerald-700">SHA-256</span>
               </div>
-              <p className="text-[10px] text-slate-500 mt-1">Zhotovitel: {branding.name} (IČO: 28491022)</p>
+              <p className="text-[10px] text-slate-500 mt-1">Zhotovitel: {activeCompanyName} (IČO: 28491022)</p>
             </div>
           </div>
         </div>
@@ -426,3 +487,4 @@ export const QuotesPage: React.FC<QuotesPageProps> = ({ branding }) => {
     </div>
   );
 };
+
