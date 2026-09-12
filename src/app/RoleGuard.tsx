@@ -16,7 +16,7 @@ export const RoleGuard: React.FC<RoleGuardProps> = ({ role, children, fallback }
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center gap-4 text-slate-100">
+      <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center gap-4 text-slate-100">
         <div className="w-10 h-10 border-4 border-amber-500/20 border-t-amber-500 rounded-full animate-spin"></div>
         <p className="text-xs font-semibold text-slate-400 animate-pulse">Ověřování přístupových práv...</p>
       </div>
@@ -40,12 +40,12 @@ export const RoleGuard: React.FC<RoleGuardProps> = ({ role, children, fallback }
   const defaultTarget = getDefaultRouteForRole(userRole);
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex items-center justify-center p-6 font-sans relative overflow-hidden">
+    <div className="min-h-screen bg-slate-50 text-slate-100 flex items-center justify-center p-6 font-sans relative overflow-hidden">
       {/* Subtle Background Glows */}
       <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-rose-500/10 rounded-full blur-3xl pointer-events-none"></div>
       <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-amber-500/10 rounded-full blur-3xl pointer-events-none"></div>
       
-      <div className="relative z-10 max-w-lg w-full bg-slate-900 border border-slate-800 rounded-3xl p-8 shadow-2xl space-y-6 text-center">
+      <div className="relative z-10 max-w-lg w-full bg-white border border-slate-800 rounded-3xl p-8 shadow-2xl space-y-6 text-center">
         <div className="w-16 h-16 mx-auto rounded-2xl bg-rose-500/10 border border-rose-500/20 text-rose-400 flex items-center justify-center shadow-inner">
           <Lock className="w-8 h-8" />
         </div>
@@ -64,7 +64,7 @@ export const RoleGuard: React.FC<RoleGuardProps> = ({ role, children, fallback }
           </p>
         </div>
 
-        <div className="bg-slate-950/80 rounded-2xl p-4 border border-slate-800 text-left space-y-2 text-xs">
+        <div className="bg-slate-50/80 rounded-2xl p-4 border border-slate-800 text-left space-y-2 text-xs">
           <div className="flex items-center justify-between text-slate-400">
             <span>Uživatel:</span>
             <span className="font-mono text-slate-200 font-semibold">{dbUser?.email || 'Neznámý'}</span>

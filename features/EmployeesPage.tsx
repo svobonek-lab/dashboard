@@ -82,10 +82,10 @@ export const EmployeesPage: React.FC<EmployeesPageProps> = ({ employees, brandin
           <div className="bg-slate-50 p-5 rounded-2xl border border-blue-100 space-y-4 animate-in fade-in">
             <div className="flex items-center justify-between border-b border-slate-200 pb-3">
               <div className="flex items-center gap-2">
-                <CheckCircle2 className="w-5 h-5 text-emerald-600" />
+                <CheckCircle2 className="w-5 h-5 text-green-600" />
                 <span className="text-xs font-bold text-slate-900">Doporučený vedoucí: <strong className="text-blue-600">{assignmentResult.bestEmployee.name}</strong></span>
               </div>
-              <span className="px-3 py-1 rounded-full text-xs font-black bg-emerald-50 text-emerald-700 border border-emerald-200">
+              <span className="px-3 py-1 rounded-full text-xs font-black bg-green-50 text-green-700 border border-green-200">
                 {assignmentResult.score}% Shoda profilu
               </span>
             </div>
@@ -120,7 +120,7 @@ export const EmployeesPage: React.FC<EmployeesPageProps> = ({ employees, brandin
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {employees.map((emp, i) => {
           const statusBg = 
-            emp.status === 'Green' ? 'bg-emerald-500' :
+            emp.status === 'Green' ? 'bg-green-500' :
             emp.status === 'Orange' ? 'bg-amber-500' : 'bg-rose-500';
 
           const certs = [

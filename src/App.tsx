@@ -157,7 +157,7 @@ function AppContent() {
 
   if (pathname === '/inquiry' || pathname === '/poptavka') {
     return (
-      <div className="min-h-screen bg-slate-950 p-6">
+      <div className="min-h-screen bg-slate-50 p-6">
         <InquiryFormPage 
           branding={branding} 
           onSubmitInquiry={handleAddLead}
@@ -169,7 +169,7 @@ function AppContent() {
 
   if (pathname === '/portal') {
     return (
-      <div className="min-h-screen bg-slate-950 p-6">
+      <div className="min-h-screen bg-slate-50 p-6">
         <CustomerPortalPage branding={branding} lead={leads[0]} onBackToCRM={() => navigate('/dashboard')} />
       </div>
     );
@@ -209,8 +209,8 @@ function AppContent() {
     );
   }
 
-  // 3. Employee Field Routes (`/employee*`)
-  if (pathname.startsWith('/employee')) {
+  // 3. Employee Field Routes (`/employee` and `/employee/*`)
+  if (pathname === '/employee' || pathname.startsWith('/employee/')) {
     return (
       <ProtectedRoute allowedRole={['employee', 'owner', 'super_admin']}>
         <EmployeeLayout leads={leads}>

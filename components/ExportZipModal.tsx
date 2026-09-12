@@ -87,11 +87,11 @@ Integrujte widget do svého webu vložením embed-demo.html nebo použitím REST
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fade-in">
-      <div className="bg-[#111726] border border-slate-800 rounded-3xl max-w-lg w-full p-6 space-y-5 shadow-2xl relative">
+      <div className="bg-[#111726] border border-slate-200 rounded-3xl max-w-lg w-full p-6 space-y-5 shadow-2xl relative">
         
         <button
           onClick={onClose}
-          className="absolute top-5 right-5 text-slate-400 hover:text-white p-1 rounded-xl hover:bg-slate-800"
+          className="absolute top-5 right-5 text-slate-500 hover:text-slate-900 p-1 rounded-xl hover:bg-slate-800"
         >
           <X className="w-5 h-5" />
         </button>
@@ -101,22 +101,22 @@ Integrujte widget do svého webu vložením embed-demo.html nebo použitím REST
             <FileArchive className="w-6 h-6" />
           </div>
           <div>
-            <h3 className="text-lg font-black text-white">Export White Label Balíčku</h3>
-            <p className="text-xs text-slate-400">Kompletní samostatný balíček pro {branding.name}</p>
+            <h3 className="text-lg font-black text-slate-900">Export White Label Balíčku</h3>
+            <p className="text-xs text-slate-500">Kompletní samostatný balíček pro {branding.name}</p>
           </div>
         </div>
 
-        <div className="bg-[#0B0F19] p-4 rounded-2xl border border-slate-800 space-y-2 text-xs text-slate-300">
-          <p className="font-bold text-white">Balíček obsahuje:</p>
-          <ul className="space-y-1.5 list-disc list-inside text-slate-400 text-[11px]">
+        <div className="bg-[#0B0F19] p-4 rounded-2xl border border-slate-200 space-y-2 text-xs text-slate-700">
+          <p className="font-bold text-slate-900">Balíček obsahuje:</p>
+          <ul className="space-y-1.5 list-disc list-inside text-slate-500 text-[11px]">
             <li>Firemní konfiguraci <code className="text-amber-400 font-mono">company.json</code></li>
-            <li>Samostatný iframe widget s firemními barvami <code className="text-emerald-400 font-mono">embed-demo.html</code></li>
+            <li>Samostatný iframe widget s firemními barvami <code className="text-green-400 font-mono">embed-demo.html</code></li>
             <li>Dokumentaci pro IT techniky a webmastera</li>
           </ul>
         </div>
 
         {downloadSuccess ? (
-          <div className="p-3.5 rounded-2xl bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 text-xs font-bold flex items-center justify-center gap-2">
+          <div className="p-3.5 rounded-2xl bg-green-500/20 border border-green-500/40 text-green-300 text-xs font-bold flex items-center justify-center gap-2">
             <Check className="w-4 h-4" />
             <span>ZIP balíček byl úspěšně stažen!</span>
           </div>

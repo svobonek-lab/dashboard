@@ -62,7 +62,7 @@ export const WeatherWidget: React.FC<WeatherWidgetProps> = ({ weather }) => {
 
       {data.recommendation && !hasWarning && (
         <div className="mt-3 pt-3 border-t border-slate-100 text-xs text-slate-600 font-medium flex items-center gap-2">
-          <span className="px-2 py-0.5 bg-emerald-50 text-emerald-700 rounded-md text-[10px] font-bold">AI Tip</span>
+          <span className="px-2 py-0.5 bg-green-50 text-green-700 rounded-md text-[10px] font-bold">AI Tip</span>
           <span>{data.recommendation}</span>
         </div>
       )}

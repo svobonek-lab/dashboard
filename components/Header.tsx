@@ -139,25 +139,25 @@ create table if not exists projects (
   };
 
   return (
-    <header className="h-20 bg-slate-900/90 backdrop-blur-md border-b border-slate-800 px-8 flex items-center justify-between sticky top-0 z-20 shadow-lg text-slate-100">
+    <header className="h-20 bg-white/90 backdrop-blur-md border-b border-slate-200 px-8 flex items-center justify-between sticky top-0 z-20 shadow-lg text-slate-900">
       <div className="flex items-center gap-6">
         <div>
-          <h2 className="text-xl font-bold text-slate-100 tracking-tight">
+          <h2 className="text-xl font-bold text-slate-900 tracking-tight">
             {currentOrg?.name || branding.name} CRM
           </h2>
-          <p className="text-xs text-slate-400 font-medium">
+          <p className="text-xs text-slate-500 font-medium">
             Multi-Tenant Supabase Portal • {branding.city}
           </p>
         </div>
 
         {/* Role Switcher for Sales Demo */}
-        <div className="hidden md:flex items-center bg-slate-950 p-1 rounded-xl border border-slate-800 text-xs font-semibold">
+        <div className="hidden md:flex items-center bg-slate-50 p-1 rounded-xl border border-slate-200 text-xs font-semibold">
           <button
             onClick={() => setActiveRole('owner')}
             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-all ${
               activeRole === 'owner'
-                ? 'bg-slate-800 text-slate-100 shadow-sm border border-slate-700/60'
-                : 'text-slate-400 hover:text-slate-200'
+                ? 'bg-slate-800 text-slate-900 shadow-sm border border-slate-300/60'
+                : 'text-slate-500 hover:text-slate-800'
             }`}
           >
             <Shield className="w-3.5 h-3.5 text-amber-500" />
@@ -167,11 +167,11 @@ create table if not exists projects (
             onClick={() => setActiveRole('employee')}
             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-all ${
               activeRole === 'employee'
-                ? 'bg-slate-800 text-slate-100 shadow-sm border border-slate-700/60'
-                : 'text-slate-400 hover:text-slate-200'
+                ? 'bg-slate-800 text-slate-900 shadow-sm border border-slate-300/60'
+                : 'text-slate-500 hover:text-slate-800'
             }`}
           >
-            <UserCheck className="w-3.5 h-3.5 text-emerald-500" />
+            <UserCheck className="w-3.5 h-3.5 text-green-500" />
             <span>Mobilní aplikace týmu</span>
           </button>
         </div>
@@ -179,19 +179,19 @@ create table if not exists projects (
 
       <div className="flex items-center gap-4">
         {/* Supabase Status Indicator Badge */}
-        <div className="hidden lg:flex items-center gap-1.5 px-3 py-1.5 bg-slate-950 border border-slate-800 rounded-xl text-[11px] font-medium text-slate-300 shadow-3xs">
-          <Database className={`w-3.5 h-3.5 ${isConfigured ? 'text-emerald-400 animate-pulse' : 'text-slate-500'}`} />
+        <div className="hidden lg:flex items-center gap-1.5 px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-[11px] font-medium text-slate-700 shadow-3xs">
+          <Database className={`w-3.5 h-3.5 ${isConfigured ? 'text-green-400 animate-pulse' : 'text-slate-500'}`} />
           <span>{isConfigured ? 'Databáze připojena' : 'Lokální sandbox'}</span>
         </div>
 
         {/* Search Bar / Command Palette Trigger */}
         <button
           onClick={onOpenCommandPalette}
-          className="hidden lg:flex items-center gap-3 w-64 bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2 text-xs text-slate-400 hover:border-slate-700 transition-all text-left"
+          className="hidden lg:flex items-center gap-3 w-64 bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-xs text-slate-500 hover:border-slate-300 transition-all text-left"
         >
-          <Search className="w-4 h-4 text-slate-400" />
+          <Search className="w-4 h-4 text-slate-500" />
           <span className="flex-1 truncate">Hledat zakázky, klienty...</span>
-          <kbd className="px-1.5 py-0.5 bg-slate-900 border border-slate-700 rounded-md text-[10px] font-mono text-slate-400 shadow-2xs">Ctrl+K</kbd>
+          <kbd className="px-1.5 py-0.5 bg-white border border-slate-300 rounded-md text-[10px] font-mono text-slate-500 shadow-2xs">Ctrl+K</kbd>
         </button>
 
         {/* Real-time Storage & Sovereignty Telemetry */}
@@ -201,7 +201,7 @@ create table if not exists projects (
         {onOpenOnboarding && (
           <button
             onClick={onOpenOnboarding}
-            className="hidden sm:flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-slate-200 transition-all border border-slate-700"
+            className="hidden sm:flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-slate-800 transition-all border border-slate-300"
           >
             <Wand2 className="w-3.5 h-3.5 text-amber-400" />
             <span>Průvodce nastavením</span>
@@ -222,7 +222,7 @@ create table if not exists projects (
         <div className="relative">
           <button
             onClick={() => setIsNotifOpen(!isNotifOpen)}
-            className="w-10 h-10 rounded-xl bg-slate-950 border border-slate-800 flex items-center justify-center text-slate-400 hover:text-slate-100 hover:bg-slate-800 transition-all relative"
+            className="w-10 h-10 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-center text-slate-500 hover:text-slate-900 hover:bg-slate-800 transition-all relative"
           >
             <Bell className="w-4 h-4" />
             {unreadCount > 0 && (
@@ -242,7 +242,7 @@ create table if not exists projects (
         <div className="relative">
           <button
             onClick={() => setIsTenantMenuOpen(!isTenantMenuOpen)}
-            className="flex items-center gap-3 pl-4 border-l border-slate-800 text-left hover:opacity-85 transition-all"
+            className="flex items-center gap-3 pl-4 border-l border-slate-200 text-left hover:opacity-85 transition-all"
           >
             <img
               src={currentOrg?.logo_url || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=120&q=80"}
@@ -251,10 +251,10 @@ create table if not exists projects (
             />
             <div className="hidden xl:block">
               <div className="flex items-center gap-1">
-                <p className="text-xs font-bold text-slate-100 truncate max-w-[130px]">
+                <p className="text-xs font-bold text-slate-900 truncate max-w-[130px]">
                   {currentOrg?.name || 'Jan Svoboda'}
                 </p>
-                <ChevronDown className="w-3 h-3 text-slate-400" />
+                <ChevronDown className="w-3 h-3 text-slate-500" />
               </div>
               <p className="text-[10px] text-amber-500 uppercase font-bold tracking-wider">
                 {dbUser?.role || 'Owner'} ({currentOrg?.slug || 'personal'})
@@ -263,17 +263,17 @@ create table if not exists projects (
           </button>
 
           {isTenantMenuOpen && (
-            <div className="absolute right-0 mt-3 w-72 bg-slate-900 rounded-3xl border border-slate-800 shadow-2xl p-4 z-50 animate-in fade-in slide-in-from-top-3 text-slate-100">
+            <div className="absolute right-0 mt-3 w-72 bg-white rounded-3xl border border-slate-200 shadow-2xl p-4 z-50 animate-in fade-in slide-in-from-top-3 text-slate-900">
               <div className="space-y-3">
-                <div className="pb-3 border-b border-slate-800">
-                  <p className="text-xs font-black text-slate-400 uppercase tracking-wider">Aktivní organizace</p>
-                  <p className="text-sm font-black text-slate-100 mt-1">{currentOrg?.name || 'Moje Firma'}</p>
-                  <p className="text-[11px] text-slate-400">{user?.email || 'sprava@firma.cz'}</p>
+                <div className="pb-3 border-b border-slate-200">
+                  <p className="text-xs font-black text-slate-500 uppercase tracking-wider">Aktivní organizace</p>
+                  <p className="text-sm font-black text-slate-900 mt-1">{currentOrg?.name || 'Moje Firma'}</p>
+                  <p className="text-[11px] text-slate-500">{user?.email || 'sprava@firma.cz'}</p>
                 </div>
 
                 {/* Tenant List */}
                 <div className="space-y-1 max-h-40 overflow-y-auto">
-                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-wider">Přepnout společnost</p>
+                  <p className="text-[10px] font-black text-slate-500 uppercase tracking-wider">Přepnout společnost</p>
                   {organizations.map((org) => (
                     <button
                       key={org.id}
@@ -284,7 +284,7 @@ create table if not exists projects (
                       className={`w-full text-left p-2 rounded-xl text-xs font-bold flex items-center justify-between transition-all ${
                         currentOrg?.id === org.id
                           ? 'bg-amber-500/10 text-amber-400 border border-amber-500/30'
-                          : 'hover:bg-slate-800 text-slate-300'
+                          : 'hover:bg-slate-800 text-slate-700'
                       }`}
                     >
                       <span className="truncate">{org.name}</span>
@@ -295,13 +295,13 @@ create table if not exists projects (
 
                 {/* Add new Organization input form */}
                 {showNewOrgInput ? (
-                  <form onSubmit={handleCreateOrgSubmit} className="space-y-2 pt-2 border-t border-slate-800">
+                  <form onSubmit={handleCreateOrgSubmit} className="space-y-2 pt-2 border-t border-slate-200">
                     <input
                       type="text"
                       placeholder="Název organizace..."
                       value={newOrgName}
                       onChange={(e) => setNewOrgName(e.target.value)}
-                      className="w-full text-xs p-2.5 bg-slate-950 border border-slate-800 text-slate-100 rounded-xl focus:ring-1 focus:ring-amber-500 outline-none"
+                      className="w-full text-xs p-2.5 bg-slate-50 border border-slate-200 text-slate-900 rounded-xl focus:ring-1 focus:ring-amber-500 outline-none"
                       required
                     />
                     <div className="flex gap-2">
@@ -314,7 +314,7 @@ create table if not exists projects (
                       <button
                         type="button"
                         onClick={() => setShowNewOrgInput(false)}
-                        className="flex-1 py-1.5 bg-slate-800 text-slate-300 rounded-xl text-xs font-bold"
+                        className="flex-1 py-1.5 bg-slate-800 text-slate-700 rounded-xl text-xs font-bold"
                       >
                         Zrušit
                       </button>
@@ -323,7 +323,7 @@ create table if not exists projects (
                 ) : (
                   <button
                     onClick={() => setShowNewOrgInput(true)}
-                    className="w-full py-2.5 border border-dashed border-slate-700 rounded-xl text-xs font-bold text-slate-300 hover:bg-slate-800 transition-all flex items-center justify-center gap-1.5"
+                    className="w-full py-2.5 border border-dashed border-slate-300 rounded-xl text-xs font-bold text-slate-700 hover:bg-slate-800 transition-all flex items-center justify-center gap-1.5"
                   >
                     <Plus className="w-3.5 h-3.5" />
                     <span>Založit novou firmu</span>
@@ -331,7 +331,7 @@ create table if not exists projects (
                 )}
 
                 {/* Auth Controls */}
-                <div className="pt-3 border-t border-slate-800 flex gap-2">
+                <div className="pt-3 border-t border-slate-200 flex gap-2">
                   {isConfigured ? (
                     user && !user.id.startsWith('user-demo') && !user.id.startsWith('user-virtual') ? (
                       <button
@@ -339,7 +339,7 @@ create table if not exists projects (
                           await logout();
                           setIsTenantMenuOpen(false);
                         }}
-                        className="w-full py-2.5 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-all"
+                        className="w-full py-2.5 bg-slate-800 hover:bg-slate-700 border border-slate-300 text-slate-800 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-all"
                       >
                         <LogOut className="w-3.5 h-3.5" />
                         <span>Odhlásit se</span>
@@ -379,15 +379,15 @@ create table if not exists projects (
 
       {/* Supabase Authentication Modal */}
       {isAuthModalOpen && (
-        <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-slate-900 rounded-3xl border border-slate-800 max-w-md w-full p-6 shadow-2xl space-y-4 animate-in fade-in zoom-in-95 text-slate-100">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-800">
-              <h3 className="text-lg font-black text-slate-100">
+        <div className="fixed inset-0 z-50 bg-slate-50/80 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl border border-slate-200 max-w-md w-full p-6 shadow-2xl space-y-4 animate-in fade-in zoom-in-95 text-slate-900">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-200">
+              <h3 className="text-lg font-black text-slate-900">
                 {isConfigured ? 'Přihlášení do databáze' : 'Vytvořit virtuální firmu (Sandbox)'}
               </h3>
               <button
                 onClick={() => setIsAuthModalOpen(false)}
-                className="text-slate-400 hover:text-slate-200 text-sm font-bold p-1"
+                className="text-slate-500 hover:text-slate-800 text-sm font-bold p-1"
               >
                 ✕
               </button>
@@ -407,24 +407,24 @@ create table if not exists projects (
               )}
 
               <div>
-                <label className="text-xs font-semibold text-slate-300 block">E-mailová adresa</label>
+                <label className="text-xs font-semibold text-slate-700 block">E-mailová adresa</label>
                 <input
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full mt-1 p-3 bg-slate-950 border border-slate-800 rounded-xl focus:ring-1 focus:ring-amber-500 outline-none text-sm font-medium text-slate-100"
+                  className="w-full mt-1 p-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-1 focus:ring-amber-500 outline-none text-sm font-medium text-slate-900"
                   placeholder="jmeno@firma.cz"
                   required
                 />
               </div>
 
               <div>
-                <label className="text-xs font-semibold text-slate-300 block">Heslo</label>
+                <label className="text-xs font-semibold text-slate-700 block">Heslo</label>
                 <input
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full mt-1 p-3 bg-slate-950 border border-slate-800 rounded-xl focus:ring-1 focus:ring-amber-500 outline-none text-sm font-medium text-slate-100"
+                  className="w-full mt-1 p-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-1 focus:ring-amber-500 outline-none text-sm font-medium text-slate-900"
                   placeholder="••••••••"
                   required
                 />
@@ -432,12 +432,12 @@ create table if not exists projects (
 
               {authMode === 'signup' && (
                 <div>
-                  <label className="text-xs font-semibold text-slate-300 block">Název firmy / organizace</label>
+                  <label className="text-xs font-semibold text-slate-700 block">Název firmy / organizace</label>
                   <input
                     type="text"
                     value={orgName}
                     onChange={(e) => setOrgName(e.target.value)}
-                    className="w-full mt-1 p-3 bg-slate-950 border border-slate-800 rounded-xl focus:ring-1 focus:ring-amber-500 outline-none text-sm font-medium text-slate-100"
+                    className="w-full mt-1 p-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-1 focus:ring-amber-500 outline-none text-sm font-medium text-slate-900"
                     placeholder="Stavební Firma s.r.o."
                     required
                   />
@@ -452,7 +452,7 @@ create table if not exists projects (
               </button>
             </form>
 
-            <div className="text-center pt-2 text-xs text-slate-400 font-medium">
+            <div className="text-center pt-2 text-xs text-slate-500 font-medium">
               {authMode === 'login' ? (
                 <>
                   Nemáte ještě firemní účet?{' '}
@@ -475,39 +475,39 @@ create table if not exists projects (
 
       {/* Schema Error Dialog for PGRST125 */}
       {schemaError && (
-        <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-slate-900 rounded-3xl border border-slate-800 max-w-2xl w-full p-6 shadow-2xl space-y-4 animate-in fade-in zoom-in-95 text-slate-100">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+        <div className="fixed inset-0 z-50 bg-slate-50/80 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl border border-slate-200 max-w-2xl w-full p-6 shadow-2xl space-y-4 animate-in fade-in zoom-in-95 text-slate-900">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-200">
               <div className="flex items-center gap-2 text-rose-500">
                 <Database className="w-5 h-5" />
-                <h3 className="text-lg font-black tracking-tight text-slate-100">Chyba struktury databáze (PGRST125)</h3>
+                <h3 className="text-lg font-black tracking-tight text-slate-900">Chyba struktury databáze (PGRST125)</h3>
               </div>
               <button
                 onClick={clearSchemaError}
-                className="text-slate-400 hover:text-slate-200 text-sm font-bold p-1"
+                className="text-slate-500 hover:text-slate-800 text-sm font-bold p-1"
               >
                 ✕
               </button>
             </div>
 
-            <div className="space-y-3 text-slate-300 text-sm leading-relaxed">
-              <p className="font-bold text-slate-100">
+            <div className="space-y-3 text-slate-700 text-sm leading-relaxed">
+              <p className="font-bold text-slate-900">
                 {schemaError}
               </p>
               <p>
                 Pro zachování plné funkčnosti aplikace CRM automaticky aktivovalo <strong>Sandbox Mód s ukládáním do Local Storage</strong>. Můžete aplikaci plnohodnotně používat, vytvářet zakázky, plánovat kapacity i přepínat organizace!
               </p>
-              <p className="text-xs text-slate-400">
+              <p className="text-xs text-slate-500">
                 Pokud si přejete integrovat Supabase s reálnou databází, spusťte následující SQL příkaz v <strong>Supabase SQL Editoru</strong> ve vašem projektu:
               </p>
             </div>
 
-            <div className="relative bg-slate-950 rounded-2xl p-4 overflow-hidden max-h-60 overflow-y-auto border border-slate-800">
-              <pre className="text-xs text-emerald-400 font-mono select-all whitespace-pre-wrap">{sqlScript}</pre>
+            <div className="relative bg-slate-50 rounded-2xl p-4 overflow-hidden max-h-60 overflow-y-auto border border-slate-200">
+              <pre className="text-xs text-green-400 font-mono select-all whitespace-pre-wrap">{sqlScript}</pre>
               <button
                 type="button"
                 onClick={handleCopySql}
-                className="absolute top-2 right-2 px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-white text-[11px] font-bold rounded-lg transition-all"
+                className="absolute top-2 right-2 px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-900 text-[11px] font-bold rounded-lg transition-all"
               >
                 {copiedSql ? 'Kopírováno!' : 'Kopírovat SQL'}
               </button>

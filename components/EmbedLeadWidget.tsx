@@ -27,7 +27,7 @@ export const EmbedLeadWidget: React.FC<EmbedLeadWidgetProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-slate-950/70 backdrop-blur-md animate-in fade-in duration-200 font-sans">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-slate-50/70 backdrop-blur-md animate-in fade-in duration-200 font-sans">
       <div 
         className="bg-slate-50 text-slate-900 rounded-[32px] border border-slate-200 shadow-2xl w-full max-w-2xl max-h-[92vh] flex flex-col overflow-hidden relative transform transition-all duration-300"
       >
@@ -38,7 +38,7 @@ export const EmbedLeadWidget: React.FC<EmbedLeadWidgetProps> = ({
               <img src={branding.logoUrl} alt={activeCompanyName} className="w-9 h-9 rounded-xl object-cover border border-slate-200 bg-white p-0.5" />
             ) : (
               <div 
-                className="w-9 h-9 rounded-xl flex items-center justify-center font-black text-xs text-white shadow-sm"
+                className="w-9 h-9 rounded-xl flex items-center justify-center font-black text-xs text-slate-900 shadow-sm"
                 style={{ backgroundColor: activeColor }}
               >
                 {activeCompanyName.substring(0, 2).toUpperCase()}

@@ -54,11 +54,11 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
   ].filter(item => item.label.toLowerCase().includes(query.toLowerCase()));
 
   return (
-    <div className="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-xs flex items-start justify-center pt-20 px-4">
+    <div className="fixed inset-0 z-50 bg-slate-50/60 backdrop-blur-xs flex items-start justify-center pt-20 px-4">
       <div className="w-full max-w-2xl bg-white rounded-3xl shadow-2xl border border-slate-200 overflow-hidden animate-in fade-in zoom-in-95 duration-150">
         {/* Search Input Bar */}
         <div className="p-4 border-b border-slate-100 flex items-center gap-3">
-          <Search className="w-5 h-5 text-slate-400" />
+          <Search className="w-5 h-5 text-slate-500" />
           <input
             autoFocus
             type="text"
@@ -67,7 +67,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
             placeholder="Type a command or search leads, clients, reports..."
             className="w-full text-slate-800 placeholder-slate-400 text-base focus:outline-none bg-transparent font-medium"
           />
-          <button onClick={onClose} className="p-1 rounded-lg hover:bg-slate-100 text-slate-400 hover:text-slate-600">
+          <button onClick={onClose} className="p-1 rounded-lg hover:bg-slate-100 text-slate-500 hover:text-slate-600">
             <X className="w-5 h-5" />
           </button>
         </div>
@@ -76,7 +76,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
         <div className="max-h-96 overflow-y-auto p-4 space-y-4">
           {navigationActions.length > 0 && (
             <div>
-              <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider px-3 pb-2">Navigation & Actions</p>
+              <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider px-3 pb-2">Navigation & Actions</p>
               <div className="space-y-1">
                 {navigationActions.map(action => {
                   const Icon = action.icon;
@@ -95,7 +95,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
                         </div>
                         <span>{action.label}</span>
                       </div>
-                      <ArrowRight className="w-4 h-4 text-slate-400 opacity-0 group-hover:opacity-100 transition-all" />
+                      <ArrowRight className="w-4 h-4 text-slate-500 opacity-0 group-hover:opacity-100 transition-all" />
                     </button>
                   );
                 })}
@@ -105,7 +105,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
 
           {filteredLeads.length > 0 && (
             <div>
-              <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider px-3 pb-2">Matching Leads & Projects</p>
+              <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider px-3 pb-2">Matching Leads & Projects</p>
               <div className="space-y-1">
                 {filteredLeads.map(lead => (
                   <button

@@ -270,16 +270,16 @@ export const AdminPanel: React.FC = () => {
   const totalUsers = organizations.length; // 1 owner user per org created automatically
 
   return (
-    <div id="super-admin-panel" className="space-y-8 pb-12 relative text-slate-100">
+    <div id="super-admin-panel" className="space-y-8 pb-12 relative text-slate-900">
       {/* Toast alert */}
       {toast && (
         <div className={`fixed bottom-6 right-6 z-50 flex items-center gap-3 px-5 py-3.5 rounded-2xl shadow-xl border text-sm font-semibold transition-all transform animate-bounce duration-300 ${
           toast.type === 'success' 
-            ? 'bg-emerald-950 border-emerald-800 text-emerald-300' 
+            ? 'bg-green-950 border-green-800 text-green-300' 
             : 'bg-rose-950 border-rose-800 text-rose-300'
         }`}>
           <div className={`w-5 h-5 rounded-full flex items-center justify-center shrink-0 ${
-            toast.type === 'success' ? 'bg-emerald-500 text-slate-950' : 'bg-rose-500 text-white'
+            toast.type === 'success' ? 'bg-green-500 text-slate-950' : 'bg-rose-500 text-slate-900'
           }`}>
             <Check className="w-3.5 h-3.5" />
           </div>
@@ -294,8 +294,8 @@ export const AdminPanel: React.FC = () => {
             <UserCheck className="w-3.5 h-3.5" />
             <span>Super Admin Režim</span>
           </div>
-          <h1 className="text-3xl font-black text-slate-100 tracking-tight">Správa zákazníků CRM</h1>
-          <p className="text-sm text-slate-400 font-medium">Správa, instalace a monitoring klientských CRM systémů pro stavebnictví.</p>
+          <h1 className="text-3xl font-black text-slate-900 tracking-tight">Správa zákazníků CRM</h1>
+          <p className="text-sm text-slate-500 font-medium">Správa, instalace a monitoring klientských CRM systémů pro stavebnictví.</p>
         </div>
 
         <button
@@ -309,50 +309,50 @@ export const AdminPanel: React.FC = () => {
 
       {/* Top Metrics Grid */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-5">
-        <div className="bg-slate-900 border border-slate-800 p-6 rounded-2xl shadow-sm space-y-2 relative overflow-hidden">
+        <div className="bg-white border border-slate-200 p-6 rounded-2xl shadow-sm space-y-2 relative overflow-hidden">
           <div className="absolute right-4 top-4 text-amber-500/10">
             <Building className="w-12 h-12" />
           </div>
-          <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Celkem firem</p>
-          <p className="text-3xl font-black text-slate-100">{loading ? '...' : totalOrgs}</p>
-          <p className="text-[11px] text-emerald-400 font-bold flex items-center gap-1">Aktivní multitenant</p>
+          <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Celkem firem</p>
+          <p className="text-3xl font-black text-slate-900">{loading ? '...' : totalOrgs}</p>
+          <p className="text-[11px] text-green-400 font-bold flex items-center gap-1">Aktivní multitenant</p>
         </div>
 
-        <div className="bg-slate-900 border border-slate-800 p-6 rounded-2xl shadow-sm space-y-2 relative overflow-hidden">
-          <div className="absolute right-4 top-4 text-emerald-500/10">
+        <div className="bg-white border border-slate-200 p-6 rounded-2xl shadow-sm space-y-2 relative overflow-hidden">
+          <div className="absolute right-4 top-4 text-green-500/10">
             <Users className="w-12 h-12" />
           </div>
-          <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Uživatelé celkem</p>
-          <p className="text-3xl font-black text-slate-100">{loading ? '...' : totalUsers}</p>
+          <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Uživatelé celkem</p>
+          <p className="text-3xl font-black text-slate-900">{loading ? '...' : totalUsers}</p>
           <p className="text-[11px] text-slate-500 font-medium">Správci a majitelé</p>
         </div>
 
-        <div className="bg-slate-900 border border-slate-800 p-6 rounded-2xl shadow-sm space-y-2 relative overflow-hidden">
+        <div className="bg-white border border-slate-200 p-6 rounded-2xl shadow-sm space-y-2 relative overflow-hidden">
           <div className="absolute right-4 top-4 text-amber-500/10">
             <Kanban className="w-12 h-12" />
           </div>
-          <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Zakázek (Leads)</p>
-          <p className="text-3xl font-black text-slate-100">{loading ? '...' : totalLeads}</p>
+          <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Zakázek (Leads)</p>
+          <p className="text-3xl font-black text-slate-900">{loading ? '...' : totalLeads}</p>
           <p className="text-[11px] text-slate-500 font-medium">Napříč všemi nájemci</p>
         </div>
 
-        <div className="bg-slate-900 border border-slate-800 p-6 rounded-2xl shadow-sm space-y-2 relative overflow-hidden">
+        <div className="bg-white border border-slate-200 p-6 rounded-2xl shadow-sm space-y-2 relative overflow-hidden">
           <div className="absolute right-4 top-4 text-amber-500/10">
             <UserCheck className="w-12 h-12" />
           </div>
-          <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Zaměstnanců</p>
-          <p className="text-3xl font-black text-slate-100">{loading ? '...' : totalEmployees}</p>
+          <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Zaměstnanců</p>
+          <p className="text-3xl font-black text-slate-900">{loading ? '...' : totalEmployees}</p>
           <p className="text-[11px] text-slate-500 font-medium">Plánované kapacity</p>
         </div>
       </div>
 
       {/* Customer List Card */}
-      <div className="bg-slate-900 border border-slate-800 rounded-2xl shadow-sm overflow-hidden">
+      <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
         {/* Search Header */}
-        <div className="p-5 border-b border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-slate-950/60">
+        <div className="p-5 border-b border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-slate-50/60">
           <div className="space-y-1">
-            <h3 className="font-bold text-slate-100 text-base">Seznam licencovaných firem</h3>
-            <p className="text-xs text-slate-400">Přehled a správa všech izolovaných instancí a tenantů.</p>
+            <h3 className="font-bold text-slate-900 text-base">Seznam licencovaných firem</h3>
+            <p className="text-xs text-slate-500">Přehled a správa všech izolovaných instancí a tenantů.</p>
           </div>
 
           <div className="relative max-w-xs w-full">
@@ -364,7 +364,7 @@ export const AdminPanel: React.FC = () => {
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               placeholder="Vyhledat společnost..."
-              className="w-full pl-10 pr-4 py-2.5 bg-slate-900 border border-slate-800 rounded-xl text-xs font-medium text-slate-100 placeholder-slate-500 focus:border-amber-500 outline-none"
+              className="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-medium text-slate-900 placeholder-slate-500 focus:border-amber-500 outline-none"
             />
           </div>
         </div>
@@ -384,7 +384,7 @@ export const AdminPanel: React.FC = () => {
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse">
               <thead>
-                <tr className="bg-slate-950 border-b border-slate-800 text-slate-400 text-[11px] font-bold uppercase tracking-wider">
+                <tr className="bg-slate-50 border-b border-slate-200 text-slate-500 text-[11px] font-bold uppercase tracking-wider">
                   <th className="py-4 px-6">Logo</th>
                   <th className="py-4 px-6">Název firmy</th>
                   <th className="py-4 px-6">Hlavní barva</th>
@@ -395,13 +395,13 @@ export const AdminPanel: React.FC = () => {
                   <th className="py-4 px-6 text-right">Akce</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-800 text-xs font-semibold text-slate-300">
+              <tbody className="divide-y divide-slate-800 text-xs font-semibold text-slate-700">
                 {filteredOrgs.map((org) => {
                   const isSuspended = org.status === 'Suspended';
                   return (
                     <tr key={org.id} className="hover:bg-slate-800/40 transition-colors">
                       <td className="py-4 px-6">
-                        <div className="w-10 h-10 rounded-xl bg-slate-950 overflow-hidden border border-slate-800 flex items-center justify-center">
+                        <div className="w-10 h-10 rounded-xl bg-slate-50 overflow-hidden border border-slate-200 flex items-center justify-center">
                           {org.logo_url ? (
                             <img src={org.logo_url} alt={org.name} className="w-full h-full object-cover" />
                           ) : (
@@ -411,32 +411,32 @@ export const AdminPanel: React.FC = () => {
                       </td>
                       <td className="py-4 px-6">
                         <div className="space-y-0.5">
-                          <span className="font-bold text-slate-100 text-sm block">{org.name}</span>
+                          <span className="font-bold text-slate-900 text-sm block">{org.name}</span>
                           <span className="font-mono text-[10px] text-slate-500 font-bold">slug: {org.slug}</span>
                         </div>
                       </td>
                       <td className="py-4 px-6">
                         <div className="flex items-center gap-2">
                           <div 
-                            className="w-4 h-4 rounded-md border border-slate-700 shrink-0" 
+                            className="w-4 h-4 rounded-md border border-slate-300 shrink-0" 
                             style={{ backgroundColor: org.primary_color || '#f59e0b' }}
                           />
-                          <span className="font-mono text-[10px] font-bold text-slate-400">{org.primary_color || '#f59e0b'}</span>
+                          <span className="font-mono text-[10px] font-bold text-slate-500">{org.primary_color || '#f59e0b'}</span>
                         </div>
                       </td>
-                      <td className="py-4 px-6 text-center text-sm font-bold text-slate-300">{org.lead_count || 0}</td>
-                      <td className="py-4 px-6 text-center text-sm font-bold text-slate-300">{org.employee_count || 0}</td>
+                      <td className="py-4 px-6 text-center text-sm font-bold text-slate-700">{org.lead_count || 0}</td>
+                      <td className="py-4 px-6 text-center text-sm font-bold text-slate-700">{org.employee_count || 0}</td>
                       <td className="py-4 px-6">
                         <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold ${
                           isSuspended 
                             ? 'bg-rose-950 text-rose-400 border border-rose-800' 
-                            : 'bg-emerald-950 text-emerald-400 border border-emerald-800'
+                            : 'bg-green-950 text-green-400 border border-green-800'
                         }`}>
-                          <div className={`w-1.5 h-1.5 rounded-full ${isSuspended ? 'bg-rose-500' : 'bg-emerald-500'}`} />
+                          <div className={`w-1.5 h-1.5 rounded-full ${isSuspended ? 'bg-rose-500' : 'bg-green-500'}`} />
                           {isSuspended ? 'Pozastaveno' : 'Aktivní'}
                         </span>
                       </td>
-                      <td className="py-4 px-6 text-slate-400">
+                      <td className="py-4 px-6 text-slate-500">
                         {org.created_at ? new Date(org.created_at).toLocaleDateString('cs-CZ') : 'Neznámé'}
                       </td>
                       <td className="py-4 px-6 text-right">
@@ -444,7 +444,7 @@ export const AdminPanel: React.FC = () => {
                           {/* Impersonate */}
                           <button
                             onClick={() => handleImpersonate(org.id, org.name)}
-                            className="p-2 text-slate-400 hover:text-amber-400 hover:bg-slate-800 rounded-xl transition-all"
+                            className="p-2 text-slate-500 hover:text-amber-400 hover:bg-slate-800 rounded-xl transition-all"
                             title="Vstoupit do CRM"
                           >
                             <Eye className="w-4 h-4" />
@@ -453,7 +453,7 @@ export const AdminPanel: React.FC = () => {
                           {/* Edit branding */}
                           <button
                             onClick={() => handleOpenEditBranding(org)}
-                            className="p-2 text-slate-400 hover:text-amber-400 hover:bg-slate-800 rounded-xl transition-all"
+                            className="p-2 text-slate-500 hover:text-amber-400 hover:bg-slate-800 rounded-xl transition-all"
                             title="Upravit branding"
                           >
                             <Edit2 className="w-4 h-4" />
@@ -464,8 +464,8 @@ export const AdminPanel: React.FC = () => {
                             onClick={() => handleToggleSuspend(org)}
                             className={`p-2 rounded-xl transition-all ${
                               isSuspended 
-                                ? 'text-emerald-400 hover:bg-slate-800' 
-                                : 'text-slate-400 hover:text-rose-400 hover:bg-slate-800'
+                                ? 'text-green-400 hover:bg-slate-800' 
+                                : 'text-slate-500 hover:text-rose-400 hover:bg-slate-800'
                             }`}
                             title={isSuspended ? 'Aktivovat účet' : 'Pozastavit účet'}
                           >
@@ -475,7 +475,7 @@ export const AdminPanel: React.FC = () => {
                           {/* Delete */}
                           <button
                             onClick={() => handleOpenDelete(org)}
-                            className="p-2 text-slate-400 hover:text-rose-400 hover:bg-slate-800 rounded-xl transition-all"
+                            className="p-2 text-slate-500 hover:text-rose-400 hover:bg-slate-800 rounded-xl transition-all"
                             title="Smazat společnost"
                           >
                             <Trash2 className="w-4 h-4" />
@@ -495,30 +495,30 @@ export const AdminPanel: React.FC = () => {
           5-STEP CREATE CUSTOMER WIZARD MODAL
           ========================================== */}
       {isWizardOpen && (
-        <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 overflow-y-auto">
-          <div className="bg-slate-900 border border-slate-800 rounded-[24px] shadow-2xl max-w-4xl w-full overflow-hidden my-8 text-slate-100">
+        <div className="fixed inset-0 bg-slate-50/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 overflow-y-auto">
+          <div className="bg-white border border-slate-200 rounded-[24px] shadow-2xl max-w-4xl w-full overflow-hidden my-8 text-slate-900">
             
             {/* Header */}
-            <div className="p-6 border-b border-slate-800 flex items-center justify-between bg-slate-950">
+            <div className="p-6 border-b border-slate-200 flex items-center justify-between bg-slate-50">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-xl bg-amber-500 text-slate-950 flex items-center justify-center font-black">
                   +
                 </div>
                 <div>
-                  <h3 className="font-bold text-slate-100 text-lg">Průvodce instalací zákazníka</h3>
-                  <p className="text-xs text-slate-400">Rychlá instalace izolované firemní jednotky s daty.</p>
+                  <h3 className="font-bold text-slate-900 text-lg">Průvodce instalací zákazníka</h3>
+                  <p className="text-xs text-slate-500">Rychlá instalace izolované firemní jednotky s daty.</p>
                 </div>
               </div>
               <button 
                 onClick={handleCloseWizard}
-                className="w-8 h-8 rounded-lg bg-slate-800 hover:bg-slate-700 flex items-center justify-center text-slate-400 transition-all"
+                className="w-8 h-8 rounded-lg bg-slate-800 hover:bg-slate-700 flex items-center justify-center text-slate-500 transition-all"
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
 
             {/* Step Indicators */}
-            <div className="px-8 py-4 bg-slate-950/50 border-b border-slate-800 grid grid-cols-5 gap-2 text-center">
+            <div className="px-8 py-4 bg-slate-50/50 border-b border-slate-200 grid grid-cols-5 gap-2 text-center">
               {[
                 { step: 1, label: 'Firma' },
                 { step: 2, label: 'Služby' },
@@ -547,80 +547,80 @@ export const AdminPanel: React.FC = () => {
                 <div className="space-y-5">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                     <div className="space-y-1.5">
-                      <label className="text-xs font-bold text-slate-300 uppercase tracking-wide">Název společnosti</label>
+                      <label className="text-xs font-bold text-slate-700 uppercase tracking-wide">Název společnosti</label>
                       <input
                         type="text"
                         value={companyName}
                         onChange={(e) => setCompanyName(e.target.value)}
                         placeholder="Např. Střechy a Pergoly Liberec s.r.o."
-                        className="w-full px-4 py-3 bg-slate-950 border border-slate-800 rounded-xl text-sm font-medium text-slate-100 focus:border-amber-500 outline-none"
+                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-900 focus:border-amber-500 outline-none"
                       />
                     </div>
                     <div className="space-y-1.5">
-                      <label className="text-xs font-bold text-slate-300 uppercase tracking-wide">Lokalita (Město)</label>
+                      <label className="text-xs font-bold text-slate-700 uppercase tracking-wide">Lokalita (Město)</label>
                       <input
                         type="text"
                         value={city}
                         onChange={(e) => setCity(e.target.value)}
                         placeholder="Např. Liberec"
-                        className="w-full px-4 py-3 bg-slate-950 border border-slate-800 rounded-xl text-sm font-medium text-slate-100 focus:border-amber-500 outline-none"
+                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-900 focus:border-amber-500 outline-none"
                       />
                     </div>
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
                     <div className="space-y-1.5">
-                      <label className="text-xs font-bold text-slate-300 uppercase tracking-wide">Telefon</label>
+                      <label className="text-xs font-bold text-slate-700 uppercase tracking-wide">Telefon</label>
                       <input
                         type="text"
                         value={phone}
                         onChange={(e) => setPhone(e.target.value)}
                         placeholder="+420 777 888 999"
-                        className="w-full px-4 py-3 bg-slate-950 border border-slate-800 rounded-xl text-sm font-medium text-slate-100 focus:border-amber-500 outline-none"
+                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-900 focus:border-amber-500 outline-none"
                       />
                     </div>
                     <div className="space-y-1.5">
-                      <label className="text-xs font-bold text-slate-300 uppercase tracking-wide">E-mail administrátora</label>
+                      <label className="text-xs font-bold text-slate-700 uppercase tracking-wide">E-mail administrátora</label>
                       <input
                         type="email"
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
                         placeholder="admin@firma.cz"
-                        className="w-full px-4 py-3 bg-slate-950 border border-slate-800 rounded-xl text-sm font-medium text-slate-100 focus:border-amber-500 outline-none"
+                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-900 focus:border-amber-500 outline-none"
                       />
                     </div>
                     <div className="space-y-1.5">
-                      <label className="text-xs font-bold text-slate-300 uppercase tracking-wide">Webová prezentace</label>
+                      <label className="text-xs font-bold text-slate-700 uppercase tracking-wide">Webová prezentace</label>
                       <input
                         type="text"
                         value={website}
                         onChange={(e) => setWebsite(e.target.value)}
                         placeholder="www.firma.cz"
-                        className="w-full px-4 py-3 bg-slate-950 border border-slate-800 rounded-xl text-sm font-medium text-slate-100 focus:border-amber-500 outline-none"
+                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-900 focus:border-amber-500 outline-none"
                       />
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-5 pt-3 border-t border-slate-800">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-5 pt-3 border-t border-slate-200">
                     <div className="space-y-1.5">
-                      <label className="text-xs font-bold text-slate-300 uppercase tracking-wide">Logo URL adresa</label>
+                      <label className="text-xs font-bold text-slate-700 uppercase tracking-wide">Logo URL adresa</label>
                       <input
                         type="text"
                         value={logoUrl}
                         onChange={(e) => setLogoUrl(e.target.value)}
                         placeholder="https://..."
-                        className="w-full px-4 py-3 bg-slate-950 border border-slate-800 rounded-xl text-sm font-medium text-slate-100 focus:border-amber-500 outline-none"
+                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-900 focus:border-amber-500 outline-none"
                       />
                     </div>
 
                     <div className="space-y-1.5">
-                      <label className="text-xs font-bold text-slate-300 uppercase tracking-wide block">Hlavní firemní barva</label>
+                      <label className="text-xs font-bold text-slate-700 uppercase tracking-wide block">Hlavní firemní barva</label>
                       <div className="flex items-center gap-4">
                         <input
                           type="color"
                           value={primaryColor}
                           onChange={(e) => setPrimaryColor(e.target.value)}
-                          className="w-14 h-11 p-0 border border-slate-700 bg-transparent rounded-xl cursor-pointer"
+                          className="w-14 h-11 p-0 border border-slate-300 bg-transparent rounded-xl cursor-pointer"
                         />
                         <span className="font-mono text-xs text-amber-400 font-bold">{primaryColor}</span>
                       </div>
@@ -633,8 +633,8 @@ export const AdminPanel: React.FC = () => {
               {wizardStep === 2 && (
                 <div className="space-y-5">
                   <div className="space-y-1.5">
-                    <h4 className="font-bold text-slate-100 text-sm">Zvolte nabízené služby společnosti</h4>
-                    <p className="text-xs text-slate-400">Tyto kategorie budou uplatněny při zakládání realistických poptávek.</p>
+                    <h4 className="font-bold text-slate-900 text-sm">Zvolte nabízené služby společnosti</h4>
+                    <p className="text-xs text-slate-500">Tyto kategorie budou uplatněny při zakládání realistických poptávek.</p>
                   </div>
 
                   <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
@@ -648,7 +648,7 @@ export const AdminPanel: React.FC = () => {
                           className={`p-4 rounded-xl border text-left font-bold transition-all relative ${
                             isSelected 
                               ? 'bg-amber-500/20 border-amber-500 text-amber-300' 
-                              : 'bg-slate-950 border-slate-800 hover:border-slate-700 text-slate-300'
+                              : 'bg-slate-50 border-slate-200 hover:border-slate-300 text-slate-700'
                           }`}
                         >
                           {isSelected && (
@@ -668,39 +668,39 @@ export const AdminPanel: React.FC = () => {
               {wizardStep === 3 && (
                 <div className="space-y-6">
                   <div className="space-y-1.5">
-                    <h4 className="font-bold text-slate-100 text-sm">Definujte realizační tým (Zaměstnanci)</h4>
-                    <p className="text-xs text-slate-400">Přidejte specialisty, kteří budou plánováni do kalendáře a zakázek.</p>
+                    <h4 className="font-bold text-slate-900 text-sm">Definujte realizační tým (Zaměstnanci)</h4>
+                    <p className="text-xs text-slate-500">Přidejte specialisty, kteří budou plánováni do kalendáře a zakázek.</p>
                   </div>
 
                   {/* Add Employee Sub-Form */}
-                  <div className="p-4 bg-slate-950 border border-slate-800 rounded-2xl grid grid-cols-1 md:grid-cols-4 gap-3 items-end">
+                  <div className="p-4 bg-slate-50 border border-slate-200 rounded-2xl grid grid-cols-1 md:grid-cols-4 gap-3 items-end">
                     <div className="space-y-1">
-                      <label className="text-[10px] font-bold text-slate-400 uppercase">Celé jméno</label>
+                      <label className="text-[10px] font-bold text-slate-500 uppercase">Celé jméno</label>
                       <input
                         type="text"
                         value={newEmpName}
                         onChange={(e) => setNewEmpName(e.target.value)}
                         placeholder="Petr Černý"
-                        className="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-lg text-xs text-slate-100 outline-none focus:border-amber-500"
+                        className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-900 outline-none focus:border-amber-500"
                       />
                     </div>
                     <div className="space-y-1">
-                      <label className="text-[10px] font-bold text-slate-400 uppercase">Specializace</label>
+                      <label className="text-[10px] font-bold text-slate-500 uppercase">Specializace</label>
                       <input
                         type="text"
                         value={newEmpSpec}
                         onChange={(e) => setNewEmpSpec(e.target.value)}
                         placeholder="Montér tesař"
-                        className="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-lg text-xs text-slate-100 outline-none focus:border-amber-500"
+                        className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-900 outline-none focus:border-amber-500"
                       />
                     </div>
                     <div className="space-y-1">
-                      <label className="text-[10px] font-bold text-slate-400 uppercase">Kapacita (%)</label>
+                      <label className="text-[10px] font-bold text-slate-500 uppercase">Kapacita (%)</label>
                       <input
                         type="number"
                         value={newEmpCap}
                         onChange={(e) => setNewEmpCap(parseInt(e.target.value) || 100)}
-                        className="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-lg text-xs text-slate-100 outline-none focus:border-amber-500"
+                        className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-900 outline-none focus:border-amber-500"
                       />
                     </div>
                     <button
@@ -715,19 +715,19 @@ export const AdminPanel: React.FC = () => {
                   {/* Employee List */}
                   <div className="space-y-2">
                     {employees.map((emp, i) => (
-                      <div key={i} className="px-4 py-3 border border-slate-800 rounded-xl flex items-center justify-between text-xs bg-slate-950">
+                      <div key={i} className="px-4 py-3 border border-slate-200 rounded-xl flex items-center justify-between text-xs bg-slate-50">
                         <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 rounded-full bg-slate-900 border border-slate-800 flex items-center justify-center text-amber-400 font-bold font-mono">
+                          <div className="w-8 h-8 rounded-full bg-white border border-slate-200 flex items-center justify-center text-amber-400 font-bold font-mono">
                             {emp.name.substring(0, 1)}
                           </div>
                           <div>
-                            <p className="font-bold text-slate-100">{emp.name}</p>
-                            <p className="text-[10px] text-slate-400 font-medium">{emp.specialization}</p>
+                            <p className="font-bold text-slate-900">{emp.name}</p>
+                            <p className="text-[10px] text-slate-500 font-medium">{emp.specialization}</p>
                           </div>
                         </div>
 
                         <div className="flex items-center gap-4">
-                          <span className="font-bold text-slate-400">Kapacita: {emp.capacity}%</span>
+                          <span className="font-bold text-slate-500">Kapacita: {emp.capacity}%</span>
                           <button
                             type="button"
                             onClick={() => handleRemoveEmployee(i)}
@@ -746,18 +746,18 @@ export const AdminPanel: React.FC = () => {
               {wizardStep === 4 && (
                 <div className="space-y-6">
                   <div className="space-y-1.5">
-                    <h4 className="font-bold text-slate-100 text-sm">Náhled firemní identity (Branding)</h4>
-                    <p className="text-xs text-slate-400">Zkontrolujte vizuální prezentaci značky pro CRM a klientský portál.</p>
+                    <h4 className="font-bold text-slate-900 text-sm">Náhled firemní identity (Branding)</h4>
+                    <p className="text-xs text-slate-500">Zkontrolujte vizuální prezentaci značky pro CRM a klientský portál.</p>
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     {/* Sidebar mockup */}
-                    <div className="border border-slate-800 rounded-xl overflow-hidden shadow-sm">
-                      <div className="bg-slate-950 px-4 py-3.5 border-b border-slate-800 text-white font-bold text-xs flex items-center gap-2">
-                        <Layout className="w-4 h-4 text-slate-400" />
+                    <div className="border border-slate-200 rounded-xl overflow-hidden shadow-sm">
+                      <div className="bg-slate-50 px-4 py-3.5 border-b border-slate-200 text-slate-900 font-bold text-xs flex items-center gap-2">
+                        <Layout className="w-4 h-4 text-slate-500" />
                         <span>Náhled postranního panelu</span>
                       </div>
-                      <div className="p-4 bg-slate-950 text-slate-300 min-h-[140px] space-y-4">
+                      <div className="p-4 bg-slate-50 text-slate-700 min-h-[140px] space-y-4">
                         <div className="flex items-center gap-2.5">
                           <div 
                             className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-950 font-black text-xs shrink-0 bg-amber-500"
@@ -765,16 +765,16 @@ export const AdminPanel: React.FC = () => {
                             {companyName ? companyName.substring(0, 2).toUpperCase() : 'NS'}
                           </div>
                           <div>
-                            <p className="font-bold text-white text-xs">{companyName || 'Název Společnosti'}</p>
+                            <p className="font-bold text-slate-900 text-xs">{companyName || 'Název Společnosti'}</p>
                             <p className="text-[10px] text-slate-500">{city || 'Město'}</p>
                           </div>
                         </div>
                         
                         <div className="space-y-1 pt-2">
-                          <div className="h-7 rounded bg-slate-900 px-2.5 flex items-center text-[10px] text-amber-400 border-l-2 border-amber-500">
+                          <div className="h-7 rounded bg-white px-2.5 flex items-center text-[10px] text-amber-400 border-l-2 border-amber-500">
                             ✓ Přehled
                           </div>
-                          <div className="h-7 rounded hover:bg-slate-900/50 px-2.5 flex items-center text-[10px] text-slate-500">
+                          <div className="h-7 rounded hover:bg-white/50 px-2.5 flex items-center text-[10px] text-slate-500">
                             Poptávky (Kanban)
                           </div>
                         </div>
@@ -782,14 +782,14 @@ export const AdminPanel: React.FC = () => {
                     </div>
 
                     {/* Logo & Colors preview */}
-                    <div className="border border-slate-800 rounded-xl overflow-hidden shadow-sm flex flex-col justify-between bg-slate-950">
-                      <div className="bg-slate-900 px-4 py-3.5 border-b border-slate-800 text-slate-300 font-bold text-xs flex items-center gap-2">
+                    <div className="border border-slate-200 rounded-xl overflow-hidden shadow-sm flex flex-col justify-between bg-slate-50">
+                      <div className="bg-white px-4 py-3.5 border-b border-slate-200 text-slate-700 font-bold text-xs flex items-center gap-2">
                         <Palette className="w-4 h-4 text-amber-400" />
                         <span>Konfigurace identity</span>
                       </div>
                       <div className="p-6 space-y-4 flex-1 flex flex-col justify-center">
                         <div className="flex items-center gap-4">
-                          <div className="w-14 h-14 bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden flex items-center justify-center shadow-sm">
+                          <div className="w-14 h-14 bg-white border border-slate-200 rounded-2xl overflow-hidden flex items-center justify-center shadow-sm">
                             {logoUrl ? (
                               <img src={logoUrl} alt="Logo" className="w-full h-full object-cover" />
                             ) : (
@@ -797,16 +797,16 @@ export const AdminPanel: React.FC = () => {
                             )}
                           </div>
                           <div className="space-y-1">
-                            <p className="text-xs font-bold text-slate-200">Firemní logo</p>
+                            <p className="text-xs font-bold text-slate-800">Firemní logo</p>
                             <p className="text-[10px] text-slate-500">Načteno přes zabezpečenou URL adresu.</p>
                           </div>
                         </div>
 
-                        <div className="space-y-2 pt-2 border-t border-slate-800">
-                          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Barevná paleta</p>
+                        <div className="space-y-2 pt-2 border-t border-slate-200">
+                          <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wide">Barevná paleta</p>
                           <div className="flex items-center gap-3">
-                            <div className="w-10 h-7 rounded-lg border border-slate-700 shadow-sm" style={{ backgroundColor: primaryColor }} />
-                            <span className="font-mono text-xs font-bold text-slate-300">{primaryColor}</span>
+                            <div className="w-10 h-7 rounded-lg border border-slate-300 shadow-sm" style={{ backgroundColor: primaryColor }} />
+                            <span className="font-mono text-xs font-bold text-slate-700">{primaryColor}</span>
                           </div>
                         </div>
                       </div>
@@ -818,39 +818,39 @@ export const AdminPanel: React.FC = () => {
               {/* STEP 5: Installation details */}
               {wizardStep === 5 && createdResult && (
                 <div className="space-y-6">
-                  <div className="p-5 bg-emerald-950 border border-emerald-800/80 rounded-2xl flex items-center gap-4">
-                    <div className="w-12 h-12 rounded-full bg-emerald-500 text-slate-950 flex items-center justify-center font-bold shrink-0">
+                  <div className="p-5 bg-green-950 border border-green-800/80 rounded-2xl flex items-center gap-4">
+                    <div className="w-12 h-12 rounded-full bg-green-500 text-slate-950 flex items-center justify-center font-bold shrink-0">
                       ✓
                     </div>
                     <div>
-                      <h4 className="font-bold text-emerald-300 text-base">Zákazník připraven (Customer ready)</h4>
-                      <p className="text-xs text-emerald-400">Systém úspěšně inicializoval organizaci a vygeneroval stavební data.</p>
+                      <h4 className="font-bold text-green-300 text-base">Zákazník připraven (Customer ready)</h4>
+                      <p className="text-xs text-green-400">Systém úspěšně inicializoval organizaci a vygeneroval stavební data.</p>
                     </div>
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-12 gap-6 pt-2">
                     {/* Left details */}
                     <div className="md:col-span-7 space-y-4">
-                      <div className="p-4 bg-slate-950 border border-slate-800 rounded-xl space-y-3">
-                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Přístupové údaje majitele</p>
+                      <div className="p-4 bg-slate-50 border border-slate-200 rounded-xl space-y-3">
+                        <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Přístupové údaje majitele</p>
                         <div className="grid grid-cols-2 gap-4 text-xs">
                           <div>
                             <span className="text-slate-500 block font-medium">E-mail:</span>
-                            <span className="font-bold text-slate-200">{createdResult.ownerEmail}</span>
+                            <span className="font-bold text-slate-800">{createdResult.ownerEmail}</span>
                           </div>
                           <div>
                             <span className="text-slate-500 block font-medium">Výchozí heslo:</span>
-                            <span className="font-bold text-slate-200">Password123!</span>
+                            <span className="font-bold text-slate-800">Password123!</span>
                           </div>
                         </div>
                       </div>
 
                       <div className="space-y-2.5">
-                        <p className="text-xs font-bold text-slate-400">Přístupové body systému:</p>
+                        <p className="text-xs font-bold text-slate-500">Přístupové body systému:</p>
                         
-                        <div className="flex items-center justify-between p-3 border border-slate-800 rounded-xl text-xs bg-slate-950 hover:bg-slate-800/50 transition-colors">
+                        <div className="flex items-center justify-between p-3 border border-slate-200 rounded-xl text-xs bg-slate-50 hover:bg-slate-800/50 transition-colors">
                           <div className="space-y-0.5">
-                            <span className="font-bold text-slate-200 block">CRM portál (Administrace)</span>
+                            <span className="font-bold text-slate-800 block">CRM portál (Administrace)</span>
                             <span className="font-mono text-[10px] text-slate-500 truncate block max-w-sm">{createdResult.crmUrl}</span>
                           </div>
                           <a 
@@ -863,9 +863,9 @@ export const AdminPanel: React.FC = () => {
                           </a>
                         </div>
 
-                        <div className="flex items-center justify-between p-3 border border-slate-800 rounded-xl text-xs bg-slate-950 hover:bg-slate-800/50 transition-colors">
+                        <div className="flex items-center justify-between p-3 border border-slate-200 rounded-xl text-xs bg-slate-50 hover:bg-slate-800/50 transition-colors">
                           <div className="space-y-0.5">
-                            <span className="font-bold text-slate-200 block">Klientská sekce (Customer Portal)</span>
+                            <span className="font-bold text-slate-800 block">Klientská sekce (Customer Portal)</span>
                             <span className="font-mono text-[10px] text-slate-500 truncate block max-w-sm">{createdResult.portalUrl}</span>
                           </div>
                           <a 
@@ -878,9 +878,9 @@ export const AdminPanel: React.FC = () => {
                           </a>
                         </div>
 
-                        <div className="flex items-center justify-between p-3 border border-slate-800 rounded-xl text-xs bg-slate-950 hover:bg-slate-800/50 transition-colors">
+                        <div className="flex items-center justify-between p-3 border border-slate-200 rounded-xl text-xs bg-slate-50 hover:bg-slate-800/50 transition-colors">
                           <div className="space-y-0.5">
-                            <span className="font-bold text-slate-200 block">Poptávkový formulář</span>
+                            <span className="font-bold text-slate-800 block">Poptávkový formulář</span>
                             <span className="font-mono text-[10px] text-slate-500 truncate block max-w-sm">{createdResult.formUrl}</span>
                           </div>
                           <a 
@@ -896,8 +896,8 @@ export const AdminPanel: React.FC = () => {
                     </div>
 
                     {/* QR Code and marketing mockup */}
-                    <div className="md:col-span-5 border border-slate-800 rounded-2xl p-6 bg-slate-950 flex flex-col items-center justify-center text-center space-y-4">
-                      <div className="w-36 h-36 bg-white border border-slate-800 rounded-2xl p-3 flex items-center justify-center shadow-sm relative overflow-hidden">
+                    <div className="md:col-span-5 border border-slate-200 rounded-2xl p-6 bg-slate-50 flex flex-col items-center justify-center text-center space-y-4">
+                      <div className="w-36 h-36 bg-white border border-slate-200 rounded-2xl p-3 flex items-center justify-center shadow-sm relative overflow-hidden">
                         {/* Mock QR Code SVG */}
                         <svg viewBox="0 0 100 100" className="w-full h-full text-slate-900">
                           <rect width="100" height="100" fill="white" />
@@ -908,7 +908,7 @@ export const AdminPanel: React.FC = () => {
                         </svg>
                       </div>
                       <div className="space-y-1">
-                        <p className="text-xs font-bold text-slate-200">QR Kód pro formulář</p>
+                        <p className="text-xs font-bold text-slate-800">QR Kód pro formulář</p>
                         <p className="text-[10px] text-slate-500">Zákazníci mohou okamžitě načíst formulář mobilem.</p>
                       </div>
                     </div>
@@ -918,13 +918,13 @@ export const AdminPanel: React.FC = () => {
             </div>
 
             {/* Footer Navigation Buttons */}
-            <div className="p-6 border-t border-slate-800 flex items-center justify-between bg-slate-950">
+            <div className="p-6 border-t border-slate-200 flex items-center justify-between bg-slate-50">
               {wizardStep < 5 ? (
                 <>
                   <button
                     onClick={() => setWizardStep(prev => Math.max(1, prev - 1))}
                     disabled={wizardStep === 1}
-                    className="inline-flex items-center gap-1 px-4 py-2 bg-slate-900 border border-slate-800 hover:bg-slate-800 text-slate-300 rounded-xl text-xs font-bold disabled:opacity-50 transition-all"
+                    className="inline-flex items-center gap-1 px-4 py-2 bg-white border border-slate-200 hover:bg-slate-800 text-slate-700 rounded-xl text-xs font-bold disabled:opacity-50 transition-all"
                   >
                     <ArrowLeft className="w-3.5 h-3.5" />
                     <span>Zpět</span>
@@ -978,52 +978,52 @@ export const AdminPanel: React.FC = () => {
           EDIT BRANDING MODAL
           ========================================== */}
       {isEditBrandingOpen && (
-        <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-slate-900 border border-slate-800 rounded-[20px] shadow-2xl max-w-md w-full overflow-hidden text-slate-100">
-            <div className="p-5 border-b border-slate-800 flex items-center justify-between bg-slate-950">
-              <h3 className="font-bold text-slate-100 text-sm">Upravit branding společnosti</h3>
-              <button onClick={() => setIsEditBrandingOpen(false)} className="text-slate-400 hover:text-slate-200">
+        <div className="fixed inset-0 bg-slate-50/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white border border-slate-200 rounded-[20px] shadow-2xl max-w-md w-full overflow-hidden text-slate-900">
+            <div className="p-5 border-b border-slate-200 flex items-center justify-between bg-slate-50">
+              <h3 className="font-bold text-slate-900 text-sm">Upravit branding společnosti</h3>
+              <button onClick={() => setIsEditBrandingOpen(false)} className="text-slate-500 hover:text-slate-800">
                 <X className="w-4 h-4" />
               </button>
             </div>
             <div className="p-6 space-y-4">
               <div className="space-y-1.5">
-                <label className="text-xs font-bold text-slate-300 uppercase">Název firmy</label>
+                <label className="text-xs font-bold text-slate-700 uppercase">Název firmy</label>
                 <input
                   type="text"
                   value={editName}
                   onChange={(e) => setEditName(e.target.value)}
-                  className="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-xs font-semibold text-slate-100 outline-none focus:border-amber-500"
+                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-900 outline-none focus:border-amber-500"
                 />
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-xs font-bold text-slate-300 uppercase">Primární barva</label>
+                <label className="text-xs font-bold text-slate-700 uppercase">Primární barva</label>
                 <div className="flex items-center gap-3">
                   <input
                     type="color"
                     value={editColor}
                     onChange={(e) => setEditColor(e.target.value)}
-                    className="w-12 h-10 p-0 border border-slate-700 bg-transparent rounded-xl cursor-pointer"
+                    className="w-12 h-10 p-0 border border-slate-300 bg-transparent rounded-xl cursor-pointer"
                   />
                   <span className="font-mono text-xs font-bold text-amber-400">{editColor}</span>
                 </div>
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-xs font-bold text-slate-300 uppercase">Logo URL adresa</label>
+                <label className="text-xs font-bold text-slate-700 uppercase">Logo URL adresa</label>
                 <input
                   type="text"
                   value={editLogo}
                   onChange={(e) => setEditLogo(e.target.value)}
-                  className="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-xs font-semibold text-slate-100 outline-none focus:border-amber-500"
+                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-900 outline-none focus:border-amber-500"
                 />
               </div>
             </div>
-            <div className="p-5 border-t border-slate-800 flex justify-end gap-2 bg-slate-950">
+            <div className="p-5 border-t border-slate-200 flex justify-end gap-2 bg-slate-50">
               <button
                 onClick={() => setIsEditBrandingOpen(false)}
-                className="px-4 py-2 bg-slate-900 border border-slate-800 text-slate-300 text-xs font-bold rounded-lg hover:bg-slate-800 transition-all"
+                className="px-4 py-2 bg-white border border-slate-200 text-slate-700 text-xs font-bold rounded-lg hover:bg-slate-800 transition-all"
               >
                 Storno
               </button>
@@ -1042,29 +1042,29 @@ export const AdminPanel: React.FC = () => {
           DELETE CONFIRMATION MODAL
           ========================================== */}
       {isDeleteOpen && (
-        <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-slate-900 border border-slate-800 rounded-[20px] shadow-2xl max-w-sm w-full overflow-hidden text-slate-100">
+        <div className="fixed inset-0 bg-slate-50/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white border border-slate-200 rounded-[20px] shadow-2xl max-w-sm w-full overflow-hidden text-slate-900">
             <div className="p-6 text-center space-y-4">
               <div className="w-12 h-12 rounded-full bg-rose-950 border border-rose-800 text-rose-400 flex items-center justify-center mx-auto">
                 <AlertTriangle className="w-6 h-6" />
               </div>
               <div className="space-y-1">
-                <h3 className="font-bold text-slate-100 text-base">Smazat společnost?</h3>
-                <p className="text-xs text-slate-400">
+                <h3 className="font-bold text-slate-900 text-base">Smazat společnost?</h3>
+                <p className="text-xs text-slate-500">
                   Tato akce trvale odstraní společnost <strong className="text-amber-400">{deleteOrgName}</strong>, všechny její uživatele, zakázky, zaměstnance a projekty ze systému. Tato akce je nevratná.
                 </p>
               </div>
             </div>
-            <div className="p-4 bg-slate-950 border-t border-slate-800 flex justify-end gap-2">
+            <div className="p-4 bg-slate-50 border-t border-slate-200 flex justify-end gap-2">
               <button
                 onClick={() => setIsDeleteOpen(false)}
-                className="px-4 py-2 bg-slate-900 border border-slate-800 text-slate-300 text-xs font-bold rounded-lg hover:bg-slate-800 transition-all"
+                className="px-4 py-2 bg-white border border-slate-200 text-slate-700 text-xs font-bold rounded-lg hover:bg-slate-800 transition-all"
               >
                 Zrušit
               </button>
               <button
                 onClick={handleDeleteConfirm}
-                className="px-5 py-2 bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold rounded-lg transition-all"
+                className="px-5 py-2 bg-rose-600 hover:bg-rose-500 text-slate-900 text-xs font-bold rounded-lg transition-all"
               >
                 Trvale smazat
               </button>

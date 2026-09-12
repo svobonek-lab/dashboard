@@ -23,14 +23,14 @@ export const EmployeeSchedulePage: React.FC<EmployeeSchedulePageProps> = ({ lead
   ];
 
   return (
-    <div className="space-y-6 text-slate-100 font-sans pb-12">
+    <div className="space-y-6 text-slate-900 font-sans pb-12">
       
       <div>
-        <h1 className="text-xl font-black text-white tracking-tight flex items-center gap-2">
-          <Calendar className="w-5 h-5 text-emerald-400" />
+        <h1 className="text-xl font-black text-slate-900 tracking-tight flex items-center gap-2">
+          <Calendar className="w-5 h-5 text-green-400" />
           Můj denní harmonogram
         </h1>
-        <p className="text-xs text-slate-400 mt-0.5">
+        <p className="text-xs text-slate-500 mt-0.5">
           Přehled plánovaných výjezdů a montáží.
         </p>
       </div>
@@ -43,14 +43,14 @@ export const EmployeeSchedulePage: React.FC<EmployeeSchedulePageProps> = ({ lead
             onClick={() => setSelectedDay(i)}
             className={`min-w-[100px] p-3 rounded-2xl border text-center transition-all ${
               selectedDay === i 
-                ? 'bg-emerald-500 border-emerald-400 text-slate-950 font-black shadow-lg shadow-emerald-500/20' 
-                : 'bg-[#111726] border-slate-800 text-slate-400 hover:text-white'
+                ? 'bg-green-500 border-green-400 text-slate-950 font-black shadow-lg shadow-green-500/20' 
+                : 'bg-[#111726] border-slate-200 text-slate-500 hover:text-slate-900'
             }`}
           >
             <span className="text-xs block">{d.name}</span>
             <span className="text-[11px] block opacity-80">{d.date}</span>
             <span className={`text-[10px] mt-1 inline-block px-2 py-0.5 rounded-full font-bold ${
-              selectedDay === i ? 'bg-slate-950 text-emerald-400' : 'bg-slate-800 text-slate-300'
+              selectedDay === i ? 'bg-slate-50 text-green-400' : 'bg-slate-800 text-slate-700'
             }`}>
               {d.count} akce
             </span>
@@ -63,36 +63,36 @@ export const EmployeeSchedulePage: React.FC<EmployeeSchedulePageProps> = ({ lead
         {scheduleItems.map((item, i) => (
           <div
             key={i}
-            className="bg-[#111726] border border-slate-800 rounded-3xl p-5 shadow-lg space-y-3"
+            className="bg-[#111726] border border-slate-200 rounded-3xl p-5 shadow-lg space-y-3"
           >
             <div className="flex items-center justify-between">
-              <span className="px-2.5 py-1 rounded-xl bg-slate-900 border border-slate-800 text-xs font-mono font-bold text-emerald-400 flex items-center gap-1.5">
+              <span className="px-2.5 py-1 rounded-xl bg-white border border-slate-200 text-xs font-mono font-bold text-green-400 flex items-center gap-1.5">
                 <Clock className="w-3.5 h-3.5" />
                 <span>{item.time}</span>
               </span>
 
               <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
-                item.status === 'Dokončeno' ? 'bg-slate-800 text-slate-400' : 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
+                item.status === 'Dokončeno' ? 'bg-slate-800 text-slate-500' : 'bg-green-500/20 text-green-400 border border-green-500/30'
               }`}>
                 {item.status}
               </span>
             </div>
 
             <div>
-              <h3 className="text-sm font-bold text-white">{item.title}</h3>
-              <p className="text-xs text-slate-400 flex items-center gap-1.5 mt-1">
+              <h3 className="text-sm font-bold text-slate-900">{item.title}</h3>
+              <p className="text-xs text-slate-500 flex items-center gap-1.5 mt-1">
                 <MapPin className="w-3.5 h-3.5 text-slate-500" />
                 <span>{item.location}</span>
               </p>
             </div>
 
-            <div className="pt-2 border-t border-slate-800/80 flex items-center justify-between text-xs text-slate-400">
+            <div className="pt-2 border-t border-slate-200/80 flex items-center justify-between text-xs text-slate-500">
               <span className="flex items-center gap-1.5">
                 <User className="w-3.5 h-3.5 text-blue-400" />
                 <span>Investor: {item.customer}</span>
               </span>
 
-              <button className="text-emerald-400 font-bold hover:underline flex items-center gap-1">
+              <button className="text-green-400 font-bold hover:underline flex items-center gap-1">
                 <span>Zobrazit trasu</span>
                 <ChevronRight className="w-3.5 h-3.5" />
               </button>

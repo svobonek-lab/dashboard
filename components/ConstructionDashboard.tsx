@@ -262,11 +262,11 @@ const INITIAL_PROJECTS: ConstructionProject[] = [
 ];
 
 const STAGE_CONFIG: Record<ConstructionStage, { label: string; order: number; badgeColor: string }> = {
-  inquiry: { label: 'Poptávka', order: 1, badgeColor: 'border-slate-700 bg-slate-800/80 text-slate-300' },
-  survey: { label: 'Zaměřování', order: 2, badgeColor: 'border-amber-600/40 bg-amber-500/10 text-amber-400' },
-  rough: { label: 'Hrubá stavba', order: 3, badgeColor: 'border-orange-600/40 bg-orange-500/10 text-orange-400' },
+  inquiry: { label: 'Poptávka', order: 1, badgeColor: 'border-slate-300 bg-slate-800/80 text-slate-700' },
+  survey: { label: 'Zaměřování', order: 2, badgeColor: 'border-amber-600/40 bg-blue-50 text-blue-600' },
+  rough: { label: 'Hrubá stavba', order: 3, badgeColor: 'border-blue-600/40 bg-blue-500/10 text-blue-400' },
   finishing: { label: 'Dokončování', order: 4, badgeColor: 'border-sky-600/40 bg-sky-500/10 text-sky-400' },
-  handed_over: { label: 'Předáno', order: 5, badgeColor: 'border-emerald-600/40 bg-emerald-500/10 text-emerald-400' }
+  handed_over: { label: 'Předáno', order: 5, badgeColor: 'border-green-600/40 bg-green-500/10 text-green-600' }
 };
 
 interface ConstructionDashboardProps {
@@ -451,48 +451,48 @@ export const ConstructionDashboard: React.FC<ConstructionDashboardProps> = () =>
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans selection:bg-amber-500 selection:text-slate-950">
+    <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col font-sans selection:bg-blue-600 selection:text-slate-950">
       
       {/* =========================================================================
           HORNÍ LIŠTA: HYBRIDNÍ ÚLOŽIŠTĚ + PŘEPÍNAČ 3 ROLÍ
           ========================================================================= */}
-      <header className="sticky top-0 z-40 bg-slate-900/90 backdrop-blur-md border-b border-slate-800 px-4 sm:px-6 py-3">
+      <header className="sticky top-0 z-40 bg-white/90 backdrop-blur-md border-b border-slate-200 px-4 sm:px-6 py-3">
         <div className="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-4">
           
           {/* Identita stavebního systému */}
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400">
+            <div className="w-10 h-10 rounded-xl bg-blue-50 border border-blue-200 flex items-center justify-center text-blue-600">
               <Building2 className="w-5 h-5" />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <span className="text-sm font-black text-white tracking-wide uppercase">StavbaCore ERP</span>
-                <span className="text-[10px] bg-amber-500/20 text-amber-300 font-bold px-1.5 py-0.5 rounded border border-amber-500/30">
+                <span className="text-sm font-black text-slate-900 tracking-wide uppercase">StavbaCore ERP</span>
+                <span className="text-[10px] bg-blue-100 text-blue-700 font-bold px-1.5 py-0.5 rounded border border-blue-200">
                   v3.4 Hybrid
                 </span>
               </div>
-              <p className="text-[11px] text-slate-400">Řízení staveb & rekonstrukcí na míru</p>
+              <p className="text-[11px] text-slate-500">Řízení staveb & rekonstrukcí na míru</p>
             </div>
           </div>
 
           {/* Telemetrie hybridního úložiště (Synology NAS / Lokální PostgreSQL) */}
-          <div className="hidden lg:flex items-center gap-3 px-3 py-1.5 rounded-xl bg-slate-950/80 border border-slate-800 text-xs">
-            <div className="flex items-center gap-1.5 text-slate-300 font-mono">
-              <HardDrive className="w-3.5 h-3.5 text-amber-400" />
+          <div className="hidden lg:flex items-center gap-3 px-3 py-1.5 rounded-xl bg-slate-50/80 border border-slate-200 text-xs">
+            <div className="flex items-center gap-1.5 text-slate-700 font-mono">
+              <HardDrive className="w-3.5 h-3.5 text-blue-600" />
               <span>Synology DS923+ (LAN)</span>
             </div>
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-            <span className="text-[11px] text-emerald-400 font-mono">1.2ms • Bezpečně On-Premise</span>
+            <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
+            <span className="text-[11px] text-green-600 font-mono">1.2ms • Bezpečně On-Premise</span>
           </div>
 
           {/* PŘEPÍNAČ 3 UŽIVATELSKÝCH ROLÍ (SIMULÁTOR) */}
-          <div className="flex items-center bg-slate-950 p-1 rounded-xl border border-slate-800 shadow-inner">
+          <div className="flex items-center bg-slate-50 p-1 rounded-xl border border-slate-200 shadow-inner">
             <button
               onClick={() => setRole('owner')}
               className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
                 role === 'owner'
-                  ? 'bg-amber-500 text-slate-950 shadow-md font-extrabold'
-                  : 'text-slate-400 hover:text-white hover:bg-slate-900'
+                  ? 'bg-blue-600 text-slate-950 shadow-md font-extrabold'
+                  : 'text-slate-500 hover:text-slate-900 hover:bg-white'
               }`}
             >
               <Shield className="w-3.5 h-3.5" />
@@ -503,8 +503,8 @@ export const ConstructionDashboard: React.FC<ConstructionDashboardProps> = () =>
               onClick={() => setRole('admin')}
               className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
                 role === 'admin'
-                  ? 'bg-amber-500 text-slate-950 shadow-md font-extrabold'
-                  : 'text-slate-400 hover:text-white hover:bg-slate-900'
+                  ? 'bg-blue-600 text-slate-950 shadow-md font-extrabold'
+                  : 'text-slate-500 hover:text-slate-900 hover:bg-white'
               }`}
             >
               <UserCog className="w-3.5 h-3.5" />
@@ -515,8 +515,8 @@ export const ConstructionDashboard: React.FC<ConstructionDashboardProps> = () =>
               onClick={() => setRole('worker')}
               className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
                 role === 'worker'
-                  ? 'bg-amber-500 text-slate-950 shadow-md font-extrabold'
-                  : 'text-slate-400 hover:text-white hover:bg-slate-900'
+                  ? 'bg-blue-600 text-slate-950 shadow-md font-extrabold'
+                  : 'text-slate-500 hover:text-slate-900 hover:bg-white'
               }`}
             >
               <Smartphone className="w-3.5 h-3.5" />
@@ -539,18 +539,18 @@ export const ConstructionDashboard: React.FC<ConstructionDashboardProps> = () =>
           <div className="space-y-6 animate-in fade-in duration-200">
             
             {/* Úvodní manažerská hlavička */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800 pb-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200 pb-4">
               <div>
-                <h1 className="text-xl sm:text-2xl font-black text-white flex items-center gap-2">
+                <h1 className="text-xl sm:text-2xl font-black text-slate-900 flex items-center gap-2">
                   <span>Finanční & Manažerský přehled firmy</span>
                 </h1>
-                <p className="text-xs text-slate-400 mt-1">
+                <p className="text-xs text-slate-500 mt-1">
                   Stav likvidity, rozpočtů a ziskovosti všech aktivních realizací rekonstrukcí a domů.
                 </p>
               </div>
 
-              <div className="flex items-center gap-2 text-xs text-slate-400 font-mono bg-slate-900 px-3 py-2 rounded-xl border border-slate-800">
-                <Clock className="w-3.5 h-3.5 text-amber-400" />
+              <div className="flex items-center gap-2 text-xs text-slate-500 font-mono bg-white px-3 py-2 rounded-xl border border-slate-200">
+                <Clock className="w-3.5 h-3.5 text-blue-600" />
                 <span>Aktualizováno: Dnes v 16:45 z lokálního NAS serveru</span>
               </div>
             </div>
@@ -559,16 +559,16 @@ export const ConstructionDashboard: React.FC<ConstructionDashboardProps> = () =>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               
               {/* Metrika: Celkový objem zakázek */}
-              <div className="bg-slate-900 p-5 rounded-2xl border border-slate-800 border-l-4 border-l-amber-500 space-y-2">
-                <div className="flex items-center justify-between text-xs text-slate-400 font-semibold uppercase tracking-wider">
+              <div className="bg-white p-5 rounded-2xl border border-slate-200 border-l-4 border-l-blue-500 space-y-2">
+                <div className="flex items-center justify-between text-xs text-slate-500 font-semibold uppercase tracking-wider">
                   <span>Celkový obrat zakázek</span>
-                  <Coins className="w-4 h-4 text-amber-400" />
+                  <Coins className="w-4 h-4 text-blue-600" />
                 </div>
-                <div className="text-2xl font-black text-white font-mono">
+                <div className="text-2xl font-black text-slate-900 font-mono">
                   {ownerMetrics.totalVolume.toLocaleString('cs-CZ')} Kč
                 </div>
-                <div className="text-[11px] text-slate-400 flex items-center gap-1.5">
-                  <span className="text-emerald-400 font-bold flex items-center">
+                <div className="text-[11px] text-slate-500 flex items-center gap-1.5">
+                  <span className="text-green-600 font-bold flex items-center">
                     <TrendingUp className="w-3 h-3 mr-0.5" /> +14 %
                   </span>
                   <span>oproti minulému kvartálu</span>
@@ -576,43 +576,43 @@ export const ConstructionDashboard: React.FC<ConstructionDashboardProps> = () =>
               </div>
 
               {/* Metrika: Průměrná marže firmy */}
-              <div className="bg-slate-900 p-5 rounded-2xl border border-slate-800 border-l-4 border-l-emerald-400 space-y-2">
-                <div className="flex items-center justify-between text-xs text-slate-400 font-semibold uppercase tracking-wider">
+              <div className="bg-white p-5 rounded-2xl border border-slate-200 border-l-4 border-l-green-400 space-y-2">
+                <div className="flex items-center justify-between text-xs text-slate-500 font-semibold uppercase tracking-wider">
                   <span>Průměrná hrubá marže</span>
-                  <Percent className="w-4 h-4 text-emerald-400" />
+                  <Percent className="w-4 h-4 text-green-600" />
                 </div>
-                <div className="text-2xl font-black text-emerald-400 font-mono">
+                <div className="text-2xl font-black text-green-600 font-mono">
                   {ownerMetrics.avgMargin} %
                 </div>
-                <div className="text-[11px] text-slate-400">
+                <div className="text-[11px] text-slate-500">
                   Cílová firemní hladina: <strong>22.0 %</strong>
                 </div>
               </div>
 
               {/* Metrika: Počet aktivních staveb */}
-              <div className="bg-slate-900 p-5 rounded-2xl border border-slate-800 border-l-4 border-l-blue-500 space-y-2">
-                <div className="flex items-center justify-between text-xs text-slate-400 font-semibold uppercase tracking-wider">
+              <div className="bg-white p-5 rounded-2xl border border-slate-200 border-l-4 border-l-blue-500 space-y-2">
+                <div className="flex items-center justify-between text-xs text-slate-500 font-semibold uppercase tracking-wider">
                   <span>Aktivní stavby v běhu</span>
                   <Hammer className="w-4 h-4 text-blue-400" />
                 </div>
-                <div className="text-2xl font-black text-white font-mono">
+                <div className="text-2xl font-black text-slate-900 font-mono">
                   {ownerMetrics.activeProjects} stavby
                 </div>
-                <div className="text-[11px] text-slate-400">
+                <div className="text-[11px] text-slate-500">
                   1x hrubá stavba • 1x dokončování • 1x zaměřování
                 </div>
               </div>
 
               {/* Metrika: Plánovaný čistý zisk */}
-              <div className="bg-slate-900 p-5 rounded-2xl border border-slate-800 border-l-4 border-l-amber-400 space-y-2">
-                <div className="flex items-center justify-between text-xs text-slate-400 font-semibold uppercase tracking-wider">
+              <div className="bg-white p-5 rounded-2xl border border-slate-200 border-l-4 border-l-blue-400 space-y-2">
+                <div className="flex items-center justify-between text-xs text-slate-500 font-semibold uppercase tracking-wider">
                   <span>Plánovaný hrubý zisk</span>
-                  <TrendingUp className="w-4 h-4 text-amber-400" />
+                  <TrendingUp className="w-4 h-4 text-blue-600" />
                 </div>
-                <div className="text-2xl font-black text-white font-mono">
+                <div className="text-2xl font-black text-slate-900 font-mono">
                   {ownerMetrics.projectedProfit.toLocaleString('cs-CZ')} Kč
                 </div>
-                <div className="text-[11px] text-slate-400">
+                <div className="text-[11px] text-slate-500">
                   Skutečné čerpání: {ownerMetrics.totalActualCosts.toLocaleString('cs-CZ')} Kč
                 </div>
               </div>
@@ -620,35 +620,35 @@ export const ConstructionDashboard: React.FC<ConstructionDashboardProps> = () =>
             </div>
 
             {/* PŘEHLEDNÁ MANAŽERSKÁ TABULKA VŠECH REALIZACÍ */}
-            <div className="bg-slate-900 rounded-2xl border border-slate-800 overflow-hidden">
-              <div className="p-4 sm:p-5 border-b border-slate-800 flex flex-wrap items-center justify-between gap-3">
+            <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden">
+              <div className="p-4 sm:p-5 border-b border-slate-200 flex flex-wrap items-center justify-between gap-3">
                 <div>
-                  <h2 className="text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2">
-                    <Briefcase className="w-4 h-4 text-amber-400" />
+                  <h2 className="text-sm font-bold text-slate-900 uppercase tracking-wider flex items-center gap-2">
+                    <Briefcase className="w-4 h-4 text-blue-600" />
                     Přehled realizací s rozpočty a ziskovostí
                   </h2>
-                  <p className="text-xs text-slate-400 mt-0.5">
+                  <p className="text-xs text-slate-500 mt-0.5">
                     Přímá finanční kontrola nákladů, marží a stavbyvedoucích.
                   </p>
                 </div>
 
                 <div className="flex items-center gap-2">
                   <div className="relative">
-                    <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-2.5" />
+                    <Search className="w-3.5 h-3.5 text-slate-500 absolute left-3 top-2.5" />
                     <input
                       type="text"
                       placeholder="Filtrovat stavby..."
                       value={searchFilter}
                       onChange={(e) => setSearchFilter(e.target.value)}
-                      className="text-xs bg-slate-950 border border-slate-800 rounded-xl pl-8 pr-3 py-1.5 text-white placeholder-slate-500 focus:outline-none focus:border-amber-500 w-48"
+                      className="text-xs bg-slate-50 border border-slate-200 rounded-xl pl-8 pr-3 py-1.5 text-slate-900 placeholder-slate-500 focus:outline-none focus:border-blue-600 w-48"
                     />
                   </div>
                 </div>
               </div>
 
               <div className="overflow-x-auto">
-                <table className="w-full text-left text-xs text-slate-300">
-                  <thead className="bg-slate-950/60 text-slate-400 text-[11px] uppercase font-bold border-b border-slate-800">
+                <table className="w-full text-left text-xs text-slate-700">
+                  <thead className="bg-slate-50/60 text-slate-500 text-[11px] uppercase font-bold border-b border-slate-200">
                     <tr>
                       <th className="py-3 px-4">Kód & Název stavby</th>
                       <th className="py-3 px-4">Lokalita</th>
@@ -671,16 +671,16 @@ export const ConstructionDashboard: React.FC<ConstructionDashboardProps> = () =>
                             
                             {/* Kód a název */}
                             <td className="py-3.5 px-4">
-                              <div className="font-bold text-white text-sm">{p.name}</div>
-                              <div className="text-[11px] text-slate-400 flex items-center gap-2 mt-0.5 font-mono">
-                                <span className="text-amber-400">{p.code}</span>
+                              <div className="font-bold text-slate-900 text-sm">{p.name}</div>
+                              <div className="text-[11px] text-slate-500 flex items-center gap-2 mt-0.5 font-mono">
+                                <span className="text-blue-600">{p.code}</span>
                                 <span>•</span>
                                 <span>Klient: {p.clientName}</span>
                               </div>
                             </td>
 
                             {/* Lokalita */}
-                            <td className="py-3.5 px-4 font-mono text-slate-300">
+                            <td className="py-3.5 px-4 font-mono text-slate-700">
                               <div className="flex items-center gap-1.5">
                                 <MapPin className="w-3.5 h-3.5 text-slate-500" />
                                 <span>{p.city}</span>
@@ -695,24 +695,24 @@ export const ConstructionDashboard: React.FC<ConstructionDashboardProps> = () =>
                             </td>
 
                             {/* Rozpočet */}
-                            <td className="py-3.5 px-4 text-right font-mono font-bold text-white">
+                            <td className="py-3.5 px-4 text-right font-mono font-bold text-slate-900">
                               {p.budgetTotal.toLocaleString('cs-CZ')} Kč
                             </td>
 
                             {/* Plánované náklady */}
-                            <td className="py-3.5 px-4 text-right font-mono text-slate-400">
+                            <td className="py-3.5 px-4 text-right font-mono text-slate-500">
                               {p.costsEstimated.toLocaleString('cs-CZ')} Kč
                             </td>
 
                             {/* Skutečně vyčerpáno */}
-                            <td className="py-3.5 px-4 text-right font-mono text-slate-300">
+                            <td className="py-3.5 px-4 text-right font-mono text-slate-700">
                               {p.costsActual.toLocaleString('cs-CZ')} Kč
                             </td>
 
                             {/* Marže */}
                             <td className="py-3.5 px-4 text-right">
                               <span className={`font-mono font-bold text-xs ${
-                                p.marginPercent >= 24 ? 'text-emerald-400' : 'text-amber-400'
+                                p.marginPercent >= 24 ? 'text-green-600' : 'text-blue-600'
                               }`}>
                                 {p.marginPercent.toFixed(1)} %
                               </span>
@@ -722,7 +722,7 @@ export const ConstructionDashboard: React.FC<ConstructionDashboardProps> = () =>
                             </td>
 
                             {/* Stavbyvedoucí */}
-                            <td className="py-3.5 px-4 text-slate-300">
+                            <td className="py-3.5 px-4 text-slate-700">
                               <div className="font-medium text-xs">{p.assignedManager}</div>
                               <div className="text-[10px] text-slate-500">{p.assignedWorker.split(' ')[0]} (Mistr)</div>
                             </td>
@@ -735,11 +735,11 @@ export const ConstructionDashboard: React.FC<ConstructionDashboardProps> = () =>
               </div>
 
               {/* Spodní shrnutí */}
-              <div className="p-4 bg-slate-950/60 border-t border-slate-800 flex flex-wrap items-center justify-between gap-3 text-xs text-slate-400">
+              <div className="p-4 bg-slate-50/60 border-t border-slate-200 flex flex-wrap items-center justify-between gap-3 text-xs text-slate-500">
                 <span>Zobrazeno {projects.length} aktivních stavebních zakázek</span>
                 <div className="flex items-center gap-4 font-mono">
-                  <span>Celkem obrat: <strong className="text-white">{ownerMetrics.totalVolume.toLocaleString('cs-CZ')} Kč</strong></span>
-                  <span>Celkem zisk: <strong className="text-emerald-400">{ownerMetrics.projectedProfit.toLocaleString('cs-CZ')} Kč</strong></span>
+                  <span>Celkem obrat: <strong className="text-slate-900">{ownerMetrics.totalVolume.toLocaleString('cs-CZ')} Kč</strong></span>
+                  <span>Celkem zisk: <strong className="text-green-600">{ownerMetrics.projectedProfit.toLocaleString('cs-CZ')} Kč</strong></span>
                 </div>
               </div>
             </div>
@@ -754,20 +754,20 @@ export const ConstructionDashboard: React.FC<ConstructionDashboardProps> = () =>
           <div className="space-y-6 animate-in fade-in duration-200">
             
             {/* Lišta stavbyvedoucího s tlačítkem pro novou stavbu */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800 pb-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200 pb-4">
               <div>
-                <h1 className="text-xl sm:text-2xl font-black text-white flex items-center gap-2">
-                  <UserCog className="w-6 h-6 text-amber-400" />
+                <h1 className="text-xl sm:text-2xl font-black text-slate-900 flex items-center gap-2">
+                  <UserCog className="w-6 h-6 text-blue-600" />
                   <span>Správa stavebního procesu & Dispečink</span>
                 </h1>
-                <p className="text-xs text-slate-400 mt-1">
+                <p className="text-xs text-slate-500 mt-1">
                   Kanban fází: Poptávka → Zaměřování → Hrubá stavba → Dokončování → Předání díla.
                 </p>
               </div>
 
               <button
                 onClick={() => setIsNewModalOpen(true)}
-                className="px-4 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs flex items-center gap-2 shadow-lg shadow-amber-500/20 transition-all cursor-pointer"
+                className="px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-slate-950 font-black text-xs flex items-center gap-2 shadow-lg shadow-blue-500/20 transition-all cursor-pointer"
               >
                 <Plus className="w-4 h-4" />
                 <span>Přidat novou poptávku / zakázku</span>
@@ -781,13 +781,13 @@ export const ConstructionDashboard: React.FC<ConstructionDashboardProps> = () =>
                 const stageProjects = projects.filter(p => p.stage === stageKey);
                 
                 return (
-                  <div key={stageKey} className="bg-slate-900/80 rounded-2xl border border-slate-800 flex flex-col min-h-[520px]">
+                  <div key={stageKey} className="bg-white/80 rounded-2xl border border-slate-200 flex flex-col min-h-[520px]">
                     
                     {/* Záhlaví sloupce */}
-                    <div className="p-3.5 border-b border-slate-800 flex items-center justify-between bg-slate-900 rounded-t-2xl">
+                    <div className="p-3.5 border-b border-slate-200 flex items-center justify-between bg-white rounded-t-2xl">
                       <div className="flex items-center gap-2">
-                        <span className="text-xs font-bold text-white uppercase tracking-wider">{stage.label}</span>
-                        <span className="w-5 h-5 rounded-full bg-slate-800 text-amber-400 text-[10px] font-mono font-bold flex items-center justify-center">
+                        <span className="text-xs font-bold text-slate-900 uppercase tracking-wider">{stage.label}</span>
+                        <span className="w-5 h-5 rounded-full bg-slate-800 text-blue-600 text-[10px] font-mono font-bold flex items-center justify-center">
                           {stageProjects.length}
                         </span>
                       </div>
@@ -803,37 +803,37 @@ export const ConstructionDashboard: React.FC<ConstructionDashboardProps> = () =>
                         stageProjects.map((proj) => (
                           <div
                             key={proj.id}
-                            className={`bg-slate-950 p-4 rounded-xl border border-slate-800 hover:border-slate-700 transition-all space-y-3 shadow-md border-l-4 ${
+                            className={`bg-slate-50 p-4 rounded-xl border border-slate-200 hover:border-slate-300 transition-all space-y-3 shadow-md border-l-4 ${
                               proj.priority === 'critical' ? 'border-l-rose-500' :
-                              proj.priority === 'high' ? 'border-l-amber-500' :
+                              proj.priority === 'high' ? 'border-l-blue-500' :
                               'border-l-blue-500'
                             }`}
                           >
                             <div className="flex items-start justify-between gap-2">
                               <div>
-                                <span className="text-[10px] font-mono text-amber-400 font-bold">{proj.code}</span>
-                                <h3 className="text-xs font-bold text-white mt-0.5 leading-snug">{proj.name}</h3>
+                                <span className="text-[10px] font-mono text-blue-600 font-bold">{proj.code}</span>
+                                <h3 className="text-xs font-bold text-slate-900 mt-0.5 leading-snug">{proj.name}</h3>
                               </div>
                             </div>
 
-                            <p className="text-[11px] text-slate-400 line-clamp-2 leading-relaxed">
+                            <p className="text-[11px] text-slate-500 line-clamp-2 leading-relaxed">
                               {proj.description}
                             </p>
 
-                            <div className="space-y-1 text-[11px] text-slate-300 font-mono pt-1 border-t border-slate-900">
-                              <div className="flex items-center gap-1.5 text-slate-400">
+                            <div className="space-y-1 text-[11px] text-slate-700 font-mono pt-1 border-t border-slate-900">
+                              <div className="flex items-center gap-1.5 text-slate-500">
                                 <MapPin className="w-3 h-3 text-slate-500" />
                                 <span className="truncate">{proj.address}, {proj.city}</span>
                               </div>
-                              <div className="flex items-center justify-between text-white pt-1">
-                                <span className="text-slate-400">Rozpočet:</span>
-                                <span className="font-bold text-amber-400 font-mono">
+                              <div className="flex items-center justify-between text-slate-900 pt-1">
+                                <span className="text-slate-500">Rozpočet:</span>
+                                <span className="font-bold text-blue-600 font-mono">
                                   {(proj.budgetTotal / 1000).toFixed(0)}k Kč
                                 </span>
                               </div>
-                              <div className="flex items-center justify-between text-[10px] text-slate-400">
+                              <div className="flex items-center justify-between text-[10px] text-slate-500">
                                 <span>Mistr:</span>
-                                <span className="text-slate-200 truncate">{proj.assignedWorker.split(' ')[0]}</span>
+                                <span className="text-slate-800 truncate">{proj.assignedWorker.split(' ')[0]}</span>
                               </div>
                             </div>
 
@@ -846,7 +846,7 @@ export const ConstructionDashboard: React.FC<ConstructionDashboardProps> = () =>
                                     const prevIdx = keys.indexOf(stageKey) - 1;
                                     if (prevIdx >= 0) handleMoveStage(proj.id, keys[prevIdx]);
                                   }}
-                                  className="text-slate-400 hover:text-white px-2 py-1 rounded bg-slate-900 hover:bg-slate-800 transition"
+                                  className="text-slate-500 hover:text-slate-900 px-2 py-1 rounded bg-white hover:bg-slate-800 transition"
                                 >
                                   ← Zpět
                                 </button>
@@ -859,7 +859,7 @@ export const ConstructionDashboard: React.FC<ConstructionDashboardProps> = () =>
                                     const nextIdx = keys.indexOf(stageKey) + 1;
                                     if (nextIdx < keys.length) handleMoveStage(proj.id, keys[nextIdx]);
                                   }}
-                                  className="text-amber-400 hover:text-amber-300 font-bold px-2 py-1 rounded bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 transition flex items-center gap-1"
+                                  className="text-blue-600 hover:text-blue-700 font-bold px-2 py-1 rounded bg-blue-50 hover:bg-blue-100 border border-blue-200 transition flex items-center gap-1"
                                 >
                                   <span>Posunout</span>
                                   <ArrowRight className="w-3 h-3" />
@@ -887,54 +887,54 @@ export const ConstructionDashboard: React.FC<ConstructionDashboardProps> = () =>
           <div className="max-w-md mx-auto space-y-5 animate-in fade-in duration-200">
             
             {/* Informační lišta stavu na mobilu */}
-            <div className="bg-slate-900 p-4 rounded-2xl border border-slate-800 flex items-center justify-between">
+            <div className="bg-white p-4 rounded-2xl border border-slate-200 flex items-center justify-between">
               <div className="flex items-center gap-2.5">
-                <div className="w-9 h-9 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400">
+                <div className="w-9 h-9 rounded-xl bg-blue-50 border border-blue-200 flex items-center justify-center text-blue-600">
                   <Hammer className="w-5 h-5" />
                 </div>
                 <div>
-                  <div className="text-xs font-bold text-white">Mistr: Petr Novotný</div>
-                  <div className="text-[11px] text-emerald-400 font-mono flex items-center gap-1">
-                    <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
+                  <div className="text-xs font-bold text-slate-900">Mistr: Petr Novotný</div>
+                  <div className="text-[11px] text-green-600 font-mono flex items-center gap-1">
+                    <span className="w-2 h-2 rounded-full bg-green-400 animate-ping" />
                     <span>Aktivní směna na stavbě</span>
                   </div>
                 </div>
               </div>
 
-              <span className="text-[10px] font-mono bg-slate-950 px-2 py-1 rounded border border-slate-800 text-slate-400">
+              <span className="text-[10px] font-mono bg-slate-50 px-2 py-1 rounded border border-slate-200 text-slate-500">
                 Offline Cache OK
               </span>
             </div>
 
             {/* KARTA AKTUÁLNĚ PŘIŘAZENÉ STAVBY */}
-            <div className="bg-slate-900 rounded-3xl border border-slate-800 border-l-4 border-l-amber-500 p-5 space-y-4 shadow-xl">
+            <div className="bg-white rounded-3xl border border-slate-200 border-l-4 border-l-blue-500 p-5 space-y-4 shadow-xl">
               
               <div className="flex items-center justify-between">
-                <span className="text-xs font-mono text-amber-400 font-bold tracking-wider uppercase">
+                <span className="text-xs font-mono text-blue-600 font-bold tracking-wider uppercase">
                   Moje dnešní stavba
                 </span>
-                <span className="text-[11px] bg-amber-500/20 text-amber-300 font-bold px-2 py-0.5 rounded-md border border-amber-500/30">
+                <span className="text-[11px] bg-blue-100 text-blue-700 font-bold px-2 py-0.5 rounded-md border border-blue-200">
                   {STAGE_CONFIG[workerAssignedProject.stage].label}
                 </span>
               </div>
 
               <div>
-                <h2 className="text-base font-black text-white leading-tight">
+                <h2 className="text-base font-black text-slate-900 leading-tight">
                   {workerAssignedProject.name}
                 </h2>
-                <div className="flex items-center gap-1.5 text-xs text-slate-300 font-mono mt-1">
-                  <MapPin className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                <div className="flex items-center gap-1.5 text-xs text-slate-700 font-mono mt-1">
+                  <MapPin className="w-3.5 h-3.5 text-blue-600 shrink-0" />
                   <span>{workerAssignedProject.address}, {workerAssignedProject.city}</span>
                 </div>
               </div>
 
               {/* Rychlý kontakt na investora / stavbyvedoucího jedním klikem */}
-              <div className="grid grid-cols-2 gap-2 pt-2 border-t border-slate-800/80">
+              <div className="grid grid-cols-2 gap-2 pt-2 border-t border-slate-200/80">
                 <a
                   href={`tel:${workerAssignedProject.clientPhone}`}
-                  className="py-2 px-3 rounded-xl bg-slate-950 hover:bg-slate-800 border border-slate-800 text-xs font-bold text-white flex items-center justify-center gap-2 transition"
+                  className="py-2 px-3 rounded-xl bg-slate-50 hover:bg-slate-800 border border-slate-200 text-xs font-bold text-slate-900 flex items-center justify-center gap-2 transition"
                 >
-                  <Phone className="w-3.5 h-3.5 text-emerald-400" />
+                  <Phone className="w-3.5 h-3.5 text-green-600" />
                   <span>Volat investora</span>
                 </a>
 
@@ -942,7 +942,7 @@ export const ConstructionDashboard: React.FC<ConstructionDashboardProps> = () =>
                   href={`https://maps.google.com/?q=${encodeURIComponent(workerAssignedProject.address + ' ' + workerAssignedProject.city)}`}
                   target="_blank"
                   rel="noreferrer"
-                  className="py-2 px-3 rounded-xl bg-slate-950 hover:bg-slate-800 border border-slate-800 text-xs font-bold text-white flex items-center justify-center gap-2 transition"
+                  className="py-2 px-3 rounded-xl bg-slate-50 hover:bg-slate-800 border border-slate-200 text-xs font-bold text-slate-900 flex items-center justify-center gap-2 transition"
                 >
                   <MapPin className="w-3.5 h-3.5 text-blue-400" />
                   <span>Navigace na stavbu</span>
@@ -957,14 +957,14 @@ export const ConstructionDashboard: React.FC<ConstructionDashboardProps> = () =>
               {/* Tlačítko pro rychlou fotku */}
               <button
                 onClick={() => setIsAddingPhoto(!isAddingPhoto)}
-                className="p-4 rounded-2xl bg-slate-900 border border-slate-800 hover:border-amber-500/50 flex flex-col items-center justify-center gap-2 text-center transition group cursor-pointer active:scale-95"
+                className="p-4 rounded-2xl bg-white border border-slate-200 hover:border-amber-500/50 flex flex-col items-center justify-center gap-2 text-center transition group cursor-pointer active:scale-95"
               >
-                <div className="w-12 h-12 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400 group-hover:bg-amber-500 group-hover:text-slate-950 transition">
+                <div className="w-12 h-12 rounded-xl bg-blue-50 border border-blue-200 flex items-center justify-center text-blue-600 group-hover:bg-blue-600 group-hover:text-slate-950 transition">
                   <Camera className="w-6 h-6" />
                 </div>
                 <div>
-                  <div className="text-xs font-bold text-white">Pořídit fotku stavu</div>
-                  <div className="text-[10px] text-slate-400">Do stavebního deníku</div>
+                  <div className="text-xs font-bold text-slate-900">Pořídit fotku stavu</div>
+                  <div className="text-[10px] text-slate-500">Do stavebního deníku</div>
                 </div>
               </button>
 
@@ -974,21 +974,21 @@ export const ConstructionDashboard: React.FC<ConstructionDashboardProps> = () =>
                 className={`p-4 rounded-2xl border flex flex-col items-center justify-center gap-2 text-center transition cursor-pointer active:scale-95 ${
                   isRecordingVoice
                     ? 'bg-rose-950/50 border-rose-500 ring-2 ring-rose-500/30 animate-pulse'
-                    : 'bg-slate-900 border-slate-800 hover:border-amber-500/50'
+                    : 'bg-white border-slate-200 hover:border-amber-500/50'
                 }`}
               >
                 <div className={`w-12 h-12 rounded-xl flex items-center justify-center transition ${
                   isRecordingVoice
-                    ? 'bg-rose-500 text-white'
-                    : 'bg-amber-500/10 border border-amber-500/30 text-amber-400'
+                    ? 'bg-rose-500 text-slate-900'
+                    : 'bg-blue-50 border border-blue-200 text-blue-600'
                 }`}>
                   <Mic className="w-6 h-6" />
                 </div>
                 <div>
-                  <div className="text-xs font-bold text-white">
+                  <div className="text-xs font-bold text-slate-900">
                     {isRecordingVoice ? `Nahrávám (0:${voiceSeconds < 10 ? '0' + voiceSeconds : voiceSeconds})` : 'Hlasová poznámka'}
                   </div>
-                  <div className="text-[10px] text-slate-400">
+                  <div className="text-[10px] text-slate-500">
                     {isRecordingVoice ? 'Klikněte pro uložení' : 'Nadiktovat hlášení'}
                   </div>
                 </div>
@@ -998,28 +998,28 @@ export const ConstructionDashboard: React.FC<ConstructionDashboardProps> = () =>
 
             {/* Formulář pro přidání fotky, pokud je aktivní */}
             {isAddingPhoto && (
-              <div className="bg-slate-900 p-4 rounded-2xl border border-slate-800 space-y-3 animate-in fade-in">
-                <div className="text-xs font-bold text-white flex items-center justify-between">
+              <div className="bg-white p-4 rounded-2xl border border-slate-200 space-y-3 animate-in fade-in">
+                <div className="text-xs font-bold text-slate-900 flex items-center justify-between">
                   <span>Přidat fotografii ze staveniště</span>
-                  <button onClick={() => setIsAddingPhoto(false)} className="text-slate-400 hover:text-white">✕</button>
+                  <button onClick={() => setIsAddingPhoto(false)} className="text-slate-500 hover:text-slate-900">✕</button>
                 </div>
                 <input
                   type="text"
                   placeholder="URL fotky (nebo simulace z mobilní kamery)"
                   value={workerPhotoInput}
                   onChange={(e) => setWorkerPhotoInput(e.target.value)}
-                  className="w-full text-xs bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white placeholder-slate-500 focus:outline-none focus:border-amber-500"
+                  className="w-full text-xs bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-slate-900 placeholder-slate-500 focus:outline-none focus:border-blue-600"
                 />
                 <input
                   type="text"
                   placeholder="Popis (např. 'Zabetonované armatury v patře')"
                   value={workerPhotoCaption}
                   onChange={(e) => setWorkerPhotoCaption(e.target.value)}
-                  className="w-full text-xs bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white placeholder-slate-500 focus:outline-none focus:border-amber-500"
+                  className="w-full text-xs bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-slate-900 placeholder-slate-500 focus:outline-none focus:border-blue-600"
                 />
                 <button
                   onClick={handleAddWorkerPhoto}
-                  className="w-full py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-bold rounded-xl transition"
+                  className="w-full py-2 bg-blue-600 hover:bg-blue-500 text-slate-950 text-xs font-bold rounded-xl transition"
                 >
                   Uložit do deníku stavby
                 </button>
@@ -1027,25 +1027,25 @@ export const ConstructionDashboard: React.FC<ConstructionDashboardProps> = () =>
             )}
 
             {/* INTERAKTIVNÍ KONTROLNÍ SEZNAM (CHECKLIST) DNEŠNÍCH MILNÍKŮ */}
-            <div className="bg-slate-900 rounded-3xl border border-slate-800 p-5 space-y-3">
+            <div className="bg-white rounded-3xl border border-slate-200 p-5 space-y-3">
               <div className="flex items-center justify-between">
                 <div>
-                  <h3 className="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-1.5">
-                    <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                  <h3 className="text-xs font-bold text-slate-900 uppercase tracking-wider flex items-center gap-1.5">
+                    <CheckCircle2 className="w-4 h-4 text-green-600" />
                     Dnešní stavební úkoly & milníky
                   </h3>
-                  <p className="text-[11px] text-slate-400">Označte hotové práce pro stavbyvedoucího</p>
+                  <p className="text-[11px] text-slate-500">Označte hotové práce pro stavbyvedoucího</p>
                 </div>
 
-                <div className="text-xs font-mono font-bold text-amber-400">
+                <div className="text-xs font-mono font-bold text-blue-600">
                   {workerAssignedProject.milestones.filter(m => m.completed).length} / {workerAssignedProject.milestones.length}
                 </div>
               </div>
 
               {/* Progress bar */}
-              <div className="w-full bg-slate-950 h-2 rounded-full overflow-hidden border border-slate-800">
+              <div className="w-full bg-slate-50 h-2 rounded-full overflow-hidden border border-slate-200">
                 <div
-                  className="bg-amber-500 h-full transition-all duration-300"
+                  className="bg-blue-600 h-full transition-all duration-300"
                   style={{
                     width: `${
                       workerAssignedProject.milestones.length > 0
@@ -1064,26 +1064,26 @@ export const ConstructionDashboard: React.FC<ConstructionDashboardProps> = () =>
                     onClick={() => handleToggleMilestone(m.id)}
                     className={`p-3 rounded-2xl border transition-all cursor-pointer flex items-start gap-3 select-none ${
                       m.completed
-                        ? 'bg-slate-950/60 border-slate-800 opacity-70'
-                        : 'bg-slate-950 border-slate-800 hover:border-slate-700'
+                        ? 'bg-slate-50/60 border-slate-200 opacity-70'
+                        : 'bg-slate-50 border-slate-200 hover:border-slate-300'
                     }`}
                   >
                     <div className={`w-6 h-6 rounded-lg border flex items-center justify-center shrink-0 mt-0.5 transition ${
                       m.completed
-                        ? 'bg-emerald-500 border-emerald-400 text-slate-950'
-                        : 'border-slate-700 bg-slate-900'
+                        ? 'bg-green-500 border-green-400 text-slate-950'
+                        : 'border-slate-300 bg-white'
                     }`}>
                       {m.completed && <Check className="w-4 h-4 stroke-[3]" />}
                     </div>
 
                     <div className="flex-1 min-w-0">
                       <div className={`text-xs font-medium leading-snug ${
-                        m.completed ? 'line-through text-slate-500' : 'text-slate-200'
+                        m.completed ? 'line-through text-slate-500' : 'text-slate-800'
                       }`}>
                         {m.title}
                       </div>
                       {m.timeSlot && (
-                        <div className="text-[10px] text-amber-400 font-mono mt-0.5">
+                        <div className="text-[10px] text-blue-600 font-mono mt-0.5">
                           Časový slot: {m.timeSlot}
                         </div>
                       )}
@@ -1096,21 +1096,21 @@ export const ConstructionDashboard: React.FC<ConstructionDashboardProps> = () =>
 
             {/* POSLEDNÍ ZÁZNAMY ZE STAVBY (FOTKY & ZVUK) */}
             {(workerAssignedProject.photos.length > 0 || workerAssignedProject.voiceLogs.length > 0) && (
-              <div className="bg-slate-900 rounded-3xl border border-slate-800 p-5 space-y-3">
-                <h3 className="text-xs font-bold text-white uppercase tracking-wider">
+              <div className="bg-white rounded-3xl border border-slate-200 p-5 space-y-3">
+                <h3 className="text-xs font-bold text-slate-900 uppercase tracking-wider">
                   Deník dnešních hlášení
                 </h3>
 
                 {/* Hlasové záznamy */}
                 {workerAssignedProject.voiceLogs.map((vl) => (
-                  <div key={vl.id} className="p-3 bg-slate-950 rounded-xl border border-slate-800 text-xs text-slate-300 space-y-1">
-                    <div className="flex items-center justify-between text-[10px] text-amber-400 font-mono">
+                  <div key={vl.id} className="p-3 bg-slate-50 rounded-xl border border-slate-200 text-xs text-slate-700 space-y-1">
+                    <div className="flex items-center justify-between text-[10px] text-blue-600 font-mono">
                       <span className="flex items-center gap-1">
                         <Mic className="w-3 h-3" /> Hlasový záznam ({vl.duration})
                       </span>
                       <span>{vl.timestamp}</span>
                     </div>
-                    <p className="italic text-slate-300 text-[11px]">"{vl.transcript}"</p>
+                    <p className="italic text-slate-700 text-[11px]">"{vl.transcript}"</p>
                   </div>
                 ))}
 
@@ -1118,11 +1118,11 @@ export const ConstructionDashboard: React.FC<ConstructionDashboardProps> = () =>
                 {workerAssignedProject.photos.length > 0 && (
                   <div className="grid grid-cols-2 gap-2">
                     {workerAssignedProject.photos.map((ph) => (
-                      <div key={ph.id} className="relative rounded-xl overflow-hidden border border-slate-800 group">
+                      <div key={ph.id} className="relative rounded-xl overflow-hidden border border-slate-200 group">
                         <img src={ph.url} alt={ph.caption} className="w-full h-24 object-cover" />
                         <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent p-2 flex flex-col justify-end">
-                          <span className="text-[10px] text-white font-medium truncate">{ph.caption}</span>
-                          <span className="text-[9px] text-amber-400 font-mono">{ph.timestamp}</span>
+                          <span className="text-[10px] text-slate-900 font-medium truncate">{ph.caption}</span>
+                          <span className="text-[9px] text-blue-600 font-mono">{ph.timestamp}</span>
                         </div>
                       </div>
                     ))}
@@ -1140,22 +1140,22 @@ export const ConstructionDashboard: React.FC<ConstructionDashboardProps> = () =>
           MODÁLNÍ OKNO PRO NOVOU POPTÁVKU / ZAKÁZKU (PRO SPRÁVCE / ADMINA)
           ========================================================================= */}
       {isNewModalOpen && (
-        <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-slate-900 border border-slate-800 rounded-3xl max-w-lg w-full p-6 space-y-4 shadow-2xl text-slate-200">
+        <div className="fixed inset-0 z-50 bg-slate-50/80 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white border border-slate-200 rounded-3xl max-w-lg w-full p-6 space-y-4 shadow-2xl text-slate-800">
             
-            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+            <div className="flex items-center justify-between border-b border-slate-200 pb-3">
               <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400">
+                <div className="w-8 h-8 rounded-xl bg-blue-50 border border-blue-200 flex items-center justify-center text-blue-600">
                   <Plus className="w-4 h-4" />
                 </div>
                 <div>
-                  <h3 className="text-sm font-bold text-white">Nová stavební poptávka / zakázka</h3>
-                  <p className="text-[11px] text-slate-400">Založení rekonstrukce nebo novostavby do systému</p>
+                  <h3 className="text-sm font-bold text-slate-900">Nová stavební poptávka / zakázka</h3>
+                  <p className="text-[11px] text-slate-500">Založení rekonstrukce nebo novostavby do systému</p>
                 </div>
               </div>
               <button
                 onClick={() => setIsNewModalOpen(false)}
-                className="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800"
+                className="text-slate-500 hover:text-slate-900 p-1 rounded-lg hover:bg-slate-800"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -1164,90 +1164,90 @@ export const ConstructionDashboard: React.FC<ConstructionDashboardProps> = () =>
             <form onSubmit={handleCreateProject} className="space-y-3.5 text-xs">
               
               <div className="space-y-1">
-                <label className="font-semibold text-slate-300">Název projektu / stavebního díla *</label>
+                <label className="font-semibold text-slate-700">Název projektu / stavebního díla *</label>
                 <input
                   type="text"
                   required
                   placeholder="např. Rekonstrukce koupelny a kuchyně RD"
                   value={newProjectForm.name}
                   onChange={(e) => setNewProjectForm({ ...newProjectForm, name: e.target.value })}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white placeholder-slate-600 focus:outline-none focus:border-amber-500"
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-slate-900 placeholder-slate-600 focus:outline-none focus:border-blue-600"
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1">
-                  <label className="font-semibold text-slate-300">Jméno investora / klienta *</label>
+                  <label className="font-semibold text-slate-700">Jméno investora / klienta *</label>
                   <input
                     type="text"
                     required
                     placeholder="např. Ing. Petr Svoboda"
                     value={newProjectForm.clientName}
                     onChange={(e) => setNewProjectForm({ ...newProjectForm, clientName: e.target.value })}
-                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white placeholder-slate-600 focus:outline-none focus:border-amber-500"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-slate-900 placeholder-slate-600 focus:outline-none focus:border-blue-600"
                   />
                 </div>
                 <div className="space-y-1">
-                  <label className="font-semibold text-slate-300">Telefon na klienta</label>
+                  <label className="font-semibold text-slate-700">Telefon na klienta</label>
                   <input
                     type="text"
                     placeholder="+420 777 123 456"
                     value={newProjectForm.clientPhone}
                     onChange={(e) => setNewProjectForm({ ...newProjectForm, clientPhone: e.target.value })}
-                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white placeholder-slate-600 focus:outline-none focus:border-amber-500"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-slate-900 placeholder-slate-600 focus:outline-none focus:border-blue-600"
                   />
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1">
-                  <label className="font-semibold text-slate-300">Město</label>
+                  <label className="font-semibold text-slate-700">Město</label>
                   <input
                     type="text"
                     value={newProjectForm.city}
                     onChange={(e) => setNewProjectForm({ ...newProjectForm, city: e.target.value })}
-                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white placeholder-slate-600 focus:outline-none focus:border-amber-500"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-slate-900 placeholder-slate-600 focus:outline-none focus:border-blue-600"
                   />
                 </div>
                 <div className="space-y-1">
-                  <label className="font-semibold text-slate-300">Ulice a číslo popisné</label>
+                  <label className="font-semibold text-slate-700">Ulice a číslo popisné</label>
                   <input
                     type="text"
                     placeholder="K Březině 14"
                     value={newProjectForm.address}
                     onChange={(e) => setNewProjectForm({ ...newProjectForm, address: e.target.value })}
-                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white placeholder-slate-600 focus:outline-none focus:border-amber-500"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-slate-900 placeholder-slate-600 focus:outline-none focus:border-blue-600"
                   />
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1">
-                  <label className="font-semibold text-slate-300">Smluvní rozpočet (Kč bez DPH)</label>
+                  <label className="font-semibold text-slate-700">Smluvní rozpočet (Kč bez DPH)</label>
                   <input
                     type="number"
                     value={newProjectForm.budgetTotal}
                     onChange={(e) => setNewProjectForm({ ...newProjectForm, budgetTotal: Number(e.target.value) })}
-                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 font-mono text-amber-400 font-bold focus:outline-none focus:border-amber-500"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 font-mono text-blue-600 font-bold focus:outline-none focus:border-blue-600"
                   />
                 </div>
                 <div className="space-y-1">
-                  <label className="font-semibold text-slate-300">Plánované náklady (Kč)</label>
+                  <label className="font-semibold text-slate-700">Plánované náklady (Kč)</label>
                   <input
                     type="number"
                     value={newProjectForm.costsEstimated}
                     onChange={(e) => setNewProjectForm({ ...newProjectForm, costsEstimated: Number(e.target.value) })}
-                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 font-mono text-slate-300 focus:outline-none focus:border-amber-500"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 font-mono text-slate-700 focus:outline-none focus:border-blue-600"
                   />
                 </div>
               </div>
 
               <div className="space-y-1">
-                <label className="font-semibold text-slate-300">Počáteční fáze zakázky</label>
+                <label className="font-semibold text-slate-700">Počáteční fáze zakázky</label>
                 <select
                   value={newProjectForm.stage}
                   onChange={(e) => setNewProjectForm({ ...newProjectForm, stage: e.target.value as ConstructionStage })}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-amber-500"
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-slate-900 focus:outline-none focus:border-blue-600"
                 >
                   <option value="inquiry">Poptávka (nově doručeno)</option>
                   <option value="survey">Zaměřování na staveništi</option>
@@ -1258,27 +1258,27 @@ export const ConstructionDashboard: React.FC<ConstructionDashboardProps> = () =>
               </div>
 
               <div className="space-y-1">
-                <label className="font-semibold text-slate-300">Popis a stavební rozsah</label>
+                <label className="font-semibold text-slate-700">Popis a stavební rozsah</label>
                 <textarea
                   rows={2}
                   placeholder="Stručný popis stavu staveniště, požadavků a termínů..."
                   value={newProjectForm.description}
                   onChange={(e) => setNewProjectForm({ ...newProjectForm, description: e.target.value })}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white placeholder-slate-600 focus:outline-none focus:border-amber-500"
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-slate-900 placeholder-slate-600 focus:outline-none focus:border-blue-600"
                 />
               </div>
 
-              <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-800">
+              <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-200">
                 <button
                   type="button"
                   onClick={() => setIsNewModalOpen(false)}
-                  className="px-4 py-2 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition"
+                  className="px-4 py-2 rounded-xl text-slate-500 hover:text-slate-900 hover:bg-slate-800 transition"
                 >
                   Zrušit
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black transition shadow-md"
+                  className="px-5 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-slate-950 font-black transition shadow-md"
                 >
                   Vytvořit zakázku na Kanban
                 </button>
@@ -1293,10 +1293,10 @@ export const ConstructionDashboard: React.FC<ConstructionDashboardProps> = () =>
       {/* =========================================================================
           PATIČKA: ARCHITEKTURA HYBRIDNÍHO SYSTÉMU (SYNOLOGY NAS REST API)
           ========================================================================= */}
-      <footer className="border-t border-slate-900 bg-slate-950 py-4 px-4 sm:px-6 text-[11px] text-slate-500 text-center">
+      <footer className="border-t border-slate-900 bg-slate-50 py-4 px-4 sm:px-6 text-[11px] text-slate-500 text-center">
         <div className="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-2">
           <span>StavbaCore B2B ERP • Architektura lokální suverenity dat (Synology NAS On-Premise + Cloud Sync)</span>
-          <span className="font-mono text-slate-400">PostgreSQL Schema v2.8 • Offline-First Service Worker</span>
+          <span className="font-mono text-slate-500">PostgreSQL Schema v2.8 • Offline-First Service Worker</span>
         </div>
       </footer>
 

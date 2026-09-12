@@ -22,28 +22,28 @@ export const EmployeeChecklistPage: React.FC = () => {
   const allCompleted = completedCount === items.length;
 
   return (
-    <div className="space-y-6 text-slate-100 font-sans pb-12">
+    <div className="space-y-6 text-slate-900 font-sans pb-12">
       
       {/* Header */}
       <div>
-        <h1 className="text-xl font-black text-white tracking-tight flex items-center gap-2">
-          <CheckSquare className="w-5 h-5 text-emerald-400" />
+        <h1 className="text-xl font-black text-slate-900 tracking-tight flex items-center gap-2">
+          <CheckSquare className="w-5 h-5 text-green-400" />
           Stavební checklist & Předávací protokol
         </h1>
-        <p className="text-xs text-slate-400 mt-0.5">
-          Zakázka: <strong className="text-white">Pergola 6x4m - Ing. Jan Svoboda</strong>
+        <p className="text-xs text-slate-500 mt-0.5">
+          Zakázka: <strong className="text-slate-900">Pergola 6x4m - Ing. Jan Svoboda</strong>
         </p>
       </div>
 
       {/* Progress Bar */}
-      <div className="bg-[#111726] p-4 rounded-3xl border border-slate-800 space-y-2">
+      <div className="bg-[#111726] p-4 rounded-3xl border border-slate-200 space-y-2">
         <div className="flex items-center justify-between text-xs font-bold">
-          <span className="text-slate-300">Splněno kontrolních bodů:</span>
-          <span className="text-emerald-400 font-mono">{completedCount} z {items.length}</span>
+          <span className="text-slate-700">Splněno kontrolních bodů:</span>
+          <span className="text-green-400 font-mono">{completedCount} z {items.length}</span>
         </div>
-        <div className="w-full h-2.5 bg-slate-900 rounded-full overflow-hidden">
+        <div className="w-full h-2.5 bg-white rounded-full overflow-hidden">
           <div 
-            className="h-full bg-emerald-500 rounded-full transition-all duration-300"
+            className="h-full bg-green-500 rounded-full transition-all duration-300"
             style={{ width: `${(completedCount / items.length) * 100}%` }}
           ></div>
         </div>
@@ -57,12 +57,12 @@ export const EmployeeChecklistPage: React.FC = () => {
             onClick={() => handleToggleItem(item.id)}
             className={`w-full min-h-[52px] p-4 rounded-2xl border text-left flex items-center gap-3 transition-all ${
               item.completed 
-                ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-200' 
-                : 'bg-[#111726] border-slate-800 text-slate-200 hover:border-slate-700'
+                ? 'bg-green-500/10 border-green-500/30 text-green-200' 
+                : 'bg-[#111726] border-slate-200 text-slate-800 hover:border-slate-300'
             }`}
           >
             {item.completed ? (
-              <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0" />
+              <CheckCircle2 className="w-5 h-5 text-green-400 shrink-0" />
             ) : (
               <Square className="w-5 h-5 text-slate-500 shrink-0" />
             )}
@@ -74,29 +74,29 @@ export const EmployeeChecklistPage: React.FC = () => {
       </div>
 
       {/* Touch Signature Pad Box */}
-      <div className="bg-[#111726] border border-slate-800 rounded-3xl p-5 space-y-4 shadow-lg">
+      <div className="bg-[#111726] border border-slate-200 rounded-3xl p-5 space-y-4 shadow-lg">
         <div className="flex items-center justify-between">
-          <h3 className="text-xs font-bold text-white flex items-center gap-2">
-            <PenTool className="w-4 h-4 text-emerald-400" />
+          <h3 className="text-xs font-bold text-slate-900 flex items-center gap-2">
+            <PenTool className="w-4 h-4 text-green-400" />
             Podpis investora při předání
           </h3>
           {signatureDone && (
-            <span className="text-[10px] font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/30">
+            <span className="text-[10px] font-bold text-green-400 bg-green-500/10 px-2 py-0.5 rounded border border-green-500/30">
               Podepsáno
             </span>
           )}
         </div>
 
-        <div className="h-32 bg-[#0B0F19] rounded-2xl border border-dashed border-slate-700 flex flex-col items-center justify-center text-center p-4 relative overflow-hidden">
+        <div className="h-32 bg-[#0B0F19] rounded-2xl border border-dashed border-slate-300 flex flex-col items-center justify-center text-center p-4 relative overflow-hidden">
           {signatureDone ? (
-            <div className="text-emerald-400 space-y-1">
+            <div className="text-green-400 space-y-1">
               <span className="font-serif italic text-2xl">Jan Svoboda</span>
               <p className="text-[10px] text-slate-500 font-mono">Časové razítko: {new Date().toLocaleTimeString('cs-CZ')}</p>
             </div>
           ) : (
             <div className="space-y-1">
               <PenTool className="w-6 h-6 text-slate-500 mx-auto" />
-              <p className="text-[11px] text-slate-400 font-medium">Klikněte pro simulaci podpisu investora prstem na obrazovce</p>
+              <p className="text-[11px] text-slate-500 font-medium">Klikněte pro simulaci podpisu investora prstem na obrazovce</p>
             </div>
           )}
 
@@ -113,7 +113,7 @@ export const EmployeeChecklistPage: React.FC = () => {
         {signatureDone && (
           <button
             onClick={() => setSignatureDone(false)}
-            className="text-[10px] text-slate-400 hover:text-white underline font-semibold"
+            className="text-[10px] text-slate-500 hover:text-slate-900 underline font-semibold"
           >
             Vymazat a podepsat znovu
           </button>
@@ -122,7 +122,7 @@ export const EmployeeChecklistPage: React.FC = () => {
 
       {/* Final Submit Protocol Action */}
       {protocolSubmitted ? (
-        <div className="p-4 rounded-2xl bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 text-xs font-bold flex items-center gap-2">
+        <div className="p-4 rounded-2xl bg-green-500/20 border border-green-500/40 text-green-300 text-xs font-bold flex items-center gap-2">
           <Check className="w-4 h-4" />
           <span>Předávací protokol byl odeslán na dispečink i na e-mail investora!</span>
         </div>
@@ -130,7 +130,7 @@ export const EmployeeChecklistPage: React.FC = () => {
         <button
           onClick={() => setProtocolSubmitted(true)}
           disabled={!signatureDone}
-          className="w-full min-h-[48px] py-3.5 px-4 rounded-2xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-xs transition-all shadow-lg shadow-emerald-500/20 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="w-full min-h-[48px] py-3.5 px-4 rounded-2xl bg-green-500 hover:bg-green-400 text-slate-950 font-black text-xs transition-all shadow-lg shadow-green-500/20 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           <Send className="w-4 h-4" />
           <span>Odeslat podepsaný protokol do CRM</span>

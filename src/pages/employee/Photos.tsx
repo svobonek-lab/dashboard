@@ -33,21 +33,21 @@ export const EmployeePhotosPage: React.FC = () => {
   });
 
   return (
-    <div className="space-y-6 text-slate-100 font-sans pb-12">
+    <div className="space-y-6 text-slate-900 font-sans pb-12">
       
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-black text-white tracking-tight flex items-center gap-2">
-            <Camera className="w-5 h-5 text-emerald-400" />
+          <h1 className="text-xl font-black text-slate-900 tracking-tight flex items-center gap-2">
+            <Camera className="w-5 h-5 text-green-400" />
             Fotodokumentace ze stavby
           </h1>
-          <p className="text-xs text-slate-400 mt-0.5">
+          <p className="text-xs text-slate-500 mt-0.5">
             Okamžitá synchronizace fotografií na dispečink pro investora a předávací protokol.
           </p>
         </div>
 
-        <label className="cursor-pointer min-h-[44px] px-4 py-2.5 rounded-2xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-xs transition-all shadow-md shadow-emerald-500/20 flex items-center gap-2">
+        <label className="cursor-pointer min-h-[44px] px-4 py-2.5 rounded-2xl bg-green-500 hover:bg-green-400 text-slate-950 font-black text-xs transition-all shadow-md shadow-green-500/20 flex items-center gap-2">
           <UploadCloud className="w-4 h-4" />
           <span>Vyfotit / Nahrát</span>
           <input type="file" accept="image/*" capture="environment" className="hidden" onChange={handleSimulateUpload} />
@@ -56,20 +56,20 @@ export const EmployeePhotosPage: React.FC = () => {
 
       {/* Success Banner */}
       {uploadSuccess && (
-        <div className="p-3.5 rounded-2xl bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 text-xs font-bold flex items-center gap-2">
+        <div className="p-3.5 rounded-2xl bg-green-500/20 border border-green-500/40 text-green-300 text-xs font-bold flex items-center gap-2">
           <CheckCircle2 className="w-4 h-4" />
           <span>Fotografie byla úspěšně nahrána a synchronizována na cloud!</span>
         </div>
       )}
 
       {/* Filter Tabs */}
-      <div className="flex items-center gap-2 bg-[#111726] p-1.5 rounded-2xl border border-slate-800">
+      <div className="flex items-center gap-2 bg-[#111726] p-1.5 rounded-2xl border border-slate-200">
         {(['All', 'Before', 'During', 'After'] as const).map((cat) => (
           <button
             key={cat}
             onClick={() => setCategory(cat)}
             className={`flex-1 py-2 rounded-xl text-xs font-bold transition-all ${
-              category === cat ? 'bg-emerald-500 text-slate-950 shadow-md' : 'text-slate-400 hover:text-white'
+              category === cat ? 'bg-green-500 text-slate-950 shadow-md' : 'text-slate-500 hover:text-slate-900'
             }`}
           >
             {cat === 'All' ? 'Všechny fotky' : cat === 'Before' ? 'Před zahájením' : cat === 'During' ? 'Průběh montáže' : 'Hotové dílo'}
@@ -82,18 +82,18 @@ export const EmployeePhotosPage: React.FC = () => {
         {filteredPhotos.map((photo) => (
           <div
             key={photo.id}
-            className="bg-[#111726] border border-slate-800 rounded-3xl overflow-hidden shadow-lg group space-y-3 p-3"
+            className="bg-[#111726] border border-slate-200 rounded-3xl overflow-hidden shadow-lg group space-y-3 p-3"
           >
-            <div className="relative h-48 rounded-2xl overflow-hidden bg-slate-900">
+            <div className="relative h-48 rounded-2xl overflow-hidden bg-white">
               <img src={photo.url} alt={photo.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
-              <span className="absolute top-2.5 left-2.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-slate-950/80 backdrop-blur-md text-emerald-400 border border-slate-800">
+              <span className="absolute top-2.5 left-2.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-slate-50/80 backdrop-blur-md text-green-400 border border-slate-200">
                 {photo.category}
               </span>
             </div>
 
             <div className="px-2">
-              <h4 className="text-xs font-bold text-white truncate">{photo.title}</h4>
-              <p className="text-[10px] text-slate-400 mt-0.5">{photo.date}</p>
+              <h4 className="text-xs font-bold text-slate-900 truncate">{photo.title}</h4>
+              <p className="text-[10px] text-slate-500 mt-0.5">{photo.date}</p>
             </div>
           </div>
         ))}

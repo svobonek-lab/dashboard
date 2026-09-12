@@ -36,7 +36,7 @@ export const AdminDomainsPage: React.FC = () => {
             <ShieldCheck className="w-5 h-5 text-cyan-400" />
             Cloud Edge Ingress Nastavení
           </h2>
-          <span className="px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+          <span className="px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold bg-green-500/20 text-green-400 border border-green-500/30">
             Ingress OK (99.99%)
           </span>
         </div>
@@ -50,7 +50,7 @@ export const AdminDomainsPage: React.FC = () => {
             <span className="text-slate-500 text-[11px] block">Globální CNAME Target:</span>
             <span className="text-cyan-300 font-bold">cname.stavbacore.cz</span>
           </div>
-          <span className="text-emerald-400 text-xs font-bold">Automatic SSL Handshake</span>
+          <span className="text-green-400 text-xs font-bold">Automatic SSL Handshake</span>
         </div>
       </div>
 
@@ -77,7 +77,7 @@ export const AdminDomainsPage: React.FC = () => {
                   </td>
                   <td className="py-4 font-sans font-bold text-white">{d.tenant}</td>
                   <td className="py-4">
-                    <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${d.ssl.includes('Active') ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'bg-amber-500/20 text-amber-400 border border-amber-500/30'}`}>
+                    <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${d.ssl.includes('Active') ? 'bg-green-500/20 text-green-400 border border-green-500/30' : 'bg-amber-500/20 text-amber-400 border border-amber-500/30'}`}>
                       {d.ssl}
                     </span>
                   </td>

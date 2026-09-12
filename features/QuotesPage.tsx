@@ -100,19 +100,19 @@ export const QuotesPage: React.FC<QuotesPageProps> = ({ branding: propBranding }
   };
 
   return (
-    <div className="space-y-8 max-w-5xl mx-auto pb-16 text-slate-100 font-sans">
+    <div className="space-y-8 max-w-5xl mx-auto pb-16 text-slate-900 font-sans">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-black text-slate-100 tracking-tight">Tvorba stavebních rozpočtů & nabídek</h2>
-          <p className="text-xs text-slate-400 mt-0.5">Kalkulační šablony, revize nabídek, generování PDF a digitální akceptace investorem.</p>
+          <h2 className="text-2xl font-black text-slate-900 tracking-tight">Tvorba stavebních rozpočtů & nabídek</h2>
+          <p className="text-xs text-slate-500 mt-0.5">Kalkulační šablony, revize nabídek, generování PDF a digitální akceptace investorem.</p>
         </div>
 
         <div className="flex items-center gap-3">
           <button
             onClick={handleSendEmail}
-            className="px-4 py-2.5 rounded-xl text-xs font-semibold bg-slate-900 border border-slate-700 text-slate-200 hover:bg-slate-800 shadow-xs flex items-center gap-2 transition-all"
+            className="px-4 py-2.5 rounded-xl text-xs font-semibold bg-white border border-slate-300 text-slate-800 hover:bg-slate-800 shadow-xs flex items-center gap-2 transition-all"
           >
-            {emailSent ? <Check className="w-4 h-4 text-emerald-400" /> : <Send className="w-4 h-4 text-slate-400" />}
+            {emailSent ? <Check className="w-4 h-4 text-green-400" /> : <Send className="w-4 h-4 text-slate-500" />}
             <span>{emailSent ? 'Odesláno e-mailem!' : 'Odeslat investorovi'}</span>
           </button>
           <button
@@ -132,17 +132,17 @@ export const QuotesPage: React.FC<QuotesPageProps> = ({ branding: propBranding }
 
       {/* Action Notice Banner */}
       {actionNotice && (
-        <div className="bg-emerald-950/90 border border-emerald-800 p-4 rounded-2xl text-emerald-300 text-xs flex items-center justify-between animate-in fade-in">
+        <div className="bg-green-950/90 border border-green-800 p-4 rounded-2xl text-green-300 text-xs flex items-center justify-between animate-in fade-in">
           <div className="flex items-center gap-2 font-semibold">
-            <Check className="w-4 h-4 text-emerald-400" />
+            <Check className="w-4 h-4 text-green-400" />
             <span>{actionNotice}</span>
           </div>
-          <button onClick={() => setActionNotice(null)} className="text-emerald-400 font-bold hover:underline">Zavřít</button>
+          <button onClick={() => setActionNotice(null)} className="text-green-400 font-bold hover:underline">Zavřít</button>
         </div>
       )}
 
       {/* Smart Builder & Version Control Toolbar */}
-      <div className="bg-slate-900/90 backdrop-blur-md p-6 rounded-[24px] border border-slate-800 shadow-md space-y-4">
+      <div className="bg-white/90 backdrop-blur-md p-6 rounded-[24px] border border-slate-200 shadow-md space-y-4">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="flex items-center gap-2">
             <div 
@@ -156,8 +156,8 @@ export const QuotesPage: React.FC<QuotesPageProps> = ({ branding: propBranding }
               <Sparkles className="w-4 h-4" />
             </div>
             <div>
-              <h3 className="text-xs font-bold text-slate-200 uppercase tracking-wider">Kalkulační šablony</h3>
-              <p className="text-[11px] text-slate-400">Rychlé načtení položek pro typické stavby:</p>
+              <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider">Kalkulační šablony</h3>
+              <p className="text-[11px] text-slate-500">Rychlé načtení položek pro typické stavby:</p>
             </div>
           </div>
           <div className="flex items-center gap-2">
@@ -174,48 +174,48 @@ export const QuotesPage: React.FC<QuotesPageProps> = ({ branding: propBranding }
             </button>
             <button
               onClick={() => applySmartBuilder('Carport')}
-              className="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs font-bold transition-all shadow-sm flex items-center gap-1.5"
+              className="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-800 border border-slate-300 text-xs font-bold transition-all shadow-sm flex items-center gap-1.5"
             >
               <span>+ Přístřešek na auta</span>
             </button>
           </div>
         </div>
 
-        <div className="pt-3 border-t border-slate-800 flex items-center justify-between text-xs">
+        <div className="pt-3 border-t border-slate-200 flex items-center justify-between text-xs">
           <div className="flex items-center gap-2">
             <History className="w-4 h-4 text-slate-500" />
-            <span className="text-slate-400 font-semibold">Historie revizí:</span>
+            <span className="text-slate-500 font-semibold">Historie revizí:</span>
             <select
               value={currentVersion}
               onChange={(e) => setCurrentVersion(e.target.value)}
-              className="bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1 text-slate-200 font-medium focus:outline-none"
+              className="bg-slate-50 border border-slate-300 rounded-lg px-2.5 py-1 text-slate-800 font-medium focus:outline-none"
             >
               {versions.map((v, i) => (
                 <option key={i} value={v}>{v}</option>
               ))}
             </select>
           </div>
-          <span className="text-emerald-400 font-bold bg-emerald-950/80 border border-emerald-800 px-2.5 py-1 rounded-md">Stav: Aktivní & Platná</span>
+          <span className="text-green-400 font-bold bg-green-950/80 border border-green-800 px-2.5 py-1 rounded-md">Stav: Aktivní & Platná</span>
         </div>
       </div>
 
       {/* Builder Controls */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 bg-slate-900/90 p-6 rounded-[24px] border border-slate-800 shadow-md">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 bg-white/90 p-6 rounded-[24px] border border-slate-200 shadow-md">
         <div>
-          <label className="text-xs font-semibold text-slate-300">Jméno zákazníka / investora</label>
+          <label className="text-xs font-semibold text-slate-700">Jméno zákazníka / investora</label>
           <input
             type="text"
             value={customerName}
             onChange={(e) => setCustomerName(e.target.value)}
-            className="w-full mt-1 bg-slate-950 border border-slate-800 rounded-xl p-3 text-xs font-semibold text-slate-200 focus:outline-none"
+            className="w-full mt-1 bg-slate-50 border border-slate-200 rounded-xl p-3 text-xs font-semibold text-slate-800 focus:outline-none"
           />
         </div>
         <div>
-          <label className="text-xs font-semibold text-slate-300">Sazba DPH (%)</label>
+          <label className="text-xs font-semibold text-slate-700">Sazba DPH (%)</label>
           <select
             value={vatRate}
             onChange={(e) => setVatRate(Number(e.target.value))}
-            className="w-full mt-1 bg-slate-950 border border-slate-800 rounded-xl p-3 text-xs font-semibold text-slate-200 focus:outline-none"
+            className="w-full mt-1 bg-slate-50 border border-slate-200 rounded-xl p-3 text-xs font-semibold text-slate-800 focus:outline-none"
           >
             <option value={21}>21% (Základní sazba)</option>
             <option value={15}>15% (Snížená pro bytovou výstavbu)</option>
@@ -223,25 +223,25 @@ export const QuotesPage: React.FC<QuotesPageProps> = ({ branding: propBranding }
           </select>
         </div>
         <div>
-          <label className="text-xs font-semibold text-slate-300">Sleva pro investora (%)</label>
+          <label className="text-xs font-semibold text-slate-700">Sleva pro investora (%)</label>
           <input
             type="number"
             value={discountPercent}
             onChange={(e) => setDiscountPercent(Number(e.target.value))}
-            className="w-full mt-1 bg-slate-950 border border-slate-800 rounded-xl p-3 text-xs font-semibold text-slate-200 focus:outline-none"
+            className="w-full mt-1 bg-slate-50 border border-slate-200 rounded-xl p-3 text-xs font-semibold text-slate-800 focus:outline-none"
           />
         </div>
       </div>
 
       {/* PDF Document Preview Box */}
       <div 
-        className="bg-slate-900/95 p-10 rounded-[28px] border border-slate-800 shadow-2xl space-y-8 text-slate-200 relative overflow-hidden"
+        className="bg-white/95 p-10 rounded-[28px] border border-slate-200 shadow-2xl space-y-8 text-slate-800 relative overflow-hidden"
         style={{
           borderTop: `4px solid ${palette.primary}`
         }}
       >
         {/* AI Summary Banner at Top of PDF */}
-        <div className="bg-slate-950 border border-slate-800 text-white p-4 rounded-2xl flex items-center justify-between shadow-md">
+        <div className="bg-slate-50 border border-slate-200 text-slate-900 p-4 rounded-2xl flex items-center justify-between shadow-md">
           <div className="flex items-center gap-3">
             <div 
               className="w-8 h-8 rounded-lg flex items-center justify-center border"
@@ -257,17 +257,17 @@ export const QuotesPage: React.FC<QuotesPageProps> = ({ branding: propBranding }
               <span className="text-[10px] font-bold uppercase tracking-wider" style={{ color: palette.primary }}>
                 Shrnutí položkového rozpočtu
               </span>
-              <p className="text-xs font-bold text-slate-200">„Kompletní montáž díla vč. materiálu a certifikované instalace.“</p>
+              <p className="text-xs font-bold text-slate-800">„Kompletní montáž díla vč. materiálu a certifikované instalace.“</p>
             </div>
           </div>
-          <span className="text-[10px] font-semibold text-emerald-400 bg-emerald-950 px-2 py-1 rounded-md border border-emerald-800">Ověřený rozsah prací</span>
+          <span className="text-[10px] font-semibold text-green-400 bg-green-950 px-2 py-1 rounded-md border border-green-800">Ověřený rozsah prací</span>
         </div>
 
         {/* PDF Header */}
-        <div className="flex items-start justify-between border-b border-slate-800 pb-6">
+        <div className="flex items-start justify-between border-b border-slate-200 pb-6">
           <div className="flex items-center gap-3.5">
             {branding.logoUrl ? (
-              <img src={branding.logoUrl} alt={activeCompanyName} className="w-12 h-12 rounded-2xl object-cover border border-slate-700 bg-white p-1 shadow-md" />
+              <img src={branding.logoUrl} alt={activeCompanyName} className="w-12 h-12 rounded-2xl object-cover border border-slate-300 bg-white p-1 shadow-md" />
             ) : (
               <div 
                 className="w-12 h-12 rounded-2xl flex items-center justify-center font-black text-xl shadow-md"
@@ -280,8 +280,8 @@ export const QuotesPage: React.FC<QuotesPageProps> = ({ branding: propBranding }
               </div>
             )}
             <div>
-              <h3 className="text-lg font-bold text-slate-100">{activeCompanyName}</h3>
-              <p className="text-xs text-slate-400">{branding.address || 'Průmyslová 100'}, {activeCity}</p>
+              <h3 className="text-lg font-bold text-slate-900">{activeCompanyName}</h3>
+              <p className="text-xs text-slate-500">{branding.address || 'Průmyslová 100'}, {activeCity}</p>
               <p className="text-xs text-slate-500">IČO: 28492011 • DIČ: CZ28492011</p>
             </div>
           </div>
@@ -290,24 +290,24 @@ export const QuotesPage: React.FC<QuotesPageProps> = ({ branding: propBranding }
             <h4 className="text-xl font-black" style={{ color: palette.primary }}>
               CENOVÁ NABÍDKA / ROZPOČET
             </h4>
-            <p className="text-xs text-slate-400 mt-1">Číslo: Q-2026-0492 ({currentVersion})</p>
+            <p className="text-xs text-slate-500 mt-1">Číslo: Q-2026-0492 ({currentVersion})</p>
             <p className="text-xs text-slate-500">Datum vystavení: 10.09.2026</p>
           </div>
         </div>
 
         {/* Customer & Project info */}
-        <div className="grid grid-cols-2 gap-6 text-xs bg-slate-950 p-6 rounded-2xl border border-slate-800">
+        <div className="grid grid-cols-2 gap-6 text-xs bg-slate-50 p-6 rounded-2xl border border-slate-200">
           <div>
-            <span className="font-semibold text-slate-400 uppercase tracking-wider block mb-1">Odběratel (Objednatel):</span>
-            <p className="font-bold text-slate-100 text-sm">{customerName}</p>
-            <p className="text-slate-400">{customerAddress}</p>
-            <p className="text-slate-400">Tel: +420 603 456 789</p>
+            <span className="font-semibold text-slate-500 uppercase tracking-wider block mb-1">Odběratel (Objednatel):</span>
+            <p className="font-bold text-slate-900 text-sm">{customerName}</p>
+            <p className="text-slate-500">{customerAddress}</p>
+            <p className="text-slate-500">Tel: +420 603 456 789</p>
           </div>
           <div>
-            <span className="font-semibold text-slate-400 uppercase tracking-wider block mb-1">Předmět díla:</span>
-            <p className="font-bold text-slate-100 text-sm">{quoteTitle}</p>
-            <p className="text-slate-400">Lokalita: {activeCity}</p>
-            <p className="text-slate-400">Platnost nabídky: 30 dnů</p>
+            <span className="font-semibold text-slate-500 uppercase tracking-wider block mb-1">Předmět díla:</span>
+            <p className="font-bold text-slate-900 text-sm">{quoteTitle}</p>
+            <p className="text-slate-500">Lokalita: {activeCity}</p>
+            <p className="text-slate-500">Platnost nabídky: 30 dnů</p>
           </div>
         </div>
 
@@ -315,7 +315,7 @@ export const QuotesPage: React.FC<QuotesPageProps> = ({ branding: propBranding }
         <div className="space-y-4">
           <table className="w-full text-left text-xs">
             <thead>
-              <tr className="border-b border-slate-800 text-slate-400 font-semibold uppercase">
+              <tr className="border-b border-slate-200 text-slate-500 font-semibold uppercase">
                 <th className="pb-3">Položka / Popis stavební práce</th>
                 <th className="pb-3 text-center">Množství</th>
                 <th className="pb-3 text-right">Cena / MJ</th>
@@ -323,11 +323,11 @@ export const QuotesPage: React.FC<QuotesPageProps> = ({ branding: propBranding }
                 <th className="pb-3 text-center w-10"></th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-800 text-slate-300">
+            <tbody className="divide-y divide-slate-800 text-slate-700">
               {items.map((item) => (
                 <tr key={item.id} className="group">
-                  <td className="py-3 font-medium text-slate-200">{item.description}</td>
-                  <td className="py-3 text-center text-slate-400">{item.quantity} {item.unit}</td>
+                  <td className="py-3 font-medium text-slate-800">{item.description}</td>
+                  <td className="py-3 text-center text-slate-500">{item.quantity} {item.unit}</td>
                   <td className="py-3 text-right font-mono">{item.unitPrice.toLocaleString()} Kč</td>
                   <td className="py-3 text-right font-bold font-mono" style={{ color: palette.primary }}>
                     {(item.quantity * item.unitPrice).toLocaleString()} Kč
@@ -349,14 +349,14 @@ export const QuotesPage: React.FC<QuotesPageProps> = ({ branding: propBranding }
               value={newItemDesc}
               onChange={(e) => setNewItemDesc(e.target.value)}
               placeholder="Zadat novou rozpočtovou položku..."
-              className="flex-1 bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-xs text-slate-200 focus:outline-none"
+              className="flex-1 bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs text-slate-800 focus:outline-none"
             />
             <input
               type="number"
               value={newItemPrice}
               onChange={(e) => setNewItemPrice(Number(e.target.value))}
               placeholder="Cena (Kč)"
-              className="w-32 bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-xs text-slate-200 focus:outline-none font-mono"
+              className="w-32 bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs text-slate-800 focus:outline-none font-mono"
             />
             <button
               type="submit"
@@ -372,23 +372,23 @@ export const QuotesPage: React.FC<QuotesPageProps> = ({ branding: propBranding }
           </form>
 
           {/* Totals Calculation */}
-          <div className="flex justify-end pt-6 border-t border-slate-800">
+          <div className="flex justify-end pt-6 border-t border-slate-200">
             <div className="w-80 space-y-2 text-xs">
-              <div className="flex justify-between text-slate-400">
+              <div className="flex justify-between text-slate-500">
                 <span>Základ bez DPH:</span>
-                <span className="font-mono text-slate-200">{subtotal.toLocaleString()} Kč</span>
+                <span className="font-mono text-slate-800">{subtotal.toLocaleString()} Kč</span>
               </div>
               {discountPercent > 0 && (
-                <div className="flex justify-between text-emerald-400 font-semibold">
+                <div className="flex justify-between text-green-400 font-semibold">
                   <span>Sleva ({discountPercent}%):</span>
                   <span className="font-mono">-{(subtotal * (discountPercent / 100)).toLocaleString()} Kč</span>
                 </div>
               )}
-              <div className="flex justify-between text-slate-400">
+              <div className="flex justify-between text-slate-500">
                 <span>DPH {vatRate}%:</span>
-                <span className="font-mono text-slate-200">{taxAmount.toLocaleString()} Kč</span>
+                <span className="font-mono text-slate-800">{taxAmount.toLocaleString()} Kč</span>
               </div>
-              <div className="flex justify-between text-base font-extrabold text-slate-100 pt-2 border-t border-slate-800">
+              <div className="flex justify-between text-base font-extrabold text-slate-900 pt-2 border-t border-slate-200">
                 <span>Celkem k úhradě:</span>
                 <span className="font-mono" style={{ color: palette.primary }}>
                   {grandTotal.toLocaleString()} CZK
@@ -399,15 +399,15 @@ export const QuotesPage: React.FC<QuotesPageProps> = ({ branding: propBranding }
         </div>
 
         {/* Customer Action Buttons inside PDF / Preview */}
-        <div className="bg-slate-950 text-white p-6 rounded-2xl border border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-4 mt-6">
+        <div className="bg-slate-50 text-slate-900 p-6 rounded-2xl border border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-4 mt-6">
           <div>
-            <h4 className="text-sm font-bold text-slate-100">Interaktivní akce investora</h4>
-            <p className="text-[11px] text-slate-400">Možnosti pro investora v online náhledu nabídky:</p>
+            <h4 className="text-sm font-bold text-slate-900">Interaktivní akce investora</h4>
+            <p className="text-[11px] text-slate-500">Možnosti pro investora v online náhledu nabídky:</p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <button
               onClick={() => handleCustomerAction('accept')}
-              className="px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold transition-all shadow-md flex items-center gap-1.5 active:scale-95"
+              className="px-4 py-2.5 rounded-xl bg-green-600 hover:bg-green-500 text-slate-900 text-xs font-bold transition-all shadow-md flex items-center gap-1.5 active:scale-95"
             >
               <ThumbsUp className="w-4 h-4" /> Schválit a podepsat nabídku
             </button>
@@ -424,7 +424,7 @@ export const QuotesPage: React.FC<QuotesPageProps> = ({ branding: propBranding }
             </button>
             <button
               onClick={() => handleCustomerAction('changes')}
-              className="px-4 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-300 text-xs font-bold transition-all border border-slate-700 flex items-center gap-1.5"
+              className="px-4 py-2.5 rounded-xl bg-white hover:bg-slate-800 text-slate-700 text-xs font-bold transition-all border border-slate-300 flex items-center gap-1.5"
             >
               <MessageSquare className="w-4 h-4" /> Požádat o úpravu položek
             </button>
@@ -432,35 +432,35 @@ export const QuotesPage: React.FC<QuotesPageProps> = ({ branding: propBranding }
         </div>
 
         {/* Terms & Digital Signature with QR Code */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-6 border-t border-slate-800 text-xs text-slate-400 items-end">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-6 border-t border-slate-200 text-xs text-slate-500 items-end">
           <div>
-            <span className="font-semibold text-slate-300 block mb-1">Platební podmínky a záruka:</span>
+            <span className="font-semibold text-slate-700 block mb-1">Platební podmínky a záruka:</span>
             <p>Záloha 50% při podpisu smlouvy o dílo, doplatek 50% po předání díla. Záruka na stavební práce 60 měsíců. Splatnost faktury 14 dní.</p>
           </div>
 
-          <div className="flex flex-col items-center justify-center p-3 bg-slate-950 rounded-2xl border border-slate-800 text-center">
+          <div className="flex flex-col items-center justify-center p-3 bg-slate-50 rounded-2xl border border-slate-200 text-center">
             {/* Simulated QR Code for instant mobile deposit payment & client signing */}
-            <div className="w-20 h-20 bg-slate-900 rounded-lg p-1.5 flex items-center justify-center text-white text-[8px] font-mono shadow-xs border border-slate-700">
+            <div className="w-20 h-20 bg-white rounded-lg p-1.5 flex items-center justify-center text-slate-900 text-[8px] font-mono shadow-xs border border-slate-300">
               <div className="grid grid-cols-4 gap-0.5 w-full h-full p-1 bg-white text-slate-900 rounded">
-                <div className="bg-slate-900 rounded-xs"></div>
+                <div className="bg-white rounded-xs"></div>
                 <div className="bg-white"></div>
-                <div className="bg-slate-900 rounded-xs"></div>
-                <div className="bg-slate-900"></div>
+                <div className="bg-white rounded-xs"></div>
                 <div className="bg-white"></div>
-                <div className="bg-slate-900 rounded-xs"></div>
                 <div className="bg-white"></div>
-                <div className="bg-slate-900"></div>
-                <div className="bg-slate-900"></div>
+                <div className="bg-white rounded-xs"></div>
                 <div className="bg-white"></div>
-                <div className="bg-slate-900"></div>
                 <div className="bg-white"></div>
-                <div className="bg-slate-900 rounded-xs"></div>
                 <div className="bg-white"></div>
-                <div className="bg-slate-900 rounded-xs"></div>
-                <div className="bg-slate-900"></div>
+                <div className="bg-white"></div>
+                <div className="bg-white"></div>
+                <div className="bg-white"></div>
+                <div className="bg-white rounded-xs"></div>
+                <div className="bg-white"></div>
+                <div className="bg-white rounded-xs"></div>
+                <div className="bg-white"></div>
               </div>
             </div>
-            <span className="text-[11px] font-bold text-slate-200 mt-1.5">Okamžitá QR platba zálohy</span>
+            <span className="text-[11px] font-bold text-slate-800 mt-1.5">Okamžitá QR platba zálohy</span>
             <span className="text-[9px] font-mono font-semibold" style={{ color: palette.primary }}>
               {(grandTotal * 0.5).toLocaleString()} CZK • SPAYD
             </span>
@@ -468,16 +468,16 @@ export const QuotesPage: React.FC<QuotesPageProps> = ({ branding: propBranding }
 
           <div className="text-right space-y-2">
             <div>
-              <p className="font-semibold text-slate-300">Elektronický podpis investora:</p>
+              <p className="font-semibold text-slate-700">Elektronický podpis investora:</p>
               <div 
                 onClick={() => handleCustomerAction('accept')}
-                className="h-14 border border-dashed border-emerald-500/70 bg-emerald-950/40 rounded-xl mt-1 p-2.5 flex items-center justify-between text-[11px] text-emerald-300 font-mono cursor-pointer hover:bg-emerald-950/70 transition-all"
+                className="h-14 border border-dashed border-green-500/70 bg-green-950/40 rounded-xl mt-1 p-2.5 flex items-center justify-between text-[11px] text-green-300 font-mono cursor-pointer hover:bg-green-950/70 transition-all"
               >
                 <div className="text-left">
                   <span className="font-bold flex items-center gap-1"><Check className="w-3.5 h-3.5" /> {customerName}</span>
-                  <span className="text-[9px] text-emerald-400">Klikněte pro elektronický podpis</span>
+                  <span className="text-[9px] text-green-400">Klikněte pro elektronický podpis</span>
                 </div>
-                <span className="text-[9px] text-emerald-400 bg-emerald-900/80 px-1.5 py-0.5 rounded font-bold border border-emerald-700">SHA-256</span>
+                <span className="text-[9px] text-green-400 bg-green-900/80 px-1.5 py-0.5 rounded font-bold border border-green-700">SHA-256</span>
               </div>
               <p className="text-[10px] text-slate-500 mt-1">Zhotovitel: {activeCompanyName} (IČO: 28491022)</p>
             </div>

@@ -33,10 +33,10 @@ export const AdminBillingPage: React.FC = () => {
         <div className="bg-[#0C111D] p-6 rounded-3xl border border-slate-800/80 shadow-lg">
           <div className="flex items-center justify-between text-slate-400">
             <span className="text-xs font-mono uppercase font-bold">Celkové měsíční MRR</span>
-            <DollarSign className="w-5 h-5 text-emerald-400" />
+            <DollarSign className="w-5 h-5 text-green-400" />
           </div>
-          <p className="text-3xl font-black text-emerald-400 mt-2 font-mono">112 400 Kč</p>
-          <p className="text-xs text-emerald-400 mt-1 flex items-center gap-1">
+          <p className="text-3xl font-black text-green-400 mt-2 font-mono">112 400 Kč</p>
+          <p className="text-xs text-green-400 mt-1 flex items-center gap-1">
             <ArrowUpRight className="w-3.5 h-3.5" />
             +18.4% oproti minulému měsíci
           </p>
@@ -115,10 +115,10 @@ export const AdminBillingPage: React.FC = () => {
                   <td className="py-3.5 text-cyan-400 font-bold">{tx.id}</td>
                   <td className="py-3.5 font-sans font-bold text-white">{tx.tenant}</td>
                   <td className="py-3.5 text-slate-400">{tx.plan}</td>
-                  <td className="py-3.5 font-bold text-emerald-400">{tx.amount}</td>
+                  <td className="py-3.5 font-bold text-green-400">{tx.amount}</td>
                   <td className="py-3.5 text-slate-400">{tx.date}</td>
                   <td className="py-3.5">
-                    <span className="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-[10px] font-bold">
+                    <span className="px-2 py-0.5 rounded-full bg-green-500/20 text-green-400 border border-green-500/30 text-[10px] font-bold">
                       {tx.status}
                     </span>
                   </td>

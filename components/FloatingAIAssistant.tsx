@@ -143,7 +143,7 @@ export const FloatingAIAssistant: React.FC<FloatingAIAssistantProps> = ({ brandi
       {/* Floating Trigger Button */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="fixed bottom-6 right-6 z-50 w-14 h-14 rounded-2xl bg-slate-900 text-white shadow-2xl flex items-center justify-center hover:scale-105 transition-all ring-4 ring-blue-500/20 group"
+        className="fixed bottom-6 right-6 z-50 w-14 h-14 rounded-2xl bg-white text-slate-900 shadow-2xl flex items-center justify-center hover:scale-105 transition-all ring-4 ring-blue-500/20 group"
         title="AI Project Copilot"
       >
         <Sparkles className="w-6 h-6 text-blue-400 group-hover:rotate-12 transition-transform" />
@@ -151,20 +151,20 @@ export const FloatingAIAssistant: React.FC<FloatingAIAssistantProps> = ({ brandi
 
       {/* Chat Window */}
       {isOpen && (
-        <div className="fixed bottom-24 right-6 z-50 w-[420px] max-w-[calc(100vw-2rem)] bg-slate-900 border border-slate-800 rounded-3xl shadow-2xl overflow-hidden flex flex-col h-[620px] text-slate-100 animate-in fade-in slide-in-from-bottom-5">
+        <div className="fixed bottom-24 right-6 z-50 w-[420px] max-w-[calc(100vw-2rem)] bg-white border border-slate-200 rounded-3xl shadow-2xl overflow-hidden flex flex-col h-[620px] text-slate-900 animate-in fade-in slide-in-from-bottom-5">
           {/* Header */}
-          <div className="p-4 border-b border-slate-800 flex items-center justify-between bg-slate-950/90 backdrop-blur-md">
+          <div className="p-4 border-b border-slate-200 flex items-center justify-between bg-slate-50/90 backdrop-blur-md">
             <div className="flex items-center gap-3">
               <div className="w-9 h-9 rounded-xl bg-blue-600/20 border border-blue-500/30 flex items-center justify-center text-blue-400">
                 <Bot className="w-5 h-5" />
               </div>
               <div>
-                <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
                   <span>AI Project Copilot</span>
                   <span className="text-[9px] bg-blue-500/20 text-blue-300 px-1.5 py-0.5 rounded border border-blue-500/30 font-semibold">Gemini 2.5</span>
                 </h3>
-                <p className="text-[10px] text-emerald-400 flex items-center gap-1">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                <p className="text-[10px] text-green-400 flex items-center gap-1">
+                  <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse"></span>
                   Online • Kontext zakázek aktivní
                 </p>
               </div>
@@ -174,14 +174,14 @@ export const FloatingAIAssistant: React.FC<FloatingAIAssistantProps> = ({ brandi
                 onClick={handleToggleVoice}
                 title="Hlasový režim (Voice Mode)"
                 className={`w-8 h-8 rounded-lg flex items-center justify-center transition-all ${
-                  isVoiceMode ? 'bg-rose-600 text-white animate-pulse' : 'bg-slate-800 text-slate-400 hover:text-white'
+                  isVoiceMode ? 'bg-rose-600 text-slate-900 animate-pulse' : 'bg-slate-800 text-slate-500 hover:text-slate-900'
                 }`}
               >
                 <Mic className="w-4 h-4" />
               </button>
               <button
                 onClick={() => setIsOpen(false)}
-                className="w-8 h-8 rounded-lg bg-slate-800 text-slate-400 hover:text-white flex items-center justify-center text-xs"
+                className="w-8 h-8 rounded-lg bg-slate-800 text-slate-500 hover:text-slate-900 flex items-center justify-center text-xs"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -189,15 +189,15 @@ export const FloatingAIAssistant: React.FC<FloatingAIAssistantProps> = ({ brandi
           </div>
 
           {/* Active Context Selector (Customer, Tech, Deadline) */}
-          <div className="px-4 py-2.5 bg-slate-950/60 border-b border-slate-800/80 flex items-center justify-between text-[11px]">
-            <span className="text-slate-400 font-medium">Aktivní kontext:</span>
+          <div className="px-4 py-2.5 bg-slate-50/60 border-b border-slate-200/80 flex items-center justify-between text-[11px]">
+            <span className="text-slate-500 font-medium">Aktivní kontext:</span>
             <select
               value={selectedLead.id}
               onChange={(e) => {
                 const lead = leads.find(l => l.id === e.target.value) || leads[0];
                 setSelectedLead(lead);
               }}
-              className="bg-slate-900 border border-slate-800 rounded-lg px-2 py-1 text-slate-200 font-semibold focus:outline-none max-w-[240px] truncate"
+              className="bg-white border border-slate-200 rounded-lg px-2 py-1 text-slate-800 font-semibold focus:outline-none max-w-[240px] truncate"
             >
               {leads.map(lead => (
                 <option key={lead.id} value={lead.id}>
@@ -209,8 +209,8 @@ export const FloatingAIAssistant: React.FC<FloatingAIAssistantProps> = ({ brandi
 
           {/* Action Notice toast */}
           {actionNotice && (
-            <div className="bg-emerald-950 border-b border-emerald-800/80 px-4 py-2 text-[11px] text-emerald-300 font-semibold flex items-center justify-between animate-in fade-in">
-              <span className="flex items-center gap-1.5"><Check className="w-3.5 h-3.5 text-emerald-400" /> {actionNotice}</span>
+            <div className="bg-green-950 border-b border-green-800/80 px-4 py-2 text-[11px] text-green-300 font-semibold flex items-center justify-between animate-in fade-in">
+              <span className="flex items-center gap-1.5"><Check className="w-3.5 h-3.5 text-green-400" /> {actionNotice}</span>
             </div>
           )}
 
@@ -221,8 +221,8 @@ export const FloatingAIAssistant: React.FC<FloatingAIAssistantProps> = ({ brandi
                 <Mic className="w-7 h-7" />
               </div>
               <div>
-                <p className="text-xs font-bold text-white">Hlasový AI asistent poslouchá...</p>
-                <p className="text-[10px] text-slate-400">Mluvte přirozeně (např. "Připrav nákupní seznam materiálu")</p>
+                <p className="text-xs font-bold text-slate-900">Hlasový AI asistent poslouchá...</p>
+                <p className="text-[10px] text-slate-500">Mluvte přirozeně (např. "Připrav nákupní seznam materiálu")</p>
               </div>
               {/* Animated Voice Soundwave */}
               <div className="flex items-center justify-center gap-1.5 h-8">
@@ -236,7 +236,7 @@ export const FloatingAIAssistant: React.FC<FloatingAIAssistantProps> = ({ brandi
               </div>
               <button
                 onClick={handleToggleVoice}
-                className="px-3 py-1 rounded-full bg-slate-800 text-[10px] text-slate-300 hover:text-white"
+                className="px-3 py-1 rounded-full bg-slate-800 text-[10px] text-slate-700 hover:text-slate-900"
               >
                 Zrušit hlasový vstup
               </button>
@@ -244,24 +244,24 @@ export const FloatingAIAssistant: React.FC<FloatingAIAssistantProps> = ({ brandi
           )}
 
           {/* Messages Area */}
-          <div className="flex-1 p-4 overflow-y-auto space-y-3 bg-slate-950/40">
+          <div className="flex-1 p-4 overflow-y-auto space-y-3 bg-slate-50/40">
             {messages.map((m) => (
               <div key={m.id} className={`flex ${m.sender === 'user' ? 'justify-end' : 'justify-start'}`}>
                 <div className={`max-w-[85%] p-3.5 rounded-2xl text-xs space-y-1 ${
                   m.sender === 'user'
-                    ? 'bg-blue-600 text-white rounded-br-xs'
-                    : 'bg-slate-800/90 text-slate-200 rounded-bl-xs border border-slate-700/60 shadow-xs'
+                    ? 'bg-blue-600 text-slate-900 rounded-br-xs'
+                    : 'bg-slate-800/90 text-slate-800 rounded-bl-xs border border-slate-300/60 shadow-xs'
                 }`}>
                   <p className="leading-relaxed whitespace-pre-line">{m.text}</p>
-                  <p className={`text-[9px] text-right ${m.sender === 'user' ? 'text-blue-200' : 'text-slate-400'}`}>{m.time}</p>
+                  <p className={`text-[9px] text-right ${m.sender === 'user' ? 'text-blue-200' : 'text-slate-500'}`}>{m.time}</p>
                 </div>
               </div>
             ))}
           </div>
 
           {/* Quick Action Suggestion Buttons (Feature 6: Prepare Email, SMS, Shopping List, Invoice, Schedule, Call) */}
-          <div className="p-2.5 bg-slate-900 border-t border-slate-800">
-            <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider block px-1 mb-1.5">
+          <div className="p-2.5 bg-white border-t border-slate-200">
+            <span className="text-[10px] uppercase font-bold text-slate-500 tracking-wider block px-1 mb-1.5">
               Doporučené akce pro "{selectedLead.customerName}":
             </span>
             <div className="grid grid-cols-3 gap-1.5">
@@ -271,7 +271,7 @@ export const FloatingAIAssistant: React.FC<FloatingAIAssistantProps> = ({ brandi
                   <button
                     key={act.action}
                     onClick={() => handleExecuteAction(act.action)}
-                    className="p-2 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-left border border-slate-700/50 transition-all flex items-center gap-1.5 text-[10px] font-semibold text-slate-200 hover:text-white"
+                    className="p-2 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-left border border-slate-300/50 transition-all flex items-center gap-1.5 text-[10px] font-semibold text-slate-800 hover:text-slate-900"
                   >
                     <Icon className="w-3.5 h-3.5 text-blue-400 flex-shrink-0" />
                     <span className="truncate">{act.label}</span>
@@ -282,11 +282,11 @@ export const FloatingAIAssistant: React.FC<FloatingAIAssistantProps> = ({ brandi
           </div>
 
           {/* Input Box */}
-          <div className="p-3 bg-slate-950 border-t border-slate-800 flex items-center gap-2">
+          <div className="p-3 bg-slate-50 border-t border-slate-200 flex items-center gap-2">
             <button
               onClick={handleToggleVoice}
               title="Aktivovat hlasový režim"
-              className="w-9 h-9 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 flex items-center justify-center transition-all flex-shrink-0"
+              className="w-9 h-9 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-700 flex items-center justify-center transition-all flex-shrink-0"
             >
               <Mic className="w-4 h-4 text-rose-400" />
             </button>
@@ -296,11 +296,11 @@ export const FloatingAIAssistant: React.FC<FloatingAIAssistantProps> = ({ brandi
               onChange={(e) => setInputVal(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleSend()}
               placeholder="Napište pokyn pro AI Copilota..."
-              className="flex-1 bg-slate-900 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500/30"
+              className="flex-1 bg-white border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs text-slate-900 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500/30"
             />
             <button
               onClick={() => handleSend()}
-              className="w-9 h-9 rounded-xl bg-blue-600 hover:bg-blue-500 text-white flex items-center justify-center transition-all flex-shrink-0"
+              className="w-9 h-9 rounded-xl bg-blue-600 hover:bg-blue-500 text-slate-900 flex items-center justify-center transition-all flex-shrink-0"
             >
               <Send className="w-4 h-4" />
             </button>

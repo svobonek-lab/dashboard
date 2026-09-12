@@ -80,7 +80,7 @@ export const ConnectionStatusBanner: React.FC = () => {
         <div className="flex items-center gap-1 pl-1 border-l border-slate-200">
           <span
             className={`w-2 h-2 rounded-full ${
-              health?.ok ? 'bg-emerald-500 ring-2 ring-emerald-100' : 'bg-amber-500 ring-2 ring-amber-100'
+              health?.ok ? 'bg-green-500 ring-2 ring-green-100' : 'bg-amber-500 ring-2 ring-amber-100'
             }`}
           />
           <span className="text-[11px] text-slate-500 font-mono">
@@ -90,7 +90,7 @@ export const ConnectionStatusBanner: React.FC = () => {
 
         <button
           onClick={() => setIsConfigOpen(true)}
-          className="p-1 hover:bg-slate-100 rounded-md text-slate-400 hover:text-slate-700 transition-colors"
+          className="p-1 hover:bg-slate-100 rounded-md text-slate-500 hover:text-slate-700 transition-colors"
           title="Konfigurace datové vrstvy (Cloud vs Synology)"
           aria-label="Nastavení úložiště"
         >
@@ -99,7 +99,7 @@ export const ConnectionStatusBanner: React.FC = () => {
       </div>
 
       {isConfigOpen && (
-        <div className="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-xs flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-50 bg-slate-50/60 backdrop-blur-xs flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-md w-full p-6 space-y-5 text-slate-800">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2.5">
@@ -113,7 +113,7 @@ export const ConnectionStatusBanner: React.FC = () => {
               </div>
               <button
                 onClick={() => setIsConfigOpen(false)}
-                className="p-1 text-slate-400 hover:text-slate-700 rounded-lg hover:bg-slate-100"
+                className="p-1 text-slate-500 hover:text-slate-700 rounded-lg hover:bg-slate-100"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -123,7 +123,7 @@ export const ConnectionStatusBanner: React.FC = () => {
             <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 flex items-center justify-between text-xs">
               <div className="flex items-center gap-2">
                 {health?.ok ? (
-                  <CheckCircle2 className="w-4 h-4 text-emerald-500 flex-shrink-0" />
+                  <CheckCircle2 className="w-4 h-4 text-green-500 flex-shrink-0" />
                 ) : (
                   <AlertCircle className="w-4 h-4 text-amber-500 flex-shrink-0" />
                 )}
@@ -218,7 +218,7 @@ export const ConnectionStatusBanner: React.FC = () => {
               </button>
               <button
                 onClick={() => handleApplyConfig(currentMode)}
-                className="px-4 py-2 text-xs font-semibold text-white bg-slate-900 hover:bg-slate-800 rounded-xl shadow-xs transition-colors"
+                className="px-4 py-2 text-xs font-semibold text-slate-900 bg-white hover:bg-slate-800 rounded-xl shadow-xs transition-colors"
               >
                 Uložit a aktivovat
               </button>

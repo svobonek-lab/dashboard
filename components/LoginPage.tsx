@@ -56,32 +56,14 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onSuccess }) => {
   };
 
   return (
-    <div id="login-page-container" className="min-h-screen bg-slate-950 flex items-center justify-center p-6 relative overflow-hidden font-sans text-slate-100 selection:bg-blue-500/30">
+    <div id="login-page-container" className="min-h-screen bg-slate-50 flex items-center justify-center p-6 relative overflow-hidden font-sans text-slate-800">
       {/* Decorative dynamic company background mesh */}
-      <div className="absolute inset-0 bg-[radial-gradient(#334155_1px,transparent_1px)] [background-size:24px_24px] opacity-20"></div>
-      <div 
-        className="absolute -top-40 -right-40 w-[500px] h-[500px] rounded-full blur-3xl opacity-20 pointer-events-none transition-all duration-700"
-        style={{ backgroundColor: palette.primary }}
-      ></div>
-      <div 
-        className="absolute -bottom-40 -left-40 w-[500px] h-[500px] rounded-full blur-3xl opacity-15 pointer-events-none transition-all duration-700"
-        style={{ backgroundColor: palette.secondary }}
-      ></div>
-
-      <div className="relative w-full max-w-5xl bg-slate-900 border border-slate-800 rounded-[32px] shadow-2xl overflow-hidden grid md:grid-cols-12 min-h-[620px] z-10">
+      <div className="absolute inset-0 bg-[radial-gradient(#e2e8f0_1px,transparent_1px)] [background-size:24px_24px] opacity-60"></div>
+      
+      <div className="relative w-full max-w-[1200px] bg-white border border-slate-200 rounded-[24px] shadow-xl overflow-hidden grid md:grid-cols-2 min-h-[620px] z-10 animate-in fade-in duration-300">
+        
         {/* Left column: Branded visual info card */}
-        <div 
-          className="md:col-span-5 text-white p-10 flex flex-col justify-between relative overflow-hidden border-r border-slate-800"
-          style={{
-            background: `linear-gradient(175deg, #090D16 0%, #030712 100%)`
-          }}
-        >
-          {/* Subtle brand glow inside left panel */}
-          <div 
-            className="absolute top-0 left-0 right-0 h-48 opacity-25 blur-2xl pointer-events-none"
-            style={{ background: palette.gradientHero }}
-          ></div>
-          
+        <div className="p-10 flex flex-col justify-between relative overflow-hidden bg-slate-50/50 border-r border-slate-200">
           <div className="space-y-6 z-10">
             <div 
               className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-bold"
@@ -95,86 +77,86 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onSuccess }) => {
               <span>Firemní informační systém</span>
             </div>
             
-            <div className="space-y-3">
+            <div className="space-y-4">
               {/* Company Logo in Hero */}
               <div className="flex items-center gap-3">
                 <div 
-                  className="w-12 h-12 rounded-2xl flex items-center justify-center font-black text-xl shadow-lg shrink-0 overflow-hidden"
+                  className="w-14 h-14 rounded-2xl flex items-center justify-center font-black text-xl shadow-md shrink-0 overflow-hidden"
                   style={{
                     backgroundColor: palette.primary,
                     color: palette.textOnPrimary,
-                    boxShadow: palette.primaryGlow
                   }}
                 >
                   {activeLogo ? (
-                    <img src={activeLogo} alt={activeCompanyName} className="w-full h-full object-cover" />
+                    <img src={activeLogo} alt={activeCompanyName} className="w-full h-full object-cover bg-white" />
                   ) : (
                     activeCompanyName.charAt(0).toUpperCase()
                   )}
                 </div>
                 <div>
-                  <h1 className="text-2xl font-black tracking-tight leading-tight text-white">
+                  <h1 className="text-3xl font-black tracking-tight leading-tight text-slate-900">
                     {activeCompanyName}
                   </h1>
-                  <p className="text-xs text-slate-400 font-medium">
+                  <p className="text-sm text-slate-500 font-medium flex items-center gap-1.5 mt-0.5">
+                    <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: palette.primary }}></span>
                     {activeCity} • Operační systém
                   </p>
                 </div>
               </div>
               
-              <p className="text-sm text-slate-300 font-normal leading-relaxed pt-2">
-                Komplexní správa zakázek, kalkulace rozpočtů, harmonogram výjezdů řemeslníků a klientský portál.
+              <p className="text-base text-slate-600 font-medium leading-relaxed pt-2 max-w-md">
+                Komplexní správa zakázek, kalkulace rozpočtů, harmonogram výjezdů řemeslníků a klientský portál v jednotném prostředí.
               </p>
             </div>
           </div>
 
-          <div className="space-y-3 z-10 my-6">
-            <div className="flex gap-3 p-3 rounded-2xl bg-slate-950/60 border border-slate-800/80">
+          <div className="space-y-3 z-10 my-8">
+            <div className="flex gap-4 p-4 rounded-2xl bg-white border border-slate-200 shadow-sm transition-all hover:shadow-md">
               <div 
-                className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0"
+                className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
                 style={{ backgroundColor: palette.primarySubtle, color: palette.primary }}
               >
-                <Layout className="w-4 h-4" />
+                <Layout className="w-5 h-5" />
               </div>
               <div>
-                <p className="text-xs font-bold text-slate-200">Vyhrazený firemní prostor</p>
-                <p className="text-[11px] text-slate-400">Bezpečně izolovaná data organizace {activeCompanyName}.</p>
+                <p className="text-sm font-bold text-slate-900">Vyhrazený firemní prostor</p>
+                <p className="text-xs text-slate-500 mt-0.5">Bezpečně izolovaná data organizace {activeCompanyName}.</p>
               </div>
             </div>
 
-            <div className="flex gap-3 p-3 rounded-2xl bg-slate-950/60 border border-slate-800/80">
-              <div className="w-8 h-8 rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 flex items-center justify-center shrink-0">
-                <Shield className="w-4 h-4" />
+            <div className="flex gap-4 p-4 rounded-2xl bg-white border border-slate-200 shadow-sm transition-all hover:shadow-md">
+              <div className="w-10 h-10 rounded-xl bg-slate-100 text-slate-600 border border-slate-200 flex items-center justify-center shrink-0">
+                <Shield className="w-5 h-5" />
               </div>
               <div>
-                <p className="text-xs font-bold text-slate-200">Šifrovaný přístup</p>
-                <p className="text-[11px] text-slate-400">Ověřené role pro majitele, dispečery a montážní party.</p>
+                <p className="text-sm font-bold text-slate-900">Šifrovaný přístup</p>
+                <p className="text-xs text-slate-500 mt-0.5">Ověřené role pro majitele, dispečery a montážní party.</p>
               </div>
             </div>
           </div>
 
           {/* Quick role fill shortcuts */}
-          <div className="z-10 pt-4 border-t border-slate-800/80">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 block mb-2 font-mono">
+          <div className="z-10 pt-6 border-t border-slate-200">
+            <span className="text-xs font-bold uppercase tracking-wider text-slate-500 block mb-3">
               Rychlé přihlášení dle role:
             </span>
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-2 gap-3">
               <button
                 type="button"
                 onClick={() => fillQuickLogin('majitel@firma.cz', 'demo123')}
-                className="px-2.5 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-800 text-[11px] font-semibold text-slate-300 flex items-center justify-center gap-1.5 transition-colors"
+                className="px-3 py-2.5 rounded-xl bg-white hover:bg-slate-50 border border-slate-200 text-xs font-bold text-slate-700 flex items-center justify-center gap-2 shadow-sm transition-colors"
                 title="Majitel firmy"
               >
-                <UserCheck className="w-3.5 h-3.5 text-emerald-400" />
+                <UserCheck className="w-4 h-4 text-green-600" />
                 <span>Majitel CRM</span>
               </button>
               <button
                 type="button"
                 onClick={() => fillQuickLogin('zamestnanec@firma.cz', 'zam123')}
-                className="px-2.5 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-800 text-[11px] font-semibold text-slate-300 flex items-center justify-center gap-1.5 transition-colors"
+                className="px-3 py-2.5 rounded-xl bg-white hover:bg-slate-50 border border-slate-200 text-xs font-bold text-slate-700 flex items-center justify-center gap-2 shadow-sm transition-colors"
                 title="Mistr / Zaměstnanec"
               >
-                <HardHat className="w-3.5 h-3.5 text-blue-400" />
+                <HardHat className="w-4 h-4 text-blue-600" />
                 <span>Zaměstnanec</span>
               </button>
             </div>
@@ -182,53 +164,53 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onSuccess }) => {
         </div>
 
         {/* Right column: Form */}
-        <div className="md:col-span-7 p-10 flex flex-col justify-center bg-slate-900 relative">
-          <div className="max-w-md w-full mx-auto space-y-6">
-            <div className="space-y-1.5">
-              <h2 className="text-2xl font-black text-slate-100 tracking-tight">
-                {mode === 'login' ? `Vítejte v CRM ${activeCompanyName}` : 'Registrace nové firmy'}
+        <div className="p-10 lg:p-14 flex flex-col justify-center bg-white relative">
+          <div className="max-w-sm w-full mx-auto space-y-8">
+            <div className="space-y-2">
+              <h2 className="text-3xl font-black text-slate-900 tracking-tight">
+                {mode === 'login' ? 'Přihlášení' : 'Registrace firmy'}
               </h2>
-              <p className="text-xs text-slate-400 font-medium">
+              <p className="text-sm text-slate-500 font-medium">
                 {mode === 'login' 
-                  ? `Zadejte své přihlašovací údaje pro vstup do portálu ${activeCompanyName}.` 
+                  ? `Zadejte své údaje pro vstup do portálu ${activeCompanyName}.` 
                   : 'Vytvořte si nový izolovaný firemní prostor s vlastní identitou.'}
               </p>
             </div>
 
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <form onSubmit={handleSubmit} className="space-y-5">
               {error && (
-                <div className="p-3 bg-rose-950/60 border border-rose-800 text-rose-300 rounded-xl text-xs font-semibold animate-in fade-in">
-                  {error}
+                <div className="p-4 bg-rose-50 border border-rose-200 text-rose-700 rounded-2xl text-xs font-bold flex items-start gap-2 animate-in fade-in">
+                  <ShieldAlert className="w-4 h-4 shrink-0 mt-0.5" />
+                  <span>{error}</span>
                 </div>
               )}
 
               {successMessage && (
-                <div className="p-4 bg-emerald-950/60 border border-emerald-800 text-emerald-300 rounded-2xl text-xs font-semibold leading-relaxed space-y-1">
-                  <p className="font-bold text-emerald-200">✓ Registrace byla úspěšná!</p>
-                  <p className="text-emerald-300">{successMessage}</p>
+                <div className="p-4 bg-green-50 border border-green-200 text-green-700 rounded-2xl text-xs font-bold leading-relaxed space-y-1">
+                  <p className="flex items-center gap-1.5"><CheckCircle2 className="w-4 h-4" /> Registrace byla úspěšná!</p>
+                  <p className="text-green-600 font-medium">{successMessage}</p>
                 </div>
               )}
 
               {contextError && !error && (
-                <div className="p-3 bg-rose-950/60 border border-rose-800 text-rose-300 rounded-xl text-xs font-semibold">
+                <div className="p-4 bg-rose-50 border border-rose-200 text-rose-700 rounded-2xl text-xs font-bold">
                   {contextError}
                 </div>
               )}
 
               {mode === 'signup' && (
-                <>
+                <div className="space-y-4">
                   <div>
-                    <label className="text-xs font-bold text-slate-300 block">Název vaší firmy</label>
-                    <div className="mt-1 relative">
-                      <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-500">
+                    <label className="text-xs font-bold uppercase tracking-wider text-slate-700 block mb-1.5">Název vaší firmy</label>
+                    <div className="relative">
+                      <span className="absolute inset-y-0 left-0 pl-4 flex items-center text-slate-500">
                         <Building className="w-4 h-4" />
                       </span>
                       <input
                         type="text"
                         value={orgName}
                         onChange={(e) => setOrgName(e.target.value)}
-                        className="w-full pl-10 pr-4 py-3 bg-slate-950 border border-slate-800 rounded-xl text-sm font-medium text-slate-100 outline-none transition-colors"
-                        style={{ borderColor: orgName ? palette.primaryBorder : undefined }}
+                        className="w-full pl-11 pr-4 py-3.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-600 transition-all"
                         placeholder="Např. Stavební pergoly s.r.o."
                         required
                       />
@@ -236,9 +218,9 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onSuccess }) => {
                   </div>
 
                   <div>
-                    <label className="text-xs font-bold text-slate-300 block">Hlavní barva značky</label>
-                    <div className="mt-1 flex items-center gap-3">
-                      <div className="relative w-12 h-10 border border-slate-800 rounded-xl overflow-hidden shrink-0 shadow-sm">
+                    <label className="text-xs font-bold uppercase tracking-wider text-slate-700 block mb-1.5">Hlavní barva značky</label>
+                    <div className="flex items-center gap-3">
+                      <div className="relative w-12 h-12 border border-slate-200 rounded-xl overflow-hidden shrink-0 shadow-sm">
                         <input
                           type="color"
                           value={primaryColor}
@@ -246,74 +228,75 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onSuccess }) => {
                           className="absolute inset-0 w-full h-full p-0 border-0 cursor-pointer scale-150 bg-transparent"
                         />
                       </div>
-                      <span className="font-mono text-xs font-bold" style={{ color: primaryColor }}>{primaryColor}</span>
+                      <span className="font-mono text-sm font-bold text-slate-900">{primaryColor}</span>
                     </div>
                   </div>
-                </>
+                </div>
               )}
 
-              <div>
-                <label className="text-xs font-bold text-slate-300 block">E-mailová adresa</label>
-                <div className="mt-1 relative">
-                  <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-500">
-                    <Mail className="w-4 h-4" />
-                  </span>
-                  <input
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    className="w-full pl-10 pr-4 py-3 bg-slate-950 border border-slate-800 rounded-xl text-sm font-medium text-slate-100 outline-none transition-colors focus:border-slate-600"
-                    placeholder="jmeno@firma.cz"
-                    required
-                  />
+              <div className="space-y-4">
+                <div>
+                  <label className="text-xs font-bold uppercase tracking-wider text-slate-700 block mb-1.5">E-mailová adresa</label>
+                  <div className="relative">
+                    <span className="absolute inset-y-0 left-0 pl-4 flex items-center text-slate-500">
+                      <Mail className="w-4 h-4" />
+                    </span>
+                    <input
+                      type="email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      className="w-full pl-11 pr-4 py-3.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-600 transition-all"
+                      placeholder="jmeno@firma.cz"
+                      required
+                    />
+                  </div>
                 </div>
-              </div>
 
-              <div>
-                <label className="text-xs font-bold text-slate-300 block">Heslo</label>
-                <div className="mt-1 relative">
-                  <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-500">
-                    <Lock className="w-4 h-4" />
-                  </span>
-                  <input
-                    type="password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    className="w-full pl-10 pr-4 py-3 bg-slate-950 border border-slate-800 rounded-xl text-sm font-medium text-slate-100 outline-none transition-colors focus:border-slate-600"
-                    placeholder="••••••••"
-                    required
-                  />
+                <div>
+                  <label className="text-xs font-bold uppercase tracking-wider text-slate-700 block mb-1.5">Heslo</label>
+                  <div className="relative">
+                    <span className="absolute inset-y-0 left-0 pl-4 flex items-center text-slate-500">
+                      <Lock className="w-4 h-4" />
+                    </span>
+                    <input
+                      type="password"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      className="w-full pl-11 pr-4 py-3.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-600 transition-all"
+                      placeholder="••••••••"
+                      required
+                    />
+                  </div>
                 </div>
               </div>
 
               <button
                 type="submit"
                 disabled={isLoading}
-                className="w-full py-3.5 rounded-xl text-sm font-bold shadow-lg transition-all flex items-center justify-center gap-2 disabled:opacity-70 mt-6 active:scale-[0.99]"
+                className="w-full py-4 rounded-xl text-sm font-bold shadow-md transition-all flex items-center justify-center gap-2 hover:opacity-95 active:scale-[0.99] mt-6"
                 style={{
                   backgroundColor: palette.primary,
                   color: palette.textOnPrimary,
-                  boxShadow: palette.primaryGlow
                 }}
               >
                 {isLoading ? (
-                  <span className="inline-block w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
+                  <span className="inline-block w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
                 ) : (
                   <>
-                    <span>{mode === 'login' ? `Vstoupit do CRM ${activeCompanyName}` : 'Vytvořit firmu & Spustit'}</span>
+                    <span>{mode === 'login' ? `Vstoupit do CRM` : 'Vytvořit firmu & Spustit'}</span>
                     <ArrowRight className="w-4 h-4" />
                   </>
                 )}
               </button>
             </form>
 
-            <div className="text-center pt-4 text-xs text-slate-400 font-medium">
+            <div className="text-center pt-6 text-sm text-slate-500 font-medium">
               {mode === 'login' ? (
                 <>
                   Chcete registrovat novou firmu?{' '}
                   <button 
                     onClick={() => setMode('signup')} 
-                    className="font-bold hover:underline"
+                    className="font-bold hover:underline transition-colors"
                     style={{ color: palette.primary }}
                   >
                     Založit firemní prostor
@@ -324,7 +307,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onSuccess }) => {
                   Již máte u nás účet?{' '}
                   <button 
                     onClick={() => setMode('login')} 
-                    className="font-bold hover:underline"
+                    className="font-bold hover:underline transition-colors"
                     style={{ color: palette.primary }}
                   >
                     Přihlásit se do účtu

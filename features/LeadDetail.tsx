@@ -122,12 +122,12 @@ export const LeadDetail: React.FC<LeadDetailProps> = ({
   };
 
   return (
-    <div className="space-y-8 pb-16 text-slate-100">
+    <div className="space-y-8 pb-16 text-slate-900">
       {/* Top bar */}
       <div className="flex items-center justify-between">
         <button
           onClick={onBack}
-          className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-slate-900 border border-slate-800 text-xs font-semibold text-slate-200 hover:bg-slate-800 transition-all shadow-sm"
+          className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white border border-slate-200 text-xs font-semibold text-slate-800 hover:bg-slate-800 transition-all shadow-sm"
         >
           <ArrowLeft className="w-4 h-4 text-amber-400" />
           <span>Zpět na přehled zakázek</span>
@@ -135,8 +135,8 @@ export const LeadDetail: React.FC<LeadDetailProps> = ({
 
         <div className="flex items-center gap-3">
           <span className={`px-3.5 py-1.5 rounded-full text-xs font-bold border ${
-            lead.status === 'New' ? 'bg-blue-950/80 border-blue-800 text-blue-400' :
-            lead.status === 'In Progress' ? 'bg-amber-950/80 border-amber-800 text-amber-400' : 'bg-emerald-950/80 border-emerald-800 text-emerald-400'
+            lead.status === 'New' ? 'bg-slate-50/80 border-blue-800 text-blue-400' :
+            lead.status === 'In Progress' ? 'bg-amber-950/80 border-amber-800 text-amber-400' : 'bg-green-950/80 border-green-800 text-green-400'
           }`}>
             Stav: {lead.status}
           </span>
@@ -147,13 +147,13 @@ export const LeadDetail: React.FC<LeadDetailProps> = ({
       </div>
 
       {/* Customer Timeline (Requirement 4) */}
-      <div className="bg-slate-900 p-6 rounded-3xl border border-slate-800 shadow-md space-y-4">
+      <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-md space-y-4">
         <div className="flex items-center justify-between">
-          <h3 className="text-sm font-bold text-slate-200 uppercase tracking-wider flex items-center gap-2">
+          <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wider flex items-center gap-2">
             <Clock className="w-4 h-4 text-amber-400" />
             Průběh a milníky zakázky
           </h3>
-          <span className="text-xs text-slate-400">Živý sledovač realizace</span>
+          <span className="text-xs text-slate-500">Živý sledovač realizace</span>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-6 gap-3 pt-2">
@@ -164,17 +164,17 @@ export const LeadDetail: React.FC<LeadDetailProps> = ({
               <div 
                 key={step.id} 
                 className={`p-3.5 rounded-2xl border transition-all relative ${
-                  isCompleted ? 'bg-emerald-950/40 border-emerald-800/80 text-emerald-300' :
+                  isCompleted ? 'bg-green-950/40 border-green-800/80 text-green-300' :
                   isCurrent ? 'bg-amber-950/40 border-amber-500/80 ring-2 ring-amber-500/20 text-amber-300' :
-                  'bg-slate-950 border-slate-800 text-slate-500'
+                  'bg-slate-50 border-slate-200 text-slate-500'
                 }`}
               >
                 <div className="flex items-center justify-between">
                   <span className="text-[10px] font-bold">Krok {index + 1}</span>
-                  {isCompleted ? <CheckCircle2 className="w-4 h-4 text-emerald-400" /> : <div className={`w-2 h-2 rounded-full ${isCurrent ? 'bg-amber-400 animate-pulse' : 'bg-slate-700'}`} />}
+                  {isCompleted ? <CheckCircle2 className="w-4 h-4 text-green-400" /> : <div className={`w-2 h-2 rounded-full ${isCurrent ? 'bg-amber-400 animate-pulse' : 'bg-slate-700'}`} />}
                 </div>
-                <p className="text-xs font-bold mt-2 truncate text-slate-200">{step.title}</p>
-                <p className="text-[10px] mt-1 text-slate-400 truncate">{step.timestamp || 'Čeká se'}</p>
+                <p className="text-xs font-bold mt-2 truncate text-slate-800">{step.title}</p>
+                <p className="text-[10px] mt-1 text-slate-500 truncate">{step.timestamp || 'Čeká se'}</p>
               </div>
             );
           })}
@@ -185,21 +185,21 @@ export const LeadDetail: React.FC<LeadDetailProps> = ({
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Left Column (Photos, Description, Address, Weather) */}
         <div className="lg:col-span-1 space-y-6">
-          <div className="bg-slate-900 p-6 rounded-3xl border border-slate-800 shadow-md space-y-6">
+          <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-md space-y-6">
             <div>
               <span className="text-xs font-semibold text-amber-400 uppercase tracking-wider">{lead.priority} Priorita</span>
-              <h2 className="text-xl font-extrabold text-slate-100 mt-1">{lead.title}</h2>
-              <p className="text-xs text-slate-400 mt-2 leading-relaxed">{lead.description}</p>
+              <h2 className="text-xl font-extrabold text-slate-900 mt-1">{lead.title}</h2>
+              <p className="text-xs text-slate-500 mt-2 leading-relaxed">{lead.description}</p>
             </div>
 
-            <div className="space-y-3 pt-4 border-t border-slate-800 text-xs text-slate-300">
+            <div className="space-y-3 pt-4 border-t border-slate-200 text-xs text-slate-700">
               <div className="flex items-center gap-3">
                 <MapPin className="w-4 h-4 text-amber-400 flex-shrink-0" />
                 <span>{lead.address}</span>
               </div>
               <div className="flex items-center gap-3">
                 <User className="w-4 h-4 text-amber-400 flex-shrink-0" />
-                <span className="font-semibold text-slate-100">{lead.customerName}</span>
+                <span className="font-semibold text-slate-900">{lead.customerName}</span>
               </div>
               <div className="flex items-center gap-3">
                 <Phone className="w-4 h-4 text-amber-400 flex-shrink-0" />
@@ -219,8 +219,8 @@ export const LeadDetail: React.FC<LeadDetailProps> = ({
             <WeatherWidget weather={lead.weather} />
 
             {/* Photos Gallery */}
-            <div className="space-y-3 pt-4 border-t border-slate-800">
-              <h3 className="text-xs font-bold text-slate-200 uppercase tracking-wider flex items-center justify-between">
+            <div className="space-y-3 pt-4 border-t border-slate-200">
+              <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center justify-between">
                 <span>Fotodokumentace ze stavby</span>
                 <button onClick={onOpenVoiceNotes} className="text-amber-400 font-semibold hover:underline flex items-center gap-1">
                   <Camera className="w-3.5 h-3.5" /> Nahrát
@@ -230,19 +230,19 @@ export const LeadDetail: React.FC<LeadDetailProps> = ({
               <div className="grid grid-cols-2 gap-2">
                 <div 
                   onClick={() => onOpenPhoto(lead.thumbnail, lead.title, 'Hlavní náhled')}
-                  className="rounded-xl overflow-hidden h-24 border border-slate-800 cursor-pointer relative group bg-slate-950"
+                  className="rounded-xl overflow-hidden h-24 border border-slate-200 cursor-pointer relative group bg-slate-50"
                 >
                   <img src={lead.thumbnail} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-all" />
-                  <span className="absolute bottom-1 left-1 px-1.5 py-0.5 rounded text-[9px] bg-slate-950/80 text-amber-400 font-bold border border-slate-800">Hlavní</span>
+                  <span className="absolute bottom-1 left-1 px-1.5 py-0.5 rounded text-[9px] bg-slate-50/80 text-amber-400 font-bold border border-slate-200">Hlavní</span>
                 </div>
                 {lead.photos.map(p => (
                   <div 
                     key={p.id}
                     onClick={() => onOpenPhoto(p.url, p.name, p.category || 'Fotka')}
-                    className="rounded-xl overflow-hidden h-24 border border-slate-800 cursor-pointer relative group bg-slate-950"
+                    className="rounded-xl overflow-hidden h-24 border border-slate-200 cursor-pointer relative group bg-slate-50"
                   >
                     <img src={p.url} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-all" />
-                    <span className="absolute bottom-1 left-1 px-1.5 py-0.5 rounded text-[9px] bg-slate-950/80 text-slate-300 font-medium border border-slate-800">{p.category}</span>
+                    <span className="absolute bottom-1 left-1 px-1.5 py-0.5 rounded text-[9px] bg-slate-50/80 text-slate-700 font-medium border border-slate-200">{p.category}</span>
                   </div>
                 ))}
               </div>
@@ -253,28 +253,28 @@ export const LeadDetail: React.FC<LeadDetailProps> = ({
         {/* Right Column (AI Project Assistant & Checklist) */}
         <div className="lg:col-span-2 space-y-6">
           {/* Upgraded Gemini Project Assistant */}
-          <div className="bg-slate-900 text-white p-6 rounded-3xl shadow-xl space-y-4 border border-slate-800 relative overflow-hidden">
+          <div className="bg-white text-slate-900 p-6 rounded-3xl shadow-xl space-y-4 border border-slate-200 relative overflow-hidden">
             <div className="absolute -right-10 -bottom-10 w-40 h-40 bg-amber-500/10 rounded-full blur-3xl pointer-events-none"></div>
             
-            <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-200">
               <div className="flex items-center gap-2.5">
                 <div className="w-9 h-9 rounded-xl bg-amber-500/20 border border-amber-500/30 flex items-center justify-center text-amber-400">
                   <Bot className="w-5 h-5" />
                 </div>
                 <div>
-                  <h3 className="text-sm font-bold tracking-tight text-white flex items-center gap-2">
+                  <h3 className="text-sm font-bold tracking-tight text-slate-900 flex items-center gap-2">
                     AI Stavbyvedoucí Asistent
-                    <span className="px-2 py-0.5 rounded-full text-[9px] font-semibold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+                    <span className="px-2 py-0.5 rounded-full text-[9px] font-semibold bg-green-500/20 text-green-400 border border-green-500/30">
                       Paměť aktivní
                     </span>
                   </h3>
-                  <p className="text-[11px] text-slate-400">Udržuje kontext: Klient • Materiály • Fotky ze stavby • Termíny</p>
+                  <p className="text-[11px] text-slate-500">Udržuje kontext: Klient • Materiály • Fotky ze stavby • Termíny</p>
                 </div>
               </div>
 
               {/* Quick Output Notification */}
               {quickOutputNotice && (
-                <div className="px-3 py-1 rounded-xl bg-emerald-600 text-white text-[11px] font-bold animate-in fade-in flex items-center gap-1.5">
+                <div className="px-3 py-1 rounded-xl bg-green-600 text-slate-900 text-[11px] font-bold animate-in fade-in flex items-center gap-1.5">
                   <Check className="w-3.5 h-3.5" /> {quickOutputNotice}
                 </div>
               )}
@@ -290,7 +290,7 @@ export const LeadDetail: React.FC<LeadDetailProps> = ({
                     </div>
                   )}
                   <div className={`p-3.5 rounded-2xl text-xs leading-relaxed max-w-lg ${
-                    msg.sender === 'user' ? 'bg-amber-500 text-slate-950 font-medium rounded-tr-xs' : 'bg-slate-950 text-slate-200 rounded-tl-xs border border-slate-800 whitespace-pre-line'
+                    msg.sender === 'user' ? 'bg-amber-500 text-slate-950 font-medium rounded-tr-xs' : 'bg-slate-50 text-slate-800 rounded-tl-xs border border-slate-200 whitespace-pre-line'
                   }`}>
                     {msg.text}
                     <p className={`text-[9px] mt-1 text-right ${msg.sender === 'user' ? 'text-amber-950' : 'text-slate-500'}`}>{msg.timestamp}</p>
@@ -301,7 +301,7 @@ export const LeadDetail: React.FC<LeadDetailProps> = ({
 
             {/* Contextual Action Buttons */}
             <div className="space-y-1.5 pt-2">
-              <p className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Doporučené rychlé akce:</p>
+              <p className="text-[10px] uppercase font-bold text-slate-500 tracking-wider">Doporučené rychlé akce:</p>
               <div className="flex flex-wrap gap-2">
                 {[
                   'Připravit navazující e-mail',
@@ -323,19 +323,19 @@ export const LeadDetail: React.FC<LeadDetailProps> = ({
             </div>
 
             {/* One-Click Outputs Toolbar */}
-            <div className="pt-2 border-t border-slate-800 flex items-center justify-between">
-              <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Výstupy na 1 klik:</span>
+            <div className="pt-2 border-t border-slate-200 flex items-center justify-between">
+              <span className="text-[10px] uppercase font-bold text-slate-500 tracking-wider">Výstupy na 1 klik:</span>
               <div className="flex items-center gap-2">
-                <button onClick={() => triggerQuickOutput('E-mail')} className="px-2.5 py-1 rounded-lg bg-slate-950 hover:bg-slate-800 text-[10px] font-semibold text-slate-300 border border-slate-800">
+                <button onClick={() => triggerQuickOutput('E-mail')} className="px-2.5 py-1 rounded-lg bg-slate-50 hover:bg-slate-800 text-[10px] font-semibold text-slate-700 border border-slate-200">
                   ✉️ E-mail
                 </button>
-                <button onClick={() => triggerQuickOutput('SMS')} className="px-2.5 py-1 rounded-lg bg-slate-950 hover:bg-slate-800 text-[10px] font-semibold text-slate-300 border border-slate-800">
+                <button onClick={() => triggerQuickOutput('SMS')} className="px-2.5 py-1 rounded-lg bg-slate-50 hover:bg-slate-800 text-[10px] font-semibold text-slate-700 border border-slate-200">
                   💬 SMS
                 </button>
-                <button onClick={() => triggerQuickOutput('PDF Rozpočet')} className="px-2.5 py-1 rounded-lg bg-slate-950 hover:bg-slate-800 text-[10px] font-semibold text-slate-300 border border-slate-800">
+                <button onClick={() => triggerQuickOutput('PDF Rozpočet')} className="px-2.5 py-1 rounded-lg bg-slate-50 hover:bg-slate-800 text-[10px] font-semibold text-slate-700 border border-slate-200">
                   📄 PDF
                 </button>
-                <button onClick={() => triggerQuickOutput('Interní poznámka')} className="px-2.5 py-1 rounded-lg bg-slate-950 hover:bg-slate-800 text-[10px] font-semibold text-slate-300 border border-slate-800">
+                <button onClick={() => triggerQuickOutput('Interní poznámka')} className="px-2.5 py-1 rounded-lg bg-slate-50 hover:bg-slate-800 text-[10px] font-semibold text-slate-700 border border-slate-200">
                   📝 Poznámka
                 </button>
               </div>
@@ -345,11 +345,11 @@ export const LeadDetail: React.FC<LeadDetailProps> = ({
             {isVoiceActive && (
               <div className="p-4 rounded-2xl bg-amber-950/40 border border-amber-500/40 flex items-center justify-between animate-in fade-in">
                 <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-full bg-red-600 animate-pulse flex items-center justify-center text-white">
+                  <div className="w-8 h-8 rounded-full bg-red-600 animate-pulse flex items-center justify-center text-slate-900">
                     <Mic className="w-4 h-4" />
                   </div>
                   <div>
-                    <p className="text-xs font-bold text-white">Poslouchám hlasový pokyn...</p>
+                    <p className="text-xs font-bold text-slate-900">Poslouchám hlasový pokyn...</p>
                     <p className="text-[10px] text-amber-300">Mluvte přirozeně v češtině</p>
                   </div>
                 </div>
@@ -359,7 +359,7 @@ export const LeadDetail: React.FC<LeadDetailProps> = ({
                     <div key={i} className="w-1 bg-amber-400 rounded-full animate-pulse" style={{ height: `${h}px`, animationDelay: `${i * 100}ms` }} />
                   ))}
                 </div>
-                <button onClick={() => setIsVoiceActive(false)} className="px-3 py-1 bg-slate-800 text-xs rounded-xl font-bold hover:bg-slate-700 text-slate-200">
+                <button onClick={() => setIsVoiceActive(false)} className="px-3 py-1 bg-slate-800 text-xs rounded-xl font-bold hover:bg-slate-700 text-slate-800">
                   Hotovo
                 </button>
               </div>
@@ -371,7 +371,7 @@ export const LeadDetail: React.FC<LeadDetailProps> = ({
                 type="button"
                 onClick={() => setIsVoiceActive(!isVoiceActive)}
                 className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-all ${
-                  isVoiceActive ? 'bg-red-600 text-white shadow-lg' : 'bg-slate-950 hover:bg-slate-800 text-slate-300 border border-slate-800'
+                  isVoiceActive ? 'bg-red-600 text-slate-900 shadow-lg' : 'bg-slate-50 hover:bg-slate-800 text-slate-700 border border-slate-200'
                 }`}
                 title="Hlasový režim"
               >
@@ -383,7 +383,7 @@ export const LeadDetail: React.FC<LeadDetailProps> = ({
                 onChange={(e) => setChatInput(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleSendChat()}
                 placeholder="Zeptejte se asistenta nebo vyberte rychlou akci..."
-                className="flex-1 bg-slate-950 border border-slate-800 rounded-2xl px-4 py-3 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-amber-500"
+                className="flex-1 bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3 text-xs text-slate-900 placeholder-slate-500 focus:outline-none focus:border-amber-500"
               />
               <button
                 onClick={() => handleSendChat()}
@@ -396,8 +396,8 @@ export const LeadDetail: React.FC<LeadDetailProps> = ({
           </div>
 
           {/* Checklist & Tasks */}
-          <div className="bg-slate-900 p-6 rounded-3xl border border-slate-800 shadow-md space-y-4">
-            <h3 className="text-sm font-bold text-slate-200 uppercase tracking-wider">Kontrolní seznam & Úkoly realizace</h3>
+          <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-md space-y-4">
+            <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wider">Kontrolní seznam & Úkoly realizace</h3>
             
             <div className="space-y-2">
               {lead.checklist.map((item) => (
@@ -405,11 +405,11 @@ export const LeadDetail: React.FC<LeadDetailProps> = ({
                   key={item.id}
                   onClick={() => toggleChecklist(item.id)}
                   className={`p-3.5 rounded-2xl border transition-all flex items-center justify-between cursor-pointer ${
-                    item.completed ? 'bg-emerald-950/20 border-emerald-800/40 text-slate-400 line-through' : 'bg-slate-950 border-slate-800 text-slate-200 hover:border-slate-700'
+                    item.completed ? 'bg-green-950/20 border-green-800/40 text-slate-500 line-through' : 'bg-slate-50 border-slate-200 text-slate-800 hover:border-slate-300'
                   }`}
                 >
                   <div className="flex items-center gap-3">
-                    {item.completed ? <CheckSquare className="w-5 h-5 text-emerald-400" /> : <Square className="w-5 h-5 text-slate-500" />}
+                    {item.completed ? <CheckSquare className="w-5 h-5 text-green-400" /> : <Square className="w-5 h-5 text-slate-500" />}
                     <span className="text-xs font-semibold">{item.text}</span>
                   </div>
                   <span className="text-[10px] font-medium text-slate-500">{item.completed ? 'Splněno' : 'Čeká'}</span>
@@ -423,7 +423,7 @@ export const LeadDetail: React.FC<LeadDetailProps> = ({
                 value={newChecklistText}
                 onChange={(e) => setNewChecklistText(e.target.value)}
                 placeholder="Přidat nový úkol nebo milník stavby..."
-                className="flex-1 bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-xs text-slate-200 focus:outline-none focus:border-amber-500"
+                className="flex-1 bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs text-slate-800 focus:outline-none focus:border-amber-500"
               />
               <button
                 type="submit"
@@ -435,37 +435,37 @@ export const LeadDetail: React.FC<LeadDetailProps> = ({
           </div>
 
           {/* Material Intelligence Panel (Feature 5) */}
-          <div className="bg-slate-900 p-6 rounded-3xl border border-slate-800 shadow-md space-y-4">
+          <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-md space-y-4">
             <div className="flex items-center justify-between">
               <div>
-                <h3 className="text-sm font-bold text-slate-200 uppercase tracking-wider">Materiálová bilance & Sklad</h3>
-                <p className="text-xs text-slate-400">Přehled kusovníku, stav skladu a vliv na termíny montáže</p>
+                <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wider">Materiálová bilance & Sklad</h3>
+                <p className="text-xs text-slate-500">Přehled kusovníku, stav skladu a vliv na termíny montáže</p>
               </div>
-              <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-950 border border-emerald-800 text-emerald-400">
+              <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-green-950 border border-green-800 text-green-400">
                 85% naskladněno
               </span>
             </div>
 
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-              <div className="p-3 bg-slate-950 rounded-2xl border border-slate-800">
-                <span className="text-[10px] font-bold uppercase text-slate-400">Potřeba</span>
-                <p className="text-lg font-black text-slate-100 mt-0.5">8 položek</p>
+              <div className="p-3 bg-slate-50 rounded-2xl border border-slate-200">
+                <span className="text-[10px] font-bold uppercase text-slate-500">Potřeba</span>
+                <p className="text-lg font-black text-slate-900 mt-0.5">8 položek</p>
                 <p className="text-[10px] text-slate-500">Kompletní specifikace</p>
               </div>
-              <div className="p-3 bg-slate-950 rounded-2xl border border-slate-800">
+              <div className="p-3 bg-slate-50 rounded-2xl border border-slate-200">
                 <span className="text-[10px] font-bold uppercase text-amber-400">Objednáno</span>
                 <p className="text-lg font-black text-amber-400 mt-0.5">6 položek</p>
-                <p className="text-[10px] text-slate-400">Dodavatel DEK a.s.</p>
+                <p className="text-[10px] text-slate-500">Dodavatel DEK a.s.</p>
               </div>
-              <div className="p-3 bg-slate-950 rounded-2xl border border-slate-800">
-                <span className="text-[10px] font-bold uppercase text-emerald-400">Dodáno</span>
-                <p className="text-lg font-black text-emerald-400 mt-0.5">5 položek</p>
-                <p className="text-[10px] text-slate-400">Naskladněno v dílně</p>
+              <div className="p-3 bg-slate-50 rounded-2xl border border-slate-200">
+                <span className="text-[10px] font-bold uppercase text-green-400">Dodáno</span>
+                <p className="text-lg font-black text-green-400 mt-0.5">5 položek</p>
+                <p className="text-[10px] text-slate-500">Naskladněno v dílně</p>
               </div>
-              <div className="p-3 bg-slate-950 rounded-2xl border border-slate-800">
+              <div className="p-3 bg-slate-50 rounded-2xl border border-slate-200">
                 <span className="text-[10px] font-bold uppercase text-rose-400">Chybí</span>
                 <p className="text-lg font-black text-rose-400 mt-0.5">1 položka</p>
-                <p className="text-[10px] text-slate-400">Kotvicí šrouby M16</p>
+                <p className="text-[10px] text-slate-500">Kotvicí šrouby M16</p>
               </div>
             </div>
 
@@ -476,7 +476,7 @@ export const LeadDetail: React.FC<LeadDetailProps> = ({
               </div>
               <div className="text-xs">
                 <p className="font-bold text-amber-400">Upozornění k harmonogramu:</p>
-                <p className="text-slate-300 mt-0.5">
+                <p className="text-slate-700 mt-0.5">
                   Kotvicí šrouby M16 mají plánované doručení zítra v 07:30. Montáž může začít v 08:00 bez zpoždění.
                 </p>
               </div>

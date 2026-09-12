@@ -174,7 +174,7 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
             <p className="text-3xl font-black text-slate-900 tracking-tight">
               {((totalRevenue + 245000) / 1000).toFixed(0)} <span className="text-sm font-bold text-slate-500">tis. Kč</span>
             </p>
-            <div className="flex items-center gap-1.5 mt-2 text-xs font-bold text-emerald-600">
+            <div className="flex items-center gap-1.5 mt-2 text-xs font-bold text-green-600">
               <ArrowUpRight className="w-4 h-4" />
               <span>+24.5% forecast do konce měsíce</span>
             </div>
@@ -223,7 +223,7 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
         >
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Reakční doba SLA</span>
-            <div className="w-10 h-10 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center group-hover:scale-110 transition-transform">
+            <div className="w-10 h-10 rounded-2xl bg-green-50 text-green-600 flex items-center justify-center group-hover:scale-110 transition-transform">
               <Timer className="w-5 h-5" />
             </div>
           </div>
@@ -231,7 +231,7 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
             <p className="text-3xl font-black text-slate-900 tracking-tight">
               18 <span className="text-sm font-bold text-slate-500">minut</span>
             </p>
-            <div className="flex items-center gap-1.5 mt-2 text-xs font-bold text-emerald-600">
+            <div className="flex items-center gap-1.5 mt-2 text-xs font-bold text-green-600">
               <Check className="w-4 h-4" />
               <span>94% odpovědí do 30 min (AI auto-reply)</span>
             </div>
@@ -303,7 +303,7 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
                     <span className="text-[10px] text-slate-500 ml-1.5">({emp.role})</span>
                   </div>
                   <span className={`font-mono font-bold text-[11px] ${
-                    emp.load > 85 ? 'text-rose-600' : emp.load > 60 ? 'text-amber-600' : 'text-emerald-600'
+                    emp.load > 85 ? 'text-rose-600' : emp.load > 60 ? 'text-amber-600' : 'text-green-600'
                   }`}>
                     {emp.load}%
                   </span>
@@ -312,7 +312,7 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
                 <div className="w-full bg-slate-200 h-1.5 rounded-full overflow-hidden">
                   <div 
                     className={`h-full ${
-                      emp.load > 85 ? 'bg-rose-500' : emp.load > 60 ? 'bg-amber-500' : 'bg-emerald-500'
+                      emp.load > 85 ? 'bg-rose-500' : emp.load > 60 ? 'bg-amber-500' : 'bg-green-500'
                     }`} 
                     style={{ width: `${emp.load}%` }}
                   />
@@ -369,7 +369,7 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
                   >
                     {visit.time}
                   </span>
-                  <span className="text-[10px] font-semibold text-emerald-600">{visit.status}</span>
+                  <span className="text-[10px] font-semibold text-green-600">{visit.status}</span>
                 </div>
                 <h4 className="text-xs font-bold text-slate-900">{visit.client} — {visit.type}</h4>
                 <p className="text-[10px] text-slate-500 flex items-center gap-1">
@@ -454,7 +454,7 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
                   {act.time}
                 </span>
                 <p className="text-xs font-medium text-slate-700 flex-1">{act.text}</p>
-                <CheckCircle2 className="w-4 h-4 text-emerald-500 flex-shrink-0" />
+                <CheckCircle2 className="w-4 h-4 text-green-500 flex-shrink-0" />
               </div>
             ))}
           </div>
@@ -464,7 +464,7 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
         <div className="bg-white p-6 rounded-[24px] border border-slate-200 shadow-sm hover:shadow-md transition-all space-y-4">
           <div className="flex items-center justify-between">
             <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
-              <Camera className="w-4 h-4 text-emerald-500" />
+              <Camera className="w-4 h-4 text-green-500" />
               Nedávné fotky ze staveb
             </h3>
             <span className="text-[10px] text-slate-500 font-semibold">Dnes (3 nové)</span>

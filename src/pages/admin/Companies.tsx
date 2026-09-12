@@ -198,7 +198,7 @@ export const AdminCompaniesPage: React.FC = () => {
                       </div>
                     </div>
 
-                    <span className="px-2 py-0.5 rounded-full text-[9px] font-mono font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+                    <span className="px-2 py-0.5 rounded-full text-[9px] font-mono font-bold bg-green-500/20 text-green-400 border border-green-500/30">
                       Aktivní
                     </span>
                   </div>

@@ -61,8 +61,8 @@ export const OnboardingWizardModal: React.FC<OnboardingWizardModalProps> = ({
   const [accentColor, setAccentColor] = useState('#f59e0b');
   const [detectedPalettes, setDetectedPalettes] = useState([
     { name: 'Modern Sapphire', primary: '#2563eb', accent: '#38bdf8', preview: 'bg-blue-600' },
-    { name: 'Nordic Forest', primary: '#059669', accent: '#34d399', preview: 'bg-emerald-600' },
-    { name: 'Warm Terracotta', primary: '#ea580c', accent: '#fbbf24', preview: 'bg-orange-600' },
+    { name: 'Nordic Forest', primary: '#059669', accent: '#34d399', preview: 'bg-green-600' },
+    { name: 'Warm Terracotta', primary: '#ea580c', accent: '#fbbf24', preview: 'bg-blue-600' },
     { name: 'Slate Executive', primary: '#334155', accent: '#60a5fa', preview: 'bg-slate-700' },
     { name: 'Luxury Amber', primary: '#d97706', accent: '#fde047', preview: 'bg-amber-600' }
   ]);
@@ -211,7 +211,7 @@ export const OnboardingWizardModal: React.FC<OnboardingWizardModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-slate-950/80 backdrop-blur-md animate-in fade-in duration-200">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-slate-50/80 backdrop-blur-md animate-in fade-in duration-200">
       <div 
         className="bg-white text-slate-900 rounded-3xl border border-slate-200 shadow-2xl w-full max-w-3xl max-h-[92vh] flex flex-col overflow-hidden relative"
         style={{ fontFamily: 'system-ui, -apple-system, sans-serif' }}
@@ -220,7 +220,7 @@ export const OnboardingWizardModal: React.FC<OnboardingWizardModalProps> = ({
         <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/80">
           <div className="flex items-center gap-3">
             <div 
-              className="w-10 h-10 rounded-xl flex items-center justify-center text-white font-black text-sm shadow-sm"
+              className="w-10 h-10 rounded-xl flex items-center justify-center text-slate-900 font-black text-sm shadow-sm"
               style={{ backgroundColor: primaryColor }}
             >
               <Building2 className="w-5 h-5" />
@@ -276,12 +276,12 @@ export const OnboardingWizardModal: React.FC<OnboardingWizardModalProps> = ({
               key={st.s}
               onClick={() => st.s < step && setStep(st.s)}
               className={`flex items-center gap-1.5 cursor-pointer ${
-                step === st.s ? 'text-blue-600' : st.s < step ? 'text-slate-700' : 'text-slate-400 opacity-60'
+                step === st.s ? 'text-blue-600' : st.s < step ? 'text-slate-700' : 'text-slate-500 opacity-60'
               }`}
             >
               <div 
                 className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] ${
-                  step === st.s ? 'bg-blue-600 text-white' : st.s < step ? 'bg-emerald-100 text-emerald-700 font-bold' : 'bg-slate-200 text-slate-600'
+                  step === st.s ? 'bg-blue-600 text-slate-900' : st.s < step ? 'bg-green-100 text-green-700 font-bold' : 'bg-slate-200 text-slate-600'
                 }`}
               >
                 {st.s < step ? '✓' : st.s}
@@ -314,7 +314,7 @@ export const OnboardingWizardModal: React.FC<OnboardingWizardModalProps> = ({
                     />
                     <label 
                       htmlFor="onboarding-logo-file"
-                      className="absolute inset-0 bg-black/40 rounded-2xl flex items-center justify-center text-white opacity-0 group-hover:opacity-100 cursor-pointer transition-opacity text-xs font-bold"
+                      className="absolute inset-0 bg-black/40 rounded-2xl flex items-center justify-center text-slate-900 opacity-0 group-hover:opacity-100 cursor-pointer transition-opacity text-xs font-bold"
                     >
                       Změnit
                     </label>
@@ -335,7 +335,7 @@ export const OnboardingWizardModal: React.FC<OnboardingWizardModalProps> = ({
                     <Upload className="w-3.5 h-3.5" />
                     <span>Nahrát nový soubor</span>
                   </label>
-                  <span className="text-[10px] text-slate-400 mt-1">PNG, SVG, JPG do 5 MB</span>
+                  <span className="text-[10px] text-slate-500 mt-1">PNG, SVG, JPG do 5 MB</span>
                 </div>
 
                 <div className="sm:col-span-7 space-y-3">
@@ -448,13 +448,13 @@ export const OnboardingWizardModal: React.FC<OnboardingWizardModalProps> = ({
                   <span className="text-xs text-slate-600 font-medium">Ukázka tlačítka a akcentu:</span>
                   <div className="flex items-center gap-2">
                     <button 
-                      className="px-3.5 py-1.5 rounded-lg text-white font-bold text-xs shadow-xs"
+                      className="px-3.5 py-1.5 rounded-lg text-slate-900 font-bold text-xs shadow-xs"
                       style={{ backgroundColor: primaryColor }}
                     >
                       Cenová nabídka
                     </button>
                     <span 
-                      className="px-2.5 py-1 rounded-full text-[10px] font-bold text-white"
+                      className="px-2.5 py-1 rounded-full text-[10px] font-bold text-slate-900"
                       style={{ backgroundColor: accentColor }}
                     >
                       Priorita 1
@@ -493,14 +493,14 @@ export const OnboardingWizardModal: React.FC<OnboardingWizardModalProps> = ({
                     </div>
 
                     <div className="flex items-center gap-2">
-                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800">
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-green-100 text-green-800">
                         {emp.status === 'Green' ? 'Dostupný' : emp.status === 'Orange' ? 'Na výjezdu' : 'Vytížen'}
                       </span>
                       {employees.length > 1 && (
                         <button 
                           type="button" 
                           onClick={() => handleRemoveEmployee(emp.id)}
-                          className="p-1.5 text-slate-400 hover:text-rose-600 transition-colors"
+                          className="p-1.5 text-slate-500 hover:text-rose-600 transition-colors"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
                         </button>
@@ -539,7 +539,7 @@ export const OnboardingWizardModal: React.FC<OnboardingWizardModalProps> = ({
                 <button
                   type="button"
                   onClick={handleAddEmployee}
-                  className="px-4 py-2 rounded-xl text-xs font-bold text-white shadow-xs"
+                  className="px-4 py-2 rounded-xl text-xs font-bold text-slate-900 shadow-xs"
                   style={{ backgroundColor: primaryColor }}
                 >
                   Uložit člena týmu
@@ -577,15 +577,15 @@ export const OnboardingWizardModal: React.FC<OnboardingWizardModalProps> = ({
                 />
 
                 {/* Simulated Interactive Coverage Box */}
-                <div className="h-44 bg-slate-950 rounded-2xl relative overflow-hidden border border-slate-800 p-4 flex flex-col justify-between shadow-inner text-white">
+                <div className="h-44 bg-slate-50 rounded-2xl relative overflow-hidden border border-slate-200 p-4 flex flex-col justify-between shadow-inner text-slate-900">
                   <div className="absolute inset-0 bg-[radial-gradient(#334155_1px,transparent_1px)] [background-size:16px_16px] opacity-40" />
 
                   <div className="relative z-10 flex items-center justify-between">
-                    <span className="px-2.5 py-1 bg-slate-800 text-white rounded-lg text-[10px] font-bold border border-slate-700 flex items-center gap-1.5">
+                    <span className="px-2.5 py-1 bg-slate-800 text-slate-900 rounded-lg text-[10px] font-bold border border-slate-300 flex items-center gap-1.5">
                       <Navigation className="w-3.5 h-3.5 text-blue-400" />
                       Centrála: {companyAddress || companyCity}
                     </span>
-                    <span className="px-2 py-0.5 rounded-full text-[9px] font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+                    <span className="px-2 py-0.5 rounded-full text-[9px] font-bold bg-green-500/20 text-green-400 border border-green-500/30">
                       Pokrytí: ~1 200 km²
                     </span>
                   </div>
@@ -596,7 +596,7 @@ export const OnboardingWizardModal: React.FC<OnboardingWizardModalProps> = ({
                     </div>
                   </div>
 
-                  <div className="relative z-10 text-[10px] text-slate-400 flex items-center justify-between">
+                  <div className="relative z-10 text-[10px] text-slate-500 flex items-center justify-between">
                     <span>Doprava zdarma: do {freeTravelKm} km</span>
                     <span>Nad limit: 14 CZK / km</span>
                   </div>
@@ -642,7 +642,7 @@ export const OnboardingWizardModal: React.FC<OnboardingWizardModalProps> = ({
                   <div>
                     <label className="text-[11px] font-bold uppercase tracking-wider text-slate-600">Odesílací e-mail pro nabídky</label>
                     <div className="relative mt-1">
-                      <Mail className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
+                      <Mail className="w-4 h-4 text-slate-500 absolute left-3.5 top-3" />
                       <input
                         type="email"
                         value={emailAddress}
@@ -655,7 +655,7 @@ export const OnboardingWizardModal: React.FC<OnboardingWizardModalProps> = ({
                   <div>
                     <label className="text-[11px] font-bold uppercase tracking-wider text-slate-600">SMS Odesílatel (Alfanumerické ID)</label>
                     <div className="relative mt-1">
-                      <Phone className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
+                      <Phone className="w-4 h-4 text-slate-500 absolute left-3.5 top-3" />
                       <input
                         type="text"
                         maxLength={11}
@@ -664,17 +664,17 @@ export const OnboardingWizardModal: React.FC<OnboardingWizardModalProps> = ({
                         className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2.5 pl-10 pr-3 text-xs font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono"
                       />
                     </div>
-                    <span className="text-[10px] text-slate-400 mt-1 block">Zobrazí se zákazníkům jako odesílatel SMS (např. {smsSenderId})</span>
+                    <span className="text-[10px] text-slate-500 mt-1 block">Zobrazí se zákazníkům jako odesílatel SMS (např. {smsSenderId})</span>
                   </div>
                 </div>
 
                 {/* Connection Verified Badge */}
-                <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-xl flex items-center justify-between text-xs text-emerald-900">
+                <div className="p-3 bg-green-50 border border-green-200 rounded-xl flex items-center justify-between text-xs text-green-900">
                   <div className="flex items-center gap-2 font-bold">
-                    <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                    <CheckCircle2 className="w-4 h-4 text-green-600" />
                     <span>E-mail & SMS brána úspěšně ověřena (SSL 256-bit)</span>
                   </div>
-                  <span className="text-[10px] font-bold bg-emerald-200 text-emerald-900 px-2 py-0.5 rounded-md">Připraveno</span>
+                  <span className="text-[10px] font-bold bg-green-200 text-green-900 px-2 py-0.5 rounded-md">Připraveno</span>
                 </div>
               </div>
             </div>
@@ -695,7 +695,7 @@ export const OnboardingWizardModal: React.FC<OnboardingWizardModalProps> = ({
                 </div>
               ) : completed ? (
                 <div className="space-y-4 py-4 animate-in fade-in">
-                  <div className="w-16 h-16 bg-emerald-50 text-emerald-600 rounded-3xl flex items-center justify-center mx-auto shadow-inner border border-emerald-100">
+                  <div className="w-16 h-16 bg-green-50 text-green-600 rounded-3xl flex items-center justify-center mx-auto shadow-inner border border-green-100">
                     <Award className="w-8 h-8" />
                   </div>
                   <div className="space-y-1">
@@ -734,20 +734,20 @@ export const OnboardingWizardModal: React.FC<OnboardingWizardModalProps> = ({
 
                   {/* Summary Checklist */}
                   <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 text-left text-xs space-y-2.5 max-w-md mx-auto">
-                    <div className="flex items-center gap-2 text-emerald-700 font-bold">
-                      <Check className="w-4 h-4 text-emerald-600" />
+                    <div className="flex items-center gap-2 text-green-700 font-bold">
+                      <Check className="w-4 h-4 text-green-600" />
                       <span>Logo a barva ({primaryColor}) nakonfigurována</span>
                     </div>
-                    <div className="flex items-center gap-2 text-emerald-700 font-bold">
-                      <Check className="w-4 h-4 text-emerald-600" />
+                    <div className="flex items-center gap-2 text-green-700 font-bold">
+                      <Check className="w-4 h-4 text-green-600" />
                       <span>{employees.length} členů týmu připraveno k přiřazování</span>
                     </div>
-                    <div className="flex items-center gap-2 text-emerald-700 font-bold">
-                      <Check className="w-4 h-4 text-emerald-600" />
+                    <div className="flex items-center gap-2 text-green-700 font-bold">
+                      <Check className="w-4 h-4 text-green-600" />
                       <span>Servisní rádius ({serviceRadius} km) a doprava nastavena</span>
                     </div>
-                    <div className="flex items-center gap-2 text-emerald-700 font-bold">
-                      <Check className="w-4 h-4 text-emerald-600" />
+                    <div className="flex items-center gap-2 text-green-700 font-bold">
+                      <Check className="w-4 h-4 text-green-600" />
                       <span>E-mail ({emailAddress}) & SMS ({smsSenderId}) aktivní</span>
                     </div>
                   </div>
@@ -774,7 +774,7 @@ export const OnboardingWizardModal: React.FC<OnboardingWizardModalProps> = ({
               <button
                 type="button"
                 onClick={() => setStep(prev => prev + 1)}
-                className="px-5 py-2.5 rounded-xl text-xs font-bold text-white shadow-md flex items-center gap-1.5 hover:opacity-95"
+                className="px-5 py-2.5 rounded-xl text-xs font-bold text-slate-900 shadow-md flex items-center gap-1.5 hover:opacity-95"
                 style={{ backgroundColor: primaryColor }}
               >
                 <span>Další ({step + 1}/{totalSteps})</span> <ArrowRight className="w-3.5 h-3.5" />
@@ -783,7 +783,7 @@ export const OnboardingWizardModal: React.FC<OnboardingWizardModalProps> = ({
               <button
                 type="button"
                 onClick={handleFinishOnboarding}
-                className="px-6 py-2.5 rounded-xl text-xs font-extrabold text-white shadow-lg flex items-center gap-2 hover:opacity-95 animate-pulse"
+                className="px-6 py-2.5 rounded-xl text-xs font-extrabold text-slate-900 shadow-lg flex items-center gap-2 hover:opacity-95 animate-pulse"
                 style={{ backgroundColor: primaryColor }}
               >
                 <Zap className="w-4 h-4" /> Dokončit a spustit CRM

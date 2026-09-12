@@ -416,9 +416,9 @@ Systém je připraven k okamžitému provozu.
   ];
 
   return (
-    <div className="max-w-5xl mx-auto space-y-8 pb-24 text-slate-100 font-sans">
+    <div className="max-w-5xl mx-auto space-y-8 pb-24 text-slate-900 font-sans">
       {/* Header Banner */}
-      <div className="relative overflow-hidden rounded-3xl bg-slate-900 p-8 border border-slate-800 shadow-2xl">
+      <div className="relative overflow-hidden rounded-3xl bg-white p-8 border border-slate-200 shadow-2xl">
         <div className="absolute top-0 right-0 w-96 h-96 bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
         
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 relative z-10">
@@ -433,20 +433,20 @@ Systém je připraven k okamžitému provozu.
                   Real Tenant Deployment System
                 </span>
               </div>
-              <h1 className="text-2xl md:text-3xl font-black tracking-tight text-white mt-1">
+              <h1 className="text-2xl md:text-3xl font-black tracking-tight text-slate-900 mt-1">
                 Autonomní provisioning klientského CRM
               </h1>
             </div>
           </div>
 
-          <div className="flex items-center gap-2 text-xs font-mono text-slate-400 bg-slate-950/80 px-3.5 py-2 rounded-xl border border-slate-800">
-            <Cpu className="w-4 h-4 text-emerald-400 animate-pulse" />
+          <div className="flex items-center gap-2 text-xs font-mono text-slate-500 bg-slate-50/80 px-3.5 py-2 rounded-xl border border-slate-200">
+            <Cpu className="w-4 h-4 text-green-400 animate-pulse" />
             <span>Multi-Tenant Engine: Real Tenant Creator</span>
           </div>
         </div>
 
         {/* 7-Step Stepper Header */}
-        <div className="mt-8 pt-6 border-t border-slate-800/80 grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2">
+        <div className="mt-8 pt-6 border-t border-slate-200/80 grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2">
           {stepsList.map((s) => {
             const isActive = currentStep === s.num;
             const isCompleted = currentStep > s.num;
@@ -457,10 +457,10 @@ Systém je připraven k okamžitému provozu.
                 onClick={() => setCurrentStep(s.num)}
                 className={`text-left p-2.5 rounded-xl border transition-all ${
                   isActive
-                    ? 'bg-amber-500/15 border-amber-500/50 text-white shadow-md'
+                    ? 'bg-amber-500/15 border-amber-500/50 text-slate-900 shadow-md'
                     : isCompleted
-                    ? 'bg-slate-800/40 border-slate-700/50 text-slate-300 hover:bg-slate-800'
-                    : 'bg-slate-950/40 border-slate-800/40 text-slate-500 opacity-60'
+                    ? 'bg-slate-800/40 border-slate-300/50 text-slate-700 hover:bg-slate-800'
+                    : 'bg-slate-50/40 border-slate-200/40 text-slate-500 opacity-60'
                 }`}
               >
                 <div className="flex items-center gap-1.5 mb-1">
@@ -468,14 +468,14 @@ Systém je připraven k okamžitému provozu.
                     isActive
                       ? 'bg-amber-500 text-slate-950'
                       : isCompleted
-                      ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/40'
-                      : 'bg-slate-800 text-slate-400'
+                      ? 'bg-green-500/20 text-green-400 border border-green-500/40'
+                      : 'bg-slate-800 text-slate-500'
                   }`}>
                     {isCompleted ? <Check className="w-3 h-3" /> : s.num}
                   </span>
                   <span className="text-xs font-bold truncate">{s.title}</span>
                 </div>
-                <p className="text-[10px] text-slate-400 truncate pl-6">{s.desc}</p>
+                <p className="text-[10px] text-slate-500 truncate pl-6">{s.desc}</p>
               </button>
             );
           })}
@@ -484,21 +484,21 @@ Systém je připraven k okamžitému provozu.
 
       {/* STEP 1: Website Import & Validation */}
       {currentStep === 1 && (
-        <div className="bg-slate-900 border border-slate-800 rounded-3xl p-8 space-y-6 shadow-xl">
+        <div className="bg-white border border-slate-200 rounded-3xl p-8 space-y-6 shadow-xl">
           <div className="max-w-2xl">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 text-xs font-bold mb-3">
               <Globe className="w-3.5 h-3.5" />
               <span>Krok 1: Extrakce reálného webu firmy</span>
             </div>
-            <h2 className="text-xl font-bold text-white">Zadejte webovou stránku klienta</h2>
-            <p className="text-xs text-slate-400 mt-1">
+            <h2 className="text-xl font-bold text-slate-900">Zadejte webovou stránku klienta</h2>
+            <p className="text-xs text-slate-500 mt-1">
               Systém automaticky stáhne HTML, extrahuje originální logo, firemní barvy, služby, telefon a e-mail.
             </p>
           </div>
 
-          <div className="p-6 bg-slate-950 rounded-2xl border border-slate-800/80 space-y-4">
+          <div className="p-6 bg-slate-50 rounded-2xl border border-slate-200/80 space-y-4">
             <div>
-              <label className="text-xs font-bold text-slate-300 block mb-2">Webová adresa (URL)</label>
+              <label className="text-xs font-bold text-slate-700 block mb-2">Webová adresa (URL)</label>
               <div className="flex flex-col sm:flex-row gap-3">
                 <div className="relative flex-1">
                   <Globe className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500" />
@@ -512,7 +512,7 @@ Systém je připraven k okamžitému provozu.
                         handleRealWebsiteImport();
                       }
                     }}
-                    className="w-full pl-10 pr-4 py-3 bg-slate-900 border border-slate-800 rounded-xl text-sm text-white placeholder-slate-500 focus:outline-none focus:border-amber-500"
+                    className="w-full pl-10 pr-4 py-3 bg-white border border-slate-200 rounded-xl text-sm text-slate-900 placeholder-slate-500 focus:outline-none focus:border-amber-500"
                   />
                 </div>
                 <button
@@ -550,7 +550,7 @@ Systém je připraven k okamžitému provozu.
                       setWebsiteUrl(demo);
                       handleRealWebsiteImport(demo);
                     }}
-                    className="px-2.5 py-1 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-800 text-[11px] text-slate-400 hover:text-white transition-colors"
+                    className="px-2.5 py-1 rounded-lg bg-white hover:bg-slate-800 border border-slate-200 text-[11px] text-slate-500 hover:text-slate-900 transition-colors"
                   >
                     {demo}
                   </button>
@@ -559,10 +559,10 @@ Systém je připraven k okamžitému provozu.
             </div>
           </div>
 
-          <div className="flex items-center justify-between pt-4 border-t border-slate-800">
+          <div className="flex items-center justify-between pt-4 border-t border-slate-200">
             <button
               onClick={() => setCurrentStep(2)}
-              className="text-xs text-slate-400 hover:text-white underline"
+              className="text-xs text-slate-500 hover:text-slate-900 underline"
             >
               Přeskočit import a vyplnit údaje ručně
             </button>
@@ -581,14 +581,14 @@ Systém je připraven k okamžitému provozu.
 
       {/* STEP 2: Company Identity */}
       {currentStep === 2 && (
-        <div className="bg-slate-900 border border-slate-800 rounded-3xl p-8 space-y-6 shadow-xl">
+        <div className="bg-white border border-slate-200 rounded-3xl p-8 space-y-6 shadow-xl">
           <div>
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/20 text-xs font-bold mb-3">
               <Building className="w-3.5 h-3.5" />
               <span>Krok 2: Firemní identita a kontakty</span>
             </div>
-            <h2 className="text-xl font-bold text-white">Základní údaje společnosti</h2>
-            <p className="text-xs text-slate-400 mt-1">
+            <h2 className="text-xl font-bold text-slate-900">Základní údaje společnosti</h2>
+            <p className="text-xs text-slate-500 mt-1">
               Zkontrolujte a upravte extrahované údaje, které se propíší do klientského CRM i veřejného formuláře.
             </p>
           </div>
@@ -602,40 +602,40 @@ Systém je připraven k okamžitému provozu.
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
             <div>
-              <label className="text-xs font-bold text-slate-300 block mb-1">Název firmy *</label>
+              <label className="text-xs font-bold text-slate-700 block mb-1">Název firmy *</label>
               <input
                 type="text"
                 placeholder="např. Pergoly & Terasy Praha s.r.o."
                 value={companyName}
                 onChange={(e) => setCompanyName(e.target.value)}
-                className="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:border-amber-500"
+                className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 placeholder-slate-500 focus:outline-none focus:border-amber-500"
               />
             </div>
 
             <div>
-              <label className="text-xs font-bold text-slate-300 block mb-1">Webová stránka</label>
+              <label className="text-xs font-bold text-slate-700 block mb-1">Webová stránka</label>
               <input
                 type="text"
                 placeholder="https://..."
                 value={websiteUrl}
                 onChange={(e) => setWebsiteUrl(e.target.value)}
-                className="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:border-amber-500"
+                className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 placeholder-slate-500 focus:outline-none focus:border-amber-500"
               />
             </div>
 
             <div>
-              <label className="text-xs font-bold text-slate-300 block mb-1">Telefon pro poptávky *</label>
+              <label className="text-xs font-bold text-slate-700 block mb-1">Telefon pro poptávky *</label>
               <input
                 type="text"
                 placeholder="+420 774 889 100"
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
-                className="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:border-amber-500"
+                className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 placeholder-slate-500 focus:outline-none focus:border-amber-500"
               />
             </div>
 
             <div>
-              <label className="text-xs font-bold text-slate-300 block mb-1">Oficiální e-mail *</label>
+              <label className="text-xs font-bold text-slate-700 block mb-1">Oficiální e-mail *</label>
               <input
                 type="email"
                 placeholder="info@firma.cz"
@@ -644,39 +644,39 @@ Systém je připraven k okamžitému provozu.
                   setEmailAddress(e.target.value);
                   if (!ownerEmail) setOwnerEmail(e.target.value);
                 }}
-                className="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:border-amber-500"
+                className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 placeholder-slate-500 focus:outline-none focus:border-amber-500"
               />
             </div>
 
             <div>
-              <label className="text-xs font-bold text-slate-300 block mb-1">Sídlo / Ulice a č.p.</label>
+              <label className="text-xs font-bold text-slate-700 block mb-1">Sídlo / Ulice a č.p.</label>
               <input
                 type="text"
                 placeholder="Průmyslová 1420"
                 value={address}
                 onChange={(e) => setAddress(e.target.value)}
-                className="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:border-amber-500"
+                className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 placeholder-slate-500 focus:outline-none focus:border-amber-500"
               />
             </div>
 
             <div>
-              <label className="text-xs font-bold text-slate-300 block mb-1">Město / Region působnosti</label>
+              <label className="text-xs font-bold text-slate-700 block mb-1">Město / Region působnosti</label>
               <input
                 type="text"
                 placeholder="Praha a Středočeský kraj"
                 value={city}
                 onChange={(e) => setCity(e.target.value)}
-                className="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:border-amber-500"
+                className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 placeholder-slate-500 focus:outline-none focus:border-amber-500"
               />
             </div>
           </div>
 
           {/* Logo & Colors */}
-          <div className="pt-4 border-t border-slate-800 grid grid-cols-1 md:grid-cols-2 gap-5">
+          <div className="pt-4 border-t border-slate-200 grid grid-cols-1 md:grid-cols-2 gap-5">
             <div>
-              <label className="text-xs font-bold text-slate-300 block mb-2">Firemní logo</label>
+              <label className="text-xs font-bold text-slate-700 block mb-2">Firemní logo</label>
               <div className="flex items-center gap-4">
-                <div className="w-16 h-16 rounded-2xl bg-slate-950 border border-slate-800 flex items-center justify-center overflow-hidden p-2">
+                <div className="w-16 h-16 rounded-2xl bg-slate-50 border border-slate-200 flex items-center justify-center overflow-hidden p-2">
                   {logoPreview ? (
                     <img src={logoPreview} alt="Logo" className="w-full h-full object-contain" />
                   ) : (
@@ -684,7 +684,7 @@ Systém je připraven k okamžitému provozu.
                   )}
                 </div>
                 <div className="space-y-1.5">
-                  <label className="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-bold text-white cursor-pointer inline-flex items-center gap-1.5 transition-colors">
+                  <label className="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-bold text-slate-900 cursor-pointer inline-flex items-center gap-1.5 transition-colors">
                     <Upload className="w-3.5 h-3.5" />
                     <span>Nahrát vlastní logo</span>
                     <input type="file" accept="image/*" onChange={handleFileUpload} className="hidden" />
@@ -695,7 +695,7 @@ Systém je připraven k okamžitému provozu.
             </div>
 
             <div>
-              <label className="text-xs font-bold text-slate-300 block mb-2">Barva značky (Primary Color)</label>
+              <label className="text-xs font-bold text-slate-700 block mb-2">Barva značky (Primary Color)</label>
               <div className="flex items-center gap-3">
                 <input
                   type="color"
@@ -707,7 +707,7 @@ Systém je připraven k okamžitému provozu.
                   type="text"
                   value={primaryColor}
                   onChange={(e) => setPrimaryColor(e.target.value)}
-                  className="w-32 px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs font-mono text-white"
+                  className="w-32 px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono text-slate-900"
                 />
                 <div className="flex gap-1.5">
                   {['#2563eb', '#059669', '#d97706', '#dc2626', '#7c3aed'].map((c) => (
@@ -715,7 +715,7 @@ Systém je připraven k okamžitému provozu.
                       key={c}
                       type="button"
                       onClick={() => setPrimaryColor(c)}
-                      className="w-6 h-6 rounded-full border border-slate-700 transition-transform hover:scale-110"
+                      className="w-6 h-6 rounded-full border border-slate-300 transition-transform hover:scale-110"
                       style={{ backgroundColor: c }}
                     />
                   ))}
@@ -724,10 +724,10 @@ Systém je připraven k okamžitému provozu.
             </div>
           </div>
 
-          <div className="flex items-center justify-between pt-4 border-t border-slate-800">
+          <div className="flex items-center justify-between pt-4 border-t border-slate-200">
             <button
               onClick={() => setCurrentStep(1)}
-              className="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold transition-all flex items-center gap-1.5"
+              className="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-700 text-xs font-bold transition-all flex items-center gap-1.5"
             >
               <ArrowLeft className="w-4 h-4" />
               <span>Zpět</span>
@@ -747,14 +747,14 @@ Systém je připraven k okamžitému provozu.
 
       {/* STEP 3: Services & Specializations */}
       {currentStep === 3 && (
-        <div className="bg-slate-900 border border-slate-800 rounded-3xl p-8 space-y-6 shadow-xl">
+        <div className="bg-white border border-slate-200 rounded-3xl p-8 space-y-6 shadow-xl">
           <div>
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-xs font-bold mb-3">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-green-500/10 text-green-400 border border-green-500/20 text-xs font-bold mb-3">
               <Wrench className="w-3.5 h-3.5" />
               <span>Krok 3: Stavební řemesla a specializace</span>
             </div>
-            <h2 className="text-xl font-bold text-white">Portfolio služeb pro poptávkový formulář</h2>
-            <p className="text-xs text-slate-400 mt-1">
+            <h2 className="text-xl font-bold text-slate-900">Portfolio služeb pro poptávkový formulář</h2>
+            <p className="text-xs text-slate-500 mt-1">
               Vyberte řemesla, která firma realizuje. Tyto položky se automaticky integrují do 3D poptávkového widgetu.
             </p>
           </div>
@@ -769,28 +769,28 @@ Systém je připraven k okamžitému provozu.
                   className={`p-4 rounded-2xl border cursor-pointer transition-all ${
                     isSelected
                       ? 'bg-amber-500/15 border-amber-500/50 shadow-md'
-                      : 'bg-slate-950 border-slate-800 hover:border-slate-700'
+                      : 'bg-slate-50 border-slate-200 hover:border-slate-300'
                   }`}
                 >
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2.5">
                       <span className="text-xl">{srv.icon}</span>
-                      <span className="text-xs font-bold text-white">{srv.name}</span>
+                      <span className="text-xs font-bold text-slate-900">{srv.name}</span>
                     </div>
                     <div className={`w-5 h-5 rounded-full flex items-center justify-center ${
-                      isSelected ? 'bg-amber-500 text-slate-950 font-bold' : 'border border-slate-700'
+                      isSelected ? 'bg-amber-500 text-slate-950 font-bold' : 'border border-slate-300'
                     }`}>
                       {isSelected && <Check className="w-3 h-3" />}
                     </div>
                   </div>
-                  <p className="text-[11px] text-slate-400 mt-2">{srv.desc}</p>
+                  <p className="text-[11px] text-slate-500 mt-2">{srv.desc}</p>
                 </div>
               );
             })}
           </div>
 
           {/* Add custom service */}
-          <div className="p-4 bg-slate-950 rounded-2xl border border-slate-800/80 flex items-center gap-3">
+          <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200/80 flex items-center gap-3">
             <input
               type="text"
               placeholder="Přidat další vlastní řemeslo (např. Bazény na klíč)..."
@@ -802,22 +802,22 @@ Systém je připraven k okamžitému provozu.
                   handleAddCustomService();
                 }
               }}
-              className="flex-1 px-3.5 py-2 bg-slate-900 border border-slate-800 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:border-amber-500"
+              className="flex-1 px-3.5 py-2 bg-white border border-slate-200 rounded-xl text-xs text-slate-900 placeholder-slate-500 focus:outline-none focus:border-amber-500"
             />
             <button
               type="button"
               onClick={handleAddCustomService}
-              className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold transition-colors flex items-center gap-1.5"
+              className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-900 text-xs font-bold transition-colors flex items-center gap-1.5"
             >
               <Plus className="w-4 h-4" />
               <span>Přidat</span>
             </button>
           </div>
 
-          <div className="flex items-center justify-between pt-4 border-t border-slate-800">
+          <div className="flex items-center justify-between pt-4 border-t border-slate-200">
             <button
               onClick={() => setCurrentStep(2)}
-              className="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold transition-all flex items-center gap-1.5"
+              className="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-700 text-xs font-bold transition-all flex items-center gap-1.5"
             >
               <ArrowLeft className="w-4 h-4" />
               <span>Zpět</span>
@@ -837,65 +837,65 @@ Systém je připraven k okamžitému provozu.
 
       {/* STEP 4: Owner Account */}
       {currentStep === 4 && (
-        <div className="bg-slate-900 border border-slate-800 rounded-3xl p-8 space-y-6 shadow-xl">
+        <div className="bg-white border border-slate-200 rounded-3xl p-8 space-y-6 shadow-xl">
           <div>
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/10 text-blue-400 border border-blue-500/20 text-xs font-bold mb-3">
               <ShieldCheck className="w-3.5 h-3.5" />
               <span>Krok 4: Administrátorský účet majitele</span>
             </div>
-            <h2 className="text-xl font-bold text-white">Přihlašovací údaje pro vedení firmy</h2>
-            <p className="text-xs text-slate-400 mt-1">
+            <h2 className="text-xl font-bold text-slate-900">Přihlašovací údaje pro vedení firmy</h2>
+            <p className="text-xs text-slate-500 mt-1">
               Vygenerovaný účet s rolí Owner bude mít plný přístup do CRM dashboardu a nastavení.
             </p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
             <div>
-              <label className="text-xs font-bold text-slate-300 block mb-1">Jméno a příjmení jednatele / majitele</label>
+              <label className="text-xs font-bold text-slate-700 block mb-1">Jméno a příjmení jednatele / majitele</label>
               <input
                 type="text"
                 placeholder="Ing. Jan Novák"
                 value={ownerName}
                 onChange={(e) => setOwnerName(e.target.value)}
-                className="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:border-amber-500"
+                className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 placeholder-slate-500 focus:outline-none focus:border-amber-500"
               />
             </div>
 
             <div>
-              <label className="text-xs font-bold text-slate-300 block mb-1">Telefon majitele</label>
+              <label className="text-xs font-bold text-slate-700 block mb-1">Telefon majitele</label>
               <input
                 type="text"
                 placeholder="+420 777 123 456"
                 value={ownerPhone}
                 onChange={(e) => setOwnerPhone(e.target.value)}
-                className="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:border-amber-500"
+                className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 placeholder-slate-500 focus:outline-none focus:border-amber-500"
               />
             </div>
 
             <div>
-              <label className="text-xs font-bold text-slate-300 block mb-1">Přihlašovací e-mail majitele (Login) *</label>
+              <label className="text-xs font-bold text-slate-700 block mb-1">Přihlašovací e-mail majitele (Login) *</label>
               <input
                 type="email"
                 placeholder="novak@firma.cz"
                 value={ownerEmail}
                 onChange={(e) => setOwnerEmail(e.target.value)}
-                className="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:border-amber-500"
+                className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 placeholder-slate-500 focus:outline-none focus:border-amber-500"
               />
             </div>
 
             <div>
-              <label className="text-xs font-bold text-slate-300 block mb-1">Generované heslo *</label>
+              <label className="text-xs font-bold text-slate-700 block mb-1">Generované heslo *</label>
               <div className="relative">
                 <input
                   type="text"
                   value={ownerPassword}
                   onChange={(e) => setOwnerPassword(e.target.value)}
-                  className="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-xs font-mono text-amber-300 focus:outline-none focus:border-amber-500"
+                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono text-amber-300 focus:outline-none focus:border-amber-500"
                 />
                 <button
                   type="button"
                   onClick={() => setOwnerPassword(`BuildFlow_${Math.floor(100000 + Math.random() * 900000)}!`)}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-white text-xs"
+                  className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-slate-500 hover:text-slate-900 text-xs"
                 >
                   <RefreshCw className="w-3.5 h-3.5" />
                 </button>
@@ -903,10 +903,10 @@ Systém je připraven k okamžitému provozu.
             </div>
           </div>
 
-          <div className="flex items-center justify-between pt-4 border-t border-slate-800">
+          <div className="flex items-center justify-between pt-4 border-t border-slate-200">
             <button
               onClick={() => setCurrentStep(3)}
-              className="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold transition-all flex items-center gap-1.5"
+              className="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-700 text-xs font-bold transition-all flex items-center gap-1.5"
             >
               <ArrowLeft className="w-4 h-4" />
               <span>Zpět</span>
@@ -926,26 +926,26 @@ Systém je připraven k okamžitému provozu.
 
       {/* STEP 5: Employees & Craftsmen */}
       {currentStep === 5 && (
-        <div className="bg-slate-900 border border-slate-800 rounded-3xl p-8 space-y-6 shadow-xl">
+        <div className="bg-white border border-slate-200 rounded-3xl p-8 space-y-6 shadow-xl">
           <div>
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-purple-500/10 text-purple-400 border border-purple-500/20 text-xs font-bold mb-3">
               <Users className="w-3.5 h-3.5" />
               <span>Krok 5: Tým řemeslníků a mistrů</span>
             </div>
-            <h2 className="text-xl font-bold text-white">Stavební personál a kapacity</h2>
-            <p className="text-xs text-slate-400 mt-1">
+            <h2 className="text-xl font-bold text-slate-900">Stavební personál a kapacity</h2>
+            <p className="text-xs text-slate-500 mt-1">
               Definujte mistry a montéry, kterým dispečer bude přiřazovat poptávky a stavby.
             </p>
           </div>
 
           <div className="space-y-3">
             {employeesList.map((emp) => (
-              <div key={emp.id} className="p-4 rounded-2xl bg-slate-950 border border-slate-800 flex items-center justify-between gap-4">
+              <div key={emp.id} className="p-4 rounded-2xl bg-slate-50 border border-slate-200 flex items-center justify-between gap-4">
                 <div className="flex items-center gap-3">
-                  <img src={emp.avatar} alt={emp.name} className="w-10 h-10 rounded-full object-cover border border-slate-700" />
+                  <img src={emp.avatar} alt={emp.name} className="w-10 h-10 rounded-full object-cover border border-slate-300" />
                   <div>
-                    <h4 className="text-xs font-bold text-white">{emp.name}</h4>
-                    <p className="text-[11px] text-slate-400">{emp.role} • {emp.specialization}</p>
+                    <h4 className="text-xs font-bold text-slate-900">{emp.name}</h4>
+                    <p className="text-[11px] text-slate-500">{emp.role} • {emp.specialization}</p>
                     <p className="text-[10px] text-slate-500 font-mono">{emp.phone} • {emp.email}</p>
                   </div>
                 </div>
@@ -957,7 +957,7 @@ Systém je připraven k okamžitému provozu.
                   </div>
                   <button
                     onClick={() => handleRemoveEmployee(emp.id)}
-                    className="p-2 rounded-xl bg-slate-900 hover:bg-rose-500/20 text-slate-500 hover:text-rose-400 border border-slate-800 transition-colors"
+                    className="p-2 rounded-xl bg-white hover:bg-rose-500/20 text-slate-500 hover:text-rose-400 border border-slate-200 transition-colors"
                   >
                     <Trash2 className="w-4 h-4" />
                   </button>
@@ -967,36 +967,36 @@ Systém je připraven k okamžitému provozu.
           </div>
 
           {/* Add Employee Form */}
-          <form onSubmit={handleAddEmployee} className="p-4 bg-slate-950 rounded-2xl border border-slate-800/80 space-y-3">
-            <h4 className="text-xs font-bold text-slate-300">Přidat nového člena týmu</h4>
+          <form onSubmit={handleAddEmployee} className="p-4 bg-slate-50 rounded-2xl border border-slate-200/80 space-y-3">
+            <h4 className="text-xs font-bold text-slate-700">Přidat nového člena týmu</h4>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
               <input
                 type="text"
                 placeholder="Jméno a příjmení"
                 value={newEmpName}
                 onChange={(e) => setNewEmpName(e.target.value)}
-                className="px-3 py-2 bg-slate-900 border border-slate-800 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-amber-500"
+                className="px-3 py-2 bg-white border border-slate-200 rounded-xl text-slate-900 placeholder-slate-500 focus:outline-none focus:border-amber-500"
               />
               <input
                 type="text"
                 placeholder="Pozice (např. Šéfmontér)"
                 value={newEmpRole}
                 onChange={(e) => setNewEmpRole(e.target.value)}
-                className="px-3 py-2 bg-slate-900 border border-slate-800 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-amber-500"
+                className="px-3 py-2 bg-white border border-slate-200 rounded-xl text-slate-900 placeholder-slate-500 focus:outline-none focus:border-amber-500"
               />
               <input
                 type="text"
                 placeholder="Telefon"
                 value={newEmpPhone}
                 onChange={(e) => setNewEmpPhone(e.target.value)}
-                className="px-3 py-2 bg-slate-900 border border-slate-800 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-amber-500"
+                className="px-3 py-2 bg-white border border-slate-200 rounded-xl text-slate-900 placeholder-slate-500 focus:outline-none focus:border-amber-500"
               />
             </div>
             <div className="flex justify-end">
               <button
                 type="submit"
                 disabled={!newEmpName.trim()}
-                className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 disabled:opacity-50 text-white text-xs font-bold transition-colors flex items-center gap-1.5"
+                className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 disabled:opacity-50 text-slate-900 text-xs font-bold transition-colors flex items-center gap-1.5"
               >
                 <Plus className="w-4 h-4" />
                 <span>Přidat do týmu</span>
@@ -1004,10 +1004,10 @@ Systém je připraven k okamžitému provozu.
             </div>
           </form>
 
-          <div className="flex items-center justify-between pt-4 border-t border-slate-800">
+          <div className="flex items-center justify-between pt-4 border-t border-slate-200">
             <button
               onClick={() => setCurrentStep(4)}
-              className="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold transition-all flex items-center gap-1.5"
+              className="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-700 text-xs font-bold transition-all flex items-center gap-1.5"
             >
               <ArrowLeft className="w-4 h-4" />
               <span>Zpět</span>
@@ -1026,20 +1026,20 @@ Systém je připraven k okamžitému provozu.
 
       {/* STEP 6: Live Preview & Confirmation */}
       {currentStep === 6 && (
-        <div className="bg-slate-900 border border-slate-800 rounded-3xl p-8 space-y-6 shadow-xl">
+        <div className="bg-white border border-slate-200 rounded-3xl p-8 space-y-6 shadow-xl">
           <div>
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 text-xs font-bold mb-3">
               <Eye className="w-3.5 h-3.5" />
               <span>Krok 6: Živý náhled před nasazením</span>
             </div>
-            <h2 className="text-xl font-bold text-white">White-Label vizualizace pro {companyName || 'Klienta'}</h2>
-            <p className="text-xs text-slate-400 mt-1">
+            <h2 className="text-xl font-bold text-slate-900">White-Label vizualizace pro {companyName || 'Klienta'}</h2>
+            <p className="text-xs text-slate-500 mt-1">
               Podívejte se, jak bude klientský systém, portál a widget vypadat ihned po dokončení nasazení.
             </p>
           </div>
 
           {/* Preview Tabs */}
-          <div className="flex flex-wrap gap-2 border-b border-slate-800 pb-3">
+          <div className="flex flex-wrap gap-2 border-b border-slate-200 pb-3">
             {[
               { id: 'dashboard', label: 'CRM Dashboard', icon: Layout },
               { id: 'widget', label: 'Poptávkový Widget', icon: Code2 },
@@ -1054,7 +1054,7 @@ Systém je připraven k okamžitému provozu.
                   className={`px-3.5 py-2 rounded-xl text-xs font-bold flex items-center gap-2 transition-all ${
                     previewTab === t.id
                       ? 'bg-amber-500 text-slate-950 shadow-md'
-                      : 'bg-slate-950 text-slate-400 hover:text-white border border-slate-800'
+                      : 'bg-slate-50 text-slate-500 hover:text-slate-900 border border-slate-200'
                   }`}
                 >
                   <Icon className="w-3.5 h-3.5" />
@@ -1065,32 +1065,32 @@ Systém je připraven k okamžitému provozu.
           </div>
 
           {/* Preview Container */}
-          <div className="p-6 bg-slate-950 rounded-2xl border border-slate-800/80 min-h-[320px] flex flex-col justify-center">
+          <div className="p-6 bg-slate-50 rounded-2xl border border-slate-200/80 min-h-[320px] flex flex-col justify-center">
             {previewTab === 'dashboard' && (
               <div className="space-y-4">
-                <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+                <div className="flex items-center justify-between pb-3 border-b border-slate-200">
                   <div className="flex items-center gap-3">
                     <img src={logoPreview} alt="Logo" className="w-8 h-8 rounded-lg object-cover" />
                     <div>
-                      <h4 className="text-xs font-bold text-white">{companyName} OS</h4>
+                      <h4 className="text-xs font-bold text-slate-900">{companyName} OS</h4>
                       <p className="text-[10px] text-slate-500">StavbaCore Cloud CRM</p>
                     </div>
                   </div>
-                  <span className="px-2.5 py-1 rounded-full text-[10px] font-bold text-white" style={{ backgroundColor: primaryColor }}>
+                  <span className="px-2.5 py-1 rounded-full text-[10px] font-bold text-slate-900" style={{ backgroundColor: primaryColor }}>
                     Aktivní licence
                   </span>
                 </div>
 
                 <div className="grid grid-cols-3 gap-3">
-                  <div className="p-3 bg-slate-900 rounded-xl border border-slate-800">
+                  <div className="p-3 bg-white rounded-xl border border-slate-200">
                     <span className="text-[10px] text-slate-500 block">Nové poptávky</span>
                     <span className="text-lg font-black text-amber-400">3</span>
                   </div>
-                  <div className="p-3 bg-slate-900 rounded-xl border border-slate-800">
+                  <div className="p-3 bg-white rounded-xl border border-slate-200">
                     <span className="text-[10px] text-slate-500 block">Rozpracované stavby</span>
-                    <span className="text-lg font-black text-emerald-400">2</span>
+                    <span className="text-lg font-black text-green-400">2</span>
                   </div>
-                  <div className="p-3 bg-slate-900 rounded-xl border border-slate-800">
+                  <div className="p-3 bg-white rounded-xl border border-slate-200">
                     <span className="text-[10px] text-slate-500 block">Kapacita týmu</span>
                     <span className="text-lg font-black text-blue-400">88 %</span>
                   </div>
@@ -1099,20 +1099,20 @@ Systém je připraven k okamžitému provozu.
             )}
 
             {previewTab === 'widget' && (
-              <div className="max-w-md mx-auto p-5 rounded-2xl bg-slate-900 border border-slate-800 shadow-2xl space-y-3">
+              <div className="max-w-md mx-auto p-5 rounded-2xl bg-white border border-slate-200 shadow-2xl space-y-3">
                 <div className="flex items-center gap-2">
                   <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: primaryColor }} />
-                  <h4 className="text-xs font-bold text-white">Nezávazná poptávka realizace</h4>
+                  <h4 className="text-xs font-bold text-slate-900">Nezávazná poptávka realizace</h4>
                 </div>
-                <p className="text-[11px] text-slate-400">Vyberte požadované stavební práce pro {city || 'váš region'}:</p>
+                <p className="text-[11px] text-slate-500">Vyberte požadované stavební práce pro {city || 'váš region'}:</p>
                 <div className="flex flex-wrap gap-1.5">
                   {selectedServices.slice(0, 4).map((s) => (
-                    <span key={s} className="px-2 py-1 rounded-lg text-[10px] font-bold bg-slate-800 text-slate-300">
+                    <span key={s} className="px-2 py-1 rounded-lg text-[10px] font-bold bg-slate-800 text-slate-700">
                       {s}
                     </span>
                   ))}
                 </div>
-                <button className="w-full py-2 rounded-xl text-xs font-black text-white shadow-md mt-2" style={{ backgroundColor: primaryColor }}>
+                <button className="w-full py-2 rounded-xl text-xs font-black text-slate-900 shadow-md mt-2" style={{ backgroundColor: primaryColor }}>
                   Spočítat orientační rozpočet
                 </button>
               </div>
@@ -1120,10 +1120,10 @@ Systém je připraven k okamžitému provozu.
 
             {previewTab === 'portal' && (
               <div className="space-y-3 text-center max-w-sm mx-auto">
-                <img src={logoPreview} alt="Logo" className="w-12 h-12 mx-auto rounded-xl object-contain bg-slate-900 p-1 border border-slate-800" />
-                <h4 className="text-sm font-bold text-white">Klientský portál zakázky</h4>
-                <p className="text-xs text-slate-400">Přístup pro investora ke stavebnímu deníku, fakturám a harmonogramu.</p>
-                <div className="p-3 rounded-xl bg-slate-900 border border-slate-800 text-left text-xs font-mono text-slate-300">
+                <img src={logoPreview} alt="Logo" className="w-12 h-12 mx-auto rounded-xl object-contain bg-white p-1 border border-slate-200" />
+                <h4 className="text-sm font-bold text-slate-900">Klientský portál zakázky</h4>
+                <p className="text-xs text-slate-500">Přístup pro investora ke stavebnímu deníku, fakturám a harmonogramu.</p>
+                <div className="p-3 rounded-xl bg-white border border-slate-200 text-left text-xs font-mono text-slate-700">
                   <p>Stav: 🟢 Stavba zahájena</p>
                   <p>Mistr: {employeesList[0]?.name || 'Vedoucí realizací'}</p>
                 </div>
@@ -1131,24 +1131,24 @@ Systém je připraven k okamžitému provozu.
             )}
 
             {previewTab === 'mobile' && (
-              <div className="max-w-xs mx-auto p-4 bg-slate-900 rounded-3xl border border-slate-800 space-y-3 text-xs">
-                <div className="flex items-center justify-between text-[10px] text-slate-500 pb-2 border-b border-slate-800">
+              <div className="max-w-xs mx-auto p-4 bg-white rounded-3xl border border-slate-200 space-y-3 text-xs">
+                <div className="flex items-center justify-between text-[10px] text-slate-500 pb-2 border-b border-slate-200">
                   <span>📱 Mobilní aplikace mistra</span>
                   <span>9:41</span>
                 </div>
-                <p className="font-bold text-white">Dnešní výjezdy a montáže</p>
-                <div className="p-2.5 rounded-xl bg-slate-950 border border-slate-800 space-y-1">
+                <p className="font-bold text-slate-900">Dnešní výjezdy a montáže</p>
+                <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-200 space-y-1">
                   <p className="font-bold text-amber-400 text-[11px]">8:00 - Zaměření pergoly</p>
-                  <p className="text-[10px] text-slate-400">Ing. Tomáš Kučera ({city || 'Praha'})</p>
+                  <p className="text-[10px] text-slate-500">Ing. Tomáš Kučera ({city || 'Praha'})</p>
                 </div>
               </div>
             )}
           </div>
 
-          <div className="flex items-center justify-between pt-4 border-t border-slate-800">
+          <div className="flex items-center justify-between pt-4 border-t border-slate-200">
             <button
               onClick={() => setCurrentStep(5)}
-              className="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold transition-all flex items-center gap-1.5"
+              className="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-700 text-xs font-bold transition-all flex items-center gap-1.5"
             >
               <ArrowLeft className="w-4 h-4" />
               <span>Zpět</span>
@@ -1168,13 +1168,13 @@ Systém je připraven k okamžitému provozu.
 
       {/* STEP 7: Nasazení dokončeno (Delivered Credentials & Live Links) */}
       {currentStep === 7 && (
-        <div className="bg-slate-900 border border-slate-800 rounded-3xl p-8 space-y-6 shadow-2xl">
+        <div className="bg-white border border-slate-200 rounded-3xl p-8 space-y-6 shadow-2xl">
           <div className="text-center max-w-xl mx-auto space-y-2">
-            <div className="w-16 h-16 rounded-3xl bg-emerald-500/20 border border-emerald-500/40 text-emerald-400 flex items-center justify-center mx-auto shadow-xl">
+            <div className="w-16 h-16 rounded-3xl bg-green-500/20 border border-green-500/40 text-green-400 flex items-center justify-center mx-auto shadow-xl">
               <CheckCircle2 className="w-8 h-8" />
             </div>
-            <h2 className="text-2xl font-black text-white">Klientské CRM bylo úspěšně vytvořeno!</h2>
-            <p className="text-xs text-slate-400">
+            <h2 className="text-2xl font-black text-slate-900">Klientské CRM bylo úspěšně vytvořeno!</h2>
+            <p className="text-xs text-slate-500">
               Firma <strong>{companyName}</strong> byla plně nakonfigurována a zapsána do databáze.
             </p>
           </div>
@@ -1184,30 +1184,30 @@ Systém je připraven k okamžitému provozu.
               {/* Credentials Grid */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {/* Owner Login Card */}
-                <div className="p-5 bg-slate-950 rounded-2xl border border-slate-800 space-y-3">
+                <div className="p-5 bg-slate-50 rounded-2xl border border-slate-200 space-y-3">
                   <div className="flex items-center gap-2 text-xs font-bold text-amber-400">
                     <Key className="w-4 h-4" />
                     <span>Přihlašovací údaje majitele</span>
                   </div>
                   <div className="space-y-2 text-xs font-mono">
-                    <div className="p-2.5 rounded-xl bg-slate-900 border border-slate-800/80 flex items-center justify-between">
-                      <span className="text-slate-400">E-mail:</span>
-                      <span className="text-white font-bold">{deploySuccessData.ownerEmail}</span>
+                    <div className="p-2.5 rounded-xl bg-white border border-slate-200/80 flex items-center justify-between">
+                      <span className="text-slate-500">E-mail:</span>
+                      <span className="text-slate-900 font-bold">{deploySuccessData.ownerEmail}</span>
                     </div>
-                    <div className="p-2.5 rounded-xl bg-slate-900 border border-slate-800/80 flex items-center justify-between">
-                      <span className="text-slate-400">Heslo:</span>
+                    <div className="p-2.5 rounded-xl bg-white border border-slate-200/80 flex items-center justify-between">
+                      <span className="text-slate-500">Heslo:</span>
                       <span className="text-amber-300 font-bold">{deploySuccessData.ownerPassword || ownerPassword}</span>
                     </div>
                   </div>
                 </div>
 
                 {/* Direct CRM Access Card */}
-                <div className="p-5 bg-slate-950 rounded-2xl border border-slate-800 space-y-3">
+                <div className="p-5 bg-slate-50 rounded-2xl border border-slate-200 space-y-3">
                   <div className="flex items-center gap-2 text-xs font-bold text-cyan-400">
                     <Layout className="w-4 h-4" />
                     <span>Přímý vstup do CRM administrace</span>
                   </div>
-                  <p className="text-[11px] text-slate-400">
+                  <p className="text-[11px] text-slate-500">
                     Okamžité otevření CRM nového klienta v režimu plného oprávnění:
                   </p>
                   <button
@@ -1224,31 +1224,31 @@ Systém je připraven k okamžitému provozu.
               </div>
 
               {/* Public Links & Embed Widget */}
-              <div className="p-5 bg-slate-950 rounded-2xl border border-slate-800 space-y-3">
+              <div className="p-5 bg-slate-50 rounded-2xl border border-slate-200 space-y-3">
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2 text-xs font-bold text-white">
-                    <Code2 className="w-4 h-4 text-emerald-400" />
+                  <div className="flex items-center gap-2 text-xs font-bold text-slate-900">
+                    <Code2 className="w-4 h-4 text-green-400" />
                     <span>Integrační kód poptávkového widgetu pro web klienta</span>
                   </div>
                   <button
                     onClick={() => copyToClipboard(deploySuccessData.widgetScript, 'widget')}
-                    className="px-3 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-[11px] text-slate-300 hover:text-white font-mono flex items-center gap-1.5 transition-colors"
+                    className="px-3 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-[11px] text-slate-700 hover:text-slate-900 font-mono flex items-center gap-1.5 transition-colors"
                   >
-                    {copiedUrl === 'widget' ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+                    {copiedUrl === 'widget' ? <Check className="w-3.5 h-3.5 text-green-400" /> : <Copy className="w-3.5 h-3.5" />}
                     <span>{copiedUrl === 'widget' ? 'Zkopírováno' : 'Kopírovat kód'}</span>
                   </button>
                 </div>
 
-                <pre className="p-3 bg-slate-900 rounded-xl border border-slate-800 text-[11px] font-mono text-emerald-400 overflow-x-auto whitespace-pre-wrap">
+                <pre className="p-3 bg-white rounded-xl border border-slate-200 text-[11px] font-mono text-green-400 overflow-x-auto whitespace-pre-wrap">
                   {deploySuccessData.widgetScript}
                 </pre>
               </div>
 
               {/* Action Buttons */}
-              <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-4 border-t border-slate-800">
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-4 border-t border-slate-200">
                 <button
                   onClick={downloadHandoverPackage}
-                  className="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold transition-colors flex items-center gap-2 w-full sm:w-auto justify-center"
+                  className="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-900 text-xs font-bold transition-colors flex items-center gap-2 w-full sm:w-auto justify-center"
                 >
                   <Download className="w-4 h-4" />
                   <span>Stáhnout předávací protokol (.txt)</span>
@@ -1260,7 +1260,7 @@ Systém je připraven k okamžitému provozu.
                       if (onClose) onClose();
                       window.location.href = '/admin/companies';
                     }}
-                    className="px-5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold transition-all w-full sm:w-auto text-center"
+                    className="px-5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-900 text-xs font-bold transition-all w-full sm:w-auto text-center"
                   >
                     Zobrazit v Super Adminu
                   </button>
@@ -1284,15 +1284,15 @@ Systém je připraven k okamžitému provozu.
       {/* Deploying Overlay Modal with 9-step progress */}
       {isDeploying && (
         <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-4">
-          <div className="bg-slate-900 border border-slate-800 rounded-3xl max-w-lg w-full p-8 space-y-6 shadow-2xl text-center">
+          <div className="bg-white border border-slate-200 rounded-3xl max-w-lg w-full p-8 space-y-6 shadow-2xl text-center">
             <div className="w-12 h-12 border-4 border-amber-500/20 border-t-amber-500 rounded-full animate-spin mx-auto" />
             
             <div className="space-y-1">
-              <h3 className="text-lg font-bold text-white">Nasazuji novou společnost</h3>
-              <p className="text-xs text-slate-400">Probíhá zápis do databáze a generování tenant infrastruktury...</p>
+              <h3 className="text-lg font-bold text-slate-900">Nasazuji novou společnost</h3>
+              <p className="text-xs text-slate-500">Probíhá zápis do databáze a generování tenant infrastruktury...</p>
             </div>
 
-            <div className="space-y-2 text-left bg-slate-950 p-4 rounded-2xl border border-slate-800 font-mono text-xs">
+            <div className="space-y-2 text-left bg-slate-50 p-4 rounded-2xl border border-slate-200 font-mono text-xs">
               {deploymentPhases.map((phase, idx) => {
                 const isPast = idx < deployStepIndex;
                 const isCurrent = idx === deployStepIndex;
@@ -1303,7 +1303,7 @@ Systém je připraven k okamžitému provozu.
                       isCurrent
                         ? 'text-amber-400 font-bold'
                         : isPast
-                        ? 'text-emerald-400'
+                        ? 'text-green-400'
                         : 'text-slate-600'
                     }`}
                   >

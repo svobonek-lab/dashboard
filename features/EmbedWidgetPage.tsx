@@ -104,7 +104,7 @@ export default function RootLayout({ children }) {
   };
 
   return (
-    <div className="space-y-8 pb-20 text-slate-100">
+    <div className="space-y-8 pb-20 text-slate-900">
       {/* Top Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
@@ -112,12 +112,12 @@ export default function RootLayout({ children }) {
             <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/20 text-amber-400 border border-amber-500/30 uppercase tracking-wider flex items-center gap-1">
               <Code2 className="w-3 h-3" /> Jednořádkový Embed modul
             </span>
-            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-950 text-emerald-400 border border-emerald-800">
+            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-green-950 text-green-400 border border-green-800">
               ⚡ Načtení: 0.8s
             </span>
           </div>
-          <h2 className="text-2xl font-black text-slate-100 tracking-tight mt-1">Webový poptávkový widget</h2>
-          <p className="text-xs text-slate-400 mt-0.5">
+          <h2 className="text-2xl font-black text-slate-900 tracking-tight mt-1">Webový poptávkový widget</h2>
+          <p className="text-xs text-slate-500 mt-0.5">
             Jakákoliv stavební firma může vložit jeden řádek JavaScriptu do svého webu. Widget automaticky přebírá barvy značky a otevírá inteligentní poptávkový formulář.
           </p>
         </div>
@@ -133,14 +133,14 @@ export default function RootLayout({ children }) {
 
       {/* Test Lead Notification Toast */}
       {testLeadNotification && (
-        <div className="bg-emerald-950 text-emerald-200 border border-emerald-800/80 p-4 rounded-2xl shadow-xl flex items-center justify-between gap-3 animate-in fade-in slide-in-from-top-2">
+        <div className="bg-green-950 text-green-200 border border-green-800/80 p-4 rounded-2xl shadow-xl flex items-center justify-between gap-3 animate-in fade-in slide-in-from-top-2">
           <div className="flex items-center gap-2.5">
-            <CheckCircle2 className="w-5 h-5 text-emerald-400" />
+            <CheckCircle2 className="w-5 h-5 text-green-400" />
             <span className="text-xs font-bold">{testLeadNotification}</span>
           </div>
           <button 
             onClick={() => onNavigateTab('leads')}
-            className="px-3 py-1 bg-slate-900 border border-emerald-700 text-emerald-300 text-xs font-bold rounded-lg hover:bg-slate-800 transition-colors"
+            className="px-3 py-1 bg-white border border-green-700 text-green-300 text-xs font-bold rounded-lg hover:bg-slate-800 transition-colors"
           >
             Zobrazit v Kanbanu
           </button>
@@ -152,9 +152,9 @@ export default function RootLayout({ children }) {
         {/* Left Column: Embed Script Generator & Customizer (5 cols) */}
         <div className="lg:col-span-5 space-y-6">
           {/* Customizer Settings Card */}
-          <div className="bg-slate-900 p-6 rounded-3xl border border-slate-800 shadow-md space-y-5">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-800">
-              <h3 className="text-sm font-bold text-slate-100 uppercase tracking-wider flex items-center gap-2">
+          <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-md space-y-5">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-200">
+              <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider flex items-center gap-2">
                 <Sliders className="w-4 h-4 text-amber-400" />
                 Nastavení a branding
               </h3>
@@ -163,25 +163,25 @@ export default function RootLayout({ children }) {
 
             <div className="space-y-4 text-xs">
               <div>
-                <label className="text-slate-300 font-bold block">Primární barva tlačítka a akcentů</label>
+                <label className="text-slate-700 font-bold block">Primární barva tlačítka a akcentů</label>
                 <div className="flex items-center gap-3 mt-1.5">
                   <input
                     type="color"
                     value={customPrimaryColor}
                     onChange={(e) => setCustomPrimaryColor(e.target.value)}
-                    className="w-9 h-9 rounded-xl border border-slate-700 cursor-pointer p-0.5 bg-slate-950"
+                    className="w-9 h-9 rounded-xl border border-slate-300 cursor-pointer p-0.5 bg-slate-50"
                   />
                   <input
                     type="text"
                     value={customPrimaryColor}
                     onChange={(e) => setCustomPrimaryColor(e.target.value)}
-                    className="flex-1 bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs font-mono font-bold text-amber-400 focus:outline-none focus:border-amber-500"
+                    className="flex-1 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-mono font-bold text-amber-400 focus:outline-none focus:border-amber-500"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="text-slate-300 font-bold block">Pozice plovoucího tlačítka</label>
+                <label className="text-slate-700 font-bold block">Pozice plovoucího tlačítka</label>
                 <div className="grid grid-cols-2 gap-2 mt-1.5">
                   <button
                     type="button"
@@ -189,7 +189,7 @@ export default function RootLayout({ children }) {
                     className={`p-2.5 rounded-xl border font-bold text-xs transition-all ${
                       widgetPosition === 'bottom-right' 
                         ? 'bg-amber-500/20 border-amber-500 text-amber-400' 
-                        : 'bg-slate-950 border-slate-800 text-slate-400 hover:bg-slate-800'
+                        : 'bg-slate-50 border-slate-200 text-slate-500 hover:bg-slate-800'
                     }`}
                   >
                     ↘ Vpravo dole
@@ -200,7 +200,7 @@ export default function RootLayout({ children }) {
                     className={`p-2.5 rounded-xl border font-bold text-xs transition-all ${
                       widgetPosition === 'bottom-left' 
                         ? 'bg-amber-500/20 border-amber-500 text-amber-400' 
-                        : 'bg-slate-950 border-slate-800 text-slate-400 hover:bg-slate-800'
+                        : 'bg-slate-50 border-slate-200 text-slate-500 hover:bg-slate-800'
                     }`}
                   >
                     ↙ Vlevo dole
@@ -209,23 +209,23 @@ export default function RootLayout({ children }) {
               </div>
 
               <div>
-                <label className="text-slate-300 font-bold block">Text plovoucího spouštěče</label>
+                <label className="text-slate-700 font-bold block">Text plovoucího spouštěče</label>
                 <input
                   type="text"
                   value={buttonText}
                   onChange={(e) => setButtonText(e.target.value)}
-                  className="w-full mt-1.5 bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs font-semibold text-slate-100 focus:outline-none focus:border-amber-500"
+                  className="w-full mt-1.5 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-semibold text-slate-900 focus:outline-none focus:border-amber-500"
                 />
               </div>
             </div>
           </div>
 
           {/* One-Line Embed Code Card */}
-          <div className="bg-slate-900 text-white p-6 rounded-3xl border border-slate-800 shadow-xl space-y-4">
+          <div className="bg-white text-slate-900 p-6 rounded-3xl border border-slate-200 shadow-xl space-y-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Code2 className="w-4 h-4 text-amber-400" />
-                <h3 className="text-sm font-bold text-white uppercase tracking-wider">Embed Kód (1 řádek)</h3>
+                <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider">Embed Kód (1 řádek)</h3>
               </div>
               <span className="text-[10px] bg-amber-500/20 text-amber-300 px-2 py-0.5 rounded-full border border-amber-500/30">
                 CDN aktivní
@@ -233,35 +233,35 @@ export default function RootLayout({ children }) {
             </div>
 
             {/* Platform Selector Tabs */}
-            <div className="flex items-center gap-1.5 bg-slate-950 p-1 rounded-xl border border-slate-800 text-[11px] font-semibold">
+            <div className="flex items-center gap-1.5 bg-slate-50 p-1 rounded-xl border border-slate-200 text-[11px] font-semibold">
               <button
                 onClick={() => setSelectedSnippetType('html')}
-                className={`flex-1 py-1.5 rounded-lg transition-colors ${selectedSnippetType === 'html' ? 'bg-amber-500 text-slate-950 font-bold' : 'text-slate-400 hover:text-white'}`}
+                className={`flex-1 py-1.5 rounded-lg transition-colors ${selectedSnippetType === 'html' ? 'bg-amber-500 text-slate-950 font-bold' : 'text-slate-500 hover:text-slate-900'}`}
               >
                 HTML / JS
               </button>
               <button
                 onClick={() => setSelectedSnippetType('wordpress')}
-                className={`flex-1 py-1.5 rounded-lg transition-colors ${selectedSnippetType === 'wordpress' ? 'bg-amber-500 text-slate-950 font-bold' : 'text-slate-400 hover:text-white'}`}
+                className={`flex-1 py-1.5 rounded-lg transition-colors ${selectedSnippetType === 'wordpress' ? 'bg-amber-500 text-slate-950 font-bold' : 'text-slate-500 hover:text-slate-900'}`}
               >
                 WordPress
               </button>
               <button
                 onClick={() => setSelectedSnippetType('webflow')}
-                className={`flex-1 py-1.5 rounded-lg transition-colors ${selectedSnippetType === 'webflow' ? 'bg-amber-500 text-slate-950 font-bold' : 'text-slate-400 hover:text-white'}`}
+                className={`flex-1 py-1.5 rounded-lg transition-colors ${selectedSnippetType === 'webflow' ? 'bg-amber-500 text-slate-950 font-bold' : 'text-slate-500 hover:text-slate-900'}`}
               >
                 Webflow
               </button>
               <button
                 onClick={() => setSelectedSnippetType('react')}
-                className={`flex-1 py-1.5 rounded-lg transition-colors ${selectedSnippetType === 'react' ? 'bg-amber-500 text-slate-950 font-bold' : 'text-slate-400 hover:text-white'}`}
+                className={`flex-1 py-1.5 rounded-lg transition-colors ${selectedSnippetType === 'react' ? 'bg-amber-500 text-slate-950 font-bold' : 'text-slate-500 hover:text-slate-900'}`}
               >
                 React/Next
               </button>
             </div>
 
             {/* Code Block */}
-            <div className="bg-slate-950 p-4 rounded-2xl border border-slate-800 font-mono text-[11px] text-amber-300 relative overflow-x-auto whitespace-pre-wrap leading-relaxed">
+            <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 font-mono text-[11px] text-amber-300 relative overflow-x-auto whitespace-pre-wrap leading-relaxed">
               {snippetCodes[selectedSnippetType]}
             </div>
 
@@ -275,22 +275,22 @@ export default function RootLayout({ children }) {
           </div>
 
           {/* Performance & Spec Badges */}
-          <div className="bg-slate-900 p-5 rounded-2xl border border-slate-800 text-xs space-y-2.5">
+          <div className="bg-white p-5 rounded-2xl border border-slate-200 text-xs space-y-2.5">
             <div className="flex items-center justify-between">
-              <span className="text-slate-400">Čas načtení v prohlížeči:</span>
-              <span className="font-bold text-emerald-400">⚡ 0.8 s (garance do 2.0 s)</span>
+              <span className="text-slate-500">Čas načtení v prohlížeči:</span>
+              <span className="font-bold text-green-400">⚡ 0.8 s (garance do 2.0 s)</span>
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-slate-400">Velikost CDN skriptu:</span>
-              <span className="font-bold text-slate-200">14.2 kB (Gzipped)</span>
+              <span className="text-slate-500">Velikost CDN skriptu:</span>
+              <span className="font-bold text-slate-800">14.2 kB (Gzipped)</span>
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-slate-400">Automatické vytvoření zakázky:</span>
+              <span className="text-slate-500">Automatické vytvoření zakázky:</span>
               <span className="font-bold text-amber-400">✓ Okamžitý zápis do CRM</span>
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-slate-400">SMS a e-mail potvrzení:</span>
-              <span className="font-bold text-emerald-400">✓ Automaticky odesíláno</span>
+              <span className="text-slate-500">SMS a e-mail potvrzení:</span>
+              <span className="font-bold text-green-400">✓ Automaticky odesíláno</span>
             </div>
           </div>
         </div>
@@ -298,24 +298,24 @@ export default function RootLayout({ children }) {
         {/* Right Column: Live Website Mockup Simulator (7 cols) */}
         <div className="lg:col-span-7 space-y-4">
           <div className="flex items-center justify-between">
-            <h3 className="text-sm font-bold text-slate-100 uppercase tracking-wider flex items-center gap-2">
+            <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider flex items-center gap-2">
               <Eye className="w-4 h-4 text-amber-400" />
               Živý náhled na webu stavební firmy
             </h3>
-            <span className="text-xs text-slate-400">Interaktivní simulace</span>
+            <span className="text-xs text-slate-500">Interaktivní simulace</span>
           </div>
 
           {/* Browser Window Mockup */}
-          <div className="bg-slate-900 rounded-3xl border border-slate-800 overflow-hidden shadow-2xl flex flex-col h-[650px] relative">
+          <div className="bg-white rounded-3xl border border-slate-200 overflow-hidden shadow-2xl flex flex-col h-[650px] relative">
             {/* Browser Window Header */}
-            <div className="bg-slate-950 px-4 py-3 border-b border-slate-800 flex items-center justify-between">
+            <div className="bg-slate-50 px-4 py-3 border-b border-slate-200 flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <div className="w-3 h-3 rounded-full bg-rose-500/80" />
                 <div className="w-3 h-3 rounded-full bg-amber-500/80" />
-                <div className="w-3 h-3 rounded-full bg-emerald-500/80" />
+                <div className="w-3 h-3 rounded-full bg-green-500/80" />
               </div>
 
-              <div className="bg-slate-900 px-6 py-1 rounded-xl text-[11px] text-slate-400 font-mono border border-slate-800 flex items-center gap-2">
+              <div className="bg-white px-6 py-1 rounded-xl text-[11px] text-slate-500 font-mono border border-slate-200 flex items-center gap-2">
                 <Globe className="w-3 h-3 text-slate-500" />
                 <span>https://www.{branding.name.toLowerCase().replace(/[^a-z0-9]/g, '')}-stavby.cz</span>
               </div>
@@ -324,19 +324,19 @@ export default function RootLayout({ children }) {
             </div>
 
             {/* Simulated Website Canvas Content */}
-            <div className="flex-1 bg-slate-950 overflow-y-auto relative text-slate-100">
+            <div className="flex-1 bg-slate-50 overflow-y-auto relative text-slate-900">
               {/* Fake Website Navigation */}
-              <div className="px-6 py-4 border-b border-slate-800 flex items-center justify-between bg-slate-950/95 backdrop-blur-md sticky top-0 z-10">
+              <div className="px-6 py-4 border-b border-slate-200 flex items-center justify-between bg-slate-50/95 backdrop-blur-md sticky top-0 z-10">
                 <div className="flex items-center gap-2.5">
                   <div 
                     className="w-7 h-7 rounded-lg flex items-center justify-center text-slate-950 font-bold text-xs bg-amber-500"
                   >
                     {branding.name.substring(0, 2).toUpperCase()}
                   </div>
-                  <span className="font-extrabold text-xs text-slate-100 tracking-tight">{branding.name}</span>
+                  <span className="font-extrabold text-xs text-slate-900 tracking-tight">{branding.name}</span>
                 </div>
 
-                <div className="hidden sm:flex items-center gap-5 text-[11px] font-semibold text-slate-400">
+                <div className="hidden sm:flex items-center gap-5 text-[11px] font-semibold text-slate-500">
                   <span>Realizace</span>
                   <span>Pergoly & Střechy</span>
                   <span>O nás</span>
@@ -353,13 +353,13 @@ export default function RootLayout({ children }) {
 
               {/* Fake Website Hero Section */}
               <div className="p-8 sm:p-12 text-center space-y-4 max-w-xl mx-auto">
-                <span className="px-3 py-1 rounded-full text-[10px] font-bold bg-slate-900 border border-slate-800 text-amber-400 uppercase tracking-wider">
+                <span className="px-3 py-1 rounded-full text-[10px] font-bold bg-white border border-slate-200 text-amber-400 uppercase tracking-wider">
                   Profesionální dřevostavby & pergoly {branding.city}
                 </span>
-                <h1 className="text-2xl sm:text-3xl font-black text-slate-100 tracking-tight leading-tight">
+                <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight leading-tight">
                   Stavíme prémiové pergoly a dřevostavby na míru
                 </h1>
-                <p className="text-xs text-slate-400 leading-relaxed">
+                <p className="text-xs text-slate-500 leading-relaxed">
                   Získejte okamžitý odhad rozpočtu díky naší kalkulačce. Nahrajte fotografii místa realizace a my se vám ozveme s návrhem.
                 </p>
 
@@ -376,19 +376,19 @@ export default function RootLayout({ children }) {
 
               {/* Simulated Feature Cards */}
               <div className="px-8 grid grid-cols-3 gap-3 max-w-lg mx-auto pb-16 text-center text-xs">
-                <div className="p-4 rounded-2xl bg-slate-900 border border-slate-800 space-y-1">
+                <div className="p-4 rounded-2xl bg-white border border-slate-200 space-y-1">
                   <span className="text-xl block">🪵</span>
-                  <p className="font-bold text-slate-200 text-[11px]">Pergoly & Terasy</p>
+                  <p className="font-bold text-slate-800 text-[11px]">Pergoly & Terasy</p>
                   <p className="text-[10px] text-slate-500">Záruka 5 let</p>
                 </div>
-                <div className="p-4 rounded-2xl bg-slate-900 border border-slate-800 space-y-1">
+                <div className="p-4 rounded-2xl bg-white border border-slate-200 space-y-1">
                   <span className="text-xl block">🏠</span>
-                  <p className="font-bold text-slate-200 text-[11px]">Střechy & Krovy</p>
+                  <p className="font-bold text-slate-800 text-[11px]">Střechy & Krovy</p>
                   <p className="text-[10px] text-slate-500">Tesařští mistři</p>
                 </div>
-                <div className="p-4 rounded-2xl bg-slate-900 border border-slate-800 space-y-1">
+                <div className="p-4 rounded-2xl bg-white border border-slate-200 space-y-1">
                   <span className="text-xl block">⚡</span>
-                  <p className="font-bold text-slate-200 text-[11px]">Rychlost</p>
+                  <p className="font-bold text-slate-800 text-[11px]">Rychlost</p>
                   <p className="text-[10px] text-slate-500">Rozpočet do 24h</p>
                 </div>
               </div>
@@ -403,7 +403,7 @@ export default function RootLayout({ children }) {
                 >
                   <Sparkles className="w-4 h-4 text-slate-950" />
                   <span>{buttonText}</span>
-                  <span className="w-2 h-2 rounded-full bg-emerald-950 border border-emerald-400 animate-ping" />
+                  <span className="w-2 h-2 rounded-full bg-green-950 border border-green-400 animate-ping" />
                 </button>
               </div>
             </div>

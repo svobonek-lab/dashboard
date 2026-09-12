@@ -74,12 +74,12 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ leads }) => {
       </div>
 
       {scheduleSuccess && (
-        <div className="bg-emerald-50 border border-emerald-200 p-4 rounded-2xl text-emerald-800 text-xs flex items-center justify-between">
+        <div className="bg-green-50 border border-green-200 p-4 rounded-2xl text-green-800 text-xs flex items-center justify-between">
           <div className="flex items-center gap-2 font-bold">
-            <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+            <CheckCircle2 className="w-4 h-4 text-green-600" />
             <span>Harmonogram optimalizován: Ušetřeno 48 km dojezdů part, vyřešeno vytížení řemeslníků.</span>
           </div>
-          <button onClick={() => setScheduleSuccess(false)} className="text-xs font-bold text-emerald-700 hover:underline">Zavřít</button>
+          <button onClick={() => setScheduleSuccess(false)} className="text-xs font-bold text-green-700 hover:underline">Zavřít</button>
         </div>
       )}
 

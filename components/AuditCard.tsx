@@ -247,7 +247,7 @@ export const AuditCard: React.FC<AuditCardProps> = ({
         setBold();
         doc.text(`Proč to bolí: ${issue.whyItHurts || 'Způsobuje odchod potenciálních stavebníků ke konkurenci.'}`, 22, yOffset + 21);
 
-        doc.setTextColor(16, 124, 65); // emerald-700
+        doc.setTextColor(16, 124, 65); // green-700
         doc.text(`Jak to CRM vyřeší: ${issue.howWeFixIt || 'Bude vyřešeno integrací naší automatizované pipeline.'}`, 22, yOffset + 28);
 
         // Saved Time Badge
@@ -381,7 +381,7 @@ export const AuditCard: React.FC<AuditCardProps> = ({
 
   // Helper to color badged scores
   const getScoreColor = (score: number) => {
-    if (score >= 80) return 'text-emerald-400 border-emerald-500/20 bg-emerald-950/20';
+    if (score >= 80) return 'text-green-400 border-green-500/20 bg-green-950/20';
     if (score >= 50) return 'text-amber-400 border-amber-500/20 bg-amber-950/20';
     return 'text-rose-400 border-rose-500/20 bg-rose-950/20';
   };
@@ -393,7 +393,7 @@ export const AuditCard: React.FC<AuditCardProps> = ({
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 flex items-center justify-center p-4 sm:p-6 relative overflow-hidden font-sans select-none">
+    <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4 sm:p-6 relative overflow-hidden font-sans select-none">
       {/* Background ambient glow matching the extracted branding */}
       <div 
         className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] rounded-full opacity-10 blur-[130px] pointer-events-none"
@@ -405,13 +405,13 @@ export const AuditCard: React.FC<AuditCardProps> = ({
         initial={{ opacity: 0, scale: 0.96, y: 15 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-        className="w-full max-w-5xl bg-slate-900 border border-slate-800 rounded-3xl shadow-2xl overflow-hidden relative z-10 text-slate-100 my-8 flex flex-col"
+        className="w-full max-w-5xl bg-white border border-slate-200 rounded-3xl shadow-2xl overflow-hidden relative z-10 text-slate-900 my-8 flex flex-col"
       >
         {/* Header Block & Share / PDF Actions */}
-        <div className="p-6 sm:p-8 border-b border-slate-800 flex flex-col md:flex-row md:items-center justify-between gap-6 bg-slate-900/85 backdrop-blur-md">
+        <div className="p-6 sm:p-8 border-b border-slate-200 flex flex-col md:flex-row md:items-center justify-between gap-6 bg-white/85 backdrop-blur-md">
           <div className="flex items-center gap-4">
             <div 
-              className="w-14 h-14 rounded-2xl flex items-center justify-center text-white font-extrabold text-2xl shadow-lg flex-shrink-0"
+              className="w-14 h-14 rounded-2xl flex items-center justify-center text-slate-900 font-extrabold text-2xl shadow-lg flex-shrink-0"
               style={{ backgroundColor: branding.primaryColor }}
             >
               {branding.name.charAt(0)}
@@ -422,9 +422,9 @@ export const AuditCard: React.FC<AuditCardProps> = ({
                   <Sparkles className="w-3 h-3 text-blue-400 animate-pulse" />
                   AI Web Extracted & Audited
                 </span>
-                <span className="text-xs text-slate-400 font-mono hidden sm:inline">{audit.url}</span>
+                <span className="text-xs text-slate-500 font-mono hidden sm:inline">{audit.url}</span>
               </div>
-              <h1 className="text-xl sm:text-2xl font-black text-white mt-1 tracking-tight">
+              <h1 className="text-xl sm:text-2xl font-black text-slate-900 mt-1 tracking-tight">
                 AI Audit prezence pro {branding.name}
               </h1>
             </div>
@@ -433,20 +433,20 @@ export const AuditCard: React.FC<AuditCardProps> = ({
           <div className="flex flex-wrap items-center gap-3">
             <button
               onClick={handleCopyDemoLink}
-              className="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-bold text-white flex items-center gap-2 transition-all border border-slate-700 cursor-pointer"
+              className="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-bold text-slate-900 flex items-center gap-2 transition-all border border-slate-300 cursor-pointer"
             >
-              {copiedLink ? <Check className="w-4 h-4 text-emerald-400 animate-scale" /> : <Share2 className="w-4 h-4 text-blue-400" />}
+              {copiedLink ? <Check className="w-4 h-4 text-green-400 animate-scale" /> : <Share2 className="w-4 h-4 text-blue-400" />}
               <span>{copiedLink ? 'Odkaz zkopírován!' : 'Sdílet demo'}</span>
             </button>
             <button
               onClick={handleDownloadPdf}
               disabled={pdfGenerating}
-              className="px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-xs font-bold text-white flex items-center gap-2 transition-all shadow-md disabled:opacity-50 cursor-pointer"
+              className="px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-xs font-bold text-slate-900 flex items-center gap-2 transition-all shadow-md disabled:opacity-50 cursor-pointer"
             >
               {pdfGenerating ? (
                 <div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin"></div>
               ) : pdfSuccess ? (
-                <Check className="w-4 h-4 text-emerald-300" />
+                <Check className="w-4 h-4 text-green-300" />
               ) : (
                 <Download className="w-4 h-4 text-blue-200" />
               )}
@@ -456,21 +456,21 @@ export const AuditCard: React.FC<AuditCardProps> = ({
         </div>
 
         {/* Brand Bar Indicator */}
-        <div className="flex bg-slate-950 p-4 border-b border-slate-800 overflow-x-auto gap-4 justify-between items-center text-xs">
+        <div className="flex bg-slate-50 p-4 border-b border-slate-200 overflow-x-auto gap-4 justify-between items-center text-xs">
           <div className="flex items-center gap-2 flex-shrink-0">
-            <span className="text-slate-400 uppercase tracking-wider text-[10px] font-bold">Hlavní barva:</span>
+            <span className="text-slate-500 uppercase tracking-wider text-[10px] font-bold">Hlavní barva:</span>
             <div className="w-4 h-4 rounded-md border border-white/20" style={{ backgroundColor: branding.primaryColor }} />
-            <span className="font-mono text-slate-300 font-bold">{branding.primaryColor}</span>
+            <span className="font-mono text-slate-700 font-bold">{branding.primaryColor}</span>
           </div>
           <div className="flex items-center gap-2 flex-shrink-0">
-            <span className="text-slate-400 uppercase tracking-wider text-[10px] font-bold">Lokalita dispečinku:</span>
-            <span className="text-white font-bold flex items-center gap-1">
+            <span className="text-slate-500 uppercase tracking-wider text-[10px] font-bold">Lokalita dispečinku:</span>
+            <span className="text-slate-900 font-bold flex items-center gap-1">
               <MapPin className="w-3.5 h-3.5 text-rose-500" />
               {branding.city}
             </span>
           </div>
           <div className="flex items-center gap-2 flex-shrink-0">
-            <span className="text-slate-400 uppercase tracking-wider text-[10px] font-bold">Google Hodnocení:</span>
+            <span className="text-slate-500 uppercase tracking-wider text-[10px] font-bold">Google Hodnocení:</span>
             <span className="text-amber-400 font-extrabold flex items-center gap-1">
               <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
               {audit.googleReviewsRating} ({audit.googleReviewsCount} recenzí)
@@ -479,11 +479,11 @@ export const AuditCard: React.FC<AuditCardProps> = ({
         </div>
 
         {/* Tabbed Interactive Explorer */}
-        <div className="border-b border-slate-800 bg-slate-900/40 p-2 flex overflow-x-auto gap-1">
+        <div className="border-b border-slate-200 bg-white/40 p-2 flex overflow-x-auto gap-1">
           <button 
             onClick={() => setActiveTab('overview')}
             className={`px-4 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${
-              activeTab === 'overview' ? 'bg-slate-800 text-white shadow-sm' : 'text-slate-400 hover:text-slate-200'
+              activeTab === 'overview' ? 'bg-slate-800 text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-800'
             }`}
           >
             📊 Celkový přehled
@@ -491,7 +491,7 @@ export const AuditCard: React.FC<AuditCardProps> = ({
           <button 
             onClick={() => setActiveTab('ux')}
             className={`px-4 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${
-              activeTab === 'ux' ? 'bg-slate-800 text-white shadow-sm' : 'text-slate-400 hover:text-slate-200'
+              activeTab === 'ux' ? 'bg-slate-800 text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-800'
             }`}
           >
             💻 Web & UX ({audit.websiteUxScore}%)
@@ -499,7 +499,7 @@ export const AuditCard: React.FC<AuditCardProps> = ({
           <button 
             onClick={() => setActiveTab('lead')}
             className={`px-4 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${
-              activeTab === 'lead' ? 'bg-slate-800 text-white shadow-sm' : 'text-slate-400 hover:text-slate-200'
+              activeTab === 'lead' ? 'bg-slate-800 text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-800'
             }`}
           >
             📥 Sběr poptávek ({audit.leadCaptureScore}%)
@@ -507,7 +507,7 @@ export const AuditCard: React.FC<AuditCardProps> = ({
           <button 
             onClick={() => setActiveTab('automation')}
             className={`px-4 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${
-              activeTab === 'automation' ? 'bg-slate-800 text-white shadow-sm' : 'text-slate-400 hover:text-slate-200'
+              activeTab === 'automation' ? 'bg-slate-800 text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-800'
             }`}
           >
             ⚡ Reakce dispečinku ({audit.responseAutomationScore}%)
@@ -515,7 +515,7 @@ export const AuditCard: React.FC<AuditCardProps> = ({
           <button 
             onClick={() => setActiveTab('cx')}
             className={`px-4 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${
-              activeTab === 'cx' ? 'bg-slate-800 text-white shadow-sm' : 'text-slate-400 hover:text-slate-200'
+              activeTab === 'cx' ? 'bg-slate-800 text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-800'
             }`}
           >
             ⭐ Klientský servis ({audit.customerExperienceScore}%)
@@ -527,7 +527,7 @@ export const AuditCard: React.FC<AuditCardProps> = ({
           <div className="p-6 sm:p-8 space-y-6">
             {/* Top Score Circle Indicator & Description */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-center">
-              <div className="bg-slate-950 p-6 rounded-3xl border border-slate-800 flex flex-col items-center text-center relative overflow-hidden">
+              <div className="bg-slate-50 p-6 rounded-3xl border border-slate-200 flex flex-col items-center text-center relative overflow-hidden">
                 <div className="absolute top-0 right-0 w-24 h-24 bg-blue-500/5 rounded-full blur-2xl" />
                 <span className="text-[10px] text-slate-500 uppercase tracking-wider font-bold mb-2">CELKOVÉ SKÓRE PREZENCE</span>
                 
@@ -550,64 +550,64 @@ export const AuditCard: React.FC<AuditCardProps> = ({
                     />
                   </svg>
                   <div className="absolute flex flex-col items-center">
-                    <span className="text-3xl font-black text-white">{audit.score}%</span>
+                    <span className="text-3xl font-black text-slate-900">{audit.score}%</span>
                     <span className="text-[9px] uppercase tracking-wider text-slate-500 font-semibold">Podprůměrné</span>
                   </div>
                 </div>
 
-                <p className="text-xs text-slate-400 mt-4 leading-relaxed">
+                <p className="text-xs text-slate-500 mt-4 leading-relaxed">
                   Web vykazuje závažné slabiny v rychlosti reakce a sběru kontaktů.
                 </p>
               </div>
 
               {/* Sub-scores Overview blocks */}
               <div className="col-span-2 grid grid-cols-2 gap-4">
-                <div className="bg-slate-950/40 p-4.5 rounded-2xl border border-slate-800/80">
+                <div className="bg-slate-50/40 p-4.5 rounded-2xl border border-slate-200/80">
                   <span className="text-[10px] text-slate-500 uppercase tracking-wider font-bold">Rychlost webu & UX</span>
                   <div className="flex items-center justify-between mt-1">
-                    <p className="text-2xl font-black text-white">{audit.websiteUxScore} <span className="text-xs text-slate-500 font-normal">/ 100</span></p>
+                    <p className="text-2xl font-black text-slate-900">{audit.websiteUxScore} <span className="text-xs text-slate-500 font-normal">/ 100</span></p>
                     <span className="px-2 py-0.5 rounded-md text-[9px] font-bold bg-amber-500/10 text-amber-400 border border-amber-500/20">Průměrné</span>
                   </div>
-                  <p className="text-[11px] text-slate-400 mt-2 leading-tight">Tradiční vizuál, ale chybí jakékoliv moderní interaktivní prvky a kalkulačky.</p>
+                  <p className="text-[11px] text-slate-500 mt-2 leading-tight">Tradiční vizuál, ale chybí jakékoliv moderní interaktivní prvky a kalkulačky.</p>
                 </div>
 
-                <div className="bg-slate-950/40 p-4.5 rounded-2xl border border-slate-800/80">
+                <div className="bg-slate-50/40 p-4.5 rounded-2xl border border-slate-200/80">
                   <span className="text-[10px] text-slate-500 uppercase tracking-wider font-bold">Lead Capture (Sběr)</span>
                   <div className="flex items-center justify-between mt-1">
-                    <p className="text-2xl font-black text-white">{audit.leadCaptureScore} <span className="text-xs text-slate-500 font-normal">/ 100</span></p>
+                    <p className="text-2xl font-black text-slate-900">{audit.leadCaptureScore} <span className="text-xs text-slate-500 font-normal">/ 100</span></p>
                     <span className="px-2 py-0.5 rounded-md text-[9px] font-bold bg-rose-500/10 text-rose-400 border border-rose-500/20">Kritické</span>
                   </div>
-                  <p className="text-[11px] text-slate-400 mt-2 leading-tight">Pouze statický telefon a e-mail. Zákazník musí psát dlouhý e-mail z vlastní iniciativy.</p>
+                  <p className="text-[11px] text-slate-500 mt-2 leading-tight">Pouze statický telefon a e-mail. Zákazník musí psát dlouhý e-mail z vlastní iniciativy.</p>
                 </div>
 
-                <div className="bg-slate-950/40 p-4.5 rounded-2xl border border-slate-800/80">
+                <div className="bg-slate-50/40 p-4.5 rounded-2xl border border-slate-200/80">
                   <span className="text-[10px] text-slate-500 uppercase tracking-wider font-bold">Automatizace reakce</span>
                   <div className="flex items-center justify-between mt-1">
-                    <p className="text-2xl font-black text-white">{audit.responseAutomationScore} <span className="text-xs text-slate-500 font-normal">/ 100</span></p>
+                    <p className="text-2xl font-black text-slate-900">{audit.responseAutomationScore} <span className="text-xs text-slate-500 font-normal">/ 100</span></p>
                     <span className="px-2 py-0.5 rounded-md text-[9px] font-bold bg-rose-500/10 text-rose-400 border border-rose-500/20">Kritické</span>
                   </div>
-                  <p className="text-[11px] text-slate-400 mt-2 leading-tight">Nula automatických odpovědí. Zákazník nemá žádné potvrzení o přijetí a čeká dny.</p>
+                  <p className="text-[11px] text-slate-500 mt-2 leading-tight">Nula automatických odpovědí. Zákazník nemá žádné potvrzení o přijetí a čeká dny.</p>
                 </div>
 
-                <div className="bg-slate-950/40 p-4.5 rounded-2xl border border-slate-800/80">
+                <div className="bg-slate-50/40 p-4.5 rounded-2xl border border-slate-200/80">
                   <span className="text-[10px] text-slate-500 uppercase tracking-wider font-bold">Klientský Servis (CX)</span>
                   <div className="flex items-center justify-between mt-1">
-                    <p className="text-2xl font-black text-white">{audit.customerExperienceScore} <span className="text-xs text-slate-500 font-normal">/ 100</span></p>
-                    <span className="px-2 py-0.5 rounded-md text-[9px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">Dobré</span>
+                    <p className="text-2xl font-black text-slate-900">{audit.customerExperienceScore} <span className="text-xs text-slate-500 font-normal">/ 100</span></p>
+                    <span className="px-2 py-0.5 rounded-md text-[9px] font-bold bg-green-500/10 text-green-400 border border-green-500/20">Dobré</span>
                   </div>
-                  <p className="text-[11px] text-slate-400 mt-2 leading-tight">Firma má skvělé recenze na Googlu, ale vůbec je neukazuje na webu pro zvýšení důvěry.</p>
+                  <p className="text-[11px] text-slate-500 mt-2 leading-tight">Firma má skvělé recenze na Googlu, ale vůbec je neukazuje na webu pro zvýšení důvěry.</p>
                 </div>
               </div>
             </div>
 
             {/* AI Extracted Assets summary */}
-            <div className="bg-slate-950 p-5 rounded-3xl border border-slate-800 space-y-3">
+            <div className="bg-slate-50 p-5 rounded-3xl border border-slate-200 space-y-3">
               <h3 className="text-xs font-bold uppercase tracking-wider text-blue-400 flex items-center gap-2">
                 <Sparkles className="w-4 h-4 text-blue-400" /> Detekované a extrahované stavební specializace
               </h3>
               <div className="flex flex-wrap gap-2">
                 {safeServices.map((srv, idx) => (
-                  <span key={idx} className="px-3 py-1 bg-slate-900 border border-slate-800 rounded-xl text-xs font-semibold text-slate-200">
+                  <span key={idx} className="px-3 py-1 bg-white border border-slate-200 rounded-xl text-xs font-semibold text-slate-800">
                     👷 {srv}
                   </span>
                 ))}
@@ -622,21 +622,21 @@ export const AuditCard: React.FC<AuditCardProps> = ({
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
                 <div className="bg-rose-950/10 border border-rose-500/20 p-5 rounded-3xl space-y-3">
                   <span className="px-2 py-0.5 rounded-md font-bold bg-rose-500/20 text-rose-400">PŮVODNÍ STRÁNKA</span>
-                  <ul className="space-y-2 text-slate-400">
-                    <li className="flex justify-between border-b border-slate-800/40 pb-1"><span>Reakce na poptávku:</span> <strong className="text-rose-300">24 až 48 hodin</strong></li>
-                    <li className="flex justify-between border-b border-slate-800/40 pb-1"><span>Sběr kontaktů:</span> <strong className="text-rose-300">Jen statický e-mail</strong></li>
-                    <li className="flex justify-between border-b border-slate-800/40 pb-1"><span>Plánování řemeslníků:</span> <strong className="text-rose-300">Telefonáty & Papír</strong></li>
+                  <ul className="space-y-2 text-slate-500">
+                    <li className="flex justify-between border-b border-slate-200/40 pb-1"><span>Reakce na poptávku:</span> <strong className="text-rose-300">24 až 48 hodin</strong></li>
+                    <li className="flex justify-between border-b border-slate-200/40 pb-1"><span>Sběr kontaktů:</span> <strong className="text-rose-300">Jen statický e-mail</strong></li>
+                    <li className="flex justify-between border-b border-slate-200/40 pb-1"><span>Plánování řemeslníků:</span> <strong className="text-rose-300">Telefonáty & Papír</strong></li>
                     <li className="flex justify-between pb-1"><span>Zákaznická zóna:</span> <strong className="text-rose-300">Chybí zcela</strong></li>
                   </ul>
                 </div>
 
-                <div className="bg-emerald-950/10 border border-emerald-500/20 p-5 rounded-3xl space-y-3">
-                  <span className="px-2 py-0.5 rounded-md font-bold bg-emerald-500/20 text-emerald-400">AUTOMATIZOVANÉ CRM</span>
-                  <ul className="space-y-2 text-slate-300">
-                    <li className="flex justify-between border-b border-slate-800/40 pb-1"><span>Reakce na poptávku:</span> <strong className="text-emerald-400 font-bold">Okamžitě (&lt; 5 min)</strong></li>
-                    <li className="flex justify-between border-b border-slate-800/40 pb-1"><span>Sběr kontaktů:</span> <strong className="text-emerald-400 font-bold">Interaktivní AI Widget</strong></li>
-                    <li className="flex justify-between border-b border-slate-800/40 pb-1"><span>Plánování řemeslníků:</span> <strong className="text-emerald-400 font-bold">GPS & Kalendář dispečera</strong></li>
-                    <li className="flex justify-between pb-1"><span>Zákaznická zóna:</span> <strong className="text-emerald-400 font-bold">Online klientský portál</strong></li>
+                <div className="bg-green-950/10 border border-green-500/20 p-5 rounded-3xl space-y-3">
+                  <span className="px-2 py-0.5 rounded-md font-bold bg-green-500/20 text-green-400">AUTOMATIZOVANÉ CRM</span>
+                  <ul className="space-y-2 text-slate-700">
+                    <li className="flex justify-between border-b border-slate-200/40 pb-1"><span>Reakce na poptávku:</span> <strong className="text-green-400 font-bold">Okamžitě (&lt; 5 min)</strong></li>
+                    <li className="flex justify-between border-b border-slate-200/40 pb-1"><span>Sběr kontaktů:</span> <strong className="text-green-400 font-bold">Interaktivní AI Widget</strong></li>
+                    <li className="flex justify-between border-b border-slate-200/40 pb-1"><span>Plánování řemeslníků:</span> <strong className="text-green-400 font-bold">GPS & Kalendář dispečera</strong></li>
+                    <li className="flex justify-between pb-1"><span>Zákaznická zóna:</span> <strong className="text-green-400 font-bold">Online klientský portál</strong></li>
                   </ul>
                 </div>
               </div>
@@ -647,14 +647,14 @@ export const AuditCard: React.FC<AuditCardProps> = ({
         {/* TAB 2: WEB & UX */}
         {activeTab === 'ux' && (
           <div className="p-6 sm:p-8 space-y-6">
-            <div className="flex flex-col sm:flex-row items-center justify-between gap-4 bg-slate-950 p-5 rounded-3xl border border-slate-800">
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-4 bg-slate-50 p-5 rounded-3xl border border-slate-200">
               <div className="flex items-center gap-3">
                 <div className="w-12 h-12 rounded-2xl bg-amber-500/10 text-amber-400 flex items-center justify-center font-bold text-lg">
                   {audit.websiteUxScore}%
                 </div>
                 <div>
-                  <h3 className="font-bold text-white text-sm">Hodnocení UX a modernosti webu</h3>
-                  <p className="text-xs text-slate-400">Analýza rychlosti, mobilního zobrazení a interakce.</p>
+                  <h3 className="font-bold text-slate-900 text-sm">Hodnocení UX a modernosti webu</h3>
+                  <p className="text-xs text-slate-500">Analýza rychlosti, mobilního zobrazení a interakce.</p>
                 </div>
               </div>
               <span className={`px-3 py-1 rounded-full text-xs font-bold border ${getScoreColor(audit.websiteUxScore)}`}>
@@ -663,18 +663,18 @@ export const AuditCard: React.FC<AuditCardProps> = ({
             </div>
 
             <div className="space-y-4">
-              <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Odhalené nedostatky v této kategorii:</h4>
+              <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider">Odhalené nedostatky v této kategorii:</h4>
               <div className="grid grid-cols-1 gap-3">
                 {audit.issues.filter(i => i.category === 'ux').map(issue => (
-                  <div key={issue.id} className="p-4 bg-slate-950/60 border border-slate-800 rounded-2xl space-y-2">
+                  <div key={issue.id} className="p-4 bg-slate-50/60 border border-slate-200 rounded-2xl space-y-2">
                     <div className="flex items-center gap-2">
                       <span className="w-2 h-2 rounded-full bg-amber-500" />
-                      <h5 className="font-bold text-slate-200 text-sm">{issue.title}</h5>
+                      <h5 className="font-bold text-slate-800 text-sm">{issue.title}</h5>
                     </div>
-                    <p className="text-xs text-slate-400">{issue.description}</p>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2 text-[11px] border-t border-slate-800/50">
+                    <p className="text-xs text-slate-500">{issue.description}</p>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2 text-[11px] border-t border-slate-200/50">
                       <p className="text-rose-400"><strong>Ztráta:</strong> {issue.whyItHurts}</p>
-                      <p className="text-emerald-400"><strong>Řešení:</strong> {issue.howWeFixIt}</p>
+                      <p className="text-green-400"><strong>Řešení:</strong> {issue.howWeFixIt}</p>
                     </div>
                   </div>
                 ))}
@@ -686,14 +686,14 @@ export const AuditCard: React.FC<AuditCardProps> = ({
         {/* TAB 3: LEAD CAPTURE */}
         {activeTab === 'lead' && (
           <div className="p-6 sm:p-8 space-y-6">
-            <div className="flex flex-col sm:flex-row items-center justify-between gap-4 bg-slate-950 p-5 rounded-3xl border border-slate-800">
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-4 bg-slate-50 p-5 rounded-3xl border border-slate-200">
               <div className="flex items-center gap-3">
                 <div className="w-12 h-12 rounded-2xl bg-rose-500/10 text-rose-400 flex items-center justify-center font-bold text-lg">
                   {audit.leadCaptureScore}%
                 </div>
                 <div>
-                  <h3 className="font-bold text-white text-sm">Sběr a zachycení poptávek (Lead Capture)</h3>
-                  <p className="text-xs text-slate-400">Účinnost nástrojů pro získání kontaktu z příchozího návštěvníka.</p>
+                  <h3 className="font-bold text-slate-900 text-sm">Sběr a zachycení poptávek (Lead Capture)</h3>
+                  <p className="text-xs text-slate-500">Účinnost nástrojů pro získání kontaktu z příchozího návštěvníka.</p>
                 </div>
               </div>
               <span className={`px-3 py-1 rounded-full text-xs font-bold border ${getScoreColor(audit.leadCaptureScore)}`}>
@@ -702,18 +702,18 @@ export const AuditCard: React.FC<AuditCardProps> = ({
             </div>
 
             <div className="space-y-4">
-              <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Zásadní slabiny v konverzním trychtýři:</h4>
+              <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider">Zásadní slabiny v konverzním trychtýři:</h4>
               <div className="grid grid-cols-1 gap-3">
                 {audit.issues.filter(i => i.category === 'lead' || i.id === 'iss-1').map(issue => (
-                  <div key={issue.id} className="p-4 bg-slate-950/60 border border-slate-800 rounded-2xl space-y-2">
+                  <div key={issue.id} className="p-4 bg-slate-50/60 border border-slate-200 rounded-2xl space-y-2">
                     <div className="flex items-center gap-2">
                       <span className="w-2 h-2 rounded-full bg-rose-500 animate-pulse" />
-                      <h5 className="font-bold text-slate-200 text-sm">{issue.title}</h5>
+                      <h5 className="font-bold text-slate-800 text-sm">{issue.title}</h5>
                     </div>
-                    <p className="text-xs text-slate-400">{issue.description}</p>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2 text-[11px] border-t border-slate-800/50">
+                    <p className="text-xs text-slate-500">{issue.description}</p>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2 text-[11px] border-t border-slate-200/50">
                       <p className="text-rose-400"><strong>Proč přicházíte o peníze:</strong> {issue.whyItHurts}</p>
-                      <p className="text-emerald-400"><strong>Zlepšení s CRM:</strong> {issue.howWeFixIt}</p>
+                      <p className="text-green-400"><strong>Zlepšení s CRM:</strong> {issue.howWeFixIt}</p>
                     </div>
                   </div>
                 ))}
@@ -725,14 +725,14 @@ export const AuditCard: React.FC<AuditCardProps> = ({
         {/* TAB 4: RESPONSE AUTOMATION */}
         {activeTab === 'automation' && (
           <div className="p-6 sm:p-8 space-y-6">
-            <div className="flex flex-col sm:flex-row items-center justify-between gap-4 bg-slate-950 p-5 rounded-3xl border border-slate-800">
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-4 bg-slate-50 p-5 rounded-3xl border border-slate-200">
               <div className="flex items-center gap-3">
                 <div className="w-12 h-12 rounded-2xl bg-rose-500/10 text-rose-400 flex items-center justify-center font-bold text-lg">
                   {audit.responseAutomationScore}%
                 </div>
                 <div>
-                  <h3 className="font-bold text-white text-sm">Automatizace dispečinku a rychlost reakce</h3>
-                  <p className="text-xs text-slate-400">Prodleva mezi odesláním poptávky a první reakcí obchodu.</p>
+                  <h3 className="font-bold text-slate-900 text-sm">Automatizace dispečinku a rychlost reakce</h3>
+                  <p className="text-xs text-slate-500">Prodleva mezi odesláním poptávky a první reakcí obchodu.</p>
                 </div>
               </div>
               <span className={`px-3 py-1 rounded-full text-xs font-bold border ${getScoreColor(audit.responseAutomationScore)}`}>
@@ -741,18 +741,18 @@ export const AuditCard: React.FC<AuditCardProps> = ({
             </div>
 
             <div className="space-y-4">
-              <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Kritické prodlevy v komunikaci:</h4>
+              <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider">Kritické prodlevy v komunikaci:</h4>
               <div className="grid grid-cols-1 gap-3">
                 {audit.issues.filter(i => i.category === 'automation' || i.id === 'iss-2').map(issue => (
-                  <div key={issue.id} className="p-4 bg-slate-950/60 border border-slate-800 rounded-2xl space-y-2">
+                  <div key={issue.id} className="p-4 bg-slate-50/60 border border-slate-200 rounded-2xl space-y-2">
                     <div className="flex items-center gap-2">
                       <span className="w-2 h-2 rounded-full bg-rose-500" />
-                      <h5 className="font-bold text-slate-200 text-sm">{issue.title}</h5>
+                      <h5 className="font-bold text-slate-800 text-sm">{issue.title}</h5>
                     </div>
-                    <p className="text-xs text-slate-400">{issue.description}</p>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2 text-[11px] border-t border-slate-800/50">
+                    <p className="text-xs text-slate-500">{issue.description}</p>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2 text-[11px] border-t border-slate-200/50">
                       <p className="text-rose-400"><strong>Co hrozí:</strong> {issue.whyItHurts}</p>
-                      <p className="text-emerald-400"><strong>CRM Automatizace:</strong> {issue.howWeFixIt}</p>
+                      <p className="text-green-400"><strong>CRM Automatizace:</strong> {issue.howWeFixIt}</p>
                     </div>
                   </div>
                 ))}
@@ -764,14 +764,14 @@ export const AuditCard: React.FC<AuditCardProps> = ({
         {/* TAB 5: CUSTOMER EXPERIENCE & GOOGLE REVIEWS */}
         {activeTab === 'cx' && (
           <div className="p-6 sm:p-8 space-y-6">
-            <div className="flex flex-col sm:flex-row items-center justify-between gap-4 bg-slate-950 p-5 rounded-3xl border border-slate-800">
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-4 bg-slate-50 p-5 rounded-3xl border border-slate-200">
               <div className="flex items-center gap-3">
-                <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center font-bold text-lg">
+                <div className="w-12 h-12 rounded-2xl bg-green-500/10 text-green-400 flex items-center justify-center font-bold text-lg">
                   {audit.customerExperienceScore}%
                 </div>
                 <div>
-                  <h3 className="font-bold text-white text-sm">Zákaznická zkušenost a hodnocení (CX)</h3>
-                  <p className="text-xs text-slate-400">Jak je hodnocena vaše práce a jak prezentujete výsledky.</p>
+                  <h3 className="font-bold text-slate-900 text-sm">Zákaznická zkušenost a hodnocení (CX)</h3>
+                  <p className="text-xs text-slate-500">Jak je hodnocena vaše práce a jak prezentujete výsledky.</p>
                 </div>
               </div>
               <span className={`px-3 py-1 rounded-full text-xs font-bold border ${getScoreColor(audit.customerExperienceScore)}`}>
@@ -780,18 +780,18 @@ export const AuditCard: React.FC<AuditCardProps> = ({
             </div>
 
             {/* Google Reviews extraction visual module */}
-            <div className="bg-slate-950 p-6 rounded-3xl border border-slate-800 space-y-4">
-              <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+            <div className="bg-slate-50 p-6 rounded-3xl border border-slate-200 space-y-4">
+              <div className="flex items-center justify-between border-b border-slate-200 pb-3">
                 <h4 className="text-xs font-bold text-amber-400 flex items-center gap-2">
                   <Star className="w-4 h-4 fill-amber-400 text-amber-400" /> Google Moje Firma - Analýza Recenzí
                 </h4>
-                <span className="text-[10px] bg-slate-900 border border-slate-800 px-2 py-1 rounded text-slate-400">Extrahováno z Google Maps API</span>
+                <span className="text-[10px] bg-white border border-slate-200 px-2 py-1 rounded text-slate-500">Extrahováno z Google Maps API</span>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div className="text-center p-4 bg-slate-900/50 rounded-2xl border border-slate-800 flex flex-col justify-center items-center">
+                <div className="text-center p-4 bg-white/50 rounded-2xl border border-slate-200 flex flex-col justify-center items-center">
                   <p className="text-4xl font-black text-amber-400">{audit.googleReviewsRating} ★</p>
-                  <p className="text-xs text-slate-400 mt-1">{audit.googleReviewsCount} celkových hodnocení</p>
+                  <p className="text-xs text-slate-500 mt-1">{audit.googleReviewsCount} celkových hodnocení</p>
                   <div className="flex gap-1 mt-2 text-amber-400">
                     <Star className="w-4 h-4 fill-amber-400" />
                     <Star className="w-4 h-4 fill-amber-400" />
@@ -802,12 +802,12 @@ export const AuditCard: React.FC<AuditCardProps> = ({
                 </div>
 
                 <div className="md:col-span-2 space-y-2">
-                  <span className="text-[10px] text-slate-400 uppercase font-bold">Shrnutí zákaznického sentimentu:</span>
-                  <p className="text-xs text-slate-300 leading-relaxed bg-slate-900/20 p-3.5 rounded-xl border border-slate-800/60">
+                  <span className="text-[10px] text-slate-500 uppercase font-bold">Shrnutí zákaznického sentimentu:</span>
+                  <p className="text-xs text-slate-700 leading-relaxed bg-white/20 p-3.5 rounded-xl border border-slate-200/60">
                     "{audit.googleReviewsSummary}"
                   </p>
                   <div className="flex gap-3 text-[10px] pt-1">
-                    <span className="text-emerald-400 flex items-center gap-1 bg-emerald-950/40 px-2 py-1 rounded-md border border-emerald-900/30">
+                    <span className="text-green-400 flex items-center gap-1 bg-green-950/40 px-2 py-1 rounded-md border border-green-900/30">
                       <ThumbsUp className="w-3 h-3" /> Vysoká řemeslná kvalita
                     </span>
                     <span className="text-rose-400 flex items-center gap-1 bg-rose-950/40 px-2 py-1 rounded-md border border-rose-900/30">
@@ -820,22 +820,22 @@ export const AuditCard: React.FC<AuditCardProps> = ({
 
             {/* Personalized Recommendations list inside specific category */}
             <div className="space-y-3 pt-2">
-              <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Navržená strategická opatření:</h4>
+              <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider">Navržená strategická opatření:</h4>
               <div className="grid grid-cols-1 gap-3">
                 {audit.recommendations.map(rec => (
-                  <div key={rec.id} className="p-4 bg-slate-950/40 border border-slate-800/80 rounded-2xl flex items-start justify-between gap-4">
+                  <div key={rec.id} className="p-4 bg-slate-50/40 border border-slate-200/80 rounded-2xl flex items-start justify-between gap-4">
                     <div className="space-y-1">
                       <div className="flex items-center gap-2">
                         <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 uppercase tracking-wide">
                           Doporučení
                         </span>
-                        <h5 className="font-bold text-white text-xs">{rec.title}</h5>
+                        <h5 className="font-bold text-slate-900 text-xs">{rec.title}</h5>
                       </div>
-                      <p className="text-[11px] text-slate-400 leading-normal">{rec.description}</p>
+                      <p className="text-[11px] text-slate-500 leading-normal">{rec.description}</p>
                     </div>
 
                     <div className="flex flex-col items-end gap-1.5 flex-shrink-0 text-right">
-                      <span className="px-2 py-0.5 rounded text-[9px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                      <span className="px-2 py-0.5 rounded text-[9px] font-bold bg-green-500/20 text-green-300 border border-green-500/30">
                         Dopad: {rec.impact}
                       </span>
                       <span className="text-[10px] text-slate-500 font-medium">Složitost: {rec.effort}</span>
@@ -849,9 +849,9 @@ export const AuditCard: React.FC<AuditCardProps> = ({
 
         {/* ROI Calculator Sliders (Common for overall value explanation) */}
         <div className="px-6 sm:px-8 pb-4">
-          <div className="bg-slate-950/80 p-6 rounded-3xl border border-slate-800 space-y-6">
+          <div className="bg-slate-50/80 p-6 rounded-3xl border border-slate-200 space-y-6">
             <div className="flex items-center justify-between">
-              <h4 className="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-2">
+              <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-2">
                 <Sliders className="w-4 h-4 text-blue-400" />
                 Interaktivní simulátor ztrát & ROI
               </h4>
@@ -862,8 +862,8 @@ export const AuditCard: React.FC<AuditCardProps> = ({
               {/* Slider 1: Leads */}
               <div className="space-y-2">
                 <div className="flex justify-between text-xs">
-                  <span className="text-slate-400">Poptávek z webu / měsíc:</span>
-                  <span className="font-bold text-white">{sliderLeads}</span>
+                  <span className="text-slate-500">Poptávek z webu / měsíc:</span>
+                  <span className="font-bold text-slate-900">{sliderLeads}</span>
                 </div>
                 <input
                   type="range"
@@ -878,8 +878,8 @@ export const AuditCard: React.FC<AuditCardProps> = ({
               {/* Slider 2: Project Value */}
               <div className="space-y-2">
                 <div className="flex justify-between text-xs">
-                  <span className="text-slate-400">Průměrná cena zakázky:</span>
-                  <span className="font-bold text-white">{sliderProjectValue.toLocaleString('cs-CZ')} CZK</span>
+                  <span className="text-slate-500">Průměrná cena zakázky:</span>
+                  <span className="font-bold text-slate-900">{sliderProjectValue.toLocaleString('cs-CZ')} CZK</span>
                 </div>
                 <input
                   type="range"
@@ -895,8 +895,8 @@ export const AuditCard: React.FC<AuditCardProps> = ({
               {/* Slider 3: Employees */}
               <div className="space-y-2">
                 <div className="flex justify-between text-xs">
-                  <span className="text-slate-400">Počet pracovníků v terénu:</span>
-                  <span className="font-bold text-white">{sliderEmployees}</span>
+                  <span className="text-slate-500">Počet pracovníků v terénu:</span>
+                  <span className="font-bold text-slate-900">{sliderEmployees}</span>
                 </div>
                 <input
                   type="range"
@@ -910,16 +910,16 @@ export const AuditCard: React.FC<AuditCardProps> = ({
             </div>
 
             {/* Calculations metrics summary */}
-            <div className="p-4 bg-slate-900/80 rounded-2xl border border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div className="p-4 bg-white/80 rounded-2xl border border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-4">
               <div className="space-y-1 text-center sm:text-left">
                 <p className="text-[10px] text-slate-500 uppercase tracking-widest font-bold">ROČNÍ ZACHRÁNĚNÉ TRŽBY</p>
-                <p className="text-xl sm:text-2xl font-black text-emerald-400">{annualRecoverableRevenue.toLocaleString('cs-CZ')} CZK</p>
-                <p className="text-[11px] text-slate-400 leading-tight">
+                <p className="text-xl sm:text-2xl font-black text-green-400">{annualRecoverableRevenue.toLocaleString('cs-CZ')} CZK</p>
+                <p className="text-[11px] text-slate-500 leading-tight">
                   Při automatickém zachycení poptávek do 5 minut a eliminaci odchodů klientů.
                 </p>
               </div>
 
-              <div className="flex gap-4 border-t sm:border-t-0 sm:border-l border-slate-800 pt-3 sm:pt-0 sm:pl-6 text-center sm:text-left shrink-0">
+              <div className="flex gap-4 border-t sm:border-t-0 sm:border-l border-slate-200 pt-3 sm:pt-0 sm:pl-6 text-center sm:text-left shrink-0">
                 <div>
                   <p className="text-[9px] text-slate-500 uppercase font-bold">Ušetřený čas</p>
                   <p className="text-lg font-black text-indigo-400">{hoursSavedPerWeek} h / týdně</p>
@@ -936,17 +936,17 @@ export const AuditCard: React.FC<AuditCardProps> = ({
         </div>
 
         {/* Strong CTA with Pulse & Hover effects */}
-        <div className="p-6 bg-slate-950 border-t border-slate-800 flex flex-col md:flex-row items-center justify-between gap-4">
+        <div className="p-6 bg-slate-50 border-t border-slate-200 flex flex-col md:flex-row items-center justify-between gap-4">
           <button
             onClick={onNewURL}
-            className="px-5 py-2.5 rounded-xl text-xs font-bold text-slate-400 hover:text-white transition-all cursor-pointer"
+            className="px-5 py-2.5 rounded-xl text-xs font-bold text-slate-500 hover:text-slate-900 transition-all cursor-pointer"
           >
             ← Zadat jinou webovou stránku
           </button>
 
           <button
             onClick={onProceedToCRM}
-            className="relative group px-8 py-4.5 rounded-2xl text-sm font-black text-white shadow-2xl transition-all hover:scale-[1.02] active:scale-[0.98] overflow-hidden cursor-pointer"
+            className="relative group px-8 py-4.5 rounded-2xl text-sm font-black text-slate-900 shadow-2xl transition-all hover:scale-[1.02] active:scale-[0.98] overflow-hidden cursor-pointer"
             style={{ backgroundColor: branding.primaryColor }}
           >
             {/* Soft backdrop glow on hover */}

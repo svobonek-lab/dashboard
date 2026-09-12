@@ -67,19 +67,19 @@ export const Sidebar: React.FC<SidebarProps> = ({
   }
 
   return (
-    <aside className="w-72 bg-slate-900 text-slate-300 flex flex-col h-screen fixed left-0 top-0 z-30 border-r border-slate-800 shadow-xl">
+    <aside className="w-72 bg-white text-slate-700 flex flex-col h-screen fixed left-0 top-0 z-30 border-r border-slate-200 shadow-xl">
       {/* Top Brand Area */}
-      <div className="p-6 border-b border-slate-800">
+      <div className="p-6 border-b border-slate-200">
         <div className="flex items-center gap-3">
           <div 
-            className="w-10 h-10 rounded-xl flex items-center justify-center text-white font-bold text-lg shadow-md"
+            className="w-10 h-10 rounded-xl flex items-center justify-center text-slate-900 font-bold text-lg shadow-md"
             style={{ backgroundColor: branding.primaryColor }}
           >
             {branding.name ? branding.name.substring(0, 2).toUpperCase() : 'NS'}
           </div>
           <div className="overflow-hidden">
-            <h1 className="font-semibold text-white text-base truncate">{branding.name}</h1>
-            <p className="text-xs text-slate-400 truncate flex items-center gap-1 mt-0.5">
+            <h1 className="font-semibold text-slate-900 text-base truncate">{branding.name}</h1>
+            <p className="text-xs text-slate-500 truncate flex items-center gap-1 mt-0.5">
               <MapPin className="w-3 h-3 text-slate-500 flex-shrink-0" /> {branding.city}
             </p>
           </div>
@@ -88,7 +88,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         {/* Demo Factory Trigger Button */}
         <button
           onClick={onOpenDemoGenerator}
-          className="mt-5 w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl text-xs font-medium text-white shadow-lg transition-all duration-200 hover:opacity-95 active:scale-[0.98]"
+          className="mt-5 w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl text-xs font-medium text-slate-900 shadow-lg transition-all duration-200 hover:opacity-95 active:scale-[0.98]"
           style={{ backgroundColor: branding.primaryColor }}
         >
           <Sparkles className="w-4 h-4" />
@@ -110,8 +110,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
               onClick={() => setCurrentTab(item.id)}
               className={`w-full flex items-center gap-3 px-3.5 py-3 rounded-xl text-sm font-medium transition-all duration-150 relative ${
                 isActive 
-                  ? 'text-white bg-slate-800/80 shadow-sm' 
-                  : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/40'
+                  ? 'text-slate-900 bg-slate-800/80 shadow-sm' 
+                  : 'text-slate-500 hover:text-slate-800 hover:bg-slate-800/40'
               }`}
             >
               {isActive && (
@@ -120,7 +120,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   style={{ backgroundColor: branding.primaryColor }}
                 />
               )}
-              <Icon className={`w-5 h-5 ${isActive ? 'text-white' : 'text-slate-400'}`} />
+              <Icon className={`w-5 h-5 ${isActive ? 'text-slate-900' : 'text-slate-500'}`} />
               <span>{item.label}</span>
             </button>
           );
@@ -149,7 +149,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
       </nav>
 
       {/* Footer Company Contact */}
-      <div className="p-4 border-t border-slate-800 bg-slate-950/40 text-xs text-slate-400 space-y-1.5">
+      <div className="p-4 border-t border-slate-200 bg-slate-50/40 text-xs text-slate-500 space-y-1.5">
         <div className="flex items-center gap-2 truncate">
           <Phone className="w-3.5 h-3.5 text-slate-500 flex-shrink-0" />
           <span className="truncate">{branding.phone}</span>

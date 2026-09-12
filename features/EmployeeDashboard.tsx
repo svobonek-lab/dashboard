@@ -154,27 +154,27 @@ export const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({
     <div className="max-w-xl mx-auto space-y-6 pb-20">
       {/* Fullscreen Site Visit Mode Modal (Feature 7) */}
       {isSiteVisitMode && (
-        <div className="fixed inset-0 z-50 bg-slate-950 text-white flex flex-col overflow-y-auto animate-in fade-in">
+        <div className="fixed inset-0 z-50 bg-slate-50 text-slate-900 flex flex-col overflow-y-auto animate-in fade-in">
           {/* Top Bar */}
-          <div className="p-4 bg-slate-900 border-b border-slate-800 flex items-center justify-between sticky top-0 z-10 shadow-lg">
+          <div className="p-4 bg-white border-b border-slate-200 flex items-center justify-between sticky top-0 z-10 shadow-lg">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-amber-400">
                 <Maximize2 className="w-5 h-5" />
               </div>
               <div>
-                <h3 className="text-base font-bold text-white flex items-center gap-2">
+                <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
                   <span>Site Visit Mode</span>
-                  <span className="text-[10px] bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded-full border border-emerald-500/30 font-semibold">
+                  <span className="text-[10px] bg-green-500/20 text-green-400 px-2 py-0.5 rounded-full border border-green-500/30 font-semibold">
                     Live na stavbě
                   </span>
                 </h3>
-                <p className="text-xs text-slate-400">{activeLead.title} • {activeLead.customerName}</p>
+                <p className="text-xs text-slate-500">{activeLead.title} • {activeLead.customerName}</p>
               </div>
             </div>
 
             <button
               onClick={() => setIsSiteVisitMode(false)}
-              className="px-3.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-slate-300 flex items-center gap-1.5 transition-all"
+              className="px-3.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-slate-700 flex items-center gap-1.5 transition-all"
             >
               <Minimize2 className="w-4 h-4" />
               <span>Ukončit režim</span>
@@ -183,18 +183,18 @@ export const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({
 
           <div className="p-6 max-w-2xl mx-auto w-full space-y-6 flex-1">
             {/* GPS Confirmation Banner */}
-            <div className="bg-emerald-950/80 border border-emerald-500/40 p-4 rounded-2xl flex items-center justify-between shadow-lg">
+            <div className="bg-green-950/80 border border-green-500/40 p-4 rounded-2xl flex items-center justify-between shadow-lg">
               <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center">
+                <div className="w-9 h-9 rounded-xl bg-green-500/20 text-green-400 flex items-center justify-center">
                   <MapPin className="w-5 h-5 animate-bounce" />
                 </div>
                 <div>
-                  <h4 className="text-xs font-bold text-emerald-300 uppercase tracking-wider">GPS potvrzení příjezdu</h4>
-                  <p className="text-xs text-emerald-100 font-semibold">Technik dorazil na místo zakázky ({activeLead.address})</p>
-                  <p className="text-[10px] text-emerald-400/80 mt-0.5">Přesnost GPS: 4 metry • Zaznamenáno v 08:14</p>
+                  <h4 className="text-xs font-bold text-green-300 uppercase tracking-wider">GPS potvrzení příjezdu</h4>
+                  <p className="text-xs text-green-100 font-semibold">Technik dorazil na místo zakázky ({activeLead.address})</p>
+                  <p className="text-[10px] text-green-400/80 mt-0.5">Přesnost GPS: 4 metry • Zaznamenáno v 08:14</p>
                 </div>
               </div>
-              <span className="px-2.5 py-1 rounded-full bg-emerald-500 text-slate-950 text-[10px] font-extrabold uppercase">
+              <span className="px-2.5 py-1 rounded-full bg-green-500 text-slate-950 text-[10px] font-extrabold uppercase">
                 Potvrzeno
               </span>
             </div>
@@ -202,8 +202,8 @@ export const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({
             {/* Checklist Header */}
             <div className="flex items-center justify-between">
               <div>
-                <h4 className="text-lg font-bold text-white">Interaktivní Checklist technika</h4>
-                <p className="text-xs text-slate-400">Splňte kroky před zahájením a vygenerováním nabídky</p>
+                <h4 className="text-lg font-bold text-slate-900">Interaktivní Checklist technika</h4>
+                <p className="text-xs text-slate-500">Splňte kroky před zahájením a vygenerováním nabídky</p>
               </div>
               <span className="text-xs font-bold text-amber-400 bg-amber-950/80 px-3 py-1 rounded-full border border-amber-800">
                 {Object.values(checklist).filter(Boolean).length} / 5 splněno
@@ -214,17 +214,17 @@ export const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({
             <div className="space-y-4">
               {/* 1. Measurements */}
               <div className={`p-4 rounded-2xl border transition-all ${
-                checklist.measurements ? 'bg-slate-900/90 border-emerald-500/40' : 'bg-slate-900/60 border-slate-800'
+                checklist.measurements ? 'bg-white/90 border-green-500/40' : 'bg-white/60 border-slate-200'
               }`}>
                 <div className="flex items-center justify-between mb-3">
                   <div className="flex items-center gap-2.5">
                     <Ruler className="w-5 h-5 text-blue-400" />
-                    <span className="text-sm font-bold text-white">1. Zaměření rozměrů (Measurements)</span>
+                    <span className="text-sm font-bold text-slate-900">1. Zaměření rozměrů (Measurements)</span>
                   </div>
                   <button
                     onClick={() => setChecklist(prev => ({ ...prev, measurements: !prev.measurements }))}
                     className={`px-3 py-1 rounded-xl text-xs font-bold flex items-center gap-1.5 ${
-                      checklist.measurements ? 'bg-emerald-600 text-white' : 'bg-slate-800 text-slate-300'
+                      checklist.measurements ? 'bg-green-600 text-slate-900' : 'bg-slate-800 text-slate-700'
                     }`}
                   >
                     <Check className="w-3.5 h-3.5" />
@@ -233,99 +233,99 @@ export const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({
                 </div>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
                   <div>
-                    <label className="text-[10px] text-slate-400 block mb-1">Šířka (Width)</label>
+                    <label className="text-[10px] text-slate-500 block mb-1">Šířka (Width)</label>
                     <input
                       type="text"
                       value={measurementsData.width}
                       onChange={(e) => setMeasurementsData({ ...measurementsData, width: e.target.value })}
-                      className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white font-mono font-bold"
+                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-slate-900 font-mono font-bold"
                     />
                   </div>
                   <div>
-                    <label className="text-[10px] text-slate-400 block mb-1">Délka (Length)</label>
+                    <label className="text-[10px] text-slate-500 block mb-1">Délka (Length)</label>
                     <input
                       type="text"
                       value={measurementsData.length}
                       onChange={(e) => setMeasurementsData({ ...measurementsData, length: e.target.value })}
-                      className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white font-mono font-bold"
+                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-slate-900 font-mono font-bold"
                     />
                   </div>
                   <div>
-                    <label className="text-[10px] text-slate-400 block mb-1">Výška (Height)</label>
+                    <label className="text-[10px] text-slate-500 block mb-1">Výška (Height)</label>
                     <input
                       type="text"
                       value={measurementsData.height}
                       onChange={(e) => setMeasurementsData({ ...measurementsData, height: e.target.value })}
-                      className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white font-mono font-bold"
+                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-slate-900 font-mono font-bold"
                     />
                   </div>
                   <div>
-                    <label className="text-[10px] text-slate-400 block mb-1">Sklon střechy</label>
+                    <label className="text-[10px] text-slate-500 block mb-1">Sklon střechy</label>
                     <input
                       type="text"
                       value={measurementsData.slope}
                       onChange={(e) => setMeasurementsData({ ...measurementsData, slope: e.target.value })}
-                      className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white font-mono font-bold"
+                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-slate-900 font-mono font-bold"
                     />
                   </div>
                 </div>
               </div>
 
               {/* 2. Photos */}
-              <div className="p-4 rounded-2xl bg-slate-900/80 border border-slate-800 space-y-3">
+              <div className="p-4 rounded-2xl bg-white/80 border border-slate-200 space-y-3">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2.5">
-                    <Camera className="w-5 h-5 text-emerald-400" />
-                    <span className="text-sm font-bold text-white">2. Fotodokumentace (Photos)</span>
+                    <Camera className="w-5 h-5 text-green-400" />
+                    <span className="text-sm font-bold text-slate-900">2. Fotodokumentace (Photos)</span>
                   </div>
                   <div className="flex gap-1.5">
                     <button onClick={() => handleAddPhoto('Before')} className="px-2.5 py-1 bg-blue-600/30 text-blue-300 border border-blue-500/30 hover:bg-blue-600/50 rounded-lg text-[10px] font-bold">+ Před</button>
                     <button onClick={() => handleAddPhoto('During')} className="px-2.5 py-1 bg-amber-600/30 text-amber-300 border border-amber-500/30 hover:bg-amber-600/50 rounded-lg text-[10px] font-bold">+ Během</button>
-                    <button onClick={() => handleAddPhoto('After')} className="px-2.5 py-1 bg-emerald-600/30 text-emerald-300 border border-emerald-500/30 hover:bg-emerald-600/50 rounded-lg text-[10px] font-bold">+ Po</button>
+                    <button onClick={() => handleAddPhoto('After')} className="px-2.5 py-1 bg-green-600/30 text-green-300 border border-green-500/30 hover:bg-green-600/50 rounded-lg text-[10px] font-bold">+ Po</button>
                   </div>
                 </div>
                 <div className="grid grid-cols-3 gap-2">
                   {timelinePhotos.map(p => (
-                    <div key={p.id} className="relative rounded-xl overflow-hidden border border-slate-800 aspect-video">
+                    <div key={p.id} className="relative rounded-xl overflow-hidden border border-slate-200 aspect-video">
                       <img src={p.url} alt="" className="w-full h-full object-cover" />
-                      <span className="absolute top-1 left-1 px-1.5 py-0.5 rounded bg-black/80 text-[8px] font-bold uppercase text-white">{p.stage}</span>
+                      <span className="absolute top-1 left-1 px-1.5 py-0.5 rounded bg-black/80 text-[8px] font-bold uppercase text-slate-900">{p.stage}</span>
                     </div>
                   ))}
                 </div>
               </div>
 
               {/* 3. Voice Notes */}
-              <div className="p-4 rounded-2xl bg-slate-900/80 border border-slate-800 space-y-3">
+              <div className="p-4 rounded-2xl bg-white/80 border border-slate-200 space-y-3">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2.5">
                     <Mic className="w-5 h-5 text-rose-400" />
-                    <span className="text-sm font-bold text-white">3. Hlasové poznámky (Voice Notes)</span>
+                    <span className="text-sm font-bold text-slate-900">3. Hlasové poznámky (Voice Notes)</span>
                   </div>
                   <button
                     onClick={handleStartRecording}
                     disabled={isRecording}
                     className={`px-3 py-1 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
-                      isRecording ? 'bg-rose-600 text-white animate-pulse' : 'bg-rose-500/20 text-rose-300 border border-rose-500/40 hover:bg-rose-500/30'
+                      isRecording ? 'bg-rose-600 text-slate-900 animate-pulse' : 'bg-rose-500/20 text-rose-300 border border-rose-500/40 hover:bg-rose-500/30'
                     }`}
                   >
                     <Mic className="w-3.5 h-3.5" />
                     {isRecording ? 'Nahrávám...' : 'Nahrát poznámku'}
                   </button>
                 </div>
-                <p className="text-xs text-slate-300 italic bg-slate-950 p-3 rounded-xl border border-slate-800">
+                <p className="text-xs text-slate-700 italic bg-slate-50 p-3 rounded-xl border border-slate-200">
                   "{transcribedNotes[0]}"
                 </p>
               </div>
 
               {/* 4. Customer Signature */}
-              <div className="p-4 rounded-2xl bg-slate-900/80 border border-slate-800 space-y-3">
+              <div className="p-4 rounded-2xl bg-white/80 border border-slate-200 space-y-3">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2.5">
                     <PenTool className="w-5 h-5 text-purple-400" />
-                    <span className="text-sm font-bold text-white">4. Podpis zákazníka na místě (Customer Signature)</span>
+                    <span className="text-sm font-bold text-slate-900">4. Podpis zákazníka na místě (Customer Signature)</span>
                   </div>
                   <span className={`text-[10px] font-bold px-2 py-0.5 rounded ${
-                    signatureDone ? 'bg-emerald-500/20 text-emerald-400' : 'bg-amber-500/20 text-amber-400'
+                    signatureDone ? 'bg-green-500/20 text-green-400' : 'bg-amber-500/20 text-amber-400'
                   }`}>
                     {signatureDone ? 'Podepsáno' : 'Čeká na podpis'}
                   </span>
@@ -337,12 +337,12 @@ export const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({
                     setSignatureDone(true);
                     setChecklist(prev => ({ ...prev, customerSignature: true }));
                   }}
-                  className="h-28 rounded-2xl bg-slate-950 border border-dashed border-slate-800 flex flex-col items-center justify-center text-slate-500 cursor-pointer hover:border-blue-500/50 transition-all relative overflow-hidden"
+                  className="h-28 rounded-2xl bg-slate-50 border border-dashed border-slate-200 flex flex-col items-center justify-center text-slate-500 cursor-pointer hover:border-blue-500/50 transition-all relative overflow-hidden"
                 >
                   {signatureDone ? (
                     <div className="flex flex-col items-center justify-center space-y-1">
                       <span className="font-serif italic text-2xl text-purple-300 tracking-widest">{activeLead.customerName}</span>
-                      <span className="text-[9px] text-emerald-400 flex items-center gap-1 font-mono">
+                      <span className="text-[9px] text-green-400 flex items-center gap-1 font-mono">
                         <Check className="w-3 h-3" /> Digitálně ověřeno s časovým razítkem (08:22)
                       </span>
                     </div>
@@ -357,16 +357,16 @@ export const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({
               </div>
 
               {/* 5. Material Notes */}
-              <div className="p-4 rounded-2xl bg-slate-900/80 border border-slate-800 space-y-3">
+              <div className="p-4 rounded-2xl bg-white/80 border border-slate-200 space-y-3">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2.5">
                     <FileText className="w-5 h-5 text-amber-400" />
-                    <span className="text-sm font-bold text-white">5. Materiálové specifikace (Material Notes)</span>
+                    <span className="text-sm font-bold text-slate-900">5. Materiálové specifikace (Material Notes)</span>
                   </div>
                   <button
                     onClick={() => setChecklist(prev => ({ ...prev, materialNotes: !prev.materialNotes }))}
                     className={`px-3 py-1 rounded-xl text-xs font-bold ${
-                      checklist.materialNotes ? 'bg-emerald-600 text-white' : 'bg-slate-800 text-slate-300'
+                      checklist.materialNotes ? 'bg-green-600 text-slate-900' : 'bg-slate-800 text-slate-700'
                     }`}
                   >
                     <Check className="w-3.5 h-3.5" />
@@ -377,16 +377,16 @@ export const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({
                   rows={2}
                   value={materialNotesText}
                   onChange={(e) => setMaterialNotesText(e.target.value)}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-xs text-slate-200 focus:outline-none focus:ring-1 focus:ring-amber-500"
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-xs text-slate-800 focus:outline-none focus:ring-1 focus:ring-amber-500"
                 />
               </div>
             </div>
 
             {/* Prominent One-Button: Generate Quote */}
-            <div className="pt-4 border-t border-slate-800 space-y-3">
+            <div className="pt-4 border-t border-slate-200 space-y-3">
               <button
                 onClick={handleGenerateQuoteFromField}
-                className="w-full py-4 rounded-2xl bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-500 hover:opacity-95 text-white font-extrabold text-base shadow-2xl flex items-center justify-center gap-3 transition-all active:scale-[0.99]"
+                className="w-full py-4 rounded-2xl bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-500 hover:opacity-95 text-slate-900 font-extrabold text-base shadow-2xl flex items-center justify-center gap-3 transition-all active:scale-[0.99]"
               >
                 <Sparkles className="w-5 h-5" />
                 <span>Generate Quote (Vytvořit cenovou nabídku na klíč)</span>
@@ -397,8 +397,8 @@ export const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({
             </div>
 
             {quoteGeneratedNotice && (
-              <div className="p-4 bg-emerald-900 border border-emerald-500 text-white rounded-2xl text-xs font-bold flex items-center gap-2 animate-in fade-in">
-                <Check className="w-5 h-5 text-emerald-300" />
+              <div className="p-4 bg-green-900 border border-green-500 text-slate-900 rounded-2xl text-xs font-bold flex items-center gap-2 animate-in fade-in">
+                <Check className="w-5 h-5 text-green-300" />
                 <span>{quoteGeneratedNotice}</span>
               </div>
             )}
@@ -407,7 +407,7 @@ export const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({
       )}
 
       {/* Employee Header & Offline-First Toggle / Queue */}
-      <div className="bg-slate-900 text-white p-6 rounded-3xl shadow-xl space-y-4">
+      <div className="bg-white text-slate-900 p-6 rounded-3xl shadow-xl space-y-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <img
@@ -417,7 +417,7 @@ export const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({
             />
             <div>
               <h2 className="text-lg font-bold">Petr Novotný</h2>
-              <p className="text-xs text-slate-400">Střechy & Tesařské práce • {branding.name}</p>
+              <p className="text-xs text-slate-500">Střechy & Tesařské práce • {branding.name}</p>
             </div>
           </div>
 
@@ -427,7 +427,7 @@ export const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({
               className={`px-3 py-1 rounded-full text-xs font-semibold flex items-center gap-1.5 transition-all ${
                 isOfflineMode 
                   ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30' 
-                  : 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
+                  : 'bg-green-500/20 text-green-400 border border-green-500/30'
               }`}
             >
               {isOfflineMode ? <WifiOff className="w-3.5 h-3.5" /> : <Wifi className="w-3.5 h-3.5" />}
@@ -441,7 +441,7 @@ export const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({
                 <button
                   onClick={handleSyncOffline}
                   disabled={isSyncing}
-                  className="text-[10px] bg-blue-600 hover:bg-blue-500 text-white font-bold px-2 py-0.5 rounded flex items-center gap-1"
+                  className="text-[10px] bg-blue-600 hover:bg-blue-500 text-slate-900 font-bold px-2 py-0.5 rounded flex items-center gap-1"
                 >
                   <RefreshCw className={`w-2.5 h-2.5 ${isSyncing ? 'animate-spin' : ''}`} />
                   <span>Sync</span>
@@ -463,38 +463,38 @@ export const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({
 
       {/* Today's Jobs Header */}
       <div className="flex items-center justify-between">
-        <h3 className="text-lg font-bold text-slate-100">Dnešní přiřazené zakázky (2)</h3>
-        <span className="text-xs font-semibold text-slate-400">10. září 2026</span>
+        <h3 className="text-lg font-bold text-slate-900">Dnešní přiřazené zakázky (2)</h3>
+        <span className="text-xs font-semibold text-slate-500">10. září 2026</span>
       </div>
 
       {/* Large Active Job Card */}
       {activeLead && (
-        <div className="bg-slate-900 rounded-3xl border border-slate-800 shadow-xl overflow-hidden space-y-6 p-6">
+        <div className="bg-white rounded-3xl border border-slate-200 shadow-xl overflow-hidden space-y-6 p-6">
           <div className="flex items-start justify-between gap-4">
             <div>
               <span className="inline-block px-3 py-1 rounded-full text-[11px] font-bold bg-amber-500/20 text-amber-400 border border-amber-500/30 mb-2">
                 Aktivní zakázka #1
               </span>
-              <h4 className="text-xl font-extrabold text-slate-100">{activeLead.title}</h4>
-              <p className="text-xs text-slate-400 mt-1 flex items-center gap-1.5">
+              <h4 className="text-xl font-extrabold text-slate-900">{activeLead.title}</h4>
+              <p className="text-xs text-slate-500 mt-1 flex items-center gap-1.5">
                 <MapPin className="w-3.5 h-3.5 text-amber-400" /> {activeLead.address}
               </p>
             </div>
-            <img src={activeLead.thumbnail} alt="" className="w-20 h-20 rounded-2xl object-cover flex-shrink-0 border border-slate-800 shadow-md" />
+            <img src={activeLead.thumbnail} alt="" className="w-20 h-20 rounded-2xl object-cover flex-shrink-0 border border-slate-200 shadow-md" />
           </div>
 
           {/* Contact & Navigation Buttons */}
           <div className="grid grid-cols-2 gap-3 pt-2">
             <a
               href={`tel:${activeLead.customerPhone}`}
-              className="p-4 rounded-2xl bg-slate-950 border border-slate-800 hover:border-slate-700 transition-all flex items-center gap-3 text-xs font-semibold text-slate-200"
+              className="p-4 rounded-2xl bg-slate-50 border border-slate-200 hover:border-slate-300 transition-all flex items-center gap-3 text-xs font-semibold text-slate-800"
             >
-              <div className="w-10 h-10 rounded-xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 flex items-center justify-center">
+              <div className="w-10 h-10 rounded-xl bg-green-500/20 text-green-400 border border-green-500/30 flex items-center justify-center">
                 <Phone className="w-5 h-5" />
               </div>
               <div>
-                <p className="text-[10px] text-slate-400 font-normal">Zavolat zákazníkovi</p>
-                <p className="truncate text-sm font-bold text-slate-100">{activeLead.customerName}</p>
+                <p className="text-[10px] text-slate-500 font-normal">Zavolat zákazníkovi</p>
+                <p className="truncate text-sm font-bold text-slate-900">{activeLead.customerName}</p>
               </div>
             </a>
 
@@ -502,28 +502,28 @@ export const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({
               href={`https://maps.google.com/?q=${encodeURIComponent(activeLead.address)}`}
               target="_blank"
               rel="noreferrer"
-              className="p-4 rounded-2xl bg-slate-950 border border-slate-800 hover:border-slate-700 transition-all flex items-center gap-3 text-xs font-semibold text-slate-200"
+              className="p-4 rounded-2xl bg-slate-50 border border-slate-200 hover:border-slate-300 transition-all flex items-center gap-3 text-xs font-semibold text-slate-800"
             >
               <div className="w-10 h-10 rounded-xl bg-amber-500/20 text-amber-400 border border-amber-500/30 flex items-center justify-center">
                 <Navigation className="w-5 h-5" />
               </div>
               <div>
-                <p className="text-[10px] text-slate-400 font-normal">Navigovat na stavbu</p>
-                <p className="text-sm font-bold text-slate-100">Google Maps</p>
+                <p className="text-[10px] text-slate-500 font-normal">Navigovat na stavbu</p>
+                <p className="text-sm font-bold text-slate-900">Google Maps</p>
               </div>
             </a>
           </div>
 
           {/* Status Buttons */}
           <div className="space-y-2 pt-2">
-            <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Stav v terénu</label>
+            <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Stav v terénu</label>
             <div className="grid grid-cols-3 gap-2">
               <button
                 onClick={() => setActiveJobStatus('Driving')}
                 className={`py-4 rounded-2xl text-xs font-bold transition-all flex flex-col items-center justify-center gap-1.5 border ${
                   activeJobStatus === 'Driving'
-                    ? 'bg-blue-600 text-white border-blue-500 shadow-md'
-                    : 'bg-slate-950 text-slate-400 border-slate-800 hover:bg-slate-800 hover:text-slate-200'
+                    ? 'bg-blue-600 text-slate-900 border-blue-500 shadow-md'
+                    : 'bg-slate-50 text-slate-500 border-slate-200 hover:bg-slate-800 hover:text-slate-800'
                 }`}
               >
                 <Car className="w-5 h-5" />
@@ -534,7 +534,7 @@ export const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({
                 className={`py-4 rounded-2xl text-xs font-bold transition-all flex flex-col items-center justify-center gap-1.5 border ${
                   activeJobStatus === 'Arrived'
                     ? 'bg-amber-500 text-slate-950 border-amber-400 shadow-md'
-                    : 'bg-slate-950 text-slate-400 border-slate-800 hover:bg-slate-800 hover:text-slate-200'
+                    : 'bg-slate-50 text-slate-500 border-slate-200 hover:bg-slate-800 hover:text-slate-800'
                 }`}
               >
                 <MapPin className="w-5 h-5" />
@@ -544,8 +544,8 @@ export const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({
                 onClick={() => setActiveJobStatus('Finished')}
                 className={`py-4 rounded-2xl text-xs font-bold transition-all flex flex-col items-center justify-center gap-1.5 border ${
                   activeJobStatus === 'Finished'
-                    ? 'bg-emerald-600 text-white border-emerald-500 shadow-md'
-                    : 'bg-slate-950 text-slate-400 border-slate-800 hover:bg-slate-800 hover:text-slate-200'
+                    ? 'bg-green-600 text-slate-900 border-green-500 shadow-md'
+                    : 'bg-slate-50 text-slate-500 border-slate-200 hover:bg-slate-800 hover:text-slate-800'
                 }`}
               >
                 <CheckCircle className="w-5 h-5" />
@@ -555,13 +555,13 @@ export const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({
           </div>
 
           {/* Before During After Chronological Photo Timeline */}
-          <div className="space-y-3 pt-4 border-t border-slate-800">
+          <div className="space-y-3 pt-4 border-t border-slate-200">
             <div className="flex items-center justify-between">
-              <h5 className="text-xs font-bold uppercase tracking-wider text-slate-300">Fotodokumentace (Před / Během / Po)</h5>
+              <h5 className="text-xs font-bold uppercase tracking-wider text-slate-700">Fotodokumentace (Před / Během / Po)</h5>
               <div className="flex gap-1">
-                <button onClick={() => handleAddPhoto('Before')} className="px-2 py-1 bg-blue-950 text-blue-400 border border-blue-800/80 hover:bg-blue-900 rounded-lg text-[10px] font-bold">+ Před</button>
+                <button onClick={() => handleAddPhoto('Before')} className="px-2 py-1 bg-slate-50 text-blue-400 border border-blue-800/80 hover:bg-white rounded-lg text-[10px] font-bold">+ Před</button>
                 <button onClick={() => handleAddPhoto('During')} className="px-2 py-1 bg-amber-950 text-amber-400 border border-amber-800/80 hover:bg-amber-900 rounded-lg text-[10px] font-bold">+ Během</button>
-                <button onClick={() => handleAddPhoto('After')} className="px-2 py-1 bg-emerald-950 text-emerald-400 border border-emerald-800/80 hover:bg-emerald-900 rounded-lg text-[10px] font-bold">+ Po</button>
+                <button onClick={() => handleAddPhoto('After')} className="px-2 py-1 bg-green-950 text-green-400 border border-green-800/80 hover:bg-green-900 rounded-lg text-[10px] font-bold">+ Po</button>
               </div>
             </div>
 
@@ -569,24 +569,24 @@ export const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({
               {['Before', 'During', 'After'].map((stageName) => {
                 const stagePhotos = timelinePhotos.filter(p => p.stage === stageName);
                 return (
-                  <div key={stageName} className="bg-slate-950 p-3 rounded-2xl border border-slate-800 space-y-2">
+                  <div key={stageName} className="bg-slate-50 p-3 rounded-2xl border border-slate-200 space-y-2">
                     <span className={`text-[10px] font-extrabold uppercase px-2 py-0.5 rounded block text-center border ${
-                      stageName === 'Before' ? 'bg-blue-950/80 border-blue-800 text-blue-400' :
-                      stageName === 'During' ? 'bg-amber-950/80 border-amber-800 text-amber-400' : 'bg-emerald-950/80 border-emerald-800 text-emerald-400'
+                      stageName === 'Before' ? 'bg-slate-50/80 border-blue-800 text-blue-400' :
+                      stageName === 'During' ? 'bg-amber-950/80 border-amber-800 text-amber-400' : 'bg-green-950/80 border-green-800 text-green-400'
                     }`}>
                       {stageName === 'Before' ? 'Před montáží' : stageName === 'During' ? 'V průběhu' : 'Hotové dílo'}
                     </span>
                     {stagePhotos.length > 0 ? (
                       <div className="space-y-2">
                         {stagePhotos.map(p => (
-                          <div key={p.id} className="relative group rounded-xl overflow-hidden border border-slate-800">
+                          <div key={p.id} className="relative group rounded-xl overflow-hidden border border-slate-200">
                             <img src={p.url} alt={stageName} className="w-full h-24 object-cover" />
-                            <span className="absolute bottom-1 right-1 px-1.5 py-0.5 rounded bg-slate-950/80 text-[9px] text-slate-200 border border-slate-800">{p.time}</span>
+                            <span className="absolute bottom-1 right-1 px-1.5 py-0.5 rounded bg-slate-50/80 text-[9px] text-slate-800 border border-slate-200">{p.time}</span>
                           </div>
                         ))}
                       </div>
                     ) : (
-                      <div className="h-24 flex items-center justify-center text-[10px] text-slate-600 border border-dashed border-slate-800 rounded-xl">
+                      <div className="h-24 flex items-center justify-center text-[10px] text-slate-600 border border-dashed border-slate-200 rounded-xl">
                         Žádné foto
                       </div>
                     )}
@@ -597,16 +597,16 @@ export const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({
           </div>
 
           {/* Voice Notes with Speech-to-Text */}
-          <div className="space-y-3 pt-4 border-t border-slate-800">
+          <div className="space-y-3 pt-4 border-t border-slate-200">
             <div className="flex items-center justify-between">
-              <h5 className="text-xs font-bold uppercase tracking-wider text-slate-300 flex items-center gap-1">
+              <h5 className="text-xs font-bold uppercase tracking-wider text-slate-700 flex items-center gap-1">
                 <Mic className="w-3.5 h-3.5 text-rose-400" /> Hlasové poznámky technika (Speech-to-Text)
               </h5>
               <button
                 onClick={handleStartRecording}
                 disabled={isRecording}
                 className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
-                  isRecording ? 'bg-rose-600 text-white animate-pulse' : 'bg-slate-950 hover:bg-slate-800 text-slate-200 border border-slate-800'
+                  isRecording ? 'bg-rose-600 text-slate-900 animate-pulse' : 'bg-slate-50 hover:bg-slate-800 text-slate-800 border border-slate-200'
                 }`}
               >
                 <Mic className="w-3.5 h-3.5 text-rose-400" />
@@ -616,7 +616,7 @@ export const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({
 
             <div className="space-y-2 max-h-40 overflow-y-auto">
               {transcribedNotes.map((note, idx) => (
-                <div key={idx} className="p-3 rounded-xl bg-slate-950 border border-slate-800 text-xs text-slate-300 flex items-start gap-2">
+                <div key={idx} className="p-3 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-700 flex items-start gap-2">
                   <span className="w-5 h-5 rounded-full bg-rose-500/20 text-rose-400 border border-rose-500/30 flex items-center justify-center text-[10px] font-bold flex-shrink-0 mt-0.5">#{idx+1}</span>
                   <p className="flex-1">{note}</p>
                 </div>
@@ -625,9 +625,9 @@ export const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({
           </div>
 
           {/* Material Receipt Scanner (Feature 7) */}
-          <div className="space-y-3 pt-4 border-t border-slate-800">
+          <div className="space-y-3 pt-4 border-t border-slate-200">
             <div className="flex items-center justify-between">
-              <h5 className="text-xs font-bold uppercase tracking-wider text-slate-300 flex items-center gap-1">
+              <h5 className="text-xs font-bold uppercase tracking-wider text-slate-700 flex items-center gap-1">
                 <Receipt className="w-3.5 h-3.5 text-amber-400" /> AI Skener nákupních účtenek (Receipt Scanner)
               </h5>
               <button
@@ -641,16 +641,16 @@ export const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({
             </div>
 
             {scannedReceipt && (
-              <div className="bg-slate-950 border border-amber-500/40 p-4 rounded-2xl text-xs space-y-2 animate-in fade-in">
-                <div className="flex items-center justify-between font-bold text-amber-400 border-b border-slate-800 pb-2">
+              <div className="bg-slate-50 border border-amber-500/40 p-4 rounded-2xl text-xs space-y-2 animate-in fade-in">
+                <div className="flex items-center justify-between font-bold text-amber-400 border-b border-slate-200 pb-2">
                   <span>Extrahovaná data z účtenky</span>
-                  <span className="text-emerald-400 flex items-center gap-1"><Check className="w-3.5 h-3.5" /> Zaúčtováno k projektu</span>
+                  <span className="text-green-400 flex items-center gap-1"><Check className="w-3.5 h-3.5" /> Zaúčtováno k projektu</span>
                 </div>
-                <div className="grid grid-cols-2 gap-2 text-slate-300">
-                  <div><strong className="text-slate-100">Dodavatel (Supplier):</strong> {scannedReceipt.supplier}</div>
-                  <div><strong className="text-slate-100">Částka (Amount):</strong> {scannedReceipt.price.toLocaleString()} Kč</div>
-                  <div><strong className="text-slate-100">Sazba DPH (VAT):</strong> {scannedReceipt.vat}%</div>
-                  <div><strong className="text-slate-100">Materiál:</strong> {scannedReceipt.item}</div>
+                <div className="grid grid-cols-2 gap-2 text-slate-700">
+                  <div><strong className="text-slate-900">Dodavatel (Supplier):</strong> {scannedReceipt.supplier}</div>
+                  <div><strong className="text-slate-900">Částka (Amount):</strong> {scannedReceipt.price.toLocaleString()} Kč</div>
+                  <div><strong className="text-slate-900">Sazba DPH (VAT):</strong> {scannedReceipt.vat}%</div>
+                  <div><strong className="text-slate-900">Materiál:</strong> {scannedReceipt.item}</div>
                 </div>
               </div>
             )}

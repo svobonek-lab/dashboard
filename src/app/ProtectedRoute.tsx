@@ -26,7 +26,7 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, allowe
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center gap-4 text-slate-100">
+      <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center gap-4 text-slate-100">
         <div className="relative">
           <div className="w-12 h-12 border-4 border-amber-500/20 border-t-amber-500 rounded-full animate-spin"></div>
           <div className="absolute inset-0 flex items-center justify-center">

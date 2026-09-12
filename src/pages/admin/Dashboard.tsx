@@ -87,7 +87,7 @@ export const AdminDashboardPage: React.FC = () => {
           <p className="text-2xl font-black text-white mt-2 font-mono">
             {loading ? '...' : orgs.length}
           </p>
-          <p className="text-[10px] text-emerald-400 font-mono mt-1 flex items-center gap-1">
+          <p className="text-[10px] text-green-400 font-mono mt-1 flex items-center gap-1">
             <ArrowUpRight className="w-3 h-3" />
             +100% tenant isolation
           </p>
@@ -101,7 +101,7 @@ export const AdminDashboardPage: React.FC = () => {
           <p className="text-2xl font-black text-white mt-2 font-mono">
             {loading ? '...' : orgs.length * 2}
           </p>
-          <p className="text-[10px] text-emerald-400 font-mono mt-1 flex items-center gap-1">
+          <p className="text-[10px] text-green-400 font-mono mt-1 flex items-center gap-1">
             <ArrowUpRight className="w-3 h-3" />
             Plná RBAC oprávnění
           </p>
@@ -123,7 +123,7 @@ export const AdminDashboardPage: React.FC = () => {
         <div className="bg-[#0C111D] p-5 rounded-2xl border border-slate-800/80 shadow-md">
           <div className="flex items-center justify-between text-slate-400">
             <span className="text-[11px] font-mono uppercase font-bold">Monthly Inquiries</span>
-            <TrendingUp className="w-4 h-4 text-emerald-400" />
+            <TrendingUp className="w-4 h-4 text-green-400" />
           </div>
           <p className="text-2xl font-black text-white mt-2 font-mono">
             142
@@ -136,12 +136,12 @@ export const AdminDashboardPage: React.FC = () => {
         <div className="bg-[#0C111D] p-5 rounded-2xl border border-slate-800/80 shadow-md">
           <div className="flex items-center justify-between text-slate-400">
             <span className="text-[11px] font-mono uppercase font-bold">Estimated MRR</span>
-            <DollarSign className="w-4 h-4 text-emerald-400" />
+            <DollarSign className="w-4 h-4 text-green-400" />
           </div>
-          <p className="text-2xl font-black text-emerald-400 mt-2 font-mono">
+          <p className="text-2xl font-black text-green-400 mt-2 font-mono">
             ${totalMRR}
           </p>
-          <p className="text-[10px] text-emerald-400 font-mono mt-1 flex items-center gap-1">
+          <p className="text-[10px] text-green-400 font-mono mt-1 flex items-center gap-1">
             <ArrowUpRight className="w-3 h-3" />
             Steady growth
           </p>
@@ -231,10 +231,10 @@ export const AdminDashboardPage: React.FC = () => {
         <div className="bg-[#0C111D] p-6 rounded-2xl border border-slate-800/80 shadow-md space-y-4">
           <div className="flex items-center justify-between">
             <h3 className="text-sm font-bold text-white flex items-center gap-2">
-              <Terminal className="w-4 h-4 text-emerald-400" />
+              <Terminal className="w-4 h-4 text-green-400" />
               Live Telemetry
             </h3>
-            <span className="text-[10px] font-mono text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/30">
+            <span className="text-[10px] font-mono text-green-400 bg-green-500/10 px-2 py-0.5 rounded border border-green-500/30">
               Live Feed
             </span>
           </div>
@@ -250,7 +250,7 @@ export const AdminDashboardPage: React.FC = () => {
               <div key={i} className="p-2.5 bg-[#090D16] rounded-xl border border-slate-800/80 space-y-1">
                 <div className="flex items-center justify-between text-[11px]">
                   <span className="text-slate-400">{log.time}</span>
-                  <span className="text-emerald-400 font-bold">{log.status}</span>
+                  <span className="text-green-400 font-bold">{log.status}</span>
                 </div>
                 <p className="text-slate-200 font-semibold">{log.action}</p>
                 <p className="text-[10px] text-slate-500">Tenant: {log.org}</p>

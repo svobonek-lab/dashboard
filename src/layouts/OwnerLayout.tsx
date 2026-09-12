@@ -135,8 +135,8 @@ export const OwnerLayout: React.FC<OwnerLayoutProps> = ({
               <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-slate-800 text-slate-300 border border-slate-700">
                 {(currentOrg as any)?.plan || 'Enterprise'} Plan
               </span>
-              <span className="hidden lg:inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[10px] font-mono text-emerald-400 bg-emerald-500/10 border border-emerald-500/20">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+              <span className="hidden lg:inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[10px] font-mono text-green-400 bg-green-500/10 border border-green-500/20">
+                <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse"></span>
                 Isolated Multi-Tenant
               </span>
             </div>
@@ -288,7 +288,7 @@ export const OwnerLayout: React.FC<OwnerLayoutProps> = ({
                   switchRoleToSuperAdmin();
                   navigate('/admin');
                 }}
-                className="w-full py-2 px-3 rounded-xl bg-slate-900 hover:bg-slate-800 text-amber-400 border border-slate-700 text-xs font-bold transition-all flex items-center justify-center gap-2 shadow-sm"
+                className="w-full py-2 px-3 rounded-xl bg-slate-50 hover:bg-slate-800 text-amber-400 border border-slate-700 text-xs font-bold transition-all flex items-center justify-center gap-2 shadow-sm"
               >
                 <Shield className="w-3.5 h-3.5 text-amber-400" />
                 <span>Super Admin Platform</span>
@@ -398,7 +398,7 @@ export const OwnerLayout: React.FC<OwnerLayoutProps> = ({
               </button>
 
               {isNotificationsOpen && (
-                <div className="absolute right-0 mt-2 w-80 bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl p-4 z-50 space-y-3">
+                <div className="absolute right-0 mt-2 w-80 bg-slate-50 border border-slate-800 rounded-2xl shadow-2xl p-4 z-50 space-y-3">
                   <div className="flex items-center justify-between border-b border-slate-800 pb-2">
                     <span className="text-xs font-bold text-slate-100">Upozornění & Zprávy</span>
                     <button
@@ -411,7 +411,7 @@ export const OwnerLayout: React.FC<OwnerLayoutProps> = ({
                   </div>
                   <div className="space-y-2 max-h-64 overflow-y-auto">
                     {notifications.map((n) => (
-                      <div key={n.id} className={`p-2.5 rounded-xl text-xs space-y-1 ${n.read ? 'bg-slate-950/60 text-slate-400' : 'bg-slate-950 text-slate-200 border border-slate-800'}`}>
+                      <div key={n.id} className={`p-2.5 rounded-xl text-xs space-y-1 ${n.read ? 'bg-slate-50/60 text-slate-400' : 'bg-slate-50 text-slate-200 border border-slate-800'}`}>
                         <div className="flex items-center justify-between font-bold">
                           <span className={n.read ? 'text-slate-300' : 'font-bold'} style={!n.read ? { color: palette.primary } : undefined}>
                             {n.title}
