@@ -2,81 +2,125 @@
 
 @layer base {
   :root {
-    /* Dynamic Brand Accent - overridden by applyBrandTheme */
-    --brand-primary: #f59e0b;
-    --brand-primary-hover: #d97706;
-    --brand-primary-light: rgba(245, 158, 11, 0.15);
-    --brand-primary-subtle: rgba(245, 158, 11, 0.1);
-    --brand-primary-border: rgba(245, 158, 11, 0.35);
-    --brand-primary-ring: rgba(245, 158, 11, 0.25);
+    /* Dynamic Brand Accent */
+    --primary: #f59e0b;
+    --primary-hover: #d97706;
+    --primary-light: rgba(245, 158, 11, 0.12);
+    --primary-subtle: rgba(245, 158, 11, 0.08);
+    --primary-border: rgba(245, 158, 11, 0.25);
+    --primary-ring: rgba(245, 158, 11, 0.2);
 
-    /* Enterprise B2B Dark Neutrals (matching StavbaCore ERP) */
-    --surface-app: #020617; /* slate-950 */
-    --surface-card: #0f172a; /* slate-900 */
-    --surface-card-subtle: #1e293b; /* slate-800 */
-    --border-subtle: #1e293b; /* slate-800 */
-    --border-strong: #334155; /* slate-700 */
+    /* Enterprise Clean Light Surfaces */
+    --surface: #ffffff;
+    --surface-secondary: #f8fafc;
+    --surface-card: #ffffff;
+    --surface-card-subtle: #f1f5f9;
+    --border: #e2e8f0;
+    --border-strong: #cbd5e1;
 
     /* Typographic Weights & Colors */
-    --text-main: #f8fafc; /* slate-100 */
-    --text-muted: #94a3b8; /* slate-400 */
+    --text: #0f172a;
+    --text-muted: #64748b;
+    --text-inverse: #ffffff;
+
+    /* Shared Tokens */
+    --radius-primary: 24px;
+    --radius-card: 20px;
+    --radius-button: 16px;
+    --shadow-subtle: 0 1px 3px 0 rgba(0, 0, 0, 0.05), 0 1px 2px -1px rgba(0, 0, 0, 0.05);
+    --shadow-card: 0 4px 6px -1px rgba(0, 0, 0, 0.04), 0 2px 4px -2px rgba(0, 0, 0, 0.04);
+    --shadow-float: 0 10px 25px -5px rgba(0, 0, 0, 0.08), 0 8px 10px -6px rgba(0, 0, 0, 0.04);
   }
 
   body {
-    background-color: var(--surface-app);
-    color: var(--text-main);
+    background-color: var(--surface-secondary);
+    color: var(--text);
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     font-feature-settings: "cv02", "cv03", "cv04", "cv11";
   }
 }
 
+/* Micro interaction utility classes */
+.hover-lift {
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.hover-lift:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-float);
+}
+
+.button-press {
+  transition: transform 0.1s ease;
+}
+.button-press:active {
+  transform: scale(0.98);
+}
+
 /* Enterprise Custom Utility Classes */
 .bg-brand {
-  background-color: var(--brand-primary);
+  background-color: var(--primary);
 }
 
 .bg-brand:hover {
-  background-color: var(--brand-primary-hover);
+  background-color: var(--primary-hover);
 }
 
 .text-brand {
-  color: var(--brand-primary);
+  color: var(--primary);
 }
 
 .border-brand {
-  border-color: var(--brand-primary);
+  border-color: var(--primary);
 }
 
 .border-brand-subtle {
-  border-color: var(--brand-primary-border);
+  border-color: var(--primary-border);
 }
 
 .bg-brand-subtle {
-  background-color: var(--brand-primary-subtle);
+  background-color: var(--primary-subtle);
 }
 
 .bg-brand-light {
-  background-color: var(--brand-primary-light);
-}
-
-.ring-brand {
-  --tw-ring-color: var(--brand-primary-ring);
+  background-color: var(--primary-light);
 }
 
 /* High-density Enterprise Table Formatting */
 .table-dense th {
-  padding: 0.5rem 0.75rem;
+  padding: 0.625rem 0.875rem;
   font-size: 0.75rem;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  color: #64748b;
-  border-bottom: 1px solid #e2e8f0;
+  color: var(--text-muted);
+  border-bottom: 1px solid var(--border);
 }
 
 .table-dense td {
-  padding: 0.5rem 0.75rem;
+  padding: 0.625rem 0.875rem;
   font-size: 0.8125rem;
   border-bottom: 1px solid #f1f5f9;
 }
+
+/* Fix WebKit/iOS Safari date input native styling & border clipping */
+input[type="date"] {
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  background-color: transparent;
+}
+
+input[type="date"]::-webkit-date-and-time-value {
+  text-align: left;
+  margin: 0;
+  padding: 0;
+  min-height: 1.25em;
+}
+
+input[type="date"]::-webkit-calendar-picker-indicator {
+  cursor: pointer;
+  opacity: 0.6;
+}
+
+

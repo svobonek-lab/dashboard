@@ -68,6 +68,8 @@ export const OwnerSettingsPage: React.FC = () => {
     setTimeout(() => setCopiedKey(false), 2000);
   };
 
+  const activeColor = formData.primaryColor || branding.primaryColor || '#2563eb';
+
   return (
     <div className="space-y-8 text-slate-900 font-sans max-w-4xl pb-16">
       
@@ -75,7 +77,7 @@ export const OwnerSettingsPage: React.FC = () => {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-black text-slate-900 tracking-tight flex items-center gap-2.5">
-            <Settings className="w-6 h-6 text-amber-400" />
+            <Settings className="w-6 h-6" style={{ color: activeColor }} />
             Firemní identita & Nastavení systému
           </h1>
           <p className="text-xs text-slate-500 mt-0.5">
@@ -85,10 +87,11 @@ export const OwnerSettingsPage: React.FC = () => {
 
         <div className="flex items-center gap-2">
           <button
+            type="button"
             onClick={() => setIsExportModalOpen(true)}
-            className="px-4 py-2.5 rounded-xl bg-white border border-slate-200 text-xs font-bold text-slate-800 hover:bg-slate-800 transition-all flex items-center gap-2 shadow-xs"
+            className="px-4 py-2.5 rounded-xl bg-white border border-slate-200 text-xs font-bold text-slate-800 hover:bg-slate-50 transition-all flex items-center gap-2 shadow-xs"
           >
-            <Download className="w-4 h-4 text-green-400" />
+            <Download className="w-4 h-4 text-emerald-600" />
             <span>Exportovat White Label ZIP</span>
           </button>
         </div>
@@ -96,8 +99,8 @@ export const OwnerSettingsPage: React.FC = () => {
 
       {/* Success Alert */}
       {savedSuccess && (
-        <div className="p-4 rounded-2xl bg-green-500/20 border border-green-500/40 text-green-300 text-xs font-bold flex items-center gap-2 animate-fade-in">
-          <Check className="w-4 h-4" />
+        <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-bold flex items-center gap-2 animate-fade-in">
+          <Check className="w-4 h-4 text-emerald-600" />
           <span>Firemní identita byla úspěšně uložena a synchronizována napříč celým systémem!</span>
         </div>
       )}
@@ -106,29 +109,29 @@ export const OwnerSettingsPage: React.FC = () => {
       <form onSubmit={handleSave} className="space-y-6">
         
         {/* Visual Identity Section */}
-        <div className="bg-white border border-slate-200 rounded-3xl p-6 space-y-5 shadow-lg">
+        <div className="bg-white border border-slate-200 rounded-3xl p-6 space-y-5 shadow-sm">
           <h2 className="text-base font-bold text-slate-900 flex items-center gap-2">
-            <Palette className="w-4 h-4 text-amber-400" />
+            <Palette className="w-4 h-4" style={{ color: activeColor }} />
             Vizuální styl & Branding
           </h2>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5 text-xs">
             <div>
-              <label className="text-slate-500 font-bold block mb-1.5">Název firmy</label>
+              <label className="text-slate-600 font-bold block mb-1.5">Název firmy</label>
               <div className="relative">
-                <Building2 className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500" />
+                <Building2 className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
                 <input
                   type="text"
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 font-semibold focus:outline-none focus:border-amber-500"
+                  className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 font-semibold focus:outline-none focus:bg-white focus:ring-2 transition-all"
                   required
                 />
               </div>
             </div>
 
             <div>
-              <label className="text-slate-500 font-bold block mb-1.5">Hlavní barva značky</label>
+              <label className="text-slate-600 font-bold block mb-1.5">Hlavní barva značky</label>
               <div className="flex items-center gap-3">
                 <div className="relative w-14 h-11 border border-slate-200 rounded-xl overflow-hidden shrink-0">
                   <input
@@ -142,19 +145,49 @@ export const OwnerSettingsPage: React.FC = () => {
                   type="text"
                   value={formData.primaryColor}
                   onChange={(e) => setFormData({ ...formData, primaryColor: e.target.value })}
-                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl font-mono text-amber-400 font-bold focus:outline-none focus:border-amber-500"
+                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl font-mono text-slate-900 font-bold focus:outline-none focus:bg-white focus:ring-2 transition-all"
+                  style={{ color: activeColor }}
                 />
+              </div>
+
+              {/* 1-Click Color Presets */}
+              <div className="mt-3 space-y-1.5">
+                <span className="text-[10px] uppercase font-bold text-slate-400">Rychlá předvolba na 1-klik:</span>
+                <div className="flex flex-wrap items-center gap-2">
+                  {[
+                    { name: 'Modrá (Pergoly & Terasy Praha)', hex: '#2563eb' },
+                    { name: 'Tmavě modrá', hex: '#1d4ed8' },
+                    { name: 'Smaragdová', hex: '#059669' },
+                    { name: 'Tyrkysová', hex: '#0891b2' },
+                    { name: 'Královská fialová', hex: '#7c3aed' },
+                    { name: 'Grafitově černá', hex: '#0f172a' }
+                  ].map((preset) => (
+                    <button
+                      key={preset.hex}
+                      type="button"
+                      onClick={() => setFormData({ ...formData, primaryColor: preset.hex })}
+                      className={`px-2.5 py-1 rounded-lg text-[11px] font-bold border transition-all flex items-center gap-1.5 ${
+                        formData.primaryColor === preset.hex
+                          ? 'border-slate-900 bg-slate-900 text-white shadow-xs'
+                          : 'border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100'
+                      }`}
+                    >
+                      <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: preset.hex }} />
+                      <span>{preset.name}</span>
+                    </button>
+                  ))}
+                </div>
               </div>
             </div>
 
             <div className="md:col-span-2">
-              <label className="text-slate-500 font-bold block mb-1.5">URL loga firmy (transparentní PNG / SVG)</label>
+              <label className="text-slate-600 font-bold block mb-1.5">URL loga firmy (transparentní PNG / SVG)</label>
               <input
                 type="text"
                 value={formData.logoUrl || ''}
                 onChange={(e) => setFormData({ ...formData, logoUrl: e.target.value })}
                 placeholder="https://images.unsplash.com/..."
-                className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 font-medium focus:outline-none focus:border-amber-500"
+                className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 font-medium focus:outline-none focus:bg-white focus:ring-2 transition-all"
               />
             </div>
           </div>

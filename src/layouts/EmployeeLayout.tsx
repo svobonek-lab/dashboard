@@ -48,41 +48,41 @@ export const EmployeeLayout: React.FC<EmployeeLayoutProps> = ({ children, leads 
   ];
 
   return (
-    <div className="min-h-screen bg-[#0B0F19] text-slate-900 flex flex-col font-sans selection:bg-green-500/30 pb-20 md:pb-0">
+    <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col font-sans selection:bg-blue-500/20 pb-20 md:pb-0">
       
-      {/* Top Mobile/Desktop Field Header */}
-      <header className="bg-[#111726] border-b border-slate-200/80 px-4 sm:px-6 py-3 sticky top-0 z-30 flex items-center justify-between shadow-md">
+      {/* Top Header */}
+      <header className="bg-white border-b border-slate-200/80 px-4 sm:px-6 py-3 sticky top-0 z-30 flex items-center justify-between shadow-xs">
         
         {/* Left: Worker Status & Identity */}
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-2xl bg-green-500/20 border border-green-500/30 text-green-700 flex items-center justify-center font-black shrink-0">
+          <div className="w-10 h-10 rounded-2xl bg-blue-50 border border-blue-100 text-blue-600 flex items-center justify-center font-bold shrink-0">
             <HardHat className="w-5 h-5" />
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <span className="text-xs font-black text-slate-900 tracking-tight">
+              <span className="text-xs font-bold text-slate-900 tracking-tight">
                 {branding?.name || 'StavbaCore'}
               </span>
-              <span className="px-2 py-0.5 rounded-full text-[9px] font-bold bg-green-500/20 text-green-700 border border-green-500/30 uppercase">
+              <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 uppercase">
                 Terénní režim
               </span>
             </div>
             <p className="text-[11px] text-slate-500 flex items-center gap-1.5 mt-0.5">
-              <span className={`w-2 h-2 rounded-full ${checkedIn ? 'bg-green-400 animate-pulse' : 'bg-amber-400'}`}></span>
+              <span className={`w-2 h-2 rounded-full ${checkedIn ? 'bg-emerald-500 animate-pulse' : 'bg-amber-400'}`}></span>
               <span>{checkedIn ? 'GPS Aktivní (Na stavbě)' : 'Mimo stavbu'}</span>
             </p>
           </div>
         </div>
 
         {/* Center: Weather & Next Appointment (Desktop/Tablet) */}
-        <div className="hidden lg:flex items-center gap-4 px-4 py-1.5 rounded-2xl bg-[#0B0F19] border border-slate-200 text-xs">
+        <div className="hidden lg:flex items-center gap-4 px-4 py-1.5 rounded-2xl bg-slate-100/80 border border-slate-200/80 text-xs">
           <div className="flex items-center gap-2 text-slate-700">
-            <CloudSun className="w-4 h-4 text-amber-400" />
+            <CloudSun className="w-4 h-4 text-amber-500" />
             <span className="font-semibold">{branding?.city || 'Praha'}: 21°C • Polojasno</span>
           </div>
-          <div className="h-3 w-px bg-slate-800"></div>
+          <div className="h-3 w-px bg-slate-300"></div>
           <div className="flex items-center gap-1.5 text-slate-700">
-            <Clock className="w-3.5 h-3.5 text-green-700" />
+            <Clock className="w-3.5 h-3.5 text-blue-600" />
             <span>Další výjezd: <strong className="text-slate-900">13:30 (Ing. Svoboda)</strong></span>
           </div>
         </div>
@@ -91,7 +91,7 @@ export const EmployeeLayout: React.FC<EmployeeLayoutProps> = ({ children, leads 
         <div className="flex items-center gap-2">
           <button
             onClick={() => setIsVoiceOpen(true)}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-green-500 hover:bg-green-400 text-slate-950 font-black text-xs transition-all shadow-md shadow-green-500/20 active:scale-95"
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs transition-all shadow-xs active:scale-95 cursor-pointer"
           >
             <Mic className="w-4 h-4" />
             <span className="hidden sm:inline">Hlasový záznam</span>
@@ -100,7 +100,7 @@ export const EmployeeLayout: React.FC<EmployeeLayoutProps> = ({ children, leads 
           <button
             onClick={() => logout().then(() => navigate('/login'))}
             title="Odhlásit se"
-            className="p-2 rounded-xl text-slate-500 hover:text-rose-400 hover:bg-rose-500/10 transition-colors"
+            className="p-2 rounded-xl text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
           >
             <LogOut className="w-4 h-4" />
           </button>
@@ -111,11 +111,11 @@ export const EmployeeLayout: React.FC<EmployeeLayoutProps> = ({ children, leads 
       <div className="flex-1 flex">
         
         {/* Desktop Sidebar (hidden on mobile) */}
-        <aside className="hidden md:flex w-64 bg-[#111726] border-r border-slate-200/80 flex-col justify-between shrink-0 p-4 sticky top-16 h-[calc(100vh-64px)]">
+        <aside className="hidden md:flex w-64 bg-white border-r border-slate-200/80 flex-col justify-between shrink-0 p-4 sticky top-16 h-[calc(100vh-64px)]">
           
           <div className="space-y-1">
-            <div className="px-3 py-2 text-[10px] font-bold uppercase tracking-wider text-slate-500">
-              Moje pracovní nástroje
+            <div className="px-3.5 py-2 text-[10px] font-bold uppercase tracking-wider text-slate-400">
+              Pracovní nástroje
             </div>
 
             {employeeNavItems.map((item) => {
@@ -126,13 +126,13 @@ export const EmployeeLayout: React.FC<EmployeeLayoutProps> = ({ children, leads 
                   key={item.path}
                   to={item.path}
                   exact={item.exact}
-                  className={`flex items-center gap-3 px-3.5 py-3 rounded-2xl text-xs font-bold transition-all ${
+                  className={`flex items-center gap-3 px-3.5 py-2.5 rounded-2xl text-xs font-bold transition-all ${
                     active
-                      ? 'bg-green-500 text-slate-950 shadow-md shadow-green-500/20'
-                      : 'text-slate-700 hover:text-slate-900 hover:bg-slate-800/60'
+                      ? 'bg-blue-50 text-blue-700 border border-blue-200/80 shadow-xs'
+                      : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
                   }`}
                 >
-                  <Icon className={`w-4 h-4 ${active ? 'text-slate-950' : 'text-slate-500'}`} />
+                  <Icon className={`w-4 h-4 ${active ? 'text-blue-600' : 'text-slate-400'}`} />
                   <span>{item.label}</span>
                 </Link>
               );
@@ -140,13 +140,13 @@ export const EmployeeLayout: React.FC<EmployeeLayoutProps> = ({ children, leads 
           </div>
 
           {/* Employee Safety & Emergency Box */}
-          <div className="p-3 bg-[#0B0F19] border border-slate-200 rounded-2xl space-y-2 text-xs">
-            <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">
+          <div className="p-3.5 bg-slate-50 border border-slate-200/80 rounded-2xl space-y-1.5 text-xs">
+            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
               Kontakt na dispečink
             </span>
             <a 
               href="tel:+420777123456" 
-              className="flex items-center gap-2 text-green-700 font-bold hover:underline"
+              className="flex items-center gap-2 text-blue-700 font-bold hover:underline"
             >
               <Phone className="w-3.5 h-3.5" />
               <span>+420 777 123 456</span>
@@ -162,8 +162,8 @@ export const EmployeeLayout: React.FC<EmployeeLayoutProps> = ({ children, leads 
 
       </div>
 
-        {/* Mobile Sticky Bottom Navigation Bar (Touch targets > 48px) */}
-      <nav className="md:hidden fixed bottom-0 inset-x-0 bg-[#0B0F19] border-t border-slate-200 pb-safe z-40 shadow-2xl">
+      {/* Mobile Sticky Bottom Navigation Bar */}
+      <nav className="md:hidden fixed bottom-0 inset-x-0 bg-white/95 backdrop-blur-md border-t border-slate-200/80 pb-safe z-40 shadow-lg">
         <div className="flex items-center justify-around px-2 py-2">
           {[
             { label: 'Přehled', path: '/employee', icon: Briefcase, exact: true },
@@ -179,18 +179,18 @@ export const EmployeeLayout: React.FC<EmployeeLayoutProps> = ({ children, leads 
                 to={tab.path}
                 exact={tab.exact}
                 className={`flex flex-col items-center justify-center min-w-[72px] h-[52px] rounded-2xl transition-all active:scale-95 ${
-                  active ? 'text-green-700 bg-green-500/10' : 'text-slate-500 hover:text-slate-700'
+                  active ? 'text-blue-700 bg-blue-50 font-bold' : 'text-slate-500 hover:text-slate-800'
                 }`}
               >
-                <Icon className={`w-6 h-6 mb-1 ${active ? 'fill-green-500/20' : ''}`} />
-                <span className="text-[10px] font-bold tracking-wide">{tab.label}</span>
+                <Icon className={`w-5 h-5 mb-0.5 ${active ? 'text-blue-600' : 'text-slate-400'}`} />
+                <span className="text-[10px] tracking-wide">{tab.label}</span>
               </Link>
             );
           })}
         </div>
       </nav>
 
-      {/* Voice Notes Modal for field speech dictation */}
+      {/* Voice Notes Modal */}
       <VoiceNotesModal
         isOpen={isVoiceOpen}
         onClose={() => setIsVoiceOpen(false)}

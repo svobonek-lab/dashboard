@@ -23,7 +23,11 @@ import {
   FileCheck,
   UploadCloud,
   Send,
-  RefreshCw
+  RefreshCw,
+  Briefcase,
+  ListCheck,
+  Image as ImageIcon,
+  FileSpreadsheet
 } from 'lucide-react';
 import { Lead, CompanyBranding } from '../types';
 
@@ -32,27 +36,29 @@ interface EmployeeDashboardProps {
   branding: CompanyBranding;
   onOpenVoiceNotes: () => void;
   onSelectLead: (lead: Lead) => void;
+  onUpdateLead?: (lead: Lead) => void;
 }
 
 export const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({
   leads,
   branding,
   onOpenVoiceNotes,
-  onSelectLead
+  onSelectLead,
+  onUpdateLead
 }) => {
+  const [activeTab, setActiveTab] = useState<'jobs' | 'siteVisit' | 'photos' | 'tools'>('jobs');
   const [activeJobStatus, setActiveJobStatus] = useState<'Driving' | 'Arrived' | 'Finished'>('Arrived');
   const [isOfflineMode, setIsOfflineMode] = useState(false);
   const [offlineQueueCount, setOfflineQueueCount] = useState(3);
   const [uploadSuccess, setUploadSuccess] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
 
-  // Fullscreen Site Visit Mode (Feature 7)
+  // Fullscreen Site Visit Mode
   const [isSiteVisitMode, setIsSiteVisitMode] = useState(false);
-  const [gpsVerified, setGpsVerified] = useState(true);
 
   // 5-point Checklist State
   const [checklist, setChecklist] = useState({
-    measurements: false,
+    measurements: true,
     photos: true,
     voiceNotes: true,
     customerSignature: false,
@@ -84,28 +90,73 @@ export const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({
   const [isScanningReceipt, setIsScanningReceipt] = useState(false);
   const [scannedReceipt, setScannedReceipt] = useState<{ supplier: string; price: number; vat: number; item: string } | null>(null);
 
+  const activeLead = leads[0] || leads[1];
+
   // Before / During / After Timeline State
   const [timelinePhotos, setTimelinePhotos] = useState<{ id: string; stage: 'Before' | 'During' | 'After'; url: string; time: string }[]>([
     { id: '1', stage: 'Before', url: 'https://images.unsplash.com/photo-1541888946425-d0fbb18f2445?auto=format&fit=crop&w=400&q=80', time: '08:15 AM' },
     { id: '2', stage: 'During', url: 'https://images.unsplash.com/photo-1504307651254-35680f356dfd?auto=format&fit=crop&w=400&q=80', time: '11:30 AM' }
   ]);
 
-  const activeLead = leads[0] || leads[1];
+  // Sync timelinePhotos with activeLead.photos
+  React.useEffect(() => {
+    if (activeLead && activeLead.photos && activeLead.photos.length > 0) {
+      const formatted = activeLead.photos.map(p => ({
+        id: p.id,
+        stage: (p.category || 'During') as 'Before' | 'During' | 'After',
+        url: p.url,
+        time: p.uploadedAt || '10:00 AM'
+      }));
+      setTimelinePhotos(formatted);
+    }
+  }, [activeLead?.id, activeLead?.photos]);
+
+  const [uploadStage, setUploadStage] = useState<'Before' | 'During' | 'After' | null>(null);
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
+
+  const triggerFileInput = (stage: 'Before' | 'During' | 'After') => {
+    setUploadStage(stage);
+    if (fileInputRef.current) {
+      fileInputRef.current.click();
+    }
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0 && activeLead && uploadStage) {
+      const file = e.target.files[0];
+      const reader = new FileReader();
+      reader.onload = (evt) => {
+        if (evt.target?.result && onUpdateLead) {
+          const base64Url = evt.target.result as string;
+          const newPhoto = {
+            id: 'photo-' + Date.now(),
+            name: file.name.split('.')[0] || 'Fotka ze stavby',
+            type: 'photo' as const,
+            url: base64Url,
+            uploadedAt: new Date().toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit' }),
+            category: uploadStage
+          };
+          
+          const currentPhotos = activeLead.photos || [];
+          const updatedLead = {
+            ...activeLead,
+            photos: [newPhoto, ...currentPhotos]
+          };
+          onUpdateLead(updatedLead);
+          setChecklist(prev => ({ ...prev, photos: true }));
+          if (isOfflineMode) {
+            setOfflineQueueCount(prev => prev + 1);
+          }
+          setUploadSuccess(true);
+          setTimeout(() => setUploadSuccess(false), 3000);
+        }
+      };
+      reader.readAsDataURL(file);
+    }
+  };
 
   const handleAddPhoto = (stage: 'Before' | 'During' | 'After') => {
-    const newPhoto = {
-      id: 'photo-' + Date.now(),
-      stage,
-      url: activeLead.thumbnail,
-      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-    };
-    setTimelinePhotos([...timelinePhotos, newPhoto]);
-    setChecklist(prev => ({ ...prev, photos: true }));
-    if (isOfflineMode) {
-      setOfflineQueueCount(prev => prev + 1);
-    }
-    setUploadSuccess(true);
-    setTimeout(() => setUploadSuccess(false), 3000);
+    triggerFileInput(stage);
   };
 
   const handleStartRecording = () => {
@@ -115,7 +166,7 @@ export const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({
       const text = "Zkontrolováno kotvení střešní konstrukce, vše v pořádku podle výkresu.";
       setTranscribedNotes([text, ...transcribedNotes]);
       setChecklist(prev => ({ ...prev, voiceNotes: true }));
-    }, 2500);
+    }, 2000);
   };
 
   const handleScanReceipt = () => {
@@ -128,7 +179,7 @@ export const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({
         vat: 21,
         item: "Spojovací nerezový materiál & vruty 8x120"
       });
-    }, 2000);
+    }, 1800);
   };
 
   const handleSyncOffline = () => {
@@ -146,67 +197,69 @@ export const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({
     setTimeout(() => {
       setQuoteGeneratedNotice(null);
       setIsSiteVisitMode(false);
-      onSelectLead(activeLead);
+      if (activeLead) onSelectLead(activeLead);
     }, 2500);
   };
 
+  const completedChecklistCount = Object.values(checklist).filter(Boolean).length;
+
   return (
-    <div className="max-w-xl mx-auto space-y-6 pb-20">
-      {/* Fullscreen Site Visit Mode Modal (Feature 7) */}
+    <div className="max-w-4xl mx-auto space-y-6 pb-20 text-slate-900">
+      {/* Fullscreen Site Visit Mode Modal */}
       {isSiteVisitMode && (
         <div className="fixed inset-0 z-50 bg-slate-50 text-slate-900 flex flex-col overflow-y-auto animate-in fade-in">
           {/* Top Bar */}
-          <div className="p-4 bg-white border-b border-slate-200 flex items-center justify-between sticky top-0 z-10 shadow-lg">
+          <div className="p-4 bg-white border-b border-slate-200 flex items-center justify-between sticky top-0 z-10 shadow-xs">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-amber-400">
+              <div className="w-10 h-10 rounded-2xl bg-blue-50 text-blue-600 border border-blue-100 flex items-center justify-center font-bold">
                 <Maximize2 className="w-5 h-5" />
               </div>
               <div>
                 <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
-                  <span>Site Visit Mode</span>
-                  <span className="text-[10px] bg-green-500/20 text-green-400 px-2 py-0.5 rounded-full border border-green-500/30 font-semibold">
-                    Live na stavbě
+                  <span>Režim zaměření na stavbě</span>
+                  <span className="text-[10px] bg-emerald-50 text-emerald-700 px-2.5 py-0.5 rounded-full font-bold border border-emerald-200">
+                    Live GPS Aktivní
                   </span>
                 </h3>
-                <p className="text-xs text-slate-500">{activeLead.title} • {activeLead.customerName}</p>
+                <p className="text-xs text-slate-500">{activeLead?.title} • {activeLead?.customerName}</p>
               </div>
             </div>
 
             <button
               onClick={() => setIsSiteVisitMode(false)}
-              className="px-3.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-slate-700 flex items-center gap-1.5 transition-all"
+              className="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-xs font-bold text-slate-700 flex items-center gap-1.5 transition-all cursor-pointer border border-slate-200/80"
             >
               <Minimize2 className="w-4 h-4" />
-              <span>Ukončit režim</span>
+              <span>Ukončit</span>
             </button>
           </div>
 
           <div className="p-6 max-w-2xl mx-auto w-full space-y-6 flex-1">
             {/* GPS Confirmation Banner */}
-            <div className="bg-green-950/80 border border-green-500/40 p-4 rounded-2xl flex items-center justify-between shadow-lg">
+            <div className="bg-emerald-50/70 border border-emerald-200 p-4 rounded-2xl flex items-center justify-between shadow-xs">
               <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-xl bg-green-500/20 text-green-400 flex items-center justify-center">
-                  <MapPin className="w-5 h-5 animate-bounce" />
+                <div className="w-10 h-10 rounded-xl bg-emerald-600 text-white flex items-center justify-center shrink-0">
+                  <MapPin className="w-5 h-5" />
                 </div>
                 <div>
-                  <h4 className="text-xs font-bold text-green-300 uppercase tracking-wider">GPS potvrzení příjezdu</h4>
-                  <p className="text-xs text-green-100 font-semibold">Technik dorazil na místo zakázky ({activeLead.address})</p>
-                  <p className="text-[10px] text-green-400/80 mt-0.5">Přesnost GPS: 4 metry • Zaznamenáno v 08:14</p>
+                  <h4 className="text-xs font-bold text-emerald-900 uppercase tracking-wider">GPS Potvrzení Polohy</h4>
+                  <p className="text-xs text-emerald-800 font-bold">{activeLead?.address}</p>
+                  <p className="text-[10px] text-emerald-700 mt-0.5">Přesnost GPS: 4 metry • Zaznamenáno v 08:14</p>
                 </div>
               </div>
-              <span className="px-2.5 py-1 rounded-full bg-green-500 text-slate-950 text-[10px] font-extrabold uppercase">
-                Potvrzeno
+              <span className="px-3 py-1 rounded-full bg-emerald-600 text-white text-[11px] font-extrabold uppercase">
+                Ověřeno
               </span>
             </div>
 
             {/* Checklist Header */}
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between bg-white p-4 rounded-2xl border border-slate-200/80 shadow-xs">
               <div>
-                <h4 className="text-lg font-bold text-slate-900">Interaktivní Checklist technika</h4>
-                <p className="text-xs text-slate-500">Splňte kroky před zahájením a vygenerováním nabídky</p>
+                <h4 className="text-base font-bold text-slate-900">Interaktivní Checklist technika</h4>
+                <p className="text-xs text-slate-500">Splňte 5 kroků zaměření před vygenerováním nabídky</p>
               </div>
-              <span className="text-xs font-bold text-amber-400 bg-amber-950/80 px-3 py-1 rounded-full border border-amber-800">
-                {Object.values(checklist).filter(Boolean).length} / 5 splněno
+              <span className="text-xs font-bold text-blue-700 bg-blue-50 px-3 py-1.5 rounded-full border border-blue-200">
+                {completedChecklistCount} / 5 splněno
               </span>
             </div>
 
@@ -214,17 +267,17 @@ export const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({
             <div className="space-y-4">
               {/* 1. Measurements */}
               <div className={`p-4 rounded-2xl border transition-all ${
-                checklist.measurements ? 'bg-white/90 border-green-500/40' : 'bg-white/60 border-slate-200'
+                checklist.measurements ? 'bg-white border-emerald-300 shadow-xs' : 'bg-white border-slate-200/80'
               }`}>
                 <div className="flex items-center justify-between mb-3">
                   <div className="flex items-center gap-2.5">
-                    <Ruler className="w-5 h-5 text-blue-400" />
+                    <Ruler className="w-5 h-5 text-blue-600" />
                     <span className="text-sm font-bold text-slate-900">1. Zaměření rozměrů (Measurements)</span>
                   </div>
                   <button
                     onClick={() => setChecklist(prev => ({ ...prev, measurements: !prev.measurements }))}
-                    className={`px-3 py-1 rounded-xl text-xs font-bold flex items-center gap-1.5 ${
-                      checklist.measurements ? 'bg-green-600 text-slate-900' : 'bg-slate-800 text-slate-700'
+                    className={`px-3 py-1 rounded-xl text-xs font-bold flex items-center gap-1.5 cursor-pointer border ${
+                      checklist.measurements ? 'bg-emerald-600 text-white border-emerald-600' : 'bg-slate-100 text-slate-700 border-slate-200'
                     }`}
                   >
                     <Check className="w-3.5 h-3.5" />
@@ -233,7 +286,7 @@ export const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({
                 </div>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
                   <div>
-                    <label className="text-[10px] text-slate-500 block mb-1">Šířka (Width)</label>
+                    <label className="text-[10px] text-slate-500 block mb-1">Šířka</label>
                     <input
                       type="text"
                       value={measurementsData.width}
@@ -242,7 +295,7 @@ export const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({
                     />
                   </div>
                   <div>
-                    <label className="text-[10px] text-slate-500 block mb-1">Délka (Length)</label>
+                    <label className="text-[10px] text-slate-500 block mb-1">Délka</label>
                     <input
                       type="text"
                       value={measurementsData.length}
@@ -251,7 +304,7 @@ export const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({
                     />
                   </div>
                   <div>
-                    <label className="text-[10px] text-slate-500 block mb-1">Výška (Height)</label>
+                    <label className="text-[10px] text-slate-500 block mb-1">Výška</label>
                     <input
                       type="text"
                       value={measurementsData.height}
@@ -271,102 +324,55 @@ export const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({
                 </div>
               </div>
 
-              {/* 2. Photos */}
-              <div className="p-4 rounded-2xl bg-white/80 border border-slate-200 space-y-3">
+              {/* 2. Customer Signature */}
+              <div className="p-4 rounded-2xl bg-white border border-slate-200/80 space-y-3 shadow-xs">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2.5">
-                    <Camera className="w-5 h-5 text-green-400" />
-                    <span className="text-sm font-bold text-slate-900">2. Fotodokumentace (Photos)</span>
+                    <PenTool className="w-5 h-5 text-blue-600" />
+                    <span className="text-sm font-bold text-slate-900">2. Podpis zákazníka na displeji</span>
                   </div>
-                  <div className="flex gap-1.5">
-                    <button onClick={() => handleAddPhoto('Before')} className="px-2.5 py-1 bg-blue-600/30 text-blue-300 border border-blue-500/30 hover:bg-blue-600/50 rounded-lg text-[10px] font-bold">+ Před</button>
-                    <button onClick={() => handleAddPhoto('During')} className="px-2.5 py-1 bg-amber-600/30 text-amber-300 border border-amber-500/30 hover:bg-amber-600/50 rounded-lg text-[10px] font-bold">+ Během</button>
-                    <button onClick={() => handleAddPhoto('After')} className="px-2.5 py-1 bg-green-600/30 text-green-300 border border-green-500/30 hover:bg-green-600/50 rounded-lg text-[10px] font-bold">+ Po</button>
-                  </div>
-                </div>
-                <div className="grid grid-cols-3 gap-2">
-                  {timelinePhotos.map(p => (
-                    <div key={p.id} className="relative rounded-xl overflow-hidden border border-slate-200 aspect-video">
-                      <img src={p.url} alt="" className="w-full h-full object-cover" />
-                      <span className="absolute top-1 left-1 px-1.5 py-0.5 rounded bg-black/80 text-[8px] font-bold uppercase text-slate-900">{p.stage}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* 3. Voice Notes */}
-              <div className="p-4 rounded-2xl bg-white/80 border border-slate-200 space-y-3">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2.5">
-                    <Mic className="w-5 h-5 text-rose-400" />
-                    <span className="text-sm font-bold text-slate-900">3. Hlasové poznámky (Voice Notes)</span>
-                  </div>
-                  <button
-                    onClick={handleStartRecording}
-                    disabled={isRecording}
-                    className={`px-3 py-1 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
-                      isRecording ? 'bg-rose-600 text-slate-900 animate-pulse' : 'bg-rose-500/20 text-rose-300 border border-rose-500/40 hover:bg-rose-500/30'
-                    }`}
-                  >
-                    <Mic className="w-3.5 h-3.5" />
-                    {isRecording ? 'Nahrávám...' : 'Nahrát poznámku'}
-                  </button>
-                </div>
-                <p className="text-xs text-slate-700 italic bg-slate-50 p-3 rounded-xl border border-slate-200">
-                  "{transcribedNotes[0]}"
-                </p>
-              </div>
-
-              {/* 4. Customer Signature */}
-              <div className="p-4 rounded-2xl bg-white/80 border border-slate-200 space-y-3">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2.5">
-                    <PenTool className="w-5 h-5 text-purple-400" />
-                    <span className="text-sm font-bold text-slate-900">4. Podpis zákazníka na místě (Customer Signature)</span>
-                  </div>
-                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded ${
-                    signatureDone ? 'bg-green-500/20 text-green-400' : 'bg-amber-500/20 text-amber-400'
+                  <span className={`text-[10px] font-bold px-2.5 py-1 rounded-full border ${
+                    signatureDone ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-amber-50 text-amber-700 border-amber-200'
                   }`}>
                     {signatureDone ? 'Podepsáno' : 'Čeká na podpis'}
                   </span>
                 </div>
                 
-                {/* Touch Signature Pad Canvas Simulation */}
                 <div 
                   onClick={() => {
                     setSignatureDone(true);
                     setChecklist(prev => ({ ...prev, customerSignature: true }));
                   }}
-                  className="h-28 rounded-2xl bg-slate-50 border border-dashed border-slate-200 flex flex-col items-center justify-center text-slate-500 cursor-pointer hover:border-blue-500/50 transition-all relative overflow-hidden"
+                  className="h-28 rounded-2xl bg-slate-50 border border-dashed border-slate-300 flex flex-col items-center justify-center text-slate-600 cursor-pointer hover:border-blue-500 transition-all relative overflow-hidden"
                 >
                   {signatureDone ? (
                     <div className="flex flex-col items-center justify-center space-y-1">
-                      <span className="font-serif italic text-2xl text-purple-300 tracking-widest">{activeLead.customerName}</span>
-                      <span className="text-[9px] text-green-400 flex items-center gap-1 font-mono">
-                        <Check className="w-3 h-3" /> Digitálně ověřeno s časovým razítkem (08:22)
+                      <span className="font-serif italic text-2xl text-blue-900 font-bold tracking-widest">{activeLead?.customerName}</span>
+                      <span className="text-[10px] text-emerald-700 flex items-center gap-1 font-mono font-bold">
+                        <Check className="w-3.5 h-3.5" /> Digitálně podepsáno v 08:22
                       </span>
                     </div>
                   ) : (
                     <>
-                      <PenTool className="w-6 h-6 text-slate-600 mb-1" />
-                      <span className="text-xs font-semibold">Klikněte pro podpis klienta na displeji</span>
-                      <span className="text-[10px] text-slate-600">Dotykový podpis pro potvrzení zaměření</span>
+                      <PenTool className="w-6 h-6 text-slate-400 mb-1" />
+                      <span className="text-xs font-bold text-slate-700">Klepněte sem pro podpis zákazníka</span>
+                      <span className="text-[10px] text-slate-500">Potvrzení zaměření a schválení parametrů</span>
                     </>
                   )}
                 </div>
               </div>
 
-              {/* 5. Material Notes */}
-              <div className="p-4 rounded-2xl bg-white/80 border border-slate-200 space-y-3">
+              {/* 3. Material Notes */}
+              <div className="p-4 rounded-2xl bg-white border border-slate-200/80 space-y-3 shadow-xs">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2.5">
-                    <FileText className="w-5 h-5 text-amber-400" />
-                    <span className="text-sm font-bold text-slate-900">5. Materiálové specifikace (Material Notes)</span>
+                    <FileText className="w-5 h-5 text-blue-600" />
+                    <span className="text-sm font-bold text-slate-900">3. Materiálové specifikace</span>
                   </div>
                   <button
                     onClick={() => setChecklist(prev => ({ ...prev, materialNotes: !prev.materialNotes }))}
-                    className={`px-3 py-1 rounded-xl text-xs font-bold ${
-                      checklist.materialNotes ? 'bg-green-600 text-slate-900' : 'bg-slate-800 text-slate-700'
+                    className={`px-3 py-1 rounded-xl text-xs font-bold cursor-pointer border ${
+                      checklist.materialNotes ? 'bg-emerald-600 text-white border-emerald-600' : 'bg-slate-100 text-slate-700 border-slate-200'
                     }`}
                   >
                     <Check className="w-3.5 h-3.5" />
@@ -377,7 +383,7 @@ export const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({
                   rows={2}
                   value={materialNotesText}
                   onChange={(e) => setMaterialNotesText(e.target.value)}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-xs text-slate-800 focus:outline-none focus:ring-1 focus:ring-amber-500"
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
             </div>
@@ -386,10 +392,10 @@ export const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({
             <div className="pt-4 border-t border-slate-200 space-y-3">
               <button
                 onClick={handleGenerateQuoteFromField}
-                className="w-full py-4 rounded-2xl bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-500 hover:opacity-95 text-slate-900 font-extrabold text-base shadow-2xl flex items-center justify-center gap-3 transition-all active:scale-[0.99]"
+                className="w-full py-3.5 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm shadow-xs flex items-center justify-center gap-2 transition-all cursor-pointer active:scale-[0.99]"
               >
                 <Sparkles className="w-5 h-5" />
-                <span>Generate Quote (Vytvořit cenovou nabídku na klíč)</span>
+                <span>Vytvořit cenovou nabídku na klíč</span>
               </button>
               <p className="text-[11px] text-center text-slate-500">
                 Přenese rozměry {measurementsData.width} × {measurementsData.length}, fotky i materiál přímo do PDF nabídky.
@@ -397,8 +403,8 @@ export const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({
             </div>
 
             {quoteGeneratedNotice && (
-              <div className="p-4 bg-green-900 border border-green-500 text-slate-900 rounded-2xl text-xs font-bold flex items-center gap-2 animate-in fade-in">
-                <Check className="w-5 h-5 text-green-300" />
+              <div className="p-4 bg-emerald-50 border border-emerald-200 text-emerald-900 rounded-2xl text-xs font-bold flex items-center gap-2 animate-in fade-in">
+                <Check className="w-5 h-5 text-emerald-600 shrink-0" />
                 <span>{quoteGeneratedNotice}</span>
               </div>
             )}
@@ -406,90 +412,140 @@ export const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({
         </div>
       )}
 
-      {/* Employee Header & Offline-First Toggle / Queue */}
-      <div className="bg-white text-slate-900 p-6 rounded-3xl shadow-xl space-y-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
+      {/* Employee Header Profile & Offline Sync Banner */}
+      <div className="bg-white p-6 rounded-3xl border border-slate-200/80 shadow-xs space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="flex items-center gap-4">
             <img
               src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80"
               alt="Petr Novotný"
-              className="w-12 h-12 rounded-2xl object-cover ring-2 ring-blue-500"
+              className="w-14 h-14 rounded-2xl object-cover ring-2 ring-blue-500 shadow-xs"
             />
             <div>
-              <h2 className="text-lg font-bold">Petr Novotný</h2>
-              <p className="text-xs text-slate-500">Střechy & Tesařské práce • {branding.name}</p>
+              <div className="flex items-center gap-2">
+                <h2 className="text-lg font-bold text-slate-900">Petr Novotný</h2>
+                <span className="px-2.5 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200 text-[11px] font-bold">
+                  Mistr stavby
+                </span>
+              </div>
+              <p className="text-xs text-slate-500 mt-0.5">Tesařské práce & pergoly • {branding.name}</p>
             </div>
           </div>
 
-          <div className="flex flex-col items-end gap-1.5">
+          <div className="flex items-center gap-2 self-start sm:self-center">
             <button
               onClick={() => setIsOfflineMode(!isOfflineMode)}
-              className={`px-3 py-1 rounded-full text-xs font-semibold flex items-center gap-1.5 transition-all ${
+              className={`px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer border ${
                 isOfflineMode 
-                  ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30' 
-                  : 'bg-green-500/20 text-green-400 border border-green-500/30'
+                  ? 'bg-amber-50 text-amber-800 border-amber-200' 
+                  : 'bg-emerald-50 text-emerald-800 border-emerald-200'
               }`}
             >
-              {isOfflineMode ? <WifiOff className="w-3.5 h-3.5" /> : <Wifi className="w-3.5 h-3.5" />}
-              <span>{isOfflineMode ? 'Offline Mode' : 'Online Sync'}</span>
+              {isOfflineMode ? <WifiOff className="w-4 h-4 text-amber-600" /> : <Wifi className="w-4 h-4 text-emerald-600" />}
+              <span>{isOfflineMode ? 'Offline Režim' : 'Online Sync'}</span>
             </button>
+
             {offlineQueueCount > 0 && (
-              <div className="flex items-center gap-1.5">
-                <span className="text-[10px] text-amber-300 font-semibold bg-amber-950 px-2 py-0.5 rounded-md border border-amber-800">
-                  ⏳ {offlineQueueCount} položek ve frontě
-                </span>
-                <button
-                  onClick={handleSyncOffline}
-                  disabled={isSyncing}
-                  className="text-[10px] bg-blue-600 hover:bg-blue-500 text-slate-900 font-bold px-2 py-0.5 rounded flex items-center gap-1"
-                >
-                  <RefreshCw className={`w-2.5 h-2.5 ${isSyncing ? 'animate-spin' : ''}`} />
-                  <span>Sync</span>
-                </button>
-              </div>
+              <button
+                onClick={handleSyncOffline}
+                disabled={isSyncing}
+                className="px-3 py-1.5 rounded-xl text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white shadow-xs flex items-center gap-1.5 cursor-pointer"
+              >
+                <RefreshCw className={`w-3.5 h-3.5 ${isSyncing ? 'animate-spin' : ''}`} />
+                <span>Sync ({offlineQueueCount})</span>
+              </button>
             )}
           </div>
         </div>
 
-        {/* Launch Site Visit Mode Button */}
+        {/* Quick Launch Site Visit Button */}
         <button
           onClick={() => setIsSiteVisitMode(true)}
-          className="w-full py-3 px-4 rounded-2xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-extrabold text-xs transition-all shadow-lg flex items-center justify-center gap-2"
+          className="w-full py-3.5 px-4 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs transition-all shadow-xs flex items-center justify-center gap-2 cursor-pointer"
         >
           <Maximize2 className="w-4 h-4" />
-          <span>Otevřít Site Visit Mode (Zaměření na stavbě & Podpis)</span>
+          <span>Otevřít režim zaměření na stavbě (Site Visit Mode)</span>
         </button>
       </div>
 
-      {/* Today's Jobs Header */}
-      <div className="flex items-center justify-between">
-        <h3 className="text-lg font-bold text-slate-900">Dnešní přiřazené zakázky (2)</h3>
-        <span className="text-xs font-semibold text-slate-500">10. září 2026</span>
+      {/* Structured Navigation Tabs */}
+      <div className="flex items-center bg-slate-100 p-1.5 rounded-2xl gap-1 text-xs font-bold border border-slate-200/60 overflow-x-auto">
+        <button
+          onClick={() => setActiveTab('jobs')}
+          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl transition-all whitespace-nowrap cursor-pointer ${
+            activeTab === 'jobs' 
+              ? 'bg-white text-blue-700 shadow-xs border border-slate-200/80' 
+              : 'text-slate-600 hover:text-slate-900'
+          }`}
+        >
+          <Briefcase className="w-4 h-4 text-blue-600" />
+          <span>Dnešní zakázky ({leads.length})</span>
+        </button>
+
+        <button
+          onClick={() => setActiveTab('siteVisit')}
+          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl transition-all whitespace-nowrap cursor-pointer ${
+            activeTab === 'siteVisit' 
+              ? 'bg-white text-blue-700 shadow-xs border border-slate-200/80' 
+              : 'text-slate-600 hover:text-slate-900'
+          }`}
+        >
+          <ListCheck className="w-4 h-4 text-blue-600" />
+          <span>Checklist & Zaměření ({completedChecklistCount}/5)</span>
+        </button>
+
+        <button
+          onClick={() => setActiveTab('photos')}
+          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl transition-all whitespace-nowrap cursor-pointer ${
+            activeTab === 'photos' 
+              ? 'bg-white text-blue-700 shadow-xs border border-slate-200/80' 
+              : 'text-slate-600 hover:text-slate-900'
+          }`}
+        >
+          <ImageIcon className="w-4 h-4 text-blue-600" />
+          <span>Fotodokumentace ({timelinePhotos.length})</span>
+        </button>
+
+        <button
+          onClick={() => setActiveTab('tools')}
+          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl transition-all whitespace-nowrap cursor-pointer ${
+            activeTab === 'tools' 
+              ? 'bg-white text-blue-700 shadow-xs border border-slate-200/80' 
+              : 'text-slate-600 hover:text-slate-900'
+          }`}
+        >
+          <Sparkles className="w-4 h-4 text-blue-600" />
+          <span>Hlas & AI Účtenky</span>
+        </button>
       </div>
 
-      {/* Large Active Job Card */}
-      {activeLead && (
-        <div className="bg-white rounded-3xl border border-slate-200 shadow-xl overflow-hidden space-y-6 p-6">
-          <div className="flex items-start justify-between gap-4">
+      {/* TAB 1: DNEŠNÍ ZAKÁZKY */}
+      {activeTab === 'jobs' && activeLead && (
+        <div className="bg-white rounded-3xl border border-slate-200/80 shadow-xs p-6 space-y-6">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
-              <span className="inline-block px-3 py-1 rounded-full text-[11px] font-bold bg-amber-500/20 text-amber-400 border border-amber-500/30 mb-2">
-                Aktivní zakázka #1
+              <span className="inline-block px-3 py-1 rounded-full text-[11px] font-bold bg-blue-50 text-blue-700 border border-blue-200 mb-2">
+                Aktivní stavba k realizaci
               </span>
-              <h4 className="text-xl font-extrabold text-slate-900">{activeLead.title}</h4>
+              <h3 className="text-lg font-bold text-slate-900">{activeLead.title}</h3>
               <p className="text-xs text-slate-500 mt-1 flex items-center gap-1.5">
-                <MapPin className="w-3.5 h-3.5 text-amber-400" /> {activeLead.address}
+                <MapPin className="w-4 h-4 text-blue-600 shrink-0" /> {activeLead.address}
               </p>
             </div>
-            <img src={activeLead.thumbnail} alt="" className="w-20 h-20 rounded-2xl object-cover flex-shrink-0 border border-slate-200 shadow-md" />
+            <img 
+              src={activeLead.thumbnail} 
+              alt="" 
+              className="w-24 h-24 rounded-2xl object-cover shrink-0 border border-slate-200 shadow-xs" 
+            />
           </div>
 
           {/* Contact & Navigation Buttons */}
-          <div className="grid grid-cols-2 gap-3 pt-2">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
             <a
               href={`tel:${activeLead.customerPhone}`}
-              className="p-4 rounded-2xl bg-slate-50 border border-slate-200 hover:border-slate-300 transition-all flex items-center gap-3 text-xs font-semibold text-slate-800"
+              className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80 hover:bg-slate-100 transition-all flex items-center gap-3 text-xs font-semibold text-slate-800"
             >
-              <div className="w-10 h-10 rounded-xl bg-green-500/20 text-green-400 border border-green-500/30 flex items-center justify-center">
+              <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 border border-emerald-200 flex items-center justify-center shrink-0 font-bold">
                 <Phone className="w-5 h-5" />
               </div>
               <div>
@@ -502,156 +558,284 @@ export const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({
               href={`https://maps.google.com/?q=${encodeURIComponent(activeLead.address)}`}
               target="_blank"
               rel="noreferrer"
-              className="p-4 rounded-2xl bg-slate-50 border border-slate-200 hover:border-slate-300 transition-all flex items-center gap-3 text-xs font-semibold text-slate-800"
+              className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80 hover:bg-slate-100 transition-all flex items-center gap-3 text-xs font-semibold text-slate-800"
             >
-              <div className="w-10 h-10 rounded-xl bg-amber-500/20 text-amber-400 border border-amber-500/30 flex items-center justify-center">
+              <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 border border-blue-200 flex items-center justify-center shrink-0 font-bold">
                 <Navigation className="w-5 h-5" />
               </div>
               <div>
                 <p className="text-[10px] text-slate-500 font-normal">Navigovat na stavbu</p>
-                <p className="text-sm font-bold text-slate-900">Google Maps</p>
+                <p className="text-sm font-bold text-slate-900">Spustit Google Maps</p>
               </div>
             </a>
           </div>
 
           {/* Status Buttons */}
           <div className="space-y-2 pt-2">
-            <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Stav v terénu</label>
+            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Stav v terénu</label>
             <div className="grid grid-cols-3 gap-2">
               <button
                 onClick={() => setActiveJobStatus('Driving')}
-                className={`py-4 rounded-2xl text-xs font-bold transition-all flex flex-col items-center justify-center gap-1.5 border ${
+                className={`py-3 rounded-2xl text-xs font-bold transition-all flex flex-col items-center justify-center gap-1 border cursor-pointer ${
                   activeJobStatus === 'Driving'
-                    ? 'bg-blue-600 text-slate-900 border-blue-500 shadow-md'
-                    : 'bg-slate-50 text-slate-500 border-slate-200 hover:bg-slate-800 hover:text-slate-800'
+                    ? 'bg-blue-600 text-white border-blue-600 shadow-xs'
+                    : 'bg-slate-50 text-slate-600 border border-slate-200 hover:bg-slate-100'
                 }`}
               >
-                <Car className="w-5 h-5" />
+                <Car className="w-4 h-4" />
                 <span>Na cestě</span>
               </button>
               <button
                 onClick={() => setActiveJobStatus('Arrived')}
-                className={`py-4 rounded-2xl text-xs font-bold transition-all flex flex-col items-center justify-center gap-1.5 border ${
+                className={`py-3 rounded-2xl text-xs font-bold transition-all flex flex-col items-center justify-center gap-1 border cursor-pointer ${
                   activeJobStatus === 'Arrived'
-                    ? 'bg-amber-500 text-slate-950 border-amber-400 shadow-md'
-                    : 'bg-slate-50 text-slate-500 border-slate-200 hover:bg-slate-800 hover:text-slate-800'
+                    ? 'bg-blue-600 text-white border-blue-600 shadow-xs'
+                    : 'bg-slate-50 text-slate-600 border border-slate-200 hover:bg-slate-100'
                 }`}
               >
-                <MapPin className="w-5 h-5" />
+                <MapPin className="w-4 h-4" />
                 <span>Na místě (GPS)</span>
               </button>
               <button
                 onClick={() => setActiveJobStatus('Finished')}
-                className={`py-4 rounded-2xl text-xs font-bold transition-all flex flex-col items-center justify-center gap-1.5 border ${
+                className={`py-3 rounded-2xl text-xs font-bold transition-all flex flex-col items-center justify-center gap-1 border cursor-pointer ${
                   activeJobStatus === 'Finished'
-                    ? 'bg-green-600 text-slate-900 border-green-500 shadow-md'
-                    : 'bg-slate-50 text-slate-500 border-slate-200 hover:bg-slate-800 hover:text-slate-800'
+                    ? 'bg-emerald-600 text-white border-emerald-600 shadow-xs'
+                    : 'bg-slate-50 text-slate-600 border border-slate-200 hover:bg-slate-100'
                 }`}
               >
-                <CheckCircle className="w-5 h-5" />
+                <CheckCircle className="w-4 h-4" />
                 <span>Dokončeno</span>
               </button>
             </div>
           </div>
+        </div>
+      )}
 
-          {/* Before During After Chronological Photo Timeline */}
-          <div className="space-y-3 pt-4 border-t border-slate-200">
-            <div className="flex items-center justify-between">
-              <h5 className="text-xs font-bold uppercase tracking-wider text-slate-700">Fotodokumentace (Před / Během / Po)</h5>
-              <div className="flex gap-1">
-                <button onClick={() => handleAddPhoto('Before')} className="px-2 py-1 bg-slate-50 text-blue-400 border border-blue-800/80 hover:bg-white rounded-lg text-[10px] font-bold">+ Před</button>
-                <button onClick={() => handleAddPhoto('During')} className="px-2 py-1 bg-amber-950 text-amber-400 border border-amber-800/80 hover:bg-amber-900 rounded-lg text-[10px] font-bold">+ Během</button>
-                <button onClick={() => handleAddPhoto('After')} className="px-2 py-1 bg-green-950 text-green-400 border border-green-800/80 hover:bg-green-900 rounded-lg text-[10px] font-bold">+ Po</button>
+      {/* TAB 2: CHECKLIST & ZAMĚŘENÍ */}
+      {activeTab === 'siteVisit' && (
+        <div className="bg-white rounded-3xl border border-slate-200/80 p-6 space-y-6 shadow-xs">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="text-lg font-bold text-slate-900">Interaktivní Protokol & Zaměření</h3>
+              <p className="text-xs text-slate-500">Zadejte specifikace zakázky pro automatické vytvoření cenové nabídky</p>
+            </div>
+            <span className="text-xs font-bold text-blue-700 bg-blue-50 px-3 py-1.5 rounded-full border border-blue-200">
+              {completedChecklistCount} / 5 splněno
+            </span>
+          </div>
+
+          <div className="space-y-4">
+            {/* 1. Measurements */}
+            <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-bold text-slate-900 flex items-center gap-2">
+                  <Ruler className="w-4 h-4 text-blue-600" /> 1. Rozměry díla
+                </span>
+                <button
+                  onClick={() => setChecklist(prev => ({ ...prev, measurements: !prev.measurements }))}
+                  className={`px-3 py-1 rounded-xl text-xs font-bold cursor-pointer border ${
+                    checklist.measurements ? 'bg-emerald-600 text-white border-emerald-600' : 'bg-slate-100 text-slate-700 border-slate-200'
+                  }`}
+                >
+                  <Check className="w-3.5 h-3.5" />
+                  {checklist.measurements ? 'Hotovo' : 'Potvrdit'}
+                </button>
+              </div>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
+                <div>
+                  <label className="text-[10px] text-slate-500 block mb-1">Šířka</label>
+                  <input
+                    type="text"
+                    value={measurementsData.width}
+                    onChange={(e) => setMeasurementsData({ ...measurementsData, width: e.target.value })}
+                    className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-slate-900 font-bold font-mono"
+                  />
+                </div>
+                <div>
+                  <label className="text-[10px] text-slate-500 block mb-1">Délka</label>
+                  <input
+                    type="text"
+                    value={measurementsData.length}
+                    onChange={(e) => setMeasurementsData({ ...measurementsData, length: e.target.value })}
+                    className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-slate-900 font-bold font-mono"
+                  />
+                </div>
+                <div>
+                  <label className="text-[10px] text-slate-500 block mb-1">Výška</label>
+                  <input
+                    type="text"
+                    value={measurementsData.height}
+                    onChange={(e) => setMeasurementsData({ ...measurementsData, height: e.target.value })}
+                    className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-slate-900 font-bold font-mono"
+                  />
+                </div>
+                <div>
+                  <label className="text-[10px] text-slate-500 block mb-1">Sklon</label>
+                  <input
+                    type="text"
+                    value={measurementsData.slope}
+                    onChange={(e) => setMeasurementsData({ ...measurementsData, slope: e.target.value })}
+                    className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-slate-900 font-bold font-mono"
+                  />
+                </div>
               </div>
             </div>
 
-            <div className="grid grid-cols-3 gap-3">
-              {['Before', 'During', 'After'].map((stageName) => {
-                const stagePhotos = timelinePhotos.filter(p => p.stage === stageName);
-                return (
-                  <div key={stageName} className="bg-slate-50 p-3 rounded-2xl border border-slate-200 space-y-2">
-                    <span className={`text-[10px] font-extrabold uppercase px-2 py-0.5 rounded block text-center border ${
-                      stageName === 'Before' ? 'bg-slate-50/80 border-blue-800 text-blue-400' :
-                      stageName === 'During' ? 'bg-amber-950/80 border-amber-800 text-amber-400' : 'bg-green-950/80 border-green-800 text-green-400'
-                    }`}>
-                      {stageName === 'Before' ? 'Před montáží' : stageName === 'During' ? 'V průběhu' : 'Hotové dílo'}
-                    </span>
-                    {stagePhotos.length > 0 ? (
-                      <div className="space-y-2">
-                        {stagePhotos.map(p => (
-                          <div key={p.id} className="relative group rounded-xl overflow-hidden border border-slate-200">
-                            <img src={p.url} alt={stageName} className="w-full h-24 object-cover" />
-                            <span className="absolute bottom-1 right-1 px-1.5 py-0.5 rounded bg-slate-50/80 text-[9px] text-slate-800 border border-slate-200">{p.time}</span>
-                          </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <div className="h-24 flex items-center justify-center text-[10px] text-slate-600 border border-dashed border-slate-200 rounded-xl">
-                        Žádné foto
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
+            {/* 2. Customer Signature */}
+            <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-bold text-slate-900 flex items-center gap-2">
+                  <PenTool className="w-4 h-4 text-blue-600" /> 2. Podpis klienta
+                </span>
+                <span className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full border ${
+                  signatureDone ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-amber-50 text-amber-700 border-amber-200'
+                }`}>
+                  {signatureDone ? 'Podepsáno' : 'Čeká'}
+                </span>
+              </div>
+              <div 
+                onClick={() => {
+                  setSignatureDone(true);
+                  setChecklist(prev => ({ ...prev, customerSignature: true }));
+                }}
+                className="h-24 rounded-xl bg-white border border-dashed border-slate-300 flex items-center justify-center text-xs font-bold text-slate-700 cursor-pointer hover:border-blue-500"
+              >
+                {signatureDone ? (
+                  <span className="font-serif italic text-xl text-blue-900">{activeLead?.customerName} ✓</span>
+                ) : (
+                  <span>Klepněte pro dotykový podpis zákazníka</span>
+                )}
+              </div>
+            </div>
+
+            <button
+              onClick={handleGenerateQuoteFromField}
+              className="w-full py-3.5 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm shadow-xs flex items-center justify-center gap-2 cursor-pointer"
+            >
+              <Sparkles className="w-5 h-5" />
+              <span>Vygenerovat cenovou nabídku z terénu</span>
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* TAB 3: FOTODOKUMENTACE */}
+      {activeTab === 'photos' && (
+        <div className="bg-white rounded-3xl border border-slate-200/80 p-6 space-y-6 shadow-xs">
+          <input
+            type="file"
+            accept="image/*"
+            capture="environment"
+            ref={fileInputRef}
+            className="hidden"
+            onChange={handleFileChange}
+          />
+          <div className="flex items-center justify-between">
+            <h3 className="text-lg font-bold text-slate-900">Fotodokumentace (Před / Během / Po)</h3>
+            <div className="flex gap-1.5">
+              <button onClick={() => handleAddPhoto('Before')} className="px-2.5 py-1 bg-blue-50 text-blue-700 border border-blue-200 rounded-lg text-xs font-bold cursor-pointer hover:bg-blue-100">+ Před</button>
+              <button onClick={() => handleAddPhoto('During')} className="px-2.5 py-1 bg-amber-50 text-amber-700 border border-amber-200 rounded-lg text-xs font-bold cursor-pointer hover:bg-amber-100">+ Během</button>
+              <button onClick={() => handleAddPhoto('After')} className="px-2.5 py-1 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-lg text-xs font-bold cursor-pointer hover:bg-emerald-100">+ Po</button>
             </div>
           </div>
 
-          {/* Voice Notes with Speech-to-Text */}
-          <div className="space-y-3 pt-4 border-t border-slate-200">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {['Before', 'During', 'After'].map((stageName) => {
+              const stagePhotos = timelinePhotos.filter(p => p.stage === stageName);
+              return (
+                <div key={stageName} className="bg-slate-50 p-4 rounded-2xl border border-slate-200/80 space-y-3">
+                  <span className={`text-xs font-bold uppercase px-2.5 py-1 rounded block text-center border ${
+                    stageName === 'Before' ? 'bg-blue-50 border-blue-200 text-blue-700' :
+                    stageName === 'During' ? 'bg-amber-50 border-amber-200 text-amber-700' : 'bg-emerald-50 border-emerald-200 text-emerald-700'
+                  }`}>
+                    {stageName === 'Before' ? 'Před montáží' : stageName === 'During' ? 'V průběhu' : 'Hotové dílo'}
+                  </span>
+                  {stagePhotos.length > 0 ? (
+                    <div className="space-y-2">
+                      {stagePhotos.map(p => (
+                        <div key={p.id} className="relative rounded-xl overflow-hidden border border-slate-200">
+                          <img src={p.url} alt={stageName} className="w-full h-32 object-cover" />
+                          <span className="absolute bottom-1 right-1 px-2 py-0.5 rounded bg-slate-900/80 text-white text-[10px] font-mono">{p.time}</span>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="h-32 flex items-center justify-center text-xs text-slate-400 border border-dashed border-slate-200 rounded-xl">
+                      Žádné foto
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* TAB 4: HLAS & AI ÚČTENKY */}
+      {activeTab === 'tools' && (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Voice Notes */}
+          <div className="bg-white rounded-3xl border border-slate-200/80 p-6 space-y-4 shadow-xs">
             <div className="flex items-center justify-between">
-              <h5 className="text-xs font-bold uppercase tracking-wider text-slate-700 flex items-center gap-1">
-                <Mic className="w-3.5 h-3.5 text-rose-400" /> Hlasové poznámky technika (Speech-to-Text)
-              </h5>
+              <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
+                <Mic className="w-5 h-5 text-blue-600" />
+                <span>Hlasové poznámky</span>
+              </h3>
               <button
                 onClick={handleStartRecording}
                 disabled={isRecording}
-                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
-                  isRecording ? 'bg-rose-600 text-slate-900 animate-pulse' : 'bg-slate-50 hover:bg-slate-800 text-slate-800 border border-slate-200'
+                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer border ${
+                  isRecording ? 'bg-rose-600 text-white border-rose-600 animate-pulse' : 'bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100'
                 }`}
               >
-                <Mic className="w-3.5 h-3.5 text-rose-400" />
-                <span>{isRecording ? 'Poslouchám a přepisuji...' : 'Nahrát hlasovou poznámku'}</span>
+                <Mic className="w-3.5 h-3.5" />
+                <span>{isRecording ? 'Nahrávám...' : 'Nahrát'}</span>
               </button>
             </div>
 
-            <div className="space-y-2 max-h-40 overflow-y-auto">
+            <div className="space-y-2">
               {transcribedNotes.map((note, idx) => (
-                <div key={idx} className="p-3 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-700 flex items-start gap-2">
-                  <span className="w-5 h-5 rounded-full bg-rose-500/20 text-rose-400 border border-rose-500/30 flex items-center justify-center text-[10px] font-bold flex-shrink-0 mt-0.5">#{idx+1}</span>
-                  <p className="flex-1">{note}</p>
+                <div key={idx} className="p-3 rounded-xl bg-slate-50 border border-slate-200/80 text-xs text-slate-800">
+                  <p className="font-bold text-blue-700 mb-0.5">Poznámka #{idx+1}</p>
+                  <p>{note}</p>
                 </div>
               ))}
             </div>
           </div>
 
-          {/* Material Receipt Scanner (Feature 7) */}
-          <div className="space-y-3 pt-4 border-t border-slate-200">
+          {/* Receipt OCR Scanner */}
+          <div className="bg-white rounded-3xl border border-slate-200/80 p-6 space-y-4 shadow-xs">
             <div className="flex items-center justify-between">
-              <h5 className="text-xs font-bold uppercase tracking-wider text-slate-700 flex items-center gap-1">
-                <Receipt className="w-3.5 h-3.5 text-amber-400" /> AI Skener nákupních účtenek (Receipt Scanner)
-              </h5>
+              <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
+                <Receipt className="w-5 h-5 text-blue-600" />
+                <span>AI Účtenky (OCR)</span>
+              </h3>
               <button
                 onClick={handleScanReceipt}
                 disabled={isScanningReceipt}
-                className="px-3 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-bold transition-all shadow-sm flex items-center gap-1.5"
+                className="px-3 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-xs flex items-center gap-1.5 cursor-pointer border border-blue-600"
               >
                 <Sparkles className="w-3.5 h-3.5" />
-                <span>{isScanningReceipt ? 'Skenuji účtenku OCR...' : 'Vyfotit účtenku'}</span>
+                <span>{isScanningReceipt ? 'Skenuji...' : 'Vyfotit účtenku'}</span>
               </button>
             </div>
 
-            {scannedReceipt && (
-              <div className="bg-slate-50 border border-amber-500/40 p-4 rounded-2xl text-xs space-y-2 animate-in fade-in">
-                <div className="flex items-center justify-between font-bold text-amber-400 border-b border-slate-200 pb-2">
-                  <span>Extrahovaná data z účtenky</span>
-                  <span className="text-green-400 flex items-center gap-1"><Check className="w-3.5 h-3.5" /> Zaúčtováno k projektu</span>
+            {scannedReceipt ? (
+              <div className="bg-slate-50 border border-slate-200/80 p-4 rounded-2xl text-xs space-y-2">
+                <div className="flex items-center justify-between font-bold text-slate-900 border-b border-slate-200 pb-2">
+                  <span>Extrahovaná účtenka</span>
+                  <span className="text-emerald-700 flex items-center gap-1"><Check className="w-3.5 h-3.5" /> Zaúčtováno</span>
                 </div>
-                <div className="grid grid-cols-2 gap-2 text-slate-700">
-                  <div><strong className="text-slate-900">Dodavatel (Supplier):</strong> {scannedReceipt.supplier}</div>
-                  <div><strong className="text-slate-900">Částka (Amount):</strong> {scannedReceipt.price.toLocaleString()} Kč</div>
-                  <div><strong className="text-slate-900">Sazba DPH (VAT):</strong> {scannedReceipt.vat}%</div>
-                  <div><strong className="text-slate-900">Materiál:</strong> {scannedReceipt.item}</div>
+                <div className="space-y-1 text-slate-800">
+                  <p><strong>Dodavatel:</strong> {scannedReceipt.supplier}</p>
+                  <p><strong>Částka:</strong> {scannedReceipt.price.toLocaleString()} Kč (DPH {scannedReceipt.vat}%)</p>
+                  <p><strong>Materiál:</strong> {scannedReceipt.item}</p>
                 </div>
+              </div>
+            ) : (
+              <div className="p-8 text-center text-xs text-slate-400 border border-dashed border-slate-200 rounded-2xl">
+                Vyfoťte účtenku za zakoupený materiál z terénu.
               </div>
             )}
           </div>
@@ -660,5 +844,3 @@ export const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({
     </div>
   );
 };
-
-

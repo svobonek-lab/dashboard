@@ -6,11 +6,13 @@ import { Lead } from '@/types';
 interface EmployeeDashboardPageProps {
   leads: Lead[];
   onSelectLead: (lead: Lead) => void;
+  onUpdateLead: (lead: Lead) => void;
 }
 
 export const EmployeeDashboardPage: React.FC<EmployeeDashboardPageProps> = ({
   leads,
-  onSelectLead
+  onSelectLead,
+  onUpdateLead
 }) => {
   const { branding } = useBranding();
 
@@ -20,6 +22,7 @@ export const EmployeeDashboardPage: React.FC<EmployeeDashboardPageProps> = ({
       branding={branding}
       onOpenVoiceNotes={() => {}}
       onSelectLead={onSelectLead}
+      onUpdateLead={onUpdateLead}
     />
   );
 };

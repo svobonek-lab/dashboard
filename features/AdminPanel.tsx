@@ -27,7 +27,10 @@ import {
   MapPin, 
   Eye, 
   CheckCircle2,
-  RefreshCw
+  RefreshCw,
+  UploadCloud,
+  Camera,
+  Image as ImageIcon
 } from 'lucide-react';
 
 export const AdminPanel: React.FC = () => {
@@ -113,6 +116,23 @@ export const AdminPanel: React.FC = () => {
   useEffect(() => {
     loadOrgs();
   }, []);
+
+  const handleQuickLogoUploadAdmin = async (org: any, file: File) => {
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+      if (e.target?.result) {
+        const logoDataUrl = e.target.result as string;
+        try {
+          await updateBrandingAdmin(org.id, org.name, org.primary_color || '#2563eb', logoDataUrl);
+          showToast(`Obrázek pro firmu ${org.name} byl změněn`, 'success');
+          loadOrgs();
+        } catch (err) {
+          showToast('Nepodařilo se nahrávání obrázku', 'error');
+        }
+      }
+    };
+    reader.readAsDataURL(file);
+  };
 
   const handleImpersonate = async (orgId: string, orgName: string) => {
     try {
@@ -401,12 +421,29 @@ export const AdminPanel: React.FC = () => {
                   return (
                     <tr key={org.id} className="hover:bg-slate-800/40 transition-colors">
                       <td className="py-4 px-6">
-                        <div className="w-10 h-10 rounded-xl bg-slate-50 overflow-hidden border border-slate-200 flex items-center justify-center">
-                          {org.logo_url ? (
-                            <img src={org.logo_url} alt={org.name} className="w-full h-full object-cover" />
-                          ) : (
-                            <Building className="w-5 h-5 text-slate-600" />
-                          )}
+                        <div className="relative group/avatar inline-block">
+                          <div className="w-10 h-10 rounded-xl bg-slate-50 overflow-hidden border border-slate-200 flex items-center justify-center">
+                            {org.logo_url ? (
+                              <img src={org.logo_url} alt={org.name} className="w-full h-full object-cover" />
+                            ) : (
+                              <Building className="w-5 h-5 text-slate-600" />
+                            )}
+                          </div>
+                          <label 
+                            title="Nahrát nový obrázek z počítače" 
+                            className="absolute -bottom-1 -right-1 w-5 h-5 rounded-md bg-blue-600 hover:bg-blue-500 text-white flex items-center justify-center shadow-md cursor-pointer transition-transform hover:scale-110"
+                          >
+                            <Camera className="w-3 h-3" />
+                            <input 
+                              type="file" 
+                              accept="image/*" 
+                              className="hidden" 
+                              onChange={(e) => {
+                                const file = e.target.files?.[0];
+                                if (file) handleQuickLogoUploadAdmin(org, file);
+                              }}
+                            />
+                          </label>
                         </div>
                       </td>
                       <td className="py-4 px-6">
@@ -602,14 +639,51 @@ export const AdminPanel: React.FC = () => {
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-5 pt-3 border-t border-slate-200">
-                    <div className="space-y-1.5">
-                      <label className="text-xs font-bold text-slate-700 uppercase tracking-wide">Logo URL adresa</label>
+                    <div className="space-y-2">
+                      <label className="text-xs font-bold text-slate-700 uppercase tracking-wide block">Obrázek / Logo společnosti</label>
+                      
+                      {logoUrl ? (
+                        <div className="flex items-center gap-3 p-2.5 bg-slate-50 border border-slate-200 rounded-xl">
+                          <img src={logoUrl} alt="Logo preview" className="w-10 h-10 object-contain rounded-lg bg-white border border-slate-200 p-0.5" />
+                          <div className="flex-1 min-w-0">
+                            <span className="text-xs font-bold text-slate-800 block truncate">Obrázek nahrán</span>
+                            <button
+                              type="button"
+                              onClick={() => setLogoUrl('')}
+                              className="text-[10px] text-rose-600 font-bold hover:underline"
+                            >
+                              Odstranit
+                            </button>
+                          </div>
+                        </div>
+                      ) : null}
+
+                      <label className="cursor-pointer min-h-[42px] py-2.5 px-3 rounded-xl bg-blue-50 hover:bg-blue-100 border border-blue-200 text-blue-700 text-xs font-bold flex items-center justify-center gap-2 transition-all">
+                        <UploadCloud className="w-4 h-4 text-blue-600" />
+                        <span>Nahrát fotku / logo z PC</span>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          className="hidden"
+                          onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (file) {
+                              const reader = new FileReader();
+                              reader.onload = (evt) => {
+                                if (evt.target?.result) setLogoUrl(evt.target.result as string);
+                              };
+                              reader.readAsDataURL(file);
+                            }
+                          }}
+                        />
+                      </label>
+
                       <input
                         type="text"
                         value={logoUrl}
                         onChange={(e) => setLogoUrl(e.target.value)}
-                        placeholder="https://..."
-                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-900 focus:border-amber-500 outline-none"
+                        placeholder="Nebo vložte URL adresu: https://..."
+                        className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-900 focus:border-amber-500 outline-none"
                       />
                     </div>
 
@@ -622,7 +696,7 @@ export const AdminPanel: React.FC = () => {
                           onChange={(e) => setPrimaryColor(e.target.value)}
                           className="w-14 h-11 p-0 border border-slate-300 bg-transparent rounded-xl cursor-pointer"
                         />
-                        <span className="font-mono text-xs text-amber-400 font-bold">{primaryColor}</span>
+                        <span className="font-mono text-xs text-amber-500 font-bold">{primaryColor}</span>
                       </div>
                     </div>
                   </div>
@@ -1010,14 +1084,55 @@ export const AdminPanel: React.FC = () => {
                 </div>
               </div>
 
-              <div className="space-y-1.5">
-                <label className="text-xs font-bold text-slate-700 uppercase">Logo URL adresa</label>
-                <input
-                  type="text"
-                  value={editLogo}
-                  onChange={(e) => setEditLogo(e.target.value)}
-                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-900 outline-none focus:border-amber-500"
-                />
+              <div className="space-y-2">
+                <label className="text-xs font-bold text-slate-700 uppercase block">Obrázek / Logo společnosti</label>
+                
+                {editLogo ? (
+                  <div className="flex items-center gap-3 p-3 bg-slate-50 border border-slate-200 rounded-2xl">
+                    <img src={editLogo} alt="Logo preview" className="w-12 h-12 object-contain rounded-xl bg-white border border-slate-200 p-1 shadow-xs" />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-bold text-slate-800 truncate">Aktuálně nahraný obrázek</p>
+                      <button
+                        type="button"
+                        onClick={() => setEditLogo('')}
+                        className="text-[10px] text-rose-600 hover:underline font-bold mt-0.5 cursor-pointer block"
+                      >
+                        Odstranit obrázek
+                      </button>
+                    </div>
+                  </div>
+                ) : null}
+
+                <label className="cursor-pointer min-h-[44px] py-2.5 px-4 rounded-xl bg-blue-50 hover:bg-blue-100 border border-blue-200 text-blue-700 font-bold text-xs flex items-center justify-center gap-2 transition-all">
+                  <UploadCloud className="w-4 h-4 text-blue-600" />
+                  <span>Nahrát nový obrázek z počítače</span>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) {
+                        const reader = new FileReader();
+                        reader.onload = (evt) => {
+                          if (evt.target?.result) setEditLogo(evt.target.result as string);
+                        };
+                        reader.readAsDataURL(file);
+                      }
+                    }}
+                  />
+                </label>
+
+                <div className="pt-1">
+                  <span className="text-[10px] text-slate-400 font-bold block mb-1">Nebo vložte URL adresu:</span>
+                  <input
+                    type="text"
+                    value={editLogo}
+                    onChange={(e) => setEditLogo(e.target.value)}
+                    placeholder="https://..."
+                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-900 outline-none focus:border-amber-500"
+                  />
+                </div>
               </div>
             </div>
             <div className="p-5 border-t border-slate-200 flex justify-end gap-2 bg-slate-50">

@@ -1,72 +1,166 @@
-import React, { useState } from 'react';
-import { CheckSquare, CheckCircle2, Square, PenTool, Sparkles, Send, ShieldCheck, Check } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { CheckSquare, CheckCircle2, Square, PenTool, Send, Check, Building } from 'lucide-react';
+import { Lead, LeadChecklistItem } from '@/types';
 
-export const EmployeeChecklistPage: React.FC = () => {
-  const [items, setItems] = useState([
+interface EmployeeChecklistPageProps {
+  leads: Lead[];
+  onUpdateLead: (lead: Lead) => void;
+}
+
+export const EmployeeChecklistPage: React.FC<EmployeeChecklistPageProps> = ({
+  leads = [],
+  onUpdateLead
+}) => {
+  const [activeLeadId, setActiveLeadId] = useState<string>(leads[0]?.id || '');
+  const [signatureDone, setSignatureDone] = useState(false);
+  const [protocolSubmitted, setProtocolSubmitted] = useState(false);
+
+  const activeLead = leads.find(l => l.id === activeLeadId) || leads[0];
+
+  const defaultChecklist: LeadChecklistItem[] = [
     { id: '1', text: 'Bezpečnostní kontrola pracoviště (BOZP) & OOPP', completed: true },
     { id: '2', text: 'Laserové zaměření rovin a kontrola stavební připravenosti', completed: true },
     { id: '3', text: 'Kotvení profilů k fasádě a nosné zdi domu', completed: true },
     { id: '4', text: 'Montáž motorického pohonu lamel a odzkoušení chodu', completed: false },
     { id: '5', text: 'Začištění pracoviště, úklid odřezků a odvoz odpadu', completed: false },
     { id: '6', text: 'Podpis předávacího protokolu investorem na tabletu', completed: false },
-  ]);
+  ];
 
-  const [signatureDone, setSignatureDone] = useState(false);
-  const [protocolSubmitted, setProtocolSubmitted] = useState(false);
+  const currentChecklist = activeLead 
+    ? (activeLead.checklist && activeLead.checklist.length > 0 ? activeLead.checklist : defaultChecklist)
+    : [];
 
-  const handleToggleItem = (id: string) => {
-    setItems(items.map(it => it.id === id ? { ...it, completed: !it.completed } : it));
+  const completedCount = currentChecklist.filter(i => i.completed).length;
+
+  const handleToggleItem = (itemId: string) => {
+    if (activeLead && onUpdateLead) {
+      const updatedChecklist = currentChecklist.map(it => {
+        if (it.id === itemId) {
+          const nextCompleted = !it.completed;
+          // If 6th item (signature) is toggled, sync signatureDone
+          if (itemId === '6') {
+            setSignatureDone(nextCompleted);
+          }
+          return { ...it, completed: nextCompleted };
+        }
+        return it;
+      });
+
+      const updatedLead = {
+        ...activeLead,
+        checklist: updatedChecklist
+      };
+      onUpdateLead(updatedLead);
+    }
   };
 
-  const completedCount = items.filter(i => i.completed).length;
-  const allCompleted = completedCount === items.length;
+  const handleSimulateSignature = () => {
+    setSignatureDone(true);
+    if (activeLead && onUpdateLead) {
+      const updatedChecklist = currentChecklist.map(it => 
+        it.id === '6' ? { ...it, completed: true } : it
+      );
+      const updatedLead = {
+        ...activeLead,
+        checklist: updatedChecklist
+      };
+      onUpdateLead(updatedLead);
+    }
+  };
+
+  const handleClearSignature = () => {
+    setSignatureDone(false);
+    if (activeLead && onUpdateLead) {
+      const updatedChecklist = currentChecklist.map(it => 
+        it.id === '6' ? { ...it, completed: false } : it
+      );
+      const updatedLead = {
+        ...activeLead,
+        checklist: updatedChecklist
+      };
+      onUpdateLead(updatedLead);
+    }
+  };
+
+  const handleSubmitProtocol = () => {
+    setProtocolSubmitted(true);
+    setTimeout(() => setProtocolSubmitted(false), 4000);
+  };
+
+  // Sync signature status if the selected lead changes
+  useEffect(() => {
+    if (activeLead) {
+      const isSigned = currentChecklist.find(c => c.id === '6')?.completed || false;
+      setSignatureDone(isSigned);
+    }
+  }, [activeLeadId, activeLead]);
 
   return (
     <div className="space-y-6 text-slate-900 font-sans pb-12">
       
       {/* Header */}
-      <div>
-        <h1 className="text-xl font-black text-slate-900 tracking-tight flex items-center gap-2">
-          <CheckSquare className="w-5 h-5 text-green-400" />
-          Stavební checklist & Předávací protokol
-        </h1>
-        <p className="text-xs text-slate-500 mt-0.5">
-          Zakázka: <strong className="text-slate-900">Pergola 6x4m - Ing. Jan Svoboda</strong>
-        </p>
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-xl font-bold text-slate-900 tracking-tight flex items-center gap-2">
+            <CheckSquare className="w-5 h-5 text-blue-600" />
+            Stavební checklist & Předávací protokol
+          </h1>
+          <p className="text-xs text-slate-500 mt-0.5">
+            Zkontrolujte všechny body a získejte podpis klienta pro automatické uzavření a fakturaci zakázky.
+          </p>
+        </div>
+
+        {/* Lead Selector */}
+        {leads.length > 0 && (
+          <div className="flex items-center gap-2 bg-slate-100 p-1.5 rounded-2xl border border-slate-200">
+            <Building className="w-4 h-4 text-slate-500 ml-1.5" />
+            <select
+              value={activeLeadId}
+              onChange={(e) => setActiveLeadId(e.target.value)}
+              className="bg-transparent text-xs font-bold text-slate-700 outline-none pr-2 cursor-pointer"
+            >
+              {leads.map(l => (
+                <option key={l.id} value={l.id}>
+                  {l.customerName || l.title} ({l.city})
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
       </div>
 
       {/* Progress Bar */}
-      <div className="bg-[#111726] p-4 rounded-3xl border border-slate-200 space-y-2">
+      <div className="bg-white p-5 rounded-3xl border border-slate-200/80 space-y-3 shadow-xs">
         <div className="flex items-center justify-between text-xs font-bold">
           <span className="text-slate-700">Splněno kontrolních bodů:</span>
-          <span className="text-green-400 font-mono">{completedCount} z {items.length}</span>
+          <span className="text-blue-700 font-mono">{completedCount} z {currentChecklist.length}</span>
         </div>
-        <div className="w-full h-2.5 bg-white rounded-full overflow-hidden">
+        <div className="w-full h-2.5 bg-slate-100 rounded-full overflow-hidden border border-slate-200/60">
           <div 
-            className="h-full bg-green-500 rounded-full transition-all duration-300"
-            style={{ width: `${(completedCount / items.length) * 100}%` }}
+            className="h-full bg-blue-600 rounded-full transition-all duration-300"
+            style={{ width: `${(completedCount / currentChecklist.length) * 100}%` }}
           ></div>
         </div>
       </div>
 
       {/* Checklist items list */}
       <div className="space-y-2.5">
-        {items.map((item) => (
+        {currentChecklist.map((item) => (
           <button
             key={item.id}
             onClick={() => handleToggleItem(item.id)}
-            className={`w-full min-h-[52px] p-4 rounded-2xl border text-left flex items-center gap-3 transition-all ${
+            className={`w-full min-h-[52px] p-4 rounded-2xl border text-left flex items-center gap-3 transition-all cursor-pointer ${
               item.completed 
-                ? 'bg-green-500/10 border-green-500/30 text-green-200' 
-                : 'bg-[#111726] border-slate-200 text-slate-800 hover:border-slate-300'
+                ? 'bg-emerald-50/80 border-emerald-200 text-emerald-900' 
+                : 'bg-white border-slate-200/80 text-slate-800 hover:border-blue-300'
             }`}
           >
             {item.completed ? (
-              <CheckCircle2 className="w-5 h-5 text-green-400 shrink-0" />
+              <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
             ) : (
-              <Square className="w-5 h-5 text-slate-500 shrink-0" />
+              <Square className="w-5 h-5 text-slate-400 shrink-0" />
             )}
-            <span className={`text-xs font-semibold ${item.completed ? 'line-through opacity-80' : ''}`}>
+            <span className={`text-xs font-semibold ${item.completed ? 'line-through text-slate-500' : 'text-slate-900'}`}>
               {item.text}
             </span>
           </button>
@@ -74,35 +168,35 @@ export const EmployeeChecklistPage: React.FC = () => {
       </div>
 
       {/* Touch Signature Pad Box */}
-      <div className="bg-[#111726] border border-slate-200 rounded-3xl p-5 space-y-4 shadow-lg">
+      <div className="bg-white border border-slate-200/80 rounded-3xl p-5 space-y-4 shadow-xs">
         <div className="flex items-center justify-between">
           <h3 className="text-xs font-bold text-slate-900 flex items-center gap-2">
-            <PenTool className="w-4 h-4 text-green-400" />
+            <PenTool className="w-4 h-4 text-blue-600" />
             Podpis investora při předání
           </h3>
           {signatureDone && (
-            <span className="text-[10px] font-bold text-green-400 bg-green-500/10 px-2 py-0.5 rounded border border-green-500/30">
+            <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200">
               Podepsáno
             </span>
           )}
         </div>
 
-        <div className="h-32 bg-[#0B0F19] rounded-2xl border border-dashed border-slate-300 flex flex-col items-center justify-center text-center p-4 relative overflow-hidden">
+        <div className="h-32 bg-slate-50 rounded-2xl border border-dashed border-slate-300 flex flex-col items-center justify-center text-center p-4 relative overflow-hidden">
           {signatureDone ? (
-            <div className="text-green-400 space-y-1">
-              <span className="font-serif italic text-2xl">Jan Svoboda</span>
-              <p className="text-[10px] text-slate-500 font-mono">Časové razítko: {new Date().toLocaleTimeString('cs-CZ')}</p>
+            <div className="text-blue-900 space-y-1">
+              <span className="font-serif italic text-2xl font-bold">{activeLead?.customerName || 'Vážený zákazník'}</span>
+              <p className="text-[10px] text-emerald-700 font-mono font-bold">Časové razítko: {new Date().toLocaleTimeString('cs-CZ')}</p>
             </div>
           ) : (
             <div className="space-y-1">
-              <PenTool className="w-6 h-6 text-slate-500 mx-auto" />
-              <p className="text-[11px] text-slate-500 font-medium">Klikněte pro simulaci podpisu investora prstem na obrazovce</p>
+              <PenTool className="w-6 h-6 text-slate-400 mx-auto" />
+              <p className="text-[11px] text-slate-600 font-medium">Klikněte pro simulaci podpisu investora prstem na obrazovce</p>
             </div>
           )}
 
           {!signatureDone && (
             <button
-              onClick={() => setSignatureDone(true)}
+              onClick={handleSimulateSignature}
               className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
             >
               Podepsat
@@ -112,8 +206,8 @@ export const EmployeeChecklistPage: React.FC = () => {
 
         {signatureDone && (
           <button
-            onClick={() => setSignatureDone(false)}
-            className="text-[10px] text-slate-500 hover:text-slate-900 underline font-semibold"
+            onClick={handleClearSignature}
+            className="text-[10px] text-slate-500 hover:text-slate-900 underline font-semibold cursor-pointer"
           >
             Vymazat a podepsat znovu
           </button>
@@ -122,15 +216,15 @@ export const EmployeeChecklistPage: React.FC = () => {
 
       {/* Final Submit Protocol Action */}
       {protocolSubmitted ? (
-        <div className="p-4 rounded-2xl bg-green-500/20 border border-green-500/40 text-green-300 text-xs font-bold flex items-center gap-2">
-          <Check className="w-4 h-4" />
+        <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-900 text-xs font-bold flex items-center gap-2">
+          <Check className="w-4 h-4 text-emerald-600" />
           <span>Předávací protokol byl odeslán na dispečink i na e-mail investora!</span>
         </div>
       ) : (
         <button
-          onClick={() => setProtocolSubmitted(true)}
+          onClick={handleSubmitProtocol}
           disabled={!signatureDone}
-          className="w-full min-h-[48px] py-3.5 px-4 rounded-2xl bg-green-500 hover:bg-green-400 text-slate-950 font-black text-xs transition-all shadow-lg shadow-green-500/20 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="w-full min-h-[48px] py-3.5 px-4 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs transition-all shadow-xs flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
         >
           <Send className="w-4 h-4" />
           <span>Odeslat podepsaný protokol do CRM</span>

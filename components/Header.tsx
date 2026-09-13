@@ -150,37 +150,26 @@ create table if not exists projects (
           </p>
         </div>
 
-        {/* Role Switcher for Sales Demo */}
-        <div className="hidden md:flex items-center bg-slate-50 p-1 rounded-xl border border-slate-200 text-xs font-semibold">
-          <button
-            onClick={() => setActiveRole('owner')}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-all ${
-              activeRole === 'owner'
-                ? 'bg-slate-800 text-slate-900 shadow-sm border border-slate-300/60'
-                : 'text-slate-500 hover:text-slate-800'
-            }`}
-          >
-            <Shield className="w-3.5 h-3.5 text-amber-500" />
-            <span>Přehled majitele</span>
-          </button>
-          <button
-            onClick={() => setActiveRole('employee')}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-all ${
-              activeRole === 'employee'
-                ? 'bg-slate-800 text-slate-900 shadow-sm border border-slate-300/60'
-                : 'text-slate-500 hover:text-slate-800'
-            }`}
-          >
-            <UserCheck className="w-3.5 h-3.5 text-green-500" />
-            <span>Mobilní aplikace týmu</span>
-          </button>
+        {/* Role Badge */}
+        <div className="hidden md:flex items-center bg-slate-50 px-3 py-1.5 rounded-xl border border-slate-200 text-xs font-semibold gap-2">
+          {dbUser?.role === 'owner' || dbUser?.role === 'super_admin' ? (
+            <>
+              <Shield className="w-3.5 h-3.5" style={{ color: currentOrg?.primary_color || branding.primaryColor || '#2563eb' }} />
+              <span className="text-slate-800">Majitelský přístup ({dbUser.role})</span>
+            </>
+          ) : (
+            <>
+              <UserCheck className="w-3.5 h-3.5 text-emerald-500" />
+              <span className="text-slate-800">Člen týmu / Řemeslník</span>
+            </>
+          )}
         </div>
       </div>
 
       <div className="flex items-center gap-4">
         {/* Supabase Status Indicator Badge */}
         <div className="hidden lg:flex items-center gap-1.5 px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-[11px] font-medium text-slate-700 shadow-3xs">
-          <Database className={`w-3.5 h-3.5 ${isConfigured ? 'text-green-400 animate-pulse' : 'text-slate-500'}`} />
+          <Database className={`w-3.5 h-3.5 ${isConfigured ? 'text-green-500 animate-pulse' : 'text-slate-400'}`} />
           <span>{isConfigured ? 'Databáze připojena' : 'Lokální sandbox'}</span>
         </div>
 
@@ -201,9 +190,9 @@ create table if not exists projects (
         {onOpenOnboarding && (
           <button
             onClick={onOpenOnboarding}
-            className="hidden sm:flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-slate-800 transition-all border border-slate-300"
+            className="hidden sm:flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold bg-white hover:bg-slate-50 text-slate-800 transition-all border border-slate-200 shadow-3xs"
           >
-            <Wand2 className="w-3.5 h-3.5 text-amber-400" />
+            <Wand2 className="w-3.5 h-3.5" style={{ color: currentOrg?.primary_color || branding.primaryColor || '#2563eb' }} />
             <span>Průvodce nastavením</span>
           </button>
         )}
@@ -211,8 +200,8 @@ create table if not exists projects (
         {/* Generate New Demo CTA */}
         <button
           onClick={onOpenDemoGenerator}
-          className="hidden sm:flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-semibold text-slate-950 shadow-sm transition-all hover:opacity-95"
-          style={{ backgroundColor: currentOrg?.primary_color || branding.primaryColor || '#f59e0b' }}
+          className="hidden sm:flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold text-slate-950 shadow-sm transition-all hover:opacity-95"
+          style={{ backgroundColor: currentOrg?.primary_color || branding.primaryColor || '#2563eb' }}
         >
           <Sparkles className="w-3.5 h-3.5" />
           <span>Generovat demo URL</span>
@@ -283,12 +272,12 @@ create table if not exists projects (
                       }}
                       className={`w-full text-left p-2 rounded-xl text-xs font-bold flex items-center justify-between transition-all ${
                         currentOrg?.id === org.id
-                          ? 'bg-amber-500/10 text-amber-400 border border-amber-500/30'
-                          : 'hover:bg-slate-800 text-slate-700'
+                          ? 'bg-blue-50 text-blue-700 border border-blue-200'
+                          : 'hover:bg-slate-50 text-slate-700'
                       }`}
                     >
                       <span className="truncate">{org.name}</span>
-                      {currentOrg?.id === org.id && <CheckCircle className="w-3.5 h-3.5 text-amber-400" />}
+                      {currentOrg?.id === org.id && <CheckCircle className="w-3.5 h-3.5" style={{ color: currentOrg?.primary_color || branding.primaryColor || '#2563eb' }} />}
                     </button>
                   ))}
                 </div>
@@ -301,20 +290,21 @@ create table if not exists projects (
                       placeholder="Název organizace..."
                       value={newOrgName}
                       onChange={(e) => setNewOrgName(e.target.value)}
-                      className="w-full text-xs p-2.5 bg-slate-50 border border-slate-200 text-slate-900 rounded-xl focus:ring-1 focus:ring-amber-500 outline-none"
+                      className="w-full text-xs p-2.5 bg-slate-50 border border-slate-200 text-slate-900 rounded-xl focus:ring-1 focus:ring-blue-500 outline-none"
                       required
                     />
                     <div className="flex gap-2">
                       <button
                         type="submit"
-                        className="flex-1 py-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 rounded-xl text-xs font-bold"
+                        className="flex-1 py-1.5 text-white rounded-xl text-xs font-bold transition-all hover:opacity-95"
+                        style={{ backgroundColor: currentOrg?.primary_color || branding.primaryColor || '#2563eb' }}
                       >
                         Vytvořit
                       </button>
                       <button
                         type="button"
                         onClick={() => setShowNewOrgInput(false)}
-                        className="flex-1 py-1.5 bg-slate-800 text-slate-700 rounded-xl text-xs font-bold"
+                        className="flex-1 py-1.5 bg-slate-100 text-slate-700 hover:bg-slate-200 rounded-xl text-xs font-bold"
                       >
                         Zrušit
                       </button>
@@ -323,7 +313,7 @@ create table if not exists projects (
                 ) : (
                   <button
                     onClick={() => setShowNewOrgInput(true)}
-                    className="w-full py-2.5 border border-dashed border-slate-300 rounded-xl text-xs font-bold text-slate-700 hover:bg-slate-800 transition-all flex items-center justify-center gap-1.5"
+                    className="w-full py-2.5 border border-dashed border-slate-300 rounded-xl text-xs font-bold text-slate-700 hover:bg-slate-50 transition-all flex items-center justify-center gap-1.5"
                   >
                     <Plus className="w-3.5 h-3.5" />
                     <span>Založit novou firmu</span>
@@ -339,7 +329,7 @@ create table if not exists projects (
                           await logout();
                           setIsTenantMenuOpen(false);
                         }}
-                        className="w-full py-2.5 bg-slate-800 hover:bg-slate-700 border border-slate-300 text-slate-800 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-all"
+                        className="w-full py-2.5 bg-slate-100 hover:bg-slate-200 border border-slate-200 text-slate-800 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-all"
                       >
                         <LogOut className="w-3.5 h-3.5" />
                         <span>Odhlásit se</span>
@@ -351,7 +341,8 @@ create table if not exists projects (
                           setIsAuthModalOpen(true);
                           setIsTenantMenuOpen(false);
                         }}
-                        className="w-full py-2.5 bg-amber-500 hover:bg-amber-400 text-slate-950 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-all shadow-xs"
+                        className="w-full py-2.5 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-all shadow-xs hover:opacity-95"
+                        style={{ backgroundColor: currentOrg?.primary_color || branding.primaryColor || '#2563eb' }}
                       >
                         <LogIn className="w-3.5 h-3.5" />
                         <span>Připojit účet</span>
@@ -364,7 +355,8 @@ create table if not exists projects (
                         setIsAuthModalOpen(true);
                         setIsTenantMenuOpen(false);
                       }}
-                      className="w-full py-2.5 bg-amber-500 hover:bg-amber-400 text-slate-950 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-all shadow-xs"
+                      className="w-full py-2.5 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-all shadow-xs hover:opacity-95"
+                      style={{ backgroundColor: currentOrg?.primary_color || branding.primaryColor || '#2563eb' }}
                     >
                       <Plus className="w-3.5 h-3.5" />
                       <span>Vytvořit virtuální firmu</span>
@@ -379,7 +371,7 @@ create table if not exists projects (
 
       {/* Supabase Authentication Modal */}
       {isAuthModalOpen && (
-        <div className="fixed inset-0 z-50 bg-slate-50/80 backdrop-blur-xs flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl border border-slate-200 max-w-md w-full p-6 shadow-2xl space-y-4 animate-in fade-in zoom-in-95 text-slate-900">
             <div className="flex items-center justify-between pb-3 border-b border-slate-200">
               <h3 className="text-lg font-black text-slate-900">
@@ -394,14 +386,14 @@ create table if not exists projects (
             </div>
 
             {!isConfigured && (
-              <div className="p-3 bg-amber-500/10 border border-amber-500/30 rounded-2xl text-xs text-amber-300 leading-relaxed">
+              <div className="p-3 bg-blue-50 border border-blue-200 rounded-2xl text-xs text-blue-900 leading-relaxed">
                 <strong>Režim lokálního úložiště:</strong> Aplikace ukládá firemní data bezpečně lokálně. Zde si můžete vyzkoušet plnou registraci, multitenanci a izolaci dat jednotlivých firem!
               </div>
             )}
 
             <form onSubmit={handleAuthSubmit} className="space-y-4">
               {authError && (
-                <div className="p-3 bg-rose-950/60 border border-rose-800 text-rose-300 rounded-xl text-xs font-semibold">
+                <div className="p-3 bg-rose-50 border border-rose-200 text-rose-800 rounded-xl text-xs font-semibold">
                   {authError}
                 </div>
               )}
@@ -412,7 +404,7 @@ create table if not exists projects (
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full mt-1 p-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-1 focus:ring-amber-500 outline-none text-sm font-medium text-slate-900"
+                  className="w-full mt-1 p-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-1 focus:ring-blue-500 outline-none text-sm font-medium text-slate-900"
                   placeholder="jmeno@firma.cz"
                   required
                 />
@@ -424,7 +416,7 @@ create table if not exists projects (
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full mt-1 p-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-1 focus:ring-amber-500 outline-none text-sm font-medium text-slate-900"
+                  className="w-full mt-1 p-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-1 focus:ring-blue-500 outline-none text-sm font-medium text-slate-900"
                   placeholder="••••••••"
                   required
                 />
@@ -437,7 +429,7 @@ create table if not exists projects (
                     type="text"
                     value={orgName}
                     onChange={(e) => setOrgName(e.target.value)}
-                    className="w-full mt-1 p-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-1 focus:ring-amber-500 outline-none text-sm font-medium text-slate-900"
+                    className="w-full mt-1 p-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-1 focus:ring-blue-500 outline-none text-sm font-medium text-slate-900"
                     placeholder="Stavební Firma s.r.o."
                     required
                   />
@@ -446,7 +438,8 @@ create table if not exists projects (
 
               <button
                 type="submit"
-                className="w-full py-3 bg-amber-500 hover:bg-amber-400 text-slate-950 rounded-xl text-sm font-bold transition-all shadow-sm"
+                className="w-full py-3 text-white rounded-xl text-sm font-bold transition-all shadow-sm hover:opacity-95"
+                style={{ backgroundColor: currentOrg?.primary_color || branding.primaryColor || '#2563eb' }}
               >
                 {authMode === 'login' ? 'Přihlásit se' : 'Zaregistrovat firmu'}
               </button>
@@ -456,14 +449,22 @@ create table if not exists projects (
               {authMode === 'login' ? (
                 <>
                   Nemáte ještě firemní účet?{' '}
-                  <button onClick={() => setAuthMode('signup')} className="text-amber-400 font-bold hover:underline">
+                  <button 
+                    onClick={() => setAuthMode('signup')} 
+                    className="font-bold hover:underline"
+                    style={{ color: currentOrg?.primary_color || branding.primaryColor || '#2563eb' }}
+                  >
                     Zaregistrovat se
                   </button>
                 </>
               ) : (
                 <>
                   Již máte vytvořený účet?{' '}
-                  <button onClick={() => setAuthMode('login')} className="text-amber-400 font-bold hover:underline">
+                  <button 
+                    onClick={() => setAuthMode('login')} 
+                    className="font-bold hover:underline"
+                    style={{ color: currentOrg?.primary_color || branding.primaryColor || '#2563eb' }}
+                  >
                     Přihlásit se
                   </button>
                 </>

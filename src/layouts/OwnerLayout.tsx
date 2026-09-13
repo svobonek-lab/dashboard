@@ -94,6 +94,7 @@ export const OwnerLayout: React.FC<OwnerLayoutProps> = ({
   const navItems = [
     { label: 'Přehled stavby (Executive)', path: '/dashboard', icon: LayoutDashboard, exact: true },
     { label: 'Poptávky & Kanban', path: '/leads', icon: Kanban, badge: leads.filter(l => l.status === 'New').length ? `${leads.filter(l => l.status === 'New').length} nové` : undefined },
+    { label: 'Poptávkový formulář', path: '/inquiry', icon: Sparkles },
     { label: 'Realizace & Stavby', path: '/projects', icon: HardHat },
     { label: 'Harmonogram výjezdů', path: '/calendar', icon: Calendar },
     { label: 'Tým & Řemeslníci', path: '/employees', icon: Users },
@@ -166,11 +167,10 @@ export const OwnerLayout: React.FC<OwnerLayoutProps> = ({
 
               <div className="flex items-center gap-3">
                 <div 
-                  className="w-11 h-11 rounded-2xl flex items-center justify-center text-white font-black text-lg shadow-sm shrink-0 overflow-hidden transition-transform duration-300 hover:scale-105"
+                  className="w-9 h-9 rounded-xl flex items-center justify-center text-white font-black text-sm shadow-2xs shrink-0 overflow-hidden"
                   style={{ 
                     backgroundColor: palette.primary,
                     color: palette.textOnPrimary,
-                    boxShadow: palette.primaryGlow
                   }}
                 >
                   {activeLogo ? (
@@ -180,18 +180,17 @@ export const OwnerLayout: React.FC<OwnerLayoutProps> = ({
                   )}
                 </div>
                 <div className="overflow-hidden">
-                  <div className="flex items-center gap-1.5">
-                    <h1 className="font-extrabold text-sm text-slate-900 truncate tracking-tight">
-                      {activeCompanyName}
-                    </h1>
+                  <h1 className="text-[18px] font-black text-slate-900 truncate tracking-tight leading-none">
+                    {activeCompanyName}
+                  </h1>
+                  <div className="flex items-center gap-1.5 mt-1">
+                    <span className="px-2 py-0.5 rounded-full text-[9px] font-extrabold uppercase tracking-wider bg-slate-100 text-slate-600 border border-slate-200">
+                      Workspace
+                    </span>
+                    <span className="text-[11px] text-slate-500 font-medium truncate">
+                      {activeCity}
+                    </span>
                   </div>
-                  <p className="text-[11px] text-slate-500 font-medium truncate flex items-center gap-1.5">
-                    <span 
-                      className="w-1.5 h-1.5 rounded-full" 
-                      style={{ backgroundColor: palette.primary }}
-                    ></span>
-                    {activeCity} • Operační systém
-                  </p>
                 </div>
               </div>
             </div>
@@ -288,9 +287,9 @@ export const OwnerLayout: React.FC<OwnerLayoutProps> = ({
                   switchRoleToSuperAdmin();
                   navigate('/admin');
                 }}
-                className="w-full py-2 px-3 rounded-xl bg-slate-50 hover:bg-slate-800 text-amber-400 border border-slate-700 text-xs font-bold transition-all flex items-center justify-center gap-2 shadow-sm"
+                className="w-full py-2 px-3 rounded-xl bg-slate-50 hover:bg-slate-100 text-slate-800 border border-slate-200 text-xs font-bold transition-all flex items-center justify-center gap-2 shadow-sm"
               >
-                <Shield className="w-3.5 h-3.5 text-amber-400" />
+                <Shield className="w-3.5 h-3.5" style={{ color: palette.primary }} />
                 <span>Super Admin Platform</span>
               </button>
             )}

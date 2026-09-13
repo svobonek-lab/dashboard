@@ -263,7 +263,7 @@ const INITIAL_PROJECTS: ConstructionProject[] = [
 
 const STAGE_CONFIG: Record<ConstructionStage, { label: string; order: number; badgeColor: string }> = {
   inquiry: { label: 'Poptávka', order: 1, badgeColor: 'border-slate-300 bg-slate-800/80 text-slate-700' },
-  survey: { label: 'Zaměřování', order: 2, badgeColor: 'border-amber-600/40 bg-blue-50 text-blue-600' },
+  survey: { label: 'Zaměřování', order: 2, badgeColor: 'border-blue-300 bg-blue-50 text-blue-600' },
   rough: { label: 'Hrubá stavba', order: 3, badgeColor: 'border-blue-600/40 bg-blue-500/10 text-blue-400' },
   finishing: { label: 'Dokončování', order: 4, badgeColor: 'border-sky-600/40 bg-sky-500/10 text-sky-400' },
   handed_over: { label: 'Předáno', order: 5, badgeColor: 'border-green-600/40 bg-green-500/10 text-green-600' }
@@ -957,7 +957,7 @@ export const ConstructionDashboard: React.FC<ConstructionDashboardProps> = () =>
               {/* Tlačítko pro rychlou fotku */}
               <button
                 onClick={() => setIsAddingPhoto(!isAddingPhoto)}
-                className="p-4 rounded-2xl bg-white border border-slate-200 hover:border-amber-500/50 flex flex-col items-center justify-center gap-2 text-center transition group cursor-pointer active:scale-95"
+                className="p-4 rounded-2xl bg-white border border-slate-200 hover:border-blue-500/50 flex flex-col items-center justify-center gap-2 text-center transition group cursor-pointer active:scale-95"
               >
                 <div className="w-12 h-12 rounded-xl bg-blue-50 border border-blue-200 flex items-center justify-center text-blue-600 group-hover:bg-blue-600 group-hover:text-slate-950 transition">
                   <Camera className="w-6 h-6" />
@@ -974,7 +974,7 @@ export const ConstructionDashboard: React.FC<ConstructionDashboardProps> = () =>
                 className={`p-4 rounded-2xl border flex flex-col items-center justify-center gap-2 text-center transition cursor-pointer active:scale-95 ${
                   isRecordingVoice
                     ? 'bg-rose-950/50 border-rose-500 ring-2 ring-rose-500/30 animate-pulse'
-                    : 'bg-white border-slate-200 hover:border-amber-500/50'
+                    : 'bg-white border-slate-200 hover:border-blue-500/50'
                 }`}
               >
                 <div className={`w-12 h-12 rounded-xl flex items-center justify-center transition ${

@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useContext } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { CompanyBranding } from '../types';
 import { getCompanyBranding, saveCompanyBranding, resetCompanyBranding, applyBrandTheme } from '../lib/branding';
 import { 
@@ -12,44 +12,71 @@ import {
   applyBrandToDOM
 } from '../lib/brandingEngine';
 import { LocalSupabaseMock, DEFAULT_DEMO_ORG_ID } from '../lib/supabase';
+import { useOrganization } from '../context/OrganizationContext';
 
 export { applyBrandTheme, getBrandDNA, detectBrandArchetype };
 export type { BrandArchetype, BrandDNA, BrandPalette };
 
 export function useBranding(explicitOrgId?: string) {
+  // Read OrganizationContext via hook safely
+  let orgCtx: any = null;
+  try {
+    orgCtx = useOrganization();
+  } catch (e) {
+    // Fallback if rendered outside OrganizationProvider
+    orgCtx = null;
+  }
+  const currentOrg = orgCtx?.currentOrg;
+
   // Determine effective organization ID
-  const activeOrgId = explicitOrgId || LocalSupabaseMock.getActiveOrgId() || DEFAULT_DEMO_ORG_ID;
+  const activeOrgId = explicitOrgId || currentOrg?.id || LocalSupabaseMock.getActiveOrgId() || DEFAULT_DEMO_ORG_ID;
 
   const [currentOrgId, setCurrentOrgId] = useState<string>(activeOrgId);
   const [branding, setBranding] = useState<CompanyBranding>(() => {
-    const initial = getCompanyBranding(activeOrgId);
-    return initial;
+    if (currentOrg?.branding) {
+      return {
+        ...getCompanyBranding(activeOrgId),
+        name: currentOrg.name || currentOrg.branding.name,
+        primaryColor: currentOrg.primary_color || currentOrg.branding.primaryColor || '#2563eb',
+        ...currentOrg.branding
+      };
+    }
+    return getCompanyBranding(activeOrgId);
   });
 
-  // Listen to organization change / custom branding events
+  // Sync whenever currentOrg or explicitOrgId changes
   useEffect(() => {
-    const targetOrgId = explicitOrgId || LocalSupabaseMock.getActiveOrgId() || DEFAULT_DEMO_ORG_ID;
+    const targetOrgId = explicitOrgId || currentOrg?.id || LocalSupabaseMock.getActiveOrgId() || DEFAULT_DEMO_ORG_ID;
     setCurrentOrgId(targetOrgId);
+
     const loaded = getCompanyBranding(targetOrgId);
-    setBranding(loaded);
-  }, [explicitOrgId]);
+    if (currentOrg && currentOrg.id === targetOrgId) {
+      setBranding({
+        ...loaded,
+        name: currentOrg.name || loaded.name,
+        primaryColor: currentOrg.primary_color || loaded.primaryColor || '#2563eb',
+        ...(currentOrg.branding || {})
+      });
+    } else {
+      setBranding(loaded);
+    }
+  }, [explicitOrgId, currentOrg]);
 
   const archetype: BrandArchetype = useMemo(() => {
-    const org = LocalSupabaseMock.getOrganizations().find(o => o.id === currentOrgId);
-    if ((org as any)?.theme_style) {
-      return (org as any).theme_style as BrandArchetype;
+    if (currentOrg && (currentOrg as any).theme_style) {
+      return (currentOrg as any).theme_style as BrandArchetype;
     }
     return detectBrandArchetype(branding.name, branding.services);
-  }, [currentOrgId, branding.name, branding.services]);
+  }, [currentOrg, branding.name, branding.services]);
 
   const palette: BrandPalette = useMemo(() => {
-    const org = LocalSupabaseMock.getOrganizations().find(o => o.id === currentOrgId);
+    const primaryColor = currentOrg?.primary_color || branding.primaryColor || '#2563eb';
     return generateBrandPalette(
-      branding.primaryColor || org?.primary_color || '#2563eb',
-      (org as any)?.secondary_color,
-      (org as any)?.accent_color
+      primaryColor,
+      (currentOrg as any)?.secondary_color,
+      (currentOrg as any)?.accent_color
     );
-  }, [currentOrgId, branding.primaryColor]);
+  }, [currentOrg?.primary_color, branding.primaryColor]);
 
   const brandDNA: BrandDNA = useMemo(() => {
     return getBrandDNA(archetype, palette.primary, branding.name || 'Stavební Firma');
@@ -64,40 +91,18 @@ export function useBranding(explicitOrgId?: string) {
     applyBrandToDOM(palette, branding.name, branding.logoUrl);
   }, [palette, branding.name, branding.logoUrl]);
 
-  // Listen to cross-component branding changes & tenant switches
-  useEffect(() => {
-    const handleBrandingChange = (e: any) => {
-      const targetId = explicitOrgId || LocalSupabaseMock.getActiveOrgId() || DEFAULT_DEMO_ORG_ID;
-      if (!e.detail?.orgId || e.detail.orgId === targetId) {
-        const updated = getCompanyBranding(targetId);
-        setBranding(updated);
-        setCurrentOrgId(targetId);
-      }
-    };
-
-    const handleOrgSwitch = () => {
-      const targetId = explicitOrgId || LocalSupabaseMock.getActiveOrgId() || DEFAULT_DEMO_ORG_ID;
-      setCurrentOrgId(targetId);
-      const updated = getCompanyBranding(targetId);
-      setBranding(updated);
-    };
-
-    window.addEventListener('brandingChanged', handleBrandingChange);
-    window.addEventListener('organizationSwitched', handleOrgSwitch);
-    window.addEventListener('storage', handleOrgSwitch);
-
-    return () => {
-      window.removeEventListener('brandingChanged', handleBrandingChange);
-      window.removeEventListener('organizationSwitched', handleOrgSwitch);
-      window.removeEventListener('storage', handleOrgSwitch);
-    };
-  }, [explicitOrgId]);
-
   const updateBranding = (newBranding: Partial<CompanyBranding> | CompanyBranding) => {
     const targetId = currentOrgId || DEFAULT_DEMO_ORG_ID;
     const merged = { ...branding, ...newBranding } as CompanyBranding;
     saveCompanyBranding(merged, targetId);
     setBranding(merged);
+    if (orgCtx?.updateBrandingAdmin && currentOrg) {
+      orgCtx.updateBrandingAdmin(targetId, {
+        name: merged.name,
+        primary_color: merged.primaryColor,
+        branding: merged
+      }).catch(console.error);
+    }
   };
 
   const resetToDefault = () => {
@@ -117,3 +122,4 @@ export function useBranding(explicitOrgId?: string) {
     currentOrgId 
   };
 }
+

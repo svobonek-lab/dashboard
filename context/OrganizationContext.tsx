@@ -864,7 +864,24 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
       project_type: leadData.aiSummary?.jobType || leadData.title?.split(' - ')[0] || 'Pergoly',
       budget: leadData.price || 150000,
       price: leadData.price || 150000,
-      status: (leadData.status || 'New') as any
+      status: (leadData.status || 'New') as any,
+      
+      // Preserve rich columns
+      photos: leadData.photos || [],
+      files: leadData.files || [],
+      checklist: leadData.checklist || [],
+      timeline: leadData.timeline || [],
+      aiSummary: leadData.aiSummary || {
+        jobType: leadData.aiSummary?.jobType || 'Projekt',
+        complexity: 'Medium',
+        estimatedRange: 'Dle kalkulace',
+        assignedEmployee: 'Petr Novotný',
+        risks: [],
+        recommendedNextStep: 'Telefonický kontakt.'
+      },
+      aiChat: leadData.aiChat || [],
+      history: leadData.history || [],
+      voiceNotes: leadData.voiceNotes || []
     };
     const mockAll = LocalSupabaseMock.getLeads() as any[];
     const newMockLead = {
@@ -886,6 +903,7 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
       ...leadData,
       id: newMockLead.id,
       organization_id: currentOrg.id,
+      ...leadRecord
     } as Lead;
   };
 

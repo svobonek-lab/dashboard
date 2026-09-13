@@ -243,21 +243,27 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
           onClick={() => onNavigateTab('analytics')}
           className="bg-white/90 backdrop-blur-md p-6 rounded-[24px] border border-slate-200/90 hover:border-slate-300 transition-all cursor-pointer shadow-sm hover:shadow-lg group relative overflow-hidden"
           style={{
-            borderTop: `4px solid #F59E0B`,
+            borderTop: `4px solid ${palette.primary}`,
             boxShadow: `0 4px 20px -2px rgba(15, 23, 42, 0.05)`
           }}
         >
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Úspěšnost & Hodnocení</span>
-            <div className="w-10 h-10 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center group-hover:scale-110 transition-transform">
-              <Star className="w-5 h-5 text-amber-500 fill-amber-500" />
+            <div 
+              className="w-10 h-10 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform"
+              style={{
+                backgroundColor: palette.primarySubtle,
+                color: palette.primary
+              }}
+            >
+              <Star className="w-5 h-5 fill-current" />
             </div>
           </div>
           <div className="mt-4">
             <p className="text-3xl font-black text-slate-900 tracking-tight">
               76% <span className="text-sm font-bold text-slate-500">konverze</span>
             </p>
-            <div className="flex items-center gap-1.5 mt-2 text-xs font-bold text-amber-600">
+            <div className="flex items-center gap-1.5 mt-2 text-xs font-bold" style={{ color: palette.primary }}>
               <span>Google Reviews: 4.9 ★ (48 recenzí)</span>
             </div>
           </div>
@@ -302,19 +308,15 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
                     <span className="font-bold text-slate-900">{emp.name}</span>
                     <span className="text-[10px] text-slate-500 ml-1.5">({emp.role})</span>
                   </div>
-                  <span className={`font-mono font-bold text-[11px] ${
-                    emp.load > 85 ? 'text-rose-600' : emp.load > 60 ? 'text-amber-600' : 'text-green-600'
-                  }`}>
+                  <span className="font-mono font-bold text-[11px]" style={{ color: palette.primary }}>
                     {emp.load}%
                   </span>
                 </div>
                 
                 <div className="w-full bg-slate-200 h-1.5 rounded-full overflow-hidden">
                   <div 
-                    className={`h-full ${
-                      emp.load > 85 ? 'bg-rose-500' : emp.load > 60 ? 'bg-amber-500' : 'bg-green-500'
-                    }`} 
-                    style={{ width: `${emp.load}%` }}
+                    className="h-full rounded-full transition-all" 
+                    style={{ width: `${emp.load}%`, backgroundColor: palette.primary }}
                   />
                 </div>
                 

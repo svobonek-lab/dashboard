@@ -528,19 +528,52 @@ export const WidgetIframePage: React.FC = () => {
 
                 <div className="space-y-3">
                   <div>
-                    <label className="text-[10px] font-bold uppercase tracking-wider text-slate-500 block">Požadované datum</label>
-                    <div className="relative mt-1">
-                      <Calendar className="w-4 h-4 text-slate-500 absolute left-3 top-3" />
+                    <label className="text-[10px] font-bold uppercase tracking-wider text-slate-500 block mb-1">Výběr data nebo rychlá předvolba</label>
+                    
+                    <div className="flex items-center w-full bg-white border border-slate-200 rounded-xl px-3 py-2.5 focus-within:border-blue-500 transition-all overflow-hidden shadow-2xs">
+                      <Calendar className="w-4 h-4 text-slate-500 shrink-0 mr-2 pointer-events-none" />
                       <input
                         type="date"
+                        min={new Date().toISOString().split('T')[0]}
+                        max={new Date(Date.now() + 730 * 86400000).toISOString().split('T')[0]}
                         value={formData.preferredDate}
                         onChange={(e) => setFormData({ ...formData, preferredDate: e.target.value })}
-                        className="w-full bg-white border border-slate-200 rounded-xl py-2.5 pl-9 pr-3 text-xs font-semibold text-slate-900 focus:outline-none focus:border-amber-500"
+                        className="w-full bg-transparent border-0 p-0 text-xs font-semibold text-slate-900 focus:outline-none focus:ring-0 cursor-pointer appearance-none min-w-0"
+                        style={{ WebkitAppearance: 'none', outline: 'none' }}
                       />
+                    </div>
+
+                    <div className="mt-2.5 space-y-1">
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Rychlá předvolba:</span>
+                      <div className="grid grid-cols-2 gap-1.5">
+                        {[
+                          { label: '⚡ Co nejdříve', days: 14 },
+                          { label: '📅 Do 1 měsíce', days: 30 },
+                          { label: '🗓️ Do 3 měsíců', days: 90 },
+                          { label: '🌿 Příští sezónu', days: 180 }
+                        ].map((preset) => {
+                          const targetDate = new Date(Date.now() + preset.days * 86400000).toISOString().split('T')[0];
+                          const isSelected = formData.preferredDate === targetDate;
+                          return (
+                            <button
+                              key={preset.label}
+                              type="button"
+                              onClick={() => setFormData({ ...formData, preferredDate: targetDate })}
+                              className={`py-1.5 px-2 rounded-lg text-[11px] font-bold border transition-all text-center cursor-pointer ${
+                                isSelected
+                                  ? 'border-blue-600 bg-blue-50 text-blue-700 font-extrabold shadow-xs'
+                                  : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-100'
+                              }`}
+                            >
+                              {preset.label}
+                            </button>
+                          );
+                        })}
+                      </div>
                     </div>
                   </div>
 
-                  <div className="p-3 bg-amber-500/10 border border-amber-500/20 rounded-xl text-[10px] text-amber-300">
+                  <div className="p-3 bg-blue-50 border border-blue-200 rounded-xl text-[10px] text-blue-900">
                     <p className="font-bold">Kapacitní kalendář obvodu {formData.address.split(',')[1] || 'střední Čechy'}:</p>
                     <p className="mt-0.5 text-slate-700">Volné kapacity pro zaměření i naskladnění materiálu jsou plně dostupné.</p>
                   </div>

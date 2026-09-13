@@ -154,6 +154,23 @@ export class SupabaseRepository implements ICRMRepository {
         project_type: lead.aiSummary?.jobType || lead.title?.split('—')[0]?.trim() || 'Zakázka',
         budget: lead.price,
         status: lead.status || 'New',
+        title: lead.title,
+        description: lead.description,
+        city: lead.city,
+        address: lead.address,
+        preferred_date: lead.preferredDate,
+        priority: lead.priority,
+        assigned_employee_id: lead.assignedEmployeeId,
+        assigned_employee_name: lead.assignedEmployeeName,
+        thumbnail: lead.thumbnail,
+        photos: lead.photos || [],
+        files: lead.files || [],
+        checklist: lead.checklist || [],
+        ai_summary: lead.aiSummary,
+        timeline: lead.timeline || [],
+        ai_chat: lead.aiChat || [],
+        history: lead.history || [],
+        voice_notes: lead.voiceNotes || []
       };
 
       if (isValidUUID(lead.id)) {

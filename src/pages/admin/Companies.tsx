@@ -19,7 +19,10 @@ import {
   Mail, 
   MapPin,
   RefreshCw,
-  Globe
+  Globe,
+  UploadCloud,
+  Camera,
+  Image as ImageIcon
 } from 'lucide-react';
 
 export const AdminCompaniesPage: React.FC = () => {
@@ -35,7 +38,6 @@ export const AdminCompaniesPage: React.FC = () => {
   const [organizations, setOrganizations] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-  const [filterStatus, setFilterStatus] = useState<'all' | 'active' | 'suspended'>('all');
 
   // Edit Branding Modal
   const [editModalOpen, setEditModalOpen] = useState(false);
@@ -88,6 +90,22 @@ export const AdminCompaniesPage: React.FC = () => {
     }
   };
 
+  const handleQuickLogoUpload = async (org: any, file: File) => {
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+      if (e.target?.result) {
+        const logoDataUrl = e.target.result as string;
+        try {
+          await updateBrandingAdmin(org.id, org.name, org.primary_color || '#2563eb', logoDataUrl);
+          loadData();
+        } catch (err) {
+          console.error('Quick upload failed', err);
+        }
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
   const handleDelete = async () => {
     if (!deleteOrg) return;
     try {
@@ -116,7 +134,7 @@ export const AdminCompaniesPage: React.FC = () => {
             Adresář zákaznických firem
           </h1>
           <p className="text-xs text-slate-400 mt-0.5">
-            Přehled všech {organizations.length} registrovaných tenantů na platformě StavbaCore.
+            Přehled všech {organizations.length} registrovaných tenantů na platformě.
           </p>
         </div>
 
@@ -146,7 +164,7 @@ export const AdminCompaniesPage: React.FC = () => {
           <button
             onClick={loadData}
             title="Aktualizovat data"
-            className="p-2 rounded-xl bg-[#090D16] border border-slate-800 text-slate-400 hover:text-white transition-colors"
+            className="p-2 rounded-xl bg-[#090D16] border border-slate-800 text-slate-400 hover:text-white transition-colors cursor-pointer"
           >
             <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin text-cyan-400' : ''}`} />
           </button>
@@ -160,7 +178,7 @@ export const AdminCompaniesPage: React.FC = () => {
           <p className="text-xs font-mono text-slate-400">Načítání seznamu firem z databáze...</p>
         </div>
       ) : filteredOrgs.length === 0 ? (
-        <div className="p-12 text-center bg-[#0C111D] rounded-3xl border border-slate-800 space-y-3">
+        <div className="p-12 bg-[#0C111D] border border-slate-800 rounded-3xl text-center space-y-3">
           <Building2 className="w-10 h-10 text-slate-600 mx-auto" />
           <h3 className="text-sm font-bold text-white">Nenalezena žádná firma</h3>
           <p className="text-xs text-slate-400">Zkuste upravit vyhledávací dotaz nebo vytvořte novou firmu přes Install Studio.</p>
@@ -178,16 +196,37 @@ export const AdminCompaniesPage: React.FC = () => {
                   {/* Card Header */}
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex items-center gap-3">
-                      <div 
-                        className="w-12 h-12 rounded-2xl flex items-center justify-center text-white font-black text-lg shadow-md shrink-0 overflow-hidden"
-                        style={{ backgroundColor: primaryColor }}
-                      >
-                        {org.logo_url ? (
-                          <img src={org.logo_url} alt={org.name} className="w-full h-full object-cover" />
-                        ) : (
-                          org.name.charAt(0).toUpperCase()
-                        )}
+                      
+                      {/* Logo Avatar with direct Upload Trigger */}
+                      <div className="relative group/avatar shrink-0">
+                        <div 
+                          className="w-12 h-12 rounded-2xl flex items-center justify-center text-white font-black text-lg shadow-md overflow-hidden border border-slate-700/60"
+                          style={{ backgroundColor: primaryColor }}
+                        >
+                          {org.logo_url ? (
+                            <img src={org.logo_url} alt={org.name} className="w-full h-full object-cover" />
+                          ) : (
+                            org.name.charAt(0).toUpperCase()
+                          )}
+                        </div>
+
+                        <label 
+                          title="Změnit obrázek / logo z počítače" 
+                          className="absolute -bottom-1 -right-1 w-6 h-6 rounded-lg bg-cyan-500 hover:bg-cyan-400 text-slate-950 flex items-center justify-center shadow-md cursor-pointer transition-transform hover:scale-110"
+                        >
+                          <Camera className="w-3.5 h-3.5" />
+                          <input 
+                            type="file" 
+                            accept="image/*" 
+                            className="hidden" 
+                            onChange={(e) => {
+                              const file = e.target.files?.[0];
+                              if (file) handleQuickLogoUpload(org, file);
+                            }}
+                          />
+                        </label>
                       </div>
+
                       <div>
                         <h3 className="text-sm font-bold text-white group-hover:text-cyan-300 transition-colors">
                           {org.name}
@@ -239,7 +278,7 @@ export const AdminCompaniesPage: React.FC = () => {
                 <div className="pt-3 border-t border-slate-800/80 flex items-center justify-between gap-2">
                   <button
                     onClick={() => handleImpersonate(org.id)}
-                    className="flex-1 py-2 px-3 rounded-xl bg-gradient-to-r from-cyan-500/20 to-blue-600/20 hover:from-cyan-500/30 hover:to-blue-600/30 text-cyan-300 border border-cyan-500/30 text-xs font-bold transition-all flex items-center justify-center gap-1.5 shadow-sm"
+                    className="flex-1 py-2 px-3 rounded-xl bg-gradient-to-r from-cyan-500/20 to-blue-600/20 hover:from-cyan-500/30 hover:to-blue-600/30 text-cyan-300 border border-cyan-500/30 text-xs font-bold transition-all flex items-center justify-center gap-1.5 shadow-sm cursor-pointer"
                   >
                     <span>Otevřít Company Workspace</span>
                     <ExternalLink className="w-3.5 h-3.5 text-cyan-400" />
@@ -247,8 +286,8 @@ export const AdminCompaniesPage: React.FC = () => {
 
                   <button
                     onClick={() => handleOpenEdit(org)}
-                    title="Upravit branding"
-                    className="p-2 rounded-xl bg-[#090D16] hover:bg-slate-800 text-slate-400 hover:text-white border border-slate-800 transition-colors"
+                    title="Upravit branding & obrázek"
+                    className="p-2 rounded-xl bg-[#090D16] hover:bg-slate-800 text-slate-400 hover:text-white border border-slate-800 transition-colors cursor-pointer"
                   >
                     <Edit2 className="w-3.5 h-3.5" />
                   </button>
@@ -259,7 +298,7 @@ export const AdminCompaniesPage: React.FC = () => {
                       setDeleteModalOpen(true);
                     }}
                     title="Smazat firmu"
-                    className="p-2 rounded-xl bg-[#090D16] hover:bg-rose-500/20 text-slate-400 hover:text-rose-400 border border-slate-800 transition-colors"
+                    className="p-2 rounded-xl bg-[#090D16] hover:bg-rose-500/20 text-slate-400 hover:text-rose-400 border border-slate-800 transition-colors cursor-pointer"
                   >
                     <Trash2 className="w-3.5 h-3.5" />
                   </button>
@@ -270,18 +309,21 @@ export const AdminCompaniesPage: React.FC = () => {
         </div>
       )}
 
-      {/* Edit Branding Modal */}
+      {/* Edit Branding Modal with File Upload */}
       {editModalOpen && (
         <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-[#0C111D] border border-slate-800 rounded-3xl max-w-md w-full p-6 space-y-4 shadow-2xl">
             <div className="flex items-center justify-between">
-              <h3 className="text-base font-bold text-white">Upravit branding firmy</h3>
-              <button onClick={() => setEditModalOpen(false)} className="text-slate-400 hover:text-white">
+              <h3 className="text-base font-bold text-white flex items-center gap-2">
+                <Palette className="w-4 h-4 text-cyan-400" />
+                Upravit branding & logo firmy
+              </h3>
+              <button onClick={() => setEditModalOpen(false)} className="text-slate-400 hover:text-white cursor-pointer">
                 <X className="w-5 h-5" />
               </button>
             </div>
 
-            <div className="space-y-3 text-xs">
+            <div className="space-y-4 text-xs">
               <div>
                 <label className="text-slate-400 font-bold block mb-1">Název firmy</label>
                 <input
@@ -293,7 +335,7 @@ export const AdminCompaniesPage: React.FC = () => {
               </div>
 
               <div>
-                <label className="text-slate-400 font-bold block mb-1">Hlavní barva</label>
+                <label className="text-slate-400 font-bold block mb-1">Hlavní firemní barva</label>
                 <div className="flex items-center gap-3">
                   <input
                     type="color"
@@ -305,28 +347,76 @@ export const AdminCompaniesPage: React.FC = () => {
                 </div>
               </div>
 
-              <div>
-                <label className="text-slate-400 font-bold block mb-1">URL loga</label>
-                <input
-                  type="text"
-                  value={editLogo}
-                  onChange={(e) => setEditLogo(e.target.value)}
-                  className="w-full p-2.5 bg-[#090D16] border border-slate-800 rounded-xl text-white font-semibold focus:outline-none focus:border-cyan-500/50"
-                  placeholder="https://..."
-                />
+              {/* Logo Upload Section */}
+              <div className="space-y-2">
+                <label className="text-slate-400 font-bold block">Obrázek / Logo společnosti</label>
+                
+                {editLogo ? (
+                  <div className="flex items-center gap-3 p-3 bg-[#090D16] border border-slate-800 rounded-2xl">
+                    <img 
+                      src={editLogo} 
+                      alt="Logo preview" 
+                      className="w-14 h-14 object-contain rounded-xl bg-slate-950 border border-slate-800 p-1 shadow-sm"
+                    />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-bold text-white truncate">Aktuálně nahraný obrázek</p>
+                      <button
+                        type="button"
+                        onClick={() => setEditLogo('')}
+                        className="text-[10px] text-rose-400 hover:underline font-bold mt-1 cursor-pointer block"
+                      >
+                        Odstranit obrázek
+                      </button>
+                    </div>
+                  </div>
+                ) : null}
+
+                {/* File Upload Trigger */}
+                <label className="cursor-pointer min-h-[48px] py-3 px-4 rounded-xl bg-gradient-to-r from-cyan-500/10 to-blue-600/10 hover:from-cyan-500/20 hover:to-blue-600/20 border border-cyan-500/30 text-cyan-300 font-bold text-xs flex items-center justify-center gap-2 transition-all">
+                  <UploadCloud className="w-4 h-4 text-cyan-400" />
+                  <span>Nahrát nové logo / fotku z počítače</span>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) {
+                        const reader = new FileReader();
+                        reader.onload = (evt) => {
+                          if (evt.target?.result) {
+                            setEditLogo(evt.target.result as string);
+                          }
+                        };
+                        reader.readAsDataURL(file);
+                      }
+                    }}
+                  />
+                </label>
+
+                <div className="pt-1">
+                  <span className="text-[10px] text-slate-500 block mb-1">Nebo vložte URL adresu:</span>
+                  <input
+                    type="text"
+                    value={editLogo}
+                    onChange={(e) => setEditLogo(e.target.value)}
+                    className="w-full p-2.5 bg-[#090D16] border border-slate-800 rounded-xl text-white font-mono text-[11px] focus:outline-none focus:border-cyan-500/50"
+                    placeholder="https://..."
+                  />
+                </div>
               </div>
             </div>
 
             <div className="flex items-center justify-end gap-2 pt-2">
               <button
                 onClick={() => setEditModalOpen(false)}
-                className="px-4 py-2 rounded-xl bg-slate-800 text-slate-300 text-xs font-bold hover:bg-slate-700"
+                className="px-4 py-2 rounded-xl bg-slate-800 text-slate-300 text-xs font-bold hover:bg-slate-700 cursor-pointer"
               >
                 Zrušit
               </button>
               <button
                 onClick={handleSaveEdit}
-                className="px-4 py-2 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 text-xs font-black"
+                className="px-4 py-2 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 text-xs font-black cursor-pointer shadow-md shadow-cyan-500/20"
               >
                 Uložit změny
               </button>
@@ -350,13 +440,13 @@ export const AdminCompaniesPage: React.FC = () => {
             <div className="flex items-center justify-center gap-3 pt-2">
               <button
                 onClick={() => setDeleteModalOpen(false)}
-                className="px-4 py-2.5 rounded-xl bg-slate-800 text-slate-300 text-xs font-bold hover:bg-slate-700"
+                className="px-4 py-2.5 rounded-xl bg-slate-800 text-slate-300 text-xs font-bold hover:bg-slate-700 cursor-pointer"
               >
                 Zrušit
               </button>
               <button
                 onClick={handleDelete}
-                className="px-4 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-black shadow-lg shadow-rose-600/20"
+                className="px-4 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-black shadow-lg shadow-rose-600/20 cursor-pointer"
               >
                 Trvale smazat
               </button>

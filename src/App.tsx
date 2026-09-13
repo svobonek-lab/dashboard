@@ -157,13 +157,11 @@ function AppContent() {
 
   if (pathname === '/inquiry' || pathname === '/poptavka') {
     return (
-      <div className="min-h-screen bg-slate-50 p-6">
-        <InquiryFormPage 
-          branding={branding} 
-          onSubmitInquiry={handleAddLead}
-          onBackToDashboard={() => navigate('/dashboard')} 
-        />
-      </div>
+      <InquiryFormPage 
+        branding={branding} 
+        onSubmitInquiry={handleAddLead}
+        onBackToDashboard={() => navigate('/dashboard')} 
+      />
     );
   }
 
@@ -215,7 +213,7 @@ function AppContent() {
       <ProtectedRoute allowedRole={['employee', 'owner', 'super_admin']}>
         <EmployeeLayout leads={leads}>
           {pathname === '/employee' || pathname === '/employee/dashboard' ? (
-            <EmployeeDashboardPage leads={leads} onSelectLead={setSelectedLead} />
+            <EmployeeDashboardPage leads={leads} onSelectLead={setSelectedLead} onUpdateLead={handleUpdateLead} />
           ) : pathname === '/employee/jobs' ? (
             <EmployeeJobsPage leads={leads} onSelectLead={setSelectedLead} />
           ) : pathname === '/employee/schedule' ? (
@@ -223,15 +221,15 @@ function AppContent() {
           ) : pathname === '/employee/map' ? (
             <EmployeeMapPage leads={leads} onSelectLead={setSelectedLead} />
           ) : pathname === '/employee/photos' ? (
-            <EmployeePhotosPage />
+            <EmployeePhotosPage leads={leads} onUpdateLead={handleUpdateLead} />
           ) : pathname === '/employee/checklist' ? (
-            <EmployeeChecklistPage />
+            <EmployeeChecklistPage leads={leads} onUpdateLead={handleUpdateLead} />
           ) : pathname === '/employee/messages' ? (
             <OwnerCommunicationPage leads={leads} />
           ) : pathname === '/employee/profile' ? (
             <EmployeeProfilePage />
           ) : (
-            <EmployeeDashboardPage leads={leads} onSelectLead={setSelectedLead} />
+            <EmployeeDashboardPage leads={leads} onSelectLead={setSelectedLead} onUpdateLead={handleUpdateLead} />
           )}
         </EmployeeLayout>
       </ProtectedRoute>
