@@ -139,83 +139,38 @@ create table if not exists projects (
   };
 
   return (
-    <header className="h-20 bg-white/90 backdrop-blur-md border-b border-slate-200 px-8 flex items-center justify-between sticky top-0 z-20 shadow-lg text-slate-900">
+    <header className="h-16 bg-surface border-b border-border px-8 flex items-center justify-between sticky top-0 z-20 text-text">
       <div className="flex items-center gap-6">
         <div>
-          <h2 className="text-xl font-bold text-slate-900 tracking-tight">
+          <h2 className="text-base font-bold text-text tracking-tight">
             {currentOrg?.name || branding.name} CRM
           </h2>
-          <p className="text-xs text-slate-500 font-medium">
-            Multi-Tenant Supabase Portal • {branding.city}
+          <p className="text-[11px] text-muted font-medium">
+            {branding.city}
           </p>
-        </div>
-
-        {/* Role Badge */}
-        <div className="hidden md:flex items-center bg-slate-50 px-3 py-1.5 rounded-xl border border-slate-200 text-xs font-semibold gap-2">
-          {dbUser?.role === 'owner' || dbUser?.role === 'super_admin' ? (
-            <>
-              <Shield className="w-3.5 h-3.5" style={{ color: currentOrg?.primary_color || branding.primaryColor || '#2563eb' }} />
-              <span className="text-slate-800">Majitelský přístup ({dbUser.role})</span>
-            </>
-          ) : (
-            <>
-              <UserCheck className="w-3.5 h-3.5 text-emerald-500" />
-              <span className="text-slate-800">Člen týmu / Řemeslník</span>
-            </>
-          )}
         </div>
       </div>
 
       <div className="flex items-center gap-4">
-        {/* Supabase Status Indicator Badge */}
-        <div className="hidden lg:flex items-center gap-1.5 px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-[11px] font-medium text-slate-700 shadow-3xs">
-          <Database className={`w-3.5 h-3.5 ${isConfigured ? 'text-green-500 animate-pulse' : 'text-slate-400'}`} />
-          <span>{isConfigured ? 'Databáze připojena' : 'Lokální sandbox'}</span>
-        </div>
-
         {/* Search Bar / Command Palette Trigger */}
         <button
           onClick={onOpenCommandPalette}
-          className="hidden lg:flex items-center gap-3 w-64 bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-xs text-slate-500 hover:border-slate-300 transition-all text-left"
+          className="hidden lg:flex items-center gap-3 w-64 bg-surface-secondary border border-border rounded-app px-3.5 py-1.5 text-xs text-muted hover:border-brand-primary transition-all text-left cursor-pointer"
         >
-          <Search className="w-4 h-4 text-slate-500" />
-          <span className="flex-1 truncate">Hledat zakázky, klienty...</span>
-          <kbd className="px-1.5 py-0.5 bg-white border border-slate-300 rounded-md text-[10px] font-mono text-slate-500 shadow-2xs">Ctrl+K</kbd>
-        </button>
-
-        {/* Real-time Storage & Sovereignty Telemetry */}
-        <ConnectionStatusBanner />
-
-        {/* Setup Onboarding Wizard CTA */}
-        {onOpenOnboarding && (
-          <button
-            onClick={onOpenOnboarding}
-            className="hidden sm:flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold bg-white hover:bg-slate-50 text-slate-800 transition-all border border-slate-200 shadow-3xs"
-          >
-            <Wand2 className="w-3.5 h-3.5" style={{ color: currentOrg?.primary_color || branding.primaryColor || '#2563eb' }} />
-            <span>Průvodce nastavením</span>
-          </button>
-        )}
-
-        {/* Generate New Demo CTA */}
-        <button
-          onClick={onOpenDemoGenerator}
-          className="hidden sm:flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold text-slate-950 shadow-sm transition-all hover:opacity-95"
-          style={{ backgroundColor: currentOrg?.primary_color || branding.primaryColor || '#2563eb' }}
-        >
-          <Sparkles className="w-3.5 h-3.5" />
-          <span>Generovat demo URL</span>
+          <Search className="w-3.5 h-3.5 text-muted" />
+          <span className="flex-1 truncate text-muted">Hledat zakázky, klienty...</span>
+          <kbd className="px-1.5 py-0.5 bg-surface border border-border rounded-md text-[10px] font-mono text-muted shadow-app">Ctrl+K</kbd>
         </button>
 
         {/* Notifications Dropdown Container */}
         <div className="relative">
           <button
             onClick={() => setIsNotifOpen(!isNotifOpen)}
-            className="w-10 h-10 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-center text-slate-500 hover:text-slate-900 hover:bg-slate-800 transition-all relative"
+            className="w-9 h-9 rounded-app bg-surface-secondary border border-border flex items-center justify-center text-muted hover:text-text hover:bg-surface-tertiary transition-all relative cursor-pointer"
           >
             <Bell className="w-4 h-4" />
             {unreadCount > 0 && (
-              <span className="absolute top-2 right-2 w-2.5 h-2.5 rounded-full bg-rose-500 ring-2 ring-slate-900 animate-pulse"></span>
+              <span className="absolute top-2 right-2 w-2 h-2 rounded-full bg-red-500 animate-pulse"></span>
             )}
           </button>
 
@@ -231,22 +186,22 @@ create table if not exists projects (
         <div className="relative">
           <button
             onClick={() => setIsTenantMenuOpen(!isTenantMenuOpen)}
-            className="flex items-center gap-3 pl-4 border-l border-slate-200 text-left hover:opacity-85 transition-all"
+            className="flex items-center gap-3 pl-4 border-l border-border text-left hover:opacity-85 transition-all cursor-pointer"
           >
             <img
               src={currentOrg?.logo_url || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=120&q=80"}
               alt="Profile"
-              className="w-10 h-10 rounded-xl object-cover ring-2 ring-slate-700"
+              className="w-8 h-8 rounded-app object-cover border border-border"
             />
             <div className="hidden xl:block">
               <div className="flex items-center gap-1">
-                <p className="text-xs font-bold text-slate-900 truncate max-w-[130px]">
+                <p className="text-xs font-bold text-text truncate max-w-[130px]">
                   {currentOrg?.name || 'Jan Svoboda'}
                 </p>
-                <ChevronDown className="w-3 h-3 text-slate-500" />
+                <ChevronDown className="w-3 h-3 text-muted" />
               </div>
-              <p className="text-[10px] text-amber-500 uppercase font-bold tracking-wider">
-                {dbUser?.role || 'Owner'} ({currentOrg?.slug || 'personal'})
+              <p className="text-[9px] text-brand-primary uppercase font-bold tracking-wider">
+                {dbUser?.role || 'Owner'}
               </p>
             </div>
           </button>

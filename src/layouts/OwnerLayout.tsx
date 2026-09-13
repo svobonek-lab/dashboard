@@ -150,71 +150,37 @@ export const OwnerLayout: React.FC<OwnerLayoutProps> = ({
       )}
 
       <div className={`flex flex-1 ${isSuperAdminUser ? 'pt-14' : ''}`}>
-        {/* 280px Executive Navigation Sidebar (White-Labeled) */}
+        {/* Rebuilt Sidebar - Linear Aesthetic with Design Tokens */}
         <aside 
-          className="w-72 bg-white border-r border-slate-200/90 flex flex-col justify-between shrink-0 fixed inset-y-0 left-0 z-30 shadow-sm transition-all" 
+          className="w-72 bg-surface border-r border-border flex flex-col justify-between shrink-0 fixed inset-y-0 left-0 z-30 shadow-app transition-all font-sans" 
           style={{ top: isSuperAdminUser ? '56px' : '0' }}
         >
-          
-          {/* Company Identity Header */}
+          {/* Top Brand & Identity Header */}
           <div>
-            <div className="p-5 border-b border-slate-100 relative overflow-hidden">
-              {/* Subtle top brand tint */}
+            <div className="p-5 border-b border-border flex items-center gap-3">
+              {/* 36px logo */}
               <div 
-                className="absolute inset-x-0 top-0 h-1" 
-                style={{ background: palette.gradientPrimary }}
-              ></div>
-
-              <div className="flex items-center gap-3">
-                <div 
-                  className="w-9 h-9 rounded-xl flex items-center justify-center text-white font-black text-sm shadow-2xs shrink-0 overflow-hidden"
-                  style={{ 
-                    backgroundColor: palette.primary,
-                    color: palette.textOnPrimary,
-                  }}
-                >
-                  {activeLogo ? (
-                    <img src={activeLogo} alt={activeCompanyName} className="w-full h-full object-cover" />
-                  ) : (
-                    activeCompanyName.charAt(0).toUpperCase()
-                  )}
-                </div>
-                <div className="overflow-hidden">
-                  <h1 className="text-[18px] font-black text-slate-900 truncate tracking-tight leading-none">
-                    {activeCompanyName}
-                  </h1>
-                  <div className="flex items-center gap-1.5 mt-1">
-                    <span className="px-2 py-0.5 rounded-full text-[9px] font-extrabold uppercase tracking-wider bg-slate-100 text-slate-600 border border-slate-200">
-                      Workspace
-                    </span>
-                    <span className="text-[11px] text-slate-500 font-medium truncate">
-                      {activeCity}
-                    </span>
-                  </div>
-                </div>
+                className="w-[36px] h-[36px] rounded-app bg-brand-primary text-white font-black text-sm shrink-0 flex items-center justify-center shadow-app"
+              >
+                {activeCompanyName.substring(0, 2).toUpperCase()}
+              </div>
+              
+              <div className="overflow-hidden">
+                {/* 18px company name */}
+                <h1 className="text-[18px] font-bold text-text truncate tracking-tight leading-tight">
+                  {activeCompanyName}
+                </h1>
+                {/* Small workspace label */}
+                <p className="text-[10px] font-semibold text-muted tracking-wide mt-0.5 uppercase">
+                  Workspace
+                </p>
               </div>
             </div>
 
-            {/* Quick Search Trigger */}
-            <div className="px-4 pt-4">
-              <button
-                onClick={() => setIsCommandPaletteOpen(true)}
-                className="w-full flex items-center justify-between px-3 py-2 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl text-xs text-slate-500 transition-all shadow-sm group"
-              >
-                <div className="flex items-center gap-2">
-                  <Search className="w-3.5 h-3.5 text-slate-400 group-hover:text-slate-600 transition-colors" />
-                  <span>Rychlé hledání...</span>
-                </div>
-                <kbd className="px-1.5 py-0.5 text-[10px] font-mono bg-white border border-slate-200 text-slate-400 rounded-md shadow-sm">
-                  ⌘K
-                </kbd>
-              </button>
-            </div>
-
-            {/* Nav Items List */}
-            <nav className="p-3 space-y-1 overflow-y-auto max-h-[calc(100vh-280px)]">
-              <div className="px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-400 font-mono">
-                Správa zakázek & realizace
+            {/* Navigation Menu */}
+            <nav className="py-4 px-0 space-y-0.5 overflow-y-auto max-h-[calc(100vh-250px)]">
+              <div className="px-6 pb-2 text-[10px] font-bold tracking-wider text-muted uppercase font-mono">
+                Aplikace
               </div>
 
               {navItems.map((item) => {
@@ -225,36 +191,24 @@ export const OwnerLayout: React.FC<OwnerLayoutProps> = ({
                     key={item.path}
                     to={item.path}
                     exact={item.exact}
-                    style={active ? {
-                      backgroundColor: palette.primarySubtle,
-                      color: palette.primary,
-                      borderColor: palette.primaryBorder,
-                      borderLeft: `3px solid ${palette.primary}`
-                    } : undefined}
-                    className={`flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-bold transition-all group ${
-                      active
-                        ? 'shadow-sm border'
-                        : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+                    className={`w-full flex items-center justify-between px-6 py-2.5 text-xs font-semibold transition-all relative cursor-pointer ${
+                      active 
+                        ? 'bg-brand-primary-soft/40 text-brand-primary font-bold' 
+                        : 'text-muted hover:text-text hover:bg-surface-secondary'
                     }`}
                   >
-                    <div className="flex items-center gap-2.5">
+                    <div className="flex items-center gap-3">
+                      {/* 3px left indicator */}
+                      {active && (
+                        <span className="absolute left-0 top-0 bottom-0 w-[3px] bg-brand-primary rounded-r-xs" />
+                      )}
                       <Icon 
-                        className="w-4 h-4 transition-colors" 
-                        style={active ? { color: palette.primary } : undefined}
+                        className={`w-4 h-4 ${active ? 'text-brand-primary' : 'text-muted'}`} 
                       />
-                      <span>{item.label}</span>
+                      <span className="truncate">{item.label}</span>
                     </div>
                     {item.badge && (
-                      <span 
-                        className="text-[10px] font-bold px-2 py-0.5 rounded-full"
-                        style={active ? {
-                          backgroundColor: palette.primaryLight,
-                          color: palette.primary
-                        } : {
-                          backgroundColor: '#FEF3C7',
-                          color: '#B45309'
-                        }}
-                      >
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-brand-primary-soft text-brand-primary">
                         {item.badge}
                       </span>
                     )}
@@ -264,169 +218,114 @@ export const OwnerLayout: React.FC<OwnerLayoutProps> = ({
             </nav>
           </div>
 
-          {/* Bottom User Box */}
-          <div className="p-4 border-t border-slate-100 space-y-2.5 bg-white">
-            
-            {/* Install Studio / White Label Live Customizer Button */}
-            <button
-              onClick={() => navigate('/install')}
-              className="w-full py-2.5 px-3 rounded-xl text-white text-xs font-bold transition-all flex items-center justify-center gap-2 shadow-sm hover:opacity-90 active:scale-[0.99]"
-              style={{
-                background: palette.gradientPrimary,
-                boxShadow: `0 4px 12px -2px ${palette.primaryLight}`
-              }}
-            >
-              <Sparkles className="w-3.5 h-3.5" />
-              <span>White-Label Studio</span>
-            </button>
-
-            {/* Super Admin Control Center switch button (Strictly for svobonek@gmail.com) */}
-            {(user?.email?.toLowerCase() === 'svobonek@gmail.com' || dbUser?.email?.toLowerCase() === 'svobonek@gmail.com' || dbUser?.role === 'super_admin' || dbUser?.role === 'superadmin') && (
-              <button
-                onClick={() => {
-                  switchRoleToSuperAdmin();
-                  navigate('/admin');
-                }}
-                className="w-full py-2 px-3 rounded-xl bg-slate-50 hover:bg-slate-100 text-slate-800 border border-slate-200 text-xs font-bold transition-all flex items-center justify-center gap-2 shadow-sm"
+          {/* Bottom Compact Profile, Logout, and Settings */}
+          <div className="p-4 border-t border-border bg-surface-secondary flex flex-col gap-3">
+            {/* Compact profile */}
+            <div className="flex items-center gap-2.5 overflow-hidden">
+              <div 
+                className="w-8 h-8 rounded-app bg-brand-primary text-white font-bold text-xs flex items-center justify-center shrink-0 shadow-app"
               >
-                <Shield className="w-3.5 h-3.5" style={{ color: palette.primary }} />
-                <span>Super Admin Platform</span>
-              </button>
-            )}
-
-            {/* User profile details */}
-            <div className="flex items-center justify-between pt-1">
-              <div className="flex items-center gap-2.5 overflow-hidden">
-                <div 
-                  className="w-8 h-8 rounded-xl text-white font-black text-xs flex items-center justify-center shrink-0 shadow-sm"
-                  style={{ 
-                    backgroundColor: palette.primary,
-                    color: palette.textOnPrimary
-                  }}
-                >
-                  {user?.email?.charAt(0).toUpperCase() || 'U'}
-                </div>
-                <div className="overflow-hidden">
-                  <p className="text-xs font-bold text-slate-800 truncate">{dbUser?.email || user?.email || 'majitel@firma.cz'}</p>
-                  <p 
-                    className="text-[10px] font-bold uppercase tracking-wider"
-                    style={{ color: palette.primary }}
-                  >
-                    {dbUser?.role === 'super_admin' ? 'Super Admin' : dbUser?.role || 'Majitel CRM'}
-                  </p>
-                </div>
+                {(dbUser?.email || user?.email || 'U').charAt(0).toUpperCase()}
               </div>
+              <div className="overflow-hidden flex-1">
+                <p className="text-xs font-bold text-text truncate">
+                  {dbUser?.email || user?.email || 'Majitel CRM'}
+                </p>
+                <p className="text-[9px] font-semibold text-muted uppercase tracking-wider">
+                  {dbUser?.role === 'super_admin' ? 'Super Admin' : dbUser?.role || 'owner'}
+                </p>
+              </div>
+            </div>
+
+            {/* Logout and Settings Bottom Buttons */}
+            <div className="flex items-center justify-between border-t border-border/60 pt-2.5">
+              <button
+                onClick={() => navigate('/settings')}
+                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-app text-xs font-semibold text-muted hover:text-text hover:bg-surface-tertiary transition-colors cursor-pointer"
+              >
+                <Settings className="w-3.5 h-3.5" />
+                <span>Nastavení</span>
+              </button>
 
               <button
                 onClick={() => logout().then(() => navigate('/login'))}
-                title="Odhlásit se z CRM"
-                className="p-2 rounded-xl text-slate-400 hover:text-red-500 hover:bg-red-50 transition-colors"
+                title="Odhlásit se"
+                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-app text-xs font-semibold text-muted hover:text-red-600 hover:bg-red-50/50 transition-colors cursor-pointer"
               >
-                <LogOut className="w-4 h-4" />
+                <LogOut className="w-3.5 h-3.5" />
+                <span>Odhlásit</span>
               </button>
             </div>
-
           </div>
-
         </aside>
 
         {/* Main Executive Content Canvas */}
-        <div className="flex-1 ml-72 flex flex-col min-h-screen bg-slate-50 relative overflow-hidden">
+        <div className="flex-1 ml-72 flex flex-col min-h-screen bg-surface-secondary relative overflow-hidden">
 
-        {/* Executive Header Bar (White-Labeled) */}
-        <header className="h-16 bg-white/90 backdrop-blur-md border-b border-slate-200 px-8 flex items-center justify-between sticky top-0 z-20 shadow-sm">
-          
-          <div className="flex items-center gap-4">
-            <span className="text-xs font-medium text-slate-500">
-              {new Date().toLocaleDateString('cs-CZ', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
-            </span>
-            {/* Dynamic brand gradient divider */}
-            <div 
-              className="h-4 w-1 rounded-full opacity-60"
-              style={{ background: palette.gradientPrimary }}
-            ></div>
-            <span 
-              className="text-xs font-bold flex items-center gap-1.5"
-              style={{ color: palette.primary }}
-            >
-              <span 
-                className="w-2 h-2 rounded-full animate-pulse"
-                style={{ backgroundColor: palette.primary }}
-              ></span>
-              {activeCompanyName} • Dispečink aktivní
+        {/* Rebuilt Header - Visual-Noise-Free with Design Tokens */}
+        <header className="h-16 bg-surface border-b border-border px-8 flex items-center justify-between sticky top-0 z-20 text-text">
+          {/* Left: Company Name */}
+          <div className="flex items-center gap-3">
+            <h2 className="text-base font-bold text-text tracking-tight">
+              {activeCompanyName}
+            </h2>
+            <span className="text-[11px] text-muted font-medium bg-surface-secondary px-2.5 py-1 rounded-full border border-border">
+              Dispečink aktivní
             </span>
           </div>
 
-          <div className="flex items-center gap-3">
-            
-            {/* Quick Actions */}
+          {/* Right: Search, Notifications, Profile/Switcher */}
+          <div className="flex items-center gap-4">
+            {/* Search Bar / Command Palette Trigger */}
             <button
-              onClick={() => navigate('/quotes')}
-              className="hidden sm:flex items-center gap-1.5 px-3 py-2 rounded-xl bg-white border border-slate-200 text-xs font-bold text-slate-700 hover:bg-slate-50 transition-all shadow-sm hover:border-slate-300"
+              onClick={() => setIsCommandPaletteOpen(true)}
+              className="hidden lg:flex items-center gap-3 w-64 bg-surface-secondary border border-border rounded-app px-3.5 py-1.5 text-xs text-muted hover:border-brand-primary transition-all text-left cursor-pointer"
             >
-              <FileText className="w-3.5 h-3.5" style={{ color: palette.primary }} />
-              <span>Vytvořit nabídku</span>
-            </button>
-
-            <button
-              onClick={() => navigate('/leads')}
-              style={{
-                backgroundColor: palette.primary,
-                color: palette.textOnPrimary,
-                boxShadow: palette.primaryGlow
-              }}
-              className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-black transition-all shadow-md active:scale-[0.98]"
-            >
-              <Plus className="w-4 h-4" />
-              <span>Nová zakázka</span>
+              <Search className="w-3.5 h-3.5 text-muted" />
+              <span className="flex-1 truncate text-muted">Hledat zakázky, klienty...</span>
+              <kbd className="px-1.5 py-0.5 bg-surface border border-border rounded-md text-[10px] font-mono text-muted shadow-app">⌘K</kbd>
             </button>
 
             {/* Notifications Bell */}
             <div className="relative">
               <button
                 onClick={() => setIsNotificationsOpen(prev => !prev)}
-                className="p-2.5 rounded-xl bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 transition-colors relative shadow-sm"
+                className="w-9 h-9 rounded-app bg-surface-secondary border border-border flex items-center justify-center text-muted hover:text-text hover:bg-surface-tertiary transition-all relative cursor-pointer"
               >
                 <Bell className="w-4 h-4" />
                 {unreadCount > 0 && (
-                  <span 
-                    className="absolute top-1 right-1 w-2.5 h-2.5 rounded-full border-2 border-white"
-                    style={{ backgroundColor: palette.primary }}
-                  ></span>
+                  <span className="absolute top-2 right-2 w-2 h-2 rounded-full bg-red-500 animate-pulse"></span>
                 )}
               </button>
 
               {isNotificationsOpen && (
-                <div className="absolute right-0 mt-2 w-80 bg-slate-50 border border-slate-800 rounded-2xl shadow-2xl p-4 z-50 space-y-3">
-                  <div className="flex items-center justify-between border-b border-slate-800 pb-2">
-                    <span className="text-xs font-bold text-slate-100">Upozornění & Zprávy</span>
+                <div className="absolute right-0 mt-2 w-80 bg-surface border border-border rounded-app shadow-app p-4 z-50 space-y-3 animate-in fade-in zoom-in-95 duration-100">
+                  <div className="flex items-center justify-between border-b border-border pb-2">
+                    <span className="text-xs font-bold text-text">Upozornění & Zprávy</span>
                     <button
                       onClick={() => setNotifications(notifications.map(n => ({ ...n, read: true })))}
-                      className="text-[10px] font-semibold hover:underline"
-                      style={{ color: palette.primary }}
+                      className="text-[10px] font-bold text-brand-primary hover:underline cursor-pointer"
                     >
-                      Označit vše jako přečtené
+                      Označit vše
                     </button>
                   </div>
                   <div className="space-y-2 max-h-64 overflow-y-auto">
                     {notifications.map((n) => (
-                      <div key={n.id} className={`p-2.5 rounded-xl text-xs space-y-1 ${n.read ? 'bg-slate-50/60 text-slate-400' : 'bg-slate-50 text-slate-200 border border-slate-800'}`}>
+                      <div key={n.id} className={`p-2.5 rounded-app text-xs space-y-1 ${n.read ? 'text-muted' : 'bg-surface-secondary text-text border border-border'}`}>
                         <div className="flex items-center justify-between font-bold">
-                          <span className={n.read ? 'text-slate-300' : 'font-bold'} style={!n.read ? { color: palette.primary } : undefined}>
+                          <span className={n.read ? 'text-muted' : 'text-brand-primary font-bold'}>
                             {n.title}
                           </span>
-                          <span className="text-[10px] text-slate-500">{n.timestamp}</span>
+                          <span className="text-[10px] text-muted">{n.timestamp}</span>
                         </div>
-                        <p className="text-[11px] leading-relaxed">{n.message}</p>
+                        <p className="text-[11px] leading-relaxed text-muted">{n.message}</p>
                       </div>
                     ))}
                   </div>
                 </div>
               )}
             </div>
-
           </div>
-
         </header>
 
         {/* Main Content Area */}

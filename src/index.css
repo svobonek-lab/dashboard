@@ -1,35 +1,46 @@
 @import "tailwindcss";
 
+@theme {
+  --color-brand-primary: var(--brand-primary);
+  --color-brand-primary-soft: var(--brand-primary-soft);
+  --color-surface: var(--surface);
+  --color-surface-secondary: var(--surface-secondary);
+  --color-surface-tertiary: var(--surface-tertiary);
+  --color-text: var(--text);
+  --color-muted: var(--muted);
+  --color-border: var(--border);
+  
+  --radius-app: var(--radius-app);
+  --shadow-app: var(--shadow-app);
+}
+
 @layer base {
   :root {
-    /* Dynamic Brand Accent */
-    --primary: #f59e0b;
-    --primary-hover: #d97706;
-    --primary-light: rgba(245, 158, 11, 0.12);
-    --primary-subtle: rgba(245, 158, 11, 0.08);
-    --primary-border: rgba(245, 158, 11, 0.25);
-    --primary-ring: rgba(245, 158, 11, 0.2);
-
-    /* Enterprise Clean Light Surfaces */
+    /* Design Tokens */
+    --brand-primary: #f59e0b;
+    --brand-primary-soft: rgba(245, 158, 11, 0.12);
     --surface: #ffffff;
     --surface-secondary: #f8fafc;
-    --surface-card: #ffffff;
-    --surface-card-subtle: #f1f5f9;
-    --border: #e2e8f0;
-    --border-strong: #cbd5e1;
-
-    /* Typographic Weights & Colors */
+    --surface-tertiary: #f1f5f9;
     --text: #0f172a;
-    --text-muted: #64748b;
-    --text-inverse: #ffffff;
+    --muted: #64748b;
+    --border: #e2e8f0;
 
-    /* Shared Tokens */
-    --radius-primary: 24px;
-    --radius-card: 20px;
-    --radius-button: 16px;
-    --shadow-subtle: 0 1px 3px 0 rgba(0, 0, 0, 0.05), 0 1px 2px -1px rgba(0, 0, 0, 0.05);
-    --shadow-card: 0 4px 6px -1px rgba(0, 0, 0, 0.04), 0 2px 4px -2px rgba(0, 0, 0, 0.04);
-    --shadow-float: 0 10px 25px -5px rgba(0, 0, 0, 0.08), 0 8px 10px -6px rgba(0, 0, 0, 0.04);
+    --radius-app: 12px;
+    --shadow-app: 0 1px 3px 0 rgba(0, 0, 0, 0.05), 0 1px 2px 0 rgba(0, 0, 0, 0.03);
+
+    /* Legacy Mappings for compatibility */
+    --primary: var(--brand-primary);
+    --primary-hover: #d97706;
+    --primary-light: var(--brand-primary-soft);
+    --primary-subtle: var(--brand-primary-soft);
+    --primary-border: var(--border);
+    --primary-ring: var(--brand-primary-soft);
+    --surface-card: var(--surface);
+    --surface-card-subtle: var(--surface-tertiary);
+    --border-strong: #cbd5e1;
+    --text-muted: var(--muted);
+    --text-inverse: #ffffff;
   }
 
   body {

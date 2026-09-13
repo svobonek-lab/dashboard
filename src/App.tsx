@@ -210,7 +210,7 @@ function AppContent() {
   // 3. Employee Field Routes (`/employee` and `/employee/*`)
   if (pathname === '/employee' || pathname.startsWith('/employee/')) {
     return (
-      <ProtectedRoute allowedRole={['employee', 'owner', 'super_admin']}>
+      <ProtectedRoute allowedRole={['employee', 'super_admin']}>
         <EmployeeLayout leads={leads}>
           {pathname === '/employee' || pathname === '/employee/dashboard' ? (
             <EmployeeDashboardPage leads={leads} onSelectLead={setSelectedLead} onUpdateLead={handleUpdateLead} />

@@ -1,12 +1,18 @@
 import React from 'react';
 
-export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+// Design System Constants
+// Spacing scale: p-4 (16px), p-6 (24px)
+// Radius: rounded-app (12px)
+// Shadow: shadow-app
+
+// AppButton
+export interface AppButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: 'primary' | 'secondary' | 'outline' | 'ghost' | 'danger';
   size?: 'sm' | 'md' | 'lg';
   children: React.ReactNode;
 }
 
-export const Button: React.FC<ButtonProps> = ({
+export const AppButton: React.FC<AppButtonProps> = ({
   variant = 'primary',
   size = 'md',
   className = '',
@@ -14,22 +20,22 @@ export const Button: React.FC<ButtonProps> = ({
   ...props
 }) => {
   const sizeClasses = {
-    sm: 'px-3 py-1.5 text-xs rounded-xl font-bold',
-    md: 'px-4 py-2.5 text-xs rounded-xl font-bold',
-    lg: 'px-6 py-3.5 text-sm rounded-2xl font-black'
+    sm: 'px-3 py-1.5 text-xs rounded-app font-semibold',
+    md: 'px-4 py-2.5 text-xs rounded-app font-semibold',
+    lg: 'px-6 py-3.5 text-sm rounded-app font-bold'
   }[size];
 
   const variantClasses = {
-    primary: 'bg-brand text-slate-950 hover:opacity-95 shadow-md hover-lift button-press',
-    secondary: 'bg-slate-100 text-slate-800 hover:bg-slate-200 button-press',
-    outline: 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 hover:border-slate-300 button-press',
-    ghost: 'bg-transparent text-slate-600 hover:bg-slate-100 hover:text-slate-900 button-press',
-    danger: 'bg-rose-50 text-rose-700 border border-rose-200 hover:bg-rose-100 button-press'
+    primary: 'bg-brand-primary text-white hover:opacity-90 shadow-app transition-opacity cursor-pointer',
+    secondary: 'bg-brand-primary-soft text-brand-primary hover:opacity-90 transition-opacity cursor-pointer',
+    outline: 'bg-surface border border-border text-text hover:bg-surface-secondary transition-colors cursor-pointer',
+    ghost: 'bg-transparent text-muted hover:bg-surface-secondary hover:text-text transition-colors cursor-pointer',
+    danger: 'bg-red-50 text-red-600 border border-red-200 hover:bg-red-100 transition-colors cursor-pointer'
   }[variant];
 
   return (
     <button
-      className={`inline-flex items-center justify-center gap-2 transition-all ${sizeClasses} ${variantClasses} ${className}`}
+      className={`inline-flex items-center justify-center gap-2 font-sans focus:outline-none focus:ring-2 focus:ring-brand-primary/20 ${sizeClasses} ${variantClasses} ${className}`}
       {...props}
     >
       {children}
@@ -37,21 +43,22 @@ export const Button: React.FC<ButtonProps> = ({
   );
 };
 
-export interface CardProps extends React.HTMLAttributes<HTMLDivElement> {
+// AppCard
+export interface AppCardProps extends React.HTMLAttributes<HTMLDivElement> {
   children: React.ReactNode;
   hoverEffect?: boolean;
 }
 
-export const Card: React.FC<CardProps> = ({
+export const AppCard: React.FC<AppCardProps> = ({
   children,
   className = '',
-  hoverEffect = true,
+  hoverEffect = false,
   ...props
 }) => {
   return (
     <div
-      className={`bg-white border border-slate-200/90 rounded-[24px] p-6 shadow-2xs ${
-        hoverEffect ? 'hover:shadow-md hover-lift transition-all' : ''
+      className={`bg-surface border border-border rounded-app p-6 shadow-app ${
+        hoverEffect ? 'hover:shadow-md transition-shadow' : ''
       } ${className}`}
       {...props}
     >
@@ -60,12 +67,13 @@ export const Card: React.FC<CardProps> = ({
   );
 };
 
-export interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
+// AppInput
+export interface AppInputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   label?: string;
   error?: string;
 }
 
-export const Input: React.FC<InputProps> = ({
+export const AppInput: React.FC<AppInputProps> = ({
   label,
   error,
   className = '',
@@ -74,31 +82,30 @@ export const Input: React.FC<InputProps> = ({
   return (
     <div className="space-y-1.5 w-full font-sans">
       {label && (
-        <label className="text-xs font-bold uppercase tracking-wider text-slate-700 block">
+        <label className="text-xs font-bold uppercase tracking-wider text-muted block">
           {label}
         </label>
       )}
       <input
-        className={`w-full bg-slate-50 border rounded-xl px-4 py-3 text-sm font-medium text-slate-900 focus:outline-none focus:ring-2 focus:bg-white transition-all ${
-          error
-            ? 'border-rose-400 focus:ring-rose-200'
-            : 'border-slate-200 focus:border-slate-400 focus:ring-slate-100'
+        className={`w-full bg-surface-secondary border border-border rounded-app px-4 py-3 text-sm font-medium text-text focus:outline-none focus:ring-2 focus:ring-brand-primary/10 focus:bg-surface transition-all ${
+          error ? 'border-red-400 focus:ring-red-100' : 'focus:border-brand-primary'
         } ${className}`}
         {...props}
       />
-      {error && <p className="text-xs font-semibold text-rose-600 mt-1">{error}</p>}
+      {error && <p className="text-xs font-semibold text-red-600 mt-1">{error}</p>}
     </div>
   );
 };
 
-export interface SelectProps extends React.SelectHTMLAttributes<HTMLSelectElement> {
+// AppSelect
+export interface AppSelectProps extends React.SelectHTMLAttributes<HTMLSelectElement> {
   label?: string;
   error?: string;
   options?: { value: string; label: string }[];
   children?: React.ReactNode;
 }
 
-export const Select: React.FC<SelectProps> = ({
+export const AppSelect: React.FC<AppSelectProps> = ({
   label,
   error,
   options,
@@ -109,15 +116,13 @@ export const Select: React.FC<SelectProps> = ({
   return (
     <div className="space-y-1.5 w-full font-sans">
       {label && (
-        <label className="text-xs font-bold uppercase tracking-wider text-slate-700 block">
+        <label className="text-xs font-bold uppercase tracking-wider text-muted block">
           {label}
         </label>
       )}
       <select
-        className={`w-full bg-slate-50 border rounded-xl px-4 py-3 text-sm font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:bg-white transition-all cursor-pointer ${
-          error
-            ? 'border-rose-400 focus:ring-rose-200'
-            : 'border-slate-200 focus:border-slate-400 focus:ring-slate-100'
+        className={`w-full bg-surface-secondary border border-border rounded-app px-4 py-3 text-sm font-medium text-text focus:outline-none focus:ring-2 focus:ring-brand-primary/10 focus:bg-surface transition-all cursor-pointer ${
+          error ? 'border-red-400 focus:ring-red-100' : 'focus:border-brand-primary'
         } ${className}`}
         {...props}
       >
@@ -125,36 +130,92 @@ export const Select: React.FC<SelectProps> = ({
           <option key={opt.value} value={opt.value}>{opt.label}</option>
         )) : children}
       </select>
-      {error && <p className="text-xs font-semibold text-rose-600 mt-1">{error}</p>}
+      {error && <p className="text-xs font-semibold text-red-600 mt-1">{error}</p>}
     </div>
   );
 };
 
-export interface BadgeProps extends React.HTMLAttributes<HTMLSpanElement> {
+// AppBadge
+export interface AppBadgeProps extends React.HTMLAttributes<HTMLSpanElement> {
   variant?: 'primary' | 'secondary' | 'success' | 'warning' | 'danger';
   children: React.ReactNode;
 }
 
-export const Badge: React.FC<BadgeProps> = ({
+export const AppBadge: React.FC<AppBadgeProps> = ({
   variant = 'primary',
   children,
   className = '',
   ...props
 }) => {
   const variantClasses = {
-    primary: 'bg-brand-light text-slate-900 border border-brand-subtle',
-    secondary: 'bg-slate-100 text-slate-700 border border-slate-200',
-    success: 'bg-emerald-50 text-emerald-700 border border-emerald-200',
-    warning: 'bg-amber-50 text-amber-700 border border-amber-200',
-    danger: 'bg-rose-50 text-rose-700 border border-rose-200'
+    primary: 'bg-brand-primary-soft text-brand-primary border border-brand-primary-soft/30',
+    secondary: 'bg-surface-tertiary text-muted border border-border',
+    success: 'bg-emerald-50 text-emerald-700 border border-emerald-150',
+    warning: 'bg-amber-50 text-amber-700 border border-amber-150',
+    danger: 'bg-red-50 text-red-700 border border-red-150'
   }[variant];
 
   return (
     <span
-      className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold tracking-wider ${variantClasses} ${className}`}
+      className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold tracking-wide ${variantClasses} ${className}`}
       {...props}
     >
       {children}
     </span>
   );
+};
+
+// AppModal
+export interface AppModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  title?: string;
+  children: React.ReactNode;
+}
+
+export const AppModal: React.FC<AppModalProps> = ({
+  isOpen,
+  onClose,
+  title,
+  children
+}) => {
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      {/* Backdrop */}
+      <div 
+        className="fixed inset-0 bg-black/40 backdrop-blur-xs transition-opacity" 
+        onClick={onClose}
+      />
+      
+      {/* Modal Card */}
+      <div className="relative bg-surface border border-border rounded-app w-full max-w-xl shadow-app z-10 overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+        {title && (
+          <div className="px-6 py-4 border-b border-border flex items-center justify-between">
+            <h3 className="text-base font-bold text-text">{title}</h3>
+            <button 
+              onClick={onClose}
+              className="text-muted hover:text-text cursor-pointer p-1 rounded-app hover:bg-surface-secondary"
+            >
+              <span className="text-lg leading-none">&times;</span>
+            </button>
+          </div>
+        )}
+        <div className="p-6">
+          {children}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// Keep aliases for backward compatibility so we don't break existing files that import without "App" prefix
+export { 
+  AppButton as Button, 
+  AppCard as Card, 
+  AppInput as Input, 
+  AppSelect as Select, 
+  AppBadge as Badge,
+  AppModal as Modal
 };

@@ -109,62 +109,75 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ leads }) => {
               </div>
 
               {/* Day Event Cards */}
-              <div className="space-y-3 pl-6 border-l-2 border-slate-200 ml-4">
+              <div className="space-y-4 pl-6 border-l-[3px] border-slate-200 ml-4 relative">
                 {dayLeads.map((lead) => (
                   <div 
                     key={lead.id}
-                    className="bg-white p-5 rounded-[24px] border border-slate-200 shadow-sm hover:shadow-md transition-all space-y-3 group"
+                    className="bg-white p-5 rounded-[24px] border border-slate-200 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 space-y-4 group cursor-pointer relative"
                   >
+                    {/* Timeline Dot */}
+                    <div className={`absolute -left-[31px] top-6 w-4 h-4 rounded-full border-4 border-white ${lead.status === 'Completed' ? 'bg-green-500' : lead.status === 'In Progress' ? 'bg-purple-500' : 'bg-blue-500'}`} />
+
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
-                        <span className="px-3 py-1 rounded-xl text-xs font-black bg-blue-50 text-blue-700 border border-blue-100 flex items-center gap-1.5">
-                          <Clock className="w-3.5 h-3.5" /> 08:00 - 15:30 (7.5 hod)
+                        <span className="px-3 py-1 rounded-xl text-xs font-black bg-slate-50 text-slate-700 border border-slate-200 flex items-center gap-1.5">
+                          <Clock className="w-3.5 h-3.5 text-slate-500" /> 08:00 - 15:30 (7.5 hod)
                         </span>
-                        <span className="px-2.5 py-1 rounded-xl text-xs font-bold bg-slate-100 text-slate-700">
+                        <span className={`px-2.5 py-1 rounded-xl text-xs font-bold ${
+                          lead.status === 'Completed' ? 'bg-green-100 text-green-700' : 
+                          lead.status === 'In Progress' ? 'bg-purple-100 text-purple-700' : 
+                          'bg-blue-100 text-blue-700'
+                        }`}>
                           {lead.status}
                         </span>
                       </div>
-                      <span className="text-xs font-mono font-bold text-slate-900">
+                      <span className="text-sm font-mono font-black text-slate-900">
                         {lead.price ? `${lead.price.toLocaleString()} Kč` : 'Dohodou'}
                       </span>
                     </div>
 
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                      <div className="space-y-1">
-                        <h4 className="text-base font-black text-slate-900 group-hover:text-blue-600 transition-colors">
+                      <div className="space-y-1.5">
+                        <h4 className="text-lg font-black text-slate-900 group-hover:text-blue-600 transition-colors leading-tight">
                           {lead.title}
                         </h4>
-                        <div className="flex items-center gap-2 text-xs text-slate-500">
-                          <MapPin className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                        <div className="flex items-center gap-2 text-xs text-slate-500 font-medium">
+                          <MapPin className="w-4 h-4 text-slate-400 shrink-0" />
                           <span>{lead.address}</span>
-                          <span>•</span>
-                          <span className="font-semibold text-slate-700">{lead.customerName} ({lead.customerPhone})</span>
+                          <span className="text-slate-300">•</span>
+                          <span className="font-bold text-slate-700 bg-slate-100 px-2 py-0.5 rounded-lg">{lead.customerName}</span>
                         </div>
                       </div>
 
-                      <div className="flex items-center gap-3 bg-slate-50 p-2.5 rounded-2xl border border-slate-100 shrink-0">
-                        <div className="w-8 h-8 rounded-xl bg-blue-600/10 text-blue-700 flex items-center justify-center font-bold text-xs">
-                          {lead.assignedEmployeeName.charAt(0)}
+                      <div className="flex items-center gap-3 bg-slate-50/80 p-2.5 rounded-2xl border border-slate-100 shrink-0 group-hover:bg-blue-50 group-hover:border-blue-100 transition-colors">
+                        <div className="relative">
+                          <img 
+                            src={`https://api.dicebear.com/7.x/notionists/svg?seed=${lead.assignedEmployeeName}&backgroundColor=e2e8f0`} 
+                            alt={lead.assignedEmployeeName}
+                            className="w-10 h-10 rounded-full border-2 border-white shadow-sm"
+                          />
+                          <span className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-white rounded-full"></span>
                         </div>
-                        <div className="text-xs pr-2">
-                          <span className="text-slate-500 block text-[10px]">Přiřazená parta</span>
-                          <span className="font-bold text-slate-900">{lead.assignedEmployeeName}</span>
+                        <div className="text-xs pr-3">
+                          <span className="text-slate-500 block text-[10px] font-semibold uppercase tracking-wider">Přiřazená parta</span>
+                          <span className="font-black text-slate-900">{lead.assignedEmployeeName}</span>
                         </div>
                       </div>
                     </div>
 
                     {lead.description && (
-                      <div className="pt-2 border-t border-slate-100 text-xs text-slate-600 flex items-start gap-2">
-                        <FileText className="w-3.5 h-3.5 text-slate-400 mt-0.5 shrink-0" />
-                        <p className="line-clamp-1">{lead.description}</p>
+                      <div className="pt-3 border-t border-slate-100 text-xs text-slate-600 flex items-start gap-2.5">
+                        <FileText className="w-4 h-4 text-slate-400 mt-0.5 shrink-0" />
+                        <p className="line-clamp-2 leading-relaxed">{lead.description}</p>
                       </div>
                     )}
                   </div>
                 ))}
 
                 {dayLeads.length === 0 && (
-                  <div className="bg-slate-50/50 p-6 rounded-2xl border border-dashed border-slate-200 text-center text-xs text-slate-500">
-                    Žádné naplánované výjezdy pro tento den.
+                  <div className="bg-slate-50/50 p-6 rounded-2xl border border-dashed border-slate-200 text-center text-xs text-slate-500 relative">
+                    <div className="absolute -left-[31px] top-1/2 -translate-y-1/2 w-4 h-4 rounded-full border-4 border-white bg-slate-200" />
+                    Žádné naplánované výjezdy pro tento den. Volná kapacita.
                   </div>
                 )}
               </div>

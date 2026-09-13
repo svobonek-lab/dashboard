@@ -41,6 +41,38 @@ interface OwnerDashboardProps {
   onNavigateTab: (tab: string) => void;
 }
 
+const KpiCard = ({ title, icon: Icon, value, unit, trend, subtext, color, subtleColor, onClick }: any) => (
+  <div 
+    onClick={onClick}
+    className="bg-white/90 backdrop-blur-md p-6 rounded-[24px] border border-slate-200/90 hover:border-slate-300 transition-all cursor-pointer shadow-sm hover:shadow-lg hover:-translate-y-1 group relative overflow-hidden flex flex-col justify-between"
+    style={{
+      borderTop: `4px solid ${color}`,
+      boxShadow: `0 4px 20px -2px rgba(15, 23, 42, 0.05)`
+    }}
+  >
+    <div className="flex items-center justify-between">
+      <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">{title}</span>
+      <div 
+        className="w-10 h-10 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform"
+        style={{ backgroundColor: subtleColor, color: color }}
+      >
+        <Icon className="w-5 h-5" />
+      </div>
+    </div>
+    <div className="mt-4">
+      <p className="text-3xl font-black text-slate-900 tracking-tight">
+        {value} {unit && <span className="text-sm font-bold text-slate-500">{unit}</span>}
+      </p>
+      {(trend || subtext) && (
+        <div className="flex items-center gap-1.5 mt-2 text-xs font-bold" style={{ color: color }}>
+          {trend}
+          <span>{subtext}</span>
+        </div>
+      )}
+    </div>
+  </div>
+);
+
 export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
   branding: propBranding,
   leads,
@@ -93,30 +125,28 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
         ></div>
 
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 relative z-10">
-          <div className="space-y-2.5">
-            <div className="flex items-center gap-2.5">
-              <span 
-                className="px-3 py-1 rounded-full text-[11px] font-extrabold uppercase tracking-wider flex items-center gap-1.5"
-                style={{
-                  backgroundColor: palette.primaryLight,
-                  color: palette.primary,
-                  border: `1px solid ${palette.primaryBorder}`
-                }}
+          <div className="space-y-4">
+            <div className="flex items-center gap-3">
+              <div 
+                className="w-12 h-12 rounded-2xl flex items-center justify-center text-white shadow-lg"
+                style={{ backgroundColor: palette.primary }}
               >
-                <Sparkles className="w-3.5 h-3.5" />
-                <span>Executive Operační Systém</span>
-              </span>
-              <span className="text-xs font-semibold text-slate-500">
-                {new Date().toLocaleDateString('cs-CZ', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
-              </span>
+                <HardHat className="w-6 h-6" />
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">
+                    {new Date().toLocaleDateString('cs-CZ', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
+                  </span>
+                </div>
+                <h1 className="text-3xl sm:text-4xl font-black text-slate-900 tracking-tight leading-tight">
+                  <span style={{ color: palette.primary }}>{activeCompanyName}</span> Executive
+                </h1>
+              </div>
             </div>
 
-            <h1 className="text-3xl sm:text-4xl font-black text-slate-900 tracking-tight leading-tight">
-              Vítejte zpět, <span style={{ color: palette.primary }}>{activeCompanyName}</span>
-            </h1>
-
             <p className="text-sm text-slate-600 font-medium max-w-2xl leading-relaxed">
-              Dnes máte <strong className="text-slate-900 font-bold">{inProgressCount} aktivních projektů</strong> ve výstavbě a <strong className="text-slate-900 font-bold">{newLeadsCount} nových poptávek</strong> čekajících na zpracování rozpočtu.
+              Dnešní přehled: <strong className="text-slate-900 font-bold">{inProgressCount} aktivních projektů</strong>, <strong className="text-slate-900 font-bold">{newLeadsCount} nových poptávek</strong> a <strong className="text-slate-900 font-bold">4 party v terénu</strong>. Odhadovaný týdenní obrat je <strong className="text-slate-900 font-bold">{((totalRevenue + 245000) / 1000).toFixed(0)} tis. Kč</strong>.
             </p>
           </div>
 
@@ -148,127 +178,51 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
 
       {/* 4 Main Executive Glassmorphic Metric Cards with Top-Border Glow */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-        
-        {/* Card 1: Revenue & Forecast */}
-        <div 
+        <KpiCard
+          title="Obrat & Tržby (Q3)"
+          icon={DollarSign}
+          value={((totalRevenue + 245000) / 1000).toFixed(0)}
+          unit="tis. Kč"
+          trend={<ArrowUpRight className="w-4 h-4" />}
+          subtext="+24.5% forecast do konce měsíce"
+          color={palette.primary}
+          subtleColor={palette.primarySubtle}
           onClick={() => onNavigateTab('analytics')}
-          className="bg-white/90 backdrop-blur-md p-6 rounded-[24px] border border-slate-200/90 hover:border-slate-300 transition-all cursor-pointer shadow-sm hover:shadow-lg group relative overflow-hidden"
-          style={{
-            borderTop: `4px solid ${palette.primary}`,
-            boxShadow: `0 4px 20px -2px rgba(15, 23, 42, 0.05)`
-          }}
-        >
-          <div className="flex items-center justify-between">
-            <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Obrat & Tržby (Q3)</span>
-            <div 
-              className="w-10 h-10 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform"
-              style={{
-                backgroundColor: palette.primarySubtle,
-                color: palette.primary
-              }}
-            >
-              <DollarSign className="w-5 h-5" />
-            </div>
-          </div>
-          <div className="mt-4">
-            <p className="text-3xl font-black text-slate-900 tracking-tight">
-              {((totalRevenue + 245000) / 1000).toFixed(0)} <span className="text-sm font-bold text-slate-500">tis. Kč</span>
-            </p>
-            <div className="flex items-center gap-1.5 mt-2 text-xs font-bold text-green-600">
-              <ArrowUpRight className="w-4 h-4" />
-              <span>+24.5% forecast do konce měsíce</span>
-            </div>
-          </div>
-        </div>
+        />
 
-        {/* Card 2: Pipeline Funnel / Active Jobs */}
-        <div 
+        <KpiCard
+          title="Pipeline & Poptávky"
+          icon={BarChart3}
+          value={leads.length}
+          unit="zakázek"
+          subtext={`${newLeadsCount} nových • ${quoteCount} v nabídce • ${inProgressCount} na stavbě`}
+          color={palette.secondary}
+          subtleColor={palette.secondaryLight}
           onClick={() => onNavigateTab('leads')}
-          className="bg-white/90 backdrop-blur-md p-6 rounded-[24px] border border-slate-200/90 hover:border-slate-300 transition-all cursor-pointer shadow-sm hover:shadow-lg group relative overflow-hidden"
-          style={{
-            borderTop: `4px solid ${palette.secondary}`,
-            boxShadow: `0 4px 20px -2px rgba(15, 23, 42, 0.05)`
-          }}
-        >
-          <div className="flex items-center justify-between">
-            <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Pipeline & Poptávky</span>
-            <div 
-              className="w-10 h-10 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform"
-              style={{
-                backgroundColor: palette.secondaryLight,
-                color: palette.secondary
-              }}
-            >
-              <BarChart3 className="w-5 h-5" />
-            </div>
-          </div>
-          <div className="mt-4">
-            <p className="text-3xl font-black text-slate-900 tracking-tight">
-              {leads.length} <span className="text-sm font-bold text-slate-500">zakázek</span>
-            </p>
-            <div className="flex items-center gap-1.5 mt-2 text-xs font-bold" style={{ color: palette.secondary }}>
-              <span>{newLeadsCount} nových • {quoteCount} v nabídce • {inProgressCount} na stavbě</span>
-            </div>
-          </div>
-        </div>
+        />
 
-        {/* Card 3: Response Time SLA */}
-        <div 
+        <KpiCard
+          title="Reakční doba SLA"
+          icon={Timer}
+          value={18}
+          unit="minut"
+          trend={<Check className="w-4 h-4" />}
+          subtext="94% odpovědí do 30 min (AI auto-reply)"
+          color="#10B981"
+          subtleColor="#D1FAE5"
           onClick={() => onNavigateTab('communication')}
-          className="bg-white/90 backdrop-blur-md p-6 rounded-[24px] border border-slate-200/90 hover:border-slate-300 transition-all cursor-pointer shadow-sm hover:shadow-lg group relative overflow-hidden"
-          style={{
-            borderTop: `4px solid #10B981`,
-            boxShadow: `0 4px 20px -2px rgba(15, 23, 42, 0.05)`
-          }}
-        >
-          <div className="flex items-center justify-between">
-            <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Reakční doba SLA</span>
-            <div className="w-10 h-10 rounded-2xl bg-green-50 text-green-600 flex items-center justify-center group-hover:scale-110 transition-transform">
-              <Timer className="w-5 h-5" />
-            </div>
-          </div>
-          <div className="mt-4">
-            <p className="text-3xl font-black text-slate-900 tracking-tight">
-              18 <span className="text-sm font-bold text-slate-500">minut</span>
-            </p>
-            <div className="flex items-center gap-1.5 mt-2 text-xs font-bold text-green-600">
-              <Check className="w-4 h-4" />
-              <span>94% odpovědí do 30 min (AI auto-reply)</span>
-            </div>
-          </div>
-        </div>
+        />
 
-        {/* Card 4: Win Rate & Google Rating */}
-        <div 
+        <KpiCard
+          title="Úspěšnost & Hodnocení"
+          icon={Star}
+          value="76%"
+          unit="konverze"
+          subtext="Google Reviews: 4.9 ★ (48 recenzí)"
+          color={palette.primary}
+          subtleColor={palette.primarySubtle}
           onClick={() => onNavigateTab('analytics')}
-          className="bg-white/90 backdrop-blur-md p-6 rounded-[24px] border border-slate-200/90 hover:border-slate-300 transition-all cursor-pointer shadow-sm hover:shadow-lg group relative overflow-hidden"
-          style={{
-            borderTop: `4px solid ${palette.primary}`,
-            boxShadow: `0 4px 20px -2px rgba(15, 23, 42, 0.05)`
-          }}
-        >
-          <div className="flex items-center justify-between">
-            <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Úspěšnost & Hodnocení</span>
-            <div 
-              className="w-10 h-10 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform"
-              style={{
-                backgroundColor: palette.primarySubtle,
-                color: palette.primary
-              }}
-            >
-              <Star className="w-5 h-5 fill-current" />
-            </div>
-          </div>
-          <div className="mt-4">
-            <p className="text-3xl font-black text-slate-900 tracking-tight">
-              76% <span className="text-sm font-bold text-slate-500">konverze</span>
-            </p>
-            <div className="flex items-center gap-1.5 mt-2 text-xs font-bold" style={{ color: palette.primary }}>
-              <span>Google Reviews: 4.9 ★ (48 recenzí)</span>
-            </div>
-          </div>
-        </div>
-
+        />
       </div>
 
       {/* Row 2: Team Capacity Heatmap & Planned Site Visits & Lead Sources */}

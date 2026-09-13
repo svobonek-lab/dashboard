@@ -381,6 +381,17 @@ export function applyBrandToDOM(palette: BrandPalette, companyName?: string, log
 
   const root = document.documentElement;
   root.style.setProperty('--brand-primary', palette.primary);
+  root.style.setProperty('--brand-primary-soft', palette.primaryLight);
+  root.style.setProperty('--surface', palette.surface || '#ffffff');
+  root.style.setProperty('--surface-secondary', palette.backgroundLight || '#f8fafc');
+  root.style.setProperty('--surface-tertiary', '#f1f5f9');
+  root.style.setProperty('--text', palette.textMain || '#0f172a');
+  root.style.setProperty('--muted', palette.textMuted || '#64748b');
+  root.style.setProperty('--border', '#e2e8f0');
+
+  root.style.setProperty('--radius-app', '12px');
+  root.style.setProperty('--shadow-app', '0 1px 3px 0 rgba(0, 0, 0, 0.05), 0 1px 2px 0 rgba(0, 0, 0, 0.03)');
+
   root.style.setProperty('--brand-primary-hover', palette.primaryHover);
   root.style.setProperty('--brand-primary-active', palette.primaryActive);
   root.style.setProperty('--brand-primary-light', palette.primaryLight);

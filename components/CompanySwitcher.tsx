@@ -25,7 +25,8 @@ export const CompanySwitcher: React.FC<CompanySwitcherProps> = ({ variant = 'dar
     switchOrganization, 
     impersonateOrganization,
     impersonatingOrgId,
-    fetchAllOrganizationsAdmin 
+    fetchAllOrganizationsAdmin,
+    dbUser
   } = useOrganization();
   const { navigate } = useRouter();
 
@@ -36,19 +37,28 @@ export const CompanySwitcher: React.FC<CompanySwitcherProps> = ({ variant = 'dar
 
   // Load organizations
   useEffect(() => {
-    const orgs = LocalSupabaseMock.getOrganizations();
-    if (orgs && orgs.length > 0) {
-      setAllOrgs(orgs);
-    } else if (organizations && organizations.length > 0) {
-      setAllOrgs(organizations);
-    }
+    const isSuperAdmin = (dbUser?.email || '').trim().toLowerCase() === 'svobonek@gmail.com' || dbUser?.role === 'super_admin';
+    if (isSuperAdmin) {
+      const orgs = LocalSupabaseMock.getOrganizations();
+      if (orgs && orgs.length > 0) {
+        setAllOrgs(orgs);
+      } else if (organizations && organizations.length > 0) {
+        setAllOrgs(organizations);
+      }
 
-    if (fetchAllOrganizationsAdmin) {
-      fetchAllOrganizationsAdmin().then(data => {
-        if (data && data.length > 0) setAllOrgs(data);
-      }).catch(() => {});
+      if (fetchAllOrganizationsAdmin) {
+        fetchAllOrganizationsAdmin().then(data => {
+          if (data && data.length > 0) setAllOrgs(data);
+        }).catch(() => {});
+      }
+    } else {
+      if (currentOrg) {
+        setAllOrgs([currentOrg]);
+      } else {
+        setAllOrgs([]);
+      }
     }
-  }, [organizations]);
+  }, [organizations, dbUser, currentOrg, fetchAllOrganizationsAdmin]);
 
   // Click outside listener
   useEffect(() => {
@@ -205,18 +215,20 @@ export const CompanySwitcher: React.FC<CompanySwitcherProps> = ({ variant = 'dar
           </div>
 
           {/* Action Footer: Create Company */}
-          <div className="p-2 border-t border-slate-200/80 bg-[#090D16]/80">
-            <button
-              onClick={() => {
-                setIsOpen(false);
-                navigate('/admin/install');
-              }}
-              className="w-full py-2 px-3 rounded-xl bg-gradient-to-r from-cyan-500/20 to-blue-600/20 hover:from-cyan-500/30 hover:to-blue-600/30 border border-cyan-500/30 text-cyan-300 text-xs font-bold transition-all flex items-center justify-center gap-1.5"
-            >
-              <Plus className="w-3.5 h-3.5" />
-              <span>Nová instalace klienta (+ Create Company)</span>
-            </button>
-          </div>
+          {((dbUser?.email || '').trim().toLowerCase() === 'svobonek@gmail.com' || dbUser?.role === 'super_admin') && (
+            <div className="p-2 border-t border-slate-200/80 bg-[#090D16]/80">
+              <button
+                onClick={() => {
+                  setIsOpen(false);
+                  navigate('/admin/install');
+                }}
+                className="w-full py-2 px-3 rounded-xl bg-gradient-to-r from-cyan-500/20 to-blue-600/20 hover:from-cyan-500/30 hover:to-blue-600/30 border border-cyan-500/30 text-cyan-300 text-xs font-bold transition-all flex items-center justify-center gap-1.5"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                <span>Nová instalace klienta (+ Create Company)</span>
+              </button>
+            </div>
+          )}
         </div>
       )}
     </div>
