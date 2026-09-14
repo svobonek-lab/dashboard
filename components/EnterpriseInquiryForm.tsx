@@ -1,3 +1,4 @@
+import { useOrganization } from '@/context/OrganizationContext';
 import React, { useState } from 'react';
 import { 
   Sparkles, 
@@ -17,7 +18,6 @@ import {
   Loader2
 } from 'lucide-react';
 import { CompanyBranding } from '../types';
-import { useBranding } from '@/hooks/useBranding';
 import { useVoiceNotes } from '../hooks/useVoiceNotes';
 
 interface EnterpriseInquiryFormProps {
@@ -35,7 +35,8 @@ export const EnterpriseInquiryForm: React.FC<EnterpriseInquiryFormProps> = ({
   isModal = false,
   customColor
 }) => {
-  const { branding } = useBranding();
+  const { currentOrg } = useOrganization();
+  const branding = currentOrg?.branding || {};
   const activeColor = customColor || branding.primaryColor || propBranding.primaryColor || '#2563eb';
   const activeCompanyName = branding.name || propBranding.name || 'Stavební Firma';
   const activeCity = branding.city || propBranding.city || 'Praha';

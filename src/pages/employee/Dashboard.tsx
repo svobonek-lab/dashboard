@@ -1,6 +1,6 @@
+import { useOrganization } from '@/context/OrganizationContext';
 import React from 'react';
 import { EmployeeDashboard } from '@/features/EmployeeDashboard';
-import { useBranding } from '@/hooks/useBranding';
 import { Lead } from '@/types';
 
 interface EmployeeDashboardPageProps {
@@ -14,7 +14,8 @@ export const EmployeeDashboardPage: React.FC<EmployeeDashboardPageProps> = ({
   onSelectLead,
   onUpdateLead
 }) => {
-  const { branding } = useBranding();
+  const { currentOrg } = useOrganization();
+  const branding = currentOrg?.branding || {};
 
   return (
     <EmployeeDashboard

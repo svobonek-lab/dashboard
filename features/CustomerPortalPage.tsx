@@ -1,7 +1,7 @@
+import { useOrganization } from '@/context/OrganizationContext';
 import React, { useState } from 'react';
 import { Sparkles, CheckCircle2, Clock, FileText, Download, Calendar, MapPin, Phone, MessageSquare, ShieldCheck, Check, Send, ArrowLeft } from 'lucide-react';
 import { CompanyBranding, Lead } from '../types';
-import { useBranding } from '@/hooks/useBranding';
 
 interface CustomerPortalPageProps {
   branding: CompanyBranding;
@@ -14,7 +14,8 @@ export const CustomerPortalPage: React.FC<CustomerPortalPageProps> = ({
   lead,
   onBackToCRM
 }) => {
-  const { branding, palette, brandStyles } = useBranding();
+  const { currentOrg } = useOrganization();
+  const branding = currentOrg?.branding || {};
   const [activeTab, setActiveTab] = useState<'timeline' | 'documents' | 'chat'>('timeline');
   const [chatMessage, setChatMessage] = useState('');
   
@@ -62,7 +63,7 @@ export const CustomerPortalPage: React.FC<CustomerPortalPageProps> = ({
       >
         <div 
           className="absolute -top-12 -right-12 w-64 h-64 rounded-full blur-3xl opacity-25 pointer-events-none"
-          style={{ backgroundColor: palette.primary }}
+          style={{ backgroundColor: 'var(--brand-primary)' }}
         ></div>
 
         <div className="max-w-4xl mx-auto flex flex-col md:flex-row md:items-center justify-between gap-4 relative z-10">
@@ -77,8 +78,8 @@ export const CustomerPortalPage: React.FC<CustomerPortalPageProps> = ({
               <div 
                 className="w-12 h-12 rounded-2xl flex items-center justify-center font-black text-lg shadow-lg"
                 style={{
-                  backgroundColor: palette.primary,
-                  color: palette.textOnPrimary
+                  backgroundColor: 'var(--brand-primary)',
+                  color: '#ffffff'
                 }}
               >
                 {activeCompanyName.substring(0, 2).toUpperCase()}
@@ -89,9 +90,9 @@ export const CustomerPortalPage: React.FC<CustomerPortalPageProps> = ({
                 <span 
                   className="text-[10px] uppercase font-extrabold tracking-wider px-2.5 py-0.5 rounded-full border"
                   style={{
-                    backgroundColor: palette.primarySubtle,
-                    color: palette.primary,
-                    borderColor: palette.primaryBorder
+                    backgroundColor: 'var(--brand-primary-soft)',
+                    color: 'var(--brand-primary)',
+                    borderColor: 'var(--border)'
                   }}
                 >
                   Klientský portál zakázky
@@ -120,13 +121,13 @@ export const CustomerPortalPage: React.FC<CustomerPortalPageProps> = ({
         <div 
           className="bg-white/90 backdrop-blur-md p-6 rounded-[24px] border border-slate-200 shadow-xl grid grid-cols-1 sm:grid-cols-3 gap-6"
           style={{
-            borderTop: `4px solid ${palette.primary}`
+            borderTop: `4px solid ${'var(--brand-primary)'}`
           }}
         >
           <div className="space-y-1">
             <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Aktuální stav</span>
             <div className="flex items-center gap-2">
-              <span className="w-3 h-3 rounded-full animate-pulse" style={{ backgroundColor: palette.primary }} />
+              <span className="w-3 h-3 rounded-full animate-pulse" style={{ backgroundColor: 'var(--brand-primary)' }} />
               <span className="font-extrabold text-slate-900 text-sm">{lead.status}</span>
             </div>
             <p className="text-[11px] text-slate-500">Předpokládané dokončení za 3 dny</p>
@@ -140,7 +141,7 @@ export const CustomerPortalPage: React.FC<CustomerPortalPageProps> = ({
 
           <div className="space-y-1">
             <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Celková cena díla</span>
-            <p className="font-black text-lg font-mono" style={{ color: palette.primary }}>
+            <p className="font-black text-lg font-mono" style={{ color: 'var(--brand-primary)' }}>
               {lead.price.toLocaleString()} Kč
             </p>
             <p className="text-[11px] text-green-600 font-medium">Vč. DPH a záruky 5 let</p>
@@ -151,7 +152,7 @@ export const CustomerPortalPage: React.FC<CustomerPortalPageProps> = ({
         <div className="flex border-b border-slate-200 gap-8">
           <button
             onClick={() => setActiveTab('timeline')}
-            style={activeTab === 'timeline' ? { borderColor: palette.primary, color: palette.primary } : undefined}
+            style={activeTab === 'timeline' ? { borderColor: 'var(--brand-primary)', color: 'var(--brand-primary)' } : undefined}
             className={`pb-3 text-xs font-bold tracking-wider uppercase border-b-2 transition-all ${
               activeTab === 'timeline' ? '' : 'border-transparent text-slate-500 hover:text-slate-800'
             }`}
@@ -160,7 +161,7 @@ export const CustomerPortalPage: React.FC<CustomerPortalPageProps> = ({
           </button>
           <button
             onClick={() => setActiveTab('documents')}
-            style={activeTab === 'documents' ? { borderColor: palette.primary, color: palette.primary } : undefined}
+            style={activeTab === 'documents' ? { borderColor: 'var(--brand-primary)', color: 'var(--brand-primary)' } : undefined}
             className={`pb-3 text-xs font-bold tracking-wider uppercase border-b-2 transition-all ${
               activeTab === 'documents' ? '' : 'border-transparent text-slate-500 hover:text-slate-800'
             }`}
@@ -169,7 +170,7 @@ export const CustomerPortalPage: React.FC<CustomerPortalPageProps> = ({
           </button>
           <button
             onClick={() => setActiveTab('chat')}
-            style={activeTab === 'chat' ? { borderColor: palette.primary, color: palette.primary } : undefined}
+            style={activeTab === 'chat' ? { borderColor: 'var(--brand-primary)', color: 'var(--brand-primary)' } : undefined}
             className={`pb-3 text-xs font-bold tracking-wider uppercase border-b-2 transition-all ${
               activeTab === 'chat' ? '' : 'border-transparent text-slate-500 hover:text-slate-800'
             }`}
@@ -198,7 +199,7 @@ export const CustomerPortalPage: React.FC<CustomerPortalPageProps> = ({
                         step.status === 'Completed' ? 'bg-green-600 text-slate-900 shadow-md' :
                         step.status === 'Current' ? 'text-slate-900 shadow-lg' : 'bg-slate-800 text-slate-500'
                       }`}
-                      style={step.status === 'Current' ? { backgroundColor: palette.primary, color: palette.textOnPrimary } : undefined}
+                      style={step.status === 'Current' ? { backgroundColor: 'var(--brand-primary)', color: '#ffffff' } : undefined}
                     >
                       {step.status === 'Completed' ? '✓' : idx + 1}
                     </div>
@@ -227,8 +228,8 @@ export const CustomerPortalPage: React.FC<CustomerPortalPageProps> = ({
                       <span 
                         className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md"
                         style={{
-                          backgroundColor: palette.primary,
-                          color: palette.textOnPrimary
+                          backgroundColor: 'var(--brand-primary)',
+                          color: '#ffffff'
                         }}
                       >
                         {photo.category || 'Průběh'}
@@ -254,7 +255,7 @@ export const CustomerPortalPage: React.FC<CustomerPortalPageProps> = ({
                 <div className="flex gap-2">
                   <button
                     onClick={() => setApprovedQuote(true)}
-                    style={!approvedQuote ? { backgroundColor: palette.primary, color: palette.textOnPrimary, boxShadow: palette.primaryGlow } : undefined}
+                    style={!approvedQuote ? { backgroundColor: 'var(--brand-primary)', color: '#ffffff', boxShadow: '0 4px 14px 0 rgba(0,0,0,0.1)' } : undefined}
                     className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all shadow-sm ${
                       approvedQuote ? 'bg-green-600 text-slate-900' : ''
                     }`}
@@ -270,14 +271,14 @@ export const CustomerPortalPage: React.FC<CustomerPortalPageProps> = ({
                     <h4 className="font-bold text-slate-800 text-sm">Rozpočet č. Q-2026-8841</h4>
                     <p className="text-xs text-slate-500">Vystaveno společností {activeCompanyName} • Platnost do 30.4.2026</p>
                   </div>
-                  <span className="text-base font-black font-mono" style={{ color: palette.primary }}>
+                  <span className="text-base font-black font-mono" style={{ color: 'var(--brand-primary)' }}>
                     {lead.price.toLocaleString()} Kč
                   </span>
                 </div>
 
                 <div className="flex items-center justify-between pt-4 border-t border-slate-200">
                   <div className="flex items-center gap-2 text-xs text-slate-500">
-                    <FileText className="w-4 h-4" style={{ color: palette.primary }} />
+                    <FileText className="w-4 h-4" style={{ color: 'var(--brand-primary)' }} />
                     <span>Kompletní PDF rozpis materiálů a prací</span>
                   </div>
                   <button 
@@ -298,7 +299,7 @@ export const CustomerPortalPage: React.FC<CustomerPortalPageProps> = ({
                   </div>
                   <button
                     onClick={() => setPaidDeposit(true)}
-                    style={!paidDeposit ? { backgroundColor: palette.primary, color: palette.textOnPrimary, boxShadow: palette.primaryGlow } : undefined}
+                    style={!paidDeposit ? { backgroundColor: 'var(--brand-primary)', color: '#ffffff', boxShadow: '0 4px 14px 0 rgba(0,0,0,0.1)' } : undefined}
                     className={`px-5 py-2.5 rounded-xl text-xs font-bold shadow-md transition-all ${
                       paidDeposit ? 'bg-green-600 text-slate-900' : ''
                     }`}
@@ -316,7 +317,7 @@ export const CustomerPortalPage: React.FC<CustomerPortalPageProps> = ({
           <div className="bg-white/90 rounded-[24px] border border-slate-200 shadow-md overflow-hidden flex flex-col h-[500px]">
             <div className="p-4 border-b border-slate-200 bg-slate-50 flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded-full animate-pulse" style={{ backgroundColor: palette.primary }} />
+                <div className="w-3 h-3 rounded-full animate-pulse" style={{ backgroundColor: 'var(--brand-primary)' }} />
                 <span className="font-bold text-slate-900 text-xs">AI Asistent & Vedoucí projektu online</span>
               </div>
               <span className="text-[11px] text-slate-500">Odpovídáme obvykle do 5 minut</span>
@@ -331,7 +332,7 @@ export const CustomerPortalPage: React.FC<CustomerPortalPageProps> = ({
                         ? 'font-medium rounded-br-xs shadow-md' 
                         : 'bg-slate-50 text-slate-800 rounded-bl-xs border border-slate-200'
                     }`}
-                    style={m.sender === 'user' ? { backgroundColor: palette.primary, color: palette.textOnPrimary } : undefined}
+                    style={m.sender === 'user' ? { backgroundColor: 'var(--brand-primary)', color: '#ffffff' } : undefined}
                   >
                     <p>{m.text}</p>
                     <span 
@@ -355,9 +356,9 @@ export const CustomerPortalPage: React.FC<CustomerPortalPageProps> = ({
               <button
                 type="submit"
                 style={{
-                  backgroundColor: palette.primary,
-                  color: palette.textOnPrimary,
-                  boxShadow: palette.primaryGlow
+                  backgroundColor: 'var(--brand-primary)',
+                  color: '#ffffff',
+                  boxShadow: '0 4px 14px 0 rgba(0,0,0,0.1)'
                 }}
                 className="px-5 py-3 rounded-xl text-xs font-bold shadow-md flex items-center gap-1.5 active:scale-[0.98] transition-all"
               >

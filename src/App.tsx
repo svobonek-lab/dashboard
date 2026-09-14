@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { useBranding } from '@/hooks/useBranding';
 import { generateRealisticLeads, generateRealisticEmployees } from '@/lib/demoData';
 import { useOrganization } from '@/context/OrganizationContext';
 import { RouterProvider, useRouter } from './app/router';
@@ -53,13 +52,14 @@ import { CustomerPortalPage } from '@/features/CustomerPortalPage';
 import { Lead, LeadStatus } from '@/types';
 
 function AppContent() {
-  const { branding, updateBranding } = useBranding();
-  const { 
-    isConfigured, 
+  const { currentOrg } = useOrganization();
+  const branding = currentOrg?.branding || {};
+  
+  
+  const { updateBrandingAdmin, isConfigured, 
     user, 
     dbUser,
     isLoading: isAuthLoading, 
-    currentOrg, 
     fetchLeads, 
     fetchEmployees, 
     saveLead, 
@@ -112,13 +112,13 @@ function AppContent() {
 
   // Dynamic White Labeling (Browser Title & Favicon Update)
   useEffect(() => {
-    if (branding?.name) {
+    if (currentOrg?.name) {
       document.title = `${branding.name} | Stavební OS`;
     } else {
       document.title = 'StavbaCore CRM';
     }
 
-    if (branding?.logoUrl) {
+    if (currentOrg?.branding?.logoUrl) {
       const link: HTMLLinkElement = document.querySelector("link[rel*='icon']") || document.createElement('link');
       link.type = 'image/png';
       link.rel = 'icon';
@@ -190,7 +190,7 @@ function AppContent() {
           ) : pathname === '/admin/companies' ? (
             <AdminCompaniesPage />
           ) : pathname === '/admin/install' ? (
-            <InstallStudio currentBranding={branding} onDeploy={(b) => updateBranding(b)} />
+            <InstallStudio currentBranding={branding} onDeploy={(b) => updateBrandingAdmin(currentOrg?.id || "", b.name, b.primaryColor, b.logoUrl)} />
           ) : pathname === '/admin/demo-creator' ? (
             <AdminPanel />
           ) : pathname === '/admin/domains' ? (

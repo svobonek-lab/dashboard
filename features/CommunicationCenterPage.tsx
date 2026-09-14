@@ -65,22 +65,22 @@ export const CommunicationCenterPage: React.FC<CommunicationCenterPageProps> = (
     appointment: {
       title: 'Potvrzení termínu montáže / návštěvy',
       icon: Calendar,
-      text: `Dobrý den, pane/paní ${selectedLead.customerName},\n\npotvrzujeme termín realizace Vašeho projektu "${selectedLead.title}" u ${branding.name} na ${selectedLead.preferredDate} v 08:00 ráno.\nNáš mistr ${selectedLead.assignedEmployeeName} Vám bude plně k dispozici.\n\nS pozdravem,\n${branding.name}\nTel: ${branding.phone}`
+      text: `Dobrý den, pane/paní ${selectedLead.customerName},\n\npotvrzujeme termín realizace Vašeho projektu "${selectedLead.title}" u ${(branding?.name || 'Firma')} na ${selectedLead.preferredDate} v 08:00 ráno.\nNáš mistr ${selectedLead.assignedEmployeeName} Vám bude plně k dispozici.\n\nS pozdravem,\n${(branding?.name || 'Firma')}\nTel: ${branding.phone}`
     },
     delay: {
       title: 'Upozornění na posun termínu (Počasí/Doprava)',
       icon: AlertTriangle,
-      text: `Dobrý den, pane/paní ${selectedLead.customerName},\n\nz důvodu nepříznivé předpovědi počasí (déšť) pro venkovní práce přesouváme montáž zítra o 2 hodiny na 10:00.\nVšechny materiály jsou naskladněny.\n\nDěkujeme za pochopení,\n${selectedLead.assignedEmployeeName} (${branding.name})`
+      text: `Dobrý den, pane/paní ${selectedLead.customerName},\n\nz důvodu nepříznivé předpovědi počasí (déšť) pro venkovní práce přesouváme montáž zítra o 2 hodiny na 10:00.\nVšechny materiály jsou naskladněny.\n\nDěkujeme za pochopení,\n${selectedLead.assignedEmployeeName} (${(branding?.name || 'Firma')})`
     },
     completion: {
       title: 'Předání hotového díla & Protokol',
       icon: CheckCircle2,
-      text: `Dobrý den, pane/paní ${selectedLead.customerName},\n\nrealizace Vašeho projektu "${selectedLead.title}" byla úspěšně dokončena! Předávací protokol a garanční list 5 let naleznete ve Vašem zákaznickém portálu.\n\nDěkujeme za důvěru,\nTým ${branding.name}`
+      text: `Dobrý den, pane/paní ${selectedLead.customerName},\n\nrealizace Vašeho projektu "${selectedLead.title}" byla úspěšně dokončena! Předávací protokol a garanční list 5 let naleznete ve Vašem zákaznickém portálu.\n\nDěkujeme za důvěru,\nTým ${(branding?.name || 'Firma')}`
     },
     review: {
       title: 'Žádost o Google Review (Hodnocení spokojenosti)',
       icon: Star,
-      text: `Vážený zákazníku,\n\nděkujeme za spolupráci na projektu "${selectedLead.title}". Byli jste spokojeni s naší prací? Budeme rádi za krátké hodnocení na Google:\nhttps://g.page/r/${branding.name.toLowerCase().replace(/\s+/g, '-')}/review\n\nZabere to jen 1 minutu. Děkujeme!\n${branding.name}`
+      text: `Vážený zákazníku,\n\nděkujeme za spolupráci na projektu "${selectedLead.title}". Byli jste spokojeni s naší prací? Budeme rádi za krátké hodnocení na Google:\nhttps://g.page/r/${(branding?.name || 'Firma').toLowerCase().replace(/\s+/g, '-')}/review\n\nZabere to jen 1 minutu. Děkujeme!\n${(branding?.name || 'Firma')}`
     }
   };
 
@@ -312,7 +312,7 @@ export const CommunicationCenterPage: React.FC<CommunicationCenterPageProps> = (
                   }`}
                 >
                   <div className="flex items-center justify-between text-[10px] text-slate-500">
-                    <span className="font-bold">{item.sender === 'company' ? branding.name : selectedLead.customerName}</span>
+                    <span className="font-bold">{item.sender === 'company' ? (branding?.name || 'Firma') : selectedLead.customerName}</span>
                     <span>{item.time}</span>
                   </div>
                   <p className="leading-relaxed whitespace-pre-wrap">{item.text}</p>

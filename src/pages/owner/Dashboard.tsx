@@ -1,5 +1,5 @@
+import { useOrganization } from '@/context/OrganizationContext';
 import React from 'react';
-import { useBranding } from '@/hooks/useBranding';
 import { useRouter } from '../../app/router';
 import { OwnerDashboard } from '@/features/OwnerDashboard';
 import { Lead } from '@/types';
@@ -13,7 +13,8 @@ export const OwnerDashboardPage: React.FC<OwnerDashboardPageProps> = ({
   leads,
   onSelectLead
 }) => {
-  const { branding } = useBranding();
+  const { currentOrg } = useOrganization();
+  const branding = currentOrg?.branding || {};
   const { navigate } = useRouter();
 
   return (

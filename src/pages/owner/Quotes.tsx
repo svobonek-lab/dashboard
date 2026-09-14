@@ -1,8 +1,9 @@
+import { useOrganization } from '@/context/OrganizationContext';
 import React from 'react';
 import { QuotesPage } from '@/features/QuotesPage';
-import { useBranding } from '@/hooks/useBranding';
 
 export const OwnerQuotesPage: React.FC = () => {
-  const { branding } = useBranding();
+  const { currentOrg } = useOrganization();
+  const branding = currentOrg?.branding || {};
   return <QuotesPage branding={branding} />;
 };

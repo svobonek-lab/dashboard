@@ -43,6 +43,7 @@ export interface Organization {
   primary_color: string;
   secondary_color?: string;
   logo_url?: string;
+  branding?: any;
   status?: string;
   created_at?: string;
 }
@@ -152,6 +153,35 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
   const [originalOrg, setOriginalOrg] = useState<Organization | null>(null);
 
   const clearSchemaError = () => setSchemaError(null);
+
+  // Global Design Tokens & Branding sync
+  useEffect(() => {
+    const primaryColor = currentOrg?.primary_color || currentOrg?.branding?.primaryColor || '#2563eb';
+    const root = document.documentElement;
+    root.style.setProperty('--brand-primary', primaryColor);
+    
+    // Hex to rgba for soft background
+    const hexToRgb = (hex: string) => {
+      const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+      return result ? `${parseInt(result[1], 16)}, ${parseInt(result[2], 16)}, ${parseInt(result[3], 16)}` : '37, 99, 235';
+    };
+    root.style.setProperty('--brand-primary-soft', `rgba(${hexToRgb(primaryColor)}, 0.12)`);
+    root.style.setProperty('--primary', primaryColor); // Compatibility
+    root.style.setProperty('--primary-subtle', `rgba(${hexToRgb(primaryColor)}, 0.12)`);
+    root.style.setProperty('--primary-light', `rgba(${hexToRgb(primaryColor)}, 0.12)`);
+
+    const name = currentOrg?.name || currentOrg?.branding?.name || 'StavbaCore CRM';
+    const logoUrl = currentOrg?.branding?.logoUrl;
+    
+    document.title = `${name} | Executive OS`;
+    if (logoUrl) {
+      const link: HTMLLinkElement = document.querySelector("link[rel*='icon']") || document.createElement('link');
+      link.type = 'image/png';
+      link.rel = 'icon';
+      link.href = logoUrl;
+      document.head.appendChild(link);
+    }
+  }, [currentOrg]);
 
   // Initialize Auth and Organization data
   useEffect(() => {

@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { useBranding } from '@/hooks/useBranding';
 import { useOrganization } from '@/context/OrganizationContext';
 import { canManageCompany } from '@/src/app/permissions';
 import { 
@@ -25,8 +24,9 @@ import { CompanyBranding } from '@/types';
 import { ExportZipModal } from '@/components/ExportZipModal';
 
 export const OwnerSettingsPage: React.FC = () => {
-  const { dbUser } = useOrganization();
-  const { branding, updateBranding, resetToDefault } = useBranding();
+  
+  const { dbUser, currentOrg, updateBrandingAdmin } = useOrganization();
+  const branding = currentOrg?.branding || {};
 
   const [formData, setFormData] = useState<CompanyBranding>({ ...branding });
   const [newService, setNewService] = useState('');
@@ -40,17 +40,17 @@ export const OwnerSettingsPage: React.FC = () => {
       alert("Nemáte oprávnění spravovat firmu.");
       return;
     }
-    updateBranding(formData);
+    updateBrandingAdmin(currentOrg?.id || '', formData.name, formData.primaryColor, formData.logoUrl);
     setSavedSuccess(true);
     setTimeout(() => setSavedSuccess(false), 3000);
   };
 
   const handleAddService = () => {
     if (!newService.trim()) return;
-    if (formData.services.includes(newService.trim())) return;
+    if ((formData.services || []).includes(newService.trim())) return;
     setFormData({
       ...formData,
-      services: [...formData.services, newService.trim()]
+      services: [...(formData.services || []), newService.trim()]
     });
     setNewService('');
   };
@@ -58,7 +58,7 @@ export const OwnerSettingsPage: React.FC = () => {
   const handleRemoveService = (service: string) => {
     setFormData({
       ...formData,
-      services: formData.services.filter(s => s !== service)
+      services: (formData.services || []).filter(s => s !== service)
     });
   };
 
@@ -274,7 +274,7 @@ export const OwnerSettingsPage: React.FC = () => {
           </h2>
 
           <div className="flex flex-wrap gap-2">
-            {formData.services.map((srv) => (
+            {(formData.services || []).map((srv) => (
               <span
                 key={srv}
                 className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-50 border border-slate-200 text-xs font-bold text-amber-400 shadow-inner"
@@ -343,7 +343,7 @@ export const OwnerSettingsPage: React.FC = () => {
         <div className="flex items-center justify-between pt-2">
           <button
             type="button"
-            onClick={resetToDefault}
+            onClick={() => updateBrandingAdmin(currentOrg?.id || '', '', '#2563eb', '')}
             className="px-4 py-3 rounded-2xl bg-white hover:bg-slate-800 border border-slate-200 text-xs font-bold text-slate-500 hover:text-slate-900 transition-all flex items-center gap-2"
           >
             <RefreshCw className="w-4 h-4" />

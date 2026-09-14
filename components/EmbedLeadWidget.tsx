@@ -1,7 +1,7 @@
+import { useOrganization } from '@/context/OrganizationContext';
 import React from 'react';
 import { X } from 'lucide-react';
 import { CompanyBranding } from '../types';
-import { useBranding } from '@/hooks/useBranding';
 import { EnterpriseInquiryForm } from './EnterpriseInquiryForm';
 
 export interface EmbedLeadWidgetProps {
@@ -20,7 +20,8 @@ export const EmbedLeadWidget: React.FC<EmbedLeadWidgetProps> = ({
   onSubmitLead,
   customColor,
 }) => {
-  const { branding, palette } = useBranding();
+  const { currentOrg } = useOrganization();
+  const branding = currentOrg?.branding || {};
   const activeColor = customColor || branding.primaryColor || propBranding.primaryColor || '#2563eb';
   const activeCompanyName = branding.name || propBranding.name || 'Stavební Firma';
 

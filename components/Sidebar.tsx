@@ -17,7 +17,6 @@ import {
   ChevronRight
 } from 'lucide-react';
 import { useOrganization } from '../context/OrganizationContext';
-import { useBranding } from '../hooks/useBranding';
 
 interface SidebarProps {
   currentTab: string;
@@ -32,8 +31,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
   setCurrentTab, 
   onOpenDemoGenerator
 }) => {
-  const { currentOrg, dbUser, user, logout } = useOrganization();
-  const { palette, branding } = useBranding();
+  const { dbUser, user, logout, currentOrg } = useOrganization();
+  const branding = currentOrg?.branding || {};
+  
 
   const activeCompanyName = currentOrg?.name || branding?.name || 'Stavební Firma';
 

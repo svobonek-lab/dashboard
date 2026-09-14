@@ -1,3 +1,4 @@
+import { useOrganization } from '@/context/OrganizationContext';
 import React, { useState, useEffect } from 'react';
 import { 
   TrendingUp, 
@@ -32,7 +33,6 @@ import {
   HardHat
 } from 'lucide-react';
 import { CompanyBranding, Lead } from '../types';
-import { useBranding } from '@/hooks/useBranding';
 
 interface OwnerDashboardProps {
   branding: CompanyBranding;
@@ -79,7 +79,8 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
   onSelectLead,
   onNavigateTab
 }) => {
-  const { branding, palette, brandStyles } = useBranding();
+  const { currentOrg } = useOrganization();
+  const branding = currentOrg?.branding || {};
   const [aiInsightIndex, setAiInsightIndex] = useState(0);
 
   const activeCompanyName = branding.name || propBranding.name || 'Vaše Stavební Firma';
@@ -114,14 +115,14 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
       <div 
         className="p-8 rounded-[28px] border shadow-sm relative overflow-hidden transition-all duration-300"
         style={{
-          background: `linear-gradient(135deg, #FFFFFF 0%, ${palette.primarySubtle} 60%, ${palette.primaryLight} 100%)`,
-          borderColor: palette.primaryBorder,
+          background: `linear-gradient(135deg, #FFFFFF 0%, ${'var(--brand-primary-soft)'} 60%, ${'var(--brand-primary-soft)'} 100%)`,
+          borderColor: 'var(--border)',
           boxShadow: `0 8px 30px -6px rgba(15, 23, 42, 0.05)`
         }}
       >
         <div 
           className="absolute -top-24 -right-24 w-80 h-80 rounded-full blur-3xl opacity-40 pointer-events-none"
-          style={{ backgroundColor: palette.primary }}
+          style={{ backgroundColor: 'var(--brand-primary)' }}
         ></div>
 
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 relative z-10">
@@ -129,7 +130,7 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
             <div className="flex items-center gap-3">
               <div 
                 className="w-12 h-12 rounded-2xl flex items-center justify-center text-white shadow-lg"
-                style={{ backgroundColor: palette.primary }}
+                style={{ backgroundColor: 'var(--brand-primary)' }}
               >
                 <HardHat className="w-6 h-6" />
               </div>
@@ -140,7 +141,7 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
                   </span>
                 </div>
                 <h1 className="text-3xl sm:text-4xl font-black text-slate-900 tracking-tight leading-tight">
-                  <span style={{ color: palette.primary }}>{activeCompanyName}</span> Executive
+                  <span style={{ color: 'var(--brand-primary)' }}>{activeCompanyName}</span> Executive
                 </h1>
               </div>
             </div>
@@ -156,16 +157,16 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
               onClick={() => onNavigateTab('quotes')}
               className="px-4 py-3 rounded-2xl text-xs font-bold bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 shadow-sm transition-all flex items-center gap-2 hover:border-slate-300 active:scale-[0.98]"
             >
-              <FileText className="w-4 h-4" style={{ color: palette.primary }} />
+              <FileText className="w-4 h-4" style={{ color: 'var(--brand-primary)' }} />
               <span>Vytvořit nabídku</span>
             </button>
             
             <button
               onClick={() => onNavigateTab('leads')}
               style={{
-                backgroundColor: palette.primary,
-                color: palette.textOnPrimary,
-                boxShadow: palette.primaryGlow
+                backgroundColor: 'var(--brand-primary)',
+                color: '#ffffff',
+                boxShadow: '0 4px 14px 0 rgba(0,0,0,0.1)'
               }}
               className="px-5 py-3 rounded-2xl text-xs font-black transition-all shadow-lg flex items-center gap-2 active:scale-[0.98]"
             >
@@ -185,8 +186,8 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
           unit="tis. Kč"
           trend={<ArrowUpRight className="w-4 h-4" />}
           subtext="+24.5% forecast do konce měsíce"
-          color={palette.primary}
-          subtleColor={palette.primarySubtle}
+          color={'var(--brand-primary)'}
+          subtleColor={'var(--brand-primary-soft)'}
           onClick={() => onNavigateTab('analytics')}
         />
 
@@ -196,8 +197,8 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
           value={leads.length}
           unit="zakázek"
           subtext={`${newLeadsCount} nových • ${quoteCount} v nabídce • ${inProgressCount} na stavbě`}
-          color={palette.secondary}
-          subtleColor={palette.secondaryLight}
+          color={'var(--muted)'}
+          subtleColor={'var(--surface-tertiary)'}
           onClick={() => onNavigateTab('leads')}
         />
 
@@ -219,8 +220,8 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
           value="76%"
           unit="konverze"
           subtext="Google Reviews: 4.9 ★ (48 recenzí)"
-          color={palette.primary}
-          subtleColor={palette.primarySubtle}
+          color={'var(--brand-primary)'}
+          subtleColor={'var(--brand-primary-soft)'}
           onClick={() => onNavigateTab('analytics')}
         />
       </div>
@@ -232,15 +233,15 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
         <div className="bg-white p-6 rounded-[24px] border border-slate-200 shadow-sm hover:shadow-md transition-all space-y-4">
           <div className="flex items-center justify-between">
             <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
-              <Users className="w-4 h-4" style={{ color: palette.primary }} />
+              <Users className="w-4 h-4" style={{ color: 'var(--brand-primary)' }} />
               Vytížení týmu & Dispečink
             </h3>
             <span 
               className="text-[10px] font-bold px-2.5 py-0.5 rounded-full"
               style={{
-                backgroundColor: palette.primarySubtle,
-                color: palette.primary,
-                border: `1px solid ${palette.primaryBorder}`
+                backgroundColor: 'var(--brand-primary-soft)',
+                color: 'var(--brand-primary)',
+                border: `1px solid ${'var(--border)'}`
               }}
             >
               Průměr 82%
@@ -262,7 +263,7 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
                     <span className="font-bold text-slate-900">{emp.name}</span>
                     <span className="text-[10px] text-slate-500 ml-1.5">({emp.role})</span>
                   </div>
-                  <span className="font-mono font-bold text-[11px]" style={{ color: palette.primary }}>
+                  <span className="font-mono font-bold text-[11px]" style={{ color: 'var(--brand-primary)' }}>
                     {emp.load}%
                   </span>
                 </div>
@@ -270,7 +271,7 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
                 <div className="w-full bg-slate-200 h-1.5 rounded-full overflow-hidden">
                   <div 
                     className="h-full rounded-full transition-all" 
-                    style={{ width: `${emp.load}%`, backgroundColor: palette.primary }}
+                    style={{ width: `${emp.load}%`, backgroundColor: 'var(--brand-primary)' }}
                   />
                 </div>
                 
@@ -278,7 +279,7 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
                   <span>Úkol: {emp.task}</span>
                   <span 
                     className="font-bold cursor-pointer hover:underline" 
-                    style={{ color: palette.primary }}
+                    style={{ color: 'var(--brand-primary)' }}
                     onClick={() => onNavigateTab('employees')}
                   >
                     Přiřadit →
@@ -293,13 +294,13 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
         <div className="bg-white p-6 rounded-[24px] border border-slate-200 shadow-sm hover:shadow-md transition-all space-y-4">
           <div className="flex items-center justify-between">
             <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
-              <Calendar className="w-4 h-4" style={{ color: palette.primary }} />
+              <Calendar className="w-4 h-4" style={{ color: 'var(--brand-primary)' }} />
               Plánované výjezdy & Zaměření
             </h3>
             <button 
               onClick={() => onNavigateTab('calendar')}
               className="text-[10px] font-bold hover:underline"
-              style={{ color: palette.primary }}
+              style={{ color: 'var(--brand-primary)' }}
             >
               Zobrazit vše →
             </button>
@@ -318,9 +319,9 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
                   <span 
                     className="text-xs font-mono font-bold px-2 py-0.5 rounded border"
                     style={{
-                      backgroundColor: palette.primaryLight,
-                      color: palette.primary,
-                      borderColor: palette.primaryBorder
+                      backgroundColor: 'var(--brand-primary-soft)',
+                      color: 'var(--brand-primary)',
+                      borderColor: 'var(--border)'
                     }}
                   >
                     {visit.time}
@@ -340,7 +341,7 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
         <div className="bg-white p-6 rounded-[24px] border border-slate-200 shadow-sm hover:shadow-md transition-all space-y-4">
           <div className="flex items-center justify-between">
             <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
-              <PieChart className="w-4 h-4" style={{ color: palette.secondary }} />
+              <PieChart className="w-4 h-4" style={{ color: 'var(--muted)' }} />
               Zdroje poptávek (Tento měsíc)
             </h3>
             <span className="text-[10px] font-bold text-slate-500">Celkem 28</span>
@@ -348,9 +349,9 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
 
           <div className="space-y-3 pt-2">
             {[
-              { source: `Embed Widget na webu ${activeCompanyName}`, count: 14, pct: 50, color: palette.primary },
+              { source: `Embed Widget na webu ${activeCompanyName}`, count: 14, pct: 50, color: 'var(--brand-primary)' },
               { source: 'Doporučení od stávajících klientů', count: 8, pct: 28, color: '#10B981' },
-              { source: 'Google & Organické vyhledávání', count: 4, pct: 15, color: palette.secondary },
+              { source: 'Google & Organické vyhledávání', count: 4, pct: 15, color: 'var(--muted)' },
               { source: 'Sociální sítě & Reklama', count: 2, pct: 7, color: '#8B5CF6' }
             ].map((src, i) => (
               <div key={i} className="space-y-1 text-xs">
@@ -375,27 +376,27 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
         <div className="bg-white p-6 rounded-[24px] border border-slate-200 shadow-sm hover:shadow-md transition-all lg:col-span-2 space-y-4">
           <div className="flex items-center justify-between">
             <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
-              <Activity className="w-4 h-4" style={{ color: palette.primary }} />
+              <Activity className="w-4 h-4" style={{ color: 'var(--brand-primary)' }} />
               Živý přehled ze staveb (Real-time deník)
             </h3>
             <span 
               className="text-[10px] font-bold flex items-center gap-1.5 px-3 py-1 rounded-full"
               style={{
-                backgroundColor: palette.primarySubtle,
-                color: palette.primary,
-                border: `1px solid ${palette.primaryBorder}`
+                backgroundColor: 'var(--brand-primary-soft)',
+                color: 'var(--brand-primary)',
+                border: `1px solid ${'var(--border)'}`
               }}
             >
-              <span className="w-2 h-2 rounded-full animate-ping" style={{ backgroundColor: palette.primary }}></span>
+              <span className="w-2 h-2 rounded-full animate-ping" style={{ backgroundColor: 'var(--brand-primary)' }}></span>
               Live synchronizace
             </span>
           </div>
 
           <div className="space-y-2.5">
             {[
-              { time: '09:42', text: 'Petr Novotný dorazil na stavbu (Zahradní 12 - zahájení kotvení patek)', badgeColor: palette.primaryLight, textColor: palette.primary },
+              { time: '09:42', text: 'Petr Novotný dorazil na stavbu (Zahradní 12 - zahájení kotvení patek)', badgeColor: 'var(--brand-primary-soft)', textColor: 'var(--brand-primary)' },
               { time: '10:15', text: 'Investor Ing. Jan Svoboda nahrál 2 fotografie před montáží do klientského portálu', badgeColor: '#D1FAE5', textColor: '#065F46' },
-              { time: '11:06', text: 'Rozpočet POL-2026-0492 odsouhlasen & uhrazena záloha na materiál (220 tis. Kč)', badgeColor: palette.secondaryLight, textColor: palette.secondary },
+              { time: '11:06', text: 'Rozpočet POL-2026-0492 odsouhlasen & uhrazena záloha na materiál (220 tis. Kč)', badgeColor: 'var(--surface-tertiary)', textColor: 'var(--muted)' },
               { time: '11:22', text: `AI Dispatcher přiřadil novou poptávku z webu ${activeCompanyName} mistru Petrovi`, badgeColor: '#EDE9FE', textColor: '#5B21B6' },
               { time: '11:40', text: 'Zákazník Marta Dvořáková podepsal předávací protokol na dotykovém tabletu', badgeColor: '#D1FAE5', textColor: '#065F46' }
             ].map((act, i) => (
@@ -449,20 +450,20 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
       {/* Floating AI Insight Card with dynamic branding */}
       <div 
         className="fixed bottom-6 right-6 z-40 max-w-sm bg-white/95 backdrop-blur-md border p-4 rounded-2xl shadow-2xl text-slate-800 flex items-start gap-3"
-        style={{ borderColor: palette.primaryBorder }}
+        style={{ borderColor: 'var(--border)' }}
       >
         <div 
           className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 mt-0.5"
-          style={{ backgroundColor: palette.primarySubtle, color: palette.primary }}
+          style={{ backgroundColor: 'var(--brand-primary-soft)', color: 'var(--brand-primary)' }}
         >
           <Sparkles className="w-4 h-4" />
         </div>
         <div className="space-y-1 flex-1">
           <div className="flex items-center justify-between">
-            <span className="text-[11px] font-bold uppercase tracking-wider" style={{ color: palette.primary }}>
+            <span className="text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--brand-primary)' }}>
               Asistent stavby (AI)
             </span>
-            <span className="w-2 h-2 rounded-full animate-pulse" style={{ backgroundColor: palette.primary }}></span>
+            <span className="w-2 h-2 rounded-full animate-pulse" style={{ backgroundColor: 'var(--brand-primary)' }}></span>
           </div>
           <p className="text-xs text-slate-700 font-medium leading-relaxed">
             {aiInsights[aiInsightIndex]}

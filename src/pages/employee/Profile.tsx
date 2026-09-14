@@ -1,11 +1,11 @@
 import React from 'react';
 import { useOrganization } from '@/context/OrganizationContext';
-import { useBranding } from '@/hooks/useBranding';
 import { User, Phone, Mail, Award, Clock, HardHat, ShieldCheck, MapPin, CheckCircle2 } from 'lucide-react';
 
 export const EmployeeProfilePage: React.FC = () => {
   const { user, dbUser } = useOrganization();
-  const { branding } = useBranding();
+  const { currentOrg } = useOrganization();
+  const branding = currentOrg?.branding || {};
 
   return (
     <div className="space-y-6 text-slate-900 font-sans pb-12 max-w-lg mx-auto">

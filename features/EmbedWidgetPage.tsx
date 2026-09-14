@@ -273,7 +273,7 @@ export default function RootLayout({ children }) {
 
               <div className="bg-white px-6 py-1 rounded-xl text-[11px] text-slate-500 font-mono border border-slate-200 flex items-center gap-2">
                 <Globe className="w-3 h-3 text-slate-400" />
-                <span>https://www.{branding.name.toLowerCase().replace(/[^a-z0-9]/g, '')}-stavby.cz</span>
+                <span>https://www.{(branding?.name || 'Firma').toLowerCase().replace(/[^a-z0-9]/g, '')}-stavby.cz</span>
               </div>
 
               <div className="w-12" />
@@ -288,9 +288,9 @@ export default function RootLayout({ children }) {
                     className="w-7 h-7 rounded-lg flex items-center justify-center text-white font-bold text-xs"
                     style={{ backgroundColor: customPrimaryColor }}
                   >
-                    {branding.name.substring(0, 2).toUpperCase()}
+                    {(branding?.name || 'Firma').substring(0, 2).toUpperCase()}
                   </div>
-                  <span className="font-extrabold text-xs text-slate-900 tracking-tight">{branding.name}</span>
+                  <span className="font-extrabold text-xs text-slate-900 tracking-tight">{(branding?.name || 'Firma')}</span>
                 </div>
 
                 <div className="hidden sm:flex items-center gap-5 text-[11px] font-semibold text-slate-500">

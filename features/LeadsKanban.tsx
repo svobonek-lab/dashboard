@@ -3,7 +3,6 @@ import { Lead, LeadStatus } from '../types';
 import { MapPin, DollarSign, User, Plus, Phone, MessageSquare, ShieldCheck, Calendar, Clock, AlertTriangle } from 'lucide-react';
 import { canDeleteLead } from '../src/app/permissions';
 import { useOrganization } from '../context/OrganizationContext';
-import { useBranding } from '../hooks/useBranding';
 
 interface LeadsKanbanProps {
   leads: Lead[];
@@ -18,10 +17,10 @@ export const LeadsKanban: React.FC<LeadsKanbanProps> = ({
   onUpdateLeadStatus,
   onAddLead
 }) => {
-  const { palette } = useBranding();
+  
   
   const columns: { status: LeadStatus; label: string; color: string; badgeColor: string }[] = [
-    { status: 'New', label: 'Nová poptávka', color: 'border-blue-200 bg-blue-50 text-blue-700', badgeColor: 'bg-blue-100 text-blue-700 border-blue-200' },
+    { status: 'New', label: 'Nová poptávka', color: 'border-border bg-surface-secondary text-brand-primary', badgeColor: 'bg-brand-primary-soft text-brand-primary border-brand-primary-soft' },
     { status: 'Contacted', label: 'Kontaktováno', color: 'border-indigo-200 bg-indigo-50 text-indigo-700', badgeColor: 'bg-indigo-100 text-indigo-700 border-indigo-200' },
     { status: 'Quote', label: 'Rozpočet / Nabídka', color: 'border-amber-200 bg-amber-50 text-amber-700', badgeColor: 'bg-amber-100 text-amber-700 border-amber-200' },
     { status: 'In Progress', label: 'Realizace stavby', color: 'border-purple-200 bg-purple-50 text-purple-700', badgeColor: 'bg-purple-100 text-purple-700 border-purple-200' },
@@ -103,7 +102,7 @@ export const LeadsKanban: React.FC<LeadsKanbanProps> = ({
           <button
             onClick={() => setIsModalOpen(true)}
             className="px-5 py-3 rounded-2xl font-black text-xs shadow-md hover:shadow-lg transition-all flex items-center gap-2"
-            style={{ backgroundColor: palette.primary, color: palette.textOnPrimary }}
+            style={{ backgroundColor: 'var(--brand-primary)', color: '#ffffff' }}
           >
             <Plus className="w-4 h-4" />
             <span>Nová zakázka / Poptávka</span>
@@ -206,7 +205,7 @@ export const LeadsKanban: React.FC<LeadsKanbanProps> = ({
                 <button
                   type="submit"
                   className="px-6 py-3 rounded-xl font-extrabold shadow-md hover:shadow-lg transition-all"
-                  style={{ backgroundColor: palette.primary, color: palette.textOnPrimary }}
+                  style={{ backgroundColor: 'var(--brand-primary)', color: '#ffffff' }}
                 >
                   Vytvořit zakázku
                 </button>
@@ -246,7 +245,7 @@ export const LeadsKanban: React.FC<LeadsKanbanProps> = ({
                       className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 cursor-pointer space-y-4 group min-h-[190px] flex flex-col justify-between relative overflow-hidden"
                     >
                       {/* Subtle hover accent line */}
-                      <div className="absolute left-0 top-0 bottom-0 w-1.5 opacity-0 group-hover:opacity-100 transition-opacity" style={{ backgroundColor: palette.primary }}></div>
+                      <div className="absolute left-0 top-0 bottom-0 w-1.5 opacity-0 group-hover:opacity-100 transition-opacity" style={{ backgroundColor: 'var(--brand-primary)' }}></div>
 
                       {/* Top: Priority & Budget */}
                       <div className="flex items-center justify-between">
@@ -305,7 +304,7 @@ export const LeadsKanban: React.FC<LeadsKanbanProps> = ({
                             onSelectLead(lead);
                           }}
                           className="flex-1 py-2.5 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-all border shadow-sm hover:shadow active:scale-[0.98]"
-                          style={{ backgroundColor: palette.primarySubtle, color: palette.primary, borderColor: palette.primaryBorder }}
+                          style={{ backgroundColor: 'var(--brand-primary-soft)', color: 'var(--brand-primary)', borderColor: 'var(--border)' }}
                         >
                           <span>Otevřít</span>
                         </button>

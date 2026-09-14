@@ -1,6 +1,6 @@
+import { useOrganization } from '@/context/OrganizationContext';
 import React from 'react';
 import { EmbedWidgetPage } from '@/features/EmbedWidgetPage';
-import { useBranding } from '@/hooks/useBranding';
 import { useRouter } from '../../app/router';
 import { Lead } from '@/types';
 
@@ -9,7 +9,8 @@ interface OwnerWidgetPageProps {
 }
 
 export const OwnerWidgetPage: React.FC<OwnerWidgetPageProps> = ({ onAddLead }) => {
-  const { branding } = useBranding();
+  const { currentOrg } = useOrganization();
+  const branding = currentOrg?.branding || {};
   const { navigate } = useRouter();
 
   return (

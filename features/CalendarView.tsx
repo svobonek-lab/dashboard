@@ -44,19 +44,19 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ leads }) => {
           <div className="bg-slate-100 p-1 rounded-xl border border-slate-200 flex items-center text-xs">
             <button
               onClick={() => setViewMode('day')}
-              className={`px-3 py-1.5 rounded-lg font-bold transition-all ${viewMode === 'day' ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-600 hover:text-slate-900'}`}
+              className={`px-3 py-1.5 rounded-lg font-bold transition-all ${viewMode === 'day' ? 'bg-brand-primary text-white shadow-sm' : 'text-slate-600 hover:text-slate-900'}`}
             >
               Den
             </button>
             <button
               onClick={() => setViewMode('week')}
-              className={`px-3 py-1.5 rounded-lg font-bold transition-all ${viewMode === 'week' ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-600 hover:text-slate-900'}`}
+              className={`px-3 py-1.5 rounded-lg font-bold transition-all ${viewMode === 'week' ? 'bg-brand-primary text-white shadow-sm' : 'text-slate-600 hover:text-slate-900'}`}
             >
               Týden (Agenda)
             </button>
             <button
               onClick={() => setViewMode('month')}
-              className={`px-3 py-1.5 rounded-lg font-bold transition-all ${viewMode === 'month' ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-600 hover:text-slate-900'}`}
+              className={`px-3 py-1.5 rounded-lg font-bold transition-all ${viewMode === 'month' ? 'bg-brand-primary text-white shadow-sm' : 'text-slate-600 hover:text-slate-900'}`}
             >
               Měsíc
             </button>
@@ -65,7 +65,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ leads }) => {
           <button
             onClick={handleAutoSchedule}
             disabled={isAutoScheduling}
-            className="px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-md transition-all flex items-center gap-2"
+            className="px-4 py-2.5 rounded-xl bg-brand-primary hover:bg-brand-primary-dark text-white text-xs font-bold shadow-md transition-all flex items-center gap-2"
           >
             <Sparkles className={`w-4 h-4 ${isAutoScheduling ? 'animate-spin' : ''}`} />
             <span>{isAutoScheduling ? 'Optimalizace...' : 'Optimalizovat trasy (AI)'}</span>
@@ -92,9 +92,9 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ leads }) => {
               {/* Sticky Date Header */}
               <div className="sticky top-16 z-20 bg-slate-50/90 backdrop-blur-md py-3 px-4 rounded-2xl border border-slate-200 shadow-xs flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <div className={`w-3.5 h-3.5 rounded-full ${day.active ? 'bg-blue-600 ring-4 ring-blue-100' : 'bg-slate-400'}`} />
-                  <h3 className={`text-sm font-black ${day.active ? 'text-blue-900' : 'text-slate-800'}`}>{day.name}</h3>
-                  {day.active && <span className="px-2 py-0.5 rounded-md text-[10px] font-extrabold bg-blue-100 text-blue-700">Dnes</span>}
+                  <div className={`w-3.5 h-3.5 rounded-full ${day.active ? 'bg-brand-primary ring-4 ring-brand-primary-soft' : 'bg-slate-400'}`} />
+                  <h3 className={`text-sm font-black ${day.active ? 'text-text' : 'text-slate-800'}`}>{day.name}</h3>
+                  {day.active && <span className="px-2 py-0.5 rounded-md text-[10px] font-extrabold bg-brand-primary-soft text-brand-primary">Dnes</span>}
                 </div>
                 <div className="flex items-center gap-3">
                   {day.rain && (
@@ -116,7 +116,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ leads }) => {
                     className="bg-white p-5 rounded-[24px] border border-slate-200 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 space-y-4 group cursor-pointer relative"
                   >
                     {/* Timeline Dot */}
-                    <div className={`absolute -left-[31px] top-6 w-4 h-4 rounded-full border-4 border-white ${lead.status === 'Completed' ? 'bg-green-500' : lead.status === 'In Progress' ? 'bg-purple-500' : 'bg-blue-500'}`} />
+                    <div className={`absolute -left-[31px] top-6 w-4 h-4 rounded-full border-4 border-white ${lead.status === 'Completed' ? 'bg-green-500' : lead.status === 'In Progress' ? 'bg-purple-500' : 'bg-brand-primary'}`} />
 
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
@@ -126,7 +126,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ leads }) => {
                         <span className={`px-2.5 py-1 rounded-xl text-xs font-bold ${
                           lead.status === 'Completed' ? 'bg-green-100 text-green-700' : 
                           lead.status === 'In Progress' ? 'bg-purple-100 text-purple-700' : 
-                          'bg-blue-100 text-blue-700'
+                          'bg-brand-primary-soft text-brand-primary'
                         }`}>
                           {lead.status}
                         </span>

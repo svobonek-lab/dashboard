@@ -1,8 +1,9 @@
+import { useOrganization } from '@/context/OrganizationContext';
 import React from 'react';
 import { DocumentsPage } from '@/features/DocumentsPage';
-import { useBranding } from '@/hooks/useBranding';
 
 export const OwnerDocumentsPage: React.FC = () => {
-  const { branding } = useBranding();
+  const { currentOrg } = useOrganization();
+  const branding = currentOrg?.branding || {};
   return <DocumentsPage branding={branding} />;
 };

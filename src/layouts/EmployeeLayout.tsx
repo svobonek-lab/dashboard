@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { useOrganization } from '@/context/OrganizationContext';
-import { useBranding } from '@/hooks/useBranding';
 import { useRouter, Link } from '../app/router';
 import { 
   Briefcase, 
@@ -30,7 +29,8 @@ interface EmployeeLayoutProps {
 }
 
 export const EmployeeLayout: React.FC<EmployeeLayoutProps> = ({ children, leads = [] }) => {
-  const { branding } = useBranding();
+  const { currentOrg } = useOrganization();
+  const branding = currentOrg?.branding || {};
   const { user, dbUser, logout } = useOrganization();
   const { pathname, navigate, isActive } = useRouter();
   

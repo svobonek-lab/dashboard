@@ -1,14 +1,15 @@
+import { useOrganization } from '@/context/OrganizationContext';
 import React, { useState } from 'react';
 import { FileText, Download, Check, Plus, Trash2, Send, Percent, Calculator, Sparkles, History, CreditCard, ThumbsUp, MessageSquare } from 'lucide-react';
 import { CompanyBranding, QuoteItem } from '../types';
-import { useBranding } from '@/hooks/useBranding';
 
 interface QuotesPageProps {
   branding: CompanyBranding;
 }
 
 export const QuotesPage: React.FC<QuotesPageProps> = ({ branding: propBranding }) => {
-  const { branding, palette, brandStyles } = useBranding();
+  const { currentOrg } = useOrganization();
+  const branding = currentOrg?.branding || {};
   const activeCompanyName = branding.name || propBranding.name || 'Stavební Společnost';
   const activeCity = branding.city || propBranding.city || 'Praha';
 
@@ -118,9 +119,9 @@ export const QuotesPage: React.FC<QuotesPageProps> = ({ branding: propBranding }
           <button
             onClick={handleDownload}
             style={{
-              backgroundColor: palette.primary,
-              color: palette.textOnPrimary,
-              boxShadow: palette.primaryGlow
+              backgroundColor: 'var(--brand-primary)',
+              color: '#ffffff',
+              boxShadow: '0 4px 14px 0 rgba(0,0,0,0.1)'
             }}
             className="px-4 py-2.5 rounded-xl text-xs font-bold shadow-md flex items-center gap-2 transition-all active:scale-[0.98]"
           >
@@ -148,9 +149,9 @@ export const QuotesPage: React.FC<QuotesPageProps> = ({ branding: propBranding }
             <div 
               className="w-7 h-7 rounded-lg flex items-center justify-center border"
               style={{
-                backgroundColor: palette.primarySubtle,
-                borderColor: palette.primaryBorder,
-                color: palette.primary
+                backgroundColor: 'var(--brand-primary-soft)',
+                borderColor: 'var(--border)',
+                color: 'var(--brand-primary)'
               }}
             >
               <Sparkles className="w-4 h-4" />
@@ -164,9 +165,9 @@ export const QuotesPage: React.FC<QuotesPageProps> = ({ branding: propBranding }
             <button
               onClick={() => applySmartBuilder('Pergola')}
               style={{
-                backgroundColor: palette.primarySubtle,
-                borderColor: palette.primaryBorder,
-                color: palette.primary
+                backgroundColor: 'var(--brand-primary-soft)',
+                borderColor: 'var(--border)',
+                color: 'var(--brand-primary)'
               }}
               className="px-3.5 py-2 rounded-xl border text-xs font-bold transition-all shadow-xs flex items-center gap-1.5 hover:opacity-90"
             >
@@ -237,7 +238,7 @@ export const QuotesPage: React.FC<QuotesPageProps> = ({ branding: propBranding }
       <div 
         className="bg-white/95 p-10 rounded-[28px] border border-slate-200 shadow-2xl space-y-8 text-slate-800 relative overflow-hidden"
         style={{
-          borderTop: `4px solid ${palette.primary}`
+          borderTop: `4px solid ${'var(--brand-primary)'}`
         }}
       >
         {/* AI Summary Banner at Top of PDF */}
@@ -246,15 +247,15 @@ export const QuotesPage: React.FC<QuotesPageProps> = ({ branding: propBranding }
             <div 
               className="w-8 h-8 rounded-lg flex items-center justify-center border"
               style={{
-                backgroundColor: palette.primarySubtle,
-                borderColor: palette.primaryBorder,
-                color: palette.primary
+                backgroundColor: 'var(--brand-primary-soft)',
+                borderColor: 'var(--border)',
+                color: 'var(--brand-primary)'
               }}
             >
               <Sparkles className="w-4 h-4" />
             </div>
             <div>
-              <span className="text-[10px] font-bold uppercase tracking-wider" style={{ color: palette.primary }}>
+              <span className="text-[10px] font-bold uppercase tracking-wider" style={{ color: 'var(--brand-primary)' }}>
                 Shrnutí položkového rozpočtu
               </span>
               <p className="text-xs font-bold text-slate-800">„Kompletní montáž díla vč. materiálu a certifikované instalace.“</p>
@@ -272,8 +273,8 @@ export const QuotesPage: React.FC<QuotesPageProps> = ({ branding: propBranding }
               <div 
                 className="w-12 h-12 rounded-2xl flex items-center justify-center font-black text-xl shadow-md"
                 style={{
-                  backgroundColor: palette.primary,
-                  color: palette.textOnPrimary
+                  backgroundColor: 'var(--brand-primary)',
+                  color: '#ffffff'
                 }}
               >
                 {activeCompanyName.substring(0, 2).toUpperCase()}
@@ -287,7 +288,7 @@ export const QuotesPage: React.FC<QuotesPageProps> = ({ branding: propBranding }
           </div>
 
           <div className="text-right">
-            <h4 className="text-xl font-black" style={{ color: palette.primary }}>
+            <h4 className="text-xl font-black" style={{ color: 'var(--brand-primary)' }}>
               CENOVÁ NABÍDKA / ROZPOČET
             </h4>
             <p className="text-xs text-slate-500 mt-1">Číslo: Q-2026-0492 ({currentVersion})</p>
@@ -329,7 +330,7 @@ export const QuotesPage: React.FC<QuotesPageProps> = ({ branding: propBranding }
                   <td className="py-3 font-medium text-slate-800">{item.description}</td>
                   <td className="py-3 text-center text-slate-500">{item.quantity} {item.unit}</td>
                   <td className="py-3 text-right font-mono">{item.unitPrice.toLocaleString()} Kč</td>
-                  <td className="py-3 text-right font-bold font-mono" style={{ color: palette.primary }}>
+                  <td className="py-3 text-right font-bold font-mono" style={{ color: 'var(--brand-primary)' }}>
                     {(item.quantity * item.unitPrice).toLocaleString()} Kč
                   </td>
                   <td className="py-3 text-center">
@@ -361,9 +362,9 @@ export const QuotesPage: React.FC<QuotesPageProps> = ({ branding: propBranding }
             <button
               type="submit"
               style={{
-                backgroundColor: palette.primarySubtle,
-                borderColor: palette.primaryBorder,
-                color: palette.primary
+                backgroundColor: 'var(--brand-primary-soft)',
+                borderColor: 'var(--border)',
+                color: 'var(--brand-primary)'
               }}
               className="px-4 py-2.5 rounded-xl border text-xs font-bold transition-all flex items-center gap-1.5"
             >
@@ -390,7 +391,7 @@ export const QuotesPage: React.FC<QuotesPageProps> = ({ branding: propBranding }
               </div>
               <div className="flex justify-between text-base font-extrabold text-slate-900 pt-2 border-t border-slate-200">
                 <span>Celkem k úhradě:</span>
-                <span className="font-mono" style={{ color: palette.primary }}>
+                <span className="font-mono" style={{ color: 'var(--brand-primary)' }}>
                   {grandTotal.toLocaleString()} CZK
                 </span>
               </div>
@@ -414,9 +415,9 @@ export const QuotesPage: React.FC<QuotesPageProps> = ({ branding: propBranding }
             <button
               onClick={() => handleCustomerAction('deposit')}
               style={{
-                backgroundColor: palette.primary,
-                color: palette.textOnPrimary,
-                boxShadow: palette.primaryGlow
+                backgroundColor: 'var(--brand-primary)',
+                color: '#ffffff',
+                boxShadow: '0 4px 14px 0 rgba(0,0,0,0.1)'
               }}
               className="px-4 py-2.5 rounded-xl text-xs font-bold transition-all shadow-md flex items-center gap-1.5 active:scale-95"
             >
@@ -461,7 +462,7 @@ export const QuotesPage: React.FC<QuotesPageProps> = ({ branding: propBranding }
               </div>
             </div>
             <span className="text-[11px] font-bold text-slate-800 mt-1.5">Okamžitá QR platba zálohy</span>
-            <span className="text-[9px] font-mono font-semibold" style={{ color: palette.primary }}>
+            <span className="text-[9px] font-mono font-semibold" style={{ color: 'var(--brand-primary)' }}>
               {(grandTotal * 0.5).toLocaleString()} CZK • SPAYD
             </span>
           </div>

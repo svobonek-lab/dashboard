@@ -1,6 +1,6 @@
+import { useOrganization } from '@/context/OrganizationContext';
 import React from 'react';
 import { CommunicationCenterPage } from '@/features/CommunicationCenterPage';
-import { useBranding } from '@/hooks/useBranding';
 import { Lead } from '@/types';
 
 interface OwnerCommunicationPageProps {
@@ -8,6 +8,7 @@ interface OwnerCommunicationPageProps {
 }
 
 export const OwnerCommunicationPage: React.FC<OwnerCommunicationPageProps> = ({ leads }) => {
-  const { branding } = useBranding();
+  const { currentOrg } = useOrganization();
+  const branding = currentOrg?.branding || {};
   return <CommunicationCenterPage branding={branding} leads={leads} />;
 };

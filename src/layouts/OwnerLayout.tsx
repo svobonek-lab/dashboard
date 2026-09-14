@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { useOrganization } from '@/context/OrganizationContext';
-import { useBranding } from '@/hooks/useBranding';
 import { useRouter, Link } from '../app/router';
 import { 
   LayoutDashboard, 
@@ -47,11 +46,11 @@ export const OwnerLayout: React.FC<OwnerLayoutProps> = ({
   leads = [],
   onSelectLead
 }) => {
-  const { branding, updateBranding, palette, brandStyles } = useBranding();
+  const { currentOrg, updateBrandingAdmin } = useOrganization();
+  const branding = currentOrg?.branding || {};
   const { 
     user, 
     dbUser, 
-    currentOrg, 
     logout, 
     impersonatingOrgId, 
     stopImpersonation,
@@ -357,7 +356,7 @@ export const OwnerLayout: React.FC<OwnerLayoutProps> = ({
         isOpen={isDemoModalOpen}
         onClose={() => setIsDemoModalOpen(false)}
         onDemoGenerated={(newBranding) => {
-          updateBranding(newBranding);
+          updateBrandingAdmin(currentOrg?.id || '', newBranding.name, newBranding.primaryColor, newBranding.logoUrl);
           setIsDemoModalOpen(false);
         }}
       />
@@ -367,7 +366,7 @@ export const OwnerLayout: React.FC<OwnerLayoutProps> = ({
         onClose={() => setIsOnboardingOpen(false)}
         currentBranding={branding}
         onCompleteOnboarding={(updatedBranding) => {
-          updateBranding(updatedBranding);
+          updateBrandingAdmin(currentOrg?.id || '', updatedBranding.name, updatedBranding.primaryColor, updatedBranding.logoUrl);
           setIsOnboardingOpen(false);
         }}
       />
