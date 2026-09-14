@@ -74,7 +74,7 @@ export const WidgetIframePage: React.FC = () => {
           const { LocalSupabaseMock } = await import('../lib/supabase');
           const mockOrgs = LocalSupabaseMock.getOrganizations();
           const mockOrg = mockOrgs.find((o: any) => o.id === orgId) || mockOrgs[0];
-          setOrgData((mockOrg || { id: 'temp', name: 'Demo Organizace', primary_color: '#000000' }) as any);
+          setOrgData((mockOrg || { id: 'temp', name: 'Stavební Firma s.r.o.', primary_color: '#2563eb' }) as any);
         }
       } catch (e) {
         console.warn('Failed to load org for iframe', e);

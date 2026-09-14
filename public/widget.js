@@ -1,7 +1,7 @@
 (function() {
   // Prevent duplicate execution
-  if (window.__demofactory_widget_loaded) return;
-  window.__demofactory_widget_loaded = true;
+  if (window.__stavbacore_widget_loaded) return;
+  window.__stavbacore_widget_loaded = true;
 
   // 1. Identify the loader script tag to read attributes
   var script = document.currentScript || (function() {
@@ -15,14 +15,14 @@
   })();
 
   if (!script) {
-    console.error('DemoFactory Widget: Loader script not found.');
+    console.error('StavbaCore Widget: Loader script not found.');
     return;
   }
 
   // 2. Parse multi-tenant arguments
   var orgId = script.getAttribute('data-org');
   if (!orgId) {
-    console.error('DemoFactory Widget: Missing data-org attribute.');
+    console.error('StavbaCore Widget: Missing data-org attribute.');
     return;
   }
 
@@ -41,7 +41,7 @@
   // 3. Create the iframe element (hidden by default)
   var iframe = document.createElement('iframe');
   iframe.src = rootUrl + '/widget-iframe?org=' + encodeURIComponent(orgId) + '&color=' + encodeURIComponent(btnColor);
-  iframe.id = 'demofactory-widget-iframe';
+  iframe.id = 'stavbacore-widget-iframe';
   iframe.style.position = 'fixed';
   iframe.style.zIndex = '2147483647'; // Maximum possible z-index
   iframe.style.border = 'none';

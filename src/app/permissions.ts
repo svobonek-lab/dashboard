@@ -138,6 +138,11 @@ export const canAccessAnalytics = (role?: string | null): boolean => {
   return ROLE_PERMISSIONS[r]?.canAccessAnalytics ?? false;
 };
 
+export const canManageIntegrations = (role?: string | null): boolean => {
+  const r = (role as UserRole) || 'owner';
+  return ROLE_PERMISSIONS[r]?.canManageIntegrations ?? false;
+};
+
 export const getDefaultRouteForRole = (role?: string | null): string => {
   if (role === 'super_admin') return '/admin';
   if (role === 'employee') return '/employee';

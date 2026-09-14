@@ -33,6 +33,8 @@ import { OwnerDocumentsPage } from './pages/owner/Documents';
 import { OwnerCommunicationPage } from './pages/owner/Communication';
 import { OwnerWidgetPage } from './pages/owner/Widget';
 import { OwnerSettingsPage } from './pages/owner/Settings';
+import { Integrations } from './pages/owner/Integrations';
+import { SynologyNAS } from './pages/owner/SynologyNAS';
 
 // Employee Pages
 import { EmployeeDashboardPage } from './pages/employee/Dashboard';
@@ -357,6 +359,10 @@ function AppContent() {
           <OwnerCommunicationPage leads={leads} />
         ) : pathname === '/widget' ? (
           <OwnerWidgetPage onAddLead={handleAddLead} />
+        ) : pathname === '/integrations' ? (
+          <Integrations leads={leads} employees={employees} onAddLead={handleAddLead} />
+        ) : pathname === '/integrations/synology' ? (
+          <SynologyNAS leads={leads} employees={employees} onAddLead={handleAddLead} />
         ) : pathname === '/settings' ? (
           <OwnerSettingsPage />
         ) : (

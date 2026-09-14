@@ -195,7 +195,7 @@ export const AuditCard: React.FC<AuditCardProps> = ({
       doc.setFontSize(9);
       doc.setTextColor(148, 163, 184);
       setNormal();
-      doc.text('Generováno systémem DemoFactory Enterprise AI. Důvěrný dokument určený výhradně pro majitele.', 20, 275);
+      doc.text('Generováno systémem StavbaCore Enterprise AI. Důvěrný dokument určený výhradně pro majitele.', 20, 275);
 
       // ================= PAGE 2: BOTTLENECKS & RECOMMENDATIONS =================
       doc.addPage();
@@ -617,7 +617,7 @@ export const AuditCard: React.FC<AuditCardProps> = ({
             {/* Before vs After comparison */}
             <div className="space-y-4">
               <h3 className="text-xs font-bold uppercase tracking-wider text-indigo-400 flex items-center gap-1.5">
-                <Layout className="w-4 h-4" /> Porovnání: Současný stav vs. DemoFactory CRM
+                <Layout className="w-4 h-4" /> Porovnání: Současný stav vs. StavbaCore CRM
               </h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
                 <div className="bg-rose-950/10 border border-rose-500/20 p-5 rounded-3xl space-y-3">

@@ -26,7 +26,9 @@ import {
   X,
   Menu,
   FileArchive,
-  Building2
+  Building2,
+  Zap,
+  HardDrive
 } from 'lucide-react';
 import { CRMNotification, CompanyBranding, Lead } from '@/types';
 import { NotificationCenter } from '@/components/NotificationCenter';
@@ -104,6 +106,8 @@ export const OwnerLayout: React.FC<OwnerLayoutProps> = ({
     { label: 'Dokumenty & Protokoly', path: '/documents', icon: FolderArchive },
     { label: 'Komunikační centrum', path: '/communication', icon: MessageSquare },
     { label: 'Embed Lead Widget', path: '/widget', icon: Code2 },
+    { label: 'Integrace & Datový Hub', path: '/integrations', icon: Zap },
+    { label: 'Synology NAS', path: '/integrations/synology', icon: HardDrive },
     { label: 'Klientský portál', path: '/portal', icon: Globe },
     { label: 'Nastavení & Export', path: '/settings', icon: Settings },
   ];

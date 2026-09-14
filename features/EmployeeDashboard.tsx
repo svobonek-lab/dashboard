@@ -9,25 +9,26 @@ import {
   Camera, 
   Mic, 
   Sparkles, 
-  Wifi,
-  WifiOff,
-  CloudUpload,
-  AlertTriangle,
-  Receipt,
-  FileText,
-  Check,
-  Maximize2,
-  Minimize2,
-  PenTool,
-  Ruler,
-  FileCheck,
-  UploadCloud,
-  Send,
-  RefreshCw,
-  Briefcase,
-  ListCheck,
-  Image as ImageIcon,
-  FileSpreadsheet
+  Wifi, 
+  WifiOff, 
+  CloudUpload, 
+  AlertTriangle, 
+  Receipt, 
+  FileText, 
+  Check, 
+  Maximize2, 
+  Minimize2, 
+  PenTool, 
+  Ruler, 
+  FileCheck, 
+  UploadCloud, 
+  Send, 
+  RefreshCw, 
+  Briefcase, 
+  ListCheck, 
+  Image as ImageIcon, 
+  FileSpreadsheet,
+  MessageSquare
 } from 'lucide-react';
 import { Lead, CompanyBranding } from '../types';
 
@@ -540,17 +541,30 @@ export const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({
           </div>
 
           {/* Contact & Navigation Buttons */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2">
             <a
               href={`tel:${activeLead.customerPhone}`}
-              className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80 hover:bg-slate-100 transition-all flex items-center gap-3 text-xs font-semibold text-slate-800"
+              className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200/80 hover:bg-slate-100 transition-all flex items-center gap-2.5 text-xs font-semibold text-slate-800"
             >
-              <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 border border-emerald-200 flex items-center justify-center shrink-0 font-bold">
-                <Phone className="w-5 h-5" />
+              <div className="w-9 h-9 rounded-xl bg-emerald-50 text-emerald-600 border border-emerald-200 flex items-center justify-center shrink-0 font-bold">
+                <Phone className="w-4 h-4" />
               </div>
-              <div>
-                <p className="text-[10px] text-slate-500 font-normal">Zavolat zákazníkovi</p>
-                <p className="truncate text-sm font-bold text-slate-900">{activeLead.customerName}</p>
+              <div className="min-w-0">
+                <p className="text-[10px] text-slate-500 font-normal">Zavolat</p>
+                <p className="truncate text-xs font-bold text-slate-900">{activeLead.customerPhone || activeLead.customerName}</p>
+              </div>
+            </a>
+
+            <a
+              href={`sms:${activeLead.customerPhone}`}
+              className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200/80 hover:bg-slate-100 transition-all flex items-center gap-2.5 text-xs font-semibold text-slate-800"
+            >
+              <div className="w-9 h-9 rounded-xl bg-indigo-50 text-indigo-600 border border-indigo-200 flex items-center justify-center shrink-0 font-bold">
+                <MessageSquare className="w-4 h-4" />
+              </div>
+              <div className="min-w-0">
+                <p className="text-[10px] text-slate-500 font-normal">Poslat SMS</p>
+                <p className="truncate text-xs font-bold text-slate-900">{activeLead.customerName}</p>
               </div>
             </a>
 
@@ -558,14 +572,14 @@ export const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({
               href={`https://maps.google.com/?q=${encodeURIComponent(activeLead.address)}`}
               target="_blank"
               rel="noreferrer"
-              className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80 hover:bg-slate-100 transition-all flex items-center gap-3 text-xs font-semibold text-slate-800"
+              className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200/80 hover:bg-slate-100 transition-all flex items-center gap-2.5 text-xs font-semibold text-slate-800"
             >
-              <div className="w-10 h-10 rounded-xl bg-brand-primary-soft text-brand-primary border border-brand-primary-soft flex items-center justify-center shrink-0 font-bold">
-                <Navigation className="w-5 h-5" />
+              <div className="w-9 h-9 rounded-xl bg-brand-primary-soft text-brand-primary border border-brand-primary-soft flex items-center justify-center shrink-0 font-bold">
+                <Navigation className="w-4 h-4" />
               </div>
-              <div>
-                <p className="text-[10px] text-slate-500 font-normal">Navigovat na stavbu</p>
-                <p className="text-sm font-bold text-slate-900">Spustit Google Maps</p>
+              <div className="min-w-0">
+                <p className="text-[10px] text-slate-500 font-normal">Navigovat</p>
+                <p className="text-xs font-bold text-slate-900">Google Maps</p>
               </div>
             </a>
           </div>

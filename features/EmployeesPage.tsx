@@ -11,7 +11,14 @@ import {
   Calendar, 
   MessageSquare, 
   ArrowRight,
-  UserCheck
+  UserCheck,
+  KeyRound,
+  Send,
+  Power,
+  PowerOff,
+  Copy,
+  Check,
+  ShieldCheck
 } from 'lucide-react';
 import { autoAssignEmployee } from '../lib/autoAssignment';
 import { generateRealisticLeads } from '../lib/demoData';
@@ -31,7 +38,16 @@ interface EmployeesPageProps {
 }
 
 export const EmployeesPage: React.FC<EmployeesPageProps> = ({ employees, branding, onEmployeeAdded }) => {
-  const { dbUser, fetchEmployees, currentOrg } = useOrganization();
+  const { 
+    dbUser, 
+    fetchEmployees, 
+    currentOrg, 
+    inviteEmployee,
+    resendEmployeeInvite,
+    resetEmployeePassword,
+    deactivateEmployee,
+    deleteEmployee 
+  } = useOrganization();
   const [selectedLeadId, setSelectedLeadId] = useState<string>('lead-1');
   const [assignmentResult, setAssignmentResult] = useState<any | null>(null);
   const [isAssignSuccessModalOpen, setIsAssignSuccessModalOpen] = useState(false);
@@ -39,13 +55,20 @@ export const EmployeesPage: React.FC<EmployeesPageProps> = ({ employees, brandin
   const [isInviting, setIsInviting] = useState(false);
   const [inviteError, setInviteError] = useState<string | null>(null);
   const [createdCredentials, setCreatedCredentials] = useState<{ email: string; password: string; name: string } | null>(null);
+  const [actionNotice, setActionNotice] = useState<string | null>(null);
+  const [copiedPassword, setCopiedPassword] = useState(false);
+  
+  const [resetModalState, setResetModalState] = useState<{ isOpen: boolean; employee: Employee | null; newPassword?: string; isSubmitting?: boolean }>({
+    isOpen: false,
+    employee: null
+  });
+
   const [inviteForm, setInviteForm] = useState({ 
     name: '', 
     email: '', 
     password: `Stavba${Math.floor(1000 + Math.random() * 9000)}`, 
     specialization: 'Stavební technik' 
   });
-  const { inviteEmployee } = useOrganization();
 
   const handleInviteSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -102,12 +125,71 @@ export const EmployeesPage: React.FC<EmployeesPageProps> = ({ employees, brandin
     setIsAssignSuccessModalOpen(true);
   };
 
-  const handleDeleteEmployee = (id: string) => {
+  const handleResendInvite = async (emp: Employee) => {
+    try {
+      const res = await resendEmployeeInvite(emp.id);
+      setActionNotice(res.message);
+      setTimeout(() => setActionNotice(null), 5000);
+    } catch (err: any) {
+      alert(err?.message || 'Chyba při odesílání pozvánky');
+    }
+  };
+
+  const handleOpenResetPassword = (emp: Employee) => {
+    const generated = `Stavba${Math.floor(1000 + Math.random() * 9000)}!`;
+    setResetModalState({
+      isOpen: true,
+      employee: emp,
+      newPassword: generated
+    });
+    setCopiedPassword(false);
+  };
+
+  const handleConfirmResetPassword = async () => {
+    if (!resetModalState.employee || !resetModalState.newPassword) return;
+    setResetModalState(prev => ({ ...prev, isSubmitting: true }));
+    try {
+      await resetEmployeePassword(resetModalState.employee.id, resetModalState.newPassword);
+      setActionNotice(`Heslo pro ${resetModalState.employee.name} (${resetModalState.employee.email}) bylo úspěšně nastaveno na: ${resetModalState.newPassword}`);
+      setTimeout(() => setActionNotice(null), 8000);
+    } catch (err: any) {
+      alert(err?.message || 'Chyba při resetování hesla');
+    } finally {
+      setResetModalState(prev => ({ ...prev, isSubmitting: false }));
+    }
+  };
+
+  const handleToggleDeactivate = async (emp: Employee) => {
+    const isCurrentlyActive = (emp as any).active !== false && (emp.status as string) !== 'Inactive';
+    const confirmMsg = isCurrentlyActive 
+      ? `Opravdu chcete deaktivovat zaměstnance ${emp.name}? Účet bude dočasně zablokován.`
+      : `Chcete znovu aktivovat zaměstnance ${emp.name}?`;
+    if (!window.confirm(confirmMsg)) return;
+
+    try {
+      await deactivateEmployee(emp.id, isCurrentlyActive);
+      await fetchEmployees();
+      setActionNotice(`Účet zaměstnance ${emp.name} byl ${isCurrentlyActive ? 'deaktivován' : 'aktivován'}.`);
+      setTimeout(() => setActionNotice(null), 4000);
+    } catch (err: any) {
+      alert(err?.message || 'Chyba při změně stavu');
+    }
+  };
+
+  const handleDeleteEmployee = async (id: string) => {
     if (!canDeleteEmployees(dbUser?.role)) {
       alert("Nemáte oprávnění odstraňovat zaměstnance z organizace.");
       return;
     }
-    alert(`Odstranění zaměstnance s ID: ${id}`);
+    if (!window.confirm("Opravdu chcete smazat tohoto zaměstnance z organizace?")) return;
+    try {
+      await deleteEmployee(id);
+      await fetchEmployees();
+      setActionNotice("Zaměstnanec byl úspěšně odstraněn.");
+      setTimeout(() => setActionNotice(null), 4000);
+    } catch (err: any) {
+      alert(err?.message || 'Chyba při mazání');
+    }
   };
 
   return (
@@ -366,10 +448,135 @@ export const EmployeesPage: React.FC<EmployeesPageProps> = ({ employees, brandin
                   <span>Přiřadit</span>
                 </AppButton>
               </div>
+
+              {/* Owner/Admin Account Actions */}
+              <div className="pt-3 border-t border-border space-y-1.5">
+                <div className="flex items-center justify-between text-[11px] font-bold text-muted">
+                  <span className="flex items-center gap-1">
+                    <ShieldCheck className="w-3 h-3 text-brand-primary" />
+                    Správa účtu
+                  </span>
+                  <span className={`text-[10px] px-1.5 py-0.5 rounded font-bold ${(emp as any).active !== false ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-red-50 text-red-700 border border-red-200'}`}>
+                    {(emp as any).active !== false ? 'Aktivní' : 'Deaktivován'}
+                  </span>
+                </div>
+                <div className="grid grid-cols-2 gap-1.5 text-[11px]">
+                  <button
+                    type="button"
+                    onClick={() => handleResendInvite(emp)}
+                    className="py-1.5 px-2 rounded-lg bg-surface-secondary hover:bg-surface-tertiary text-text font-semibold flex items-center justify-center gap-1 border border-border transition-colors cursor-pointer"
+                  >
+                    <Send className="w-3 h-3 text-brand-primary" />
+                    <span>Znovu pozvat</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleOpenResetPassword(emp)}
+                    className="py-1.5 px-2 rounded-lg bg-surface-secondary hover:bg-surface-tertiary text-text font-semibold flex items-center justify-center gap-1 border border-border transition-colors cursor-pointer"
+                  >
+                    <KeyRound className="w-3 h-3 text-brand-primary" />
+                    <span>Reset hesla</span>
+                  </button>
+                </div>
+                <div className="flex items-center gap-1.5 pt-1">
+                  <button
+                    type="button"
+                    onClick={() => handleToggleDeactivate(emp)}
+                    className="flex-1 py-1.5 px-2 rounded-lg text-[10px] font-bold text-slate-700 hover:text-slate-900 bg-surface-secondary hover:bg-surface-tertiary border border-border transition-colors flex items-center justify-center gap-1 cursor-pointer"
+                  >
+                    {(emp as any).active !== false ? (
+                      <>
+                        <PowerOff className="w-3 h-3 text-amber-600" />
+                        <span>Deaktivovat</span>
+                      </>
+                    ) : (
+                      <>
+                        <Power className="w-3 h-3 text-emerald-600" />
+                        <span>Aktivovat účet</span>
+                      </>
+                    )}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleDeleteEmployee(emp.id)}
+                    className="p-1.5 rounded-lg text-slate-400 hover:text-red-600 bg-surface-secondary hover:bg-red-50 border border-border transition-colors cursor-pointer"
+                    title="Odstranit zaměstnance"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              </div>
             </AppCard>
           );
         })}
       </div>
+
+      {/* Action Notice Toast */}
+      {actionNotice && (
+        <div className="fixed bottom-6 right-6 z-50 bg-slate-900 text-white px-4 py-3 rounded-2xl shadow-xl border border-slate-700 text-xs font-semibold flex items-center gap-2.5 animate-in fade-in slide-in-from-bottom-2">
+          <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+          <span>{actionNotice}</span>
+        </div>
+      )}
+
+      {/* Password Reset Modal */}
+      <AppModal
+        isOpen={resetModalState.isOpen}
+        onClose={() => setResetModalState({ isOpen: false, employee: null })}
+        title="Reset hesla zaměstnance"
+      >
+        <div className="space-y-4 py-2 text-left font-sans text-xs">
+          <p className="text-slate-600">
+            Zadejte nebo vygenerujte nové heslo pro zaměstnance <strong>{resetModalState.employee?.name}</strong> ({resetModalState.employee?.email}).
+          </p>
+          <div className="space-y-1.5">
+            <label className="font-bold text-slate-700">Nové heslo</label>
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={resetModalState.newPassword || ''}
+                onChange={(e) => setResetModalState(prev => ({ ...prev, newPassword: e.target.value }))}
+                className="flex-1 px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl font-mono text-xs font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-brand-primary"
+              />
+              <button
+                type="button"
+                onClick={() => {
+                  if (resetModalState.newPassword) {
+                    navigator.clipboard.writeText(resetModalState.newPassword);
+                    setCopiedPassword(true);
+                    setTimeout(() => setCopiedPassword(false), 2000);
+                  }
+                }}
+                className="px-3 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold flex items-center gap-1 border border-slate-200 cursor-pointer"
+                title="Kopírovat heslo"
+              >
+                {copiedPassword ? <Check className="w-4 h-4 text-emerald-600" /> : <Copy className="w-4 h-4" />}
+                <span>{copiedPassword ? 'Zkopírováno' : 'Kopírovat'}</span>
+              </button>
+            </div>
+          </div>
+          <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl text-[11px] text-amber-900 leading-relaxed">
+            Zaměstnanec bude moci toto heslo použít okamžitě pro přihlášení do rozhraní "Moje práce".
+          </div>
+          <div className="pt-3 flex gap-2">
+            <AppButton
+              variant="outline"
+              className="flex-1"
+              onClick={() => setResetModalState({ isOpen: false, employee: null })}
+            >
+              Zrušit
+            </AppButton>
+            <AppButton
+              variant="primary"
+              className="flex-1"
+              disabled={resetModalState.isSubmitting || !resetModalState.newPassword}
+              onClick={handleConfirmResetPassword}
+            >
+              {resetModalState.isSubmitting ? 'Ukládám...' : 'Nastavit heslo'}
+            </AppButton>
+          </div>
+        </div>
+      </AppModal>
 
       {/* Assign Success Modal */}
       <AppModal

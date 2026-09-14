@@ -59,7 +59,7 @@ export const ConnectionStatusBanner: React.FC = () => {
 
   const getModeLabel = () => {
     if (currentMode === 'synology') return 'Synology NAS (On-Premise)';
-    if (currentMode === 'local') return 'Lokální mezipaměť (Sandbox)';
+    if (currentMode === 'local') return 'Lokální zabezpečené úložiště';
     return 'Supabase Cloud (PostgreSQL)';
   };
 

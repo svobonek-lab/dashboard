@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Search, LayoutDashboard, Kanban, Calendar, Users, FileText, FolderOpen, BarChart3, Plus, Sparkles, X, ArrowRight } from 'lucide-react';
+import { Search, LayoutDashboard, Kanban, Calendar, Users, FileText, FolderOpen, BarChart3, Plus, Sparkles, X, ArrowRight, Zap, HardDrive } from 'lucide-react';
 import { CompanyBranding, Lead } from '../types';
 
 interface CommandPaletteProps {
@@ -51,6 +51,8 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
     { id: 'quotes', label: 'Quick Quote Builder & PDF', icon: FileText },
     { id: 'documents', label: 'Documents & Contracts', icon: FolderOpen },
     { id: 'analytics', label: 'Analytics & Revenue', icon: BarChart3 },
+    { id: 'integrations', label: 'Enterprise Integrations & Data Hub', icon: Zap },
+    { id: 'integrations/synology', label: 'Synology NAS Integration & Shared Folders', icon: HardDrive },
   ].filter(item => item.label.toLowerCase().includes(query.toLowerCase()));
 
   return (

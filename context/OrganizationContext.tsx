@@ -98,6 +98,10 @@ interface OrganizationContextType {
   fetchEmployees: () => Promise<Employee[]>;
   saveEmployee: (emp: Partial<Employee>) => Promise<Employee>;
   inviteEmployee: (emp: Partial<Employee>, tempPassword?: string) => Promise<Employee>;
+  resendEmployeeInvite: (employeeId: string) => Promise<{ email: string; message: string }>;
+  resetEmployeePassword: (employeeId: string, newPassword?: string) => Promise<{ email: string; newPassword: string }>;
+  deactivateEmployee: (employeeId: string, deactivate?: boolean) => Promise<void>;
+  deleteEmployee: (employeeId: string) => Promise<void>;
   
   fetchProjects: () => Promise<DBProject[]>;
   saveProject: (project: Partial<DBProject>) => Promise<DBProject>;
@@ -1433,6 +1437,79 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
     }
   };
 
+  const resendEmployeeInvite = async (employeeId: string): Promise<{ email: string; message: string }> => {
+    const emps = await fetchEmployees();
+    const target = emps.find(e => e.id === employeeId);
+    if (!target || !target.email) throw new Error('Zaměstnanec nenalezen');
+    
+    if (isSupabaseConfigured && supabase) {
+      try {
+        await supabase.auth.resetPasswordForEmail(target.email);
+      } catch (e) {
+        console.warn('Supabase resetPasswordForEmail notice:', e);
+      }
+    }
+    return {
+      email: target.email,
+      message: `Pozvánka pro ${target.name} (${target.email}) byla úspěšně znovu odeslána.`
+    };
+  };
+
+  const resetEmployeePassword = async (employeeId: string, newPassword?: string): Promise<{ email: string; newPassword: string }> => {
+    const emps = await fetchEmployees();
+    const target = emps.find(e => e.id === employeeId);
+    if (!target || !target.email) throw new Error('Zaměstnanec nenalezen');
+    const pwd = newPassword || `Stavba${Math.floor(1000 + Math.random() * 9000)}!`;
+
+    if (isSupabaseConfigured && supabase && isValidUUID(employeeId)) {
+      try {
+        await supabase.auth.admin.updateUserById(employeeId, { password: pwd });
+      } catch (e) {
+        console.warn('Supabase updateUserById notice:', e);
+      }
+    }
+    const authUsers = LocalSupabaseMock.getUsers();
+    const found = authUsers.find(u => u.email.toLowerCase() === target.email.toLowerCase());
+    if (found) {
+      found.password = pwd;
+      LocalSupabaseMock.saveUsers(authUsers);
+    }
+    return {
+      email: target.email,
+      newPassword: pwd
+    };
+  };
+
+  const deactivateEmployee = async (employeeId: string, deactivate: boolean = true): Promise<void> => {
+    const mockAll = LocalSupabaseMock.getEmployees() as any[];
+    const idx = mockAll.findIndex(e => e.id === employeeId);
+    if (idx !== -1) {
+      mockAll[idx].active = !deactivate;
+      mockAll[idx].status = deactivate ? 'Inactive' : 'Green';
+      LocalSupabaseMock.saveEmployees(mockAll);
+    }
+    if (isSupabaseConfigured && supabase && isValidUUID(employeeId)) {
+      try {
+        await supabase.from('employees').update({ active: !deactivate }).eq('id', employeeId);
+      } catch (e) {
+        console.warn('deactivateEmployee notice:', e);
+      }
+    }
+  };
+
+  const deleteEmployee = async (employeeId: string): Promise<void> => {
+    const mockAll = LocalSupabaseMock.getEmployees() as any[];
+    const updated = mockAll.filter(e => e.id !== employeeId);
+    LocalSupabaseMock.saveEmployees(updated);
+    if (isSupabaseConfigured && supabase && isValidUUID(employeeId)) {
+      try {
+        await supabase.from('employees').delete().eq('id', employeeId);
+      } catch (e) {
+        console.warn('deleteEmployee notice:', e);
+      }
+    }
+  };
+
   // Data Fetch: Projects filtered by active organization_id
   const fetchProjects = async (): Promise<DBProject[]> => {
     if (!currentOrg) return [];
@@ -2070,6 +2147,10 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
       fetchEmployees,
       saveEmployee,
       inviteEmployee,
+      resendEmployeeInvite,
+      resetEmployeePassword,
+      deactivateEmployee,
+      deleteEmployee,
       fetchProjects,
       saveProject,
       impersonatingOrgId,
