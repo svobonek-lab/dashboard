@@ -839,7 +839,7 @@ Systém je připraven k okamžitému provozu.
       {currentStep === 4 && (
         <div className="bg-white border border-slate-200 rounded-3xl p-8 space-y-6 shadow-xl">
           <div>
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/10 text-blue-400 border border-blue-500/20 text-xs font-bold mb-3">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-brand-primary-soft text-brand-primary border border-brand-primary/20 text-xs font-bold mb-3">
               <ShieldCheck className="w-3.5 h-3.5" />
               <span>Krok 4: Administrátorský účet majitele</span>
             </div>
@@ -1092,7 +1092,7 @@ Systém je připraven k okamžitému provozu.
                   </div>
                   <div className="p-3 bg-white rounded-xl border border-slate-200">
                     <span className="text-[10px] text-slate-500 block">Kapacita týmu</span>
-                    <span className="text-lg font-black text-blue-400">88 %</span>
+                    <span className="text-lg font-black text-brand-primary">88 %</span>
                   </div>
                 </div>
               </div>

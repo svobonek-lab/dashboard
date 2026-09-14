@@ -81,7 +81,7 @@ export const EmployeePhotosPage: React.FC<EmployeePhotosPageProps> = ({
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-xl font-bold text-slate-900 tracking-tight flex items-center gap-2">
-            <Camera className="w-5 h-5 text-blue-600" />
+            <Camera className="w-5 h-5 text-brand-primary" />
             Fotodokumentace ze stavby
           </h1>
           <p className="text-xs text-slate-500 mt-0.5">
@@ -107,7 +107,7 @@ export const EmployeePhotosPage: React.FC<EmployeePhotosPageProps> = ({
           </div>
         )}
 
-        <label className="cursor-pointer min-h-[44px] px-4 py-2.5 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs transition-all shadow-xs flex items-center justify-center gap-2">
+        <label className="cursor-pointer min-h-[44px] px-4 py-2.5 rounded-2xl bg-brand-primary hover:bg-brand-primary text-white font-bold text-xs transition-all shadow-xs flex items-center justify-center gap-2">
           <UploadCloud className="w-4 h-4" />
           <span>Vyfotit / Nahrát fotku</span>
           <input type="file" accept="image/*" capture="environment" className="hidden" onChange={handleUploadPhoto} />
@@ -129,7 +129,7 @@ export const EmployeePhotosPage: React.FC<EmployeePhotosPageProps> = ({
             key={cat}
             onClick={() => setCategory(cat)}
             className={`flex-1 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${
-              category === cat ? 'bg-white text-blue-700 shadow-xs border border-slate-200/80' : 'text-slate-600 hover:text-slate-900'
+              category === cat ? 'bg-white text-brand-primary shadow-xs border border-slate-200/80' : 'text-slate-600 hover:text-slate-900'
             }`}
           >
             {cat === 'All' ? 'Všechny fotky' : cat === 'Before' ? 'Před zahájením' : cat === 'During' ? 'Průběh montáže' : 'Hotové dílo'}
@@ -148,7 +148,7 @@ export const EmployeePhotosPage: React.FC<EmployeePhotosPageProps> = ({
               <div className="relative h-48 rounded-2xl overflow-hidden bg-slate-100">
                 <img src={photo.url} alt={photo.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
                 <span className={`absolute top-2.5 left-2.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold border shadow-xs ${
-                  photo.category === 'Before' ? 'bg-blue-50 border-blue-200 text-blue-700' :
+                  photo.category === 'Before' ? 'bg-brand-primary-soft border-brand-primary-soft text-brand-primary' :
                   photo.category === 'During' ? 'bg-amber-50 border-amber-200 text-amber-700' : 'bg-emerald-50 border-emerald-200 text-emerald-700'
                 }`}>
                   {photo.category === 'Before' ? 'Před montáží' : photo.category === 'During' ? 'V průběhu' : 'Hotové dílo'}

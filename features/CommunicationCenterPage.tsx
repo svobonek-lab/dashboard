@@ -250,7 +250,7 @@ export const CommunicationCenterPage: React.FC<CommunicationCenterPageProps> = (
                     onClick={() => handleApplyTemplate(type)}
                     className={`p-3.5 rounded-2xl border text-left transition-all flex flex-col justify-between space-y-2 ${
                       isSelected 
-                        ? 'border-blue-500 bg-blue-50/60 shadow-xs ring-2 ring-blue-500/20' 
+                        ? 'border-brand-primary bg-brand-primary-soft/60 shadow-xs ring-2 ring-brand-primary-soft' 
                         : 'border-slate-200 hover:border-slate-300 bg-slate-50'
                     }`}
                   >
@@ -275,7 +275,7 @@ export const CommunicationCenterPage: React.FC<CommunicationCenterPageProps> = (
                 rows={6}
                 value={customMessage || templates[selectedTemplate].text}
                 onChange={(e) => setCustomMessage(e.target.value)}
-                className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-4 text-xs font-medium text-slate-900 focus:outline-none focus:bg-white focus:border-blue-500 transition-all leading-relaxed"
+                className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-4 text-xs font-medium text-slate-900 focus:outline-none focus:bg-white focus:border-brand-primary transition-all leading-relaxed"
               />
               
               <div className="flex justify-end">
@@ -307,7 +307,7 @@ export const CommunicationCenterPage: React.FC<CommunicationCenterPageProps> = (
                   key={item.id} 
                   className={`p-3 rounded-2xl text-xs space-y-1 ${
                     item.sender === 'company' 
-                      ? 'bg-blue-50 border border-blue-100 text-slate-900 ml-4' 
+                      ? 'bg-brand-primary-soft border border-brand-primary-soft text-slate-900 ml-4' 
                       : 'bg-slate-100 border border-slate-200 text-slate-800 mr-4'
                   }`}
                 >

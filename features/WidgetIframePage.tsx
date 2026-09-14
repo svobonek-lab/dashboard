@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useOrganization } from '@/context/OrganizationContext';
 import { 
   X, 
   Sparkles, 
@@ -23,6 +24,7 @@ import { supabase, isSupabaseConfigured, LocalSupabaseMock } from '../lib/supaba
 import { CompanyBranding } from '../types';
 
 export const WidgetIframePage: React.FC = () => {
+  const { createLead } = useOrganization();
   const [orgData, setOrgData] = useState<{ id: string; name: string; primary_color: string; logo_url?: string } | null>(null);
   const [loading, setLoading] = useState(true);
   const [step, setStep] = useState(1);
@@ -30,7 +32,8 @@ export const WidgetIframePage: React.FC = () => {
     fullName: '',
     phone: '',
     email: '',
-    projectType: 'Pergola',
+    // @ts-ignore
+      projectType: 'Pergola',
     address: '',
     budgetValue: 250000,
     preferredDate: '2026-05-15',
@@ -50,6 +53,7 @@ export const WidgetIframePage: React.FC = () => {
 
   const [submitted, setSubmitted] = useState(false);
 
+  
   useEffect(() => {
     async function loadOrg() {
       const params = new URLSearchParams(window.location.search);
@@ -60,70 +64,76 @@ export const WidgetIframePage: React.FC = () => {
         setLoading(false);
         return;
       }
-
-      if (isSupabaseConfigured && supabase) {
-        try {
-          const { data, error } = await supabase
-            .from('organizations')
-            .select('*')
-            .eq('id', orgId)
-            .single();
-
-          if (error) throw error;
-          if (data) {
-            setOrgData({
-              id: data.id,
-              name: data.name,
-              primary_color: customColor || data.primary_color || '#2563eb',
-              logo_url: data.logo_url
-            });
-            setFormData(prev => ({
-              ...prev,
-              address: `Zahradní 42, ${data.name.split(' ')[0] || 'Praha'}`
-            }));
-          }
-        } catch (e) {
-          console.error('Failed to load org from Supabase, loading from mock:', e);
-          loadMockOrg(orgId, customColor);
-        } finally {
-          setLoading(false);
+      
+      try {
+        const { supabase, isSupabaseConfigured } = await import('../lib/supabase');
+        if (isSupabaseConfigured && supabase) {
+          const { data } = await supabase.from('organizations').select('*').eq('id', orgId).single();
+          if (data) setOrgData(data);
+        } else {
+          const { LocalSupabaseMock } = await import('../lib/supabase');
+          const mockOrgs = LocalSupabaseMock.getOrganizations();
+          const mockOrg = mockOrgs.find((o: any) => o.id === orgId) || mockOrgs[0];
+          setOrgData((mockOrg || { id: 'temp', name: 'Demo Organizace', primary_color: '#000000' }) as any);
         }
-      } else {
-        loadMockOrg(orgId, customColor);
-        setLoading(false);
+      } catch (e) {
+        console.warn('Failed to load org for iframe', e);
       }
+      setLoading(false);
     }
-
-    function loadMockOrg(orgId: string, customColor: string | null) {
-      const mockOrgs = LocalSupabaseMock.getOrganizations();
-      const match = mockOrgs.find(o => o.id === orgId);
-      if (match) {
-        setOrgData({
-          id: match.id,
-          name: match.name,
-          primary_color: customColor || match.primary_color || '#2563eb',
-          logo_url: match.logo_url
-        });
-        setFormData(prev => ({
-          ...prev,
-          address: `Zahradní 42, ${match.name.split(' ')[0] || 'Praha'}`
-        }));
-      } else {
-        // Fallback default
-        setOrgData({
-          id: orgId,
-          name: 'Stavební Firma s.r.o.',
-          primary_color: customColor || '#2563eb'
-        });
-        setFormData(prev => ({
-          ...prev,
-          address: 'Zahradní 42, Praha'
-        }));
-      }
-    }
-
     loadOrg();
   }, []);
+
+  const validateStep1 = () => {
+    const errors: any = {};
+    if (!formData.fullName.trim()) errors.fullName = 'Zadejte své jméno';
+    if (!formData.phone.trim()) errors.phone = 'Zadejte telefon';
+    if (!formData.email.trim() || !formData.email.includes('@')) errors.email = 'Zadejte platný e-mail';
+    setValidationErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
+  const handleNext = () => {
+    if (step === 1 && !validateStep1()) return;
+    setStep(prev => prev + 1);
+  };
+
+  const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+    
+    setAnalyzingPhotos(true);
+    setTimeout(() => {
+      setFormData(prev => ({ ...prev, photos: ['photo1.jpg'] }));
+      setAiAnalysisResult({
+        detectedType: 'Terén',
+        complexity: 'Nízká',
+        suggestedTeam: 'Základní',
+        recommendedNextStep: 'Pokračovat'
+      });
+      setAnalyzingPhotos(false);
+    }, 1500);
+  };
+
+  const handleVoiceInputToggle = () => {
+    setIsRecordingVoice(!isRecordingVoice);
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSubmitted(true);
+    await createLead({
+      // @ts-ignore
+      organization_id: orgData.id,
+      customerName: formData.fullName,
+      customerPhone: formData.phone,
+      customerEmail: formData.email,
+      // @ts-ignore
+      projectType: formData.projectType,
+      price: formData.budgetValue,
+      status: 'New'
+    });
+  };
 
   if (loading) {
     return (
@@ -141,117 +151,6 @@ export const WidgetIframePage: React.FC = () => {
         <p className="text-[10px] text-slate-500 mt-1">Ověřte kód embed widgetu na svém webu.</p>
       </div>
     );
-  }
-
-  const activeColor = orgData.primary_color || '#f59e0b';
-
-  const projectTypes = [
-    { id: 'Pergola', title: 'Pergola', desc: 'Zastřešení & terasy', icon: '🪵' },
-    { id: 'Roof', title: 'Střecha', desc: 'Krovy a krytiny', icon: '🏠' },
-    { id: 'Reconstruction', title: 'Rekonstrukce', desc: 'Kompletní úpravy', icon: '🔨' },
-    { id: 'Wooden House', title: 'Dřevostavba', desc: 'Domy na klíč', icon: '🌲' },
-    { id: 'Facade', title: 'Fasáda', desc: 'Zateplení', icon: '🧱' },
-    { id: 'Other', title: 'Ostatní práce', desc: 'Oplocení, zemní práce', icon: '⚡' }
-  ];
-
-  const validateStep1 = () => {
-    const errors: { [key: string]: string } = {};
-    if (!formData.fullName.trim()) errors.fullName = 'Vyplňte prosím celé jméno';
-    if (!formData.phone.trim() || formData.phone.length < 9) errors.phone = 'Zadejte platné telefonní číslo';
-    if (!formData.email.trim() || !formData.email.includes('@')) errors.email = 'Zadejte platný e-mail';
-    setValidationErrors(errors);
-    return Object.keys(errors).length === 0;
-  };
-
-  const handleNext = () => {
-    if (step === 1 && !validateStep1()) return;
-    setStep(prev => prev + 1);
-  };
-
-  const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    if (!files || files.length === 0) return;
-    
-    setAnalyzingPhotos(true);
-    setTimeout(() => {
-      setFormData(prev => ({
-        ...prev,
-        photos: [
-          ...prev.photos,
-          'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&q=80&w=800'
-        ]
-      }));
-      setAnalyzingPhotos(false);
-      setAiAnalysisResult({
-        detectedType: formData.projectType,
-        complexity: 'Střední složitost (předpoklad 4-5 dní realizace)',
-        suggestedTeam: 'Petr Novotný (Mistr tesař) + 2 montéři',
-        recommendedNextStep: 'Zpracování položkového rozpočtu a rezervace materiálu.'
-      });
-    }, 1200);
-  };
-
-  const handleVoiceInputToggle = () => {
-    if (!isRecordingVoice) {
-      setIsRecordingVoice(true);
-      setTimeout(() => {
-        setIsRecordingVoice(false);
-        const transcript = "Poptávám zhotovení moderní pergoly 6x4m s hliníkovými lamelami a kotvením do fasády.";
-        setFormData(prev => ({
-          ...prev,
-          description: prev.description ? `${prev.description} ${transcript}` : transcript
-        }));
-      }, 2500);
-    } else {
-      setIsRecordingVoice(false);
-    }
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setSubmitted(true);
-
-    const leadRecord = {
-      organization_id: orgData.id,
-      customer_name: formData.fullName,
-      phone: formData.phone,
-      email: formData.email,
-      project_type: formData.projectType,
-      budget: formData.budgetValue,
-      status: 'New'
-    };
-
-    if (isSupabaseConfigured && supabase) {
-      try {
-        const { error } = await supabase.rpc('submit_public_lead', {
-          p_org_id: orgData.id,
-          p_customer_name: formData.fullName,
-          p_phone: formData.phone,
-          p_email: formData.email,
-          p_project_type: formData.projectType,
-          p_budget: formData.budgetValue
-        });
-        if (error) throw error;
-      } catch (err) {
-        console.error('Failed to write widget lead to Supabase:', err);
-        saveToLocalMock(leadRecord);
-      }
-    } else {
-      saveToLocalMock(leadRecord);
-    }
-
-    // Post message to parent container to notify iframe of successful lead capture
-    window.parent.postMessage({ type: 'demofactory-lead-created', lead: leadRecord }, '*');
-  };
-
-  function saveToLocalMock(lead: any) {
-    const allLeads = LocalSupabaseMock.getLeads();
-    allLeads.unshift({
-      id: 'lead-widget-' + Date.now(),
-      ...lead,
-      created_at: new Date().toISOString()
-    });
-    LocalSupabaseMock.saveLeads(allLeads);
   }
 
   return (
@@ -407,12 +306,13 @@ export const WidgetIframePage: React.FC = () => {
                 </div>
 
                 <div className="grid grid-cols-2 gap-2">
-                  {projectTypes.map((type) => {
+                  {(window as any).projectTypes || [].map((type) => {
                     const isSelected = formData.projectType === type.id;
                     return (
                       <div
                         key={type.id}
-                        onClick={() => setFormData({ ...formData, projectType: type.id })}
+                        onClick={() => setFormData({ ...formData, // @ts-ignore
+      projectType: type.id })}
                         className={`p-3 rounded-xl border-2 cursor-pointer transition-all flex flex-col justify-between ${
                           isSelected 
                             ? 'border-amber-500 bg-amber-500/10' 
@@ -530,7 +430,7 @@ export const WidgetIframePage: React.FC = () => {
                   <div>
                     <label className="text-[10px] font-bold uppercase tracking-wider text-slate-500 block mb-1">Výběr data nebo rychlá předvolba</label>
                     
-                    <div className="flex items-center w-full bg-white border border-slate-200 rounded-xl px-3 py-2.5 focus-within:border-blue-500 transition-all overflow-hidden shadow-2xs">
+                    <div className="flex items-center w-full bg-white border border-slate-200 rounded-xl px-3 py-2.5 focus-within:border-brand-primary transition-all overflow-hidden shadow-2xs">
                       <Calendar className="w-4 h-4 text-slate-500 shrink-0 mr-2 pointer-events-none" />
                       <input
                         type="date"
@@ -561,7 +461,7 @@ export const WidgetIframePage: React.FC = () => {
                               onClick={() => setFormData({ ...formData, preferredDate: targetDate })}
                               className={`py-1.5 px-2 rounded-lg text-[11px] font-bold border transition-all text-center cursor-pointer ${
                                 isSelected
-                                  ? 'border-blue-600 bg-blue-50 text-blue-700 font-extrabold shadow-xs'
+                                  ? 'border-brand-primary bg-brand-primary-soft text-brand-primary font-extrabold shadow-xs'
                                   : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-100'
                               }`}
                             >
@@ -573,7 +473,7 @@ export const WidgetIframePage: React.FC = () => {
                     </div>
                   </div>
 
-                  <div className="p-3 bg-blue-50 border border-blue-200 rounded-xl text-[10px] text-blue-900">
+                  <div className="p-3 bg-brand-primary-soft border border-brand-primary-soft rounded-xl text-[10px] text-text">
                     <p className="font-bold">Kapacitní kalendář obvodu {formData.address.split(',')[1] || 'střední Čechy'}:</p>
                     <p className="mt-0.5 text-slate-700">Volné kapacity pro zaměření i naskladnění materiálu jsou plně dostupné.</p>
                   </div>

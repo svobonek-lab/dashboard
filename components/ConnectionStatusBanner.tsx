@@ -68,9 +68,9 @@ export const ConnectionStatusBanner: React.FC = () => {
       <div className="flex items-center gap-2 px-2.5 py-1 rounded-lg border border-slate-200 bg-white/90 text-xs text-slate-600 shadow-xs">
         <div className="flex items-center gap-1.5 font-medium">
           {currentMode === 'synology' ? (
-            <HardDrive className="w-3.5 h-3.5 text-indigo-600" />
+            <HardDrive className="w-3.5 h-3.5 text-brand-primary" />
           ) : (
-            <Database className="w-3.5 h-3.5 text-blue-600" />
+            <Database className="w-3.5 h-3.5 text-brand-primary" />
           )}
           <span className="hidden sm:inline font-semibold text-slate-800">
             {currentMode === 'synology' ? 'Synology NAS' : 'Cloud DB'}
@@ -103,7 +103,7 @@ export const ConnectionStatusBanner: React.FC = () => {
           <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-md w-full p-6 space-y-5 text-slate-800">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2.5">
-                <div className="w-9 h-9 rounded-xl bg-blue-50 border border-blue-200 flex items-center justify-center text-blue-600">
+                <div className="w-9 h-9 rounded-xl bg-brand-primary-soft border border-brand-primary-soft flex items-center justify-center text-brand-primary">
                   <Database className="w-5 h-5" />
                 </div>
                 <div>
@@ -150,12 +150,12 @@ export const ConnectionStatusBanner: React.FC = () => {
                   onClick={() => setCurrentMode('cloud')}
                   className={`p-3 rounded-xl border text-left transition-all ${
                     currentMode === 'cloud'
-                      ? 'border-blue-600 bg-blue-50/50 text-blue-900 font-semibold ring-2 ring-blue-500/20'
+                      ? 'border-brand-primary bg-brand-primary-soft/50 text-text font-semibold ring-2 ring-brand-primary-soft'
                       : 'border-slate-200 hover:border-slate-300 text-slate-700'
                   }`}
                 >
                   <div className="flex items-center gap-1.5 text-xs font-bold mb-1">
-                    <Database className="w-3.5 h-3.5 text-blue-600" /> Cloud (Supabase)
+                    <Database className="w-3.5 h-3.5 text-brand-primary" /> Cloud (Supabase)
                   </div>
                   <p className="text-[10px] text-slate-500 font-normal">
                     Centrální synchronizovaná PostgreSQL databáze.
@@ -166,12 +166,12 @@ export const ConnectionStatusBanner: React.FC = () => {
                   onClick={() => setCurrentMode('synology')}
                   className={`p-3 rounded-xl border text-left transition-all ${
                     currentMode === 'synology'
-                      ? 'border-indigo-600 bg-indigo-50/50 text-indigo-900 font-semibold ring-2 ring-indigo-500/20'
+                      ? 'border-brand-primary bg-brand-primary-soft/50 text-indigo-900 font-semibold ring-2 ring-indigo-500/20'
                       : 'border-slate-200 hover:border-slate-300 text-slate-700'
                   }`}
                 >
                   <div className="flex items-center gap-1.5 text-xs font-bold mb-1">
-                    <HardDrive className="w-3.5 h-3.5 text-indigo-600" /> Synology NAS
+                    <HardDrive className="w-3.5 h-3.5 text-brand-primary" /> Synology NAS
                   </div>
                   <p className="text-[10px] text-slate-500 font-normal">
                     On-premise privátní síťové úložiště firmy.
@@ -184,7 +184,7 @@ export const ConnectionStatusBanner: React.FC = () => {
             {currentMode === 'synology' && (
               <div className="p-3.5 bg-slate-50 rounded-xl border border-slate-200 space-y-3 animate-in fade-in">
                 <div className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
-                  <Wifi className="w-3.5 h-3.5 text-indigo-600" /> Nastavení Synology NAS REST API
+                  <Wifi className="w-3.5 h-3.5 text-brand-primary" /> Nastavení Synology NAS REST API
                 </div>
                 <div className="space-y-1">
                   <label className="text-[11px] font-semibold text-slate-600">IP adresa / URL endpoint:</label>

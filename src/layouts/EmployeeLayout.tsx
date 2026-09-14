@@ -48,14 +48,14 @@ export const EmployeeLayout: React.FC<EmployeeLayoutProps> = ({ children, leads 
   ];
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col font-sans selection:bg-blue-500/20 pb-20 md:pb-0">
+    <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col font-sans selection:bg-brand-primary-soft pb-20 md:pb-0">
       
       {/* Top Header */}
       <header className="bg-white border-b border-slate-200/80 px-4 sm:px-6 py-3 sticky top-0 z-30 flex items-center justify-between shadow-xs">
         
         {/* Left: Worker Status & Identity */}
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-2xl bg-blue-50 border border-blue-100 text-blue-600 flex items-center justify-center font-bold shrink-0">
+          <div className="w-10 h-10 rounded-2xl bg-brand-primary-soft border border-brand-primary-soft text-brand-primary flex items-center justify-center font-bold shrink-0">
             <HardHat className="w-5 h-5" />
           </div>
           <div>
@@ -82,7 +82,7 @@ export const EmployeeLayout: React.FC<EmployeeLayoutProps> = ({ children, leads 
           </div>
           <div className="h-3 w-px bg-slate-300"></div>
           <div className="flex items-center gap-1.5 text-slate-700">
-            <Clock className="w-3.5 h-3.5 text-blue-600" />
+            <Clock className="w-3.5 h-3.5 text-brand-primary" />
             <span>Další výjezd: <strong className="text-slate-900">13:30 (Ing. Svoboda)</strong></span>
           </div>
         </div>
@@ -91,7 +91,7 @@ export const EmployeeLayout: React.FC<EmployeeLayoutProps> = ({ children, leads 
         <div className="flex items-center gap-2">
           <button
             onClick={() => setIsVoiceOpen(true)}
-            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs transition-all shadow-xs active:scale-95 cursor-pointer"
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-brand-primary hover:bg-brand-primary text-white font-bold text-xs transition-all shadow-xs active:scale-95 cursor-pointer"
           >
             <Mic className="w-4 h-4" />
             <span className="hidden sm:inline">Hlasový záznam</span>
@@ -128,11 +128,11 @@ export const EmployeeLayout: React.FC<EmployeeLayoutProps> = ({ children, leads 
                   exact={item.exact}
                   className={`flex items-center gap-3 px-3.5 py-2.5 rounded-2xl text-xs font-bold transition-all ${
                     active
-                      ? 'bg-blue-50 text-blue-700 border border-blue-200/80 shadow-xs'
+                      ? 'bg-brand-primary-soft text-brand-primary border border-brand-primary-soft/80 shadow-xs'
                       : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
                   }`}
                 >
-                  <Icon className={`w-4 h-4 ${active ? 'text-blue-600' : 'text-slate-400'}`} />
+                  <Icon className={`w-4 h-4 ${active ? 'text-brand-primary' : 'text-slate-400'}`} />
                   <span>{item.label}</span>
                 </Link>
               );
@@ -146,7 +146,7 @@ export const EmployeeLayout: React.FC<EmployeeLayoutProps> = ({ children, leads 
             </span>
             <a 
               href="tel:+420777123456" 
-              className="flex items-center gap-2 text-blue-700 font-bold hover:underline"
+              className="flex items-center gap-2 text-brand-primary font-bold hover:underline"
             >
               <Phone className="w-3.5 h-3.5" />
               <span>+420 777 123 456</span>
@@ -179,10 +179,10 @@ export const EmployeeLayout: React.FC<EmployeeLayoutProps> = ({ children, leads 
                 to={tab.path}
                 exact={tab.exact}
                 className={`flex flex-col items-center justify-center min-w-[72px] h-[52px] rounded-2xl transition-all active:scale-95 ${
-                  active ? 'text-blue-700 bg-blue-50 font-bold' : 'text-slate-500 hover:text-slate-800'
+                  active ? 'text-brand-primary bg-brand-primary-soft font-bold' : 'text-slate-500 hover:text-slate-800'
                 }`}
               >
-                <Icon className={`w-5 h-5 mb-0.5 ${active ? 'text-blue-600' : 'text-slate-400'}`} />
+                <Icon className={`w-5 h-5 mb-0.5 ${active ? 'text-brand-primary' : 'text-slate-400'}`} />
                 <span className="text-[10px] tracking-wide">{tab.label}</span>
               </Link>
             );

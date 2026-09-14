@@ -168,7 +168,7 @@ export const CompanySwitcher: React.FC<CompanySwitcherProps> = ({ variant = 'dar
                     isSelected
                       ? isDark 
                         ? 'bg-cyan-500/15 text-slate-900 border border-cyan-500/30' 
-                        : 'bg-blue-50 text-blue-900 border border-blue-200'
+                        : 'bg-brand-primary-soft text-text border border-brand-primary-soft'
                       : isDark
                         ? 'hover:bg-slate-800/70 text-slate-700 hover:text-slate-900'
                         : 'hover:bg-slate-100 text-slate-700 hover:text-slate-900'

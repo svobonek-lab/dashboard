@@ -83,7 +83,7 @@ export class ErrorBoundary extends React.Component<Props, State> {
             <div className="space-y-2">
               <button
                 onClick={this.handleReload}
-                className="w-full py-2.5 px-4 rounded-xl bg-blue-600 hover:bg-blue-500 text-slate-900 font-medium text-xs flex items-center justify-center gap-2 transition-colors"
+                className="w-full py-2.5 px-4 rounded-xl bg-brand-primary hover:bg-brand-primary text-slate-900 font-medium text-xs flex items-center justify-center gap-2 transition-colors"
               >
                 <RefreshCw className="w-4 h-4" /> Obnovit stránku
               </button>

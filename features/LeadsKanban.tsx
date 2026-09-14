@@ -21,7 +21,7 @@ export const LeadsKanban: React.FC<LeadsKanbanProps> = ({
   
   const columns: { status: LeadStatus; label: string; color: string; badgeColor: string }[] = [
     { status: 'New', label: 'Nová poptávka', color: 'border-border bg-surface-secondary text-brand-primary', badgeColor: 'bg-brand-primary-soft text-brand-primary border-brand-primary-soft' },
-    { status: 'Contacted', label: 'Kontaktováno', color: 'border-indigo-200 bg-indigo-50 text-indigo-700', badgeColor: 'bg-indigo-100 text-indigo-700 border-indigo-200' },
+    { status: 'Contacted', label: 'Kontaktováno', color: 'border-sky-200 bg-sky-50 text-sky-700', badgeColor: 'bg-sky-100 text-sky-700 border-sky-200' },
     { status: 'Quote', label: 'Rozpočet / Nabídka', color: 'border-amber-200 bg-amber-50 text-amber-700', badgeColor: 'bg-amber-100 text-amber-700 border-amber-200' },
     { status: 'In Progress', label: 'Realizace stavby', color: 'border-purple-200 bg-purple-50 text-purple-700', badgeColor: 'bg-purple-100 text-purple-700 border-purple-200' },
     { status: 'Completed', label: 'Dokončeno & Předáno', color: 'border-green-200 bg-green-50 text-green-700', badgeColor: 'bg-green-100 text-green-700 border-green-200' },
@@ -30,6 +30,7 @@ export const LeadsKanban: React.FC<LeadsKanbanProps> = ({
 
   const { dbUser } = useOrganization();
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [draggedLead, setDraggedLead] = useState<string | null>(null);
 
   // New lead form state
   const [formTitle, setFormTitle] = useState('Nová montáž pergoly');
@@ -133,7 +134,7 @@ export const LeadsKanban: React.FC<LeadsKanbanProps> = ({
                     value={formTitle}
                     onChange={(e) => setFormTitle(e.target.value)}
                     required
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-600 transition-all font-semibold"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-900 focus:outline-none focus:ring-2 focus:ring-brand-primary-soft focus:border-brand-primary transition-all font-semibold"
                   />
                 </div>
                 <div className="space-y-2">
@@ -143,7 +144,7 @@ export const LeadsKanban: React.FC<LeadsKanbanProps> = ({
                     value={formCustomerName}
                     onChange={(e) => setFormCustomerName(e.target.value)}
                     required
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-600 transition-all font-semibold"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-900 focus:outline-none focus:ring-2 focus:ring-brand-primary-soft focus:border-brand-primary transition-all font-semibold"
                   />
                 </div>
               </div>
@@ -156,7 +157,7 @@ export const LeadsKanban: React.FC<LeadsKanbanProps> = ({
                     value={formPhone}
                     onChange={(e) => setFormPhone(e.target.value)}
                     required
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-600 transition-all font-semibold"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-900 focus:outline-none focus:ring-2 focus:ring-brand-primary-soft focus:border-brand-primary transition-all font-semibold"
                   />
                 </div>
                 <div className="space-y-2">
@@ -166,7 +167,7 @@ export const LeadsKanban: React.FC<LeadsKanbanProps> = ({
                     value={formEmail}
                     onChange={(e) => setFormEmail(e.target.value)}
                     required
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-600 transition-all font-semibold"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-900 focus:outline-none focus:ring-2 focus:ring-brand-primary-soft focus:border-brand-primary transition-all font-semibold"
                   />
                 </div>
               </div>
@@ -179,7 +180,7 @@ export const LeadsKanban: React.FC<LeadsKanbanProps> = ({
                     value={formBudget}
                     onChange={(e) => setFormBudget(e.target.value)}
                     required
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-600 transition-all font-semibold"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-900 focus:outline-none focus:ring-2 focus:ring-brand-primary-soft focus:border-brand-primary transition-all font-semibold"
                   />
                 </div>
                 <div className="space-y-2">
@@ -189,7 +190,7 @@ export const LeadsKanban: React.FC<LeadsKanbanProps> = ({
                     value={formAddress}
                     onChange={(e) => setFormAddress(e.target.value)}
                     required
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-600 transition-all font-semibold"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-900 focus:outline-none focus:ring-2 focus:ring-brand-primary-soft focus:border-brand-primary transition-all font-semibold"
                   />
                 </div>
               </div>
@@ -215,15 +216,45 @@ export const LeadsKanban: React.FC<LeadsKanbanProps> = ({
         </div>
       )}
 
-      {/* Wide Kanban Board Container (min-width columns 320px-420px, 24px spacing) */}
-      <div className="overflow-x-auto pb-6 -mx-4 px-4 sm:-mx-8 sm:px-8">
-        <div className="flex gap-6 items-start min-w-[2100px]">
+      {/* Mobile Quick Status Filter Pills (Sticky horizontal bar on phone) */}
+      <div className="flex md:hidden overflow-x-auto gap-2 pb-2 -mx-4 px-4 scrollbar-none">
+        {columns.map(col => {
+          const count = leads.filter(l => l.status === col.status).length;
+          return (
+            <button
+              key={col.status}
+              onClick={() => {
+                const el = document.getElementById(`kanban-col-${col.status}`);
+                if (el) el.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+              }}
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-white border border-slate-200 text-xs font-bold text-slate-700 whitespace-nowrap shadow-2xs shrink-0 active:scale-95 transition-transform"
+            >
+              <span className={`w-2 h-2 rounded-full ${col.badgeColor.split(' ')[0]}`}></span>
+              <span>{col.label}</span>
+              <span className="text-[10px] bg-slate-100 px-1.5 py-0.2 rounded-full text-slate-500 font-mono">{count}</span>
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Wide Kanban Board Container with Mobile Snap Scrolling */}
+      <div className="overflow-x-auto pb-6 -mx-4 px-4 sm:-mx-8 sm:px-8 snap-x snap-mandatory scroll-smooth">
+        <div className="flex gap-4 sm:gap-6 items-start w-max min-w-full">
           {columns.map(col => {
             const columnLeads = leads.filter(l => l.status === col.status);
             return (
               <div 
                 key={col.status} 
-                className="w-[360px] min-w-[340px] max-w-[420px] bg-slate-50/80 rounded-[24px] border border-slate-200 flex flex-col shadow-sm shrink-0"
+                id={`kanban-col-${col.status}`}
+                onDragOver={(e) => e.preventDefault()}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  if (draggedLead) {
+                    onUpdateLeadStatus(draggedLead, col.status);
+                    setDraggedLead(null);
+                  }
+                }}
+                className="w-[85vw] max-w-[340px] sm:w-[360px] sm:min-w-[340px] sm:max-w-[420px] bg-slate-50/80 rounded-[24px] border border-slate-200 flex flex-col shadow-sm shrink-0 snap-start"
               >
                 {/* Sticky Column Header */}
                 <div className="p-5 border-b border-slate-200 sticky top-0 bg-slate-50/95 backdrop-blur-md rounded-t-[24px] z-10 flex items-center justify-between">
@@ -241,8 +272,11 @@ export const LeadsKanban: React.FC<LeadsKanbanProps> = ({
                   {columnLeads.map(lead => (
                     <div
                       key={lead.id}
+                      draggable
+                      onDragStart={() => setDraggedLead(lead.id)}
+                      onDragEnd={() => setDraggedLead(null)}
                       onClick={() => onSelectLead(lead)}
-                      className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 cursor-pointer space-y-4 group min-h-[190px] flex flex-col justify-between relative overflow-hidden"
+                      className={`bg-white p-5 rounded-2xl ${draggedLead === lead.id ? 'opacity-50 scale-95 shadow-none ring-2 ring-brand-primary' : 'opacity-100'} cursor-grab active:cursor-grabbing border border-slate-200 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 space-y-4 group min-h-[190px] flex flex-col justify-between relative overflow-hidden`}
                     >
                       {/* Subtle hover accent line */}
                       <div className="absolute left-0 top-0 bottom-0 w-1.5 opacity-0 group-hover:opacity-100 transition-opacity" style={{ backgroundColor: 'var(--brand-primary)' }}></div>
@@ -261,7 +295,7 @@ export const LeadsKanban: React.FC<LeadsKanbanProps> = ({
 
                       {/* Title & Customer */}
                       <div className="space-y-1.5 pl-1">
-                        <h4 className="text-[15px] font-black text-slate-900 group-hover:text-blue-600 transition-colors line-clamp-2 leading-tight">
+                        <h4 className="text-[15px] font-black text-slate-900 group-hover:text-brand-primary transition-colors line-clamp-2 leading-tight">
                           {lead.title}
                         </h4>
                         <div className="flex items-center gap-2 text-xs text-slate-500 font-medium">
@@ -295,7 +329,7 @@ export const LeadsKanban: React.FC<LeadsKanbanProps> = ({
                           onClick={(e) => e.stopPropagation()}
                           className="flex-1 py-2.5 rounded-xl bg-slate-50 hover:bg-slate-100 text-slate-700 text-xs font-bold flex items-center justify-center gap-1.5 border border-slate-200 transition-colors active:scale-[0.98]"
                         >
-                          <Phone className="w-3.5 h-3.5 text-blue-600" />
+                          <Phone className="w-3.5 h-3.5 text-brand-primary" />
                           <span>Zavolat</span>
                         </a>
                         <button

@@ -62,10 +62,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
   };
 
   return (
-    <aside className="w-72 bg-surface text-text flex flex-col h-screen fixed left-0 top-0 z-30 border-r border-border shadow-app font-sans">
+    <aside className="w-72 bg-surface text-text flex flex-col h-screen fixed left-0 top-0 z-30 border-r border-border font-sans">
       
       {/* 1. TOP BRAND AREA - Linear Style */}
-      <div className="p-5 border-b border-border flex items-center gap-3">
+      <div className="p-4 border-b border-border flex items-center gap-3">
         {/* 36px logo */}
         <div 
           className="w-[36px] h-[36px] rounded-app bg-brand-primary text-white font-black text-sm shrink-0 flex items-center justify-center shadow-app"

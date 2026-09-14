@@ -27,7 +27,7 @@ export const EmployeeSchedulePage: React.FC<EmployeeSchedulePageProps> = ({ lead
       
       <div>
         <h1 className="text-xl font-bold text-slate-900 tracking-tight flex items-center gap-2">
-          <Calendar className="w-5 h-5 text-blue-600" />
+          <Calendar className="w-5 h-5 text-brand-primary" />
           Můj denní harmonogram
         </h1>
         <p className="text-xs text-slate-500 mt-0.5">
@@ -43,7 +43,7 @@ export const EmployeeSchedulePage: React.FC<EmployeeSchedulePageProps> = ({ lead
             onClick={() => setSelectedDay(i)}
             className={`min-w-[100px] p-3 rounded-2xl border text-center transition-all cursor-pointer ${
               selectedDay === i 
-                ? 'bg-blue-600 border-blue-600 text-white font-bold shadow-xs' 
+                ? 'bg-brand-primary border-brand-primary text-white font-bold shadow-xs' 
                 : 'bg-white border-slate-200/80 text-slate-600 hover:text-slate-900'
             }`}
           >
@@ -66,13 +66,13 @@ export const EmployeeSchedulePage: React.FC<EmployeeSchedulePageProps> = ({ lead
             className="bg-white border border-slate-200/80 rounded-3xl p-5 shadow-xs space-y-3"
           >
             <div className="flex items-center justify-between">
-              <span className="px-2.5 py-1 rounded-xl bg-slate-50 border border-slate-200 text-xs font-mono font-bold text-blue-700 flex items-center gap-1.5">
-                <Clock className="w-3.5 h-3.5 text-blue-600" />
+              <span className="px-2.5 py-1 rounded-xl bg-slate-50 border border-slate-200 text-xs font-mono font-bold text-brand-primary flex items-center gap-1.5">
+                <Clock className="w-3.5 h-3.5 text-brand-primary" />
                 <span>{item.time}</span>
               </span>
 
               <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold border ${
-                item.status === 'Dokončeno' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-blue-50 text-blue-700 border-blue-200'
+                item.status === 'Dokončeno' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-brand-primary-soft text-brand-primary border-brand-primary-soft'
               }`}>
                 {item.status}
               </span>
@@ -81,18 +81,18 @@ export const EmployeeSchedulePage: React.FC<EmployeeSchedulePageProps> = ({ lead
             <div>
               <h3 className="text-sm font-bold text-slate-900">{item.title}</h3>
               <p className="text-xs text-slate-500 flex items-center gap-1.5 mt-1">
-                <MapPin className="w-3.5 h-3.5 text-blue-600" />
+                <MapPin className="w-3.5 h-3.5 text-brand-primary" />
                 <span>{item.location}</span>
               </p>
             </div>
 
             <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
               <span className="flex items-center gap-1.5">
-                <User className="w-3.5 h-3.5 text-blue-600" />
+                <User className="w-3.5 h-3.5 text-brand-primary" />
                 <span>Investor: {item.customer}</span>
               </span>
 
-              <button className="text-blue-600 font-bold hover:underline flex items-center gap-1 cursor-pointer">
+              <button className="text-brand-primary font-bold hover:underline flex items-center gap-1 cursor-pointer">
                 <span>Zobrazit trasu</span>
                 <ChevronRight className="w-3.5 h-3.5" />
               </button>

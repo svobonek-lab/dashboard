@@ -246,22 +246,22 @@ export const DemoGeneratorModal: React.FC<DemoGeneratorModalProps> = ({
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.95, y: 10 }}
           transition={{ duration: 0.3, ease: 'easeOut' }}
-          className="w-full max-w-2xl bg-white/95 border border-slate-300/80 rounded-3xl shadow-2xl shadow-blue-950/50 overflow-hidden text-slate-900 flex flex-col relative"
+          className="w-full max-w-2xl bg-white/95 border border-slate-300/80 rounded-3xl shadow-2xl shadow-brand-primary-soft overflow-hidden text-slate-900 flex flex-col relative"
         >
           {/* Ambient Glow accents */}
-          <div className="absolute top-0 right-1/4 w-72 h-40 bg-blue-500/15 rounded-full blur-3xl pointer-events-none" />
-          <div className="absolute bottom-0 left-1/4 w-80 h-40 bg-indigo-500/15 rounded-full blur-3xl pointer-events-none" />
+          <div className="absolute top-0 right-1/4 w-72 h-40 bg-brand-primary-soft rounded-full blur-3xl pointer-events-none" />
+          <div className="absolute bottom-0 left-1/4 w-80 h-40 bg-brand-primary/15 rounded-full blur-3xl pointer-events-none" />
 
           {/* Modal Header */}
           <div className="px-6 py-4 border-b border-slate-200/80 flex items-center justify-between bg-white/80 relative z-10">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-500 flex items-center justify-center text-slate-900 shadow-lg shadow-blue-500/30">
+              <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-500 flex items-center justify-center text-slate-900 shadow-lg shadow-brand-primary-soft">
                 <Sparkles className="w-5 h-5 animate-pulse" />
               </div>
               <div>
                 <div className="flex items-center gap-2">
-                  <span className="text-[10px] font-bold tracking-widest uppercase text-blue-400">AI Engine</span>
-                  <span className="px-2 py-0.5 rounded-full text-[9px] font-bold bg-blue-500/20 text-blue-300 border border-blue-500/30">
+                  <span className="text-[10px] font-bold tracking-widest uppercase text-brand-primary">AI Engine</span>
+                  <span className="px-2 py-0.5 rounded-full text-[9px] font-bold bg-brand-primary-soft text-brand-primary border border-brand-primary/30">
                     V2.4 Precision
                   </span>
                 </div>
@@ -293,7 +293,7 @@ export const DemoGeneratorModal: React.FC<DemoGeneratorModalProps> = ({
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
                     <label className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
-                      <Globe className="w-3.5 h-3.5 text-blue-400" />
+                      <Globe className="w-3.5 h-3.5 text-brand-primary" />
                       Zadejte webovou stránku stavební firmy
                     </label>
                     <span className="text-[11px] text-slate-500 font-medium">CZ / SK / EU weby</span>
@@ -301,7 +301,7 @@ export const DemoGeneratorModal: React.FC<DemoGeneratorModalProps> = ({
 
                   <div className="relative">
                     <div className="absolute left-3.5 top-3.5 flex items-center gap-1.5 text-slate-500">
-                      <Search className="w-4 h-4 text-blue-400" />
+                      <Search className="w-4 h-4 text-brand-primary" />
                     </div>
                     <input
                       type="url"
@@ -309,7 +309,7 @@ export const DemoGeneratorModal: React.FC<DemoGeneratorModalProps> = ({
                       value={url}
                       onChange={(e) => setUrl(e.target.value)}
                       placeholder="https://vasefirma.cz"
-                      className="w-full bg-slate-50/90 border border-slate-300/80 rounded-2xl pl-10 pr-4 py-3.5 text-sm text-slate-900 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 font-medium transition-all shadow-inner"
+                      className="w-full bg-slate-50/90 border border-slate-300/80 rounded-2xl pl-10 pr-4 py-3.5 text-sm text-slate-900 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-brand-primary-soft focus:border-brand-primary font-medium transition-all shadow-inner"
                     />
                   </div>
                   <p className="text-[11px] text-slate-500">
@@ -321,7 +321,7 @@ export const DemoGeneratorModal: React.FC<DemoGeneratorModalProps> = ({
                 <div className="space-y-2.5">
                   <div className="flex items-center justify-between">
                     <span className="text-xs font-semibold text-slate-500">Rychlé testovací profily:</span>
-                    <span className="text-[10px] text-blue-400 font-bold uppercase tracking-wider">Přednastavené vzory</span>
+                    <span className="text-[10px] text-brand-primary font-bold uppercase tracking-wider">Přednastavené vzory</span>
                   </div>
                   <div className="grid grid-cols-1 gap-2">
                     {presetUrls.map((preset, idx) => (
@@ -331,17 +331,17 @@ export const DemoGeneratorModal: React.FC<DemoGeneratorModalProps> = ({
                         onClick={() => setUrl(preset.url)}
                         className={`text-left px-4 py-3 rounded-2xl border transition-all flex items-center justify-between group ${
                           url === preset.url 
-                            ? 'bg-blue-600/15 border-blue-500/60 shadow-md shadow-blue-950/50' 
+                            ? 'bg-brand-primary/15 border-brand-primary/60 shadow-md shadow-brand-primary-soft' 
                             : 'bg-slate-50/60 border-slate-200/80 hover:border-slate-300 hover:bg-slate-800/40'
                         }`}
                       >
                         <div className="space-y-0.5">
                           <div className="flex items-center gap-2">
-                            <span className="font-bold text-xs text-slate-900 group-hover:text-blue-300 transition-colors">
+                            <span className="font-bold text-xs text-slate-900 group-hover:text-brand-primary transition-colors">
                               {preset.label}
                             </span>
                             {url === preset.url && (
-                              <span className="w-1.5 h-1.5 rounded-full bg-blue-400 animate-ping" />
+                              <span className="w-1.5 h-1.5 rounded-full bg-brand-primary animate-ping" />
                             )}
                           </div>
                           <p className="text-[11px] text-slate-500">{preset.desc}</p>
@@ -357,11 +357,11 @@ export const DemoGeneratorModal: React.FC<DemoGeneratorModalProps> = ({
                 {/* Submit Action */}
                 <button
                   type="submit"
-                  className="w-full py-4 rounded-2xl text-sm font-bold text-slate-900 bg-gradient-to-r from-blue-600 via-blue-500 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 shadow-lg shadow-blue-600/30 transition-all flex items-center justify-center gap-2 group cursor-pointer hover:scale-[1.01] active:scale-[0.99]"
+                  className="w-full py-4 rounded-2xl text-sm font-bold text-slate-900 bg-gradient-to-r from-blue-600 via-blue-500 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 shadow-lg shadow-brand-primary-soft transition-all flex items-center justify-center gap-2 group cursor-pointer hover:scale-[1.01] active:scale-[0.99]"
                 >
-                  <Sparkles className="w-4 h-4 text-blue-200 group-hover:rotate-12 transition-transform" />
+                  <Sparkles className="w-4 h-4 text-brand-primary group-hover:rotate-12 transition-transform" />
                   <span>Spustit AI Analýzu & Vytvořit Personalizované CRM</span>
-                  <ChevronRight className="w-4 h-4 text-blue-200 group-hover:translate-x-1 transition-transform" />
+                  <ChevronRight className="w-4 h-4 text-brand-primary group-hover:translate-x-1 transition-transform" />
                 </button>
               </form>
             )}
@@ -373,8 +373,8 @@ export const DemoGeneratorModal: React.FC<DemoGeneratorModalProps> = ({
                 <div className="p-4 rounded-2xl bg-slate-50/80 border border-slate-200/80 flex items-center justify-between gap-4">
                   <div className="flex items-center gap-3">
                     <div className="relative w-12 h-12 flex items-center justify-center">
-                      <div className="absolute inset-0 rounded-2xl bg-blue-500/20 animate-ping" />
-                      <div className="relative w-10 h-10 rounded-xl bg-blue-600/30 border border-blue-500/40 flex items-center justify-center text-blue-400">
+                      <div className="absolute inset-0 rounded-2xl bg-brand-primary-soft animate-ping" />
+                      <div className="relative w-10 h-10 rounded-xl bg-brand-primary/30 border border-brand-primary/40 flex items-center justify-center text-brand-primary">
                         <Activity className="w-5 h-5 animate-pulse" />
                       </div>
                     </div>
@@ -395,7 +395,7 @@ export const DemoGeneratorModal: React.FC<DemoGeneratorModalProps> = ({
 
                   {/* Circular / Pill % indicator */}
                   <div className="flex flex-col items-end">
-                    <span className="text-xl font-black font-mono text-blue-400">{scanProgress}%</span>
+                    <span className="text-xl font-black font-mono text-brand-primary">{scanProgress}%</span>
                     <span className="text-[10px] text-slate-500 uppercase font-semibold">
                       Krok {Math.min(currentStepIndex + 1, 6)} z 6
                     </span>
@@ -428,7 +428,7 @@ export const DemoGeneratorModal: React.FC<DemoGeneratorModalProps> = ({
                           isDone
                             ? 'bg-green-500/10 border-green-500/30 text-slate-800'
                             : isCurrent
-                            ? 'bg-blue-600/15 border-blue-500/50 shadow-md shadow-blue-950/60 ring-1 ring-blue-500/30'
+                            ? 'bg-brand-primary/15 border-brand-primary/50 shadow-md shadow-brand-primary-soft ring-1 ring-brand-primary-soft'
                             : 'bg-slate-50/40 border-slate-200/50 text-slate-600 opacity-60'
                         }`}
                       >
@@ -439,7 +439,7 @@ export const DemoGeneratorModal: React.FC<DemoGeneratorModalProps> = ({
                               isDone
                                 ? 'bg-green-500/20 text-green-400 border border-green-500/30'
                                 : isCurrent
-                                ? 'bg-blue-600 text-slate-900 shadow-md shadow-blue-500/40 animate-pulse'
+                                ? 'bg-brand-primary text-slate-900 shadow-md shadow-brand-primary-soft animate-pulse'
                                 : 'bg-slate-800/80 text-slate-500 border border-slate-300/50'
                             }`}
                           >
@@ -456,12 +456,12 @@ export const DemoGeneratorModal: React.FC<DemoGeneratorModalProps> = ({
                           <div>
                             <div className="flex items-center gap-2">
                               <span className={`text-xs font-bold ${
-                                isDone ? 'text-slate-900' : isCurrent ? 'text-blue-300 font-extrabold' : 'text-slate-500'
+                                isDone ? 'text-slate-900' : isCurrent ? 'text-brand-primary font-extrabold' : 'text-slate-500'
                               }`}>
                                 {stepItem.title}
                               </span>
                               {isCurrent && (
-                                <span className="px-2 py-0.2 rounded-full text-[9px] font-bold bg-blue-500 text-slate-900 animate-pulse">
+                                <span className="px-2 py-0.2 rounded-full text-[9px] font-bold bg-brand-primary text-slate-900 animate-pulse">
                                   Pracuji
                                 </span>
                               )}
@@ -485,7 +485,7 @@ export const DemoGeneratorModal: React.FC<DemoGeneratorModalProps> = ({
                           )}
                           {idx === 1 && (isDone || isCurrent) && (
                             <div className="flex items-center gap-1.5 bg-white border border-slate-300 px-2 py-1 rounded-lg">
-                              <span className="w-2.5 h-2.5 rounded-full bg-blue-600" />
+                              <span className="w-2.5 h-2.5 rounded-full bg-brand-primary" />
                               <span className="w-2.5 h-2.5 rounded-full bg-amber-500" />
                               <span className="text-[10px] font-mono text-slate-700">#0A4EA3</span>
                             </div>
@@ -506,7 +506,7 @@ export const DemoGeneratorModal: React.FC<DemoGeneratorModalProps> = ({
                             </span>
                           )}
                           {idx === 5 && (isDone || isCurrent) && (
-                            <span className="text-[10px] font-bold bg-blue-500/20 border border-blue-500/40 px-2.5 py-1 rounded-lg text-blue-300">
+                            <span className="text-[10px] font-bold bg-brand-primary-soft border border-brand-primary/40 px-2.5 py-1 rounded-lg text-brand-primary">
                               +3.8M CZK
                             </span>
                           )}
@@ -533,7 +533,7 @@ export const DemoGeneratorModal: React.FC<DemoGeneratorModalProps> = ({
                     transition={{ repeat: Infinity, duration: 4, ease: 'easeInOut' }}
                     className="absolute inset-0 rounded-3xl bg-gradient-to-tr from-blue-600 via-indigo-500 to-green-500 opacity-30 blur-lg"
                   />
-                  <div className="relative w-16 h-16 rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-600 text-slate-900 flex items-center justify-center shadow-xl shadow-blue-500/40 border border-white/20">
+                  <div className="relative w-16 h-16 rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-600 text-slate-900 flex items-center justify-center shadow-xl shadow-brand-primary-soft border border-white/20">
                     <Award className="w-8 h-8 text-slate-900" />
                   </div>
                 </div>
@@ -547,7 +547,7 @@ export const DemoGeneratorModal: React.FC<DemoGeneratorModalProps> = ({
                     {generatedData.branding.name}
                   </h3>
                   <p className="text-xs text-slate-700 max-w-md mx-auto">
-                    Vaše pracovní prostředí pro lokalitu <span className="text-blue-400 font-bold">{generatedData.branding.city}</span> je nakonfigurováno a připraveno ke spuštění.
+                    Vaše pracovní prostředí pro lokalitu <span className="text-brand-primary font-bold">{generatedData.branding.city}</span> je nakonfigurováno a připraveno ke spuštění.
                   </p>
                 </div>
 
@@ -592,7 +592,7 @@ export const DemoGeneratorModal: React.FC<DemoGeneratorModalProps> = ({
                       {(generatedData?.branding?.services || []).map((srv, sIdx) => (
                         <span 
                           key={sIdx}
-                          className="px-2.5 py-0.5 rounded-lg text-[11px] font-bold bg-blue-500/15 text-blue-300 border border-blue-500/30"
+                          className="px-2.5 py-0.5 rounded-lg text-[11px] font-bold bg-brand-primary-soft text-brand-primary border border-brand-primary/30"
                         >
                           {srv}
                         </span>
@@ -606,7 +606,7 @@ export const DemoGeneratorModal: React.FC<DemoGeneratorModalProps> = ({
                   <button
                     type="button"
                     onClick={launchPersonalizedCRM}
-                    className="w-full py-4 rounded-2xl text-sm font-black text-slate-900 bg-gradient-to-r from-blue-600 via-indigo-600 to-green-600 hover:opacity-95 shadow-xl shadow-blue-600/40 transition-all flex items-center justify-center gap-2 group cursor-pointer animate-pulse"
+                    className="w-full py-4 rounded-2xl text-sm font-black text-slate-900 bg-gradient-to-r from-blue-600 via-indigo-600 to-green-600 hover:opacity-95 shadow-xl shadow-brand-primary-soft transition-all flex items-center justify-center gap-2 group cursor-pointer animate-pulse"
                   >
                     <Zap className="w-4 h-4 text-amber-300" />
                     <span>Vstoupit do Personalizovaného CRM ({countdown}s)</span>
@@ -623,7 +623,7 @@ export const DemoGeneratorModal: React.FC<DemoGeneratorModalProps> = ({
           {/* Modal Footer Info */}
           <div className="px-6 py-3 border-t border-slate-200/60 bg-slate-50/60 flex items-center justify-between text-[11px] text-slate-500">
             <span className="flex items-center gap-1.5">
-              <ShieldCheck className="w-3.5 h-3.5 text-blue-400" />
+              <ShieldCheck className="w-3.5 h-3.5 text-brand-primary" />
               DemoFactory Enterprise Engine
             </span>
             <span>Real-time Gemini & Computer Vision</span>

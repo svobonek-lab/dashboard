@@ -211,7 +211,7 @@ export const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({
           {/* Top Bar */}
           <div className="p-4 bg-white border-b border-slate-200 flex items-center justify-between sticky top-0 z-10 shadow-xs">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-2xl bg-blue-50 text-blue-600 border border-blue-100 flex items-center justify-center font-bold">
+              <div className="w-10 h-10 rounded-2xl bg-brand-primary-soft text-brand-primary border border-brand-primary-soft flex items-center justify-center font-bold">
                 <Maximize2 className="w-5 h-5" />
               </div>
               <div>
@@ -258,7 +258,7 @@ export const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({
                 <h4 className="text-base font-bold text-slate-900">Interaktivní Checklist technika</h4>
                 <p className="text-xs text-slate-500">Splňte 5 kroků zaměření před vygenerováním nabídky</p>
               </div>
-              <span className="text-xs font-bold text-blue-700 bg-blue-50 px-3 py-1.5 rounded-full border border-blue-200">
+              <span className="text-xs font-bold text-brand-primary bg-brand-primary-soft px-3 py-1.5 rounded-full border border-brand-primary-soft">
                 {completedChecklistCount} / 5 splněno
               </span>
             </div>
@@ -271,7 +271,7 @@ export const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({
               }`}>
                 <div className="flex items-center justify-between mb-3">
                   <div className="flex items-center gap-2.5">
-                    <Ruler className="w-5 h-5 text-blue-600" />
+                    <Ruler className="w-5 h-5 text-brand-primary" />
                     <span className="text-sm font-bold text-slate-900">1. Zaměření rozměrů (Measurements)</span>
                   </div>
                   <button
@@ -328,7 +328,7 @@ export const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({
               <div className="p-4 rounded-2xl bg-white border border-slate-200/80 space-y-3 shadow-xs">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2.5">
-                    <PenTool className="w-5 h-5 text-blue-600" />
+                    <PenTool className="w-5 h-5 text-brand-primary" />
                     <span className="text-sm font-bold text-slate-900">2. Podpis zákazníka na displeji</span>
                   </div>
                   <span className={`text-[10px] font-bold px-2.5 py-1 rounded-full border ${
@@ -343,11 +343,11 @@ export const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({
                     setSignatureDone(true);
                     setChecklist(prev => ({ ...prev, customerSignature: true }));
                   }}
-                  className="h-28 rounded-2xl bg-slate-50 border border-dashed border-slate-300 flex flex-col items-center justify-center text-slate-600 cursor-pointer hover:border-blue-500 transition-all relative overflow-hidden"
+                  className="h-28 rounded-2xl bg-slate-50 border border-dashed border-slate-300 flex flex-col items-center justify-center text-slate-600 cursor-pointer hover:border-brand-primary transition-all relative overflow-hidden"
                 >
                   {signatureDone ? (
                     <div className="flex flex-col items-center justify-center space-y-1">
-                      <span className="font-serif italic text-2xl text-blue-900 font-bold tracking-widest">{activeLead?.customerName}</span>
+                      <span className="font-serif italic text-2xl text-text font-bold tracking-widest">{activeLead?.customerName}</span>
                       <span className="text-[10px] text-emerald-700 flex items-center gap-1 font-mono font-bold">
                         <Check className="w-3.5 h-3.5" /> Digitálně podepsáno v 08:22
                       </span>
@@ -366,7 +366,7 @@ export const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({
               <div className="p-4 rounded-2xl bg-white border border-slate-200/80 space-y-3 shadow-xs">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2.5">
-                    <FileText className="w-5 h-5 text-blue-600" />
+                    <FileText className="w-5 h-5 text-brand-primary" />
                     <span className="text-sm font-bold text-slate-900">3. Materiálové specifikace</span>
                   </div>
                   <button
@@ -383,7 +383,7 @@ export const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({
                   rows={2}
                   value={materialNotesText}
                   onChange={(e) => setMaterialNotesText(e.target.value)}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-brand-primary-soft"
                 />
               </div>
             </div>
@@ -392,7 +392,7 @@ export const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({
             <div className="pt-4 border-t border-slate-200 space-y-3">
               <button
                 onClick={handleGenerateQuoteFromField}
-                className="w-full py-3.5 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm shadow-xs flex items-center justify-center gap-2 transition-all cursor-pointer active:scale-[0.99]"
+                className="w-full py-3.5 rounded-2xl bg-brand-primary hover:bg-brand-primary text-white font-bold text-sm shadow-xs flex items-center justify-center gap-2 transition-all cursor-pointer active:scale-[0.99]"
               >
                 <Sparkles className="w-5 h-5" />
                 <span>Vytvořit cenovou nabídku na klíč</span>
@@ -419,12 +419,12 @@ export const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({
             <img
               src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80"
               alt="Petr Novotný"
-              className="w-14 h-14 rounded-2xl object-cover ring-2 ring-blue-500 shadow-xs"
+              className="w-14 h-14 rounded-2xl object-cover ring-2 ring-brand-primary-soft shadow-xs"
             />
             <div>
               <div className="flex items-center gap-2">
                 <h2 className="text-lg font-bold text-slate-900">Petr Novotný</h2>
-                <span className="px-2.5 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200 text-[11px] font-bold">
+                <span className="px-2.5 py-0.5 rounded-full bg-brand-primary-soft text-brand-primary border border-brand-primary-soft text-[11px] font-bold">
                   Mistr stavby
                 </span>
               </div>
@@ -449,7 +449,7 @@ export const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({
               <button
                 onClick={handleSyncOffline}
                 disabled={isSyncing}
-                className="px-3 py-1.5 rounded-xl text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white shadow-xs flex items-center gap-1.5 cursor-pointer"
+                className="px-3 py-1.5 rounded-xl text-xs font-bold bg-brand-primary hover:bg-brand-primary text-white shadow-xs flex items-center gap-1.5 cursor-pointer"
               >
                 <RefreshCw className={`w-3.5 h-3.5 ${isSyncing ? 'animate-spin' : ''}`} />
                 <span>Sync ({offlineQueueCount})</span>
@@ -461,7 +461,7 @@ export const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({
         {/* Quick Launch Site Visit Button */}
         <button
           onClick={() => setIsSiteVisitMode(true)}
-          className="w-full py-3.5 px-4 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs transition-all shadow-xs flex items-center justify-center gap-2 cursor-pointer"
+          className="w-full py-3.5 px-4 rounded-2xl bg-brand-primary hover:bg-brand-primary text-white font-bold text-xs transition-all shadow-xs flex items-center justify-center gap-2 cursor-pointer"
         >
           <Maximize2 className="w-4 h-4" />
           <span>Otevřít režim zaměření na stavbě (Site Visit Mode)</span>
@@ -474,11 +474,11 @@ export const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({
           onClick={() => setActiveTab('jobs')}
           className={`flex items-center gap-2 px-4 py-2.5 rounded-xl transition-all whitespace-nowrap cursor-pointer ${
             activeTab === 'jobs' 
-              ? 'bg-white text-blue-700 shadow-xs border border-slate-200/80' 
+              ? 'bg-white text-brand-primary shadow-xs border border-slate-200/80' 
               : 'text-slate-600 hover:text-slate-900'
           }`}
         >
-          <Briefcase className="w-4 h-4 text-blue-600" />
+          <Briefcase className="w-4 h-4 text-brand-primary" />
           <span>Dnešní zakázky ({leads.length})</span>
         </button>
 
@@ -486,11 +486,11 @@ export const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({
           onClick={() => setActiveTab('siteVisit')}
           className={`flex items-center gap-2 px-4 py-2.5 rounded-xl transition-all whitespace-nowrap cursor-pointer ${
             activeTab === 'siteVisit' 
-              ? 'bg-white text-blue-700 shadow-xs border border-slate-200/80' 
+              ? 'bg-white text-brand-primary shadow-xs border border-slate-200/80' 
               : 'text-slate-600 hover:text-slate-900'
           }`}
         >
-          <ListCheck className="w-4 h-4 text-blue-600" />
+          <ListCheck className="w-4 h-4 text-brand-primary" />
           <span>Checklist & Zaměření ({completedChecklistCount}/5)</span>
         </button>
 
@@ -498,11 +498,11 @@ export const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({
           onClick={() => setActiveTab('photos')}
           className={`flex items-center gap-2 px-4 py-2.5 rounded-xl transition-all whitespace-nowrap cursor-pointer ${
             activeTab === 'photos' 
-              ? 'bg-white text-blue-700 shadow-xs border border-slate-200/80' 
+              ? 'bg-white text-brand-primary shadow-xs border border-slate-200/80' 
               : 'text-slate-600 hover:text-slate-900'
           }`}
         >
-          <ImageIcon className="w-4 h-4 text-blue-600" />
+          <ImageIcon className="w-4 h-4 text-brand-primary" />
           <span>Fotodokumentace ({timelinePhotos.length})</span>
         </button>
 
@@ -510,11 +510,11 @@ export const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({
           onClick={() => setActiveTab('tools')}
           className={`flex items-center gap-2 px-4 py-2.5 rounded-xl transition-all whitespace-nowrap cursor-pointer ${
             activeTab === 'tools' 
-              ? 'bg-white text-blue-700 shadow-xs border border-slate-200/80' 
+              ? 'bg-white text-brand-primary shadow-xs border border-slate-200/80' 
               : 'text-slate-600 hover:text-slate-900'
           }`}
         >
-          <Sparkles className="w-4 h-4 text-blue-600" />
+          <Sparkles className="w-4 h-4 text-brand-primary" />
           <span>Hlas & AI Účtenky</span>
         </button>
       </div>
@@ -524,12 +524,12 @@ export const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({
         <div className="bg-white rounded-3xl border border-slate-200/80 shadow-xs p-6 space-y-6">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
-              <span className="inline-block px-3 py-1 rounded-full text-[11px] font-bold bg-blue-50 text-blue-700 border border-blue-200 mb-2">
+              <span className="inline-block px-3 py-1 rounded-full text-[11px] font-bold bg-brand-primary-soft text-brand-primary border border-brand-primary-soft mb-2">
                 Aktivní stavba k realizaci
               </span>
               <h3 className="text-lg font-bold text-slate-900">{activeLead.title}</h3>
               <p className="text-xs text-slate-500 mt-1 flex items-center gap-1.5">
-                <MapPin className="w-4 h-4 text-blue-600 shrink-0" /> {activeLead.address}
+                <MapPin className="w-4 h-4 text-brand-primary shrink-0" /> {activeLead.address}
               </p>
             </div>
             <img 
@@ -560,7 +560,7 @@ export const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({
               rel="noreferrer"
               className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80 hover:bg-slate-100 transition-all flex items-center gap-3 text-xs font-semibold text-slate-800"
             >
-              <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 border border-blue-200 flex items-center justify-center shrink-0 font-bold">
+              <div className="w-10 h-10 rounded-xl bg-brand-primary-soft text-brand-primary border border-brand-primary-soft flex items-center justify-center shrink-0 font-bold">
                 <Navigation className="w-5 h-5" />
               </div>
               <div>
@@ -578,7 +578,7 @@ export const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({
                 onClick={() => setActiveJobStatus('Driving')}
                 className={`py-3 rounded-2xl text-xs font-bold transition-all flex flex-col items-center justify-center gap-1 border cursor-pointer ${
                   activeJobStatus === 'Driving'
-                    ? 'bg-blue-600 text-white border-blue-600 shadow-xs'
+                    ? 'bg-brand-primary text-white border-brand-primary shadow-xs'
                     : 'bg-slate-50 text-slate-600 border border-slate-200 hover:bg-slate-100'
                 }`}
               >
@@ -589,7 +589,7 @@ export const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({
                 onClick={() => setActiveJobStatus('Arrived')}
                 className={`py-3 rounded-2xl text-xs font-bold transition-all flex flex-col items-center justify-center gap-1 border cursor-pointer ${
                   activeJobStatus === 'Arrived'
-                    ? 'bg-blue-600 text-white border-blue-600 shadow-xs'
+                    ? 'bg-brand-primary text-white border-brand-primary shadow-xs'
                     : 'bg-slate-50 text-slate-600 border border-slate-200 hover:bg-slate-100'
                 }`}
               >
@@ -620,7 +620,7 @@ export const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({
               <h3 className="text-lg font-bold text-slate-900">Interaktivní Protokol & Zaměření</h3>
               <p className="text-xs text-slate-500">Zadejte specifikace zakázky pro automatické vytvoření cenové nabídky</p>
             </div>
-            <span className="text-xs font-bold text-blue-700 bg-blue-50 px-3 py-1.5 rounded-full border border-blue-200">
+            <span className="text-xs font-bold text-brand-primary bg-brand-primary-soft px-3 py-1.5 rounded-full border border-brand-primary-soft">
               {completedChecklistCount} / 5 splněno
             </span>
           </div>
@@ -630,7 +630,7 @@ export const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({
             <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-3">
               <div className="flex items-center justify-between">
                 <span className="text-sm font-bold text-slate-900 flex items-center gap-2">
-                  <Ruler className="w-4 h-4 text-blue-600" /> 1. Rozměry díla
+                  <Ruler className="w-4 h-4 text-brand-primary" /> 1. Rozměry díla
                 </span>
                 <button
                   onClick={() => setChecklist(prev => ({ ...prev, measurements: !prev.measurements }))}
@@ -686,7 +686,7 @@ export const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({
             <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-3">
               <div className="flex items-center justify-between">
                 <span className="text-sm font-bold text-slate-900 flex items-center gap-2">
-                  <PenTool className="w-4 h-4 text-blue-600" /> 2. Podpis klienta
+                  <PenTool className="w-4 h-4 text-brand-primary" /> 2. Podpis klienta
                 </span>
                 <span className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full border ${
                   signatureDone ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-amber-50 text-amber-700 border-amber-200'
@@ -699,10 +699,10 @@ export const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({
                   setSignatureDone(true);
                   setChecklist(prev => ({ ...prev, customerSignature: true }));
                 }}
-                className="h-24 rounded-xl bg-white border border-dashed border-slate-300 flex items-center justify-center text-xs font-bold text-slate-700 cursor-pointer hover:border-blue-500"
+                className="h-24 rounded-xl bg-white border border-dashed border-slate-300 flex items-center justify-center text-xs font-bold text-slate-700 cursor-pointer hover:border-brand-primary"
               >
                 {signatureDone ? (
-                  <span className="font-serif italic text-xl text-blue-900">{activeLead?.customerName} ✓</span>
+                  <span className="font-serif italic text-xl text-text">{activeLead?.customerName} ✓</span>
                 ) : (
                   <span>Klepněte pro dotykový podpis zákazníka</span>
                 )}
@@ -711,7 +711,7 @@ export const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({
 
             <button
               onClick={handleGenerateQuoteFromField}
-              className="w-full py-3.5 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm shadow-xs flex items-center justify-center gap-2 cursor-pointer"
+              className="w-full py-3.5 rounded-2xl bg-brand-primary hover:bg-brand-primary text-white font-bold text-sm shadow-xs flex items-center justify-center gap-2 cursor-pointer"
             >
               <Sparkles className="w-5 h-5" />
               <span>Vygenerovat cenovou nabídku z terénu</span>
@@ -734,7 +734,7 @@ export const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({
           <div className="flex items-center justify-between">
             <h3 className="text-lg font-bold text-slate-900">Fotodokumentace (Před / Během / Po)</h3>
             <div className="flex gap-1.5">
-              <button onClick={() => handleAddPhoto('Before')} className="px-2.5 py-1 bg-blue-50 text-blue-700 border border-blue-200 rounded-lg text-xs font-bold cursor-pointer hover:bg-blue-100">+ Před</button>
+              <button onClick={() => handleAddPhoto('Before')} className="px-2.5 py-1 bg-brand-primary-soft text-brand-primary border border-brand-primary-soft rounded-lg text-xs font-bold cursor-pointer hover:bg-brand-primary-soft">+ Před</button>
               <button onClick={() => handleAddPhoto('During')} className="px-2.5 py-1 bg-amber-50 text-amber-700 border border-amber-200 rounded-lg text-xs font-bold cursor-pointer hover:bg-amber-100">+ Během</button>
               <button onClick={() => handleAddPhoto('After')} className="px-2.5 py-1 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-lg text-xs font-bold cursor-pointer hover:bg-emerald-100">+ Po</button>
             </div>
@@ -746,7 +746,7 @@ export const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({
               return (
                 <div key={stageName} className="bg-slate-50 p-4 rounded-2xl border border-slate-200/80 space-y-3">
                   <span className={`text-xs font-bold uppercase px-2.5 py-1 rounded block text-center border ${
-                    stageName === 'Before' ? 'bg-blue-50 border-blue-200 text-blue-700' :
+                    stageName === 'Before' ? 'bg-brand-primary-soft border-brand-primary-soft text-brand-primary' :
                     stageName === 'During' ? 'bg-amber-50 border-amber-200 text-amber-700' : 'bg-emerald-50 border-emerald-200 text-emerald-700'
                   }`}>
                     {stageName === 'Before' ? 'Před montáží' : stageName === 'During' ? 'V průběhu' : 'Hotové dílo'}
@@ -779,14 +779,14 @@ export const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({
           <div className="bg-white rounded-3xl border border-slate-200/80 p-6 space-y-4 shadow-xs">
             <div className="flex items-center justify-between">
               <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
-                <Mic className="w-5 h-5 text-blue-600" />
+                <Mic className="w-5 h-5 text-brand-primary" />
                 <span>Hlasové poznámky</span>
               </h3>
               <button
                 onClick={handleStartRecording}
                 disabled={isRecording}
                 className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer border ${
-                  isRecording ? 'bg-rose-600 text-white border-rose-600 animate-pulse' : 'bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100'
+                  isRecording ? 'bg-rose-600 text-white border-rose-600 animate-pulse' : 'bg-brand-primary-soft text-brand-primary border-brand-primary-soft hover:bg-brand-primary-soft'
                 }`}
               >
                 <Mic className="w-3.5 h-3.5" />
@@ -797,7 +797,7 @@ export const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({
             <div className="space-y-2">
               {transcribedNotes.map((note, idx) => (
                 <div key={idx} className="p-3 rounded-xl bg-slate-50 border border-slate-200/80 text-xs text-slate-800">
-                  <p className="font-bold text-blue-700 mb-0.5">Poznámka #{idx+1}</p>
+                  <p className="font-bold text-brand-primary mb-0.5">Poznámka #{idx+1}</p>
                   <p>{note}</p>
                 </div>
               ))}
@@ -808,13 +808,13 @@ export const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({
           <div className="bg-white rounded-3xl border border-slate-200/80 p-6 space-y-4 shadow-xs">
             <div className="flex items-center justify-between">
               <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
-                <Receipt className="w-5 h-5 text-blue-600" />
+                <Receipt className="w-5 h-5 text-brand-primary" />
                 <span>AI Účtenky (OCR)</span>
               </h3>
               <button
                 onClick={handleScanReceipt}
                 disabled={isScanningReceipt}
-                className="px-3 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-xs flex items-center gap-1.5 cursor-pointer border border-blue-600"
+                className="px-3 py-1.5 rounded-xl bg-brand-primary hover:bg-brand-primary text-white text-xs font-bold shadow-xs flex items-center gap-1.5 cursor-pointer border border-brand-primary"
               >
                 <Sparkles className="w-3.5 h-3.5" />
                 <span>{isScanningReceipt ? 'Skenuji...' : 'Vyfotit účtenku'}</span>

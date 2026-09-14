@@ -35,15 +35,24 @@ export interface AISummary {
   assignedEmployee: string;
   risks: string[];
   recommendedNextStep: string;
+  sentiment?: string;
+  riskScore?: number;
+  suggestedPrice?: number;
+  materials?: string[];
+  estimatedDays?: number;
 }
 
 export interface TimelineStep {
   id: string;
   title: string;
-  status: 'Completed' | 'Current' | 'Pending';
+  status?: 'Completed' | 'Current' | 'Pending';
   timestamp?: string;
   responsibleEmployee?: string;
   notes?: string;
+  date?: string;
+  time?: string;
+  completed?: boolean;
+  description?: string;
 }
 
 export interface AIChatMessage {
@@ -64,6 +73,7 @@ export interface WeatherInfo {
 }
 
 export interface Lead {
+  organization_id?: string;
   id: string;
   title: string;
   description: string;
@@ -87,6 +97,11 @@ export interface Lead {
   aiChat: AIChatMessage[];
   weather?: WeatherInfo;
   latLng?: { lat: number; lng: number };
+  createdDate?: string;
+  urgency?: string;
+  projectType?: string;
+  phone?: string;
+  email?: string;
   history: {
     id: string;
     timestamp: string;

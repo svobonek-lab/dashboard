@@ -21,20 +21,72 @@ import {
   AppButton, 
   AppCard, 
   AppBadge, 
-  AppSelect, 
-  AppModal 
+  AppSelect, AppModal, AppInput 
 } from '../src/components/ui/common';
 
 interface EmployeesPageProps {
   employees: Employee[];
   branding: any;
+  onEmployeeAdded?: (newEmp?: any) => void;
 }
 
-export const EmployeesPage: React.FC<EmployeesPageProps> = ({ employees, branding }) => {
-  const { dbUser } = useOrganization();
+export const EmployeesPage: React.FC<EmployeesPageProps> = ({ employees, branding, onEmployeeAdded }) => {
+  const { dbUser, fetchEmployees, currentOrg } = useOrganization();
   const [selectedLeadId, setSelectedLeadId] = useState<string>('lead-1');
   const [assignmentResult, setAssignmentResult] = useState<any | null>(null);
   const [isAssignSuccessModalOpen, setIsAssignSuccessModalOpen] = useState(false);
+  const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
+  const [isInviting, setIsInviting] = useState(false);
+  const [inviteError, setInviteError] = useState<string | null>(null);
+  const [createdCredentials, setCreatedCredentials] = useState<{ email: string; password: string; name: string } | null>(null);
+  const [inviteForm, setInviteForm] = useState({ 
+    name: '', 
+    email: '', 
+    password: `Stavba${Math.floor(1000 + Math.random() * 9000)}`, 
+    specialization: 'Stavební technik' 
+  });
+  const { inviteEmployee } = useOrganization();
+
+  const handleInviteSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsInviting(true);
+    setInviteError(null);
+    try {
+      const result: any = await inviteEmployee(
+        { 
+          name: inviteForm.name, 
+          specialization: inviteForm.specialization, 
+          capacity: 100, 
+          email: inviteForm.email 
+        } as any,
+        inviteForm.password
+      );
+      setIsInviteModalOpen(false);
+      setCreatedCredentials({
+        name: inviteForm.name,
+        email: inviteForm.email,
+        password: inviteForm.password
+      });
+      setInviteForm({ 
+        name: '', 
+        email: '', 
+        password: `Stavba${Math.floor(1000 + Math.random() * 9000)}`, 
+        specialization: 'Stavební technik' 
+      });
+      if (onEmployeeAdded) {
+        onEmployeeAdded(result);
+      }
+      try {
+        await fetchEmployees();
+      } catch (fErr) {
+        console.warn('Refresh notice:', fErr);
+      }
+    } catch (err: any) {
+      setInviteError(err.message || 'Chyba při pozvání zaměstnance');
+    } finally {
+      setIsInviting(false);
+    }
+  };
   const [assignedEmployeeName, setAssignedEmployeeName] = useState('');
 
   const sampleLeads = generateRealisticLeads(branding);
@@ -61,12 +113,45 @@ export const EmployeesPage: React.FC<EmployeesPageProps> = ({ employees, brandin
   return (
     <div className="space-y-8 pb-20 text-text font-sans max-w-6xl mx-auto">
       {/* Header */}
-      <AppCard className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <AppCard className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h2 className="text-2xl font-black text-text tracking-tight">Správa týmu & řemeslníků</h2>
           <p className="text-xs text-muted mt-0.5">Správa stavebních part, certifikací, aktuální kapacity a přiřazování na zakázky</p>
         </div>
+        <AppButton 
+          variant="primary" 
+          onClick={() => setIsInviteModalOpen(true)}
+          className="flex items-center gap-2 shrink-0 self-start sm:self-auto"
+        >
+          <UserCheck className="w-4 h-4" />
+          <span>Pozvat zaměstnance</span>
+        </AppButton>
       </AppCard>
+
+      {/* Empty State when no employees */}
+      {employees.length === 0 && (
+        <AppCard className="text-center py-16 px-6 space-y-4 border-dashed border-2 border-slate-200">
+          <div className="w-16 h-16 rounded-full bg-slate-100 flex items-center justify-center mx-auto text-slate-400">
+            <UserCheck className="w-8 h-8 text-brand-primary" />
+          </div>
+          <div className="space-y-1 max-w-md mx-auto">
+            <h3 className="text-lg font-black text-text">Zatím žádní zaměstnanci v týmu</h3>
+            <p className="text-xs text-muted leading-relaxed">
+              Tato organizace začíná s čistým štítem. Pozvěte prvního technika, mistra nebo montážníka – systém mu automaticky zřídí samostatný účet s přístupem do terénního rozhraní.
+            </p>
+          </div>
+          <div className="pt-2">
+            <AppButton 
+              variant="primary" 
+              onClick={() => setIsInviteModalOpen(true)}
+              className="inline-flex items-center gap-2"
+            >
+              <UserCheck className="w-4 h-4" />
+              <span>Pozvat prvního zaměstnance</span>
+            </AppButton>
+          </div>
+        </AppCard>
+      )}
 
       {/* AI Dispatcher Assistant */}
       <AppCard className="space-y-4 border border-brand-primary/20">
@@ -313,6 +398,76 @@ export const EmployeesPage: React.FC<EmployeesPageProps> = ({ employees, brandin
           </div>
         </div>
       </AppModal>
+    
+      {/* Invite Employee Modal */}
+      <AppModal
+        isOpen={isInviteModalOpen}
+        onClose={() => setIsInviteModalOpen(false)}
+        title="Pozvat zaměstnance"
+      >
+        <form onSubmit={handleInviteSubmit} className="space-y-4 py-2">
+          {inviteError && <div className="text-red-500 text-xs font-bold">{inviteError}</div>}
+          <div className="space-y-1.5">
+            <label className="text-xs font-bold text-slate-700">Jméno a příjmení</label>
+            <AppInput required value={inviteForm.name} onChange={e => setInviteForm(prev => ({...prev, name: e.target.value}))} placeholder="Jan Novák" />
+          </div>
+          <div className="space-y-1.5">
+            <label className="text-xs font-bold text-slate-700">E-mail pro přihlášení</label>
+            <AppInput type="email" required value={inviteForm.email} onChange={e => setInviteForm(prev => ({...prev, email: e.target.value}))} placeholder="jan.novak@firma.cz" />
+          </div>
+          <div className="space-y-1.5">
+            <label className="text-xs font-bold text-slate-700">Dočasné heslo</label>
+            <AppInput required value={inviteForm.password} onChange={e => setInviteForm(prev => ({...prev, password: e.target.value}))} placeholder="Heslo pro první přihlášení" />
+          </div>
+          <div className="space-y-1.5">
+            <label className="text-xs font-bold text-slate-700">Specializace / Role</label>
+            <AppInput required value={inviteForm.specialization} onChange={e => setInviteForm(prev => ({...prev, specialization: e.target.value}))} placeholder="Např. Mistr tesař" />
+          </div>
+          <div className="pt-4 flex gap-3">
+            <AppButton type="button" variant="outline" className="flex-1" onClick={() => setIsInviteModalOpen(false)}>Zrušit</AppButton>
+            <AppButton type="submit" variant="primary" className="flex-1" disabled={isInviting}>
+              {isInviting ? 'Odesílám...' : 'Odeslat pozvánku'}
+            </AppButton>
+          </div>
+        </form>
+      </AppModal>
+
+      {/* Created Credentials Modal */}
+      <AppModal
+        isOpen={!!createdCredentials}
+        onClose={() => setCreatedCredentials(null)}
+        title="Účet zaměstnance vytvořen"
+      >
+        <div className="space-y-4 py-2 text-left font-sans">
+          <div className="p-4 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-900 text-xs space-y-3">
+            <p className="font-bold flex items-center gap-2 text-emerald-800 text-sm">
+              <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
+              <span>Zaměstnanecký účet byl úspěšně aktivován</span>
+            </p>
+            <p className="text-slate-600 leading-relaxed">
+              Zaměstnanec se může ihned přihlásit na stránce <strong>/login</strong>. Po přihlášení má okamžitý přístup výhradně do svého terénního rozhraní (Moje zakázky, Kalendář, Hlasové poznámky, Kontrolní seznamy).
+            </p>
+            <div className="bg-white p-3.5 rounded-lg border border-emerald-200 font-mono text-xs space-y-1.5 shadow-xs">
+              <div className="flex justify-between">
+                <span className="text-slate-500 font-sans">Jméno:</span> 
+                <strong className="text-slate-900">{createdCredentials?.name}</strong>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-slate-500 font-sans">Přihlašovací e-mail:</span> 
+                <strong className="text-brand-primary">{createdCredentials?.email}</strong>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-slate-500 font-sans">Heslo pro přihlášení:</span> 
+                <strong className="text-emerald-700">{createdCredentials?.password}</strong>
+              </div>
+            </div>
+          </div>
+          <AppButton variant="primary" className="w-full" onClick={() => setCreatedCredentials(null)}>
+            Zavřít a pokračovat
+          </AppButton>
+        </div>
+      </AppModal>
+
     </div>
   );
 };

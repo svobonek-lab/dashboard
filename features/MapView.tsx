@@ -225,7 +225,7 @@ export const MapView: React.FC<MapViewProps> = ({ leads, branding, onSelectLead 
         <div>
           <h2 className="text-2xl font-bold text-slate-900 tracking-tight flex items-center gap-2">
             <span>Reálná Mapa Výjezdů & Staveb</span>
-            <span className="px-2.5 py-0.5 rounded-full bg-blue-100 text-blue-800 text-[11px] font-bold">Live GPS OpenStreetMap</span>
+            <span className="px-2.5 py-0.5 rounded-full bg-brand-primary-soft text-brand-primary text-[11px] font-bold">Live GPS OpenStreetMap</span>
           </h2>
           <p className="text-xs text-slate-500 mt-0.5">Interaktivní mapa všech zakázek, dispečink techniků a GPS trasování v {branding.city}.</p>
         </div>
@@ -266,9 +266,9 @@ export const MapView: React.FC<MapViewProps> = ({ leads, branding, onSelectLead 
 
       {/* Route Optimization Savings Banner (shown after click) */}
       {optimizedRoute && (
-        <div className="bg-blue-50 p-5 rounded-2xl text-slate-900 shadow-sm border border-blue-200 flex flex-col md:flex-row items-center justify-between gap-4 animate-in fade-in slide-in-from-top-2">
+        <div className="bg-brand-primary-soft p-5 rounded-2xl text-slate-900 shadow-sm border border-brand-primary-soft flex flex-col md:flex-row items-center justify-between gap-4 animate-in fade-in slide-in-from-top-2">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-blue-600 text-white flex items-center justify-center">
+            <div className="w-10 h-10 rounded-xl bg-brand-primary text-white flex items-center justify-center">
               <Sparkles className="w-5 h-5" />
             </div>
             <div>
@@ -277,9 +277,9 @@ export const MapView: React.FC<MapViewProps> = ({ leads, branding, onSelectLead 
             </div>
           </div>
           <div className="flex items-center gap-6 text-xs font-bold bg-white px-4 py-2.5 rounded-xl border border-slate-200 shadow-xs">
-            <div>⏱️ Ušetřený čas: <span className="text-blue-600 font-mono">41 min</span></div>
-            <div>⛽ Ušetřené palivo: <span className="text-blue-600 font-mono">4.2 L</span></div>
-            <div>📍 Zkrácení tras: <span className="text-blue-600 font-mono">32 km</span></div>
+            <div>⏱️ Ušetřený čas: <span className="text-brand-primary font-mono">41 min</span></div>
+            <div>⛽ Ušetřené palivo: <span className="text-brand-primary font-mono">4.2 L</span></div>
+            <div>📍 Zkrácení tras: <span className="text-brand-primary font-mono">32 km</span></div>
           </div>
         </div>
       )}
@@ -313,7 +313,7 @@ export const MapView: React.FC<MapViewProps> = ({ leads, branding, onSelectLead 
               <div>
                 <h3 className="text-base font-bold text-slate-900">{selectedPin.title}</h3>
                 <p className="text-xs text-slate-500 mt-1 flex items-center gap-1.5">
-                  <MapPin className="w-3.5 h-3.5 text-blue-600 shrink-0" /> {selectedPin.address}
+                  <MapPin className="w-3.5 h-3.5 text-brand-primary shrink-0" /> {selectedPin.address}
                 </p>
               </div>
 
@@ -324,7 +324,7 @@ export const MapView: React.FC<MapViewProps> = ({ leads, branding, onSelectLead 
                 </div>
                 <div className="flex justify-between">
                   <span className="text-slate-500">Odpovědný mistr:</span>
-                  <span className="font-bold text-blue-700">{selectedPin.assignedEmployeeName}</span>
+                  <span className="font-bold text-brand-primary">{selectedPin.assignedEmployeeName}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-slate-500">Termín realizace:</span>
@@ -339,12 +339,12 @@ export const MapView: React.FC<MapViewProps> = ({ leads, branding, onSelectLead 
                   rel="noreferrer"
                   className="py-2.5 px-3 rounded-xl text-xs font-bold text-slate-800 bg-slate-100 hover:bg-slate-200 border border-slate-200 transition-all text-center flex items-center justify-center gap-1.5"
                 >
-                  <Navigation className="w-3.5 h-3.5 text-blue-600" />
+                  <Navigation className="w-3.5 h-3.5 text-brand-primary" />
                   <span>Navigace</span>
                 </a>
                 <button
                   onClick={() => onSelectLead(selectedPin)}
-                  className="py-2.5 px-3 rounded-xl text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 shadow-xs transition-all cursor-pointer"
+                  className="py-2.5 px-3 rounded-xl text-xs font-bold text-white bg-brand-primary hover:bg-brand-primary shadow-xs transition-all cursor-pointer"
                 >
                   Detail zakázky
                 </button>

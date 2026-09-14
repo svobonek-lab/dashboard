@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { generateRealisticLeads, generateRealisticEmployees } from '@/lib/demoData';
+import { DEFAULT_DEMO_ORG_ID } from '@/lib/supabase';
 import { useOrganization } from '@/context/OrganizationContext';
 import { RouterProvider, useRouter } from './app/router';
 import { ProtectedRoute } from './app/ProtectedRoute';
@@ -67,18 +68,20 @@ function AppContent() {
   } = useOrganization();
   const { pathname, navigate } = useRouter();
 
-  const [leads, setLeads] = useState<Lead[]>(() => generateRealisticLeads(branding));
-  const [employees, setEmployees] = useState(() => generateRealisticEmployees());
+  const isDemoOrg = currentOrg?.id === DEFAULT_DEMO_ORG_ID || currentOrg?.slug === 'pergoly-praha';
+  const [leads, setLeads] = useState<Lead[]>(() => isDemoOrg ? generateRealisticLeads(branding) : []);
+  const [employees, setEmployees] = useState(() => isDemoOrg ? generateRealisticEmployees() : []);
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
 
   // Synchronize leads & employees from active organization
   useEffect(() => {
     if (currentOrg) {
+      const isDemo = currentOrg.id === DEFAULT_DEMO_ORG_ID || currentOrg.slug === 'pergoly-praha';
       Promise.all([fetchLeads(), fetchEmployees()])
         .then(([dbLeads, dbEmployees]) => {
           if (dbLeads.length > 0) {
             setLeads(dbLeads);
-          } else {
+          } else if (isDemo) {
             const initialLeads = generateRealisticLeads({
               ...branding,
               name: currentOrg.name,
@@ -87,10 +90,16 @@ function AppContent() {
             Promise.all(initialLeads.map(l => saveLead(l)))
               .then(saved => setLeads(saved))
               .catch(() => setLeads(initialLeads));
+          } else {
+            setLeads([]);
           }
 
           if (dbEmployees.length > 0) {
             setEmployees(dbEmployees);
+          } else if (isDemo) {
+            setEmployees(generateRealisticEmployees());
+          } else {
+            setEmployees([]);
           }
         })
         .catch(err => {
@@ -112,20 +121,18 @@ function AppContent() {
 
   // Dynamic White Labeling (Browser Title & Favicon Update)
   useEffect(() => {
-    if (currentOrg?.name) {
-      document.title = `${branding.name} | Stavební OS`;
-    } else {
-      document.title = 'StavbaCore CRM';
-    }
+    const activeName = currentOrg?.name || branding.name || 'StavbaCore CRM';
+    document.title = `${activeName} | Stavební OS`;
 
-    if (currentOrg?.branding?.logoUrl) {
+    const activeLogo = currentOrg?.logo_url || branding.logoUrl;
+    if (activeLogo) {
       const link: HTMLLinkElement = document.querySelector("link[rel*='icon']") || document.createElement('link');
       link.type = 'image/png';
       link.rel = 'icon';
-      link.href = branding.logoUrl;
+      link.href = activeLogo;
       document.head.appendChild(link);
     }
-  }, [branding?.name, branding?.logoUrl]);
+  }, [currentOrg?.name, currentOrg?.logo_url, branding?.name, branding?.logoUrl]);
 
   const handleUpdateLeadStatus = async (leadId: string, newStatus: LeadStatus) => {
     setLeads(prev => prev.map(l => l.id === leadId ? { ...l, status: newStatus } : l));
@@ -145,8 +152,81 @@ function AppContent() {
     saveLead(updatedLead).catch(e => console.error('Failed to save lead', e));
   };
 
-  const handleAddLead = (newLead: Lead) => {
-    setLeads(prev => [newLead, ...prev]);
+  React.useEffect(() => {
+    const handleMessage = (e: MessageEvent) => {
+      if (e.data?.type === 'LEAD_CREATED') {
+        handleAddLead(e.data.payload);
+      }
+    };
+    window.addEventListener('message', handleMessage);
+    return () => window.removeEventListener('message', handleMessage);
+  }, [employees]);
+
+  const handleAddLead = (incoming: any) => {
+    const customerName = incoming.fullName || incoming.customerName || incoming.title || 'Nová poptávka';
+    const newLead: Lead = {
+      id: incoming.id || `lead-${Date.now()}`,
+      title: incoming.title || `${incoming.projectType || 'Projekt'} - ${customerName}`,
+      customerName: customerName,
+      customerPhone: incoming.phone || incoming.customerPhone || '',
+      customerEmail: incoming.email || incoming.customerEmail || '',
+      city: incoming.city || currentOrg?.city || 'Praha',
+      address: incoming.address || `${currentOrg?.city || 'Praha'}`,
+      preferredDate: incoming.preferredDate || new Date().toISOString().substring(0, 10),
+      price: Number(incoming.price || incoming.budgetValue) || 220000,
+      status: (incoming.status as LeadStatus) || 'New',
+      priority: (incoming.priority as any) || 'Medium',
+      assignedEmployeeId: incoming.assignedEmployeeId || (employees[0]?.id || 'emp-1'),
+      assignedEmployeeName: incoming.assignedEmployeeName || (employees[0]?.name || 'Dispečink'),
+      thumbnail: incoming.thumbnail || 'https://images.unsplash.com/photo-1513694203232-719a280e022f?auto=format&fit=crop&w=400&q=80',
+      photos: incoming.photos || [],
+      files: incoming.files || [],
+      createdDate: incoming.createdDate || new Date().toLocaleDateString('cs-CZ'),
+      urgency: incoming.urgency || 'Medium',
+      description: incoming.description || 'Poptávka z webového formuláře',
+      timeline: incoming.timeline && incoming.timeline.length > 0 ? incoming.timeline : [
+        {
+          id: 't-1',
+          title: 'Poptávka odeslána z webu',
+          date: new Date().toLocaleDateString('cs-CZ'),
+          time: new Date().toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit' }),
+          completed: true,
+          description: 'Zákazník odeslal online poptávku s kontaktními údaji.'
+        }
+      ],
+      checklist: incoming.checklist && incoming.checklist.length > 0 ? incoming.checklist : [
+        { id: 'c-1', text: 'Zkontrolovat kontaktní údaje a ověřit telefon', completed: false, required: true },
+        { id: 'c-2', text: 'Zpracovat cenovou kalkulaci', completed: false, required: true },
+        { id: 'c-3', text: 'Domluvit termín zaměření na místě', completed: false, required: false }
+      ],
+      aiSummary: incoming.aiSummary || {
+        jobType: incoming.projectType || 'Zakázka',
+        complexity: 'Medium',
+        estimatedRange: `${Number(incoming.price || incoming.budgetValue || 220000).toLocaleString('cs-CZ')} Kč`,
+        assignedEmployee: employees[0]?.name || 'Dispečink',
+        risks: ['Ověřit terénní přístup a inženýrské sítě'],
+        recommendedNextStep: 'Telefonický kontakt zákazníka do 24 hodin.'
+      },
+      aiChat: incoming.aiChat || [],
+      history: incoming.history && incoming.history.length > 0 ? incoming.history : [
+        {
+          id: 'h-' + Date.now(),
+          timestamp: new Date().toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit' }),
+          action: 'Poptávka přijata do CRM',
+          author: 'Webový formulář'
+        }
+      ],
+      voiceNotes: incoming.voiceNotes || (incoming.voiceNoteText ? [
+        {
+          id: 'vn-1',
+          timestamp: new Date().toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit' }),
+          text: incoming.voiceNoteText,
+          duration: '0:15'
+        }
+      ] : [])
+    };
+
+    setLeads(prev => [newLead, ...prev.filter(l => l.id !== newLead.id)]);
     saveLead(newLead).catch(e => console.error('Failed to save lead', e));
   };
 
@@ -174,9 +254,12 @@ function AppContent() {
   }
 
   if (pathname === '/login') {
-    return <LoginPage onSuccess={() => {
-      const role = (dbUser?.role as UserRole) || 'owner';
-      navigate(getDefaultRouteForRole(role), { replace: true });
+    return <LoginPage onSuccess={(user) => {
+      if (user?.role) {
+         navigate(getDefaultRouteForRole(user.role), { replace: true });
+      } else {
+         navigate('/', { replace: true });
+      }
     }} />;
   }
 
@@ -256,7 +339,14 @@ function AppContent() {
         ) : pathname === '/calendar' ? (
           <OwnerCalendarPage leads={leads} />
         ) : pathname === '/employees' ? (
-          <OwnerEmployeesPage employees={employees} />
+          <OwnerEmployeesPage 
+            employees={employees} 
+            onEmployeeAdded={() => {
+              fetchEmployees().then(dbEmp => {
+                if (dbEmp && dbEmp.length > 0) setEmployees(dbEmp);
+              }).catch(console.error);
+            }} 
+          />
         ) : pathname === '/analytics' ? (
           <OwnerAnalyticsPage />
         ) : pathname === '/quotes' ? (

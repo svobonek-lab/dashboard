@@ -143,10 +143,10 @@ export const FloatingAIAssistant: React.FC<FloatingAIAssistantProps> = ({ brandi
       {/* Floating Trigger Button */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="fixed bottom-6 right-6 z-50 w-14 h-14 rounded-2xl bg-white text-slate-900 shadow-2xl flex items-center justify-center hover:scale-105 transition-all ring-4 ring-blue-500/20 group"
+        className="fixed bottom-6 right-6 z-50 w-14 h-14 rounded-2xl bg-white text-slate-900 shadow-2xl flex items-center justify-center hover:scale-105 transition-all ring-4 ring-brand-primary-soft group"
         title="AI Project Copilot"
       >
-        <Sparkles className="w-6 h-6 text-blue-400 group-hover:rotate-12 transition-transform" />
+        <Sparkles className="w-6 h-6 text-brand-primary group-hover:rotate-12 transition-transform" />
       </button>
 
       {/* Chat Window */}
@@ -155,13 +155,13 @@ export const FloatingAIAssistant: React.FC<FloatingAIAssistantProps> = ({ brandi
           {/* Header */}
           <div className="p-4 border-b border-slate-200 flex items-center justify-between bg-slate-50/90 backdrop-blur-md">
             <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-xl bg-blue-600/20 border border-blue-500/30 flex items-center justify-center text-blue-400">
+              <div className="w-9 h-9 rounded-xl bg-brand-primary/20 border border-brand-primary/30 flex items-center justify-center text-brand-primary">
                 <Bot className="w-5 h-5" />
               </div>
               <div>
                 <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
                   <span>AI Project Copilot</span>
-                  <span className="text-[9px] bg-blue-500/20 text-blue-300 px-1.5 py-0.5 rounded border border-blue-500/30 font-semibold">Gemini 2.5</span>
+                  <span className="text-[9px] bg-brand-primary-soft text-brand-primary px-1.5 py-0.5 rounded border border-brand-primary/30 font-semibold">Gemini 2.5</span>
                 </h3>
                 <p className="text-[10px] text-green-400 flex items-center gap-1">
                   <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse"></span>
@@ -216,7 +216,7 @@ export const FloatingAIAssistant: React.FC<FloatingAIAssistantProps> = ({ brandi
 
           {/* Voice Mode Wave Animation Overlay */}
           {isVoiceMode && (
-            <div className="bg-gradient-to-b from-blue-950/90 to-slate-900/95 p-6 border-b border-blue-500/30 flex flex-col items-center justify-center space-y-4 text-center animate-in fade-in">
+            <div className="bg-gradient-to-b from-blue-950/90 to-slate-900/95 p-6 border-b border-brand-primary/30 flex flex-col items-center justify-center space-y-4 text-center animate-in fade-in">
               <div className="w-14 h-14 rounded-full bg-rose-600/20 border border-rose-500/40 flex items-center justify-center text-rose-400 animate-pulse">
                 <Mic className="w-7 h-7" />
               </div>
@@ -226,13 +226,13 @@ export const FloatingAIAssistant: React.FC<FloatingAIAssistantProps> = ({ brandi
               </div>
               {/* Animated Voice Soundwave */}
               <div className="flex items-center justify-center gap-1.5 h-8">
-                <span className="w-1 bg-blue-400 rounded-full animate-[bounce_1s_infinite_100ms] h-4"></span>
-                <span className="w-1 bg-blue-400 rounded-full animate-[bounce_1s_infinite_200ms] h-8"></span>
-                <span className="w-1 bg-blue-400 rounded-full animate-[bounce_1s_infinite_300ms] h-6"></span>
+                <span className="w-1 bg-brand-primary rounded-full animate-[bounce_1s_infinite_100ms] h-4"></span>
+                <span className="w-1 bg-brand-primary rounded-full animate-[bounce_1s_infinite_200ms] h-8"></span>
+                <span className="w-1 bg-brand-primary rounded-full animate-[bounce_1s_infinite_300ms] h-6"></span>
                 <span className="w-1 bg-rose-400 rounded-full animate-[bounce_1s_infinite_150ms] h-7"></span>
                 <span className="w-1 bg-rose-400 rounded-full animate-[bounce_1s_infinite_250ms] h-9"></span>
-                <span className="w-1 bg-blue-400 rounded-full animate-[bounce_1s_infinite_350ms] h-5"></span>
-                <span className="w-1 bg-blue-400 rounded-full animate-[bounce_1s_infinite_100ms] h-3"></span>
+                <span className="w-1 bg-brand-primary rounded-full animate-[bounce_1s_infinite_350ms] h-5"></span>
+                <span className="w-1 bg-brand-primary rounded-full animate-[bounce_1s_infinite_100ms] h-3"></span>
               </div>
               <button
                 onClick={handleToggleVoice}
@@ -249,11 +249,11 @@ export const FloatingAIAssistant: React.FC<FloatingAIAssistantProps> = ({ brandi
               <div key={m.id} className={`flex ${m.sender === 'user' ? 'justify-end' : 'justify-start'}`}>
                 <div className={`max-w-[85%] p-3.5 rounded-2xl text-xs space-y-1 ${
                   m.sender === 'user'
-                    ? 'bg-blue-600 text-slate-900 rounded-br-xs'
+                    ? 'bg-brand-primary text-slate-900 rounded-br-xs'
                     : 'bg-slate-800/90 text-slate-800 rounded-bl-xs border border-slate-300/60 shadow-xs'
                 }`}>
                   <p className="leading-relaxed whitespace-pre-line">{m.text}</p>
-                  <p className={`text-[9px] text-right ${m.sender === 'user' ? 'text-blue-200' : 'text-slate-500'}`}>{m.time}</p>
+                  <p className={`text-[9px] text-right ${m.sender === 'user' ? 'text-brand-primary' : 'text-slate-500'}`}>{m.time}</p>
                 </div>
               </div>
             ))}
@@ -273,7 +273,7 @@ export const FloatingAIAssistant: React.FC<FloatingAIAssistantProps> = ({ brandi
                     onClick={() => handleExecuteAction(act.action)}
                     className="p-2 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-left border border-slate-300/50 transition-all flex items-center gap-1.5 text-[10px] font-semibold text-slate-800 hover:text-slate-900"
                   >
-                    <Icon className="w-3.5 h-3.5 text-blue-400 flex-shrink-0" />
+                    <Icon className="w-3.5 h-3.5 text-brand-primary flex-shrink-0" />
                     <span className="truncate">{act.label}</span>
                   </button>
                 );
@@ -296,11 +296,11 @@ export const FloatingAIAssistant: React.FC<FloatingAIAssistantProps> = ({ brandi
               onChange={(e) => setInputVal(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleSend()}
               placeholder="Napište pokyn pro AI Copilota..."
-              className="flex-1 bg-white border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs text-slate-900 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500/30"
+              className="flex-1 bg-white border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs text-slate-900 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-brand-primary-soft"
             />
             <button
               onClick={() => handleSend()}
-              className="w-9 h-9 rounded-xl bg-blue-600 hover:bg-blue-500 text-slate-900 flex items-center justify-center transition-all flex-shrink-0"
+              className="w-9 h-9 rounded-xl bg-brand-primary hover:bg-brand-primary text-slate-900 flex items-center justify-center transition-all flex-shrink-0"
             >
               <Send className="w-4 h-4" />
             </button>

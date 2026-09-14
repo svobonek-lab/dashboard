@@ -431,7 +431,7 @@ export const AdminPanel: React.FC = () => {
                           </div>
                           <label 
                             title="Nahrát nový obrázek z počítače" 
-                            className="absolute -bottom-1 -right-1 w-5 h-5 rounded-md bg-blue-600 hover:bg-blue-500 text-white flex items-center justify-center shadow-md cursor-pointer transition-transform hover:scale-110"
+                            className="absolute -bottom-1 -right-1 w-5 h-5 rounded-md bg-brand-primary hover:bg-brand-primary text-white flex items-center justify-center shadow-md cursor-pointer transition-transform hover:scale-110"
                           >
                             <Camera className="w-3 h-3" />
                             <input 
@@ -658,8 +658,8 @@ export const AdminPanel: React.FC = () => {
                         </div>
                       ) : null}
 
-                      <label className="cursor-pointer min-h-[42px] py-2.5 px-3 rounded-xl bg-blue-50 hover:bg-blue-100 border border-blue-200 text-blue-700 text-xs font-bold flex items-center justify-center gap-2 transition-all">
-                        <UploadCloud className="w-4 h-4 text-blue-600" />
+                      <label className="cursor-pointer min-h-[42px] py-2.5 px-3 rounded-xl bg-brand-primary-soft hover:bg-brand-primary-soft border border-brand-primary-soft text-brand-primary text-xs font-bold flex items-center justify-center gap-2 transition-all">
+                        <UploadCloud className="w-4 h-4 text-brand-primary" />
                         <span>Nahrát fotku / logo z PC</span>
                         <input
                           type="file"
@@ -1103,8 +1103,8 @@ export const AdminPanel: React.FC = () => {
                   </div>
                 ) : null}
 
-                <label className="cursor-pointer min-h-[44px] py-2.5 px-4 rounded-xl bg-blue-50 hover:bg-blue-100 border border-blue-200 text-blue-700 font-bold text-xs flex items-center justify-center gap-2 transition-all">
-                  <UploadCloud className="w-4 h-4 text-blue-600" />
+                <label className="cursor-pointer min-h-[44px] py-2.5 px-4 rounded-xl bg-brand-primary-soft hover:bg-brand-primary-soft border border-brand-primary-soft text-brand-primary font-bold text-xs flex items-center justify-center gap-2 transition-all">
+                  <UploadCloud className="w-4 h-4 text-brand-primary" />
                   <span>Nahrát nový obrázek z počítače</span>
                   <input
                     type="file"

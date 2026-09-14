@@ -22,6 +22,7 @@ import {
   Globe,
   UploadCloud,
   Camera,
+  Eye,
   Image as ImageIcon
 } from 'lucide-react';
 
@@ -283,6 +284,16 @@ export const AdminCompaniesPage: React.FC = () => {
                     <span>Otevřít Company Workspace</span>
                     <ExternalLink className="w-3.5 h-3.5 text-cyan-400" />
                   </button>
+
+                  <a
+                    href={`/inquiry?org=${org.id}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    title="Otevřít veřejný poptávkový formulář firmy (Live Preview)"
+                    className="p-2 rounded-xl bg-[#090D16] hover:bg-slate-800 text-slate-400 hover:text-cyan-300 border border-slate-800 transition-colors flex items-center justify-center"
+                  >
+                    <Eye className="w-3.5 h-3.5" />
+                  </a>
 
                   <button
                     onClick={() => handleOpenEdit(org)}

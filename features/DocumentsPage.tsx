@@ -77,7 +77,7 @@ export const DocumentsPage: React.FC<DocumentsPageProps> = ({ branding }) => {
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Hledat v dokumentech (např. 'smlouva', 'povolení')..."
-            className="w-full bg-white border border-slate-200 focus:border-blue-500 rounded-2xl pl-10 pr-4 py-2.5 text-xs text-slate-800 focus:outline-none shadow-xs"
+            className="w-full bg-white border border-slate-200 focus:border-brand-primary rounded-2xl pl-10 pr-4 py-2.5 text-xs text-slate-800 focus:outline-none shadow-xs"
           />
         </div>
       </div>

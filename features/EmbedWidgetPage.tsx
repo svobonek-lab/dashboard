@@ -158,7 +158,7 @@ export default function RootLayout({ children }) {
                     onClick={() => setWidgetPosition('bottom-right')}
                     className={`py-2 px-3 rounded-xl border text-xs font-bold transition-all ${
                       widgetPosition === 'bottom-right'
-                        ? 'border-blue-500 bg-blue-50 text-blue-700'
+                        ? 'border-brand-primary bg-brand-primary-soft text-brand-primary'
                         : 'border-slate-200 bg-slate-50 text-slate-600'
                     }`}
                   >
@@ -169,7 +169,7 @@ export default function RootLayout({ children }) {
                     onClick={() => setWidgetPosition('bottom-left')}
                     className={`py-2 px-3 rounded-xl border text-xs font-bold transition-all ${
                       widgetPosition === 'bottom-left'
-                        ? 'border-blue-500 bg-blue-50 text-blue-700'
+                        ? 'border-brand-primary bg-brand-primary-soft text-brand-primary'
                         : 'border-slate-200 bg-slate-50 text-slate-600'
                     }`}
                   >
@@ -220,7 +220,7 @@ export default function RootLayout({ children }) {
             </div>
 
             {/* Code Block */}
-            <div className="bg-slate-900 p-4 rounded-2xl font-mono text-[11px] text-blue-300 relative overflow-x-auto whitespace-pre-wrap leading-relaxed">
+            <div className="bg-slate-900 p-4 rounded-2xl font-mono text-[11px] text-brand-primary relative overflow-x-auto whitespace-pre-wrap leading-relaxed">
               {snippetCodes[selectedSnippetType]}
             </div>
 

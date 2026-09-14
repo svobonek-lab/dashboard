@@ -12,13 +12,13 @@ export const EmployeeProfilePage: React.FC = () => {
       
       {/* Header Avatar Card */}
       <div className="bg-white border border-slate-200/80 rounded-3xl p-6 text-center space-y-4 shadow-xs">
-        <div className="w-20 h-20 rounded-3xl bg-blue-50 border-2 border-blue-200 text-blue-700 flex items-center justify-center font-extrabold text-2xl mx-auto shadow-xs">
+        <div className="w-20 h-20 rounded-3xl bg-brand-primary-soft border-2 border-brand-primary-soft text-brand-primary flex items-center justify-center font-extrabold text-2xl mx-auto shadow-xs">
           PN
         </div>
 
         <div>
           <h2 className="text-lg font-bold text-slate-900">Petr Novotný</h2>
-          <p className="text-xs text-blue-700 font-bold mt-0.5">Vedoucí montážní party • Pergoly & Terasy</p>
+          <p className="text-xs text-brand-primary font-bold mt-0.5">Vedoucí montážní party • Pergoly & Terasy</p>
           <p className="text-[11px] text-slate-500 font-medium mt-1">{branding?.name}</p>
         </div>
 
@@ -26,7 +26,7 @@ export const EmployeeProfilePage: React.FC = () => {
           <span className="px-3 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px] font-bold uppercase tracking-wider">
             Aktivní v terénu
           </span>
-          <span className="px-3 py-1 rounded-full bg-blue-50 text-blue-700 border border-blue-200 text-[10px] font-bold">
+          <span className="px-3 py-1 rounded-full bg-brand-primary-soft text-brand-primary border border-brand-primary-soft text-[10px] font-bold">
             Certifikace 2026 OK
           </span>
         </div>

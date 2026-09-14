@@ -135,7 +135,7 @@ export const LeadDetail: React.FC<LeadDetailProps> = ({
 
         <div className="flex items-center gap-3">
           <span className={`px-3.5 py-1.5 rounded-full text-xs font-bold border ${
-            lead.status === 'New' ? 'bg-slate-50/80 border-blue-800 text-blue-400' :
+            lead.status === 'New' ? 'bg-slate-50/80 border-brand-primary text-brand-primary' :
             lead.status === 'In Progress' ? 'bg-amber-950/80 border-amber-800 text-amber-400' : 'bg-green-950/80 border-green-800 text-green-400'
           }`}>
             Stav: {lead.status}

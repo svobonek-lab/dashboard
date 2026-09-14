@@ -54,7 +54,7 @@ export const InquiryFormPage: React.FC<InquiryFormPageProps> = ({
       </div>
 
       {/* Stable central workspace with internal overflow scrolling */}
-      <div className="flex-1 w-full overflow-y-auto px-6 py-8 md:px-12 bg-slate-50/50 flex justify-center">
+      <div className="flex-1 w-full overflow-y-auto px-6 py-4 md:px-10 bg-slate-50/50 flex justify-center">
         <div className="w-full max-w-[1600px] flex flex-col justify-between min-h-full">
           <div className="flex-1 pb-10">
             <EnterpriseInquiryForm

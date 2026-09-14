@@ -11,7 +11,7 @@ interface CustomerPortalPageProps {
 
 export const CustomerPortalPage: React.FC<CustomerPortalPageProps> = ({
   branding: propBranding,
-  lead,
+  lead: propLead,
   onBackToCRM
 }) => {
   const { currentOrg } = useOrganization();
@@ -20,6 +20,50 @@ export const CustomerPortalPage: React.FC<CustomerPortalPageProps> = ({
   const [chatMessage, setChatMessage] = useState('');
   
   const activeCompanyName = branding.name || propBranding.name || 'Stavební Společnost';
+
+  const safeLead: Lead = propLead || {
+    id: 'lead-preview-demo',
+    title: 'Realizace stavebního projektu',
+    description: 'Kompletní realizace stavebního projektu na klíč.',
+    city: currentOrg?.city || 'Praha',
+    customerName: 'Vážený zákazník',
+    customerPhone: '+420 777 123 456',
+    customerEmail: 'klient@email.cz',
+    address: currentOrg?.city || 'Praha',
+    preferredDate: new Date().toISOString().substring(0, 10),
+    price: 185000,
+    status: 'In Progress',
+    priority: 'Medium',
+    assignedEmployeeId: 'emp-1',
+    assignedEmployeeName: 'Technik realizací',
+    thumbnail: 'https://images.unsplash.com/photo-1513694203232-719a280e022f?auto=format&fit=crop&w=400&q=80',
+    photos: [],
+    files: [],
+    createdDate: new Date().toLocaleDateString('cs-CZ'),
+    urgency: 'Medium',
+    aiSummary: {
+      jobType: 'Stavba',
+      complexity: 'Medium',
+      estimatedRange: '185 000 Kč',
+      assignedEmployee: 'Petr Novotný',
+      risks: [],
+      recommendedNextStep: 'Zahájit montáž',
+      sentiment: 'Positive',
+      riskScore: 5,
+      suggestedPrice: 185000,
+      materials: ['Základové patky', 'Dřevěné trámy KVH'],
+      estimatedDays: 4
+    },
+    aiChat: [],
+    timeline: [
+      { id: 't-1', title: 'Podpis smlouvy a zahájení zakázky', date: 'Včera', completed: true, description: 'Smlouva o dílo byla oboustranně potvrzena.' },
+      { id: 't-2', title: 'Příprava materiálu a montáž', date: 'Dnes', completed: true, description: 'Materiál byl dovezen na staveniště.' },
+      { id: 't-3', title: 'Předání a kolaudace', date: 'Příští týden', completed: false, description: 'Finální kontrola kvality se zákazníkem.' }
+    ],
+    checklist: [],
+    history: []
+  };
+  const lead = safeLead;
 
   const [messages, setMessages] = useState(lead.aiChat || [
     { id: '1', sender: 'ai', text: `Dobrý den, pane ${lead.customerName.split(' ').pop()}. Váš projekt "${lead.title}" je aktivně naplánován a materiály jsou připraveny na skladě společnosti ${activeCompanyName}.`, timestamp: 'Dnes 09:30' },
@@ -116,7 +160,7 @@ export const CustomerPortalPage: React.FC<CustomerPortalPageProps> = ({
         </div>
       </div>
 
-      <div className="max-w-4xl mx-auto px-4 py-8 space-y-8">
+      <div className="max-w-4xl mx-auto px-4 py-6 space-y-6">
         {/* Status Overview Card */}
         <div 
           className="bg-white/90 backdrop-blur-md p-6 rounded-[24px] border border-slate-200 shadow-xl grid grid-cols-1 sm:grid-cols-3 gap-6"

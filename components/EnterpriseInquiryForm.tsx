@@ -363,7 +363,7 @@ export const EnterpriseInquiryForm: React.FC<EnterpriseInquiryFormProps> = ({
                           onClick={() => setFormData({ ...formData, preferredDate: targetDate })}
                           className={`py-2 px-1 rounded-xl text-[11px] font-bold border transition-all text-center cursor-pointer ${
                             isSelected
-                              ? 'shadow-xs ring-2 ring-blue-500/10'
+                              ? 'shadow-xs ring-2 ring-brand-primary-soft'
                               : 'border-slate-200 bg-slate-50 text-slate-600 hover:bg-slate-100 hover:text-slate-800'
                           }`}
                           style={
@@ -546,7 +546,7 @@ export const EnterpriseInquiryForm: React.FC<EnterpriseInquiryFormProps> = ({
               id="enterprise-form-gdpr"
               checked={formData.gdprConsent}
               onChange={e => setFormData({ ...formData, gdprConsent: e.target.checked })}
-              className="mt-0.5 w-4.5 h-4.5 rounded border-slate-300 text-blue-600 focus:ring-blue-500/20 cursor-pointer shrink-0"
+              className="mt-0.5 w-4.5 h-4.5 rounded border-slate-300 text-brand-primary focus:ring-brand-primary-soft cursor-pointer shrink-0"
             />
             <label htmlFor="enterprise-form-gdpr" className="text-xs text-slate-500 leading-relaxed cursor-pointer font-medium">
               Souhlasím se zpracováním mých kontaktních a osobních údajů společností <strong>{activeCompanyName}</strong> za účelem kalkulace cenové nabídky a technického zaměření staveniště, v souladu se směrnicí GDPR.

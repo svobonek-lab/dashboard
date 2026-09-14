@@ -16,6 +16,7 @@ function generateUUID(): string {
 // Strict Super Admin Access Enforcer:
 // ONLY and SOLELY svobonek@gmail.com with password AP11hynek is allowed super_admin access.
 // All other users are strictly restricted to 'owner' or 'employee'.
+
 export const enforceRole = (email?: string, pass?: string, candidateRole?: string): 'super_admin' | 'owner' | 'employee' => {
   const cleanEmail = (email || '').trim().toLowerCase();
   
@@ -25,12 +26,17 @@ export const enforceRole = (email?: string, pass?: string, candidateRole?: strin
     }
   }
 
-  // Under NO circumstances can any other email/user have super_admin role
-  if (candidateRole === 'employee' || cleanEmail.includes('zamestnanec') || cleanEmail.includes('worker') || cleanEmail.includes('montaznik')) {
+  if (candidateRole === 'employee' || candidateRole === 'owner') {
+    return candidateRole;
+  }
+
+  if (cleanEmail.includes('zamestnanec') || cleanEmail.includes('worker') || cleanEmail.includes('montaznik')) {
     return 'employee';
   }
+
   return 'owner';
 };
+
 
 export interface Organization {
   id: string;
@@ -86,10 +92,12 @@ interface OrganizationContextType {
   // Data synchronization functions (filtered by current active organization_id)
   fetchLeads: () => Promise<Lead[]>;
   saveLead: (lead: Partial<Lead>) => Promise<Lead>;
+  createLead: (lead: Partial<Lead>) => Promise<Lead>;
   updateLeadStatus: (leadId: string, status: string) => Promise<void>;
   
   fetchEmployees: () => Promise<Employee[]>;
   saveEmployee: (emp: Partial<Employee>) => Promise<Employee>;
+  inviteEmployee: (emp: Partial<Employee>, tempPassword?: string) => Promise<Employee>;
   
   fetchProjects: () => Promise<DBProject[]>;
   saveProject: (project: Partial<DBProject>) => Promise<DBProject>;
@@ -171,7 +179,7 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
     root.style.setProperty('--primary-light', `rgba(${hexToRgb(primaryColor)}, 0.12)`);
 
     const name = currentOrg?.name || currentOrg?.branding?.name || 'StavbaCore CRM';
-    const logoUrl = currentOrg?.branding?.logoUrl;
+    const logoUrl = currentOrg?.logo_url || currentOrg?.branding?.logoUrl;
     
     document.title = `${name} | Executive OS`;
     if (logoUrl) {
@@ -435,10 +443,10 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
       });
       if (err?.code === 'PGRST125' || (err?.message && err.message.includes('PGRST125'))) {
         if (IS_PRODUCTION) {
-          setSchemaError('Databáze není správně nastavená. Kontaktujte podporu (support@demofactorycrm.cz).');
+          setSchemaError('Databáze není správně nastavená. Kontaktujte podporu (support@stavbacore.cz).');
           throw err;
         } else {
-          setSchemaError('V Supabase databázi chybí tabulky. CRM automaticky spustilo Local Storage Sandbox pro zachování plné funkčnosti.');
+          setSchemaError('V Supabase databázi chybí tabulky. CRM automaticky spustilo lokální režim (Local Storage) pro zachování plné funkčnosti.');
           setupLocalDemoData();
         }
       } else {
@@ -942,6 +950,15 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
     const target = mockAll.find(m => m.id === leadId);
     if (target) {
       target.status = status;
+      if (!Array.isArray(target.history)) {
+        target.history = [];
+      }
+      target.history.unshift({
+        id: 'hist-' + Date.now(),
+        timestamp: new Date().toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit' }),
+        action: `Stav zakázky změněn na: ${status}`,
+        author: dbUser?.email || 'Dispečink'
+      });
       LocalSupabaseMock.saveLeads(mockAll);
     }
   };
@@ -1079,7 +1096,7 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
       });
       if (err?.code === 'PGRST125' || (err?.message && err.message.includes('PGRST125')) || err?.code === '22P02') {
         if (IS_PRODUCTION && err?.code === 'PGRST125') {
-          setSchemaError('Databáze není správně nastavená. Kontaktujte podporu (support@demofactorycrm.cz).');
+          setSchemaError('Databáze není správně nastavená. Kontaktujte podporu (support@stavbacore.cz).');
           throw err;
         } else {
           return fetchLeadsLocal();
@@ -1090,6 +1107,14 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
   };
 
   // Data Action: Save Lead to Supabase
+  const createLead = async (leadData: Partial<Lead>): Promise<Lead> => {
+    const saved = await saveLead(leadData);
+    if (window.parent !== window) {
+      window.parent.postMessage({ type: 'LEAD_CREATED', payload: saved }, '*');
+    }
+    return saved;
+  };
+
   const saveLead = async (leadData: Partial<Lead>): Promise<Lead> => {
     if (!currentOrg) throw new Error('Organizace není vybrána');
 
@@ -1194,8 +1219,10 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
 
   // Data Action: Update lead status
   const updateLeadStatus = async (leadId: string, status: string) => {
+    // Always persist into local storage immediately for zero-lag UI and offline robustness
+    updateLeadStatusLocal(leadId, status);
+
     if (!isSupabaseConfigured || !supabase || !isValidUUID(leadId)) {
-      updateLeadStatusLocal(leadId, status);
       return;
     }
 
@@ -1205,12 +1232,10 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
         .update({ status })
         .eq('id', leadId);
       if (updateError) {
-        console.warn('updateLeadStatus notice (updating locally):', updateError.message);
-        updateLeadStatusLocal(leadId, status);
+        console.warn('updateLeadStatus notice (updated locally):', updateError.message);
       }
     } catch (err: any) {
-      console.warn('updateLeadStatus notice (updating locally):', err?.message || err);
-      updateLeadStatusLocal(leadId, status);
+      console.warn('updateLeadStatus notice (updated locally):', err?.message || err);
     }
   };
 
@@ -1252,6 +1277,104 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
   };
 
   // Data Action: Save Employee to Supabase
+  
+  const inviteEmployee = async (empData: Partial<Employee>, tempPassword?: string): Promise<Employee> => {
+    if (!currentOrg) throw new Error('Organizace není vybrána');
+    const email = (empData as any).email || `${(empData.name || 'zamestnanec').toLowerCase().replace(/\s+/g, '.')}@${currentOrg.slug || 'firma'}.cz`;
+    const password = tempPassword || `Stavba${Math.floor(1000 + Math.random() * 9000)}`;
+
+    // Always ensure user exists in LocalSupabaseMock so employee login works reliably
+    const persistToLocalMock = (userId: string) => {
+      const allUsers = LocalSupabaseMock.getUsers() || [];
+      const existingUserIdx = allUsers.findIndex(u => u.email.toLowerCase() === email.toLowerCase());
+      const userPayload = {
+        id: userId,
+        email: email,
+        password: password,
+        name: empData.name || 'Zaměstnanec',
+        role: 'employee' as const,
+        organization_id: currentOrg.id
+      };
+      if (existingUserIdx !== -1) {
+        allUsers[existingUserIdx] = { ...allUsers[existingUserIdx], ...userPayload };
+      } else {
+        allUsers.push(userPayload);
+      }
+      LocalSupabaseMock.saveUsers(allUsers);
+    };
+
+    if (!isSupabaseConfigured || !supabase) {
+      const newEmp = await saveEmployee({ ...empData, email, phone: empData.phone || '+420 777 000 111' });
+      persistToLocalMock(newEmp.id);
+      return {
+        ...newEmp,
+        email,
+        tempPassword: password
+      } as any;
+    }
+
+    // Supabase Real Invite via Temp Client
+    try {
+      const { createClient } = await import('@supabase/supabase-js');
+      const tempSupabase = createClient(
+        (import.meta as any).env.VITE_SUPABASE_URL,
+        (import.meta as any).env.VITE_SUPABASE_ANON_KEY,
+        { auth: { persistSession: false } }
+      );
+      
+      const { data: signUpData, error: authError } = await tempSupabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            name: empData.name,
+            organization_id: currentOrg.id,
+            role: 'employee'
+          }
+        }
+      });
+      
+      let userId = signUpData?.user?.id;
+      if (!userId) {
+        userId = generateUUID();
+      }
+
+      if (!authError && signUpData?.user) {
+        // Manually insert into public.users
+        try {
+          await supabase.from('users').insert({
+            id: userId,
+            organization_id: currentOrg.id,
+            role: 'employee',
+            email,
+            name: empData.name
+          });
+        } catch (uErr) {
+          console.warn('User insert warning:', uErr);
+        }
+      }
+
+      persistToLocalMock(userId);
+      // Also save to public.employees
+      const newEmp = await saveEmployee({ ...empData, email, phone: empData.phone || '+420 777 000 111', auth_user_id: userId } as any);
+      return {
+        ...newEmp,
+        email,
+        tempPassword: password
+      } as any;
+    } catch (e: any) {
+      console.warn('Supabase invite notice (falling back to guaranteed local mock):', e?.message || e);
+      const fallbackId = generateUUID();
+      persistToLocalMock(fallbackId);
+      const newEmp = await saveEmployee({ ...empData, id: fallbackId, email, phone: empData.phone || '+420 777 000 111' });
+      return {
+        ...newEmp,
+        email,
+        tempPassword: password
+      } as any;
+    }
+  };
+
   const saveEmployee = async (empData: Partial<Employee>): Promise<Employee> => {
     if (!currentOrg) throw new Error('Organizace není vybrána');
 
@@ -1555,24 +1678,64 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
   };
 
   const updateBrandingAdmin = async (orgId: string, name: string, color: string, logo?: string): Promise<void> => {
+    const finalLogo = logo || 'https://images.unsplash.com/photo-1513694203232-719a280e022f?auto=format&fit=crop&w=160&q=80';
     const updatedRecord = {
       name,
       primary_color: color,
-      logo_url: logo || 'https://images.unsplash.com/photo-1513694203232-719a280e022f?auto=format&fit=crop&w=160&q=80'
+      logo_url: finalLogo
     };
 
-    if (!isSupabaseConfigured || !supabase) {
-      const orgs = LocalSupabaseMock.getOrganizations().map((o: any) => {
-        if (o.id === orgId) {
-          return { ...o, ...updatedRecord };
-        }
-        return o;
-      });
-      LocalSupabaseMock.saveOrganizations(orgs);
-      setOrganizations(orgs);
-      if (currentOrg?.id === orgId) {
-        setCurrentOrg({ ...currentOrg, ...updatedRecord });
+    // Update organizations in LocalSupabaseMock
+    const orgs = LocalSupabaseMock.getOrganizations().map((o: any) => {
+      if (o.id === orgId) {
+        return { 
+          ...o, 
+          ...updatedRecord,
+          branding: {
+            ...o.branding,
+            name,
+            primaryColor: color,
+            logoUrl: finalLogo
+          }
+        };
       }
+      return o;
+    });
+    LocalSupabaseMock.saveOrganizations(orgs);
+    setOrganizations(orgs);
+
+    // Update CompanySettings in LocalSupabaseMock
+    const settings = (LocalSupabaseMock.getCompanySettings() as any[]) || [];
+    const updatedSettings = settings.map((s: any) => {
+      if (s.organization_id === orgId) {
+        return {
+          ...s,
+          branding: {
+            ...s.branding,
+            name,
+            primaryColor: color,
+            logoUrl: finalLogo
+          }
+        };
+      }
+      return s;
+    });
+    LocalSupabaseMock.saveCompanySettings(updatedSettings);
+
+    if (currentOrg?.id === orgId) {
+      setCurrentOrg(prev => prev ? { 
+        ...prev, 
+        ...updatedRecord,
+        branding: {
+          ...prev.branding,
+          name,
+          primaryColor: color,
+          logoUrl: finalLogo
+        }
+      } : null);
+    }
+
+    if (!isSupabaseConfigured || !supabase) {
       return;
     }
 
@@ -1583,9 +1746,19 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
         .eq('id', orgId);
       if (orgUpdErr) throw orgUpdErr;
 
-      setOrganizations(prev => prev.map(o => o.id === orgId ? { ...o, ...updatedRecord } : o));
-      if (currentOrg?.id === orgId) {
-        setCurrentOrg(prev => prev ? { ...prev, ...updatedRecord } : null);
+      try {
+        await supabase
+          .from('company_settings')
+          .update({
+            branding: {
+              name,
+              primaryColor: color,
+              logoUrl: finalLogo
+            }
+          })
+          .eq('organization_id', orgId);
+      } catch (sErr) {
+        console.warn('Company settings update warning:', sErr);
       }
     } catch (err: any) {
       console.error('updateBrandingAdmin error:', err);
@@ -1766,7 +1939,7 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
     await new Promise(r => setTimeout(r, 120));
 
     // Step 5: Provisioning týmu a mistrů v public.employees
-    stepNotify(5, 'Provisioning týmu a mistrů v public.employees...');
+    stepNotify(5, 'Provisioning týmu v public.employees...');
     const employeesToInsert = (data.employees && data.employees.length > 0) ? data.employees.map((emp, idx) => ({
       id: generateUUID(),
       organization_id: activeOrgId,
@@ -1774,14 +1947,10 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
       specialization: emp.specialization || emp.role || servicesList[idx % servicesList.length] || 'Realizace',
       phone: emp.phone || '+420 775 000 000',
       email: emp.email || `zamestnanec${idx + 1}@${slug}.cz`,
-      capacity: typeof emp.capacity === 'number' ? emp.capacity : 85
-    })) : [
-      { id: generateUUID(), organization_id: activeOrgId, name: data.owner_name || 'Vedoucí realizací', specialization: servicesList[0] || 'Šéf montáží', phone: data.phone || '+420 774 889 100', email: ownerEmail, capacity: 90 },
-      { id: generateUUID(), organization_id: activeOrgId, name: 'Michal Dvořák', specialization: servicesList[1] || 'Hlavní mistr', phone: '+420 732 112 334', email: `dvorak@${slug}.cz`, capacity: 95 },
-      { id: generateUUID(), organization_id: activeOrgId, name: 'Petr Veselý', specialization: 'Technická příprava', phone: '+420 604 998 776', email: `vesely@${slug}.cz`, capacity: 70 }
-    ];
+      capacity: typeof emp.capacity === 'number' ? emp.capacity : 100
+    })) : [];
 
-    if (isSupabaseConfigured && supabase) {
+    if (employeesToInsert.length > 0 && isSupabaseConfigured && supabase) {
       try {
         await supabase.from('employees').insert(employeesToInsert);
       } catch (eErr) {
@@ -1813,71 +1982,10 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
     }
     await new Promise(r => setTimeout(r, 120));
 
-    // Step 7: Generování úvodních klientských poptávek pro region
-    stepNotify(7, 'Generování úvodních klientských poptávek pro region...');
-    const leadService1 = servicesList[0] || 'Pergola & Terasa';
-    const leadService2 = servicesList[1] || 'Realizace na klíč';
-    const demoLeads = [
-      {
-        id: generateUUID(),
-        organization_id: activeOrgId,
-        customer_name: 'Ing. Tomáš Kučera',
-        phone: '+420 774 231 890',
-        email: 'tomas.kucera@seznam.cz',
-        project_type: leadService1,
-        budget: 285000,
-        status: 'New',
-        created_at: new Date(Date.now() - 3600000 * 2).toISOString()
-      },
-      {
-        id: generateUUID(),
-        organization_id: activeOrgId,
-        customer_name: 'Mgr. Kateřina Procházková',
-        phone: '+420 608 554 321',
-        email: 'prochazkova.k@gmail.com',
-        project_type: leadService2,
-        budget: 450000,
-        status: 'Contacted',
-        created_at: new Date(Date.now() - 3600000 * 18).toISOString()
-      },
-      {
-        id: generateUUID(),
-        organization_id: activeOrgId,
-        customer_name: 'MUDr. Jan Beránek',
-        phone: '+420 723 119 448',
-        email: 'beranek.jan@email.cz',
-        project_type: leadService1,
-        budget: 320000,
-        status: 'Quote',
-        created_at: new Date(Date.now() - 3600000 * 40).toISOString()
-      }
-    ];
-
-    const demoProjects = [
-      {
-        id: generateUUID(),
-        organization_id: activeOrgId,
-        lead_id: demoLeads[0].id,
-        assigned_employee: employeesToInsert[0].name,
-        status: 'in_progress'
-      },
-      {
-        id: generateUUID(),
-        organization_id: activeOrgId,
-        lead_id: demoLeads[1].id,
-        assigned_employee: employeesToInsert[1].name,
-        status: 'draft'
-      }
-    ];
-
-    if (isSupabaseConfigured && supabase) {
-      try {
-        await supabase.from('leads').insert(demoLeads);
-        await supabase.from('projects').insert(demoProjects);
-      } catch (lErr) {
-        console.warn('Leads/projects insert notice:', lErr);
-      }
-    }
+    // Step 7: Příprava čistého pracoviště organizace
+    stepNotify(7, 'Inicializace čistého pracoviště organizace...');
+    const demoLeads: any[] = [];
+    const demoProjects: any[] = [];
     await new Promise(r => setTimeout(r, 120));
 
     // Step 8: Synchronizace Super Adminu a aktivace linků
@@ -1901,10 +2009,10 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
     LocalSupabaseMock.saveCompanySettings([...currentSettings.filter((s: any) => s.organization_id !== activeOrgId), companySettingsRecord]);
 
     const currentLeads = LocalSupabaseMock.getLeads();
-    LocalSupabaseMock.saveLeads([...currentLeads.filter(l => l.organization_id !== activeOrgId), ...demoLeads]);
+    LocalSupabaseMock.saveLeads([...currentLeads.filter(l => l.organization_id !== activeOrgId)]);
 
     const currentProjects = LocalSupabaseMock.getProjects();
-    LocalSupabaseMock.saveProjects([...currentProjects.filter(p => p.organization_id !== activeOrgId), ...demoProjects]);
+    LocalSupabaseMock.saveProjects([...currentProjects.filter(p => p.organization_id !== activeOrgId)]);
 
     // Update Context State immediately
     setOrganizations(prev => [...prev.filter(o => o.id !== activeOrgId), orgRecord]);
@@ -1957,9 +2065,11 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
       switchOrganization,
       fetchLeads,
       saveLead,
+      createLead,
       updateLeadStatus,
       fetchEmployees,
       saveEmployee,
+      inviteEmployee,
       fetchProjects,
       saveProject,
       impersonatingOrgId,

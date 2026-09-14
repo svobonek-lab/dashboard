@@ -399,7 +399,7 @@ export const AuditCard: React.FC<AuditCardProps> = ({
         className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] rounded-full opacity-10 blur-[130px] pointer-events-none"
         style={{ backgroundColor: branding.primaryColor }}
       />
-      <div className="absolute -bottom-20 -left-20 w-[400px] h-[400px] rounded-full opacity-5 bg-indigo-500 blur-[100px] pointer-events-none" />
+      <div className="absolute -bottom-20 -left-20 w-[400px] h-[400px] rounded-full opacity-5 bg-brand-primary blur-[100px] pointer-events-none" />
 
       <motion.div 
         initial={{ opacity: 0, scale: 0.96, y: 15 }}
@@ -418,8 +418,8 @@ export const AuditCard: React.FC<AuditCardProps> = ({
             </div>
             <div>
               <div className="flex flex-wrap items-center gap-2">
-                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-blue-500/10 text-blue-400 border border-blue-500/20 flex items-center gap-1">
-                  <Sparkles className="w-3 h-3 text-blue-400 animate-pulse" />
+                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-brand-primary-soft text-brand-primary border border-brand-primary/20 flex items-center gap-1">
+                  <Sparkles className="w-3 h-3 text-brand-primary animate-pulse" />
                   AI Web Extracted & Audited
                 </span>
                 <span className="text-xs text-slate-500 font-mono hidden sm:inline">{audit.url}</span>
@@ -435,20 +435,20 @@ export const AuditCard: React.FC<AuditCardProps> = ({
               onClick={handleCopyDemoLink}
               className="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-bold text-slate-900 flex items-center gap-2 transition-all border border-slate-300 cursor-pointer"
             >
-              {copiedLink ? <Check className="w-4 h-4 text-green-400 animate-scale" /> : <Share2 className="w-4 h-4 text-blue-400" />}
+              {copiedLink ? <Check className="w-4 h-4 text-green-400 animate-scale" /> : <Share2 className="w-4 h-4 text-brand-primary" />}
               <span>{copiedLink ? 'Odkaz zkopírován!' : 'Sdílet demo'}</span>
             </button>
             <button
               onClick={handleDownloadPdf}
               disabled={pdfGenerating}
-              className="px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-xs font-bold text-slate-900 flex items-center gap-2 transition-all shadow-md disabled:opacity-50 cursor-pointer"
+              className="px-4 py-2.5 rounded-xl bg-brand-primary hover:bg-brand-primary text-xs font-bold text-slate-900 flex items-center gap-2 transition-all shadow-md disabled:opacity-50 cursor-pointer"
             >
               {pdfGenerating ? (
                 <div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin"></div>
               ) : pdfSuccess ? (
                 <Check className="w-4 h-4 text-green-300" />
               ) : (
-                <Download className="w-4 h-4 text-blue-200" />
+                <Download className="w-4 h-4 text-brand-primary" />
               )}
               <span>{pdfGenerating ? 'Generuji PDF...' : pdfSuccess ? 'PDF Staženo!' : 'Stáhnout PDF Audit'}</span>
             </button>
@@ -528,7 +528,7 @@ export const AuditCard: React.FC<AuditCardProps> = ({
             {/* Top Score Circle Indicator & Description */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-center">
               <div className="bg-slate-50 p-6 rounded-3xl border border-slate-200 flex flex-col items-center text-center relative overflow-hidden">
-                <div className="absolute top-0 right-0 w-24 h-24 bg-blue-500/5 rounded-full blur-2xl" />
+                <div className="absolute top-0 right-0 w-24 h-24 bg-brand-primary-soft rounded-full blur-2xl" />
                 <span className="text-[10px] text-slate-500 uppercase tracking-wider font-bold mb-2">CELKOVÉ SKÓRE PREZENCE</span>
                 
                 {/* Visual Gauge */}
@@ -602,8 +602,8 @@ export const AuditCard: React.FC<AuditCardProps> = ({
 
             {/* AI Extracted Assets summary */}
             <div className="bg-slate-50 p-5 rounded-3xl border border-slate-200 space-y-3">
-              <h3 className="text-xs font-bold uppercase tracking-wider text-blue-400 flex items-center gap-2">
-                <Sparkles className="w-4 h-4 text-blue-400" /> Detekované a extrahované stavební specializace
+              <h3 className="text-xs font-bold uppercase tracking-wider text-brand-primary flex items-center gap-2">
+                <Sparkles className="w-4 h-4 text-brand-primary" /> Detekované a extrahované stavební specializace
               </h3>
               <div className="flex flex-wrap gap-2">
                 {safeServices.map((srv, idx) => (
@@ -826,7 +826,7 @@ export const AuditCard: React.FC<AuditCardProps> = ({
                   <div key={rec.id} className="p-4 bg-slate-50/40 border border-slate-200/80 rounded-2xl flex items-start justify-between gap-4">
                     <div className="space-y-1">
                       <div className="flex items-center gap-2">
-                        <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 uppercase tracking-wide">
+                        <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-brand-primary/10 text-indigo-400 border border-brand-primary/20 uppercase tracking-wide">
                           Doporučení
                         </span>
                         <h5 className="font-bold text-slate-900 text-xs">{rec.title}</h5>
@@ -852,10 +852,10 @@ export const AuditCard: React.FC<AuditCardProps> = ({
           <div className="bg-slate-50/80 p-6 rounded-3xl border border-slate-200 space-y-6">
             <div className="flex items-center justify-between">
               <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-2">
-                <Sliders className="w-4 h-4 text-blue-400" />
+                <Sliders className="w-4 h-4 text-brand-primary" />
                 Interaktivní simulátor ztrát & ROI
               </h4>
-              <span className="text-xs text-blue-400 font-mono font-bold animate-pulse">Živá simulace</span>
+              <span className="text-xs text-brand-primary font-mono font-bold animate-pulse">Živá simulace</span>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">

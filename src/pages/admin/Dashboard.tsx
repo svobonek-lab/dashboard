@@ -96,7 +96,7 @@ export const AdminDashboardPage: React.FC = () => {
         <div className="bg-[#0C111D] p-5 rounded-2xl border border-slate-800/80 shadow-md">
           <div className="flex items-center justify-between text-slate-400">
             <span className="text-[11px] font-mono uppercase font-bold">Active Owners</span>
-            <Users className="w-4 h-4 text-blue-400" />
+            <Users className="w-4 h-4 text-brand-primary" />
           </div>
           <p className="text-2xl font-black text-white mt-2 font-mono">
             {loading ? '...' : orgs.length * 2}
@@ -158,7 +158,7 @@ export const AdminDashboardPage: React.FC = () => {
             Create Company
           </button>
           <button onClick={() => navigate('/admin/install')} className="flex items-center gap-3 w-full p-3 bg-slate-800/30 hover:bg-slate-800/60 rounded-xl transition-colors text-sm font-semibold text-white group text-left">
-            <div className="p-2 rounded-lg bg-blue-500/10 text-blue-400 group-hover:bg-blue-500/20"><Wand2 className="w-4 h-4" /></div>
+            <div className="p-2 rounded-lg bg-brand-primary-soft text-brand-primary group-hover:bg-brand-primary-soft"><Wand2 className="w-4 h-4" /></div>
             Open Install Studio
           </button>
           <button onClick={() => navigate('/admin/demo-creator')} className="flex items-center gap-3 w-full p-3 bg-slate-800/30 hover:bg-slate-800/60 rounded-xl transition-colors text-sm font-semibold text-white group text-left">

@@ -66,7 +66,7 @@ export const AdminLogsPage: React.FC = () => {
           </button>
           <button
             onClick={() => setFilterSeverity('info')}
-            className={`px-3 py-1.5 rounded-xl text-xs font-mono font-bold transition-all ${filterSeverity === 'info' ? 'bg-blue-500 text-slate-900' : 'bg-[#090D16] text-slate-500 hover:text-slate-900'}`}
+            className={`px-3 py-1.5 rounded-xl text-xs font-mono font-bold transition-all ${filterSeverity === 'info' ? 'bg-brand-primary text-slate-900' : 'bg-[#090D16] text-slate-500 hover:text-slate-900'}`}
           >
             INFO
           </button>
@@ -105,7 +105,7 @@ export const AdminLogsPage: React.FC = () => {
                   <td className="py-3.5 text-slate-500">{log.time}</td>
                   <td className="py-3.5">
                     <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
-                      log.severity === 'INFO' ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30' :
+                      log.severity === 'INFO' ? 'bg-brand-primary-soft text-brand-primary border border-brand-primary/30' :
                       log.severity === 'WARN' ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30' :
                       'bg-rose-500/20 text-rose-400 border border-rose-500/30'
                     }`}>

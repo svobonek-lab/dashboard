@@ -54,7 +54,7 @@ export const OwnerProjectsPage: React.FC<OwnerProjectsPageProps> = ({ leads, onS
             onClick={() => navigate('/quotes')}
             className="px-4 py-2.5 rounded-xl bg-white border border-slate-200 text-xs font-bold text-slate-800 hover:bg-slate-800 transition-all flex items-center gap-1.5"
           >
-            <FileText className="w-3.5 h-3.5 text-blue-400" />
+            <FileText className="w-3.5 h-3.5 text-brand-primary" />
             <span>Rozpočty & Nabídky</span>
           </button>
         </div>
@@ -83,7 +83,7 @@ export const OwnerProjectsPage: React.FC<OwnerProjectsPageProps> = ({ leads, onS
           <p className="text-2xl font-black text-slate-900 mt-1">
             {leads.filter(l => l.status === 'Completed').length} zakázek
           </p>
-          <span className="text-[10px] text-blue-400 font-semibold mt-0.5 block">100% podepsaných protokolů</span>
+          <span className="text-[10px] text-brand-primary font-semibold mt-0.5 block">100% podepsaných protokolů</span>
         </div>
       </div>
 
@@ -177,7 +177,7 @@ export const OwnerProjectsPage: React.FC<OwnerProjectsPageProps> = ({ leads, onS
                 {/* Info Pills */}
                 <div className="grid grid-cols-2 gap-2 text-xs">
                   <div className="p-2.5 bg-slate-50/50 rounded-xl border border-slate-200 flex items-center gap-2">
-                    <User className="w-3.5 h-3.5 text-blue-400" />
+                    <User className="w-3.5 h-3.5 text-brand-primary" />
                     <span className="text-slate-700 truncate">{project.customerName}</span>
                   </div>
                   <div className="p-2.5 bg-slate-50/50 rounded-xl border border-slate-200 flex items-center gap-2">

@@ -3,7 +3,7 @@ import { useOrganization } from '@/context/OrganizationContext';
 import { Building, Lock, Mail, ArrowRight, CheckCircle2, ShieldAlert, LayoutDashboard, Users, Calendar, Inbox } from 'lucide-react';
 
 interface LoginPageProps {
-  onSuccess: () => void;
+  onSuccess: (user?: any) => void;
 }
 
 export const LoginPage: React.FC<LoginPageProps> = ({ onSuccess }) => {
@@ -34,8 +34,8 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onSuccess }) => {
 
     try {
       if (mode === 'login') {
-        await login(email, password);
-        onSuccess();
+        const user = await login(email, password);
+        onSuccess(user);
       } else {
         await signUp(email, password, orgName);
         if (isConfigured) {

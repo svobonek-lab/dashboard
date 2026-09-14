@@ -127,8 +127,8 @@ export const VoiceNotesModal: React.FC<VoiceNotesModalProps> = ({
           {/* Transcript preview */}
           {(isRecording || transcript) && (
             <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 text-xs text-slate-700 text-left space-y-1">
-              <span className="text-blue-400 font-semibold flex items-center gap-1 text-[11px]">
-                <Sparkles className="w-3.5 h-3.5 text-blue-400" />
+              <span className="text-brand-primary font-semibold flex items-center gap-1 text-[11px]">
+                <Sparkles className="w-3.5 h-3.5 text-brand-primary" />
                 {isRecording ? 'Živý přepis mluveného slova:' : 'Výsledný text:'}
               </span>
               <p className="italic text-slate-800 leading-relaxed">
@@ -139,12 +139,12 @@ export const VoiceNotesModal: React.FC<VoiceNotesModalProps> = ({
 
           {/* Structured AI Lead Extraction */}
           {parsedLead && (
-            <div className="p-3.5 bg-slate-50/80 rounded-2xl border border-blue-900/40 text-left space-y-2.5 animate-in fade-in">
+            <div className="p-3.5 bg-slate-50/80 rounded-2xl border border-brand-primary/40 text-left space-y-2.5 animate-in fade-in">
               <div className="flex items-center justify-between text-xs border-b border-slate-200 pb-2">
-                <span className="font-bold text-blue-300 flex items-center gap-1.5">
-                  <Sparkles className="w-3.5 h-3.5 text-blue-400" /> AI strukturovaná zakázka
+                <span className="font-bold text-brand-primary flex items-center gap-1.5">
+                  <Sparkles className="w-3.5 h-3.5 text-brand-primary" /> AI strukturovaná zakázka
                 </span>
-                <span className="text-[10px] bg-slate-50 text-blue-300 px-2 py-0.5 rounded-md border border-blue-800 font-mono">
+                <span className="text-[10px] bg-slate-50 text-brand-primary px-2 py-0.5 rounded-md border border-brand-primary font-mono">
                   {parsedLead.projectType}
                 </span>
               </div>
@@ -221,7 +221,7 @@ export const VoiceNotesModal: React.FC<VoiceNotesModalProps> = ({
               {onCreateLeadFromVoice && (
                 <button
                   onClick={handleCreateKanbanLead}
-                  className="px-5 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-slate-900 text-xs font-semibold flex items-center gap-2 shadow-md transition-colors"
+                  className="px-5 py-2 rounded-xl bg-brand-primary hover:bg-brand-primary text-slate-900 text-xs font-semibold flex items-center gap-2 shadow-md transition-colors"
                 >
                   <ArrowRight className="w-4 h-4" /> Vytvořit novou zakázku na Kanban
                 </button>

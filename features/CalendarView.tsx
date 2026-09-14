@@ -138,7 +138,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ leads }) => {
 
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                       <div className="space-y-1.5">
-                        <h4 className="text-lg font-black text-slate-900 group-hover:text-blue-600 transition-colors leading-tight">
+                        <h4 className="text-lg font-black text-slate-900 group-hover:text-brand-primary transition-colors leading-tight">
                           {lead.title}
                         </h4>
                         <div className="flex items-center gap-2 text-xs text-slate-500 font-medium">
@@ -149,7 +149,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ leads }) => {
                         </div>
                       </div>
 
-                      <div className="flex items-center gap-3 bg-slate-50/80 p-2.5 rounded-2xl border border-slate-100 shrink-0 group-hover:bg-blue-50 group-hover:border-blue-100 transition-colors">
+                      <div className="flex items-center gap-3 bg-slate-50/80 p-2.5 rounded-2xl border border-slate-100 shrink-0 group-hover:bg-brand-primary-soft group-hover:border-brand-primary-soft transition-colors">
                         <div className="relative">
                           <img 
                             src={`https://api.dicebear.com/7.x/notionists/svg?seed=${lead.assignedEmployeeName}&backgroundColor=e2e8f0`} 

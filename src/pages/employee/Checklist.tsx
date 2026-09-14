@@ -102,7 +102,7 @@ export const EmployeeChecklistPage: React.FC<EmployeeChecklistPageProps> = ({
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-xl font-bold text-slate-900 tracking-tight flex items-center gap-2">
-            <CheckSquare className="w-5 h-5 text-blue-600" />
+            <CheckSquare className="w-5 h-5 text-brand-primary" />
             Stavební checklist & Předávací protokol
           </h1>
           <p className="text-xs text-slate-500 mt-0.5">
@@ -133,11 +133,11 @@ export const EmployeeChecklistPage: React.FC<EmployeeChecklistPageProps> = ({
       <div className="bg-white p-5 rounded-3xl border border-slate-200/80 space-y-3 shadow-xs">
         <div className="flex items-center justify-between text-xs font-bold">
           <span className="text-slate-700">Splněno kontrolních bodů:</span>
-          <span className="text-blue-700 font-mono">{completedCount} z {currentChecklist.length}</span>
+          <span className="text-brand-primary font-mono">{completedCount} z {currentChecklist.length}</span>
         </div>
         <div className="w-full h-2.5 bg-slate-100 rounded-full overflow-hidden border border-slate-200/60">
           <div 
-            className="h-full bg-blue-600 rounded-full transition-all duration-300"
+            className="h-full bg-brand-primary rounded-full transition-all duration-300"
             style={{ width: `${(completedCount / currentChecklist.length) * 100}%` }}
           ></div>
         </div>
@@ -152,7 +152,7 @@ export const EmployeeChecklistPage: React.FC<EmployeeChecklistPageProps> = ({
             className={`w-full min-h-[52px] p-4 rounded-2xl border text-left flex items-center gap-3 transition-all cursor-pointer ${
               item.completed 
                 ? 'bg-emerald-50/80 border-emerald-200 text-emerald-900' 
-                : 'bg-white border-slate-200/80 text-slate-800 hover:border-blue-300'
+                : 'bg-white border-slate-200/80 text-slate-800 hover:border-brand-primary-soft'
             }`}
           >
             {item.completed ? (
@@ -171,7 +171,7 @@ export const EmployeeChecklistPage: React.FC<EmployeeChecklistPageProps> = ({
       <div className="bg-white border border-slate-200/80 rounded-3xl p-5 space-y-4 shadow-xs">
         <div className="flex items-center justify-between">
           <h3 className="text-xs font-bold text-slate-900 flex items-center gap-2">
-            <PenTool className="w-4 h-4 text-blue-600" />
+            <PenTool className="w-4 h-4 text-brand-primary" />
             Podpis investora při předání
           </h3>
           {signatureDone && (
@@ -183,7 +183,7 @@ export const EmployeeChecklistPage: React.FC<EmployeeChecklistPageProps> = ({
 
         <div className="h-32 bg-slate-50 rounded-2xl border border-dashed border-slate-300 flex flex-col items-center justify-center text-center p-4 relative overflow-hidden">
           {signatureDone ? (
-            <div className="text-blue-900 space-y-1">
+            <div className="text-text space-y-1">
               <span className="font-serif italic text-2xl font-bold">{activeLead?.customerName || 'Vážený zákazník'}</span>
               <p className="text-[10px] text-emerald-700 font-mono font-bold">Časové razítko: {new Date().toLocaleTimeString('cs-CZ')}</p>
             </div>
@@ -224,7 +224,7 @@ export const EmployeeChecklistPage: React.FC<EmployeeChecklistPageProps> = ({
         <button
           onClick={handleSubmitProtocol}
           disabled={!signatureDone}
-          className="w-full min-h-[48px] py-3.5 px-4 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs transition-all shadow-xs flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+          className="w-full min-h-[48px] py-3.5 px-4 rounded-2xl bg-brand-primary hover:bg-brand-primary text-white font-bold text-xs transition-all shadow-xs flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
         >
           <Send className="w-4 h-4" />
           <span>Odeslat podepsaný protokol do CRM</span>

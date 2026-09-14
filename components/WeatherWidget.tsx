@@ -19,7 +19,7 @@ export const WeatherWidget: React.FC<WeatherWidgetProps> = ({ weather }) => {
 
   const getWeatherIcon = (condition: string) => {
     switch (condition) {
-      case 'Rain': return <CloudRain className="w-5 h-5 text-blue-500" />;
+      case 'Rain': return <CloudRain className="w-5 h-5 text-brand-primary" />;
       case 'Snow': return <Snowflake className="w-5 h-5 text-indigo-400" />;
       case 'Windy': return <Wind className="w-5 h-5 text-amber-500" />;
       case 'Cloudy': return <Cloud className="w-5 h-5 text-slate-500" />;
@@ -49,7 +49,7 @@ export const WeatherWidget: React.FC<WeatherWidgetProps> = ({ weather }) => {
 
         <div className="text-right">
           <p className="text-[11px] text-slate-500">Vítr: {data.windSpeed} km/h</p>
-          <p className="text-[11px] font-semibold text-blue-600">Srážky: {data.rainProbability}%</p>
+          <p className="text-[11px] font-semibold text-brand-primary">Srážky: {data.rainProbability}%</p>
         </div>
       </div>
 

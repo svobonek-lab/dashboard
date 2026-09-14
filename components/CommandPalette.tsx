@@ -90,7 +90,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
                       className="w-full flex items-center justify-between p-3 rounded-2xl hover:bg-slate-50 text-slate-700 hover:text-slate-900 transition-all text-sm font-medium group"
                     >
                       <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-xl bg-slate-100 text-slate-600 flex items-center justify-center group-hover:bg-blue-50 group-hover:text-blue-600 transition-all">
+                        <div className="w-8 h-8 rounded-xl bg-slate-100 text-slate-600 flex items-center justify-center group-hover:bg-brand-primary-soft group-hover:text-brand-primary transition-all">
                           <Icon className="w-4 h-4" />
                         </div>
                         <span>{action.label}</span>
@@ -123,7 +123,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
                         <p className="text-[11px] text-slate-500 truncate">{lead.customerName} • {(lead.price/1000).toFixed(0)}k CZK</p>
                       </div>
                     </div>
-                    <span className="px-2.5 py-1 rounded-lg text-[10px] font-semibold bg-blue-50 text-blue-700">
+                    <span className="px-2.5 py-1 rounded-lg text-[10px] font-semibold bg-brand-primary-soft text-brand-primary">
                       {lead.status}
                     </span>
                   </button>

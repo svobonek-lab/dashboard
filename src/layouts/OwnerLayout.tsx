@@ -24,6 +24,7 @@ import {
   Download,
   CheckCircle2,
   X,
+  Menu,
   FileArchive,
   Building2
 } from 'lucide-react';
@@ -63,6 +64,7 @@ export const OwnerLayout: React.FC<OwnerLayoutProps> = ({
   const [isDemoModalOpen, setIsDemoModalOpen] = useState(false);
   const [isOnboardingOpen, setIsOnboardingOpen] = useState(false);
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
+  const [isMobileDrawerOpen, setIsMobileDrawerOpen] = useState(false);
 
   // Effective company branding info
   const activeCompanyName = currentOrg?.name || branding.name || 'Vaše Stavební Firma';
@@ -109,7 +111,7 @@ export const OwnerLayout: React.FC<OwnerLayoutProps> = ({
   const isSuperAdminUser = (dbUser?.email || user?.email || '').trim().toLowerCase() === 'svobonek@gmail.com' || Boolean(impersonatingOrgId);
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-800 flex flex-col font-sans selection:bg-blue-500/30">
+    <div className="min-h-screen bg-slate-50 text-slate-800 flex flex-col font-sans selection:bg-brand-primary-soft">
       
       {/* Super Admin Company Workspace Top Bar */}
       {isSuperAdminUser && (
@@ -149,31 +151,54 @@ export const OwnerLayout: React.FC<OwnerLayoutProps> = ({
       )}
 
       <div className={`flex flex-1 ${isSuperAdminUser ? 'pt-14' : ''}`}>
-        {/* Rebuilt Sidebar - Linear Aesthetic with Design Tokens */}
+        {/* Mobile Drawer Overlay */}
+        {isMobileDrawerOpen && (
+          <div 
+            className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-40 lg:hidden transition-opacity"
+            onClick={() => setIsMobileDrawerOpen(false)}
+          />
+        )}
+
+        {/* Sidebar - Desktop Fixed / Mobile Slide-in Drawer */}
         <aside 
-          className="w-72 bg-surface border-r border-border flex flex-col justify-between shrink-0 fixed inset-y-0 left-0 z-30 shadow-app transition-all font-sans" 
+          className={`w-72 bg-surface border-r border-border flex flex-col justify-between shrink-0 fixed inset-y-0 left-0 z-50 shadow-app transition-transform duration-300 font-sans ${
+            isMobileDrawerOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
+          }`} 
           style={{ top: isSuperAdminUser ? '56px' : '0' }}
         >
           {/* Top Brand & Identity Header */}
           <div>
-            <div className="p-5 border-b border-border flex items-center gap-3">
-              {/* 36px logo */}
-              <div 
-                className="w-[36px] h-[36px] rounded-app bg-brand-primary text-white font-black text-sm shrink-0 flex items-center justify-center shadow-app"
+            <div className="p-5 border-b border-border flex items-center justify-between">
+              <div className="flex items-center gap-3 overflow-hidden">
+                {/* 36px logo */}
+                <div 
+                  className="w-[36px] h-[36px] rounded-app bg-brand-primary text-white font-black text-sm shrink-0 flex items-center justify-center shadow-app overflow-hidden"
+                >
+                  {activeLogo ? (
+                    <img src={activeLogo} alt={activeCompanyName} className="w-full h-full object-cover" />
+                  ) : (
+                    activeCompanyName.substring(0, 2).toUpperCase()
+                  )}
+                </div>
+                
+                <div className="overflow-hidden">
+                  <h1 className="text-[17px] font-bold text-text truncate tracking-tight leading-tight">
+                    {activeCompanyName}
+                  </h1>
+                  <p className="text-[10px] font-semibold text-muted tracking-wide mt-0.5 uppercase">
+                    Workspace
+                  </p>
+                </div>
+              </div>
+
+              {/* Close Button on Mobile Drawer */}
+              <button 
+                onClick={() => setIsMobileDrawerOpen(false)}
+                className="lg:hidden p-1.5 rounded-lg text-muted hover:text-text hover:bg-surface-secondary"
+                aria-label="Zavřít menu"
               >
-                {activeCompanyName.substring(0, 2).toUpperCase()}
-              </div>
-              
-              <div className="overflow-hidden">
-                {/* 18px company name */}
-                <h1 className="text-[18px] font-bold text-text truncate tracking-tight leading-tight">
-                  {activeCompanyName}
-                </h1>
-                {/* Small workspace label */}
-                <p className="text-[10px] font-semibold text-muted tracking-wide mt-0.5 uppercase">
-                  Workspace
-                </p>
-              </div>
+                <X className="w-5 h-5" />
+              </button>
             </div>
 
             {/* Navigation Menu */}
@@ -190,7 +215,8 @@ export const OwnerLayout: React.FC<OwnerLayoutProps> = ({
                     key={item.path}
                     to={item.path}
                     exact={item.exact}
-                    className={`w-full flex items-center justify-between px-6 py-2.5 text-xs font-semibold transition-all relative cursor-pointer ${
+                    onClick={() => setIsMobileDrawerOpen(false)}
+                    className={`w-full min-h-[44px] flex items-center justify-between px-6 py-2.5 text-xs font-semibold transition-all relative cursor-pointer ${
                       active 
                         ? 'bg-brand-primary-soft/40 text-brand-primary font-bold' 
                         : 'text-muted hover:text-text hover:bg-surface-secondary'
@@ -239,8 +265,11 @@ export const OwnerLayout: React.FC<OwnerLayoutProps> = ({
             {/* Logout and Settings Bottom Buttons */}
             <div className="flex items-center justify-between border-t border-border/60 pt-2.5">
               <button
-                onClick={() => navigate('/settings')}
-                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-app text-xs font-semibold text-muted hover:text-text hover:bg-surface-tertiary transition-colors cursor-pointer"
+                onClick={() => {
+                  setIsMobileDrawerOpen(false);
+                  navigate('/settings');
+                }}
+                className="flex items-center gap-1.5 px-2.5 py-2 rounded-app text-xs font-semibold text-muted hover:text-text hover:bg-surface-tertiary transition-colors cursor-pointer"
               >
                 <Settings className="w-3.5 h-3.5" />
                 <span>Nastavení</span>
@@ -249,7 +278,7 @@ export const OwnerLayout: React.FC<OwnerLayoutProps> = ({
               <button
                 onClick={() => logout().then(() => navigate('/login'))}
                 title="Odhlásit se"
-                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-app text-xs font-semibold text-muted hover:text-red-600 hover:bg-red-50/50 transition-colors cursor-pointer"
+                className="flex items-center gap-1.5 px-2.5 py-2 rounded-app text-xs font-semibold text-muted hover:text-red-600 hover:bg-red-50/50 transition-colors cursor-pointer"
               >
                 <LogOut className="w-3.5 h-3.5" />
                 <span>Odhlásit</span>
@@ -259,22 +288,32 @@ export const OwnerLayout: React.FC<OwnerLayoutProps> = ({
         </aside>
 
         {/* Main Executive Content Canvas */}
-        <div className="flex-1 ml-72 flex flex-col min-h-screen bg-surface-secondary relative overflow-hidden">
+        <div className="flex-1 lg:ml-72 w-full min-w-0 flex flex-col min-h-screen bg-surface-secondary relative overflow-x-hidden">
 
         {/* Rebuilt Header - Visual-Noise-Free with Design Tokens */}
-        <header className="h-16 bg-surface border-b border-border px-8 flex items-center justify-between sticky top-0 z-20 text-text">
-          {/* Left: Company Name */}
+        <header className="h-16 bg-surface border-b border-border px-4 sm:px-6 lg:px-8 flex items-center justify-between sticky top-0 z-20 text-text">
+          {/* Left: Mobile Hamburger & Company Name */}
           <div className="flex items-center gap-3">
-            <h2 className="text-base font-bold text-text tracking-tight">
-              {activeCompanyName}
-            </h2>
-            <span className="text-[11px] text-muted font-medium bg-surface-secondary px-2.5 py-1 rounded-full border border-border">
-              Dispečink aktivní
-            </span>
+            <button
+              onClick={() => setIsMobileDrawerOpen(true)}
+              className="lg:hidden min-h-[44px] min-w-[44px] rounded-xl border border-border bg-surface flex items-center justify-center text-muted hover:text-text hover:bg-surface-secondary"
+              aria-label="Otevřít menu navigace"
+            >
+              <Menu className="w-5 h-5" />
+            </button>
+
+            <div className="flex items-center gap-2.5">
+              <h2 className="text-sm sm:text-base font-bold text-text tracking-tight truncate max-w-[160px] sm:max-w-xs">
+                {activeCompanyName}
+              </h2>
+              <span className="hidden sm:inline-block text-[11px] text-muted font-medium bg-surface-secondary px-2.5 py-1 rounded-full border border-border">
+                Dispečink aktivní
+              </span>
+            </div>
           </div>
 
           {/* Right: Search, Notifications, Profile/Switcher */}
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3">
             {/* Search Bar / Command Palette Trigger */}
             <button
               onClick={() => setIsCommandPaletteOpen(true)}
@@ -289,7 +328,7 @@ export const OwnerLayout: React.FC<OwnerLayoutProps> = ({
             <div className="relative">
               <button
                 onClick={() => setIsNotificationsOpen(prev => !prev)}
-                className="w-9 h-9 rounded-app bg-surface-secondary border border-border flex items-center justify-center text-muted hover:text-text hover:bg-surface-tertiary transition-all relative cursor-pointer"
+                className="w-10 h-10 sm:w-9 sm:h-9 rounded-app bg-surface-secondary border border-border flex items-center justify-center text-muted hover:text-text hover:bg-surface-tertiary transition-all relative cursor-pointer"
               >
                 <Bell className="w-4 h-4" />
                 {unreadCount > 0 && (
@@ -298,7 +337,7 @@ export const OwnerLayout: React.FC<OwnerLayoutProps> = ({
               </button>
 
               {isNotificationsOpen && (
-                <div className="absolute right-0 mt-2 w-80 bg-surface border border-border rounded-app shadow-app p-4 z-50 space-y-3 animate-in fade-in zoom-in-95 duration-100">
+                <div className="absolute right-0 mt-2 w-72 sm:w-80 bg-surface border border-border rounded-app shadow-app p-4 z-50 space-y-3 animate-in fade-in zoom-in-95 duration-100">
                   <div className="flex items-center justify-between border-b border-border pb-2">
                     <span className="text-xs font-bold text-text">Upozornění & Zprávy</span>
                     <button
@@ -328,7 +367,7 @@ export const OwnerLayout: React.FC<OwnerLayoutProps> = ({
         </header>
 
         {/* Main Content Area */}
-        <main className="flex-1 p-8 max-w-7xl w-full mx-auto">
+        <main className="flex-1 p-4 sm:p-6 lg:p-8 max-w-7xl w-full mx-auto min-w-0">
           {children}
         </main>
       </div>
