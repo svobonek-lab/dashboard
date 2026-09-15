@@ -15,10 +15,19 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onSuccess }) => {
   const [password, setPassword] = useState('');
   const [orgName, setOrgName] = useState('');
   const [primaryColor, setPrimaryColor] = useState('var(--brand-primary)');
+  const [inviteToken, setInviteToken] = useState<string | null>(null);
   
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+
+  React.useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const token = params.get('inviteToken') || params.get('token');
+    const emailParam = params.get('email');
+    if (token) setInviteToken(token);
+    if (emailParam) setEmail(emailParam);
+  }, []);
 
   const activeCompanyName = currentOrg?.name || branding.name || 'Vaše Stavební Firma';
   const activeLogo = currentOrg?.branding?.logoUrl || branding.logoUrl;
@@ -121,6 +130,16 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onSuccess }) => {
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-5">
+              {inviteToken && (
+                <div className="p-4 bg-amber-50 border border-amber-200 text-amber-800 rounded-app text-xs font-semibold leading-relaxed space-y-1">
+                  <p className="flex items-center gap-1.5 font-bold text-amber-900">
+                    <CheckCircle2 className="w-4 h-4 text-amber-600" /> Pozvánka pro zaměstnance
+                  </p>
+                  <p className="text-amber-700">
+                    Byli jste pozváni do týmu <strong>{displayOrgName}</strong>. Přihlaste se svými údaji pro dokončení aktivace účtu.
+                  </p>
+                </div>
+              )}
               {error && (
                 <div className="p-4 bg-rose-50 border border-rose-200 text-rose-700 rounded-app text-xs font-bold flex items-start gap-2">
                   <ShieldAlert className="w-4 h-4 shrink-0 mt-0.5" />

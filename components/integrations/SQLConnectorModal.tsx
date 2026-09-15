@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { SQLConnectionConfig, SQLDriver, SSLMode, FieldMappingConfig } from '@/types/integrations';
 import { testSQLConnection, SQLTestResult } from '@/lib/integrations/sqlConnector';
 import { SmartFieldMappingModal } from './SmartFieldMappingModal';
+import { TablePreviewModal } from './TablePreviewModal';
 import { 
   Database, 
   Server, 
@@ -52,6 +53,7 @@ export const SQLConnectorModal: React.FC<SQLConnectorModalProps> = ({
   const [syncFeedback, setSyncFeedback] = useState<string | null>(null);
 
   const [isMappingOpen, setIsMappingOpen] = useState(false);
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const [currentMapping, setCurrentMapping] = useState<FieldMappingConfig>(initialMapping || {
     nazev_projektu: 'title',
     zakaznik_jmeno: 'customerName',
@@ -355,14 +357,24 @@ export const SQLConnectorModal: React.FC<SQLConnectorModalProps> = ({
                   <span className="font-semibold text-emerald-800">
                     Nalezeno <strong>{testResult.foundProjectsCount}</strong> aktivních projektů ve vybrané tabulce.
                   </span>
-                  <button
-                    type="button"
-                    onClick={() => setIsMappingOpen(true)}
-                    className="px-3 py-1 rounded-lg bg-emerald-700 hover:bg-emerald-800 text-white font-bold flex items-center gap-1.5 transition-colors cursor-pointer"
-                  >
-                    <SlidersHorizontal className="w-3 h-3" />
-                    Zkontrolovat mapování sloupců ({Object.keys(currentMapping).length})
-                  </button>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setIsPreviewOpen(true)}
+                      className="px-3 py-1 rounded-lg bg-emerald-100 hover:bg-emerald-200 text-emerald-800 font-bold flex items-center gap-1.5 transition-colors cursor-pointer border border-emerald-300"
+                    >
+                      <Eye className="w-3 h-3" />
+                      Preview Tables
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setIsMappingOpen(true)}
+                      className="px-3 py-1 rounded-lg bg-emerald-700 hover:bg-emerald-800 text-white font-bold flex items-center gap-1.5 transition-colors cursor-pointer"
+                    >
+                      <SlidersHorizontal className="w-3 h-3" />
+                      Smart Mapping ({Object.keys(currentMapping).length})
+                    </button>
+                  </div>
                 </div>
               )}
             </div>
@@ -424,6 +436,14 @@ export const SQLConnectorModal: React.FC<SQLConnectorModalProps> = ({
         </div>
 
       </div>
+
+      <TablePreviewModal
+        isOpen={isPreviewOpen}
+        onClose={() => setIsPreviewOpen(false)}
+        availableTables={testResult?.availableTables || []}
+        sampleColumns={testResult?.sampleColumns || []}
+        sampleRows={testResult?.sampleRows || []}
+      />
 
       {/* Field Mapping Sub-Modal */}
       <SmartFieldMappingModal

@@ -206,7 +206,7 @@ export const EnterpriseInquiryForm: React.FC<EnterpriseInquiryFormProps> = ({
                     value={formData.fullName}
                     onChange={e => setFormData({ ...formData, fullName: e.target.value })}
                     placeholder="Ing. Jan Svoboda"
-                    className={`w-full bg-slate-50 border rounded-xl py-3 pl-11 pr-4 text-sm font-medium text-slate-950 focus:outline-none focus:ring-2 focus:bg-white transition-all ${
+                    className={`w-full bg-slate-50 border rounded-xl py-3 pl-11 pr-4 text-sm font-medium text-slate-950 min-h-[48px] focus:outline-none focus:ring-2 focus:bg-white transition-all ${
                       errors.fullName ? 'border-rose-400 focus:ring-rose-100' : 'border-slate-200 focus:ring-slate-100'
                     }`}
                   />
@@ -227,7 +227,7 @@ export const EnterpriseInquiryForm: React.FC<EnterpriseInquiryFormProps> = ({
                       value={formData.phone}
                       onChange={e => setFormData({ ...formData, phone: e.target.value })}
                       placeholder="+420 777 123 456"
-                      className={`w-full bg-slate-50 border rounded-xl py-3 pl-11 pr-4 text-sm font-medium text-slate-950 focus:outline-none focus:ring-2 focus:bg-white transition-all ${
+                      className={`w-full bg-slate-50 border rounded-xl py-3 pl-11 pr-4 text-sm font-medium text-slate-950 min-h-[48px] focus:outline-none focus:ring-2 focus:bg-white transition-all ${
                         errors.phone ? 'border-rose-400 focus:ring-rose-100' : 'border-slate-200 focus:ring-slate-100'
                       }`}
                     />
@@ -246,7 +246,7 @@ export const EnterpriseInquiryForm: React.FC<EnterpriseInquiryFormProps> = ({
                       value={formData.email}
                       onChange={e => setFormData({ ...formData, email: e.target.value })}
                       placeholder="jan.svoboda@email.cz"
-                      className={`w-full bg-slate-50 border rounded-xl py-3 pl-11 pr-4 text-sm font-medium text-slate-950 focus:outline-none focus:ring-2 focus:bg-white transition-all ${
+                      className={`w-full bg-slate-50 border rounded-xl py-3 pl-11 pr-4 text-sm font-medium text-slate-950 min-h-[48px] focus:outline-none focus:ring-2 focus:bg-white transition-all ${
                         errors.email ? 'border-rose-400 focus:ring-rose-100' : 'border-slate-200 focus:ring-slate-100'
                       }`}
                     />
@@ -268,7 +268,7 @@ export const EnterpriseInquiryForm: React.FC<EnterpriseInquiryFormProps> = ({
                       value={formData.company}
                       onChange={e => setFormData({ ...formData, company: e.target.value })}
                       placeholder="Název společnosti s.r.o."
-                      className="w-full bg-slate-50 border border-slate-200 rounded-xl py-3 pl-11 pr-4 text-sm font-medium text-slate-950 focus:outline-none focus:ring-2 focus:ring-slate-100 focus:bg-white transition-all"
+                      className="w-full bg-slate-50 border border-slate-200 rounded-xl py-3 pl-11 pr-4 text-sm font-medium text-slate-950 min-h-[48px] focus:outline-none focus:ring-2 focus:ring-slate-100 focus:bg-white transition-all"
                     />
                   </div>
                 </div>
@@ -280,7 +280,7 @@ export const EnterpriseInquiryForm: React.FC<EnterpriseInquiryFormProps> = ({
                   <select
                     value={formData.projectType}
                     onChange={e => setFormData({ ...formData, projectType: e.target.value })}
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl py-3 px-4 text-sm font-bold text-slate-950 focus:outline-none focus:ring-2 focus:ring-slate-100 focus:bg-white transition-all cursor-pointer"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl py-3 px-4 text-sm font-bold text-slate-950 min-h-[48px] focus:outline-none focus:ring-2 focus:ring-slate-100 focus:bg-white transition-all cursor-pointer"
                   >
                     <option value="Pergola">Bioklimatická Pergola</option>
                     <option value="Střecha">Střecha & Krovy</option>
@@ -305,7 +305,7 @@ export const EnterpriseInquiryForm: React.FC<EnterpriseInquiryFormProps> = ({
                     value={formData.address}
                     onChange={e => setFormData({ ...formData, address: e.target.value })}
                     placeholder={`Zahradní 42, ${activeCity}`}
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl py-3 pl-11 pr-4 text-sm font-medium text-slate-950 focus:outline-none focus:ring-2 focus:ring-slate-100 focus:bg-white transition-all"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl py-3 pl-11 pr-4 text-sm font-medium text-slate-950 min-h-[48px] focus:outline-none focus:ring-2 focus:ring-slate-100 focus:bg-white transition-all"
                   />
                 </div>
               </div>
@@ -315,7 +315,7 @@ export const EnterpriseInquiryForm: React.FC<EnterpriseInquiryFormProps> = ({
                 <label className="text-xs font-bold uppercase tracking-wider text-slate-500 block mb-1.5">
                   Preferovaný termín zahájení prací
                 </label>
-                <div className="flex items-center w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-3 focus-within:ring-2 focus-within:ring-slate-100 focus-within:bg-white focus-within:border-slate-300 transition-all overflow-hidden shadow-2xs">
+                <div className="flex items-center w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-3 min-h-[48px] focus-within:ring-2 focus-within:ring-slate-100 focus-within:bg-white focus-within:border-slate-300 transition-all overflow-hidden shadow-2xs">
                   <Calendar className="w-4.5 h-4.5 text-slate-400 shrink-0 mr-2.5 pointer-events-none" />
                   <input
                     type="date"
@@ -361,7 +361,7 @@ export const EnterpriseInquiryForm: React.FC<EnterpriseInquiryFormProps> = ({
                           key={preset.label}
                           type="button"
                           onClick={() => setFormData({ ...formData, preferredDate: targetDate })}
-                          className={`py-2 px-1 rounded-xl text-[11px] font-bold border transition-all text-center cursor-pointer ${
+                          className={`py-2 px-1 rounded-xl text-[11px] font-bold border transition-all text-center cursor-pointer min-h-[48px] flex items-center justify-center ${
                             isSelected
                               ? 'shadow-xs ring-2 ring-brand-primary-soft'
                               : 'border-slate-200 bg-slate-50 text-slate-600 hover:bg-slate-100 hover:text-slate-800'
@@ -402,7 +402,7 @@ export const EnterpriseInquiryForm: React.FC<EnterpriseInquiryFormProps> = ({
                   value={formData.description}
                   onChange={e => setFormData({ ...formData, description: e.target.value })}
                   placeholder="Zadejte podrobnosti o zakázce (např. rozměry pergoly, sklon střechy, preferovaný materiál, specifické přání na elektroinstalaci apod.)."
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl p-4 text-sm font-medium text-slate-950 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-100 focus:bg-white transition-all resize-y"
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl p-4 text-sm font-medium text-slate-950 min-h-[48px] placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-100 focus:bg-white transition-all resize-y"
                 />
               </div>
 
@@ -478,7 +478,7 @@ export const EnterpriseInquiryForm: React.FC<EnterpriseInquiryFormProps> = ({
                     <button
                       type="button"
                       onClick={handleToggleVoiceNote}
-                      className={`px-4 py-2 rounded-lg text-xs font-extrabold flex items-center gap-1.5 transition-all cursor-pointer ${
+                      className={`px-4 py-2 rounded-lg text-xs font-extrabold flex items-center justify-center gap-1.5 transition-all cursor-pointer min-h-[48px] ${
                         isRecording 
                           ? 'bg-rose-600 hover:bg-rose-700 text-white shadow-md' 
                           : 'bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 shadow-2xs'
@@ -554,12 +554,12 @@ export const EnterpriseInquiryForm: React.FC<EnterpriseInquiryFormProps> = ({
           </div>
           {errors.gdpr && <p className="text-xs text-rose-600 font-bold px-1">{errors.gdpr}</p>}
 
-          <div className="flex flex-col sm:flex-row items-center justify-end gap-3 pt-2">
+          <div className="sticky bottom-0 left-0 right-0 z-20 bg-white/95 backdrop-blur-md p-4 sm:p-0 sm:bg-transparent sm:backdrop-blur-none border-t border-slate-200 sm:border-0 -mx-6 sm:mx-0 flex flex-col sm:flex-row items-center justify-end gap-3 pt-4 sm:pt-2 mt-4 shadow-[0_-10px_20px_-10px_rgba(0,0,0,0.05)] sm:shadow-none">
             {onCancel && (
               <button
                 type="button"
                 onClick={onCancel}
-                className="w-full sm:w-auto px-6 py-4.5 rounded-xl text-xs font-black text-slate-600 hover:text-slate-800 bg-slate-50 hover:bg-slate-100 border border-slate-200 transition-colors text-center cursor-pointer uppercase tracking-wider"
+                className="w-full sm:w-auto px-6 py-3.5 min-h-[48px] rounded-xl text-xs font-black text-slate-600 hover:text-slate-800 bg-slate-50 hover:bg-slate-100 border border-slate-200 transition-colors text-center cursor-pointer uppercase tracking-wider"
               >
                 Zrušit poptávku
               </button>
@@ -567,7 +567,7 @@ export const EnterpriseInquiryForm: React.FC<EnterpriseInquiryFormProps> = ({
             <button
               type="submit"
               disabled={isSubmitting}
-              className="w-full sm:flex-1 max-w-xl py-4.5 rounded-xl text-sm sm:text-base font-extrabold text-white flex items-center justify-center gap-2.5 transition-all hover:opacity-95 active:scale-[0.99] disabled:opacity-50 cursor-pointer shadow-lg"
+              className="w-full sm:flex-1 max-w-xl py-3.5 min-h-[48px] rounded-xl text-sm sm:text-base font-extrabold text-white flex items-center justify-center gap-2.5 transition-all hover:opacity-95 active:scale-[0.99] disabled:opacity-50 cursor-pointer shadow-lg"
               style={{ backgroundColor: activeColor, boxShadow: `0 8px 24px -6px ${activeColor}50` }}
             >
               {isSubmitting ? (

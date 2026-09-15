@@ -98,7 +98,7 @@ interface OrganizationContextType {
   fetchEmployees: () => Promise<Employee[]>;
   saveEmployee: (emp: Partial<Employee>) => Promise<Employee>;
   inviteEmployee: (emp: Partial<Employee>, tempPassword?: string) => Promise<Employee>;
-  resendEmployeeInvite: (employeeId: string) => Promise<{ email: string; message: string }>;
+  resendEmployeeInvite: (employeeId: string) => Promise<{ email: string; inviteToken?: string; inviteLink?: string; message: string }>;
   resetEmployeePassword: (employeeId: string, newPassword?: string) => Promise<{ email: string; newPassword: string }>;
   deactivateEmployee: (employeeId: string, deactivate?: boolean) => Promise<void>;
   deleteEmployee: (employeeId: string) => Promise<void>;
@@ -345,11 +345,55 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
         }
       }
 
+      // Check public.employees table for employee record matching email or userId
+      let employeeRecord: any = null;
+      if (email || userId) {
+        try {
+          const query = supabase.from('employees').select('*');
+          if (email && userId) {
+            query.or(`email.eq.${email},auth_user_id.eq.${userId}`);
+          } else if (email) {
+            query.eq('email', email);
+          } else {
+            query.eq('auth_user_id', userId);
+          }
+          const { data: empData } = await query.maybeSingle();
+          if (empData) {
+            employeeRecord = empData;
+          }
+        } catch (empQueryErr) {
+          console.warn('Employee table lookup warning:', empQueryErr);
+        }
+      }
+
+      // If user is found in employees table, bind role as 'employee' and organization_id
+      if (!dbUserData && employeeRecord) {
+        dbUserData = {
+          id: userId,
+          organization_id: employeeRecord.organization_id,
+          role: 'employee',
+          email: email || employeeRecord.email,
+          name: employeeRecord.name
+        };
+      }
+
       // Check local storage for matching user record as secondary fallback
       if (!dbUserData) {
         const localUser = LocalSupabaseMock.getUsers().find(u => u.id === userId || (email && u.email?.toLowerCase() === email.toLowerCase()));
         if (localUser) {
           dbUserData = localUser;
+        } else {
+          // Check local employees mock store
+          const localEmp = LocalSupabaseMock.getEmployees().find(e => (email && e.email?.toLowerCase() === email.toLowerCase()) || e.id === userId);
+          if (localEmp) {
+            dbUserData = {
+              id: userId,
+              organization_id: localEmp.organization_id,
+              role: 'employee',
+              email: email || localEmp.email,
+              name: localEmp.name
+            };
+          }
         }
       }
 
@@ -617,6 +661,22 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
         }
 
         const role = enforceRole(cleanEmail, pass, foundUser?.role);
+        
+        // Check if employee account is deactivated or pending activation
+        const allEmployees = LocalSupabaseMock.getEmployees() as any[];
+        const empRecord = allEmployees.find(e => e.email?.toLowerCase() === cleanEmail.toLowerCase() || e.id === foundUser?.id);
+        if (empRecord) {
+          if ((empRecord as any).active === false || (empRecord as any).status === 'Inactive') {
+            throw new Error('Tento zaměstnanecký účet byl deaktivován administrátorem.');
+          }
+          // Activate account on login if it was pending
+          if ((empRecord as any).invitationStatus === 'Pending' || !(empRecord as any).activated_at) {
+            empRecord.invitationStatus = 'Active';
+            empRecord.activated_at = new Date().toISOString();
+            LocalSupabaseMock.saveEmployees(allEmployees);
+          }
+        }
+
         const dbUserRecord: DBUser = {
           id: foundUser.id,
           organization_id: userOrg.id,
@@ -643,7 +703,35 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
       // 2. Load public.users row and organization
       await loadUserData(authUser.id, cleanEmail);
 
-      return authUser;
+      const activeSessionUser = LocalSupabaseMock.getActiveSessionUser();
+      
+      // Check if employee is deactivated or pending activation
+      const allEmps = LocalSupabaseMock.getEmployees() as any[];
+      const empRec = allEmps.find(e => e.email?.toLowerCase() === cleanEmail.toLowerCase());
+      if (empRec) {
+        if ((empRec as any).active === false || (empRec as any).status === 'Inactive') {
+          await supabase.auth.signOut();
+          setUser(null);
+          setDbUser(null);
+          throw new Error('Tento zaměstnanecký účet byl deaktivován administrátorem.');
+        }
+        if ((empRec as any).invitationStatus === 'Pending' || !(empRec as any).activated_at) {
+          empRec.invitationStatus = 'Active';
+          empRec.activated_at = new Date().toISOString();
+          LocalSupabaseMock.saveEmployees(allEmps);
+          try {
+            await supabase.from('employees').update({ invitation_status: 'Active', activated_at: new Date().toISOString() }).eq('email', cleanEmail);
+          } catch (e) {
+            console.warn('Supabase employee activation error:', e);
+          }
+        }
+      }
+
+      return {
+        ...authUser,
+        role: activeSessionUser?.role || 'owner',
+        organization_id: activeSessionUser?.organization_id
+      };
     } catch (err: any) {
       console.error('login error:', err);
       Sentry.captureException(err, {
@@ -859,43 +947,44 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
     if (!currentOrg) return [];
     const allLeads = LocalSupabaseMock.getLeads();
     const filteredLeads = allLeads.filter(l => l.organization_id === currentOrg.id);
-    return filteredLeads.map(l => ({
+    return filteredLeads.map((l: any) => ({
       id: l.id,
-      title: l.project_type + ' - ' + l.customer_name,
-      description: 'Vytvořeno automaticky přes Supabase / Local storage integration',
-      city: currentOrg.name,
-      address: 'Pražská 1, ' + currentOrg.name,
-      customerName: l.customer_name,
-      customerPhone: l.phone,
-      customerEmail: l.email,
-      preferredDate: new Date().toISOString().substring(0, 10),
-      price: l.budget,
-      status: l.status as any,
-      priority: 'High' as any,
-      assignedEmployeeId: 'emp-1',
-      assignedEmployeeName: 'Petr Novotný',
-      thumbnail: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=600&q=80',
-      photos: [],
-      files: [],
-      checklist: [],
-      aiSummary: {
-        jobType: l.project_type,
+      title: l.title || (l.project_type ? `${l.project_type} - ${l.customer_name || l.customerName || 'Zákazník'}` : l.customer_name || l.customerName || 'Zakázka'),
+      description: l.description || 'Poptávka v systému',
+      city: l.city || currentOrg.name || 'Praha',
+      address: l.address || ('Pražská 1, ' + (currentOrg.name || 'Praha')),
+      customerName: l.customer_name || l.customerName || 'Neznámý zákazník',
+      customerPhone: l.phone || l.customerPhone || '',
+      customerEmail: l.email || l.customerEmail || '',
+      preferredDate: l.preferredDate || (l.created_at ? l.created_at.substring(0, 10) : new Date().toISOString().substring(0, 10)),
+      price: l.budget || l.price || 0,
+      status: (l.status as any) || 'New',
+      priority: (l.priority as any) || 'Medium',
+      assignedEmployeeId: l.assignedEmployeeId || 'emp-1',
+      assignedEmployeeName: l.assignedEmployeeName || 'Petr Novotný',
+      thumbnail: l.thumbnail || 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=600&q=80',
+      photos: l.photos || [],
+      files: l.files || [],
+      checklist: l.checklist || [],
+      aiSummary: l.aiSummary || {
+        jobType: l.project_type || 'Pergola',
         complexity: 'Medium' as any,
-        estimatedRange: '180,000 - 240,000 CZK',
-        assignedEmployee: 'Petr Novotný',
+        estimatedRange: `${((l.budget || l.price || 150000) * 0.9).toLocaleString('cs-CZ')} - ${((l.budget || l.price || 150000) * 1.1).toLocaleString('cs-CZ')} Kč`,
+        assignedEmployee: l.assignedEmployeeName || 'Petr Novotný',
         risks: [],
         recommendedNextStep: 'Zavolat zákazníkovi'
       },
-      timeline: [],
-      aiChat: [],
-      history: [],
+      timeline: l.timeline || [],
+      aiChat: l.aiChat || [],
+      history: l.history || [],
+      organization_id: l.organization_id || currentOrg.id
     }));
   };
 
   const saveLeadLocal = (leadData: Partial<Lead>): Lead => {
-    if (!currentOrg) throw new Error('Organizace není vybrána');
+    const targetOrgId = currentOrg?.id || LocalSupabaseMock.getActiveOrgId() || DEFAULT_DEMO_ORG_ID;
     const leadRecord = {
-      organization_id: currentOrg.id,
+      organization_id: targetOrgId,
       customer_name: leadData.customerName || leadData.title || 'Zákazník',
       customerName: leadData.customerName || leadData.title || 'Zákazník',
       phone: leadData.customerPhone || '',
@@ -903,10 +992,16 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
       email: leadData.customerEmail || '',
       customerEmail: leadData.customerEmail || '',
       title: leadData.title || 'Zakázka',
-      project_type: leadData.aiSummary?.jobType || leadData.title?.split(' - ')[0] || 'Pergoly',
+      project_type: leadData.aiSummary?.jobType || (leadData as any).projectType || leadData.title?.split(' - ')[0] || 'Pergoly',
       budget: leadData.price || 150000,
       price: leadData.price || 150000,
       status: (leadData.status || 'New') as any,
+      priority: leadData.priority || 'Medium',
+      assignedEmployeeId: leadData.assignedEmployeeId || 'emp-1',
+      assignedEmployeeName: leadData.assignedEmployeeName || 'Petr Novotný',
+      address: leadData.address || 'Pražská 42, Praha',
+      city: leadData.city || 'Praha',
+      thumbnail: leadData.thumbnail || 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=600&q=80',
       
       // Preserve rich columns
       photos: leadData.photos || [],
@@ -944,7 +1039,7 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
     return {
       ...leadData,
       id: newMockLead.id,
-      organization_id: currentOrg.id,
+      organization_id: targetOrgId,
       ...leadRecord
     } as Lead;
   };
@@ -963,6 +1058,15 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
         action: `Stav zakázky změněn na: ${status}`,
         author: dbUser?.email || 'Dispečink'
       });
+      if (!Array.isArray(target.timeline)) {
+        target.timeline = [];
+      }
+      target.timeline.unshift({
+        id: 't-' + Date.now(),
+        title: `Stav změněn na: ${status}`,
+        status: 'Completed',
+        timestamp: new Date().toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit' })
+      });
       LocalSupabaseMock.saveLeads(mockAll);
     }
   };
@@ -970,30 +1074,49 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
   const fetchEmployeesLocal = (): Employee[] => {
     if (!currentOrg) return [];
     const mockEmps = LocalSupabaseMock.getEmployees().filter(e => e.organization_id === currentOrg.id);
-    return mockEmps.map(e => ({
-      id: e.id,
-      name: e.name || 'Zaměstnanec',
-      avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80',
-      specialization: e.specialization || 'Stavební technik',
-      capacity: e.capacity || 100,
-      maxCapacity: 100,
-      todaysJobsCount: 1,
-      status: 'Green',
-      phone: (e as any).phone || '+420 777 987 654',
-      email: (e as any).email || 'novotny@stavby.cz'
-    }));
+    return mockEmps.map(e => {
+      const isInactive = (e as any).active === false || (e as any).status === 'Inactive';
+      const invStatus: 'Pending' | 'Active' | 'Disabled' = isInactive 
+        ? 'Disabled' 
+        : ((e as any).invitationStatus || ((e as any).activated_at ? 'Active' : 'Pending'));
+      return {
+        id: e.id,
+        name: e.name || 'Zaměstnanec',
+        avatar: (e as any).avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80',
+        specialization: e.specialization || (e as any).role || 'Stavební technik',
+        role: (e as any).role || 'employee',
+        capacity: e.capacity || 100,
+        maxCapacity: 100,
+        todaysJobsCount: 1,
+        status: 'Green',
+        invitationStatus: invStatus,
+        active: !isInactive,
+        phone: (e as any).phone || '+420 777 987 654',
+        email: (e as any).email || 'zamestnanec@firma.cz',
+        inviteToken: (e as any).inviteToken || (e as any).invite_token,
+        invitedAt: (e as any).invitedAt || (e as any).invited_at,
+        organization_id: e.organization_id,
+        auth_user_id: (e as any).auth_user_id
+      };
+    });
   };
 
   const saveEmployeeLocal = (empData: Partial<Employee>): Employee => {
     if (!currentOrg) throw new Error('Organizace není vybrána');
+    const isInactive = empData.active === false || (empData as any).status === 'Inactive';
+    const invStatus = empData.invitationStatus || (isInactive ? 'Disabled' : 'Pending');
     const empRecord = {
       organization_id: currentOrg.id,
       name: empData.name || 'Zaměstnanec',
-      specialization: empData.specialization || 'Technik',
+      specialization: empData.specialization || empData.role || 'Technik',
+      role: empData.role || empData.specialization || 'employee',
       capacity: empData.capacity || 100,
       phone: empData.phone || '+420 777 000 111',
       email: empData.email || 'zamestnanec@firma.cz',
-      role: 'employee'
+      active: !isInactive,
+      invitationStatus: invStatus,
+      inviteToken: empData.inviteToken,
+      invitedAt: empData.invitedAt
     };
     const mockAll = LocalSupabaseMock.getEmployees() as any[];
     const newMockEmp = {
@@ -1013,6 +1136,15 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
     return {
       ...empData,
       id: newMockEmp.id,
+      name: newMockEmp.name,
+      email: newMockEmp.email,
+      phone: newMockEmp.phone,
+      specialization: newMockEmp.specialization,
+      role: newMockEmp.role,
+      active: newMockEmp.active,
+      invitationStatus: newMockEmp.invitationStatus,
+      inviteToken: newMockEmp.inviteToken,
+      invitedAt: newMockEmp.invitedAt
     } as Employee;
   };
 
@@ -1110,17 +1242,102 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
     }
   };
 
-  // Data Action: Save Lead to Supabase
+  // Data Action: Save Lead to Supabase or Sandbox
   const createLead = async (leadData: Partial<Lead>): Promise<Lead> => {
-    const saved = await saveLead(leadData);
-    if (window.parent !== window) {
+    const targetOrgId = currentOrg?.id || LocalSupabaseMock.getActiveOrgId() || DEFAULT_DEMO_ORG_ID;
+
+    const customerName = leadData.customerName || (leadData as any).fullName || leadData.title || 'Nová poptávka';
+    const phone = leadData.customerPhone || (leadData as any).phone || '';
+    const email = leadData.customerEmail || (leadData as any).email || '';
+    const projectType = (leadData as any).projectType || leadData.aiSummary?.jobType || leadData.title?.split(' - ')[0] || 'Pergola';
+    const budget = Number(leadData.price || (leadData as any).budgetValue) || 220000;
+    const address = leadData.address || (leadData as any).address || `Pražská 42, ${currentOrg?.name || 'Praha'}`;
+
+    const enrichedLead: Partial<Lead> = {
+      ...leadData,
+      organization_id: targetOrgId,
+      customerName,
+      customerPhone: phone,
+      customerEmail: email,
+      title: leadData.title || `${projectType} - ${customerName}`,
+      description: leadData.description || (leadData as any).description || 'Poptávka z online veřejného formuláře',
+      address,
+      city: leadData.city || currentOrg?.name || 'Praha',
+      preferredDate: leadData.preferredDate || new Date(Date.now() + 7 * 86400000).toISOString().substring(0, 10),
+      price: budget,
+      status: 'New',
+      priority: leadData.priority || 'Medium',
+      assignedEmployeeId: leadData.assignedEmployeeId || 'emp-1',
+      assignedEmployeeName: leadData.assignedEmployeeName || 'Petr Novotný',
+      thumbnail: leadData.thumbnail || 'https://images.unsplash.com/photo-1513694203232-719a280e022f?auto=format&fit=crop&w=600&q=80',
+      photos: leadData.photos || [],
+      files: leadData.files || [],
+      checklist: leadData.checklist && leadData.checklist.length > 0 ? leadData.checklist : [
+        { id: 'c-1', text: 'Zkontrolovat kontaktní údaje a ověřit telefon', completed: false },
+        { id: 'c-2', text: 'Zpracovat cenovou kalkulaci', completed: false },
+        { id: 'c-3', text: 'Domluvit termín zaměření na místě', completed: false }
+      ],
+      aiSummary: leadData.aiSummary || {
+        jobType: projectType,
+        complexity: 'Medium',
+        estimatedRange: `${budget.toLocaleString('cs-CZ')} Kč`,
+        assignedEmployee: 'Petr Novotný',
+        risks: ['Ověřit stavební připravenost podloží'],
+        recommendedNextStep: 'Telefonický kontakt zákazníka do 24 hodin.'
+      },
+      timeline: leadData.timeline && leadData.timeline.length > 0 ? leadData.timeline : [
+        {
+          id: 't-1',
+          title: 'Poptávka odeslána z veřejného formuláře',
+          status: 'Completed',
+          timestamp: 'Dnes'
+        }
+      ],
+      history: leadData.history && leadData.history.length > 0 ? leadData.history : [
+        {
+          id: 'h-' + Date.now(),
+          timestamp: new Date().toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit' }),
+          action: 'Poptávka vytvořena z veřejného formuláře',
+          author: 'Veřejný formulář'
+        }
+      ]
+    };
+
+    const saved = await saveLead(enrichedLead);
+
+    // Create Notification and Activity feed entry
+    const notifItem = {
+      id: 'notif-' + Date.now(),
+      title: 'Nová veřejná poptávka',
+      message: `${customerName} odeslal poptávku "${projectType}" v hodnotě ${budget.toLocaleString('cs-CZ')} Kč.`,
+      timestamp: new Date().toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit' }),
+      read: false,
+      type: 'lead'
+    };
+
+    const actItem = {
+      time: new Date().toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit' }),
+      text: `Nová veřejná poptávka z webu: ${customerName} (${projectType} - ${budget.toLocaleString('cs-CZ')} Kč)`,
+      badgeColor: '#EDE9FE',
+      textColor: '#5B21B6'
+    };
+
+    LocalSupabaseMock.saveNotification(targetOrgId, notifItem);
+    LocalSupabaseMock.saveActivity(targetOrgId, actItem);
+
+    if (typeof window !== 'undefined' && window.parent !== window) {
       window.parent.postMessage({ type: 'LEAD_CREATED', payload: saved }, '*');
     }
+
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('crm:lead_created', { detail: { lead: saved, notification: notifItem, activity: actItem } }));
+    }
+
     return saved;
   };
 
   const saveLead = async (leadData: Partial<Lead>): Promise<Lead> => {
-    if (!currentOrg) throw new Error('Organizace není vybrána');
+    const targetOrgId = currentOrg?.id || LocalSupabaseMock.getActiveOrgId() || DEFAULT_DEMO_ORG_ID;
 
     const customerName = leadData.customerName || (leadData as any).fullName || leadData.title || 'Nová poptávka';
     const phone = leadData.customerPhone || (leadData as any).phone || '';
@@ -1130,7 +1347,7 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
     const status = leadData.status || 'New';
 
     const leadRecord = {
-      organization_id: currentOrg.id,
+      organization_id: targetOrgId,
       customer_name: customerName,
       phone: phone,
       email: email,
@@ -1139,7 +1356,7 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
       status: status
     };
 
-    if (!isSupabaseConfigured || !supabase || !isValidUUID(currentOrg.id)) {
+    if (!isSupabaseConfigured || !supabase || !isValidUUID(targetOrgId)) {
       return saveLeadLocal({ ...leadData, customerName, customerPhone: phone, customerEmail: email, price: budget });
     }
 
@@ -1171,7 +1388,7 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
           // If insert fails (e.g. 42501 RLS policy violation or unauthenticated session), try submit_public_lead RPC
           try {
             const { data: rpcLeadId, error: rpcError } = await supabase.rpc('submit_public_lead', {
-              p_org_id: currentOrg.id,
+              p_org_id: targetOrgId,
               p_customer_name: customerName,
               p_phone: phone,
               p_email: email,
@@ -1188,7 +1405,7 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
                 customerEmail: email,
                 price: budget,
                 status: status,
-                organization_id: currentOrg.id,
+                organization_id: targetOrgId,
               } as Lead;
             }
           } catch (rpcCatch) {
@@ -1213,7 +1430,7 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
         customerEmail: result.email || email,
         price: result.budget || budget,
         status: result.status || status,
-        organization_id: currentOrg.id,
+        organization_id: targetOrgId,
       } as Lead;
     } catch (err: any) {
       console.warn('saveLead operation notice (saved locally):', err?.message || err);
@@ -1259,18 +1476,31 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
 
       if (fetchError) throw fetchError;
 
-      return (data || []).map((e: any) => ({
-        id: e.id,
-        name: e.name || 'Zaměstnanec',
-        avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80',
-        specialization: e.specialization || 'Stavební technik',
-        capacity: e.capacity || 100,
-        maxCapacity: 100,
-        todaysJobsCount: 1,
-        status: 'Green',
-        phone: '+420 777 987 654',
-        email: 'novotny@stavby.cz'
-      }));
+      return (data || []).map((e: any) => {
+        const isInactive = e.active === false || e.status === 'Inactive';
+        const invStatus: 'Pending' | 'Active' | 'Disabled' = isInactive 
+          ? 'Disabled' 
+          : (e.invitation_status || e.invitationStatus || (e.activated_at ? 'Active' : 'Pending'));
+        return {
+          id: e.id,
+          name: e.name || 'Zaměstnanec',
+          avatar: e.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80',
+          specialization: e.specialization || e.role || 'Stavební technik',
+          role: e.role || 'employee',
+          capacity: e.capacity || 100,
+          maxCapacity: 100,
+          todaysJobsCount: 1,
+          status: 'Green',
+          invitationStatus: invStatus,
+          active: !isInactive,
+          phone: e.phone || '+420 777 987 654',
+          email: e.email || 'zamestnanec@firma.cz',
+          inviteToken: e.invite_token || e.inviteToken,
+          invitedAt: e.invited_at || e.invitedAt,
+          organization_id: e.organization_id,
+          auth_user_id: e.auth_user_id
+        };
+      });
     } catch (err: any) {
       console.error('fetchEmployees error:', err);
       Sentry.captureException(err, {
@@ -1282,10 +1512,13 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
 
   // Data Action: Save Employee to Supabase
   
-  const inviteEmployee = async (empData: Partial<Employee>, tempPassword?: string): Promise<Employee> => {
+  const inviteEmployee = async (empData: Partial<Employee>, tempPassword?: string): Promise<Employee & { tempPassword?: string; inviteLink?: string }> => {
     if (!currentOrg) throw new Error('Organizace není vybrána');
     const email = (empData as any).email || `${(empData.name || 'zamestnanec').toLowerCase().replace(/\s+/g, '.')}@${currentOrg.slug || 'firma'}.cz`;
     const password = tempPassword || `Stavba${Math.floor(1000 + Math.random() * 9000)}`;
+    const inviteToken = `inv-tok-${Date.now()}-${Math.floor(1000 + Math.random() * 9000)}`;
+    const invitedAt = new Date().toISOString();
+    const role = empData.role || empData.specialization || 'Stavební technik';
 
     // Always ensure user exists in LocalSupabaseMock so employee login works reliably
     const persistToLocalMock = (userId: string) => {
@@ -1307,13 +1540,31 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
       LocalSupabaseMock.saveUsers(allUsers);
     };
 
+    const payload: Partial<Employee> = {
+      ...empData,
+      email,
+      phone: empData.phone || '+420 777 000 111',
+      specialization: role,
+      role: role,
+      active: true,
+      invitationStatus: 'Pending',
+      inviteToken,
+      invitedAt
+    };
+
+    const inviteLink = `${window.location.origin}/login?inviteToken=${inviteToken}&email=${encodeURIComponent(email)}`;
+
     if (!isSupabaseConfigured || !supabase) {
-      const newEmp = await saveEmployee({ ...empData, email, phone: empData.phone || '+420 777 000 111' });
+      const newEmp = await saveEmployee(payload);
       persistToLocalMock(newEmp.id);
       return {
         ...newEmp,
         email,
-        tempPassword: password
+        tempPassword: password,
+        inviteToken,
+        invitedAt,
+        invitationStatus: 'Pending',
+        inviteLink
       } as any;
     }
 
@@ -1360,21 +1611,29 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
 
       persistToLocalMock(userId);
       // Also save to public.employees
-      const newEmp = await saveEmployee({ ...empData, email, phone: empData.phone || '+420 777 000 111', auth_user_id: userId } as any);
+      const newEmp = await saveEmployee({ ...payload, auth_user_id: userId } as any);
       return {
         ...newEmp,
         email,
-        tempPassword: password
+        tempPassword: password,
+        inviteToken,
+        invitedAt,
+        invitationStatus: 'Pending',
+        inviteLink
       } as any;
     } catch (e: any) {
       console.warn('Supabase invite notice (falling back to guaranteed local mock):', e?.message || e);
       const fallbackId = generateUUID();
       persistToLocalMock(fallbackId);
-      const newEmp = await saveEmployee({ ...empData, id: fallbackId, email, phone: empData.phone || '+420 777 000 111' });
+      const newEmp = await saveEmployee({ ...payload, id: fallbackId });
       return {
         ...newEmp,
         email,
-        tempPassword: password
+        tempPassword: password,
+        inviteToken,
+        invitedAt,
+        invitationStatus: 'Pending',
+        inviteLink
       } as any;
     }
   };
@@ -1437,21 +1696,47 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
     }
   };
 
-  const resendEmployeeInvite = async (employeeId: string): Promise<{ email: string; message: string }> => {
+  const resendEmployeeInvite = async (employeeId: string): Promise<{ email: string; inviteToken: string; inviteLink: string; message: string }> => {
     const emps = await fetchEmployees();
     const target = emps.find(e => e.id === employeeId);
     if (!target || !target.email) throw new Error('Zaměstnanec nenalezen');
     
+    const inviteToken = target.inviteToken || `inv-tok-${Date.now()}-${Math.floor(1000 + Math.random() * 9000)}`;
+    const invitedAt = new Date().toISOString();
+
+    const mockAll = LocalSupabaseMock.getEmployees() as any[];
+    const idx = mockAll.findIndex(e => e.id === employeeId || e.email?.toLowerCase() === target.email.toLowerCase());
+    if (idx !== -1) {
+      mockAll[idx].inviteToken = inviteToken;
+      mockAll[idx].invitedAt = invitedAt;
+      if (mockAll[idx].invitationStatus !== 'Disabled') {
+        mockAll[idx].invitationStatus = 'Pending';
+      }
+      LocalSupabaseMock.saveEmployees(mockAll);
+    }
+
     if (isSupabaseConfigured && supabase) {
       try {
+        if (isValidUUID(employeeId)) {
+          await supabase.from('employees').update({ 
+            invite_token: inviteToken, 
+            invited_at: invitedAt,
+            invitation_status: 'Pending'
+          }).eq('id', employeeId);
+        }
         await supabase.auth.resetPasswordForEmail(target.email);
       } catch (e) {
         console.warn('Supabase resetPasswordForEmail notice:', e);
       }
     }
+
+    const inviteLink = `${window.location.origin}/login?inviteToken=${inviteToken}&email=${encodeURIComponent(target.email)}`;
+
     return {
       email: target.email,
-      message: `Pozvánka pro ${target.name} (${target.email}) byla úspěšně znovu odeslána.`
+      inviteToken,
+      inviteLink,
+      message: `Pozvánka pro ${target.name} (${target.email}) byla obnovena. Link pro aktivaci: ${inviteLink}`
     };
   };
 
@@ -1486,11 +1771,15 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
     if (idx !== -1) {
       mockAll[idx].active = !deactivate;
       mockAll[idx].status = deactivate ? 'Inactive' : 'Green';
+      mockAll[idx].invitationStatus = deactivate ? 'Disabled' : (mockAll[idx].activated_at ? 'Active' : 'Pending');
       LocalSupabaseMock.saveEmployees(mockAll);
     }
     if (isSupabaseConfigured && supabase && isValidUUID(employeeId)) {
       try {
-        await supabase.from('employees').update({ active: !deactivate }).eq('id', employeeId);
+        await supabase.from('employees').update({ 
+          active: !deactivate, 
+          invitation_status: deactivate ? 'Disabled' : 'Active' 
+        }).eq('id', employeeId);
       } catch (e) {
         console.warn('deactivateEmployee notice:', e);
       }

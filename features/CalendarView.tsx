@@ -39,24 +39,24 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ leads }) => {
           <p className="text-xs text-slate-500 mt-0.5">Vertikální časová osa stavebních výjezdů, přiřazených part a meteorologických výstrah</p>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 w-full md:w-auto">
           {/* View Mode Switcher */}
-          <div className="bg-slate-100 p-1 rounded-xl border border-slate-200 flex items-center text-xs">
+          <div className="bg-slate-100 p-1 rounded-xl border border-slate-200 flex items-center text-xs flex-1 md:flex-none">
             <button
               onClick={() => setViewMode('day')}
-              className={`px-3 py-1.5 rounded-lg font-bold transition-all ${viewMode === 'day' ? 'bg-brand-primary text-white shadow-sm' : 'text-slate-600 hover:text-slate-900'}`}
+              className={`px-3 py-1.5 min-h-[48px] md:min-h-[36px] flex-1 md:flex-none flex items-center justify-center rounded-lg font-bold transition-all ${viewMode === 'day' ? 'bg-brand-primary text-white shadow-sm' : 'text-slate-600 hover:text-slate-900'}`}
             >
               Den
             </button>
             <button
               onClick={() => setViewMode('week')}
-              className={`px-3 py-1.5 rounded-lg font-bold transition-all ${viewMode === 'week' ? 'bg-brand-primary text-white shadow-sm' : 'text-slate-600 hover:text-slate-900'}`}
+              className={`px-3 py-1.5 min-h-[48px] md:min-h-[36px] flex-1 md:flex-none flex items-center justify-center rounded-lg font-bold transition-all ${viewMode === 'week' ? 'bg-brand-primary text-white shadow-sm' : 'text-slate-600 hover:text-slate-900'}`}
             >
-              Týden (Agenda)
+              Týden
             </button>
             <button
               onClick={() => setViewMode('month')}
-              className={`px-3 py-1.5 rounded-lg font-bold transition-all ${viewMode === 'month' ? 'bg-brand-primary text-white shadow-sm' : 'text-slate-600 hover:text-slate-900'}`}
+              className={`px-3 py-1.5 min-h-[48px] md:min-h-[36px] flex-1 md:flex-none flex items-center justify-center rounded-lg font-bold transition-all ${viewMode === 'month' ? 'bg-brand-primary text-white shadow-sm' : 'text-slate-600 hover:text-slate-900'}`}
             >
               Měsíc
             </button>
@@ -65,10 +65,10 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ leads }) => {
           <button
             onClick={handleAutoSchedule}
             disabled={isAutoScheduling}
-            className="px-4 py-2.5 rounded-xl bg-brand-primary hover:bg-brand-primary-dark text-white text-xs font-bold shadow-md transition-all flex items-center gap-2"
+            className="px-4 py-2.5 min-h-[48px] rounded-xl bg-brand-primary hover:bg-brand-primary-dark text-white text-xs font-bold shadow-md transition-all flex items-center justify-center gap-2 flex-1 md:flex-none"
           >
-            <Sparkles className={`w-4 h-4 ${isAutoScheduling ? 'animate-spin' : ''}`} />
-            <span>{isAutoScheduling ? 'Optimalizace...' : 'Optimalizovat trasy (AI)'}</span>
+            <Sparkles className={`w-4 h-4 shrink-0 ${isAutoScheduling ? 'animate-spin' : ''}`} />
+            <span className="hidden sm:inline">{isAutoScheduling ? 'Optimalizace...' : 'Optimalizovat (AI)'}</span>
           </button>
         </div>
       </div>

@@ -69,9 +69,9 @@ export const OwnerLayout: React.FC<OwnerLayoutProps> = ({
   const [isMobileDrawerOpen, setIsMobileDrawerOpen] = useState(false);
 
   // Effective company branding info
-  const activeCompanyName = currentOrg?.name || branding.name || 'Vaše Stavební Firma';
-  const activeLogo = currentOrg?.logo_url || branding.logoUrl;
-  const activeCity = currentOrg?.city || branding.city || 'Česká republika';
+  const activeCompanyName = currentOrg?.name || 'Vaše Stavební Firma';
+  const activeLogo = currentOrg?.logo_url;
+  const activeCity = currentOrg?.city || 'Česká republika';
 
   // Notifications State
   const [notifications, setNotifications] = useState<CRMNotification[]>([
@@ -165,6 +165,16 @@ export const OwnerLayout: React.FC<OwnerLayoutProps> = ({
 
         {/* Sidebar - Desktop Fixed / Mobile Slide-in Drawer */}
         <aside 
+          onTouchStart={(e) => {
+            const touch = e.touches[0];
+            const startX = touch.clientX;
+            const handleTouchEnd = (endE: TouchEvent) => {
+              const endX = endE.changedTouches[0].clientX;
+              if (startX - endX > 50) setIsMobileDrawerOpen(false);
+              document.removeEventListener('touchend', handleTouchEnd);
+            };
+            document.addEventListener('touchend', handleTouchEnd);
+          }}
           className={`w-72 bg-surface border-r border-border flex flex-col justify-between shrink-0 fixed inset-y-0 left-0 z-50 shadow-app transition-transform duration-300 font-sans ${
             isMobileDrawerOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
           }`} 
@@ -198,7 +208,7 @@ export const OwnerLayout: React.FC<OwnerLayoutProps> = ({
               {/* Close Button on Mobile Drawer */}
               <button 
                 onClick={() => setIsMobileDrawerOpen(false)}
-                className="lg:hidden p-1.5 rounded-lg text-muted hover:text-text hover:bg-surface-secondary"
+                className="lg:hidden p-2 rounded-lg text-muted hover:text-text hover:bg-surface-secondary min-h-[48px] min-w-[48px] flex items-center justify-center"
                 aria-label="Zavřít menu"
               >
                 <X className="w-5 h-5" />
@@ -300,7 +310,7 @@ export const OwnerLayout: React.FC<OwnerLayoutProps> = ({
           <div className="flex items-center gap-3">
             <button
               onClick={() => setIsMobileDrawerOpen(true)}
-              className="lg:hidden min-h-[44px] min-w-[44px] rounded-xl border border-border bg-surface flex items-center justify-center text-muted hover:text-text hover:bg-surface-secondary"
+              className="lg:hidden min-h-[48px] min-w-[48px] rounded-xl border border-border bg-surface flex items-center justify-center text-muted hover:text-text hover:bg-surface-secondary"
               aria-label="Otevřít menu navigace"
             >
               <Menu className="w-5 h-5" />
@@ -332,11 +342,11 @@ export const OwnerLayout: React.FC<OwnerLayoutProps> = ({
             <div className="relative">
               <button
                 onClick={() => setIsNotificationsOpen(prev => !prev)}
-                className="w-10 h-10 sm:w-9 sm:h-9 rounded-app bg-surface-secondary border border-border flex items-center justify-center text-muted hover:text-text hover:bg-surface-tertiary transition-all relative cursor-pointer"
+                className="w-[48px] h-[48px] sm:w-10 sm:h-10 rounded-app bg-surface-secondary border border-border flex items-center justify-center text-muted hover:text-text hover:bg-surface-tertiary transition-all relative cursor-pointer"
               >
-                <Bell className="w-4 h-4" />
+                <Bell className="w-4 h-4 sm:w-5 sm:h-5" />
                 {unreadCount > 0 && (
-                  <span className="absolute top-2 right-2 w-2 h-2 rounded-full bg-red-500 animate-pulse"></span>
+                  <span className="absolute top-2.5 right-2.5 sm:top-2 sm:right-2 w-2 h-2 rounded-full bg-red-500 animate-pulse"></span>
                 )}
               </button>
 

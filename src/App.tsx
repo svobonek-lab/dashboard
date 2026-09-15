@@ -66,6 +66,7 @@ function AppContent() {
     fetchLeads, 
     fetchEmployees, 
     saveLead, 
+    createLead,
     updateLeadStatus 
   } = useOrganization();
   const { pathname, navigate } = useRouter();
@@ -110,7 +111,7 @@ function AppContent() {
     }
   }, [currentOrg]);
 
-  // Root path routing based on user role
+  // Root path routing & strict employee route protection
   useEffect(() => {
     if (isAuthLoading) return;
 
@@ -118,15 +119,20 @@ function AppContent() {
       const role = (dbUser?.role as UserRole) || 'owner';
       const target = getDefaultRouteForRole(role);
       navigate(target, { replace: true });
+    } else if (dbUser?.role === 'employee') {
+      const isAllowedEmployeePath = pathname.startsWith('/employee') || pathname === '/login' || pathname === '/portal' || pathname.startsWith('/widget-iframe');
+      if (!isAllowedEmployeePath) {
+        navigate('/employee', { replace: true });
+      }
     }
   }, [pathname, isAuthLoading, dbUser, navigate]);
 
   // Dynamic White Labeling (Browser Title & Favicon Update)
   useEffect(() => {
-    const activeName = currentOrg?.name || branding.name || 'StavbaCore CRM';
+    const activeName = currentOrg?.name || 'StavbaCore CRM';
     document.title = `${activeName} | Stavební OS`;
 
-    const activeLogo = currentOrg?.logo_url || branding.logoUrl;
+    const activeLogo = currentOrg?.logo_url;
     if (activeLogo) {
       const link: HTMLLinkElement = document.querySelector("link[rel*='icon']") || document.createElement('link');
       link.type = 'image/png';
@@ -134,17 +140,85 @@ function AppContent() {
       link.href = activeLogo;
       document.head.appendChild(link);
     }
-  }, [currentOrg?.name, currentOrg?.logo_url, branding?.name, branding?.logoUrl]);
+  }, [currentOrg?.name, currentOrg?.logo_url]);
+
+  const STATUS_LABELS: Record<LeadStatus, string> = {
+    New: 'Nová poptávka',
+    Contacted: 'Kontaktováno',
+    Quote: 'Rozpočet / Nabídka',
+    'In Progress': 'Realizace stavby',
+    Completed: 'Dokončeno & Předáno',
+    Lost: 'Stornováno'
+  };
+
+  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
+
+  const showToast = (message: string, type: 'success' | 'error' = 'success') => {
+    setToast({ message, type });
+    setTimeout(() => {
+      setToast(null);
+    }, 4000);
+  };
 
   const handleUpdateLeadStatus = async (leadId: string, newStatus: LeadStatus) => {
-    setLeads(prev => prev.map(l => l.id === leadId ? { ...l, status: newStatus } : l));
+    const targetLead = leads.find(l => l.id === leadId);
+    if (!targetLead) return;
+    const previousStatus = targetLead.status;
+    if (previousStatus === newStatus) return;
+
+    const statusLabel = STATUS_LABELS[newStatus] || newStatus;
+    const timestamp = new Date().toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit' });
+
+    // 1. Optimistic Update (Immediate UI update, timeline update, history update, counter recalculation)
+    const updatedHistory = [
+      {
+        id: 'hist-' + Date.now(),
+        timestamp,
+        action: `Stav zakázky změněn na: ${statusLabel}`,
+        author: dbUser?.email || 'Dispečink'
+      },
+      ...(targetLead.history || [])
+    ];
+
+    const updatedTimeline = [
+      {
+        id: 't-' + Date.now(),
+        title: `Stav změněn na: ${statusLabel}`,
+        status: 'Completed' as const,
+        timestamp
+      },
+      ...(targetLead.timeline || [])
+    ];
+
+    setLeads(prev => prev.map(l => l.id === leadId ? {
+      ...l,
+      status: newStatus,
+      history: updatedHistory,
+      timeline: updatedTimeline
+    } : l));
+
     if (selectedLead && selectedLead.id === leadId) {
-      setSelectedLead(prev => prev ? { ...prev, status: newStatus } : null);
+      setSelectedLead(prev => prev ? {
+        ...prev,
+        status: newStatus,
+        history: updatedHistory,
+        timeline: updatedTimeline
+      } : null);
     }
+
+    showToast(`Stav zakázky "${targetLead.customerName}" změněn na: ${statusLabel}`, 'success');
+
+    // 2. Persist to cache & database with optimistic rollback on failure
     try {
       await updateLeadStatus(leadId, newStatus);
-    } catch (e) {
-      console.error('Failed to sync status with database', e);
+    } catch (e: any) {
+      console.error('Failed to sync status with database, rolling back', e);
+      // Rollback on failure
+      setLeads(prev => prev.map(l => l.id === leadId ? targetLead : l));
+      if (selectedLead && selectedLead.id === leadId) {
+        setSelectedLead(targetLead);
+      }
+      showToast('Nepodařilo se uložit změnu stavu. Změna byla stornována.', 'error');
     }
   };
 
@@ -156,80 +230,47 @@ function AppContent() {
 
   React.useEffect(() => {
     const handleMessage = (e: MessageEvent) => {
-      if (e.data?.type === 'LEAD_CREATED') {
-        handleAddLead(e.data.payload);
+      if (e.data?.type === 'LEAD_CREATED' && e.data?.payload) {
+        const incomingLead = e.data.payload;
+        setLeads(prev => [incomingLead, ...prev.filter(l => l.id !== incomingLead.id)]);
+      }
+    };
+    const handleCrmLeadCreated = (e: any) => {
+      if (e.detail?.lead) {
+        const newLead = e.detail.lead;
+        setLeads(prev => [newLead, ...prev.filter(l => l.id !== newLead.id)]);
+      }
+    };
+    const handleCrmToast = (e: any) => {
+      if (e.detail?.message) {
+        showToast(e.detail.message, e.detail.type || 'success');
       }
     };
     window.addEventListener('message', handleMessage);
-    return () => window.removeEventListener('message', handleMessage);
-  }, [employees]);
-
-  const handleAddLead = (incoming: any) => {
-    const customerName = incoming.fullName || incoming.customerName || incoming.title || 'Nová poptávka';
-    const newLead: Lead = {
-      id: incoming.id || `lead-${Date.now()}`,
-      title: incoming.title || `${incoming.projectType || 'Projekt'} - ${customerName}`,
-      customerName: customerName,
-      customerPhone: incoming.phone || incoming.customerPhone || '',
-      customerEmail: incoming.email || incoming.customerEmail || '',
-      city: incoming.city || currentOrg?.city || 'Praha',
-      address: incoming.address || `${currentOrg?.city || 'Praha'}`,
-      preferredDate: incoming.preferredDate || new Date().toISOString().substring(0, 10),
-      price: Number(incoming.price || incoming.budgetValue) || 220000,
-      status: (incoming.status as LeadStatus) || 'New',
-      priority: (incoming.priority as any) || 'Medium',
-      assignedEmployeeId: incoming.assignedEmployeeId || (employees[0]?.id || 'emp-1'),
-      assignedEmployeeName: incoming.assignedEmployeeName || (employees[0]?.name || 'Dispečink'),
-      thumbnail: incoming.thumbnail || 'https://images.unsplash.com/photo-1513694203232-719a280e022f?auto=format&fit=crop&w=400&q=80',
-      photos: incoming.photos || [],
-      files: incoming.files || [],
-      createdDate: incoming.createdDate || new Date().toLocaleDateString('cs-CZ'),
-      urgency: incoming.urgency || 'Medium',
-      description: incoming.description || 'Poptávka z webového formuláře',
-      timeline: incoming.timeline && incoming.timeline.length > 0 ? incoming.timeline : [
-        {
-          id: 't-1',
-          title: 'Poptávka odeslána z webu',
-          date: new Date().toLocaleDateString('cs-CZ'),
-          time: new Date().toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit' }),
-          completed: true,
-          description: 'Zákazník odeslal online poptávku s kontaktními údaji.'
-        }
-      ],
-      checklist: incoming.checklist && incoming.checklist.length > 0 ? incoming.checklist : [
-        { id: 'c-1', text: 'Zkontrolovat kontaktní údaje a ověřit telefon', completed: false, required: true },
-        { id: 'c-2', text: 'Zpracovat cenovou kalkulaci', completed: false, required: true },
-        { id: 'c-3', text: 'Domluvit termín zaměření na místě', completed: false, required: false }
-      ],
-      aiSummary: incoming.aiSummary || {
-        jobType: incoming.projectType || 'Zakázka',
-        complexity: 'Medium',
-        estimatedRange: `${Number(incoming.price || incoming.budgetValue || 220000).toLocaleString('cs-CZ')} Kč`,
-        assignedEmployee: employees[0]?.name || 'Dispečink',
-        risks: ['Ověřit terénní přístup a inženýrské sítě'],
-        recommendedNextStep: 'Telefonický kontakt zákazníka do 24 hodin.'
-      },
-      aiChat: incoming.aiChat || [],
-      history: incoming.history && incoming.history.length > 0 ? incoming.history : [
-        {
-          id: 'h-' + Date.now(),
-          timestamp: new Date().toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit' }),
-          action: 'Poptávka přijata do CRM',
-          author: 'Webový formulář'
-        }
-      ],
-      voiceNotes: incoming.voiceNotes || (incoming.voiceNoteText ? [
-        {
-          id: 'vn-1',
-          timestamp: new Date().toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit' }),
-          text: incoming.voiceNoteText,
-          duration: '0:15'
-        }
-      ] : [])
+    window.addEventListener('crm:lead_created', handleCrmLeadCreated as EventListener);
+    window.addEventListener('crm:toast', handleCrmToast as EventListener);
+    return () => {
+      window.removeEventListener('message', handleMessage);
+      window.removeEventListener('crm:lead_created', handleCrmLeadCreated as EventListener);
+      window.removeEventListener('crm:toast', handleCrmToast as EventListener);
     };
+  }, []);
 
-    setLeads(prev => [newLead, ...prev.filter(l => l.id !== newLead.id)]);
-    saveLead(newLead).catch(e => console.error('Failed to save lead', e));
+  const handleAddLead = async (incoming: any) => {
+    try {
+      const created = await createLead(incoming);
+      setLeads(prev => [created, ...prev.filter(l => l.id !== created.id)]);
+    } catch (e) {
+      console.error('Failed to add lead via unified createLead pipeline', e);
+    }
+  };
+
+  const activeBranding = {
+    ...branding,
+    name: currentOrg?.name || branding.name,
+    logoUrl: currentOrg?.logo_url || branding.logoUrl,
+    primaryColor: currentOrg?.primary_color || branding.primaryColor,
+    city: currentOrg?.city || branding.city
   };
 
   // 1. Standalone / Public / Embed Routes (No Layout)
@@ -240,7 +281,7 @@ function AppContent() {
   if (pathname === '/inquiry' || pathname === '/poptavka') {
     return (
       <InquiryFormPage 
-        branding={branding} 
+        branding={activeBranding} 
         onSubmitInquiry={handleAddLead}
         onBackToDashboard={() => navigate('/dashboard')} 
       />
@@ -250,18 +291,15 @@ function AppContent() {
   if (pathname === '/portal') {
     return (
       <div className="min-h-screen bg-slate-50 p-6">
-        <CustomerPortalPage branding={branding} lead={leads[0]} onBackToCRM={() => navigate('/dashboard')} />
+        <CustomerPortalPage branding={activeBranding} lead={leads[0]} onBackToCRM={() => navigate('/dashboard')} />
       </div>
     );
   }
 
   if (pathname === '/login') {
     return <LoginPage onSuccess={(user) => {
-      if (user?.role) {
-         navigate(getDefaultRouteForRole(user.role), { replace: true });
-      } else {
-         navigate('/', { replace: true });
-      }
+      const targetRole = user?.role || dbUser?.role || 'owner';
+      navigate(getDefaultRouteForRole(targetRole), { replace: true });
     }} />;
   }
 
@@ -275,7 +313,7 @@ function AppContent() {
           ) : pathname === '/admin/companies' ? (
             <AdminCompaniesPage />
           ) : pathname === '/admin/install' ? (
-            <InstallStudio currentBranding={branding} onDeploy={(b) => updateBrandingAdmin(currentOrg?.id || "", b.name, b.primaryColor, b.logoUrl)} />
+            <InstallStudio currentBranding={activeBranding} onDeploy={(b) => updateBrandingAdmin(currentOrg?.id || "", b.name, b.primaryColor, b.logoUrl)} />
           ) : pathname === '/admin/demo-creator' ? (
             <AdminPanel />
           ) : pathname === '/admin/domains' ? (
@@ -366,9 +404,22 @@ function AppContent() {
         ) : pathname === '/settings' ? (
           <OwnerSettingsPage />
         ) : (
-          <OwnerDashboardPage leads={leads} onSelectLead={setSelectedLead} />
+          <OwnerDashboardPage leads={leads} employees={employees} onSelectLead={setSelectedLead} />
         )}
       </OwnerLayout>
+
+      {/* Persistent Toast Notifications */}
+      {toast && (
+        <div className="fixed bottom-6 right-6 z-50 animate-in fade-in slide-in-from-bottom-5 duration-200">
+          <div className={`px-5 py-3.5 rounded-2xl shadow-2xl border flex items-center gap-3 text-sm font-bold ${
+            toast.type === 'error' ? 'bg-rose-950 text-rose-100 border-rose-800' : 'bg-slate-900 text-white border-slate-700'
+          }`}>
+            <span className={`w-2.5 h-2.5 rounded-full ${toast.type === 'error' ? 'bg-rose-500 animate-pulse' : 'bg-emerald-400'}`}></span>
+            <span>{toast.message}</span>
+            <button onClick={() => setToast(null)} className="ml-2 text-slate-400 hover:text-white font-bold text-xs">✕</button>
+          </div>
+        </div>
+      )}
     </ProtectedRoute>
   );
 }

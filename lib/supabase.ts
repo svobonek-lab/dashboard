@@ -640,4 +640,48 @@ export class LocalSupabaseMock {
   static saveProjects(projects: any[]) {
     this.setStored('projects', projects);
   }
+
+  static getNotifications(orgId?: string) {
+    const all = this.getStored('notifications', [
+      {
+        id: 'notif-1',
+        organization_id: DEFAULT_DEMO_ORG_ID,
+        title: 'Nová poptávka z webu',
+        message: 'Ing. Jan Svoboda odeslal poptávku na bioklimatickou pergolu.',
+        timestamp: '14:15',
+        read: false,
+        type: 'lead'
+      }
+    ]);
+    if (orgId) {
+      return all.filter((n: any) => !n.organization_id || n.organization_id === orgId);
+    }
+    return all;
+  }
+
+  static saveNotification(orgId: string, notification: any) {
+    const notifications = this.getNotifications();
+    this.setStored('notifications', [{ ...notification, organization_id: orgId }, ...notifications]);
+  }
+
+  static getActivities(orgId?: string) {
+    const all = this.getStored('activities', [
+      {
+        time: '14:15',
+        text: 'Přijata nová poptávka: Bioklimatická pergola 6x4m - Praha 6 (265.000 Kč)',
+        badgeColor: '#EDE9FE',
+        textColor: '#5B21B6',
+        organization_id: DEFAULT_DEMO_ORG_ID
+      }
+    ]);
+    if (orgId) {
+      return all.filter((a: any) => !a.organization_id || a.organization_id === orgId);
+    }
+    return all;
+  }
+
+  static saveActivity(orgId: string, activity: any) {
+    const activities = this.getActivities();
+    this.setStored('activities', [{ ...activity, organization_id: orgId }, ...activities]);
+  }
 }

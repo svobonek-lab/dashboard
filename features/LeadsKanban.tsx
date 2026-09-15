@@ -31,6 +31,7 @@ export const LeadsKanban: React.FC<LeadsKanbanProps> = ({
   const { dbUser } = useOrganization();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [draggedLead, setDraggedLead] = useState<string | null>(null);
+  const [dragOverColumn, setDragOverColumn] = useState<string | null>(null);
 
   // New lead form state
   const [formTitle, setFormTitle] = useState('Nová montáž pergoly');
@@ -99,10 +100,10 @@ export const LeadsKanban: React.FC<LeadsKanbanProps> = ({
           <p className="text-xs text-slate-500 mt-0.5">Široké sloupce s podrobnými kartami, rychlými akcemi a přehledem stavu</p>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 w-full md:w-auto">
           <button
             onClick={() => setIsModalOpen(true)}
-            className="px-5 py-3 rounded-2xl font-black text-xs shadow-md hover:shadow-lg transition-all flex items-center gap-2"
+            className="w-full md:w-auto px-5 py-3 min-h-[48px] rounded-2xl font-black text-xs shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2"
             style={{ backgroundColor: 'var(--brand-primary)', color: '#ffffff' }}
           >
             <Plus className="w-4 h-4" />
@@ -227,7 +228,7 @@ export const LeadsKanban: React.FC<LeadsKanbanProps> = ({
                 const el = document.getElementById(`kanban-col-${col.status}`);
                 if (el) el.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
               }}
-              className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-white border border-slate-200 text-xs font-bold text-slate-700 whitespace-nowrap shadow-2xs shrink-0 active:scale-95 transition-transform"
+              className="flex items-center justify-center gap-1.5 px-4 py-2 min-h-[48px] rounded-xl bg-white border border-slate-200 text-xs font-bold text-slate-700 whitespace-nowrap shadow-2xs shrink-0 active:scale-95 transition-transform"
             >
               <span className={`w-2 h-2 rounded-full ${col.badgeColor.split(' ')[0]}`}></span>
               <span>{col.label}</span>
@@ -246,15 +247,28 @@ export const LeadsKanban: React.FC<LeadsKanbanProps> = ({
               <div 
                 key={col.status} 
                 id={`kanban-col-${col.status}`}
-                onDragOver={(e) => e.preventDefault()}
+                onDragOver={(e) => {
+                  e.preventDefault();
+                  if (dragOverColumn !== col.status) {
+                    setDragOverColumn(col.status);
+                  }
+                }}
+                onDragLeave={() => {
+                  setDragOverColumn(null);
+                }}
                 onDrop={(e) => {
                   e.preventDefault();
+                  setDragOverColumn(null);
                   if (draggedLead) {
                     onUpdateLeadStatus(draggedLead, col.status);
                     setDraggedLead(null);
                   }
                 }}
-                className="w-[85vw] max-w-[340px] sm:w-[360px] sm:min-w-[340px] sm:max-w-[420px] bg-slate-50/80 rounded-[24px] border border-slate-200 flex flex-col shadow-sm shrink-0 snap-start"
+                className={`w-[85vw] max-w-[340px] sm:w-[360px] sm:min-w-[340px] sm:max-w-[420px] rounded-[24px] border flex flex-col shadow-sm shrink-0 snap-start transition-all duration-200 ${
+                  dragOverColumn === col.status
+                    ? 'bg-blue-50/60 border-brand-primary ring-2 ring-brand-primary-soft shadow-md'
+                    : 'bg-slate-50/80 border-slate-200'
+                }`}
               >
                 {/* Sticky Column Header */}
                 <div className="p-5 border-b border-slate-200 sticky top-0 bg-slate-50/95 backdrop-blur-md rounded-t-[24px] z-10 flex items-center justify-between">
@@ -327,9 +341,9 @@ export const LeadsKanban: React.FC<LeadsKanbanProps> = ({
                         <a
                           href={`tel:${lead.customerPhone}`}
                           onClick={(e) => e.stopPropagation()}
-                          className="flex-1 py-2.5 rounded-xl bg-slate-50 hover:bg-slate-100 text-slate-700 text-xs font-bold flex items-center justify-center gap-1.5 border border-slate-200 transition-colors active:scale-[0.98]"
+                          className="flex-1 py-2.5 min-h-[48px] rounded-xl bg-slate-50 hover:bg-slate-100 text-slate-700 text-xs font-bold flex items-center justify-center gap-1.5 border border-slate-200 transition-colors active:scale-[0.98]"
                         >
-                          <Phone className="w-3.5 h-3.5 text-brand-primary" />
+                          <Phone className="w-3.5 h-3.5 text-brand-primary shrink-0" />
                           <span>Zavolat</span>
                         </a>
                         <button
@@ -337,7 +351,7 @@ export const LeadsKanban: React.FC<LeadsKanbanProps> = ({
                             e.stopPropagation();
                             onSelectLead(lead);
                           }}
-                          className="flex-1 py-2.5 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-all border shadow-sm hover:shadow active:scale-[0.98]"
+                          className="flex-1 py-2.5 min-h-[48px] rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-all border shadow-sm hover:shadow active:scale-[0.98]"
                           style={{ backgroundColor: 'var(--brand-primary-soft)', color: 'var(--brand-primary)', borderColor: 'var(--border)' }}
                         >
                           <span>Otevřít</span>

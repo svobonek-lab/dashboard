@@ -61,7 +61,7 @@ export const EmployeeLayout: React.FC<EmployeeLayoutProps> = ({ children, leads 
           <div>
             <div className="flex items-center gap-2">
               <span className="text-xs font-bold text-slate-900 tracking-tight">
-                {branding?.name || 'StavbaCore'}
+                {currentOrg?.name || 'StavbaCore'}
               </span>
               <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 uppercase">
                 Terénní režim
@@ -78,7 +78,7 @@ export const EmployeeLayout: React.FC<EmployeeLayoutProps> = ({ children, leads 
         <div className="hidden lg:flex items-center gap-4 px-4 py-1.5 rounded-2xl bg-slate-100/80 border border-slate-200/80 text-xs">
           <div className="flex items-center gap-2 text-slate-700">
             <CloudSun className="w-4 h-4 text-amber-500" />
-            <span className="font-semibold">{branding?.city || 'Praha'}: 21°C • Polojasno</span>
+            <span className="font-semibold">{currentOrg?.city || 'Praha'}: 21°C • Polojasno</span>
           </div>
           <div className="h-3 w-px bg-slate-300"></div>
           <div className="flex items-center gap-1.5 text-slate-700">
@@ -91,7 +91,7 @@ export const EmployeeLayout: React.FC<EmployeeLayoutProps> = ({ children, leads 
         <div className="flex items-center gap-2">
           <button
             onClick={() => setIsVoiceOpen(true)}
-            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-brand-primary hover:bg-brand-primary text-white font-bold text-xs transition-all shadow-xs active:scale-95 cursor-pointer"
+            className="flex items-center gap-1.5 px-3.5 py-2 min-h-[48px] rounded-xl bg-brand-primary hover:bg-brand-primary text-white font-bold text-xs transition-all shadow-xs active:scale-95 cursor-pointer"
           >
             <Mic className="w-4 h-4" />
             <span className="hidden sm:inline">Hlasový záznam</span>
@@ -100,7 +100,7 @@ export const EmployeeLayout: React.FC<EmployeeLayoutProps> = ({ children, leads 
           <button
             onClick={() => logout().then(() => navigate('/login'))}
             title="Odhlásit se"
-            className="p-2 rounded-xl text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
+            className="p-2 min-h-[48px] min-w-[48px] flex items-center justify-center rounded-xl text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
           >
             <LogOut className="w-4 h-4" />
           </button>

@@ -113,7 +113,7 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
       
       {/* Dynamic Brand Hero Section */}
       <div 
-        className="p-8 rounded-[28px] border shadow-sm relative overflow-hidden transition-all duration-300"
+        className="p-6 md:p-8 rounded-[28px] border shadow-sm relative overflow-hidden transition-all duration-300"
         style={{
           background: `linear-gradient(135deg, #FFFFFF 0%, ${'var(--brand-primary-soft)'} 60%, ${'var(--brand-primary-soft)'} 100%)`,
           borderColor: 'var(--border)',
@@ -152,10 +152,10 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
           </div>
 
           {/* Quick Actions with company palette */}
-          <div className="flex flex-wrap items-center gap-2.5 shrink-0">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 shrink-0">
             <button
               onClick={() => onNavigateTab('quotes')}
-              className="px-4 py-3 rounded-2xl text-xs font-bold bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 shadow-sm transition-all flex items-center gap-2 hover:border-slate-300 active:scale-[0.98]"
+              className="px-4 py-3 min-h-[48px] rounded-2xl text-xs font-bold bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 shadow-sm transition-all flex items-center justify-center gap-2 hover:border-slate-300 active:scale-[0.98]"
             >
               <FileText className="w-4 h-4" style={{ color: 'var(--brand-primary)' }} />
               <span>Vytvořit nabídku</span>
@@ -168,7 +168,7 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
                 color: '#ffffff',
                 boxShadow: '0 4px 14px 0 rgba(0,0,0,0.1)'
               }}
-              className="px-5 py-3 rounded-2xl text-xs font-black transition-all shadow-lg flex items-center gap-2 active:scale-[0.98]"
+              className="px-5 py-3 min-h-[48px] rounded-2xl text-xs font-black transition-all shadow-lg flex items-center justify-center gap-2 active:scale-[0.98]"
             >
               <Plus className="w-4 h-4" />
               <span>Nová zakázka</span>
