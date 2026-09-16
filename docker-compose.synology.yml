@@ -1,0 +1,65 @@
+version: '3.8'
+
+services:
+  # The main connector service that bridges Synology local network and the Cloud CRM
+  synology-connector:
+    image: node:20-alpine
+    container_name: stavbacore-synology-connector
+    restart: unless-stopped
+    working_dir: /app
+    volumes:
+      # Mount the connector script/app
+      - ./synology-connector:/app
+      # Mount the Synology shared folder for file access (PDFs, Docs, Plans)
+      - /volume1/shared_crm_files:/app/data/files:ro
+    environment:
+      # Security: API Token required for the Cloud CRM to authenticate against this connector
+      - API_TOKEN=${CONNECTOR_API_TOKEN:-super-secret-token-123}
+      # Database connection (e.g. MariaDB running on Synology)
+      - SQL_HOST=${SQL_HOST:-mariadb}
+      - SQL_PORT=${SQL_PORT:-3306}
+      - SQL_USER=${SQL_USER:-crm_user}
+      - SQL_PASSWORD=${SQL_PASSWORD:-crm_pass}
+      - SQL_DATABASE=${SQL_DATABASE:-crm_db}
+      # Network configuration
+      - PORT=8080
+    command: >
+      sh -c "npm install --production && node server.js"
+    networks:
+      - crm_network
+
+  # Optional: MariaDB database if not already running natively on Synology
+  mariadb:
+    image: mariadb:10.11
+    container_name: stavbacore-mariadb
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: root_password
+      MYSQL_DATABASE: crm_db
+      MYSQL_USER: crm_user
+      MYSQL_PASSWORD: crm_pass
+    volumes:
+      - /volume1/docker/mariadb_data:/var/lib/mysql
+    networks:
+      - crm_network
+
+  # Reverse proxy to provide HTTPS using Let's Encrypt / self-signed certificates
+  caddy:
+    image: caddy:2-alpine
+    container_name: stavbacore-caddy
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile
+      - /volume1/docker/caddy_data:/data
+      - /volume1/docker/caddy_config:/config
+    depends_on:
+      - synology-connector
+    networks:
+      - crm_network
+
+networks:
+  crm_network:
+    driver: bridge

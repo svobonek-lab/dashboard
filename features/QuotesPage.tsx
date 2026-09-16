@@ -313,8 +313,8 @@ export const QuotesPage: React.FC<QuotesPageProps> = ({ branding: propBranding }
         </div>
 
         {/* Pricing Table with Editable Items */}
-        <div className="space-y-4">
-          <table className="w-full text-left text-xs">
+        <div className="space-y-4 overflow-x-auto">
+          <table className="w-full text-left text-xs min-w-[500px]">
             <thead>
               <tr className="border-b border-slate-200 text-slate-500 font-semibold uppercase">
                 <th className="pb-3">Položka / Popis stavební práce</th>

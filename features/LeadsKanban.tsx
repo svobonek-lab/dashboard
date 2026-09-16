@@ -38,95 +38,18 @@ export const LeadsKanban: React.FC<LeadsKanbanProps> = ({
     setLeads(initialLeads);
   }, [initialLeads]);
 
-  // Recalculates lead with new status, history entry and updated timeline
-  const updateLocal = (id: string, status: LeadStatus): Lead[] => {
-    const timestamp = new Date().toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit' });
-    const colConfig = columns.find(c => c.status === status);
-    const statusLabel = colConfig ? colConfig.label : status;
-
-    return leads.map(l => {
-      if (l.id !== id) return l;
-
-      const updatedHistory = [
-        {
-          id: 'hist-' + Date.now(),
-          timestamp,
-          action: `Stav zakázky změněn na: ${statusLabel}`,
-          author: dbUser?.email || 'Dispečink'
-        },
-        ...(l.history || [])
-      ];
-
-      const updatedTimeline = [
-        {
-          id: 't-' + Date.now(),
-          title: `Stav změněn na: ${statusLabel}`,
-          status: 'Completed' as const,
-          timestamp
-        },
-        ...(l.timeline || [])
-      ];
-
-      return {
-        ...l,
-        status,
-        history: updatedHistory,
-        timeline: updatedTimeline
-      };
-    });
-  };
-
-  // Optimistic update handler with Supabase persistence and rollback on error
-  const handleDragDrop = async (id: string, status: LeadStatus) => {
+  // Optimistic update handler delegates to parent via onUpdateLeadStatus
+  const handleDragDrop = (id: string, status: LeadStatus) => {
     const targetLead = leads.find(l => l.id === id);
     if (!targetLead || targetLead.status === status) return;
+    
+    // Okamžitá reakce v UI (interní state komponenty pro drag and drop plynulost)
+    const updated = leads.map(l => l.id === id ? { ...l, status } : l);
+    setLeads(updated);
 
-    // 1. Okamžitě změní UI + 4. Přepočítá Timeline
-    const previous = leads;
-    const updatedLeads = updateLocal(id, status);
-    setLeads(updatedLeads);
-
-    // 3. Přepočítá Dashboard (propaguje změnu do rodičovské komponenty pro celkové statistiky a KPI)
+    // Centrální App handler zajistí optimistický update, toast, uložení i případný rollback
     if (onUpdateLeadStatus) {
       onUpdateLeadStatus(id, status);
-    }
-
-    // Okamžitá synchronizace do local storage pro zachování stavu po refresh
-    const isDemo = currentOrg?.id === DEFAULT_DEMO_ORG_ID || currentOrg?.slug === 'pergoly-praha';
-    const cacheKey = isDemo ? 'demo_leads_cache' : (currentOrg?.id ? `leads_cache_${currentOrg.id}` : null);
-
-    try {
-      const allMock = LocalSupabaseMock.getLeads();
-      const mockLead = allMock.find((m: any) => m.id === id);
-      if (mockLead) {
-        mockLead.status = status;
-        LocalSupabaseMock.saveLeads(allMock);
-      }
-      if (cacheKey) {
-        localStorage.setItem(cacheKey, JSON.stringify(updatedLeads));
-      }
-    } catch (e) {
-      console.warn('Local storage cache sync notice:', e);
-    }
-
-    // 2. Uloží Supabase + Rollback při chybě
-    if (supabase) {
-      const { error } = await supabase
-        .from("leads")
-        .update({ status })
-        .eq("id", id);
-      if (error) {
-        console.error("Supabase status update error, rolling back:", error);
-        setLeads(previous);
-        try {
-          if (cacheKey) {
-            localStorage.setItem(cacheKey, JSON.stringify(previous));
-          }
-        } catch {}
-        if (onUpdateLeadStatus) {
-          onUpdateLeadStatus(id, targetLead.status);
-        }
-      }
     }
   };
 

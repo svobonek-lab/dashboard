@@ -712,23 +712,40 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
       const activeSessionUser = LocalSupabaseMock.getActiveSessionUser();
       
       // Check if employee is deactivated or pending activation
-      const allEmps = LocalSupabaseMock.getEmployees() as any[];
-      const empRec = allEmps.find(e => e.email?.toLowerCase() === cleanEmail.toLowerCase());
+      let empRec = null;
+      if (isSupabaseConfigured && supabase) {
+        try {
+          const { data: remoteEmp } = await supabase.from('employees').select('*').eq('email', cleanEmail).maybeSingle();
+          empRec = remoteEmp;
+        } catch (e) {
+          console.warn('Failed to fetch remote employee status', e);
+        }
+      }
+
+      if (!empRec) {
+        const allEmps = LocalSupabaseMock.getEmployees() as any[];
+        empRec = allEmps.find(e => e.email?.toLowerCase() === cleanEmail.toLowerCase());
+      }
+
       if (empRec) {
-        if ((empRec as any).active === false || (empRec as any).status === 'Inactive') {
+        if (empRec.active === false || empRec.status === 'Inactive') {
           await supabase.auth.signOut();
           setUser(null);
           setDbUser(null);
           throw new Error('Tento zaměstnanecký účet byl deaktivován administrátorem.');
         }
-        if ((empRec as any).invitationStatus === 'Pending' || !(empRec as any).activated_at) {
-          empRec.invitationStatus = 'Active';
-          empRec.activated_at = new Date().toISOString();
-          LocalSupabaseMock.saveEmployees(allEmps);
+        if (empRec.invitationStatus === 'Pending' || empRec.invitation_status === 'Pending' || !empRec.activated_at) {
           try {
             await supabase.from('employees').update({ invitation_status: 'Active', activated_at: new Date().toISOString() }).eq('email', cleanEmail);
           } catch (e) {
             console.warn('Supabase employee activation error:', e);
+          }
+          const allEmps = LocalSupabaseMock.getEmployees() as any[];
+          const localIdx = allEmps.findIndex(e => e.email?.toLowerCase() === cleanEmail.toLowerCase());
+          if (localIdx !== -1) {
+            allEmps[localIdx].invitationStatus = 'Active';
+            allEmps[localIdx].activated_at = new Date().toISOString();
+            LocalSupabaseMock.saveEmployees(allEmps);
           }
         }
       }
@@ -1264,57 +1281,14 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
   const createLead = async (payload: any): Promise<Lead> => {
     const targetOrgId = currentOrg?.id || LocalSupabaseMock.getActiveOrgId() || DEFAULT_DEMO_ORG_ID;
 
-    // Resolve fields defensively to support both Lead objects and InquiryForm payload
-    const customerName = payload.name || payload.fullName || payload.customerName || payload.title || 'Nová poptávka';
-    const phone = payload.phone || payload.customerPhone || '';
-    const email = payload.email || payload.customerEmail || '';
-    const projectType = payload.projectType || payload.aiSummary?.jobType || payload.title?.split(' - ')[0] || 'Nezadáno';
-    const budget = Number(payload.price || payload.budgetValue) || 0;
-
-    let savedData: any = null;
-
-    if (isSupabaseConfigured && supabase && isValidUUID(targetOrgId)) {
-      try {
-        const { data, error } = await supabase
-          .from("leads")
-          .insert({
-            organization_id: targetOrgId,
-            customer_name: customerName,
-            phone: phone,
-            email: email,
-            project_type: projectType,
-            status: "New"
-          })
-          .select()
-          .single();
-
-        if (error) throw error;
-        savedData = data;
-      } catch (err) {
-        console.warn('createLead Supabase insert failed:', err);
-        // Fallback to local if remote fails
-        savedData = saveLeadLocal({ 
-          ...payload, 
-          customerName, customerPhone: phone, customerEmail: email, price: budget, status: 'New', organization_id: targetOrgId 
-        });
-      }
-    } else {
-      savedData = saveLeadLocal({ 
-        ...payload, 
-        customerName, customerPhone: phone, customerEmail: email, price: budget, status: 'New', organization_id: targetOrgId 
-      });
-    }
-
-    const savedLead = {
+    // Call unified saveLead logic
+    const savedLead = await saveLead({
       ...payload,
-      id: savedData.id,
-      customerName: savedData.customer_name || customerName,
-      customerPhone: savedData.phone || phone,
-      customerEmail: savedData.email || email,
-      price: savedData.budget || budget,
-      status: savedData.status || "New",
-      organization_id: targetOrgId,
-    } as Lead;
+      organization_id: targetOrgId
+    });
+
+    const customerName = savedLead.customerName;
+    const projectType = savedLead.aiSummary?.jobType || savedLead.title?.split(' - ')[0] || 'Poptávka';
 
     // Create Notification and Activity feed entry
     const notifItem = {
