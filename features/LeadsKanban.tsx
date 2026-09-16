@@ -54,15 +54,15 @@ export const LeadsKanban: React.FC<LeadsKanbanProps> = ({
   };
 
   // New lead form state
-  const [formTitle, setFormTitle] = useState('Nová montáž pergoly');
-  const [formCustomerName, setFormCustomerName] = useState('Ing. Jan Novák');
-  const [formPhone, setFormPhone] = useState('+420 603 112 233');
-  const [formEmail, setFormEmail] = useState('jan.novak@seznam.cz');
-  const [formAddress, setFormAddress] = useState('Pražská 45, Praha 6');
-  const [formBudget, setFormBudget] = useState('250000');
-  const [formDate, setFormDate] = useState('2026-09-20');
-  const [formDescription, setFormDescription] = useState('Zájem o bioklimatickou pergolu s bočním stíněním a LED osvětlením.');
-  const [formThumbnail, setFormThumbnail] = useState('https://images.unsplash.com/photo-1513694203232-719a280e022f?auto=format&fit=crop&w=600&q=80');
+  const [formTitle, setFormTitle] = useState('');
+  const [formCustomerName, setFormCustomerName] = useState('');
+  const [formPhone, setFormPhone] = useState('');
+  const [formEmail, setFormEmail] = useState('');
+  const [formAddress, setFormAddress] = useState('');
+  const [formBudget, setFormBudget] = useState('');
+  const [formDate, setFormDate] = useState('');
+  const [formDescription, setFormDescription] = useState('');
+  const [formThumbnail, setFormThumbnail] = useState('');
 
   const handleCreateLeadSubmit = (e: React.FormEvent) => {
     e.preventDefault();
