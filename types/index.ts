@@ -212,3 +212,29 @@ export interface CRMNotification {
   type: 'lead' | 'quote' | 'employee' | 'system';
 }
 
+export interface WebsiteAnalysisConfidence {
+  companyName: number;
+  logo: number;
+  colors: number;
+  contacts: number;
+  services: number;
+}
+
+export interface WebsiteAnalysisResult {
+  companyName: string;
+  website: string;
+  logoUrl: string;
+  faviconUrl: string;
+  primaryColor: string;
+  secondaryColor: string;
+  phone: string;
+  email: string;
+  address: string;
+  services: string[];
+  heroImageUrl: string;
+  socialLinks: string[];
+  confidence: WebsiteAnalysisConfidence;
+  branding?: CompanyBranding;
+  audit?: WebsiteAudit;
+}
+
