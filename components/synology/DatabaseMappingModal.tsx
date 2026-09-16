@@ -1,13 +1,15 @@
 import React, { useState } from 'react';
 import { SynologyDatabaseConfig, SynologyDbDriver } from '@/types/synology';
 import { FieldMappingConfig, TargetFieldType } from '@/types/integrations';
+import { suggestFieldMapping } from '@/lib/integrations/fieldMapping';
 import { 
   X, 
   Database, 
   Check, 
   Sparkles, 
   ArrowRight, 
-  SlidersHorizontal
+  SlidersHorizontal,
+  RefreshCw
 } from 'lucide-react';
 
 interface DatabaseMappingModalProps {
@@ -85,6 +87,22 @@ export const DatabaseMappingModal: React.FC<DatabaseMappingModalProps> = ({
     setDriver(newDriver);
     if (newDriver === 'postgresql') setPort(5432);
     else if (newDriver === 'mariadb') setPort(3306);
+  };
+
+  const handleAiAutoMap = () => {
+    const updated: Record<string, string> = {};
+    // For each available column, use AI suggestion engine
+    mockAvailableColumns.forEach(col => {
+      const suggestion = suggestFieldMapping(col);
+      if (suggestion.targetField !== 'ignore' && suggestion.confidence >= 70) {
+        updated[suggestion.targetField] = col;
+      }
+    });
+
+    setColumnMap(prev => ({
+      ...prev,
+      ...updated
+    }));
   };
 
   const handleSave = () => {
@@ -227,6 +245,14 @@ export const DatabaseMappingModal: React.FC<DatabaseMappingModalProps> = ({
                 </h4>
                 <p className="text-xs text-slate-500 mt-0.5">Přiřaďte sloupce z tabulky Synology MariaDB k atributům zakázky v CRM.</p>
               </div>
+              <button
+                type="button"
+                onClick={handleAiAutoMap}
+                className="px-3 py-1.5 text-xs font-bold text-cyan-700 hover:text-cyan-800 bg-cyan-50 hover:bg-cyan-100 border border-cyan-200 rounded-xl flex items-center gap-1.5 transition-all shadow-xs cursor-pointer"
+              >
+                <Sparkles className="w-3.5 h-3.5" />
+                Spustit AI mapování
+              </button>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">

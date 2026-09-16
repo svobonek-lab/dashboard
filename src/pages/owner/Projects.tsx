@@ -116,7 +116,18 @@ export const OwnerProjectsPage: React.FC<OwnerProjectsPageProps> = ({ leads, onS
       </div>
 
       {/* Projects Cards List */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+      {projects.length === 0 ? (
+        <div className="bg-white rounded-3xl border border-slate-200 p-12 text-center space-y-3 shadow-xs">
+          <div className="w-12 h-12 rounded-2xl bg-slate-100 flex items-center justify-center mx-auto text-slate-400">
+            <HardHat className="w-6 h-6 text-amber-500" />
+          </div>
+          <h3 className="text-sm font-bold text-slate-800">Zatím žádné stavební projekty</h3>
+          <p className="text-xs text-slate-500 max-w-sm mx-auto">
+            V této organizaci zatím neprobíhá žádná stavba. Přidejte první poptávku v sekci Zakázky a přesuňte ji do realizace.
+          </p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
         {projects.map((project) => {
           const completedTasks = project.checklist?.filter(c => c.completed).length || 0;
           const totalTasks = project.checklist?.length || 5;
@@ -210,7 +221,8 @@ export const OwnerProjectsPage: React.FC<OwnerProjectsPageProps> = ({ leads, onS
             </div>
           );
         })}
-      </div>
+        </div>
+      )}
 
     </div>
   );

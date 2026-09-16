@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useOrganization } from '@/context/OrganizationContext';
 import { canManageCompany } from '@/src/app/permissions';
 import { 
@@ -18,31 +18,115 @@ import {
   Sparkles, 
   Save, 
   RefreshCw,
-  Copy
+  Copy,
+  Upload,
+  Trash2,
+  Image as ImageIcon
 } from 'lucide-react';
 import { CompanyBranding } from '@/types';
 import { ExportZipModal } from '@/components/ExportZipModal';
+
+// High quality transparent SVG presets for fast testing
+const LOGO_PRESETS = [
+  {
+    name: 'Moderní Stavby',
+    url: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" fill="none"><rect width="100" height="100" rx="20" fill="%230F172A"/><path d="M25 75V45L50 25L75 45V75H60V55H40V75H25Z" fill="%23F59E0B"/><circle cx="50" cy="40" r="6" fill="%2338BDF8"/></svg>'
+  },
+  {
+    name: 'Pergoly & Terasy',
+    url: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" fill="none"><rect width="100" height="100" rx="20" fill="%231E293B"/><path d="M20 35H80V42H20V35ZM28 42V75H35V42H28ZM65 42V75H72V42H65ZM40 50H60V55H40V50Z" fill="%2310B981"/></svg>'
+  },
+  {
+    name: 'Střechy & Fasády',
+    url: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" fill="none"><rect width="100" height="100" rx="20" fill="%2318181B"/><path d="M50 20L15 52H28V80H72V52H85L50 20ZM50 35L65 48H35L50 35Z" fill="%23EF4444"/></svg>'
+  }
+];
 
 export const OwnerSettingsPage: React.FC = () => {
   
   const { dbUser, currentOrg, updateBrandingAdmin } = useOrganization();
   const branding = currentOrg?.branding || {};
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const [formData, setFormData] = useState<CompanyBranding>({ ...branding });
+  const [formData, setFormData] = useState<CompanyBranding>(() => ({
+    name: currentOrg?.name || currentOrg?.branding?.name || '',
+    primaryColor: currentOrg?.primary_color || currentOrg?.branding?.primaryColor || '#2563eb',
+    logoUrl: currentOrg?.logo_url !== undefined ? currentOrg.logo_url : (currentOrg?.branding?.logoUrl || ''),
+    city: currentOrg?.city || currentOrg?.branding?.city || '',
+    address: currentOrg?.address || currentOrg?.branding?.address || '',
+    phone: currentOrg?.phone || currentOrg?.branding?.phone || '',
+    email: currentOrg?.email || currentOrg?.branding?.email || '',
+    services: currentOrg?.branding?.services || []
+  }));
+
+  // Re-sync with currentOrg whenever active org changes
+  useEffect(() => {
+    if (currentOrg) {
+      setFormData(prev => ({
+        ...prev,
+        name: currentOrg.name || prev.name,
+        primaryColor: currentOrg.primary_color || prev.primaryColor,
+        logoUrl: currentOrg.logo_url !== undefined ? currentOrg.logo_url : prev.logoUrl,
+        city: currentOrg.city || prev.city,
+        address: currentOrg.address || prev.address,
+        phone: currentOrg.phone || prev.phone,
+        email: currentOrg.email || prev.email,
+        services: currentOrg.branding?.services || prev.services
+      }));
+    }
+  }, [currentOrg?.name, currentOrg?.primary_color, currentOrg?.logo_url, currentOrg?.city, currentOrg?.address, currentOrg?.phone, currentOrg?.email]);
+
   const [newService, setNewService] = useState('');
   const [savedSuccess, setSavedSuccess] = useState(false);
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
   const [copiedKey, setCopiedKey] = useState(false);
 
-  const handleSave = (e: React.FormEvent) => {
+  const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!canManageCompany(dbUser?.role)) {
       alert("Nemáte oprávnění spravovat firmu.");
       return;
     }
-    updateBrandingAdmin(currentOrg?.id || '', formData.name, formData.primaryColor, formData.logoUrl);
+    await updateBrandingAdmin(currentOrg?.id || '', formData.name, formData.primaryColor, formData.logoUrl || '');
     setSavedSuccess(true);
     setTimeout(() => setSavedSuccess(false), 3000);
+  };
+
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = async (event) => {
+      if (event.target?.result) {
+        const dataUrl = event.target.result as string;
+        setFormData(prev => ({ ...prev, logoUrl: dataUrl }));
+        // Apply immediately
+        if (currentOrg?.id) {
+          await updateBrandingAdmin(currentOrg.id, formData.name, formData.primaryColor, dataUrl);
+          setSavedSuccess(true);
+          setTimeout(() => setSavedSuccess(false), 3000);
+        }
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleApplyPresetLogo = async (presetUrl: string) => {
+    setFormData(prev => ({ ...prev, logoUrl: presetUrl }));
+    if (currentOrg?.id) {
+      await updateBrandingAdmin(currentOrg.id, formData.name, formData.primaryColor, presetUrl);
+      setSavedSuccess(true);
+      setTimeout(() => setSavedSuccess(false), 3000);
+    }
+  };
+
+  const handleClearLogo = async () => {
+    setFormData(prev => ({ ...prev, logoUrl: '' }));
+    if (currentOrg?.id) {
+      await updateBrandingAdmin(currentOrg.id, formData.name, formData.primaryColor, '');
+      setSavedSuccess(true);
+      setTimeout(() => setSavedSuccess(false), 3000);
+    }
   };
 
   const handleAddService = () => {
@@ -180,15 +264,100 @@ export const OwnerSettingsPage: React.FC = () => {
               </div>
             </div>
 
-            <div className="md:col-span-2">
-              <label className="text-slate-600 font-bold block mb-1.5">URL loga firmy (transparentní PNG / SVG)</label>
-              <input
-                type="text"
-                value={formData.logoUrl || ''}
-                onChange={(e) => setFormData({ ...formData, logoUrl: e.target.value })}
-                placeholder="https://images.unsplash.com/..."
-                className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 font-medium focus:outline-none focus:bg-white focus:ring-2 transition-all"
-              />
+            <div className="md:col-span-2 space-y-3">
+              <div className="flex items-center justify-between">
+                <label className="text-slate-700 font-bold block">Logo firmy (Sidebar, Header, Favicon, Portály)</label>
+                {formData.logoUrl && (
+                  <button
+                    type="button"
+                    onClick={handleClearLogo}
+                    className="text-xs text-rose-600 hover:text-rose-700 font-bold flex items-center gap-1 cursor-pointer transition-colors"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                    <span>Odstranit logo (Reset na iniciály)</span>
+                  </button>
+                )}
+              </div>
+
+              {/* Logo Preview & Actions */}
+              <div className="p-4 bg-slate-50 border border-slate-200 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div className="flex items-center gap-3.5">
+                  <div 
+                    className="w-16 h-16 rounded-2xl flex items-center justify-center font-black text-xl text-white shadow-md shrink-0 border border-slate-200 bg-white overflow-hidden p-1"
+                    style={{ backgroundColor: formData.logoUrl ? '#ffffff' : formData.primaryColor }}
+                  >
+                    {formData.logoUrl ? (
+                      <img src={formData.logoUrl} alt="Náhled loga" className="w-full h-full object-contain" />
+                    ) : (
+                      <span className="text-white font-black text-lg">
+                        {(formData.name || 'SC').substring(0, 2).toUpperCase()}
+                      </span>
+                    )}
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-bold text-slate-900">
+                        {formData.logoUrl ? 'Aktivní logo organizace' : 'Žádné logo (použity iniciály)'}
+                      </span>
+                      {currentOrg?.logo_url && (
+                        <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800">
+                          Aktivní v systému
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-[11px] text-slate-500 mt-0.5">
+                      Logo se okamžitě bez reloadu promítá do Sidebaru, Záhlaví, Faviconu, Titulku i Poptávkového portálu.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2 shrink-0">
+                  <input
+                    type="file"
+                    ref={fileInputRef}
+                    onChange={handleFileUpload}
+                    accept="image/png,image/jpeg,image/svg+xml,image/webp"
+                    className="hidden"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    className="px-3.5 py-2 min-h-[40px] rounded-xl bg-white hover:bg-slate-100 border border-slate-200 text-xs font-bold text-slate-800 flex items-center gap-1.5 shadow-xs transition-all cursor-pointer"
+                  >
+                    <Upload className="w-4 h-4 text-brand-primary" />
+                    <span>Nahrát z počítače</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* URL Input */}
+              <div className="space-y-1">
+                <input
+                  type="text"
+                  value={formData.logoUrl || ''}
+                  onChange={(e) => setFormData({ ...formData, logoUrl: e.target.value })}
+                  placeholder="https://domena.cz/logo.png nebo vložené SVG/Data URL"
+                  className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-slate-900 font-medium focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all text-xs"
+                />
+              </div>
+
+              {/* Fast 1-Click SVG Presets */}
+              <div className="space-y-1.5 pt-1">
+                <span className="text-[10px] uppercase font-bold text-slate-400">Rychlé vzory log pro okamžité otestování (1-klik):</span>
+                <div className="flex flex-wrap items-center gap-2">
+                  {LOGO_PRESETS.map((preset) => (
+                    <button
+                      key={preset.name}
+                      type="button"
+                      onClick={() => handleApplyPresetLogo(preset.url)}
+                      className="px-3 py-1.5 rounded-xl text-[11px] font-bold border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 transition-all flex items-center gap-2 cursor-pointer shadow-2xs"
+                    >
+                      <img src={preset.url} alt="" className="w-4 h-4 rounded object-cover" />
+                      <span>{preset.name}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
             </div>
           </div>
         </div>

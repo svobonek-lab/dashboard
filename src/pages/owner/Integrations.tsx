@@ -914,6 +914,9 @@ export const Integrations: React.FC<IntegrationsProps> = ({
         onClose={() => setActiveModal(null)}
         initialConfig={sqlConfig?.sqlConfig}
         initialMapping={sqlConfig?.fieldMapping}
+        status={sqlConfig?.status}
+        lastSync={sqlConfig?.lastSync}
+        recordsCount={sqlConfig?.recordsCount}
         onSaveConfig={handleSaveSQLConfig}
         onRunSync={handleRunSQLSync}
       />

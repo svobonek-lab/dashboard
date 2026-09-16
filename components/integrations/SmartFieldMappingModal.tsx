@@ -15,18 +15,18 @@ interface SmartFieldMappingModalProps {
 }
 
 const TARGET_FIELDS: { value: TargetFieldType; label: string; desc: string }[] = [
-  { value: 'customerName', label: 'customer_name (Jméno zákazníka)', desc: 'Např. Ing. Jan Novák, Logis s.r.o.' },
-  { value: 'title', label: 'project_title (Název projektu)', desc: 'Např. Bioklimatická pergola 6x4m' },
-  { value: 'price', label: 'budget (Cena / Rozpočet)', desc: 'Např. 250 000 Kč' },
-  { value: 'assignedEmployeeName', label: 'assigned_employee (Přiřazený technik)', desc: 'Např. Petr Novotný' },
-  { value: 'status', label: 'status (Stav zakázky)', desc: 'Např. Nová, V jednání, Realizace, Hotovo' },
-  { value: 'customerPhone', label: 'customer_phone (Telefon)', desc: 'Např. +420 774 123 456' },
-  { value: 'customerEmail', label: 'customer_email (E-mail)', desc: 'Např. zakaznik@email.cz' },
-  { value: 'city', label: 'city (Město)', desc: 'Např. Praha, Brno, Beroun' },
-  { value: 'address', label: 'address (Adresa stavby)', desc: 'Např. K Lesu 14, Beroun' },
-  { value: 'preferredDate', label: 'preferred_date (Termín)', desc: 'Např. 2026-09-25 nebo 25.09.2026' },
-  { value: 'description', label: 'description (Popis)', desc: 'Detaily stavby, rozměry, barva' },
-  { value: 'priority', label: 'priority (Priorita)', desc: 'Urgentní, Vysoká, Střední' },
+  { value: 'customerName', label: 'Customer (Jméno zákazníka / customer_name)', desc: 'Např. Ing. Jan Novák, Logis s.r.o.' },
+  { value: 'title', label: 'Project (Název projektu / project_title)', desc: 'Např. Bioklimatická pergola 6x4m' },
+  { value: 'assignedEmployeeName', label: 'Employee (Přiřazený pracovník / worker)', desc: 'Např. Petr Novotný' },
+  { value: 'status', label: 'Status (Stav zakázky / status)', desc: 'Např. Nová, V jednání, Realizace, Hotovo' },
+  { value: 'price', label: 'Price / Budget (Cena / Rozpočet)', desc: 'Např. 250 000 Kč' },
+  { value: 'customerPhone', label: 'Phone (Telefon klienta)', desc: 'Např. +420 774 123 456' },
+  { value: 'customerEmail', label: 'Email (E-mail klienta)', desc: 'Např. zakaznik@email.cz' },
+  { value: 'city', label: 'City (Město / Obec)', desc: 'Např. Praha, Brno, Beroun' },
+  { value: 'address', label: 'Address (Adresa stavby)', desc: 'Např. K Lesu 14, Beroun' },
+  { value: 'preferredDate', label: 'Date (Termín realizace)', desc: 'Např. 2026-09-25 nebo 25.09.2026' },
+  { value: 'description', label: 'Description (Popis / Poznámka)', desc: 'Detaily stavby, rozměry, barva' },
+  { value: 'priority', label: 'Priority (Priorita zakázky)', desc: 'Urgentní, Vysoká, Střední' },
   { value: 'ignore', label: '— Ignorovat sloupec —', desc: 'Tento sloupec se nebude importovat' }
 ];
 

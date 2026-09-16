@@ -15,11 +15,11 @@ export const CustomerPortalPage: React.FC<CustomerPortalPageProps> = ({
   onBackToCRM
 }) => {
   const { currentOrg } = useOrganization();
-  const branding = currentOrg?.branding || {};
   const [activeTab, setActiveTab] = useState<'timeline' | 'documents' | 'chat'>('timeline');
   const [chatMessage, setChatMessage] = useState('');
   
-  const activeCompanyName = branding.name || propBranding.name || 'Stavební Společnost';
+  const activeCompanyName = currentOrg?.name || propBranding.name || 'Stavební Společnost';
+  const activeLogo = currentOrg?.logo_url !== undefined ? currentOrg.logo_url : (propBranding.logoUrl || '');
 
   const safeLead: Lead = propLead || {
     id: 'lead-preview-demo',
@@ -112,9 +112,9 @@ export const CustomerPortalPage: React.FC<CustomerPortalPageProps> = ({
 
         <div className="max-w-4xl mx-auto flex flex-col md:flex-row md:items-center justify-between gap-4 relative z-10">
           <div className="flex items-center gap-3.5">
-            {branding.logoUrl ? (
+            {activeLogo ? (
               <img 
-                src={branding.logoUrl} 
+                src={activeLogo} 
                 alt={activeCompanyName} 
                 className="w-12 h-12 rounded-2xl object-cover border border-slate-300 shadow-md bg-white p-1" 
               />

@@ -77,10 +77,15 @@ export async function testSynologyConnection(
 
 export function generateSynologyDockerCompose(config: SynologyConfig, organizationId: string): string {
   const token = config.apiToken || 'buildflow-syn-token-replace-me';
+  const nasHost = config.nasAddress || 'localhost';
+  const nasPort = config.port || (config.useHttps ? 5001 : 5000);
+  const endpointProtocol = config.useHttps ? 'https' : 'http';
+
   return `# ====================================================================
-# BuildFlow Synology Connector (Synology Container Manager)
-# Projekt: buildflow-nas-connector
-# Organizace ID: ${organizationId}
+# BuildFlow Enterprise Synology Connector (Docker Compose)
+# Architektura: Synology Container Manager (DSM 7.x)
+# Moduly: [SQL] [Files] [HTTPS] [API Token]
+# Organizace: ${organizationId}
 # ====================================================================
 
 version: '3.8'
@@ -92,30 +97,51 @@ services:
     restart: always
     network_mode: bridge
     environment:
+      # ------------------------------------------------------------------
+      # 1. AUTENTIZACE & API TOKEN
+      # ------------------------------------------------------------------
       - BUILDFLOW_ORG_ID=${organizationId}
       - BUILDFLOW_API_TOKEN=${token}
-      - BUILDFLOW_ENDPOINT=https://ais-dev-yafu5oubxe3o6hzzewfzd2-440069837434.europe-west2.run.app/api/v1/synology/webhook/${organizationId}
-      - SYNC_INTERVAL_SECONDS=300
+      - BUILDFLOW_AUTH_SCHEME=Bearer
       
-      # Lokální databáze běžící na NAS (přístup přes interní Docker host)
+      # ------------------------------------------------------------------
+      # 2. ZABEZPEČENÝ TRANSPORT (HTTPS & TLS 1.3)
+      # ------------------------------------------------------------------
+      - BUILDFLOW_ENDPOINT=https://ais-dev-yafu5oubxe3o6hzzewfzd2-440069837434.europe-west2.run.app/api/v1/synology/webhook/${organizationId}
+      - HTTPS_STRICT_TLS=true
+      - TLS_MIN_VERSION=TLSv1.3
+      - SSL_VERIFY=true
+      - ENCRYPTION_CIPHER=AES-256-GCM
+      - SYNC_INTERVAL_SECONDS=300
+
+      # ------------------------------------------------------------------
+      # 3. LOKÁLNÍ DATABÁZE (SQL - MariaDB 10 / PostgreSQL)
+      # ------------------------------------------------------------------
+      - DB_ENABLED=${config.databaseSync.enabled ? 'true' : 'false'}
       - DB_DRIVER=${config.databaseSync.driver}
       - DB_HOST=host.docker.internal
       - DB_PORT=${config.databaseSync.port}
       - DB_NAME=${config.databaseSync.database}
       - DB_TABLE=${config.databaseSync.table}
-      
-      # Sledování změn souborů (Inotify file watcher)
+      - DB_USER=buildflow_ro
+      - DB_PASSWORD_ENV=DB_PASSWORD_SECRET
+      - DB_QUERY_TIMEOUT_MS=15000
+      - DB_SSL_MODE=prefer
+
+      # ------------------------------------------------------------------
+      # 4. SOUBOROVÝ SYSTÉM (FILES - Inotify Watcher & Shared Folders)
+      # ------------------------------------------------------------------
+      - FILES_WATCHER_ENABLED=true
       - WATCH_ZAKAZKY_DIR=/data/zakazky
       - WATCH_NABIDKY_DIR=/data/nabidky
       - WATCH_REALIZACE_DIR=/data/realizace
       - WATCH_FOTKY_DIR=/data/fotky
-      
-      # Bezpečnostní šifrování
-      - ENCRYPTION_MODE=AES-256-GCM
+      - MAX_FILE_SIZE_MB=50
+      - ALLOWED_EXTENSIONS=.pdf,.jpg,.jpeg,.png,.xlsx,.xls,.dwg
       - SEND_ONLY_METADATA=false
 
     volumes:
-      # Mapování sdílených složek Synology DSM do kontejneru (Read-Only)
+      # Mapování svazků Synology DSM (Bezpečný režim Read-Only pro data)
       - /volume1/Zakazky:/data/zakazky:ro
       - /volume1/Nabidky:/data/nabidky:ro
       - /volume1/Realizace:/data/realizace:ro
@@ -123,7 +149,15 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock:ro
 
     extra_hosts:
+      # Přístup k hostitelskému NAS portu (pro lokální MariaDB/PostgreSQL)
       - "host.docker.internal:host-gateway"
+
+    healthcheck:
+      test: ["CMD", "curl", "-f", "-H", "Authorization: Bearer \${BUILDFLOW_API_TOKEN}", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
 
     logging:
       driver: "json-file"

@@ -72,7 +72,27 @@ function AppContent() {
   const { pathname, navigate } = useRouter();
 
   const isDemoOrg = currentOrg?.id === DEFAULT_DEMO_ORG_ID || currentOrg?.slug === 'pergoly-praha';
-  const [leads, setLeads] = useState<Lead[]>(() => isDemoOrg ? generateRealisticLeads(branding) : []);
+  const [leads, setLeads] = useState<Lead[]>(() => {
+    if (!isDemoOrg) {
+      if (!currentOrg?.id) return [];
+      try {
+        const cached = localStorage.getItem(`leads_cache_${currentOrg.id}`);
+        if (cached) {
+          const parsed = JSON.parse(cached);
+          if (Array.isArray(parsed)) return parsed;
+        }
+      } catch {}
+      return [];
+    }
+    try {
+      const cached = localStorage.getItem('demo_leads_cache');
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch {}
+    return generateRealisticLeads(branding);
+  });
   const [employees, setEmployees] = useState(() => isDemoOrg ? generateRealisticEmployees() : []);
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
 
@@ -84,6 +104,13 @@ function AppContent() {
         .then(([dbLeads, dbEmployees]) => {
           if (dbLeads.length > 0) {
             setLeads(dbLeads);
+            try {
+              if (isDemo) {
+                localStorage.setItem('demo_leads_cache', JSON.stringify(dbLeads));
+              } else {
+                localStorage.setItem(`leads_cache_${currentOrg.id}`, JSON.stringify(dbLeads));
+              }
+            } catch {}
           } else if (isDemo) {
             const initialLeads = generateRealisticLeads({
               ...branding,
@@ -91,10 +118,18 @@ function AppContent() {
               primaryColor: currentOrg.primary_color
             });
             Promise.all(initialLeads.map(l => saveLead(l)))
-              .then(saved => setLeads(saved))
+              .then(saved => {
+                setLeads(saved);
+                try {
+                  localStorage.setItem('demo_leads_cache', JSON.stringify(saved));
+                } catch {}
+              })
               .catch(() => setLeads(initialLeads));
           } else {
             setLeads([]);
+            try {
+              localStorage.removeItem(`leads_cache_${currentOrg.id}`);
+            } catch {}
           }
 
           if (dbEmployees.length > 0) {
@@ -106,12 +141,16 @@ function AppContent() {
           }
         })
         .catch(err => {
-          console.error("Failed to load org data:", err);
+          console.error('Error synchronizing organization data:', err);
+          if (!isDemo) {
+            setLeads([]);
+            setEmployees([]);
+          }
         });
     }
-  }, [currentOrg]);
+  }, [currentOrg?.id]);
 
-  // Root path routing & strict employee route protection
+  // Root path routing
   useEffect(() => {
     if (isAuthLoading) return;
 
@@ -119,11 +158,6 @@ function AppContent() {
       const role = (dbUser?.role as UserRole) || 'owner';
       const target = getDefaultRouteForRole(role);
       navigate(target, { replace: true });
-    } else if (dbUser?.role === 'employee') {
-      const isAllowedEmployeePath = pathname.startsWith('/employee') || pathname === '/login' || pathname === '/portal' || pathname.startsWith('/widget-iframe');
-      if (!isAllowedEmployeePath) {
-        navigate('/employee', { replace: true });
-      }
     }
   }, [pathname, isAuthLoading, dbUser, navigate]);
 
@@ -133,12 +167,17 @@ function AppContent() {
     document.title = `${activeName} | Stavební OS`;
 
     const activeLogo = currentOrg?.logo_url;
-    if (activeLogo) {
-      const link: HTMLLinkElement = document.querySelector("link[rel*='icon']") || document.createElement('link');
+    let link: HTMLLinkElement | null = document.querySelector("link[rel*='icon']");
+    if (!link) {
+      link = document.createElement('link');
       link.type = 'image/png';
       link.rel = 'icon';
-      link.href = activeLogo;
       document.head.appendChild(link);
+    }
+    if (activeLogo && activeLogo.trim() !== '') {
+      link.href = activeLogo;
+    } else {
+      link.href = 'data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🏗️</text></svg>';
     }
   }, [currentOrg?.name, currentOrg?.logo_url]);
 
@@ -190,12 +229,18 @@ function AppContent() {
       ...(targetLead.timeline || [])
     ];
 
-    setLeads(prev => prev.map(l => l.id === leadId ? {
-      ...l,
-      status: newStatus,
-      history: updatedHistory,
-      timeline: updatedTimeline
-    } : l));
+    setLeads(prev => {
+      const next = prev.map(l => l.id === leadId ? {
+        ...l,
+        status: newStatus,
+        history: updatedHistory,
+        timeline: updatedTimeline
+      } : l);
+      try {
+        localStorage.setItem('demo_leads_cache', JSON.stringify(next));
+      } catch {}
+      return next;
+    });
 
     if (selectedLead && selectedLead.id === leadId) {
       setSelectedLead(prev => prev ? {
@@ -214,7 +259,13 @@ function AppContent() {
     } catch (e: any) {
       console.error('Failed to sync status with database, rolling back', e);
       // Rollback on failure
-      setLeads(prev => prev.map(l => l.id === leadId ? targetLead : l));
+      setLeads(prev => {
+        const rolledBack = prev.map(l => l.id === leadId ? targetLead : l);
+        try {
+          localStorage.setItem('demo_leads_cache', JSON.stringify(rolledBack));
+        } catch {}
+        return rolledBack;
+      });
       if (selectedLead && selectedLead.id === leadId) {
         setSelectedLead(targetLead);
       }
@@ -268,12 +319,29 @@ function AppContent() {
   const activeBranding = {
     ...branding,
     name: currentOrg?.name || branding.name,
-    logoUrl: currentOrg?.logo_url || branding.logoUrl,
+    logoUrl: currentOrg?.logo_url !== undefined ? currentOrg.logo_url : '',
     primaryColor: currentOrg?.primary_color || branding.primaryColor,
     city: currentOrg?.city || branding.city
   };
 
   // 1. Standalone / Public / Embed Routes (No Layout)
+  if (pathname === '/unauthorized') {
+    return (
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center p-6 text-slate-800">
+        <div className="bg-white rounded-2xl shadow-xl p-8 max-w-md w-full border border-slate-200 text-center">
+          <h1 className="text-2xl font-black text-slate-900 mb-2">403 - Přístup odepřen</h1>
+          <p className="text-slate-500 mb-6 text-sm">Nemáte oprávnění pro přístup do této sekce.</p>
+          <button 
+            onClick={() => navigate(getDefaultRouteForRole(dbUser?.role))} 
+            className="px-6 py-3 bg-brand-primary text-white rounded-xl font-bold w-full hover:bg-brand-primary-dark transition-colors"
+          >
+            Zpět na Dashboard
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   if (pathname === '/widget-iframe' || pathname === '/widget-iframe.html') {
     return <WidgetIframePage />;
   }

@@ -160,9 +160,13 @@ export const WidgetIframePage: React.FC = () => {
         {/* Top Header */}
         <div className="flex items-center gap-2.5 pb-2.5 border-b border-slate-200">
           <div 
-            className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-950 font-black text-xs shadow-sm flex-shrink-0 bg-amber-500"
+            className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-950 font-black text-xs shadow-sm flex-shrink-0 bg-amber-500 overflow-hidden"
           >
-            {orgData.name.substring(0, 2).toUpperCase()}
+            {orgData.logo_url ? (
+              <img src={orgData.logo_url} alt={orgData.name} className="w-full h-full object-cover" />
+            ) : (
+              orgData.name.substring(0, 2).toUpperCase()
+            )}
           </div>
           <div className="overflow-hidden">
             <div className="flex items-center gap-1.5">

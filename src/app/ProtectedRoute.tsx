@@ -1,28 +1,24 @@
 import React, { useEffect } from 'react';
 import { useOrganization } from '@/context/OrganizationContext';
 import { useRouter } from './router';
-import { RoleGuard } from './RoleGuard';
-import { UserRole, getDefaultRouteForRole } from './permissions';
+import { UserRole } from './permissions';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
   allowedRole?: UserRole | UserRole[];
 }
 
+const Navigate: React.FC<{ to: string; replace?: boolean }> = ({ to, replace }) => {
+  const { navigate } = useRouter();
+  useEffect(() => {
+    navigate(to, { replace });
+  }, [navigate, to, replace]);
+  return null;
+};
+
 export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, allowedRole }) => {
   const { user, dbUser, isLoading, isConfigured } = useOrganization();
-  const { pathname, navigate } = useRouter();
-
-  useEffect(() => {
-    if (isLoading) return;
-
-    // If not authenticated and Supabase is configured, redirect to /login
-    if (!user && isConfigured) {
-      if (pathname !== '/login' && pathname !== '/widget-iframe' && pathname !== '/widget-iframe.html') {
-        navigate('/login', { replace: true });
-      }
-    }
-  }, [user, isLoading, isConfigured, pathname, navigate]);
+  const { pathname } = useRouter();
 
   if (isLoading) {
     return (
@@ -41,12 +37,22 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, allowe
     );
   }
 
-  if (!user && isConfigured) {
-    return null; // Will redirect via useEffect
+  // Bypassing logic for public pages wrapped in ProtectedRoute
+  const isPublicRoute = pathname === '/login' || pathname.startsWith('/widget-iframe') || pathname === '/portal' || pathname === '/inquiry';
+  if (isPublicRoute) {
+    return <>{children}</>;
   }
 
-  if (allowedRole) {
-    return <RoleGuard role={allowedRole}>{children}</RoleGuard>;
+  // Exact Requested Logic
+  if (isConfigured && (!user || !dbUser)) {
+    return <Navigate to="/login" replace />;
+  }
+
+  if (allowedRole && dbUser) {
+    const requiredRoles = Array.isArray(allowedRole) ? allowedRole : [allowedRole];
+    if (!requiredRoles.includes(dbUser.role as UserRole)) {
+      return <Navigate to="/unauthorized" replace />;
+    }
   }
 
   return <>{children}</>;

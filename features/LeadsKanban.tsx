@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Lead, LeadStatus } from '../types';
 import { MapPin, DollarSign, User, Plus, Phone, MessageSquare, ShieldCheck, Calendar, Clock, AlertTriangle } from 'lucide-react';
 import { canDeleteLead } from '../src/app/permissions';
 import { useOrganization } from '../context/OrganizationContext';
+import { supabase, isSupabaseConfigured, isValidUUID, LocalSupabaseMock, DEFAULT_DEMO_ORG_ID } from '../lib/supabase';
 
 interface LeadsKanbanProps {
   leads: Lead[];
@@ -12,13 +13,11 @@ interface LeadsKanbanProps {
 }
 
 export const LeadsKanban: React.FC<LeadsKanbanProps> = ({
-  leads,
+  leads: initialLeads,
   onSelectLead,
   onUpdateLeadStatus,
   onAddLead
 }) => {
-  
-  
   const columns: { status: LeadStatus; label: string; color: string; badgeColor: string }[] = [
     { status: 'New', label: 'Nová poptávka', color: 'border-border bg-surface-secondary text-brand-primary', badgeColor: 'bg-brand-primary-soft text-brand-primary border-brand-primary-soft' },
     { status: 'Contacted', label: 'Kontaktováno', color: 'border-sky-200 bg-sky-50 text-sky-700', badgeColor: 'bg-sky-100 text-sky-700 border-sky-200' },
@@ -28,10 +27,108 @@ export const LeadsKanban: React.FC<LeadsKanbanProps> = ({
     { status: 'Lost', label: 'Stornováno', color: 'border-slate-200 bg-slate-50 text-slate-500', badgeColor: 'bg-slate-100 text-slate-500 border-slate-200' }
   ];
 
-  const { dbUser } = useOrganization();
+  const { dbUser, currentOrg } = useOrganization();
+  const [leads, setLeads] = useState<Lead[]>(initialLeads);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [draggedLead, setDraggedLead] = useState<string | null>(null);
   const [dragOverColumn, setDragOverColumn] = useState<string | null>(null);
+
+  // Synchronize internal state with props when parent state changes
+  useEffect(() => {
+    setLeads(initialLeads);
+  }, [initialLeads]);
+
+  // Recalculates lead with new status, history entry and updated timeline
+  const updateLocal = (id: string, status: LeadStatus): Lead[] => {
+    const timestamp = new Date().toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit' });
+    const colConfig = columns.find(c => c.status === status);
+    const statusLabel = colConfig ? colConfig.label : status;
+
+    return leads.map(l => {
+      if (l.id !== id) return l;
+
+      const updatedHistory = [
+        {
+          id: 'hist-' + Date.now(),
+          timestamp,
+          action: `Stav zakázky změněn na: ${statusLabel}`,
+          author: dbUser?.email || 'Dispečink'
+        },
+        ...(l.history || [])
+      ];
+
+      const updatedTimeline = [
+        {
+          id: 't-' + Date.now(),
+          title: `Stav změněn na: ${statusLabel}`,
+          status: 'Completed' as const,
+          timestamp
+        },
+        ...(l.timeline || [])
+      ];
+
+      return {
+        ...l,
+        status,
+        history: updatedHistory,
+        timeline: updatedTimeline
+      };
+    });
+  };
+
+  // Optimistic update handler with Supabase persistence and rollback on error
+  const handleDragDrop = async (id: string, status: LeadStatus) => {
+    const targetLead = leads.find(l => l.id === id);
+    if (!targetLead || targetLead.status === status) return;
+
+    // 1. Okamžitě změní UI + 4. Přepočítá Timeline
+    const previous = leads;
+    const updatedLeads = updateLocal(id, status);
+    setLeads(updatedLeads);
+
+    // 3. Přepočítá Dashboard (propaguje změnu do rodičovské komponenty pro celkové statistiky a KPI)
+    if (onUpdateLeadStatus) {
+      onUpdateLeadStatus(id, status);
+    }
+
+    // Okamžitá synchronizace do local storage pro zachování stavu po refresh
+    const isDemo = currentOrg?.id === DEFAULT_DEMO_ORG_ID || currentOrg?.slug === 'pergoly-praha';
+    const cacheKey = isDemo ? 'demo_leads_cache' : (currentOrg?.id ? `leads_cache_${currentOrg.id}` : null);
+
+    try {
+      const allMock = LocalSupabaseMock.getLeads();
+      const mockLead = allMock.find((m: any) => m.id === id);
+      if (mockLead) {
+        mockLead.status = status;
+        LocalSupabaseMock.saveLeads(allMock);
+      }
+      if (cacheKey) {
+        localStorage.setItem(cacheKey, JSON.stringify(updatedLeads));
+      }
+    } catch (e) {
+      console.warn('Local storage cache sync notice:', e);
+    }
+
+    // 2. Uloží Supabase + Rollback při chybě
+    if (supabase) {
+      const { error } = await supabase
+        .from("leads")
+        .update({ status })
+        .eq("id", id);
+      if (error) {
+        console.error("Supabase status update error, rolling back:", error);
+        setLeads(previous);
+        try {
+          if (cacheKey) {
+            localStorage.setItem(cacheKey, JSON.stringify(previous));
+          }
+        } catch {}
+        if (onUpdateLeadStatus) {
+          onUpdateLeadStatus(id, targetLead.status);
+        }
+      }
+    }
+  };
 
   // New lead form state
   const [formTitle, setFormTitle] = useState('Nová montáž pergoly');
@@ -88,6 +185,7 @@ export const LeadsKanban: React.FC<LeadsKanbanProps> = ({
     if (onAddLead) {
       onAddLead(newLead);
     }
+    setLeads(prev => [newLead, ...prev]);
     setIsModalOpen(false);
   };
 
@@ -114,99 +212,107 @@ export const LeadsKanban: React.FC<LeadsKanbanProps> = ({
 
       {/* New Lead Modal */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 bg-white/60 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white border border-slate-200 rounded-[32px] max-w-xl w-full p-8 space-y-6 shadow-2xl animate-in fade-in zoom-in-95 max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between pb-4 border-b border-slate-100">
-              <h3 className="text-xl font-black text-slate-900">Vytvořit novou zakázku / poptávku</h3>
+        <div className="fixed inset-0 z-50 bg-white/60 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4">
+          <div className="bg-white border border-slate-200 rounded-3xl sm:rounded-[32px] max-w-xl w-full p-4 sm:p-8 shadow-2xl animate-in fade-in zoom-in-95 max-h-[92vh] flex flex-col overflow-hidden">
+            <div className="flex items-center justify-between pb-3.5 border-b border-slate-100 shrink-0">
+              <h3 className="text-lg sm:text-xl font-black text-slate-900">Vytvořit novou zakázku / poptávku</h3>
               <button 
                 onClick={() => setIsModalOpen(false)}
-                className="w-8 h-8 rounded-full bg-slate-100 text-slate-500 hover:text-slate-800 flex items-center justify-center text-sm font-bold"
+                className="w-8 h-8 rounded-full bg-slate-100 text-slate-500 hover:text-slate-800 flex items-center justify-center text-sm font-bold cursor-pointer"
               >
                 ✕
               </button>
             </div>
 
-            <form onSubmit={handleCreateLeadSubmit} className="space-y-5 text-sm">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                <div className="space-y-2">
-                  <label className="text-xs font-bold uppercase tracking-wider text-slate-600 block">Název projektu / zakázky</label>
+            <form onSubmit={handleCreateLeadSubmit} className="flex-1 overflow-y-auto space-y-4 text-sm pr-1">
+              {/* Single column on mobile (grid-cols-1), two-column on desktop (sm:grid-cols-2) */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 sm:gap-5 pt-1">
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold uppercase tracking-wider text-slate-600 block">Název projektu / zakázky *</label>
                   <input
                     type="text"
                     value={formTitle}
                     onChange={(e) => setFormTitle(e.target.value)}
                     required
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-900 focus:outline-none focus:ring-2 focus:ring-brand-primary-soft focus:border-brand-primary transition-all font-semibold"
+                    placeholder="Např. Pergola na míru"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 sm:px-4 sm:py-3 text-slate-900 focus:outline-none focus:ring-2 focus:ring-brand-primary-soft focus:border-brand-primary transition-all font-semibold text-base sm:text-sm"
                   />
                 </div>
-                <div className="space-y-2">
-                  <label className="text-xs font-bold uppercase tracking-wider text-slate-600 block">Jméno zákazníka</label>
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold uppercase tracking-wider text-slate-600 block">Jméno zákazníka *</label>
                   <input
                     type="text"
                     value={formCustomerName}
                     onChange={(e) => setFormCustomerName(e.target.value)}
                     required
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-900 focus:outline-none focus:ring-2 focus:ring-brand-primary-soft focus:border-brand-primary transition-all font-semibold"
+                    placeholder="Ing. Petr Novák"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 sm:px-4 sm:py-3 text-slate-900 focus:outline-none focus:ring-2 focus:ring-brand-primary-soft focus:border-brand-primary transition-all font-semibold text-base sm:text-sm"
                   />
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                <div className="space-y-2">
-                  <label className="text-xs font-bold uppercase tracking-wider text-slate-600 block">Telefon</label>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 sm:gap-5">
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold uppercase tracking-wider text-slate-600 block">Telefon *</label>
                   <input
-                    type="text"
+                    type="tel"
                     value={formPhone}
                     onChange={(e) => setFormPhone(e.target.value)}
                     required
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-900 focus:outline-none focus:ring-2 focus:ring-brand-primary-soft focus:border-brand-primary transition-all font-semibold"
+                    placeholder="+420 777 123 456"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 sm:px-4 sm:py-3 text-slate-900 focus:outline-none focus:ring-2 focus:ring-brand-primary-soft focus:border-brand-primary transition-all font-semibold text-base sm:text-sm"
                   />
                 </div>
-                <div className="space-y-2">
-                  <label className="text-xs font-bold uppercase tracking-wider text-slate-600 block">E-mail</label>
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold uppercase tracking-wider text-slate-600 block">E-mail *</label>
                   <input
                     type="email"
                     value={formEmail}
                     onChange={(e) => setFormEmail(e.target.value)}
                     required
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-900 focus:outline-none focus:ring-2 focus:ring-brand-primary-soft focus:border-brand-primary transition-all font-semibold"
+                    placeholder="klient@email.cz"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 sm:px-4 sm:py-3 text-slate-900 focus:outline-none focus:ring-2 focus:ring-brand-primary-soft focus:border-brand-primary transition-all font-semibold text-base sm:text-sm"
                   />
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                <div className="space-y-2">
-                  <label className="text-xs font-bold uppercase tracking-wider text-slate-600 block">Rozpočet (Kč)</label>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 sm:gap-5">
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold uppercase tracking-wider text-slate-600 block">Rozpočet (Kč) *</label>
                   <input
                     type="number"
                     value={formBudget}
                     onChange={(e) => setFormBudget(e.target.value)}
                     required
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-900 focus:outline-none focus:ring-2 focus:ring-brand-primary-soft focus:border-brand-primary transition-all font-semibold"
+                    placeholder="250000"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 sm:px-4 sm:py-3 text-slate-900 focus:outline-none focus:ring-2 focus:ring-brand-primary-soft focus:border-brand-primary transition-all font-semibold text-base sm:text-sm"
                   />
                 </div>
-                <div className="space-y-2">
-                  <label className="text-xs font-bold uppercase tracking-wider text-slate-600 block">Adresa</label>
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold uppercase tracking-wider text-slate-600 block">Adresa stavby *</label>
                   <input
                     type="text"
                     value={formAddress}
                     onChange={(e) => setFormAddress(e.target.value)}
                     required
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-900 focus:outline-none focus:ring-2 focus:ring-brand-primary-soft focus:border-brand-primary transition-all font-semibold"
+                    placeholder="Ulice 12, Město"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 sm:px-4 sm:py-3 text-slate-900 focus:outline-none focus:ring-2 focus:ring-brand-primary-soft focus:border-brand-primary transition-all font-semibold text-base sm:text-sm"
                   />
                 </div>
               </div>
 
-              <div className="pt-6 flex justify-end gap-3 border-t border-slate-100 mt-6">
+              {/* Sticky Submit Bar at Bottom */}
+              <div className="sticky bottom-0 bg-white/95 backdrop-blur-md pt-3.5 pb-1 flex flex-col sm:flex-row justify-end gap-2.5 border-t border-slate-100 mt-4 shrink-0 shadow-[0_-6px_16px_-4px_rgba(0,0,0,0.05)]">
                 <button
                   type="button"
                   onClick={() => setIsModalOpen(false)}
-                  className="px-5 py-3 rounded-xl bg-slate-100 text-slate-600 font-bold hover:bg-slate-200 transition-colors"
+                  className="w-full sm:w-auto px-5 py-3 rounded-xl bg-slate-100 text-slate-600 font-bold hover:bg-slate-200 transition-colors text-center order-2 sm:order-1 cursor-pointer"
                 >
                   Zrušit
                 </button>
                 <button
                   type="submit"
-                  className="px-6 py-3 rounded-xl font-extrabold shadow-md hover:shadow-lg transition-all"
+                  className="w-full sm:w-auto px-6 py-3 rounded-xl font-extrabold shadow-md hover:shadow-lg transition-all text-center order-1 sm:order-2 cursor-pointer"
                   style={{ backgroundColor: 'var(--brand-primary)', color: '#ffffff' }}
                 >
                   Vytvořit zakázku
@@ -218,7 +324,7 @@ export const LeadsKanban: React.FC<LeadsKanbanProps> = ({
       )}
 
       {/* Mobile Quick Status Filter Pills (Sticky horizontal bar on phone) */}
-      <div className="flex md:hidden overflow-x-auto gap-2 pb-2 -mx-4 px-4 scrollbar-none">
+      <div className="flex md:hidden overflow-x-auto gap-2 pb-2 -mx-3 px-3 scrollbar-none">
         {columns.map(col => {
           const count = leads.filter(l => l.status === col.status).length;
           return (
@@ -228,7 +334,7 @@ export const LeadsKanban: React.FC<LeadsKanbanProps> = ({
                 const el = document.getElementById(`kanban-col-${col.status}`);
                 if (el) el.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
               }}
-              className="flex items-center justify-center gap-1.5 px-4 py-2 min-h-[48px] rounded-xl bg-white border border-slate-200 text-xs font-bold text-slate-700 whitespace-nowrap shadow-2xs shrink-0 active:scale-95 transition-transform"
+              className="flex items-center justify-center gap-1.5 px-3 py-2 min-h-[44px] rounded-xl bg-white border border-slate-200 text-xs font-bold text-slate-700 whitespace-nowrap shadow-2xs shrink-0 active:scale-95 transition-transform"
             >
               <span className={`w-2 h-2 rounded-full ${col.badgeColor.split(' ')[0]}`}></span>
               <span>{col.label}</span>
@@ -238,8 +344,11 @@ export const LeadsKanban: React.FC<LeadsKanbanProps> = ({
         })}
       </div>
 
-      {/* Wide Kanban Board Container with Mobile Snap Scrolling */}
-      <div className="overflow-x-auto pb-6 -mx-4 px-4 sm:-mx-8 sm:px-8 snap-x snap-mandatory scroll-smooth">
+      {/* Wide Kanban Board Container with Mobile Snap Scrolling: scroll-snap-type: x mandatory */}
+      <div 
+        className="overflow-x-auto pb-6 -mx-3 px-3 sm:-mx-8 sm:px-8 snap-x snap-mandatory scroll-smooth kanban-scroll-container"
+        style={{ scrollSnapType: 'x mandatory', WebkitOverflowScrolling: 'touch' }}
+      >
         <div className="flex gap-4 sm:gap-6 items-start w-max min-w-full">
           {columns.map(col => {
             const columnLeads = leads.filter(l => l.status === col.status);
@@ -260,11 +369,12 @@ export const LeadsKanban: React.FC<LeadsKanbanProps> = ({
                   e.preventDefault();
                   setDragOverColumn(null);
                   if (draggedLead) {
-                    onUpdateLeadStatus(draggedLead, col.status);
+                    handleDragDrop(draggedLead, col.status);
                     setDraggedLead(null);
                   }
                 }}
-                className={`w-[85vw] max-w-[340px] sm:w-[360px] sm:min-w-[340px] sm:max-w-[420px] rounded-[24px] border flex flex-col shadow-sm shrink-0 snap-start transition-all duration-200 ${
+                style={{ minWidth: '320px', scrollSnapAlign: 'start' }}
+                className={`w-[320px] min-w-[320px] max-w-[320px] sm:w-[360px] sm:min-w-[340px] sm:max-w-[420px] rounded-[24px] border flex flex-col shadow-sm shrink-0 snap-start kanban-column-snap transition-all duration-200 ${
                   dragOverColumn === col.status
                     ? 'bg-blue-50/60 border-brand-primary ring-2 ring-brand-primary-soft shadow-md'
                     : 'bg-slate-50/80 border-slate-200'

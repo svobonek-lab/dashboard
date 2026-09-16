@@ -46,6 +46,7 @@ export interface Organization {
   phone?: string;
   email?: string;
   city?: string;
+  address?: string;
   primary_color: string;
   secondary_color?: string;
   logo_url?: string;
@@ -182,18 +183,23 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
     root.style.setProperty('--primary-subtle', `rgba(${hexToRgb(primaryColor)}, 0.12)`);
     root.style.setProperty('--primary-light', `rgba(${hexToRgb(primaryColor)}, 0.12)`);
 
-    const name = currentOrg?.name || currentOrg?.branding?.name || 'StavbaCore CRM';
-    const logoUrl = currentOrg?.logo_url || currentOrg?.branding?.logoUrl;
+    const name = currentOrg?.name || 'StavbaCore CRM';
+    const logoUrl = currentOrg?.logo_url;
     
-    document.title = `${name} | Executive OS`;
-    if (logoUrl) {
-      const link: HTMLLinkElement = document.querySelector("link[rel*='icon']") || document.createElement('link');
+    document.title = `${name} | Stavební OS`;
+    let link: HTMLLinkElement | null = document.querySelector("link[rel*='icon']");
+    if (!link) {
+      link = document.createElement('link');
       link.type = 'image/png';
       link.rel = 'icon';
-      link.href = logoUrl;
       document.head.appendChild(link);
     }
-  }, [currentOrg]);
+    if (logoUrl && logoUrl.trim() !== '') {
+      link.href = logoUrl;
+    } else {
+      link.href = 'data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🏗️</text></svg>';
+    }
+  }, [currentOrg?.name, currentOrg?.primary_color, currentOrg?.logo_url]);
 
   // Initialize Auth and Organization data
   useEffect(() => {
@@ -842,12 +848,24 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
         name,
         slug,
         primary_color: primaryColor,
-        logo_url: 'https://images.unsplash.com/photo-1513694203232-719a280e022f?auto=format&fit=crop&w=160&q=80',
+        logo_url: '',
         created_at: new Date().toISOString()
       };
       
       const updatedOrgs = [...organizations, newOrg];
       LocalSupabaseMock.saveOrganizations(updatedOrgs);
+      // Ensure zero data for new company in LocalSupabaseMock
+      const emps = LocalSupabaseMock.getEmployees().filter(e => e.organization_id !== newOrg.id);
+      LocalSupabaseMock.saveEmployees(emps);
+      const leads = LocalSupabaseMock.getLeads().filter(l => l.organization_id !== newOrg.id);
+      LocalSupabaseMock.saveLeads(leads);
+      const projs = LocalSupabaseMock.getProjects().filter(p => p.organization_id !== newOrg.id);
+      LocalSupabaseMock.saveProjects(projs);
+      try {
+        localStorage.removeItem('demo_leads_cache');
+        localStorage.removeItem(`leads_cache_${newOrg.id}`);
+      } catch {}
+
       setOrganizations(updatedOrgs);
       return newOrg;
     }
@@ -859,7 +877,7 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
           name,
           slug,
           primary_color: primaryColor,
-          logo_url: 'https://images.unsplash.com/photo-1513694203232-719a280e022f?auto=format&fit=crop&w=160&q=80'
+          logo_url: ''
         })
         .select()
         .single();
@@ -1242,74 +1260,67 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
     }
   };
 
-  // Data Action: Save Lead to Supabase or Sandbox
-  const createLead = async (leadData: Partial<Lead>): Promise<Lead> => {
+  // Data Action: Create New Lead (Unified)
+  const createLead = async (payload: any): Promise<Lead> => {
     const targetOrgId = currentOrg?.id || LocalSupabaseMock.getActiveOrgId() || DEFAULT_DEMO_ORG_ID;
 
-    const customerName = leadData.customerName || (leadData as any).fullName || leadData.title || 'Nová poptávka';
-    const phone = leadData.customerPhone || (leadData as any).phone || '';
-    const email = leadData.customerEmail || (leadData as any).email || '';
-    const projectType = (leadData as any).projectType || leadData.aiSummary?.jobType || leadData.title?.split(' - ')[0] || 'Pergola';
-    const budget = Number(leadData.price || (leadData as any).budgetValue) || 220000;
-    const address = leadData.address || (leadData as any).address || `Pražská 42, ${currentOrg?.name || 'Praha'}`;
+    // Resolve fields defensively to support both Lead objects and InquiryForm payload
+    const customerName = payload.name || payload.fullName || payload.customerName || payload.title || 'Nová poptávka';
+    const phone = payload.phone || payload.customerPhone || '';
+    const email = payload.email || payload.customerEmail || '';
+    const projectType = payload.projectType || payload.aiSummary?.jobType || payload.title?.split(' - ')[0] || 'Nezadáno';
+    const budget = Number(payload.price || payload.budgetValue) || 0;
 
-    const enrichedLead: Partial<Lead> = {
-      ...leadData,
+    let savedData: any = null;
+
+    if (isSupabaseConfigured && supabase && isValidUUID(targetOrgId)) {
+      try {
+        const { data, error } = await supabase
+          .from("leads")
+          .insert({
+            organization_id: targetOrgId,
+            customer_name: customerName,
+            phone: phone,
+            email: email,
+            project_type: projectType,
+            status: "New"
+          })
+          .select()
+          .single();
+
+        if (error) throw error;
+        savedData = data;
+      } catch (err) {
+        console.warn('createLead Supabase insert failed:', err);
+        // Fallback to local if remote fails
+        savedData = saveLeadLocal({ 
+          ...payload, 
+          customerName, customerPhone: phone, customerEmail: email, price: budget, status: 'New', organization_id: targetOrgId 
+        });
+      }
+    } else {
+      savedData = saveLeadLocal({ 
+        ...payload, 
+        customerName, customerPhone: phone, customerEmail: email, price: budget, status: 'New', organization_id: targetOrgId 
+      });
+    }
+
+    const savedLead = {
+      ...payload,
+      id: savedData.id,
+      customerName: savedData.customer_name || customerName,
+      customerPhone: savedData.phone || phone,
+      customerEmail: savedData.email || email,
+      price: savedData.budget || budget,
+      status: savedData.status || "New",
       organization_id: targetOrgId,
-      customerName,
-      customerPhone: phone,
-      customerEmail: email,
-      title: leadData.title || `${projectType} - ${customerName}`,
-      description: leadData.description || (leadData as any).description || 'Poptávka z online veřejného formuláře',
-      address,
-      city: leadData.city || currentOrg?.name || 'Praha',
-      preferredDate: leadData.preferredDate || new Date(Date.now() + 7 * 86400000).toISOString().substring(0, 10),
-      price: budget,
-      status: 'New',
-      priority: leadData.priority || 'Medium',
-      assignedEmployeeId: leadData.assignedEmployeeId || 'emp-1',
-      assignedEmployeeName: leadData.assignedEmployeeName || 'Petr Novotný',
-      thumbnail: leadData.thumbnail || 'https://images.unsplash.com/photo-1513694203232-719a280e022f?auto=format&fit=crop&w=600&q=80',
-      photos: leadData.photos || [],
-      files: leadData.files || [],
-      checklist: leadData.checklist && leadData.checklist.length > 0 ? leadData.checklist : [
-        { id: 'c-1', text: 'Zkontrolovat kontaktní údaje a ověřit telefon', completed: false },
-        { id: 'c-2', text: 'Zpracovat cenovou kalkulaci', completed: false },
-        { id: 'c-3', text: 'Domluvit termín zaměření na místě', completed: false }
-      ],
-      aiSummary: leadData.aiSummary || {
-        jobType: projectType,
-        complexity: 'Medium',
-        estimatedRange: `${budget.toLocaleString('cs-CZ')} Kč`,
-        assignedEmployee: 'Petr Novotný',
-        risks: ['Ověřit stavební připravenost podloží'],
-        recommendedNextStep: 'Telefonický kontakt zákazníka do 24 hodin.'
-      },
-      timeline: leadData.timeline && leadData.timeline.length > 0 ? leadData.timeline : [
-        {
-          id: 't-1',
-          title: 'Poptávka odeslána z veřejného formuláře',
-          status: 'Completed',
-          timestamp: 'Dnes'
-        }
-      ],
-      history: leadData.history && leadData.history.length > 0 ? leadData.history : [
-        {
-          id: 'h-' + Date.now(),
-          timestamp: new Date().toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit' }),
-          action: 'Poptávka vytvořena z veřejného formuláře',
-          author: 'Veřejný formulář'
-        }
-      ]
-    };
-
-    const saved = await saveLead(enrichedLead);
+    } as Lead;
 
     // Create Notification and Activity feed entry
     const notifItem = {
       id: 'notif-' + Date.now(),
       title: 'Nová veřejná poptávka',
-      message: `${customerName} odeslal poptávku "${projectType}" v hodnotě ${budget.toLocaleString('cs-CZ')} Kč.`,
+      message: `${customerName} odeslal poptávku "${projectType}".`,
       timestamp: new Date().toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit' }),
       read: false,
       type: 'lead'
@@ -1317,7 +1328,7 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
 
     const actItem = {
       time: new Date().toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit' }),
-      text: `Nová veřejná poptávka z webu: ${customerName} (${projectType} - ${budget.toLocaleString('cs-CZ')} Kč)`,
+      text: `Nová veřejná poptávka z webu: ${customerName} (${projectType})`,
       badgeColor: '#EDE9FE',
       textColor: '#5B21B6'
     };
@@ -1326,14 +1337,14 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
     LocalSupabaseMock.saveActivity(targetOrgId, actItem);
 
     if (typeof window !== 'undefined' && window.parent !== window) {
-      window.parent.postMessage({ type: 'LEAD_CREATED', payload: saved }, '*');
+      window.parent.postMessage({ type: 'LEAD_CREATED', payload: savedLead }, '*');
     }
 
     if (typeof window !== 'undefined') {
-      window.dispatchEvent(new CustomEvent('crm:lead_created', { detail: { lead: saved, notification: notifItem, activity: actItem } }));
+      window.dispatchEvent(new CustomEvent('crm:lead_created', { detail: { lead: savedLead, notification: notifItem, activity: actItem } }));
     }
 
-    return saved;
+    return savedLead;
   };
 
   const saveLead = async (leadData: Partial<Lead>): Promise<Lead> => {
@@ -1454,9 +1465,11 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
         .eq('id', leadId);
       if (updateError) {
         console.warn('updateLeadStatus notice (updated locally):', updateError.message);
+        throw updateError;
       }
     } catch (err: any) {
       console.warn('updateLeadStatus notice (updated locally):', err?.message || err);
+      throw err;
     }
   };
 
@@ -2044,16 +2057,19 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
   };
 
   const updateBrandingAdmin = async (orgId: string, name: string, color: string, logo?: string): Promise<void> => {
-    const finalLogo = logo || 'https://images.unsplash.com/photo-1513694203232-719a280e022f?auto=format&fit=crop&w=160&q=80';
+    // PATCH P5: Remove cache fallback to Unsplash demo image
+    const finalLogo = logo !== undefined ? logo : '';
     const updatedRecord = {
       name,
       primary_color: color,
       logo_url: finalLogo
     };
 
+    const targetOrgId = orgId || currentOrg?.id || '';
+
     // Update organizations in LocalSupabaseMock
     const orgs = LocalSupabaseMock.getOrganizations().map((o: any) => {
-      if (o.id === orgId) {
+      if (o.id === targetOrgId) {
         return { 
           ...o, 
           ...updatedRecord,
@@ -2073,7 +2089,7 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
     // Update CompanySettings in LocalSupabaseMock
     const settings = (LocalSupabaseMock.getCompanySettings() as any[]) || [];
     const updatedSettings = settings.map((s: any) => {
-      if (s.organization_id === orgId) {
+      if (s.organization_id === targetOrgId) {
         return {
           ...s,
           branding: {
@@ -2088,7 +2104,7 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
     });
     LocalSupabaseMock.saveCompanySettings(updatedSettings);
 
-    if (currentOrg?.id === orgId) {
+    if (!currentOrg || currentOrg.id === targetOrgId || !orgId) {
       setCurrentOrg(prev => prev ? { 
         ...prev, 
         ...updatedRecord,
@@ -2099,6 +2115,13 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
           logoUrl: finalLogo
         }
       } : null);
+    }
+
+    // Dispatch global branding change event for real-time reactivity without reload
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('brandingChanged', { 
+        detail: { orgId: targetOrgId, logo_url: finalLogo, name, primary_color: color } 
+      }));
     }
 
     if (!isSupabaseConfigured || !supabase) {
@@ -2211,7 +2234,7 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
 
     const brandingObj = {
       name: data.name,
-      logoUrl: data.logo_url || 'https://images.unsplash.com/photo-1541888946425-d0fbb18f0653?auto=format&fit=crop&w=160&q=80',
+      logoUrl: data.logo_url || '',
       primaryColor: data.primary_color || '#2563eb',
       secondaryColor: data.secondary_color || '#0f172a'
     };
@@ -2226,7 +2249,7 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
       city: cityName,
       primary_color: data.primary_color || '#2563eb',
       secondary_color: data.secondary_color || '#0f172a',
-      logo_url: data.logo_url || 'https://images.unsplash.com/photo-1541888946425-d0fbb18f0653?auto=format&fit=crop&w=160&q=80',
+      logo_url: data.logo_url || '',
       status: 'Active',
       created_at: new Date().toISOString()
     };
@@ -2304,25 +2327,10 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
     }
     await new Promise(r => setTimeout(r, 120));
 
-    // Step 5: Provisioning týmu a mistrů v public.employees
-    stepNotify(5, 'Provisioning týmu v public.employees...');
-    const employeesToInsert = (data.employees && data.employees.length > 0) ? data.employees.map((emp, idx) => ({
-      id: generateUUID(),
-      organization_id: activeOrgId,
-      name: emp.name,
-      specialization: emp.specialization || emp.role || servicesList[idx % servicesList.length] || 'Realizace',
-      phone: emp.phone || '+420 775 000 000',
-      email: emp.email || `zamestnanec${idx + 1}@${slug}.cz`,
-      capacity: typeof emp.capacity === 'number' ? emp.capacity : 100
-    })) : [];
-
-    if (employeesToInsert.length > 0 && isSupabaseConfigured && supabase) {
-      try {
-        await supabase.from('employees').insert(employeesToInsert);
-      } catch (eErr) {
-        console.warn('Employees insert notice:', eErr);
-      }
-    }
+    // Step 5: Inicializace čistého týmu (žádní demo zaměstnanci)
+    stepNotify(5, 'Inicializace čistého firemního týmu...');
+    // PATCH P4: Nevytvářej demo zaměstnance – pouze prázdný tým
+    const employeesToInsert: any[] = [];
     await new Promise(r => setTimeout(r, 120));
 
     // Step 6: Uložení white-label nastavení v public.company_settings
@@ -2348,10 +2356,13 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
     }
     await new Promise(r => setTimeout(r, 120));
 
-    // Step 7: Příprava čistého pracoviště organizace
-    stepNotify(7, 'Inicializace čistého pracoviště organizace...');
-    const demoLeads: any[] = [];
-    const demoProjects: any[] = [];
+    // Step 7: Příprava čistého pracoviště organizace (nula leadů, nula projektů, nula dokumentů)
+    stepNotify(7, 'Inicializace prázdného pracovního prostoru (0 dat)...');
+    try {
+      localStorage.removeItem('demo_leads_cache');
+      localStorage.removeItem(`demo_leads_cache_${activeOrgId}`);
+      localStorage.removeItem(`leads_cache_${activeOrgId}`);
+    } catch {}
     await new Promise(r => setTimeout(r, 120));
 
     // Step 8: Synchronizace Super Adminu a aktivace linků
@@ -2369,7 +2380,7 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
     }]);
 
     const currentEmps = LocalSupabaseMock.getEmployees();
-    LocalSupabaseMock.saveEmployees([...currentEmps.filter(e => e.organization_id !== activeOrgId), ...employeesToInsert]);
+    LocalSupabaseMock.saveEmployees([...currentEmps.filter(e => e.organization_id !== activeOrgId)]);
 
     const currentSettings = (LocalSupabaseMock.getCompanySettings() as any[]) || [];
     LocalSupabaseMock.saveCompanySettings([...currentSettings.filter((s: any) => s.organization_id !== activeOrgId), companySettingsRecord]);

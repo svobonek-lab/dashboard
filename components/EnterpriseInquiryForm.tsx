@@ -169,7 +169,7 @@ export const EnterpriseInquiryForm: React.FC<EnterpriseInquiryFormProps> = ({
     <div className={`w-full max-w-[1600px] mx-auto font-sans ${
       isModal 
         ? 'bg-transparent p-0 border-0 shadow-none' 
-        : 'bg-white border border-slate-200 rounded-[24px] p-6 sm:p-10 lg:p-12 shadow-sm'
+        : 'bg-white border border-slate-200 rounded-2xl sm:rounded-[24px] p-4 sm:p-10 lg:p-12 shadow-sm'
     }`}>
       <form onSubmit={handleSubmit} className="space-y-8">
         
@@ -554,7 +554,7 @@ export const EnterpriseInquiryForm: React.FC<EnterpriseInquiryFormProps> = ({
           </div>
           {errors.gdpr && <p className="text-xs text-rose-600 font-bold px-1">{errors.gdpr}</p>}
 
-          <div className="sticky bottom-0 left-0 right-0 z-20 bg-white/95 backdrop-blur-md p-4 sm:p-0 sm:bg-transparent sm:backdrop-blur-none border-t border-slate-200 sm:border-0 -mx-6 sm:mx-0 flex flex-col sm:flex-row items-center justify-end gap-3 pt-4 sm:pt-2 mt-4 shadow-[0_-10px_20px_-10px_rgba(0,0,0,0.05)] sm:shadow-none">
+          <div className="sticky bottom-0 left-0 right-0 z-20 bg-white/95 backdrop-blur-md p-3 sm:p-0 sm:bg-transparent sm:backdrop-blur-none border-t border-slate-200 sm:border-0 -mx-4 sm:mx-0 flex flex-col sm:flex-row items-center justify-end gap-3 pt-3 sm:pt-2 mt-4 shadow-[0_-10px_20px_-10px_rgba(0,0,0,0.05)] sm:shadow-none">
             {onCancel && (
               <button
                 type="button"

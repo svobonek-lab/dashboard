@@ -4,15 +4,16 @@ import { CompanyBranding } from '../types';
 
 interface DocumentsPageProps {
   branding: CompanyBranding;
+  isDemo?: boolean;
 }
 
-export const DocumentsPage: React.FC<DocumentsPageProps> = ({ branding }) => {
+export const DocumentsPage: React.FC<DocumentsPageProps> = ({ branding, isDemo = false }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [ocrModalDoc, setOcrModalDoc] = useState<any | null>(null);
 
   const activeColor = branding.primaryColor || '#2563eb';
 
-  const documents = [
+  const documents = isDemo ? [
     { 
       id: '1', 
       name: 'Smlouva_o_dilo_standard_2026.pdf', 
@@ -53,7 +54,7 @@ export const DocumentsPage: React.FC<DocumentsPageProps> = ({ branding }) => {
       relatedProject: 'Všechny realizace',
       ocrText: 'PŘEDÁVACÍ PROTOKOL • Prohlášení o bezvadném stavu díla při předání zákazníkovi.'
     },
-  ];
+  ] : [];
 
   const filteredDocs = documents.filter(d => 
     d.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -83,63 +84,77 @@ export const DocumentsPage: React.FC<DocumentsPageProps> = ({ branding }) => {
       </div>
 
       {/* Expiring Document Alert Banner */}
-      <div className="bg-rose-50 border border-rose-200 p-4 rounded-2xl text-rose-900 text-xs flex items-center justify-between shadow-xs">
-        <div className="flex items-center gap-2.5 font-semibold">
-          <AlertTriangle className="w-4 h-4 text-rose-600 flex-shrink-0" />
-          <span><strong>Upozornění na vypršení lhůty:</strong> Dokument „Stavebni_povoleni_Trinec_okr.pdf“ končí platnost za 8 dní (18. září 2026). Je nutné podat žádost o prodloužení.</span>
+      {isDemo && filteredDocs.length > 0 && (
+        <div className="bg-rose-50 border border-rose-200 p-4 rounded-2xl text-rose-900 text-xs flex items-center justify-between shadow-xs">
+          <div className="flex items-center gap-2.5 font-semibold">
+            <AlertTriangle className="w-4 h-4 text-rose-600 flex-shrink-0" />
+            <span><strong>Upozornění na vypršení lhůty:</strong> Dokument „Stavebni_povoleni_Trinec_okr.pdf“ končí platnost za 8 dní (18. září 2026). Je nutné podat žádost o prodloužení.</span>
+          </div>
+          <span className="px-2.5 py-1 bg-rose-100 border border-rose-300 rounded-lg text-rose-800 font-bold text-[10px]">Vyžaduje akci</span>
         </div>
-        <span className="px-2.5 py-1 bg-rose-100 border border-rose-300 rounded-lg text-rose-800 font-bold text-[10px]">Vyžaduje akci</span>
-      </div>
+      )}
 
       {/* Documents List */}
-      <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
-        <div className="divide-y divide-slate-100">
-          {filteredDocs.map(doc => {
-            const isExpiringSoon = doc.expires.startsWith('2026-09-18');
-            return (
-              <div key={doc.id} className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:bg-slate-50 transition-all">
-                <div className="flex items-start gap-3">
-                  <div 
-                    className="w-10 h-10 rounded-xl border flex items-center justify-center flex-shrink-0 mt-0.5"
-                    style={{ backgroundColor: `${activeColor}10`, borderColor: `${activeColor}30`, color: activeColor }}
-                  >
-                    <FileText className="w-5 h-5" />
-                  </div>
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-2">
-                      <h4 className="text-xs font-bold text-slate-900">{doc.name}</h4>
-                      {isExpiringSoon && (
-                        <span className="px-2 py-0.5 rounded text-[9px] font-bold bg-rose-50 border border-rose-200 text-rose-700">Brzy vyprší</span>
-                      )}
-                    </div>
-                    <p className="text-[11px] text-slate-500">{doc.type} • Nahráno {doc.date} • Velikost: {doc.size}</p>
-                    
-                    {/* Related Project Link */}
-                    <div className="flex items-center gap-1.5 text-[11px] font-semibold pt-0.5" style={{ color: activeColor }}>
-                      <Link2 className="w-3 h-3" />
-                      <span>Navázáno na zakázku: {doc.relatedProject}</span>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-2 self-end sm:self-auto">
-                  <button
-                    onClick={() => setOcrModalDoc(doc)}
-                    className="px-3 py-1.5 rounded-xl border border-slate-200 bg-slate-50 hover:bg-slate-100 text-xs font-semibold text-slate-800 flex items-center gap-1.5 transition-all"
-                  >
-                    <Sparkles className="w-3.5 h-3.5" style={{ color: activeColor }} />
-                    <span>OCR text</span>
-                  </button>
-                  <button className="px-3 py-1.5 rounded-xl border border-slate-200 bg-slate-50 hover:bg-slate-100 text-xs font-semibold text-slate-800 flex items-center gap-1.5 transition-all">
-                    <Download className="w-3.5 h-3.5" />
-                    <span>Stáhnout</span>
-                  </button>
-                </div>
-              </div>
-            );
-          })}
+      {filteredDocs.length === 0 ? (
+        <div className="bg-white rounded-3xl border border-slate-200 p-12 text-center space-y-3 shadow-xs">
+          <div className="w-12 h-12 rounded-2xl bg-slate-100 flex items-center justify-center mx-auto text-slate-400">
+            <FileText className="w-6 h-6" />
+          </div>
+          <h3 className="text-sm font-bold text-slate-800">Žádné nahrané dokumenty</h3>
+          <p className="text-xs text-slate-500 max-w-sm mx-auto">
+            Tato organizace zatím nemá žádné nahrané smlouvy, stavební povolení ani předávací protokoly.
+          </p>
         </div>
-      </div>
+      ) : (
+        <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
+          <div className="divide-y divide-slate-100">
+            {filteredDocs.map(doc => {
+              const isExpiringSoon = doc.expires.startsWith('2026-09-18');
+              return (
+                <div key={doc.id} className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:bg-slate-50 transition-all">
+                  <div className="flex items-start gap-3">
+                    <div 
+                      className="w-10 h-10 rounded-xl border flex items-center justify-center flex-shrink-0 mt-0.5"
+                      style={{ backgroundColor: `${activeColor}10`, borderColor: `${activeColor}30`, color: activeColor }}
+                    >
+                      <FileText className="w-5 h-5" />
+                    </div>
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2">
+                        <h4 className="text-xs font-bold text-slate-900">{doc.name}</h4>
+                        {isExpiringSoon && (
+                          <span className="px-2 py-0.5 rounded text-[9px] font-bold bg-rose-50 border border-rose-200 text-rose-700">Brzy vyprší</span>
+                        )}
+                      </div>
+                      <p className="text-[11px] text-slate-500">{doc.type} • Nahráno {doc.date} • Velikost: {doc.size}</p>
+                      
+                      {/* Related Project Link */}
+                      <div className="flex items-center gap-1.5 text-[11px] font-semibold pt-0.5" style={{ color: activeColor }}>
+                        <Link2 className="w-3 h-3" />
+                        <span>Navázáno na zakázku: {doc.relatedProject}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2 self-end sm:self-auto">
+                    <button
+                      onClick={() => setOcrModalDoc(doc)}
+                      className="px-3 py-1.5 rounded-xl border border-slate-200 bg-slate-50 hover:bg-slate-100 text-xs font-semibold text-slate-800 flex items-center gap-1.5 transition-all"
+                    >
+                      <Sparkles className="w-3.5 h-3.5" style={{ color: activeColor }} />
+                      <span>OCR text</span>
+                    </button>
+                    <button className="px-3 py-1.5 rounded-xl border border-slate-200 bg-slate-50 hover:bg-slate-100 text-xs font-semibold text-slate-800 flex items-center gap-1.5 transition-all">
+                      <Download className="w-3.5 h-3.5" />
+                      <span>Stáhnout</span>
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {/* OCR Preview Modal */}
       {ocrModalDoc && (

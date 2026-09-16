@@ -2,21 +2,22 @@ import { FieldMappingConfig, FieldMappingRule, TargetFieldType } from '@/types/i
 import { LeadStatus, Priority } from '@/types';
 
 // Normalized dictionary for construction CRM fields
+// Prioritizes PATCH P8 mappings: customer_name -> Customer, project_title -> Project, worker -> Employee, status -> Status
 const FIELD_DICTIONARY: Record<TargetFieldType, string[]> = {
   customerName: [
-    'customer_name', 'customername', 'customer', 'zakaznik', 'jmeno', 'klient', 
+    'customer_name', 'customer', 'customername', 'zakaznik', 'jmeno', 'klient', 
     'objednatel', 'cele_jmeno', 'full_name', 'fullname', 'kontaktni_osoba', 'odberatel', 'name'
   ],
   title: [
-    'project_title', 'projecttitle', 'title', 'nazev', 'projekt', 'stavba', 
-    'predmet', 'typ_stavby', 'nazev_projektu', 'zakazka', 'diloo', 'project'
+    'project_title', 'project', 'projecttitle', 'title', 'nazev', 'projekt', 'stavba', 
+    'predmet', 'typ_stavby', 'nazev_projektu', 'zakazka', 'diloo'
   ],
   price: [
     'budget', 'price', 'cena', 'castka', 'hodnota', 'naklady', 'rozpocet', 
     'predpokladana_cena', 'castka_s_dph', 'castka_bez_dph', 'total', 'amount', 'cost'
   ],
   assignedEmployeeName: [
-    'worker', 'employee', 'technik', 'montaznik', 'odpovedna_osoba', 'stavbyvedouci', 
+    'worker', 'employee', 'worker_name', 'technik', 'montaznik', 'odpovedna_osoba', 'stavbyvedouci', 
     'mistr', 'prirazeno', 'zodpovedny', 'pracovnik', 'vedouci_party', 'assigned_to', 'assigned_employee'
   ],
   status: [
@@ -66,12 +67,18 @@ function cleanKey(key: string): string {
 export function suggestFieldMapping(columnName: string, sampleValue?: any): { targetField: TargetFieldType; confidence: number } {
   const clean = cleanKey(columnName);
 
-  // 1. Direct dictionary match
+  // 1. Direct exact dictionary match (100% confidence)
   for (const [targetField, variants] of Object.entries(FIELD_DICTIONARY) as [TargetFieldType, string[]][]) {
     for (const variant of variants) {
       if (clean === variant) {
-        return { targetField, confidence: 98 };
+        return { targetField, confidence: 100 };
       }
+    }
+  }
+
+  // 1b. Fuzzy / substring dictionary match (85% confidence)
+  for (const [targetField, variants] of Object.entries(FIELD_DICTIONARY) as [TargetFieldType, string[]][]) {
+    for (const variant of variants) {
       if (clean.includes(variant) || variant.includes(clean)) {
         return { targetField, confidence: 85 };
       }

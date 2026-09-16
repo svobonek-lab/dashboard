@@ -60,18 +60,15 @@ export const AdminPanel: React.FC = () => {
   const [phone, setPhone] = useState('');
   const [email, setEmail] = useState('');
   const [website, setWebsite] = useState('');
-  const [logoUrl, setLogoUrl] = useState('https://images.unsplash.com/photo-1513694203232-719a280e022f?auto=format&fit=crop&w=160&q=80');
+  const [logoUrl, setLogoUrl] = useState('');
   const [primaryColor, setPrimaryColor] = useState('#2563eb');
   
   // Services (Step 2)
   const [selectedServices, setSelectedServices] = useState<string[]>(['Pergoly', 'Střechy']);
   const servicesList = ['Pergoly', 'Střechy', 'Fasády', 'Rekonstrukce', 'Dřevostavby', 'Ostatní'];
 
-  // Employees (Step 3)
-  const [employees, setEmployees] = useState<Array<{ name: string; specialization: string; phone: string; capacity: number }>>([
-    { name: 'Petr Novotný', specialization: 'Pergoly & Terasy', phone: '+420 777 123 456', capacity: 85 },
-    { name: 'Martin Kovář', specialization: 'Střechy & Krovy', phone: '+420 777 654 321', capacity: 95 }
-  ]);
+  // Employees (Step 3) - PATCH P4: Prázdný seznam zaměstnanců
+  const [employees, setEmployees] = useState<Array<{ name: string; specialization: string; phone: string; capacity: number }>>([]);
   const [newEmpName, setNewEmpName] = useState('');
   const [newEmpSpec, setNewEmpSpec] = useState('');
   const [newEmpPhone, setNewEmpPhone] = useState('');
@@ -185,7 +182,7 @@ export const AdminPanel: React.FC = () => {
         logo_url: logoUrl,
         primary_color: primaryColor,
         services: selectedServices,
-        employees
+        employees: [] // PATCH P4: nevytvářej demo zaměstnance
       });
 
       // Construct URLs
@@ -202,7 +199,7 @@ export const AdminPanel: React.FC = () => {
         portalUrl,
         formUrl
       });
-      showToast('Zákazník byl úspěšně vytvořen a demo data byla vygenerována.', 'success');
+      showToast('Organizace byla úspěšně vytvořena s prázdným pracovištěm.', 'success');
       setWizardStep(5);
       loadOrgs();
     } catch (err) {

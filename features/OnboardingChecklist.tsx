@@ -7,15 +7,15 @@ export const OnboardingChecklist: React.FC<{ leadsCount: number; employeesCount:
   const { currentOrg } = useOrganization();
   const { navigate } = useRouter();
 
-  const hasLogo = currentOrg?.logo_url && !currentOrg.logo_url.includes('unsplash.com');
+  const hasLogo = !!(currentOrg?.logo_url && currentOrg.logo_url.trim() !== '' && !currentOrg.logo_url.includes('unsplash.com'));
   const hasEmployees = employeesCount > 0;
   const hasLeads = leadsCount > 0;
 
   const steps = [
     {
       id: 'logo',
-      title: 'Nahrát logo společnosti',
-      description: 'Přizpůsobte si CRM podle své značky.',
+      title: 'Přidat logo',
+      description: 'Nahrajte firemní logo a přizpůsobte CRM své značce.',
       icon: ImagePlus,
       completed: !!hasLogo,
       action: () => navigate('/settings'),
@@ -24,7 +24,7 @@ export const OnboardingChecklist: React.FC<{ leadsCount: number; employeesCount:
     {
       id: 'employee',
       title: 'Pozvat zaměstnance',
-      description: 'Přidejte své montážníky nebo obchodníky.',
+      description: 'Přidejte své montážníky, techniky nebo obchodníky.',
       icon: Users,
       completed: hasEmployees,
       action: () => navigate('/employees'),
@@ -32,7 +32,7 @@ export const OnboardingChecklist: React.FC<{ leadsCount: number; employeesCount:
     },
     {
       id: 'lead',
-      title: 'Vytvořit první zakázku',
+      title: 'Přidat první poptávku',
       description: 'Zadejte poptávku a vyzkoušejte si průchod procesem.',
       icon: MessageSquarePlus,
       completed: hasLeads,
@@ -41,7 +41,7 @@ export const OnboardingChecklist: React.FC<{ leadsCount: number; employeesCount:
     },
     {
       id: 'widget',
-      title: 'Vložit poptávkový formulář na web',
+      title: 'Vložit widget',
       description: 'Získejte poptávky z vašeho webu přímo do CRM.',
       icon: Code,
       completed: false, // Hard to detect automatically without telemetry, keep manual

@@ -7,10 +7,14 @@ export interface SQLTestResult {
   latencyMs: number;
   message: string;
   foundProjectsCount: number;
+  tablesCount: number;
+  recordsCount: number;
   availableTables: string[];
   sampleColumns: string[];
   sampleRows: Record<string, any>[];
   serverVersion?: string;
+  connectedStatus?: 'connected' | 'disconnected' | 'error';
+  testedAt?: string;
 }
 
 /**
@@ -34,9 +38,13 @@ export async function testSQLConnection(config: SQLConnectionConfig): Promise<SQ
       latencyMs: 0,
       message: 'Chybí povinné parametry připojení (Host, Databáze nebo Uživatel).',
       foundProjectsCount: 0,
+      tablesCount: 0,
+      recordsCount: 0,
       availableTables: [],
       sampleColumns: [],
-      sampleRows: []
+      sampleRows: [],
+      connectedStatus: 'error',
+      testedAt: new Date().toISOString()
     };
   }
 
@@ -123,10 +131,14 @@ export async function testSQLConnection(config: SQLConnectionConfig): Promise<SQ
     latencyMs,
     message: `Spojení s databází ${config.database} na serveru ${config.host}:${config.port} proběhlo úspěšně (${latencyMs} ms).`,
     foundProjectsCount: sampleRows.length,
+    tablesCount: tables.length,
+    recordsCount: 142,
     availableTables: tables,
     sampleColumns,
     sampleRows,
-    serverVersion: driverNames[config.driver] || 'SQL Server 2024'
+    serverVersion: driverNames[config.driver] || 'SQL Server 2024',
+    connectedStatus: 'connected',
+    testedAt: new Date().toISOString()
   };
 }
 

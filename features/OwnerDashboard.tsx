@@ -44,29 +44,29 @@ interface OwnerDashboardProps {
 const KpiCard = ({ title, icon: Icon, value, unit, trend, subtext, color, subtleColor, onClick }: any) => (
   <div 
     onClick={onClick}
-    className="bg-white/90 backdrop-blur-md p-6 rounded-[24px] border border-slate-200/90 hover:border-slate-300 transition-all cursor-pointer shadow-sm hover:shadow-lg hover:-translate-y-1 group relative overflow-hidden flex flex-col justify-between"
+    className="w-full bg-white/90 backdrop-blur-md p-4 sm:p-6 rounded-[20px] sm:rounded-[24px] border border-slate-200/90 hover:border-slate-300 transition-all cursor-pointer shadow-sm hover:shadow-lg hover:-translate-y-1 group relative overflow-hidden flex flex-col justify-between"
     style={{
       borderTop: `4px solid ${color}`,
       boxShadow: `0 4px 20px -2px rgba(15, 23, 42, 0.05)`
     }}
   >
-    <div className="flex items-center justify-between">
+    <div className="flex items-center justify-between gap-2">
       <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">{title}</span>
       <div 
-        className="w-10 h-10 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform"
+        className="w-9 h-9 sm:w-10 sm:h-10 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform shrink-0"
         style={{ backgroundColor: subtleColor, color: color }}
       >
-        <Icon className="w-5 h-5" />
+        <Icon className="w-4.5 h-4.5 sm:w-5 sm:h-5" />
       </div>
     </div>
-    <div className="mt-4">
-      <p className="text-3xl font-black text-slate-900 tracking-tight">
-        {value} {unit && <span className="text-sm font-bold text-slate-500">{unit}</span>}
+    <div className="mt-3 sm:mt-4">
+      <p className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
+        {value} {unit && <span className="text-xs sm:text-sm font-bold text-slate-500">{unit}</span>}
       </p>
       {(trend || subtext) && (
-        <div className="flex items-center gap-1.5 mt-2 text-xs font-bold" style={{ color: color }}>
+        <div className="flex items-center gap-1.5 mt-1.5 sm:mt-2 text-xs font-bold leading-tight" style={{ color: color }}>
           {trend}
-          <span>{subtext}</span>
+          <span className="line-clamp-1">{subtext}</span>
         </div>
       )}
     </div>
@@ -177,8 +177,8 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
         </div>
       </div>
 
-      {/* 4 Main Executive Glassmorphic Metric Cards with Top-Border Glow */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+      {/* 4 Main Executive Glassmorphic Metric Cards with Top-Border Glow (KPI pod sebou na mobilu) */}
+      <div className="flex flex-col sm:grid sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
         <KpiCard
           title="Obrat & Tržby (Q3)"
           icon={DollarSign}
@@ -449,7 +449,7 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
 
       {/* Floating AI Insight Card with dynamic branding */}
       <div 
-        className="fixed bottom-6 right-6 z-40 max-w-sm bg-white/95 backdrop-blur-md border p-4 rounded-2xl shadow-2xl text-slate-800 flex items-start gap-3"
+        className="fixed bottom-4 left-3 right-3 sm:left-auto sm:right-6 sm:bottom-6 z-40 sm:max-w-sm bg-white/95 backdrop-blur-md border p-3.5 sm:p-4 rounded-2xl shadow-2xl text-slate-800 flex items-start gap-3"
         style={{ borderColor: 'var(--border)' }}
       >
         <div 

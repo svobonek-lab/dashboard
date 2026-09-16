@@ -2,6 +2,7 @@ import React from 'react';
 import { Sparkles, ArrowLeft, Building2 } from 'lucide-react';
 import { CompanyBranding } from '../types';
 import { EnterpriseInquiryForm } from '../components/EnterpriseInquiryForm';
+import { useOrganization } from '../context/OrganizationContext';
 
 interface InquiryFormPageProps {
   branding: CompanyBranding;
@@ -14,7 +15,10 @@ export const InquiryFormPage: React.FC<InquiryFormPageProps> = ({
   onSubmitInquiry,
   onBackToDashboard
 }) => {
-  const activeColor = branding.primaryColor || '#2563eb';
+  const { currentOrg } = useOrganization();
+  const effectiveLogo = currentOrg?.logo_url !== undefined ? currentOrg.logo_url : (branding.logoUrl || '');
+  const effectiveName = currentOrg?.name || branding.name || 'Stavební Firma';
+  const activeColor = currentOrg?.primary_color || branding.primaryColor || '#2563eb';
 
   return (
     <div className="fixed inset-0 z-[9999] bg-slate-50 w-screen h-screen flex flex-col overflow-hidden font-sans text-slate-800">
@@ -26,8 +30,8 @@ export const InquiryFormPage: React.FC<InquiryFormPageProps> = ({
             className="w-10 h-10 rounded-xl flex items-center justify-center text-white shadow-sm shrink-0 overflow-hidden"
             style={{ backgroundColor: activeColor }}
           >
-            {branding.logoUrl ? (
-              <img src={branding.logoUrl} alt={branding.name} className="w-full h-full object-cover" />
+            {effectiveLogo ? (
+              <img src={effectiveLogo} alt={effectiveName} className="w-full h-full object-cover" />
             ) : (
               <Sparkles className="w-5 h-5" />
             )}
@@ -35,7 +39,7 @@ export const InquiryFormPage: React.FC<InquiryFormPageProps> = ({
           <div>
             <div className="flex items-center gap-2">
               <span className="text-[10px] font-black uppercase tracking-wider text-slate-500">
-                {branding.name}
+                {effectiveName}
               </span>
               <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: activeColor }} />
               <span className="text-[10px] font-bold" style={{ color: activeColor }}>

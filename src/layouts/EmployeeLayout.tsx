@@ -39,12 +39,8 @@ export const EmployeeLayout: React.FC<EmployeeLayoutProps> = ({ children, leads 
 
   const employeeNavItems = [
     { label: 'Moje zakázky', path: '/employee', icon: Briefcase, exact: true },
-    { label: 'Harmonogram', path: '/employee/schedule', icon: Calendar },
-    { label: 'Navigace & Mapa', path: '/employee/map', icon: MapPin },
-    { label: 'Foto ze stavby', path: '/employee/photos', icon: Camera },
+    { label: 'Můj kalendář', path: '/employee/schedule', icon: Calendar },
     { label: 'Stavební checklist', path: '/employee/checklist', icon: CheckSquare },
-    { label: 'Zprávy z dispečinku', path: '/employee/messages', icon: MessageSquare },
-    { label: 'Můj profil', path: '/employee/profile', icon: User },
   ];
 
   return (
@@ -55,8 +51,12 @@ export const EmployeeLayout: React.FC<EmployeeLayoutProps> = ({ children, leads 
         
         {/* Left: Worker Status & Identity */}
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-2xl bg-brand-primary-soft border border-brand-primary-soft text-brand-primary flex items-center justify-center font-bold shrink-0">
-            <HardHat className="w-5 h-5" />
+          <div className="w-10 h-10 rounded-2xl bg-brand-primary-soft border border-brand-primary-soft text-brand-primary flex items-center justify-center font-bold shrink-0 overflow-hidden">
+            {currentOrg?.logo_url ? (
+              <img src={currentOrg.logo_url} alt={currentOrg?.name || 'Firma'} className="w-full h-full object-cover" />
+            ) : (
+              <HardHat className="w-5 h-5" />
+            )}
           </div>
           <div>
             <div className="flex items-center gap-2">
@@ -166,9 +166,8 @@ export const EmployeeLayout: React.FC<EmployeeLayoutProps> = ({ children, leads 
       <nav className="md:hidden fixed bottom-0 inset-x-0 bg-white/95 backdrop-blur-md border-t border-slate-200/80 pb-safe z-40 shadow-lg">
         <div className="flex items-center justify-around px-2 py-2">
           {[
-            { label: 'Přehled', path: '/employee', icon: Briefcase, exact: true },
-            { label: 'Mapa', path: '/employee/map', icon: MapPin },
-            { label: 'Foto', path: '/employee/photos', icon: Camera },
+            { label: 'Zakázky', path: '/employee', icon: Briefcase, exact: true },
+            { label: 'Kalendář', path: '/employee/schedule', icon: Calendar },
             { label: 'Checklist', path: '/employee/checklist', icon: CheckSquare },
           ].map((tab) => {
             const Icon = tab.icon;

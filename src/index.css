@@ -43,13 +43,26 @@
     --text-inverse: #ffffff;
   }
 
-  body {
+  html, body {
+    overflow-x: hidden;
+    max-width: 100vw;
     background-color: var(--surface-secondary);
     color: var(--text);
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     font-feature-settings: "cv02", "cv03", "cv04", "cv11";
   }
+}
+
+/* Kanban mobile UX scroll-snap specifications */
+.kanban-scroll-container {
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+}
+
+.kanban-column-snap {
+  min-width: 320px;
+  scroll-snap-align: start;
 }
 
 /* Micro interaction utility classes */

@@ -13,7 +13,11 @@ import {
   ShieldCheck, 
   Info,
   CheckCircle2,
-  FolderSync
+  FolderSync,
+  Database,
+  Key,
+  Globe,
+  Files
 } from 'lucide-react';
 
 interface DockerComposeModalProps {
@@ -86,6 +90,53 @@ export const DockerComposeModal: React.FC<DockerComposeModalProps> = ({
         {/* Content Body */}
         <div className="p-6 overflow-y-auto flex-1 space-y-6 bg-slate-50">
           
+          {/* 4 Pillars Architecture Status (SQL, Files, HTTPS, API Token) */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-2.5">
+            <div className="p-3 rounded-xl bg-white border border-slate-200 shadow-xs flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
+                <Database className="w-4 h-4" />
+              </div>
+              <div className="min-w-0">
+                <div className="text-[10px] uppercase font-bold text-slate-400">Pillar 1</div>
+                <div className="text-xs font-bold text-slate-800 truncate">SQL Databáze</div>
+                <div className="text-[10px] text-slate-500 truncate">{config.databaseSync?.driver?.toUpperCase() || 'MariaDB/PG'}</div>
+              </div>
+            </div>
+
+            <div className="p-3 rounded-xl bg-white border border-slate-200 shadow-xs flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center shrink-0">
+                <Files className="w-4 h-4" />
+              </div>
+              <div className="min-w-0">
+                <div className="text-[10px] uppercase font-bold text-slate-400">Pillar 2</div>
+                <div className="text-xs font-bold text-slate-800 truncate">Soubory (Files)</div>
+                <div className="text-[10px] text-slate-500 truncate">4 složky / Inotify</div>
+              </div>
+            </div>
+
+            <div className="p-3 rounded-xl bg-white border border-slate-200 shadow-xs flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
+                <Globe className="w-4 h-4" />
+              </div>
+              <div className="min-w-0">
+                <div className="text-[10px] uppercase font-bold text-slate-400">Pillar 3</div>
+                <div className="text-xs font-bold text-slate-800 truncate">HTTPS / TLS 1.3</div>
+                <div className="text-[10px] text-slate-500 truncate">Strict SSL & AES-256</div>
+              </div>
+            </div>
+
+            <div className="p-3 rounded-xl bg-white border border-slate-200 shadow-xs flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-lg bg-purple-50 text-purple-600 flex items-center justify-center shrink-0">
+                <Key className="w-4 h-4" />
+              </div>
+              <div className="min-w-0">
+                <div className="text-[10px] uppercase font-bold text-slate-400">Pillar 4</div>
+                <div className="text-xs font-bold text-slate-800 truncate">API Token</div>
+                <div className="text-[10px] text-slate-500 truncate font-mono">Bearer auth</div>
+              </div>
+            </div>
+          </div>
+
           {/* Quick Steps Guide */}
           <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs">
             <h4 className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-3 flex items-center gap-2">
