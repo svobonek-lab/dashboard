@@ -187,7 +187,7 @@ export const AuditCard: React.FC<AuditCardProps> = ({
       doc.text(`${branding.phone}`, 60, 210);
       doc.text(`${branding.email}`, 60, 218);
       doc.setTextColor(251, 191, 36); // amber-400
-      doc.text(`${audit.googleReviewsRating} ★ (${audit.googleReviewsCount} recenzí)`, 60, 226);
+      doc.text(audit.googleReviewsRating ? `${audit.googleReviewsRating} ★ (${audit.googleReviewsCount} recenzí)` : 'Nenalezeno', 60, 226);
       doc.setTextColor(255, 255, 255);
       doc.text(safeServices.slice(0, 4).join(', '), 60, 234);
 
@@ -473,7 +473,7 @@ export const AuditCard: React.FC<AuditCardProps> = ({
             <span className="text-slate-500 uppercase tracking-wider text-[10px] font-bold">Google Hodnocení:</span>
             <span className="text-amber-400 font-extrabold flex items-center gap-1">
               <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
-              {audit.googleReviewsRating} ({audit.googleReviewsCount} recenzí)
+              {audit.googleReviewsRating ? `${audit.googleReviewsRating} (${audit.googleReviewsCount} recenzí)` : 'Nenalezeno'}
             </span>
           </div>
         </div>
@@ -790,7 +790,7 @@ export const AuditCard: React.FC<AuditCardProps> = ({
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div className="text-center p-4 bg-white/50 rounded-2xl border border-slate-200 flex flex-col justify-center items-center">
-                  <p className="text-4xl font-black text-amber-400">{audit.googleReviewsRating} ★</p>
+                  <p className="text-4xl font-black text-amber-400">{audit.googleReviewsRating ? `${audit.googleReviewsRating} ★` : 'N/A'}</p>
                   <p className="text-xs text-slate-500 mt-1">{audit.googleReviewsCount} celkových hodnocení</p>
                   <div className="flex gap-1 mt-2 text-amber-400">
                     <Star className="w-4 h-4 fill-amber-400" />
@@ -804,7 +804,7 @@ export const AuditCard: React.FC<AuditCardProps> = ({
                 <div className="md:col-span-2 space-y-2">
                   <span className="text-[10px] text-slate-500 uppercase font-bold">Shrnutí zákaznického sentimentu:</span>
                   <p className="text-xs text-slate-700 leading-relaxed bg-white/20 p-3.5 rounded-xl border border-slate-200/60">
-                    "{audit.googleReviewsSummary}"
+                    {audit.googleReviewsSummary ? `"${audit.googleReviewsSummary}"` : 'Zákaznické recenze Google nebyly na webu detekovány.'}
                   </p>
                   <div className="flex gap-3 text-[10px] pt-1">
                     <span className="text-green-400 flex items-center gap-1 bg-green-950/40 px-2 py-1 rounded-md border border-green-900/30">

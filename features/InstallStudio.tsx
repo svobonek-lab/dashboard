@@ -7,7 +7,7 @@ import {
   Users, 
   MapPin, 
   Mail, 
-  Phone,
+  Phone, 
   Building,
   Briefcase,
   Code2, 
@@ -35,12 +35,15 @@ import {
   AlertCircle,
   RefreshCw,
   Zap,
-  Key
+  Key,
+  Image as ImageIcon,
+  X
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { CompanyBranding, Employee } from '../types';
 import { useOrganization } from '../context/OrganizationContext';
 import { analyzeWebsiteWithGemini } from '../lib/gemini';
+import { useRouter } from '@/src/app/router';
 
 interface InstallStudioProps {
   currentBranding: CompanyBranding;
@@ -54,6 +57,7 @@ export const InstallStudio: React.FC<InstallStudioProps> = ({
   onClose
 }) => {
   const { createCustomerAdmin, impersonateOrganization } = useOrganization();
+  const { navigate } = useRouter();
   const [currentStep, setCurrentStep] = useState(1);
   const [isDeploying, setIsDeploying] = useState(false);
   const [deployStepIndex, setDeployStepIndex] = useState(0);
@@ -79,13 +83,15 @@ export const InstallStudio: React.FC<InstallStudioProps> = ({
   const [extractedScore, setExtractedScore] = useState<number | null>(null);
   const [missingNotice, setMissingNotice] = useState<string | null>(null);
 
-  // STEP 2: Company Identity
+  // STEP 2: Company Identity (Extracted REAL values)
   const [companyName, setCompanyName] = useState('');
   const [phone, setPhone] = useState('');
   const [emailAddress, setEmailAddress] = useState('');
   const [address, setAddress] = useState('');
   const [city, setCity] = useState('');
-  const [logoPreview, setLogoPreview] = useState('https://images.unsplash.com/photo-1541888946425-d0fbb18f0653?auto=format&fit=crop&w=160&q=80');
+  const [logoPreview, setLogoPreview] = useState('');
+  const [faviconUrl, setFaviconUrl] = useState('');
+  const [heroImageUrl, setHeroImageUrl] = useState('');
   const [primaryColor, setPrimaryColor] = useState('#2563eb');
   const [secondaryColor, setSecondaryColor] = useState('#0f172a');
 
@@ -100,19 +106,16 @@ export const InstallStudio: React.FC<InstallStudioProps> = ({
     { id: 'groundworks', name: 'Zemní & Základové práce', icon: '⚡', desc: 'Výkopové práce, betonové patky, základové desky a opěrné zdi' }
   ];
 
-  const [selectedServices, setSelectedServices] = useState<string[]>([
-    'Pergoly & Terasy',
-    'Dřevostavby na klíč'
-  ]);
+  const [selectedServices, setSelectedServices] = useState<string[]>([]);
   const [customServiceInput, setCustomServiceInput] = useState('');
 
   // STEP 4: Owner Account
-  const [ownerName, setOwnerName] = useState('Jednatel společnosti');
+  const [ownerName, setOwnerName] = useState('');
   const [ownerEmail, setOwnerEmail] = useState('');
-  const [ownerPassword, setOwnerPassword] = useState('StavbaSecure2026!');
   const [ownerPhone, setOwnerPhone] = useState('');
+  const [deployError, setDeployError] = useState<string | null>(null);
 
-  // STEP 5: Employees & Craftsmen
+  // STEP 5: Employees & Craftsmen (CLEAN TEAM - ZERO DEMO DATA)
   const [employeesList, setEmployeesList] = useState<Array<{
     id: string;
     name: string;
@@ -122,35 +125,14 @@ export const InstallStudio: React.FC<InstallStudioProps> = ({
     avatar: string;
     specialization: string;
     capacity: number;
-  }>>([
-    {
-      id: 'emp-1',
-      name: 'Petr Novotný',
-      role: 'Hlavní mistr realizací',
-      phone: '+420 774 112 334',
-      email: 'p.novotny@stavba.cz',
-      avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80',
-      specialization: 'Pergoly & Terasy',
-      capacity: 85
-    },
-    {
-      id: 'emp-2',
-      name: 'Marek Dvořák',
-      role: 'Vedoucí montér',
-      phone: '+420 775 889 001',
-      email: 'm.dvorak@stavba.cz',
-      avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=150&q=80',
-      specialization: 'Dřevostavby na klíč',
-      capacity: 90
-    }
-  ]);
+  }>>([]);
 
   const [newEmpName, setNewEmpName] = useState('');
   const [newEmpRole, setNewEmpRole] = useState('Mistr');
-  const [newEmpPhone, setNewEmpPhone] = useState('+420 777 000 000');
+  const [newEmpPhone, setNewEmpPhone] = useState('');
   const [newEmpEmail, setNewEmpEmail] = useState('');
-  const [newEmpSpec, setNewEmpSpec] = useState('Montážní práce');
-  const [newEmpCapacity, setNewEmpCapacity] = useState(80);
+  const [newEmpSpec, setNewEmpSpec] = useState('Stavební práce');
+  const [newEmpCapacity, setNewEmpCapacity] = useState(100);
 
   // Deployment Steps
   const deploymentPhases = [
@@ -161,7 +143,7 @@ export const InstallStudio: React.FC<InstallStudioProps> = ({
     'Registrace vazeb v public.organization_members...',
     'Provisioning týmu a mistrů v public.employees...',
     'Uložení white-label nastavení v public.company_settings...',
-    'Generování úvodních klientských poptávek pro region...',
+    'Inicializace čistého pracovního prostoru (0 leadů)...',
     'Synchronizace Super Adminu a aktivace linků...'
   ];
 
@@ -172,62 +154,47 @@ export const InstallStudio: React.FC<InstallStudioProps> = ({
 
     setIsAiImporting(true);
     setMissingNotice(null);
-    setImportProgress('Připojuji se k webovému serveru...');
+    setImportProgress('Analyzuji web firmy…');
 
     try {
-      const timeout1 = setTimeout(() => setImportProgress('Stahuji HTML a analyzuji OpenGraph data...'), 400);
-      const timeout2 = setTimeout(() => setImportProgress('Detekuji reálné logo, favicon a barevnou paletu...'), 900);
-      const timeout3 = setTimeout(() => setImportProgress('Čtu poskytované stavební služby a kontaktní údaje...'), 1400);
-
       const result = await analyzeWebsiteWithGemini(urlToAnalyze);
 
-      clearTimeout(timeout1);
-      clearTimeout(timeout2);
-      clearTimeout(timeout3);
-
-      const branding = result.branding;
-      if (branding) {
-        if (branding.name) setCompanyName(branding.name);
-        if (branding.logoUrl) setLogoPreview(branding.logoUrl);
-        if (branding.primaryColor) setPrimaryColor(branding.primaryColor);
-        if (branding.phone) setPhone(branding.phone);
-        if (branding.email) {
-          setEmailAddress(branding.email);
-          setOwnerEmail(branding.email);
-        }
-        if (branding.city) setCity(branding.city);
-        if (branding.address) setAddress(branding.address);
-        if (branding.services && branding.services.length > 0) {
-          setSelectedServices(branding.services);
-        }
-
-        setExtractedScore(result.audit?.score || 88);
-
-        // Check if any critical field was missing so user can confirm
-        const missing = [];
-        if (!branding.phone) missing.push('telefonní číslo');
-        if (!branding.email) missing.push('e-mail');
-        if (!branding.city) missing.push('město / region');
-        if (missing.length > 0) {
-          setMissingNotice(`Následující údaje nebyly na webu automaticky nalezeny: ${missing.join(', ')}. Prosím doplňte je v dalším kroku.`);
-        }
+      if (result.audit?.analysisFailed || (!result.companyName && !result.branding?.name)) {
+        setIsAiImporting(false);
+        setMissingNotice('Automatická analýza nenašla všechny parametry webu. Můžete je doplnit ručně.');
+        setCurrentStep(2);
+        return;
       }
 
-      setImportProgress('Extrakce dokončena!');
-      setTimeout(() => {
-        setIsAiImporting(false);
-        setCurrentStep(2);
-      }, 500);
-    } catch (err: any) {
-      console.warn('Real website extraction failed:', err);
+      // Populate extracted real values
+      if (result.companyName) setCompanyName(result.companyName);
+      if (result.logoUrl) setLogoPreview(result.logoUrl);
+      if (result.faviconUrl) setFaviconUrl(result.faviconUrl);
+      if (result.heroImageUrl) setHeroImageUrl(result.heroImageUrl);
+      if (result.primaryColor) setPrimaryColor(result.primaryColor);
+      if (result.secondaryColor) setSecondaryColor(result.secondaryColor);
+      if (result.phone) {
+        setPhone(result.phone);
+        setOwnerPhone(result.phone);
+      }
+      if (result.email) {
+        setEmailAddress(result.email);
+        setOwnerEmail(result.email);
+      }
+      if (result.address) setAddress(result.address);
+      if (result.services && result.services.length > 0) {
+        setSelectedServices(result.services);
+      } else {
+        setSelectedServices(['Pergoly & Terasy']);
+      }
+
+      setExtractedScore(result.confidence?.companyName || 85);
       setIsAiImporting(false);
-      // Derive clean name from URL directly
-      let domainName = urlToAnalyze.replace(/https?:\/\//, '').replace('www.', '').split('/')[0];
-      const clean = domainName.split('.')[0].replace(/[-_]/g, ' ');
-      const derived = clean.charAt(0).toUpperCase() + clean.slice(1) + ' s.r.o.';
-      setCompanyName(derived);
-      setEmailAddress(`info@${domainName}`);
-      setOwnerEmail(`info@${domainName}`);
+      setCurrentStep(2);
+    } catch (err: any) {
+      console.warn('Real website extraction error:', err);
+      setIsAiImporting(false);
+      setMissingNotice('Nepodařilo se připojit k webu. Doplňte prosím údaje ručně.');
       setCurrentStep(2);
     }
   };
@@ -285,8 +252,10 @@ export const InstallStudio: React.FC<InstallStudioProps> = ({
 
   // 9-STEP DEPLOYMENT PIPELINE
   const handleDeployOS = async () => {
+    if (isDeploying) return;
     setIsDeploying(true);
     setDeployStepIndex(0);
+    setDeployError(null);
 
     try {
       const finalName = companyName || 'Moje Stavební Firma s.r.o.';
@@ -302,7 +271,6 @@ export const InstallStudio: React.FC<InstallStudioProps> = ({
         address: address || '',
         owner_name: ownerName,
         owner_email: ownerEmail || emailAddress,
-        owner_password: ownerPassword,
         services: selectedServices,
         employees: employeesList.map(e => ({
           name: e.name,
@@ -321,7 +289,6 @@ export const InstallStudio: React.FC<InstallStudioProps> = ({
       setDeploySuccessData({
         orgId: res.orgId,
         ownerEmail: res.ownerEmail,
-        ownerPassword: res.ownerPassword || ownerPassword,
         crmUrl: res.crmUrl,
         portalUrl: res.portalUrl,
         formUrl: res.formUrl,
@@ -350,9 +317,9 @@ export const InstallStudio: React.FC<InstallStudioProps> = ({
       } catch (e) {}
 
       setCurrentStep(7);
-    } catch (err) {
+    } catch (err: any) {
       console.error('Failed to deploy organization:', err);
-      setCurrentStep(7);
+      setDeployError(err?.message || 'Chyba při vytváření organizace v databázi.');
     } finally {
       setIsDeploying(false);
     }
@@ -370,15 +337,15 @@ export const InstallStudio: React.FC<InstallStudioProps> = ({
 PŘEDÁVACÍ PROTOKOL KLIENTSKÉHO CRM - BUILDFLOW OS
 =====================================================
 Firma: ${companyName}
-Web: ${websiteUrl}
+Web: ${websiteUrl || 'Neuvedeno'}
 ID Organizace: ${deploySuccessData.orgId}
 Datum nasazení: ${new Date().toLocaleString('cs-CZ')}
 
 -----------------------------------------------------
-1. PŘIHLAŠOVACÍ ÚDAJE SPRÁVCE (MAJITEL)
+1. PŘÍSTUPOVÉ ÚDAJE SPRÁVCE (MAJITEL)
 -----------------------------------------------------
 E-mail: ${deploySuccessData.ownerEmail}
-Heslo: ${deploySuccessData.ownerPassword || ownerPassword}
+Heslo: [Nastaví si správce přes zabezpečený odkaz / e-mailovou pozvánku]
 Administrace CRM: ${deploySuccessData.crmUrl}
 
 -----------------------------------------------------
@@ -392,8 +359,15 @@ Poptávkový formulář pro web: ${deploySuccessData.formUrl}
 -----------------------------------------------------
 ${deploySuccessData.widgetScript}
 
+-----------------------------------------------------
+4. BEZPEČNOSTNÍ POKYNY K INTEGRACI
+-----------------------------------------------------
+- Vložte skript embed widgetu před uzavírací značku </body> na webu klienta.
+- Tento soubor neobsahuje žádná citlivá hesla, API klíče ani přístupové tokeny.
+- Majitel účtu se poprvé přihlásí a nastaví heslo prostřednictvím zabezpečeného odkazu.
+
 =====================================================
-Systém je připraven k okamžitému provozu.
+Systém je připraven k provozu.
 `;
     const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
     const url = URL.createObjectURL(blob);
@@ -496,6 +470,13 @@ Systém je připraven k okamžitému provozu.
             </p>
           </div>
 
+          {missingNotice && (
+            <div className="p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-800 text-xs flex items-start gap-2.5">
+              <AlertCircle className="w-4 h-4 shrink-0 mt-0.5 text-amber-600" />
+              <span>{missingNotice}</span>
+            </div>
+          )}
+
           <div className="p-6 bg-slate-50 rounded-2xl border border-slate-200/80 space-y-4">
             <div>
               <label className="text-xs font-bold text-slate-700 block mb-2">Webová adresa (URL)</label>
@@ -579,63 +560,95 @@ Systém je připraven k okamžitému provozu.
         </div>
       )}
 
-      {/* STEP 2: Company Identity */}
+      {/* STEP 2: Company Identity (Extracted REAL values preview & editing) */}
       {currentStep === 2 && (
         <div className="bg-white border border-slate-200 rounded-3xl p-8 space-y-6 shadow-xl">
           <div>
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/20 text-xs font-bold mb-3">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/10 text-amber-500 border border-amber-500/20 text-xs font-bold mb-3">
               <Building className="w-3.5 h-3.5" />
-              <span>Krok 2: Firemní identita a kontakty</span>
+              <span>Krok 2: Náhled a kontrola extrahovaných parametrů</span>
             </div>
-            <h2 className="text-xl font-bold text-slate-900">Základní údaje společnosti</h2>
+            <h2 className="text-xl font-bold text-slate-900">Extrahované reálné hodnoty z webu</h2>
             <p className="text-xs text-slate-500 mt-1">
-              Zkontrolujte a upravte extrahované údaje, které se propíší do klientského CRM i veřejného formuláře.
+              Zkontrolujte a upravte hodnoty extrahované analyzátorem. Chybějící položky jsou zřetelně označeny a můžete je ručně doplnit.
             </p>
           </div>
 
           {missingNotice && (
-            <div className="p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs flex items-start gap-2.5">
-              <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+            <div className="p-3.5 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 text-xs flex items-start gap-2.5">
+              <AlertCircle className="w-4 h-4 shrink-0 mt-0.5 text-amber-600" />
               <span>{missingNotice}</span>
             </div>
           )}
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+            {/* Company Name */}
             <div>
-              <label className="text-xs font-bold text-slate-700 block mb-1">Název firmy *</label>
+              <div className="flex items-center justify-between mb-1">
+                <label className="text-xs font-bold text-slate-700">Název firmy *</label>
+                {!companyName.trim() && (
+                  <span className="px-2 py-0.5 rounded-md bg-amber-50 text-amber-700 border border-amber-200 text-[10px] font-bold">
+                    Nenalezeno – doplňte ručně
+                  </span>
+                )}
+              </div>
               <input
                 type="text"
                 placeholder="např. Pergoly & Terasy Praha s.r.o."
                 value={companyName}
                 onChange={(e) => setCompanyName(e.target.value)}
-                className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 placeholder-slate-500 focus:outline-none focus:border-amber-500"
+                className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:border-amber-500"
               />
             </div>
 
+            {/* Website URL */}
             <div>
-              <label className="text-xs font-bold text-slate-700 block mb-1">Webová stránka</label>
+              <div className="flex items-center justify-between mb-1">
+                <label className="text-xs font-bold text-slate-700">Webová stránka</label>
+                {!websiteUrl.trim() && (
+                  <span className="px-2 py-0.5 rounded-md bg-amber-50 text-amber-700 border border-amber-200 text-[10px] font-bold">
+                    Nenalezeno – doplňte ručně
+                  </span>
+                )}
+              </div>
               <input
                 type="text"
                 placeholder="https://..."
                 value={websiteUrl}
                 onChange={(e) => setWebsiteUrl(e.target.value)}
-                className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 placeholder-slate-500 focus:outline-none focus:border-amber-500"
+                className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:border-amber-500"
               />
             </div>
 
+            {/* Phone */}
             <div>
-              <label className="text-xs font-bold text-slate-700 block mb-1">Telefon pro poptávky *</label>
+              <div className="flex items-center justify-between mb-1">
+                <label className="text-xs font-bold text-slate-700">Telefon pro poptávky *</label>
+                {!phone.trim() && (
+                  <span className="px-2 py-0.5 rounded-md bg-amber-50 text-amber-700 border border-amber-200 text-[10px] font-bold">
+                    Nenalezeno – doplňte ručně
+                  </span>
+                )}
+              </div>
               <input
                 type="text"
                 placeholder="+420 774 889 100"
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
-                className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 placeholder-slate-500 focus:outline-none focus:border-amber-500"
+                className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:border-amber-500"
               />
             </div>
 
+            {/* Email */}
             <div>
-              <label className="text-xs font-bold text-slate-700 block mb-1">Oficiální e-mail *</label>
+              <div className="flex items-center justify-between mb-1">
+                <label className="text-xs font-bold text-slate-700">Oficiální e-mail *</label>
+                {!emailAddress.trim() && (
+                  <span className="px-2 py-0.5 rounded-md bg-amber-50 text-amber-700 border border-amber-200 text-[10px] font-bold">
+                    Nenalezeno – doplňte ručně
+                  </span>
+                )}
+              </div>
               <input
                 type="email"
                 placeholder="info@firma.cz"
@@ -644,81 +657,207 @@ Systém je připraven k okamžitému provozu.
                   setEmailAddress(e.target.value);
                   if (!ownerEmail) setOwnerEmail(e.target.value);
                 }}
-                className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 placeholder-slate-500 focus:outline-none focus:border-amber-500"
+                className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:border-amber-500"
               />
             </div>
 
+            {/* Address */}
             <div>
-              <label className="text-xs font-bold text-slate-700 block mb-1">Sídlo / Ulice a č.p.</label>
+              <div className="flex items-center justify-between mb-1">
+                <label className="text-xs font-bold text-slate-700">Sídlo / Adresa</label>
+                {!address.trim() && (
+                  <span className="px-2 py-0.5 rounded-md bg-amber-50 text-amber-700 border border-amber-200 text-[10px] font-bold">
+                    Nenalezeno – doplňte ručně
+                  </span>
+                )}
+              </div>
               <input
                 type="text"
-                placeholder="Průmyslová 1420"
+                placeholder="např. Průmyslová 1420, 102 00 Praha 10"
                 value={address}
                 onChange={(e) => setAddress(e.target.value)}
-                className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 placeholder-slate-500 focus:outline-none focus:border-amber-500"
+                className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:border-amber-500"
               />
             </div>
 
+            {/* City / Region */}
             <div>
-              <label className="text-xs font-bold text-slate-700 block mb-1">Město / Region působnosti</label>
+              <div className="flex items-center justify-between mb-1">
+                <label className="text-xs font-bold text-slate-700">Město / Region působnosti</label>
+                {!city.trim() && (
+                  <span className="px-2 py-0.5 rounded-md bg-amber-50 text-amber-700 border border-amber-200 text-[10px] font-bold">
+                    Nenalezeno – doplňte ručně
+                  </span>
+                )}
+              </div>
               <input
                 type="text"
-                placeholder="Praha a Středočeský kraj"
+                placeholder="např. Praha a Středočeský kraj"
                 value={city}
                 onChange={(e) => setCity(e.target.value)}
-                className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 placeholder-slate-500 focus:outline-none focus:border-amber-500"
+                className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:border-amber-500"
               />
             </div>
           </div>
 
-          {/* Logo & Colors */}
-          <div className="pt-4 border-t border-slate-200 grid grid-cols-1 md:grid-cols-2 gap-5">
-            <div>
-              <label className="text-xs font-bold text-slate-700 block mb-2">Firemní logo</label>
-              <div className="flex items-center gap-4">
-                <div className="w-16 h-16 rounded-2xl bg-slate-50 border border-slate-200 flex items-center justify-center overflow-hidden p-2">
-                  {logoPreview ? (
-                    <img src={logoPreview} alt="Logo" className="w-full h-full object-contain" />
+          {/* Logo, Colors, Favicon, Hero Section */}
+          <div className="pt-5 border-t border-slate-200 space-y-5">
+            <h3 className="text-sm font-bold text-slate-900">Vizuální identita a média</h3>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+              {/* Logo Section */}
+              <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-3">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-bold text-slate-700">Firemní logo</label>
+                  {!logoPreview ? (
+                    <span className="px-2 py-0.5 rounded-md bg-amber-50 text-amber-700 border border-amber-200 text-[10px] font-bold">
+                      Nenalezeno – doplňte ručně
+                    </span>
                   ) : (
-                    <Upload className="w-6 h-6 text-slate-600" />
+                    <span className="px-2 py-0.5 rounded-md bg-green-50 text-green-700 border border-green-200 text-[10px] font-bold">
+                      Detekováno z webu
+                    </span>
                   )}
                 </div>
-                <div className="space-y-1.5">
-                  <label className="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-bold text-slate-900 cursor-pointer inline-flex items-center gap-1.5 transition-colors">
-                    <Upload className="w-3.5 h-3.5" />
-                    <span>Nahrát vlastní logo</span>
-                    <input type="file" accept="image/*" onChange={handleFileUpload} className="hidden" />
-                  </label>
-                  <p className="text-[10px] text-slate-500">Doporučeno PNG nebo SVG s transparentním pozadím.</p>
+                
+                <div className="flex items-center gap-3">
+                  <div className="w-16 h-16 rounded-xl bg-white border border-slate-200 flex items-center justify-center overflow-hidden p-2">
+                    {logoPreview ? (
+                      <img src={logoPreview} alt="Logo preview" className="max-w-full max-h-full object-contain" />
+                    ) : (
+                      <Upload className="w-6 h-6 text-slate-400" />
+                    )}
+                  </div>
+                  <div className="space-y-1.5 flex-1">
+                    <div className="flex items-center gap-2">
+                      <label className="px-3 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-xs font-bold text-white cursor-pointer inline-flex items-center gap-1.5 transition-colors">
+                        <Upload className="w-3.5 h-3.5" />
+                        <span>Nahrát logo</span>
+                        <input type="file" accept="image/*" onChange={handleFileUpload} className="hidden" />
+                      </label>
+                      {logoPreview && (
+                        <button
+                          type="button"
+                          onClick={() => setLogoPreview('')}
+                          className="px-2.5 py-1.5 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 text-xs font-bold inline-flex items-center gap-1 transition-colors"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                          <span>Odstranit</span>
+                        </button>
+                      )}
+                    </div>
+                    <p className="text-[10px] text-slate-500">Formát PNG, SVG nebo JPG s transparentním pozadím.</p>
+                  </div>
                 </div>
               </div>
-            </div>
 
-            <div>
-              <label className="text-xs font-bold text-slate-700 block mb-2">Barva značky (Primary Color)</label>
-              <div className="flex items-center gap-3">
-                <input
-                  type="color"
-                  value={primaryColor}
-                  onChange={(e) => setPrimaryColor(e.target.value)}
-                  className="w-10 h-10 rounded-xl bg-transparent border-0 cursor-pointer"
-                />
-                <input
-                  type="text"
-                  value={primaryColor}
-                  onChange={(e) => setPrimaryColor(e.target.value)}
-                  className="w-32 px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono text-slate-900"
-                />
-                <div className="flex gap-1.5">
-                  {['#2563eb', '#059669', '#d97706', '#dc2626', '#7c3aed'].map((c) => (
-                    <button
-                      key={c}
-                      type="button"
-                      onClick={() => setPrimaryColor(c)}
-                      className="w-6 h-6 rounded-full border border-slate-300 transition-transform hover:scale-110"
-                      style={{ backgroundColor: c }}
-                    />
-                  ))}
+              {/* Favicon & Hero image */}
+              <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-3">
+                <label className="text-xs font-bold text-slate-700 block">Favicon & Úvodní obrázek</label>
+                <div className="flex items-center gap-4">
+                  {/* Favicon */}
+                  <div className="flex items-center gap-2">
+                    <div className="w-10 h-10 rounded-xl bg-white border border-slate-200 flex items-center justify-center overflow-hidden p-1.5">
+                      {faviconUrl ? (
+                        <img src={faviconUrl} alt="Favicon" className="w-6 h-6 object-contain" />
+                      ) : (
+                        <Globe className="w-4 h-4 text-slate-400" />
+                      )}
+                    </div>
+                    <div>
+                      <span className="text-[11px] font-bold text-slate-800 block">Favicon</span>
+                      <span className="text-[10px] text-slate-500">{faviconUrl ? 'Nalezen' : 'Výchozí'}</span>
+                    </div>
+                  </div>
+
+                  {/* Hero Image */}
+                  <div className="flex items-center gap-2 border-l border-slate-200 pl-4">
+                    <div className="w-12 h-10 rounded-xl bg-white border border-slate-200 flex items-center justify-center overflow-hidden">
+                      {heroImageUrl ? (
+                        <img src={heroImageUrl} alt="Hero" className="w-full h-full object-cover" />
+                      ) : (
+                        <ImageIcon className="w-4 h-4 text-slate-400" />
+                      )}
+                    </div>
+                    <div>
+                      <span className="text-[11px] font-bold text-slate-800 block">Hero obrázek</span>
+                      <span className="text-[10px] text-slate-500">{heroImageUrl ? 'Nalezen' : 'Nenalezen'}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Primary Color */}
+              <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-2.5">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-bold text-slate-700">Primární barva (Primary Color)</label>
+                  {!primaryColor && (
+                    <span className="px-2 py-0.5 rounded-md bg-amber-50 text-amber-700 border border-amber-200 text-[10px] font-bold">
+                      Nenalezeno – doplňte ručně
+                    </span>
+                  )}
+                </div>
+                <div className="flex items-center gap-3">
+                  <input
+                    type="color"
+                    value={primaryColor || '#2563eb'}
+                    onChange={(e) => setPrimaryColor(e.target.value)}
+                    className="w-9 h-9 rounded-xl bg-transparent border-0 cursor-pointer"
+                  />
+                  <input
+                    type="text"
+                    value={primaryColor}
+                    onChange={(e) => setPrimaryColor(e.target.value)}
+                    className="w-28 px-2.5 py-1.5 bg-white border border-slate-200 rounded-xl text-xs font-mono text-slate-900"
+                  />
+                  <div className="flex gap-1">
+                    {['#2563eb', '#059669', '#d97706', '#dc2626', '#7c3aed'].map((c) => (
+                      <button
+                        key={c}
+                        type="button"
+                        onClick={() => setPrimaryColor(c)}
+                        className="w-5 h-5 rounded-full border border-slate-300 transition-transform hover:scale-110"
+                        style={{ backgroundColor: c }}
+                      />
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {/* Secondary Color */}
+              <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-2.5">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-bold text-slate-700">Sekundární barva (Secondary Color)</label>
+                  {!secondaryColor && (
+                    <span className="px-2 py-0.5 rounded-md bg-amber-50 text-amber-700 border border-amber-200 text-[10px] font-bold">
+                      Nenalezeno – doplňte ručně
+                    </span>
+                  )}
+                </div>
+                <div className="flex items-center gap-3">
+                  <input
+                    type="color"
+                    value={secondaryColor || '#0f172a'}
+                    onChange={(e) => setSecondaryColor(e.target.value)}
+                    className="w-9 h-9 rounded-xl bg-transparent border-0 cursor-pointer"
+                  />
+                  <input
+                    type="text"
+                    value={secondaryColor}
+                    onChange={(e) => setSecondaryColor(e.target.value)}
+                    className="w-28 px-2.5 py-1.5 bg-white border border-slate-200 rounded-xl text-xs font-mono text-slate-900"
+                  />
+                  <div className="flex gap-1">
+                    {['#0f172a', '#1e293b', '#18181b', '#1c1917', '#334155'].map((c) => (
+                      <button
+                        key={c}
+                        type="button"
+                        onClick={() => setSecondaryColor(c)}
+                        className="w-5 h-5 rounded-full border border-slate-300 transition-transform hover:scale-110"
+                        style={{ backgroundColor: c }}
+                      />
+                    ))}
+                  </div>
                 </div>
               </div>
             </div>
@@ -727,16 +866,16 @@ Systém je připraven k okamžitému provozu.
           <div className="flex items-center justify-between pt-4 border-t border-slate-200">
             <button
               onClick={() => setCurrentStep(1)}
-              className="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-700 text-xs font-bold transition-all flex items-center gap-1.5"
+              className="px-4 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition-all flex items-center gap-1.5"
             >
               <ArrowLeft className="w-4 h-4" />
-              <span>Zpět</span>
+              <span>Zpět na webovou adresu</span>
             </button>
 
             <button
               onClick={() => setCurrentStep(3)}
               disabled={!companyName.trim()}
-              className="px-6 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 disabled:opacity-50 text-slate-950 text-xs font-black transition-all flex items-center gap-2"
+              className="px-6 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 disabled:opacity-50 text-slate-950 text-xs font-black transition-all flex items-center gap-2 shadow-md"
             >
               <span>Pokračovat k portfoliu služeb</span>
               <ArrowRight className="w-4 h-4" />
@@ -843,9 +982,9 @@ Systém je připraven k okamžitému provozu.
               <ShieldCheck className="w-3.5 h-3.5" />
               <span>Krok 4: Administrátorský účet majitele</span>
             </div>
-            <h2 className="text-xl font-bold text-slate-900">Přihlašovací údaje pro vedení firmy</h2>
+            <h2 className="text-xl font-bold text-slate-900">Správcovský účet pro vedení firmy</h2>
             <p className="text-xs text-slate-500 mt-1">
-              Vygenerovaný účet s rolí Owner bude mít plný přístup do CRM dashboardu a nastavení.
+              Účet s rolí Owner bude mít plný přístup do CRM dashboardu a správy organizace.
             </p>
           </div>
 
@@ -872,7 +1011,7 @@ Systém je připraven k okamžitému provozu.
               />
             </div>
 
-            <div>
+            <div className="md:col-span-2">
               <label className="text-xs font-bold text-slate-700 block mb-1">Přihlašovací e-mail majitele (Login) *</label>
               <input
                 type="email"
@@ -882,24 +1021,16 @@ Systém je připraven k okamžitému provozu.
                 className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 placeholder-slate-500 focus:outline-none focus:border-amber-500"
               />
             </div>
+          </div>
 
-            <div>
-              <label className="text-xs font-bold text-slate-700 block mb-1">Generované heslo *</label>
-              <div className="relative">
-                <input
-                  type="text"
-                  value={ownerPassword}
-                  onChange={(e) => setOwnerPassword(e.target.value)}
-                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono text-amber-300 focus:outline-none focus:border-amber-500"
-                />
-                <button
-                  type="button"
-                  onClick={() => setOwnerPassword(`BuildFlow_${Math.floor(100000 + Math.random() * 900000)}!`)}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-slate-500 hover:text-slate-900 text-xs"
-                >
-                  <RefreshCw className="w-3.5 h-3.5" />
-                </button>
-              </div>
+          {/* Security Standards Notice */}
+          <div className="p-4 rounded-2xl bg-blue-50/50 border border-blue-200 flex items-start gap-3">
+            <ShieldCheck className="w-5 h-5 text-blue-600 shrink-0 mt-0.5" />
+            <div className="space-y-1 text-xs">
+              <p className="font-bold text-blue-900">Bezpečný způsob správy hesel</p>
+              <p className="text-blue-700 leading-relaxed">
+                V souladu s bezpečnostními standardy se hesla neukládají v nezašifrované formě, nezobrazují na obrazovce ani nevkládají do exportovaných protokolů. Správce si nastaví vlastní silné heslo prostřednictvím bezpečného odkazu při prvním přihlášení.
+              </p>
             </div>
           </div>
 
@@ -914,7 +1045,7 @@ Systém je připraven k okamžitému provozu.
 
             <button
               onClick={() => setCurrentStep(5)}
-              disabled={!ownerEmail.trim() || !ownerPassword.trim()}
+              disabled={!ownerEmail.trim()}
               className="px-6 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 disabled:opacity-50 text-slate-950 text-xs font-black transition-all flex items-center gap-2"
             >
               <span>Pokračovat k týmu řemeslníků</span>
@@ -1145,6 +1276,17 @@ Systém je připraven k okamžitému provozu.
             )}
           </div>
 
+          {deployError && (
+            <div className="p-4 rounded-2xl bg-rose-500/10 border border-rose-500/30 text-rose-600 flex items-start gap-3">
+              <AlertCircle className="w-5 h-5 shrink-0 mt-0.5" />
+              <div className="space-y-1 text-xs">
+                <p className="font-bold text-rose-700">Nasazení organizace selhalo</p>
+                <p className="text-rose-600">{deployError}</p>
+                <p className="text-[11px] text-rose-500 mt-1">Zkontrolujte připojení k databázi nebo upravte parametry firmy a zkuste to znovu.</p>
+              </div>
+            </div>
+          )}
+
           <div className="flex items-center justify-between pt-4 border-t border-slate-200">
             <button
               onClick={() => setCurrentStep(5)}
@@ -1160,7 +1302,7 @@ Systém je připraven k okamžitému provozu.
               className="px-8 py-3 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 text-sm font-black transition-all shadow-xl flex items-center gap-2"
             >
               <Zap className="w-4 h-4" />
-              <span>Nasadit firmu a aktivovat CRM</span>
+              <span>{isDeploying ? 'Vytvářím organizaci...' : 'Nasadit firmu a aktivovat CRM'}</span>
             </button>
           </div>
         </div>
@@ -1187,7 +1329,7 @@ Systém je připraven k okamžitému provozu.
                 <div className="p-5 bg-slate-50 rounded-2xl border border-slate-200 space-y-3">
                   <div className="flex items-center gap-2 text-xs font-bold text-amber-400">
                     <Key className="w-4 h-4" />
-                    <span>Přihlašovací údaje majitele</span>
+                    <span>Přístupové údaje majitele</span>
                   </div>
                   <div className="space-y-2 text-xs font-mono">
                     <div className="p-2.5 rounded-xl bg-white border border-slate-200/80 flex items-center justify-between">
@@ -1195,8 +1337,8 @@ Systém je připraven k okamžitému provozu.
                       <span className="text-slate-900 font-bold">{deploySuccessData.ownerEmail}</span>
                     </div>
                     <div className="p-2.5 rounded-xl bg-white border border-slate-200/80 flex items-center justify-between">
-                      <span className="text-slate-500">Heslo:</span>
-                      <span className="text-amber-300 font-bold">{deploySuccessData.ownerPassword || ownerPassword}</span>
+                      <span className="text-slate-500">Aktivace hesla:</span>
+                      <span className="text-green-600 font-bold font-sans text-[11px]">Zabezpečená pozvánka</span>
                     </div>
                   </div>
                 </div>
@@ -1258,9 +1400,9 @@ Systém je připraven k okamžitému provozu.
                   <button
                     onClick={() => {
                       if (onClose) onClose();
-                      window.location.href = '/admin/companies';
+                      navigate('/admin/companies');
                     }}
-                    className="px-5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-900 text-xs font-bold transition-all w-full sm:w-auto text-center"
+                    className="px-5 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition-all w-full sm:w-auto text-center"
                   >
                     Zobrazit v Super Adminu
                   </button>
@@ -1268,7 +1410,8 @@ Systém je připraven k okamžitému provozu.
                   <button
                     onClick={() => {
                       impersonateOrganization(deploySuccessData.orgId);
-                      window.location.href = deploySuccessData.crmUrl;
+                      if (onClose) onClose();
+                      navigate('/dashboard');
                     }}
                     className="px-6 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-black transition-all shadow-lg w-full sm:w-auto text-center"
                   >

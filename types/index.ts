@@ -195,12 +195,13 @@ export interface WebsiteAudit {
   leadCaptureScore: number;
   responseAutomationScore: number;
   customerExperienceScore: number;
-  googleReviewsRating: number;
+  googleReviewsRating?: number | null;
   googleReviewsCount: number;
   googleReviewsSummary: string;
   issues: WebsiteAuditItem[];
   recommendations: WebsiteAuditRecommendation[];
   upgradedBenefits: string[];
+  analysisFailed?: boolean;
 }
 
 export interface CRMNotification {

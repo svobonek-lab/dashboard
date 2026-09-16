@@ -1,4 +1,6 @@
 import { GoogleGenAI } from '@google/genai';
+import dns from 'dns';
+import net from 'net';
 
 export interface WebsiteAnalysisConfidence {
   companyName: number;
@@ -26,8 +28,48 @@ export interface WebsiteAnalysisResult {
   audit?: any;
 }
 
-// 1. Security & URL Validation
-function validateAndNormalizeUrl(rawUrl: string): { valid: boolean; normalized?: string; error?: string } {
+// Helper to determine if an IP is private, local, or link-local
+function isPrivateIp(ip: string): boolean {
+  if (!ip) return false;
+
+  // IPv4 validation
+  if (net.isIPv4(ip)) {
+    if (ip === '0.0.0.0' || ip === '255.255.255.255') return true;
+    if (ip.startsWith('127.')) return true; // 127.0.0.0/8 Loopback
+    if (ip.startsWith('10.')) return true; // 10.0.0.0/8 Private
+    if (ip.startsWith('192.168.')) return true; // 192.168.0.0/16 Private
+    if (ip.startsWith('169.254.')) return true; // 169.254.0.0/16 Link-Local / Metadata
+    if (ip.startsWith('100.')) {
+      // 100.64.0.0/10 Carrier-grade NAT
+      const parts = ip.split('.').map(Number);
+      if (parts[1] >= 64 && parts[1] <= 127) return true;
+    }
+    if (ip.startsWith('172.')) {
+      // 172.16.0.0/12 Private
+      const parts = ip.split('.').map(Number);
+      if (parts[1] >= 16 && parts[1] <= 31) return true;
+    }
+    return false;
+  }
+
+  // IPv6 validation
+  if (net.isIPv6(ip)) {
+    const lower = ip.toLowerCase();
+    if (lower === '::1' || lower === '::' || lower === '0:0:0:0:0:0:0:1') return true;
+    if (lower.startsWith('::ffff:')) {
+      const v4Part = lower.substring(7);
+      return isPrivateIp(v4Part);
+    }
+    if (lower.startsWith('fc') || lower.startsWith('fd')) return true; // fc00::/7 Unique Local
+    if (lower.startsWith('fe8') || lower.startsWith('fe9') || lower.startsWith('fea') || lower.startsWith('feb')) return true; // fe80::/10 Link-Local
+    return false;
+  }
+
+  return false;
+}
+
+// 1. Security & URL Validation with SSRF guards
+function validateAndNormalizeUrl(rawUrl: string): { valid: boolean; normalized?: string; error?: string; isSsrf?: boolean } {
   if (!rawUrl || typeof rawUrl !== 'string') {
     return { valid: false, error: 'Chybí nebo je neplatný parametr URL.' };
   }
@@ -37,7 +79,7 @@ function validateAndNormalizeUrl(rawUrl: string): { valid: boolean; normalized?:
   // If a protocol scheme is specified, only allow http or https
   if (/^[a-zA-Z][a-zA-Z0-9+.-]*:/.test(trimmed)) {
     if (!/^https?:\/\//i.test(trimmed)) {
-      return { valid: false, error: 'Jsou podporovány pouze protokoly HTTP a HTTPS.' };
+      return { valid: false, error: 'Jsou podporovány pouze protokoly HTTP a HTTPS.', isSsrf: true };
     }
   } else {
     trimmed = `https://${trimmed}`;
@@ -51,7 +93,7 @@ function validateAndNormalizeUrl(rawUrl: string): { valid: boolean; normalized?:
   }
 
   if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
-    return { valid: false, error: 'Jsou podporovány pouze protokoly HTTP a HTTPS.' };
+    return { valid: false, error: 'Jsou podporovány pouze protokoly HTTP a HTTPS.', isSsrf: true };
   }
 
   const hostname = parsed.hostname.toLowerCase();
@@ -73,13 +115,106 @@ function validateAndNormalizeUrl(rawUrl: string): { valid: boolean; normalized?:
     /^192\.168\./.test(hostname) ||
     /^169\.254\./.test(hostname) || // AWS/GCP/Azure link-local metadata
     /^fc00:/i.test(hostname) ||
-    /^fe80:/i.test(hostname);
+    /^fe80:/i.test(hostname) ||
+    isPrivateIp(hostname);
 
   if (isPrivateOrLocal) {
-    return { valid: false, error: 'Přístup k lokálním a privátním síťovým cílům je z bezpečnostních důvodů zablokován.' };
+    return { valid: false, error: 'Přístup k lokálním a privátním síťovým cílům je z bezpečnostních důvodů zablokován.', isSsrf: true };
   }
 
   return { valid: true, normalized: parsed.href };
+}
+
+// DNS resolution check to prevent DNS rebinding or domains pointing to private IPs
+async function checkDnsResolution(hostname: string): Promise<{ safe: boolean; error?: string; isSsrf?: boolean }> {
+  try {
+    const addresses = await dns.promises.lookup(hostname, { all: true });
+    if (!addresses || addresses.length === 0) {
+      return { safe: false, error: 'Doménové jméno se nepodařilo v DNS vyhledat.' };
+    }
+    for (const record of addresses) {
+      if (isPrivateIp(record.address)) {
+        return { safe: false, error: 'Přístup k lokálním a privátním síťovým cílům je z bezpečnostních důvodů zablokován.', isSsrf: true };
+      }
+    }
+    return { safe: true };
+  } catch (dnsErr: any) {
+    return { safe: false, error: 'Doménové jméno se nepodařilo v DNS vyhledat: ' + (dnsErr?.code || dnsErr?.message) };
+  }
+}
+
+// Fetch with manual redirect checking and SSRF validation on each hop (max 3 redirects)
+async function fetchWithSafeRedirects(initialUrl: string, maxRedirects: number = 3): Promise<{ html: string; finalUrl: string }> {
+  let currentUrl = initialUrl;
+  let redirectsRemaining = maxRedirects;
+
+  while (true) {
+    const urlCheck = validateAndNormalizeUrl(currentUrl);
+    if (!urlCheck.valid || !urlCheck.normalized) {
+      const err: any = new Error(urlCheck.error || 'Neplatná URL');
+      err.isSsrf = urlCheck.isSsrf;
+      throw err;
+    }
+
+    const parsed = new URL(urlCheck.normalized);
+    const dnsCheck = await checkDnsResolution(parsed.hostname);
+    if (!dnsCheck.safe) {
+      const err: any = new Error(dnsCheck.error || 'DNS validace selhala');
+      err.isSsrf = dnsCheck.isSsrf;
+      throw err;
+    }
+
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 7500);
+
+    let res: Response;
+    try {
+      res = await fetch(urlCheck.normalized, {
+        method: 'GET',
+        signal: controller.signal,
+        redirect: 'manual', // Never auto-follow redirects!
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+          'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+          'Accept-Language': 'cs-CZ,cs;q=0.9,sk;q=0.8,en;q=0.7'
+        }
+      });
+    } finally {
+      clearTimeout(timeoutId);
+    }
+
+    // Check for HTTP redirect status codes (301, 302, 303, 307, 308)
+    if ([301, 302, 303, 307, 308].includes(res.status)) {
+      const location = res.headers.get('location');
+      if (!location) {
+        throw new Error('Přesměrování neobsahuje hlavičku Location.');
+      }
+      if (redirectsRemaining <= 0) {
+        throw new Error('Byl překročen maximální počet přesměrování (3).');
+      }
+      redirectsRemaining--;
+
+      // Resolve redirect destination URL against current URL
+      const nextUrl = new URL(location, currentUrl).href;
+      currentUrl = nextUrl;
+      continue;
+    }
+
+    if (!res.ok) {
+      throw new Error(`Server vrátil stav ${res.status} (${res.statusText})`);
+    }
+
+    const cl = res.headers.get('content-length');
+    if (cl && parseInt(cl, 10) > 5 * 1024 * 1024) {
+      throw new Error('Dokument přesahuje limit 5MB.');
+    }
+
+    const fullText = await res.text();
+    return {
+      html: fullText.substring(0, 2500000),
+      finalUrl: currentUrl
+    };
+  }
 }
 
 // 2. HTML Helper Utilities
@@ -163,38 +298,53 @@ function colorDistance(hex1: string, hex2: string): number {
 
 // 4. Server-Side Scraper & Extractor
 async function fetchAndParseWebsite(normalizedUrl: string): Promise<WebsiteAnalysisResult> {
-  const urlObj = new URL(normalizedUrl);
+  const emptyConfidence: WebsiteAnalysisConfidence = {
+    companyName: 0,
+    logo: 0,
+    colors: 0,
+    contacts: 0,
+    services: 0
+  };
+
+  const emptyResult: WebsiteAnalysisResult = {
+    companyName: '',
+    website: normalizedUrl,
+    logoUrl: '',
+    faviconUrl: '',
+    primaryColor: '',
+    secondaryColor: '',
+    phone: '',
+    email: '',
+    address: '',
+    services: [],
+    heroImageUrl: '',
+    socialLinks: [],
+    confidence: emptyConfidence
+  };
+
+  let html = '';
+  let finalUrl = normalizedUrl;
+
+  try {
+    const fetched = await fetchWithSafeRedirects(normalizedUrl, 3);
+    html = fetched.html;
+    finalUrl = fetched.finalUrl;
+  } catch (err: any) {
+    if (err?.isSsrf) {
+      throw err;
+    }
+    console.warn(`Safe fetch for ${normalizedUrl} failed:`, err?.message);
+    return emptyResult;
+  }
+
+  if (!html) {
+    return emptyResult;
+  }
+
+  const urlObj = new URL(finalUrl);
   const domainOrigin = urlObj.origin;
   const domainHost = urlObj.hostname.replace(/^www\./, '');
   const domainPart = domainHost.split('.')[0];
-
-  let html = '';
-  try {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 7500);
-
-    const res = await fetch(normalizedUrl, {
-      signal: controller.signal,
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
-        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-        'Accept-Language': 'cs-CZ,cs;q=0.9,sk;q=0.8,en;q=0.7'
-      }
-    });
-
-    clearTimeout(timeoutId);
-
-    if (res.ok) {
-      const cl = res.headers.get('content-length');
-      if (cl && parseInt(cl, 10) > 5 * 1024 * 1024) {
-        throw new Error('Dokument přesahuje limit 5MB.');
-      }
-      const fullText = await res.text();
-      html = fullText.substring(0, 2500000);
-    }
-  } catch (err: any) {
-    console.warn(`Direct fetch for ${normalizedUrl} failed:`, err?.message);
-  }
 
   // A. Parse JSON-LD Structured Data
   let jsonLdName = '';
@@ -372,12 +522,6 @@ async function fetchAndParseWebsite(normalizedUrl: string): Promise<WebsiteAnaly
       companyName = fullTitle;
       companyConfidence = 70;
     }
-  }
-
-  if (!companyName && domainPart) {
-    const cleanDomainName = domainPart.replace(/[-_]/g, ' ');
-    companyName = cleanDomainName.charAt(0).toUpperCase() + cleanDomainName.slice(1);
-    companyConfidence = 40;
   }
 
   if (!companyName) {
@@ -656,20 +800,18 @@ INSTRUCTIONS:
     const cleanJson = text.replace(/```json/g, '').replace(/```/g, '').trim();
     const parsed = JSON.parse(cleanJson);
 
-    if (parsed.companyName && !extracted.companyName) {
-      extracted.companyName = parsed.companyName;
-      extracted.confidence.companyName = 85;
+    // Only refine if field was already detected; NEVER fabricate from empty
+    if (parsed.companyName && extracted.companyName && typeof parsed.companyName === 'string') {
+      extracted.companyName = parsed.companyName.trim();
     }
-    if (parsed.phone && !extracted.phone && parsed.phone !== '+420 774 889 100') {
-      extracted.phone = parsed.phone;
-      extracted.confidence.contacts = Math.max(extracted.confidence.contacts, 75);
+    if (parsed.phone && extracted.phone && parsed.phone !== '+420 774 889 100') {
+      extracted.phone = parsed.phone.trim();
     }
-    if (parsed.email && !extracted.email && !parsed.email.includes('example.com')) {
-      extracted.email = parsed.email;
-      extracted.confidence.contacts = Math.max(extracted.confidence.contacts, 75);
+    if (parsed.email && extracted.email && !parsed.email.includes('example.com')) {
+      extracted.email = parsed.email.trim();
     }
-    if (parsed.address && !extracted.address && !parsed.address.includes('Průmyslová 12')) {
-      extracted.address = parsed.address;
+    if (parsed.address && extracted.address && !parsed.address.includes('Průmyslová 12')) {
+      extracted.address = parsed.address.trim();
     }
   } catch {
     // Non-blocking fallback to scraped data
@@ -718,7 +860,7 @@ export default async function handler(req: any, res: any) {
       name: analysis.companyName,
       website: analysis.website,
       logoUrl: analysis.logoUrl,
-      primaryColor: analysis.primaryColor || '#1e293b',
+      primaryColor: analysis.primaryColor || '',
       phone: analysis.phone,
       email: analysis.email,
       city: derivedCity,
@@ -729,41 +871,22 @@ export default async function handler(req: any, res: any) {
       heroImageUrl: analysis.heroImageUrl
     };
 
-    // Backward-compatible audit object
+    // Clean audit object without fabricated claims or ratings
     const audit = {
       url: analysis.website,
       companyName: analysis.companyName,
-      score: Math.max(overallScore, 50),
-      websiteUxScore: analysis.confidence.colors > 0 ? 75 : 60,
-      leadCaptureScore: analysis.confidence.contacts > 0 ? 65 : 35,
-      responseAutomationScore: 30,
-      customerExperienceScore: 70,
-      googleReviewsRating: 4.8,
-      googleReviewsCount: 28,
-      googleReviewsSummary: 'Spolehlivý dodavatel, zákazníci oceňují rychlost komunikace a kvalitu provedení.',
-      issues: [
-        {
-          id: 'iss-1',
-          title: 'Chybějící okamžitý kalkulátor zakázek',
-          description: 'Návštěvníci webu nemohou ihned získat orientační cenu ani odeslat strukturovanou poptávku.',
-          severity: 'error',
-          category: 'lead',
-          whyItHurts: 'Až 45 % zájemců opustí web bez odeslání kontaktu.',
-          howWeFixIt: 'Nasazení interaktivního poptávkového widgetu BuildFlow.',
-          timeSaved: '5 hodin / týdně'
-        }
-      ],
-      recommendations: [
-        {
-          id: 'rec-1',
-          title: 'Aktivovat poptávkový widget na webu',
-          description: 'Zvýšení konverze návštěvníků díky interaktivnímu formuláři s kalkulací.',
-          impact: 'High',
-          effort: 'Easy',
-          category: 'lead'
-        }
-      ],
-      upgradedBenefits: ['Automatický sběr poptávek', 'Okamžité SMS notifikace pro dispečera']
+      score: overallScore,
+      websiteUxScore: analysis.confidence.colors > 0 ? 70 : 0,
+      leadCaptureScore: analysis.confidence.contacts > 0 ? 60 : 0,
+      responseAutomationScore: 0,
+      customerExperienceScore: 0,
+      googleReviewsRating: null,
+      googleReviewsCount: 0,
+      googleReviewsSummary: '',
+      issues: [],
+      recommendations: [],
+      upgradedBenefits: [],
+      analysisFailed: !analysis.companyName
     };
 
     // Return the EXACT JSON shape required by the user prompt at top-level
@@ -787,6 +910,9 @@ export default async function handler(req: any, res: any) {
 
     return res.status(200).json(responsePayload);
   } catch (err: any) {
+    if (err?.isSsrf) {
+      return res.status(400).json({ error: 'Přístup k lokálním a privátním síťovým cílům je z bezpečnostních důvodů zablokován.' });
+    }
     console.error('Analyzer error:', err);
     return res.status(500).json({ error: 'Chyba při analýze webových stránek: ' + err?.message });
   }

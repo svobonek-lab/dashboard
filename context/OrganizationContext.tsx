@@ -2175,7 +2175,6 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
     address?: string;
     owner_name?: string;
     owner_email?: string;
-    owner_password?: string;
     services?: string[];
     employees?: Array<{ name: string; specialization?: string; role?: string; phone?: string; email?: string; capacity?: number }>;
     onStepProgress?: (step: number, message: string) => void;
@@ -2186,13 +2185,18 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
 
     // Step 0: Validace webové adresy a parametrů firmy
     stepNotify(0, 'Validace parametrů firmy a webové adresy...');
-    await new Promise(r => setTimeout(r, 120));
+    await new Promise(r => setTimeout(r, 100));
 
-    const slug = data.name.toLowerCase().replace(/[^a-z0-9]/g, '-') + '-' + Math.floor(100 + Math.random() * 900);
+    const slugBase = (data.name || 'firma')
+      .toLowerCase()
+      .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+      .replace(/[^a-z0-9]/g, '-')
+      .replace(/-+/g, '-')
+      .replace(/^-|-$/g, '') || 'firma';
+    const slug = `${slugBase}-${Math.floor(100 + Math.random() * 900)}`;
     const orgId = generateUUID();
-    let ownerUserId = generateUUID();
-    const ownerEmail = data.owner_email || data.email || `jednatel@${slug}.cz`;
-    const ownerPassword = data.owner_password || `BuildFlow_${Math.floor(100000 + Math.random() * 900000)}!`;
+    const ownerUserId = generateUUID();
+    const ownerEmail = (data.owner_email || data.email || `jednatel@${slugBase}.cz`).trim().toLowerCase();
     const servicesList = data.services && data.services.length > 0 ? data.services : ['Pergoly & Terasy', 'Dřevostavby na klíč'];
     const cityName = data.city || 'Česká republika';
 
@@ -2204,7 +2208,7 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
 
     // Step 1: Zpracování reálné vizuální identity
     stepNotify(1, 'Zpracování vizuální identity a barev...');
-    await new Promise(r => setTimeout(r, 120));
+    await new Promise(r => setTimeout(r, 100));
 
     const brandingObj = {
       name: data.name,
@@ -2228,147 +2232,223 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
       created_at: new Date().toISOString()
     };
 
-    // Step 2: Vytváření záznamu organizace v public.organizations
-    stepNotify(2, 'Vytváření organizace v public.organizations...');
     let activeOrgId = orgId;
 
     if (isSupabaseConfigured && supabase) {
+      // PRODUCTION DATABASE EXECUTION (No silent mock fallback; hard fail on error)
+      stepNotify(2, 'Vytváření organizace v Supabase...');
+
+      // 1. Try atomic PostgreSQL RPC if provisioned
+      let rpcSuccess = false;
       try {
+        const { data: rpcRes, error: rpcErr } = await supabase.rpc('provision_tenant_atomic', {
+          p_org_id: orgId,
+          p_name: data.name,
+          p_slug: slug,
+          p_website: data.website || '',
+          p_phone: data.phone || '',
+          p_email: data.email || ownerEmail,
+          p_city: cityName,
+          p_address: data.address || '',
+          p_primary_color: data.primary_color || '#2563eb',
+          p_secondary_color: data.secondary_color || '#0f172a',
+          p_logo_url: data.logo_url || '',
+          p_services: servicesList,
+          p_owner_user_id: ownerUserId,
+          p_owner_email: ownerEmail,
+          p_owner_name: data.owner_name || data.name
+        });
+
+        if (!rpcErr && rpcRes) {
+          rpcSuccess = true;
+          if (rpcRes.org_id) activeOrgId = rpcRes.org_id;
+        } else if (rpcErr && rpcErr.message && !rpcErr.message.includes('function') && !rpcErr.message.includes('does not exist')) {
+          throw new Error(`Chyba databázové procedury: ${rpcErr.message}`);
+        }
+      } catch (err: any) {
+        if (!err.message?.includes('function') && !err.message?.includes('does not exist')) {
+          throw err;
+        }
+      }
+
+      // 2. Direct Supabase write with rollback protection
+      if (!rpcSuccess) {
+        stepNotify(2, 'Vytváření záznamu v public.organizations...');
         const { data: newOrg, error: orgErr } = await supabase
           .from('organizations')
           .insert(orgRecord)
           .select()
           .single();
-        if (!orgErr && newOrg) {
-          activeOrgId = newOrg.id;
-        }
-      } catch (err) {
-        console.warn('Supabase organizations insert notice (persisting in local store):', err);
-      }
-    }
-    await new Promise(r => setTimeout(r, 120));
 
-    // Step 3: Vytvoření administrátorského účtu v Supabase Auth
-    stepNotify(3, 'Vytvoření administrátorského účtu v auth.users...');
-    if (isSupabaseConfigured && supabase) {
-      try {
-        const { data: signUpData } = await supabase.auth.signUp({
-          email: ownerEmail,
-          password: ownerPassword,
-          options: {
-            data: {
-              name: data.owner_name || data.name,
+        if (orgErr || !newOrg) {
+          throw new Error(`Zápis organizace do Supabase selhal: ${orgErr?.message || 'Neznámá chyba'}`);
+        }
+        activeOrgId = newOrg.id;
+
+        try {
+          stepNotify(3, 'Registrace správce v public.users...');
+          const userRecord = {
+            id: ownerUserId,
+            organization_id: activeOrgId,
+            role: 'owner',
+            email: ownerEmail,
+            name: data.owner_name || data.name
+          };
+
+          const { error: userErr } = await supabase
+            .from('users')
+            .upsert(userRecord);
+
+          if (userErr) {
+            throw new Error(`Registrace účtu správce v users selhala: ${userErr.message}`);
+          }
+
+          stepNotify(4, 'Registrace členství v public.organization_members...');
+          const { error: memberErr } = await supabase
+            .from('organization_members')
+            .upsert({
+              user_id: ownerUserId,
               organization_id: activeOrgId,
               role: 'owner'
-            }
+            });
+
+          if (memberErr) {
+            console.warn('Membership upsert warning:', memberErr.message);
           }
-        });
-        if (signUpData?.user?.id) {
-          ownerUserId = signUpData.user.id;
-        }
-      } catch (authErr) {
-        console.warn('Supabase auth.signUp notice:', authErr);
-      }
-    }
-    await new Promise(r => setTimeout(r, 120));
 
-    // Step 4: Registrace vazeb v public.users a public.organization_members
-    stepNotify(4, 'Registrace vazeb v public.users a public.organization_members...');
-    const userRecord = {
-      id: ownerUserId,
-      organization_id: activeOrgId,
-      role: 'owner',
-      email: ownerEmail,
-      name: data.owner_name || data.name
-    };
-
-    if (isSupabaseConfigured && supabase) {
-      try {
-        await supabase
-          .from('users')
-          .upsert(userRecord);
-
-        await supabase
-          .from('organization_members')
-          .upsert({
-            user_id: ownerUserId,
+          stepNotify(6, 'Uložení konfigurace v public.company_settings...');
+          const companySettingsRecord = {
             organization_id: activeOrgId,
-            role: 'owner'
-          });
-      } catch (uErr) {
-        console.warn('Users/organization_members upsert notice:', uErr);
+            branding: brandingObj,
+            services: servicesList,
+            website: data.website || '',
+            address: data.address || '',
+            phone: data.phone || '',
+            email: data.email || ownerEmail
+          };
+
+          const { error: setErr } = await supabase
+            .from('company_settings')
+            .upsert(companySettingsRecord);
+
+          if (setErr) {
+            throw new Error(`Uložení nastavení firmy selhalo: ${setErr.message}`);
+          }
+        } catch (subErr: any) {
+          // Rollback created organization if subsequent required writes fail
+          try {
+            await supabase.from('organizations').delete().eq('id', activeOrgId);
+          } catch {}
+          throw subErr;
+        }
       }
-    }
-    await new Promise(r => setTimeout(r, 120));
 
-    // Step 5: Inicializace čistého týmu (žádní demo zaměstnanci)
-    stepNotify(5, 'Inicializace čistého firemního týmu...');
-    // PATCH P4: Nevytvářej demo zaměstnance – pouze prázdný tým
-    const employeesToInsert: any[] = [];
-    await new Promise(r => setTimeout(r, 120));
-
-    // Step 6: Uložení white-label nastavení v public.company_settings
-    stepNotify(6, 'Uložení white-label nastavení v public.company_settings...');
-    const companySettingsRecord = {
-      id: generateUUID(),
-      organization_id: activeOrgId,
-      branding: brandingObj,
-      services: servicesList,
-      website: data.website || '',
-      address: data.address || '',
-      phone: data.phone || '',
-      email: data.email || ownerEmail,
-      created_at: new Date().toISOString()
-    };
-
-    if (isSupabaseConfigured && supabase) {
-      try {
-        await supabase.from('company_settings').insert(companySettingsRecord);
-      } catch (sErr) {
-        console.warn('Company settings insert notice:', sErr);
+      // Step 5: Insert real team members if specified
+      const employeesToInsert: any[] = [];
+      if (data.employees && data.employees.length > 0) {
+        for (const emp of data.employees) {
+          if (emp.name && emp.name.trim()) {
+            employeesToInsert.push({
+              id: generateUUID(),
+              organization_id: activeOrgId,
+              name: emp.name.trim(),
+              role: emp.role || 'Mistr',
+              specialization: emp.specialization || 'Stavební práce',
+              phone: emp.phone || '',
+              email: emp.email || '',
+              capacity: emp.capacity || 100,
+              status: 'Green',
+              avatar: ''
+            });
+          }
+        }
       }
-    }
-    await new Promise(r => setTimeout(r, 120));
 
-    // Step 7: Příprava čistého pracoviště organizace (nula leadů, nula projektů, nula dokumentů)
+      if (employeesToInsert.length > 0) {
+        stepNotify(5, 'Zápis firemního týmu...');
+        const { error: empErr } = await supabase.from('employees').insert(employeesToInsert);
+        if (empErr) {
+          console.warn('Employees insert non-fatal notice:', empErr.message);
+        }
+      }
+    } else {
+      // EXPLICIT DEMO / DEVELOPMENT MOCK MODE ONLY (Supabase is NOT configured)
+      stepNotify(2, '[Demo Režim] Lokální uložení organizace...');
+      
+      const employeesToInsert: any[] = [];
+      if (data.employees && data.employees.length > 0) {
+        for (const emp of data.employees) {
+          if (emp.name && emp.name.trim()) {
+            employeesToInsert.push({
+              id: generateUUID(),
+              organization_id: activeOrgId,
+              name: emp.name.trim(),
+              role: emp.role || 'Mistr',
+              specialization: emp.specialization || 'Stavební práce',
+              phone: emp.phone || '',
+              email: emp.email || '',
+              capacity: emp.capacity || 100,
+              status: 'Green',
+              avatar: ''
+            });
+          }
+        }
+      }
+
+      const companySettingsRecord = {
+        id: generateUUID(),
+        organization_id: activeOrgId,
+        branding: brandingObj,
+        services: servicesList,
+        website: data.website || '',
+        address: data.address || '',
+        phone: data.phone || '',
+        email: data.email || ownerEmail,
+        created_at: new Date().toISOString()
+      };
+
+      const userRecord = {
+        id: ownerUserId,
+        organization_id: activeOrgId,
+        role: 'owner',
+        email: ownerEmail,
+        name: data.owner_name || data.name
+      };
+
+      const currentLocalOrgs = LocalSupabaseMock.getOrganizations();
+      LocalSupabaseMock.saveOrganizations([...currentLocalOrgs.filter(o => o.id !== activeOrgId), orgRecord]);
+
+      const currentUsers = LocalSupabaseMock.getUsers();
+      LocalSupabaseMock.saveUsers([...currentUsers.filter(u => u.id !== ownerUserId), userRecord]);
+
+      const currentEmps = LocalSupabaseMock.getEmployees();
+      LocalSupabaseMock.saveEmployees([...currentEmps.filter(e => e.organization_id !== activeOrgId), ...employeesToInsert]);
+
+      const currentSettings = (LocalSupabaseMock.getCompanySettings() as any[]) || [];
+      LocalSupabaseMock.saveCompanySettings([...currentSettings.filter((s: any) => s.organization_id !== activeOrgId), companySettingsRecord]);
+
+      const currentLeads = LocalSupabaseMock.getLeads();
+      LocalSupabaseMock.saveLeads([...currentLeads.filter(l => l.organization_id !== activeOrgId)]);
+
+      const currentProjects = LocalSupabaseMock.getProjects();
+      LocalSupabaseMock.saveProjects([...currentProjects.filter(p => p.organization_id !== activeOrgId)]);
+      
+      LocalSupabaseMock.setActiveOrgId(activeOrgId);
+    }
+
+    // Step 7: Inicializace čistého pracovního prostoru
     stepNotify(7, 'Inicializace prázdného pracovního prostoru (0 dat)...');
     try {
       localStorage.removeItem('demo_leads_cache');
       localStorage.removeItem(`demo_leads_cache_${activeOrgId}`);
       localStorage.removeItem(`leads_cache_${activeOrgId}`);
     } catch {}
-    await new Promise(r => setTimeout(r, 120));
+    await new Promise(r => setTimeout(r, 100));
 
-    // Step 8: Synchronizace Super Adminu a aktivace linků
-    stepNotify(8, 'Synchronizace Super Adminu a aktivace linků...');
-
-    // Persist completely into LocalSupabaseMock so offline / fallback never loses the company
-    const currentLocalOrgs = LocalSupabaseMock.getOrganizations();
-    const updatedLocalOrgs = [...currentLocalOrgs.filter(o => o.id !== activeOrgId), orgRecord];
-    LocalSupabaseMock.saveOrganizations(updatedLocalOrgs);
-
-    const currentUsers = LocalSupabaseMock.getUsers();
-    LocalSupabaseMock.saveUsers([...currentUsers.filter(u => u.id !== ownerUserId), {
-      ...userRecord,
-      password: ownerPassword
-    }]);
-
-    const currentEmps = LocalSupabaseMock.getEmployees();
-    LocalSupabaseMock.saveEmployees([...currentEmps.filter(e => e.organization_id !== activeOrgId)]);
-
-    const currentSettings = (LocalSupabaseMock.getCompanySettings() as any[]) || [];
-    LocalSupabaseMock.saveCompanySettings([...currentSettings.filter((s: any) => s.organization_id !== activeOrgId), companySettingsRecord]);
-
-    const currentLeads = LocalSupabaseMock.getLeads();
-    LocalSupabaseMock.saveLeads([...currentLeads.filter(l => l.organization_id !== activeOrgId)]);
-
-    const currentProjects = LocalSupabaseMock.getProjects();
-    LocalSupabaseMock.saveProjects([...currentProjects.filter(p => p.organization_id !== activeOrgId)]);
-
-    // Update Context State immediately
+    // Step 8: Aktivace organizace a stavu v aplikaci
+    stepNotify(8, 'Dokončení provisioningu a aktivace organizace...');
     setOrganizations(prev => [...prev.filter(o => o.id !== activeOrgId), orgRecord]);
     setCurrentOrg(orgRecord);
-    LocalSupabaseMock.setActiveOrgId(activeOrgId);
 
     const activeDbUser: DBUser = {
       id: ownerUserId,
@@ -2383,14 +2463,10 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
       email: ownerEmail,
       user_metadata: { name: data.owner_name || data.name }
     });
-    LocalSupabaseMock.setActiveSessionUser(activeDbUser);
-
-    await new Promise(r => setTimeout(r, 200));
 
     return {
       orgId: activeOrgId,
       ownerEmail,
-      ownerPassword,
       crmUrl,
       portalUrl,
       formUrl,

@@ -1,25 +1,8 @@
 import { CompanyBranding, WebsiteAudit, WebsiteAnalysisResult } from '../types';
 
 function getFallbackData(url: string): WebsiteAnalysisResult & { branding: CompanyBranding; audit: WebsiteAudit } {
-  let cleanDomain = '';
-  let cleanName = '';
-
-  try {
-    const u = new URL(url.startsWith('http') ? url : `https://${url}`);
-    cleanDomain = u.hostname.replace(/^www\./, '');
-    const nameOnly = cleanDomain.split('.')[0].replace(/[-_]/g, ' ');
-    cleanName = nameOnly.charAt(0).toUpperCase() + nameOnly.slice(1);
-  } catch {
-    if (url) {
-      const sanitized = url.replace(/^https?:\/\//, '').replace(/^www\./, '').split('/')[0];
-      cleanDomain = sanitized;
-      const nameOnly = sanitized.split('.')[0].replace(/[-_]/g, ' ');
-      cleanName = nameOnly.charAt(0).toUpperCase() + nameOnly.slice(1);
-    }
-  }
-
   const confidence = {
-    companyName: cleanName ? 40 : 0,
+    companyName: 0,
     logo: 0,
     colors: 0,
     contacts: 0,
@@ -27,10 +10,10 @@ function getFallbackData(url: string): WebsiteAnalysisResult & { branding: Compa
   };
 
   const branding: CompanyBranding = {
-    name: cleanName,
-    website: url,
+    name: '',
+    website: url || '',
     logoUrl: '',
-    primaryColor: '#1e293b',
+    primaryColor: '',
     phone: '',
     email: '',
     city: '',
@@ -39,47 +22,25 @@ function getFallbackData(url: string): WebsiteAnalysisResult & { branding: Compa
   };
 
   const audit: WebsiteAudit = {
-    url,
-    companyName: cleanName,
-    score: 45,
-    websiteUxScore: 50,
-    leadCaptureScore: 30,
-    responseAutomationScore: 20,
-    customerExperienceScore: 50,
-    googleReviewsRating: 4.5,
-    googleReviewsCount: 12,
-    googleReviewsSummary: 'Web obsahuje základní prezentaci společnosti.',
-    issues: [
-      {
-        id: 'iss-1',
-        title: 'Chybějící interaktivní lead formulář',
-        description: 'Web nemá rychlý poptávkový formulář pro okamžitý sběr poptávek.',
-        severity: 'error',
-        category: 'lead',
-        whyItHurts: 'Potenciální klienti opouštějí web bez odeslání specifikace zakázky.',
-        howWeFixIt: 'Nasadíme interaktivní poptávkový widget BuildFlow s okamžitým propojením na dispečink.',
-        timeSaved: '4.5 hodiny / týdně'
-      }
-    ],
-    recommendations: [
-      {
-        id: 'rec-1',
-        title: 'Aktivovat interaktivní AI Lead Widget',
-        description: 'Nasazení poptávkového asistenta pro okamžitý sběr parametrů stavby.',
-        impact: 'High',
-        effort: 'Easy',
-        category: 'lead'
-      }
-    ],
-    upgradedBenefits: [
-      'Zvýšení konverze poptávek díky okamžitému widgetu',
-      'Přehled marží, zakázek a cash-flow v reálném čase'
-    ]
+    url: url || '',
+    companyName: '',
+    score: 0,
+    websiteUxScore: 0,
+    leadCaptureScore: 0,
+    responseAutomationScore: 0,
+    customerExperienceScore: 0,
+    googleReviewsRating: null,
+    googleReviewsCount: 0,
+    googleReviewsSummary: '',
+    issues: [],
+    recommendations: [],
+    upgradedBenefits: [],
+    analysisFailed: true
   };
 
   return {
-    companyName: cleanName,
-    website: url,
+    companyName: '',
+    website: url || '',
     logoUrl: '',
     faviconUrl: '',
     primaryColor: '',
@@ -117,7 +78,7 @@ export async function analyzeWebsiteWithGemini(url: string): Promise<WebsiteAnal
       name: data.companyName || '',
       website: data.website || url,
       logoUrl: data.logoUrl || '',
-      primaryColor: data.primaryColor || '#1e293b',
+      primaryColor: data.primaryColor || '',
       phone: data.phone || '',
       email: data.email || '',
       city: '',
@@ -127,18 +88,19 @@ export async function analyzeWebsiteWithGemini(url: string): Promise<WebsiteAnal
 
     const audit: WebsiteAudit = data.audit || {
       url: data.website || url,
-      companyName: data.companyName || branding.name,
-      score: 60,
-      websiteUxScore: 65,
-      leadCaptureScore: 40,
-      responseAutomationScore: 25,
-      customerExperienceScore: 60,
-      googleReviewsRating: 4.8,
-      googleReviewsCount: 20,
-      googleReviewsSummary: 'Zákaznické reference a kvalita provedení prací.',
+      companyName: data.companyName || branding.name || '',
+      score: 0,
+      websiteUxScore: 0,
+      leadCaptureScore: 0,
+      responseAutomationScore: 0,
+      customerExperienceScore: 0,
+      googleReviewsRating: null,
+      googleReviewsCount: 0,
+      googleReviewsSummary: '',
       issues: [],
       recommendations: [],
-      upgradedBenefits: ['Automatický sběr poptávek']
+      upgradedBenefits: [],
+      analysisFailed: !data.companyName
     };
 
     return {
