@@ -4,93 +4,68 @@ import path from 'path';
 import { defineConfig, Plugin } from 'vite';
 import analyzeWebsiteHandler from './api/analyze-website';
 import testSqlHandler from './api/test-sql';
+import inviteEmployeeHandler from './api/invite-employee';
+import resetEmployeePasswordHandler from './api/reset-employee-password';
 
 function apiMiddlewarePlugin(): Plugin {
   return {
     name: 'api-middleware',
     configureServer(server) {
       server.middlewares.use(async (req, res, next) => {
+        const handleRoute = (handler: any) => {
+          let body = '';
+          req.on('data', (chunk: any) => {
+            body += chunk.toString();
+          });
+          req.on('end', async () => {
+            try {
+              const parsedBody = body ? JSON.parse(body) : {};
+              const customReq = {
+                method: req.method,
+                body: parsedBody,
+                url: req.url
+              };
+              const customRes = {
+                setHeader: (key: string, val: any) => res.setHeader(key, val),
+                status: (code: number) => {
+                  res.statusCode = code;
+                  return {
+                    json: (data: any) => {
+                      res.setHeader('Content-Type', 'application/json');
+                      res.end(JSON.stringify(data));
+                    }
+                  };
+                }
+              };
+              await handler(customReq, customRes);
+            } catch (parseErr: any) {
+              res.statusCode = 500;
+              res.setHeader('Content-Type', 'application/json');
+              res.end(JSON.stringify({ error: parseErr.message }));
+            }
+          });
+        };
+
         if (req.url === '/api/test-sql' && req.method === 'POST') {
-          try {
-            let body = '';
-            req.on('data', chunk => {
-              body += chunk.toString();
-            });
-            req.on('end', async () => {
-              try {
-                const parsedBody = body ? JSON.parse(body) : {};
-                const customReq = {
-                  method: req.method,
-                  body: parsedBody,
-                  url: req.url
-                };
-                const customRes = {
-                  setHeader: (key: string, val: any) => res.setHeader(key, val),
-                  status: (code: number) => {
-                    res.statusCode = code;
-                    return {
-                      json: (data: any) => {
-                        res.setHeader('Content-Type', 'application/json');
-                        res.end(JSON.stringify(data));
-                      }
-                    };
-                  }
-                };
-                await testSqlHandler(customReq, customRes);
-              } catch (parseErr: any) {
-                res.statusCode = 500;
-                res.setHeader('Content-Type', 'application/json');
-                res.end(JSON.stringify({ error: parseErr.message }));
-              }
-            });
-          } catch (e: any) {
-            res.statusCode = 500;
-            res.setHeader('Content-Type', 'application/json');
-            res.end(JSON.stringify({ error: e.message }));
-          }
+          handleRoute(testSqlHandler);
           return;
         }
 
         if (req.url === '/api/analyze-website' && req.method === 'POST') {
-          try {
-            let body = '';
-            req.on('data', chunk => {
-              body += chunk.toString();
-            });
-            req.on('end', async () => {
-              try {
-                const parsedBody = body ? JSON.parse(body) : {};
-                const customReq = {
-                  method: req.method,
-                  body: parsedBody,
-                  url: req.url
-                };
-                const customRes = {
-                  setHeader: (key: string, val: any) => res.setHeader(key, val),
-                  status: (code: number) => {
-                    res.statusCode = code;
-                    return {
-                      json: (data: any) => {
-                        res.setHeader('Content-Type', 'application/json');
-                        res.end(JSON.stringify(data));
-                      }
-                    };
-                  }
-                };
-                await analyzeWebsiteHandler(customReq, customRes);
-              } catch (parseErr: any) {
-                res.statusCode = 500;
-                res.setHeader('Content-Type', 'application/json');
-                res.end(JSON.stringify({ error: parseErr.message }));
-              }
-            });
-          } catch (e: any) {
-            res.statusCode = 500;
-            res.setHeader('Content-Type', 'application/json');
-            res.end(JSON.stringify({ error: e.message }));
-          }
+          handleRoute(analyzeWebsiteHandler);
           return;
         }
+
+        if (req.url === '/api/invite-employee' && req.method === 'POST') {
+          handleRoute(inviteEmployeeHandler);
+          return;
+        }
+
+        if (req.url === '/api/reset-employee-password' && req.method === 'POST') {
+          handleRoute(resetEmployeePasswordHandler);
+          return;
+        }
+
         next();
       });
     }

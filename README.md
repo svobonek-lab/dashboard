@@ -38,8 +38,20 @@ DemoFactory is a production-quality internal sales tool designed to instantly ge
 
 DemoFactory integrates with Supabase for persistent data storage across sessions:
 1. Create a Supabase project at [supabase.com](https://supabase.com).
-2. Configure environment credentials in `.env`.
-3. Run SQL migration schemas for `leads`, `employees`, and `quotes`.
+2. Configure environment credentials in `.env` (`VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`).
+3. Run SQL migration schemas located in `supabase/migrations/`:
+   - `20260911000000_schema.sql`
+   - `20260916000000_atomic_tenant_provisioning.sql`
+   - `20260917000000_security_hardening.sql` (P0 Multi-tenant RLS isolation & employee activation)
+
+---
+
+## Serverless Security Endpoints
+
+- `/api/invite-employee`: Server-side endpoint with service role privileges to invite team members and generate secure activation tokens.
+- `/api/reset-employee-password`: Server-side endpoint to trigger password resets and activation tokens.
+- `/api/analyze-website`: Gemini AI website intelligence extractor.
+- `/api/test-sql`: SQL verification connector.
 
 ---
 

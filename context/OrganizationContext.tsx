@@ -1497,38 +1497,78 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
     }
   };
 
-  // Data Action: Save Employee to Supabase
-  
+  // Data Action: Save Employee to Supabase (Production API & Safe Mode)
   const inviteEmployee = async (empData: Partial<Employee>, tempPassword?: string): Promise<Employee & { tempPassword?: string; inviteLink?: string }> => {
     if (!currentOrg) throw new Error('Organizace není vybrána');
     const email = (empData as any).email || `${(empData.name || 'zamestnanec').toLowerCase().replace(/\s+/g, '.')}@${currentOrg.slug || 'firma'}.cz`;
     const password = tempPassword || `Stavba${Math.floor(1000 + Math.random() * 9000)}`;
-    const inviteToken = `inv-tok-${Date.now()}-${Math.floor(1000 + Math.random() * 9000)}`;
-    const invitedAt = new Date().toISOString();
     const role = empData.role || empData.specialization || 'Stavební technik';
 
-    // Always ensure user exists in LocalSupabaseMock so employee login works reliably
-    const persistToLocalMock = (userId: string) => {
-      const allUsers = LocalSupabaseMock.getUsers() || [];
-      const existingUserIdx = allUsers.findIndex(u => u.email.toLowerCase() === email.toLowerCase());
-      const userPayload = {
-        id: userId,
-        email: email,
-        password: password,
-        name: empData.name || 'Zaměstnanec',
-        role: 'employee' as const,
-        organization_id: currentOrg.id
-      };
-      if (existingUserIdx !== -1) {
-        allUsers[existingUserIdx] = { ...allUsers[existingUserIdx], ...userPayload };
-      } else {
-        allUsers.push(userPayload);
+    if (isSupabaseConfigured) {
+      // PRODUCTION FLOW: Call server-side /api/invite-employee endpoint
+      try {
+        const response = await fetch('/api/invite-employee', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            organizationId: currentOrg.id,
+            name: empData.name,
+            email,
+            role,
+            specialization: empData.specialization || role,
+            phone: empData.phone || '',
+            capacity: empData.capacity || 100
+          })
+        });
+
+        const resData = await response.json();
+        if (!response.ok || !resData.success) {
+          throw new Error(resData?.error || 'Pozvání zaměstnance přes serverový endpoint selhalo.');
+        }
+
+        return {
+          id: resData.employeeId,
+          organization_id: currentOrg.id,
+          name: empData.name || 'Zaměstnanec',
+          email,
+          role,
+          specialization: empData.specialization || role,
+          capacity: empData.capacity || 100,
+          status: 'Green',
+          phone: empData.phone || '',
+          active: true,
+          invitationStatus: 'Pending',
+          inviteToken: resData.inviteToken,
+          invitedAt: resData.invitedAt,
+          inviteLink: resData.inviteLink,
+          avatar: ''
+        } as any;
+      } catch (err: any) {
+        console.error('Production inviteEmployee failure:', err);
+        throw new Error(`Pozvánka selhala: ${err.message}`);
       }
-      LocalSupabaseMock.saveUsers(allUsers);
+    }
+
+    // EXPLICIT DEMO / LOCAL MOCK ONLY
+    const inviteToken = `inv-tok-${Date.now()}-${Math.floor(1000 + Math.random() * 9000)}`;
+    const invitedAt = new Date().toISOString();
+    const inviteLink = `${window.location.origin}/login?inviteToken=${inviteToken}&email=${encodeURIComponent(email)}`;
+
+    const allUsers = LocalSupabaseMock.getUsers() || [];
+    const userId = generateUUID();
+    const userPayload = {
+      id: userId,
+      email: email,
+      password: password,
+      name: empData.name || 'Zaměstnanec',
+      role: 'employee' as const,
+      organization_id: currentOrg.id
     };
+    LocalSupabaseMock.saveUsers([...allUsers.filter(u => u.email.toLowerCase() !== email.toLowerCase()), userPayload]);
 
     const payload: Partial<Employee> = {
       ...empData,
+      id: userId,
       email,
       phone: empData.phone || '+420 777 000 111',
       specialization: role,
@@ -1539,90 +1579,16 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
       invitedAt
     };
 
-    const inviteLink = `${window.location.origin}/login?inviteToken=${inviteToken}&email=${encodeURIComponent(email)}`;
-
-    if (!isSupabaseConfigured || !supabase) {
-      const newEmp = await saveEmployee(payload);
-      persistToLocalMock(newEmp.id);
-      return {
-        ...newEmp,
-        email,
-        tempPassword: password,
-        inviteToken,
-        invitedAt,
-        invitationStatus: 'Pending',
-        inviteLink
-      } as any;
-    }
-
-    // Supabase Real Invite via Temp Client
-    try {
-      const { createClient } = await import('@supabase/supabase-js');
-      const tempSupabase = createClient(
-        (import.meta as any).env.VITE_SUPABASE_URL,
-        (import.meta as any).env.VITE_SUPABASE_ANON_KEY,
-        { auth: { persistSession: false } }
-      );
-      
-      const { data: signUpData, error: authError } = await tempSupabase.auth.signUp({
-        email,
-        password,
-        options: {
-          data: {
-            name: empData.name,
-            organization_id: currentOrg.id,
-            role: 'employee'
-          }
-        }
-      });
-      
-      let userId = signUpData?.user?.id;
-      if (!userId) {
-        userId = generateUUID();
-      }
-
-      if (!authError && signUpData?.user) {
-        // Manually insert into public.users
-        try {
-          await supabase.from('users').insert({
-            id: userId,
-            organization_id: currentOrg.id,
-            role: 'employee',
-            email,
-            name: empData.name
-          });
-        } catch (uErr) {
-          console.warn('User insert warning:', uErr);
-        }
-      }
-
-      persistToLocalMock(userId);
-      // Also save to public.employees
-      const newEmp = await saveEmployee({ ...payload, auth_user_id: userId } as any);
-      return {
-        ...newEmp,
-        email,
-        tempPassword: password,
-        inviteToken,
-        invitedAt,
-        invitationStatus: 'Pending',
-        inviteLink
-      } as any;
-    } catch (e: any) {
-      console.warn('Supabase invite notice (falling back to guaranteed local mock):', e?.message || e);
-      const fallbackId = generateUUID();
-      persistToLocalMock(fallbackId);
-      const newEmp = await saveEmployee({ ...payload, id: fallbackId });
-      return {
-        ...newEmp,
-        email,
-        tempPassword: password,
-        inviteToken,
-        invitedAt,
-        invitationStatus: 'Pending',
-        inviteLink
-      } as any;
-    }
+    const newEmp = await saveEmployee(payload);
+    return {
+      ...newEmp,
+      email,
+      tempPassword: password,
+      inviteToken,
+      invitedAt,
+      invitationStatus: 'Pending',
+      inviteLink
+    } as any;
   };
 
   const saveEmployee = async (empData: Partial<Employee>): Promise<Employee> => {
@@ -1649,8 +1615,7 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
           .select()
           .maybeSingle();
         if (updateError) {
-          console.warn('saveEmployee update notice (saved locally):', updateError.message);
-          return saveEmployeeLocal(empData);
+          throw new Error(`Chyba při aktualizaci zaměstnance: ${updateError.message}`);
         }
         result = data;
       } else {
@@ -1660,14 +1625,13 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
           .select()
           .maybeSingle();
         if (insertError) {
-          console.warn('saveEmployee insert notice (saved locally):', insertError.message);
-          return saveEmployeeLocal(empData);
+          throw new Error(`Chyba při vkládání zaměstnance: ${insertError.message}`);
         }
         result = data;
       }
 
       if (!result) {
-        return saveEmployeeLocal(empData);
+        throw new Error('Zaměstnanec nebyl nalezen.');
       }
 
       return {
@@ -1678,8 +1642,8 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
         capacity: result.capacity
       } as Employee;
     } catch (err: any) {
-      console.warn('saveEmployee catch notice (saved locally):', err?.message || err);
-      return saveEmployeeLocal(empData);
+      console.error('saveEmployee error:', err);
+      throw err;
     }
   };
 
@@ -1688,6 +1652,32 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
     const target = emps.find(e => e.id === employeeId);
     if (!target || !target.email) throw new Error('Zaměstnanec nenalezen');
     
+    if (isSupabaseConfigured) {
+      try {
+        const response = await fetch('/api/reset-employee-password', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            employeeId,
+            email: target.email,
+            organizationId: currentOrg?.id
+          })
+        });
+        const resData = await response.json();
+        if (!response.ok || !resData.success) {
+          throw new Error(resData?.error || 'Obnovení pozvánky selhalo.');
+        }
+        return {
+          email: target.email,
+          inviteToken: 'pending',
+          inviteLink: resData.resetLink || `${window.location.origin}/login?email=${encodeURIComponent(target.email)}`,
+          message: resData.message || `Pozvánka pro ${target.name} byla obnovena.`
+        };
+      } catch (err: any) {
+        throw new Error(`Obnovení pozvánky selhalo: ${err.message}`);
+      }
+    }
+
     const inviteToken = target.inviteToken || `inv-tok-${Date.now()}-${Math.floor(1000 + Math.random() * 9000)}`;
     const invitedAt = new Date().toISOString();
 
@@ -1700,21 +1690,6 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
         mockAll[idx].invitationStatus = 'Pending';
       }
       LocalSupabaseMock.saveEmployees(mockAll);
-    }
-
-    if (isSupabaseConfigured && supabase) {
-      try {
-        if (isValidUUID(employeeId)) {
-          await supabase.from('employees').update({ 
-            invite_token: inviteToken, 
-            invited_at: invitedAt,
-            invitation_status: 'Pending'
-          }).eq('id', employeeId);
-        }
-        await supabase.auth.resetPasswordForEmail(target.email);
-      } catch (e) {
-        console.warn('Supabase resetPasswordForEmail notice:', e);
-      }
     }
 
     const inviteLink = `${window.location.origin}/login?inviteToken=${inviteToken}&email=${encodeURIComponent(target.email)}`;
@@ -1731,15 +1706,33 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
     const emps = await fetchEmployees();
     const target = emps.find(e => e.id === employeeId);
     if (!target || !target.email) throw new Error('Zaměstnanec nenalezen');
-    const pwd = newPassword || `Stavba${Math.floor(1000 + Math.random() * 9000)}!`;
 
-    if (isSupabaseConfigured && supabase && isValidUUID(employeeId)) {
+    if (isSupabaseConfigured) {
       try {
-        await supabase.auth.admin.updateUserById(employeeId, { password: pwd });
-      } catch (e) {
-        console.warn('Supabase updateUserById notice:', e);
+        const response = await fetch('/api/reset-employee-password', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            employeeId,
+            email: target.email,
+            organizationId: currentOrg?.id,
+            newPassword
+          })
+        });
+        const resData = await response.json();
+        if (!response.ok || !resData.success) {
+          throw new Error(resData?.error || 'Obnova hesla selhala.');
+        }
+        return {
+          email: target.email,
+          newPassword: newPassword || 'Zaslán resetovací odkaz'
+        };
+      } catch (err: any) {
+        throw new Error(`Reset hesla selhal: ${err.message}`);
       }
     }
+
+    const pwd = newPassword || `Stavba${Math.floor(1000 + Math.random() * 9000)}!`;
     const authUsers = LocalSupabaseMock.getUsers();
     const found = authUsers.find(u => u.email.toLowerCase() === target.email.toLowerCase());
     if (found) {
