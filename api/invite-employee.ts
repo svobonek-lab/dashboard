@@ -73,53 +73,80 @@ export default async function handler(req: any, res: any) {
     let employeeId = existingEmp?.id;
 
     if (existingEmp) {
-      // Update existing record
-      const { error: updateErr } = await supabase
+      // Update existing record (try full schema first, fallback to base columns if columns not migrated)
+      let updatePayload: any = {
+        name,
+        role,
+        specialization,
+        phone,
+        capacity,
+        invite_token: inviteToken,
+        invited_at: invitedAt,
+        invitation_status: 'Pending',
+        user_id: createdAuthUserId || undefined,
+        active: true
+      };
+      let { error: updateErr } = await supabase
         .from('employees')
-        .update({
-          name,
-          role,
-          specialization,
-          phone,
-          capacity,
-          invite_token: inviteToken,
-          invited_at: invitedAt,
-          invitation_status: 'Pending',
-          user_id: createdAuthUserId || undefined,
-          active: true
-        })
+        .update(updatePayload)
         .eq('id', existingEmp.id);
 
       if (updateErr) {
-        throw new Error(`Chyba při aktualizaci zaměstnance: ${updateErr.message}`);
+        // Fallback to base columns
+        const basePayload: any = { name, specialization, phone, capacity };
+        const { error: fallbackErr } = await supabase
+          .from('employees')
+          .update(basePayload)
+          .eq('id', existingEmp.id);
+        if (fallbackErr) {
+          throw new Error(`Chyba při aktualizaci zaměstnance: ${fallbackErr.message}`);
+        }
       }
     } else {
-      // Insert new employee record
-      const { data: insertedEmp, error: insertErr } = await supabase
+      // Insert new employee record (try full schema first, fallback to base columns if needed)
+      let insertPayload: any = {
+        organization_id: organizationId,
+        name,
+        email: normalizedEmail,
+        role,
+        specialization,
+        phone,
+        capacity,
+        invite_token: inviteToken,
+        invited_at: invitedAt,
+        invitation_status: 'Pending',
+        user_id: createdAuthUserId || undefined,
+        status: 'Green',
+        avatar: '',
+        active: true
+      };
+      let { data: insertedEmp, error: insertErr } = await supabase
         .from('employees')
-        .insert({
-          organization_id: organizationId,
-          name,
-          email: normalizedEmail,
-          role,
-          specialization,
-          phone,
-          capacity,
-          invite_token: inviteToken,
-          invited_at: invitedAt,
-          invitation_status: 'Pending',
-          user_id: createdAuthUserId || undefined,
-          status: 'Green',
-          avatar: '',
-          active: true
-        })
+        .insert(insertPayload)
         .select()
         .single();
 
       if (insertErr) {
-        throw new Error(`Chyba při vkládání zaměstnance: ${insertErr.message}`);
+        // Fallback to base columns
+        const baseInsert: any = {
+          organization_id: organizationId,
+          name,
+          email: normalizedEmail,
+          specialization,
+          phone,
+          capacity
+        };
+        const { data: fbEmp, error: fbInsertErr } = await supabase
+          .from('employees')
+          .insert(baseInsert)
+          .select()
+          .single();
+        if (fbInsertErr) {
+          throw new Error(`Chyba při vkládání zaměstnance: ${fbInsertErr.message}`);
+        }
+        insertedEmp = fbEmp;
       }
-      employeeId = insertedEmp.id;
+      employeeId = insertedEmp?.id;
     }
 
     // 3. Construct secure invitation URL

@@ -78,13 +78,15 @@ export const OwnerSettingsPage: React.FC = () => {
 
   const [newService, setNewService] = useState('');
   const [savedSuccess, setSavedSuccess] = useState(false);
+  const [permissionError, setPermissionError] = useState<string | null>(null);
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
   const [copiedKey, setCopiedKey] = useState(false);
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!canManageCompany(dbUser?.role)) {
-      alert("Nemáte oprávnění spravovat firmu.");
+      setPermissionError("Nemáte oprávnění spravovat firmu.");
+      setTimeout(() => setPermissionError(null), 4000);
       return;
     }
     await updateBrandingAdmin(currentOrg?.id || '', formData.name, formData.primaryColor, formData.logoUrl || '');
@@ -477,7 +479,7 @@ export const OwnerSettingsPage: React.FC = () => {
             <button
               type="button"
               onClick={handleAddService}
-              className="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-800 text-xs font-bold transition-all flex items-center gap-1.5"
+              className="px-4 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold transition-all flex items-center gap-1.5"
             >
               <Plus className="w-4 h-4" />
               <span>Přidat</span>
@@ -495,12 +497,12 @@ export const OwnerSettingsPage: React.FC = () => {
           <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3 font-mono text-xs">
             <div className="space-y-1">
               <span className="text-slate-500 text-[11px] block">Produkční API Token:</span>
-              <span className="text-amber-400 font-bold">sk_live_stavbacore_984f839a2b9104</span>
+              <span className="text-amber-500 font-bold">sk_live_stavbacore_984f839a2b9104</span>
             </div>
             <button
               type="button"
               onClick={handleCopyApiKey}
-              className="px-3.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-700 text-xs font-bold flex items-center gap-1.5 self-start sm:self-auto"
+              className="px-3.5 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold flex items-center gap-1.5 self-start sm:self-auto transition-colors"
             >
               {copiedKey ? <Check className="w-3.5 h-3.5 text-green-400" /> : <Copy className="w-3.5 h-3.5" />}
               <span>{copiedKey ? 'Zkopírováno' : 'Kopírovat'}</span>
@@ -508,12 +510,19 @@ export const OwnerSettingsPage: React.FC = () => {
           </div>
         </div>
 
+        {/* Permission Error Message */}
+        {permissionError && (
+          <div className="p-4 bg-rose-50 border border-rose-200 rounded-2xl text-rose-700 text-xs font-bold flex items-center gap-2">
+            <span>{permissionError}</span>
+          </div>
+        )}
+
         {/* Submit Buttons */}
         <div className="flex items-center justify-between pt-2">
           <button
             type="button"
             onClick={() => updateBrandingAdmin(currentOrg?.id || '', '', '#2563eb', '')}
-            className="px-4 py-3 rounded-2xl bg-white hover:bg-slate-800 border border-slate-200 text-xs font-bold text-slate-500 hover:text-slate-900 transition-all flex items-center gap-2"
+            className="px-4 py-3 rounded-2xl bg-white hover:bg-slate-100 border border-slate-200 text-xs font-bold text-slate-700 hover:text-slate-900 transition-all flex items-center gap-2"
           >
             <RefreshCw className="w-4 h-4" />
             <span>Obnovit výchozí nastavení</span>

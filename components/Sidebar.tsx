@@ -39,6 +39,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
   const baseMenuItems = [
     { id: 'dashboard', label: 'Přehled stavby', icon: LayoutDashboard },
+    { id: 'demo', label: 'Interaktivní Demo', icon: Sparkles },
+    { id: 'landing', label: 'Prodejní Landing Page', icon: FolderOpen },
     { id: 'leads', label: 'Poptávky & Kanban', icon: Kanban },
     { id: 'calendar', label: 'Harmonogram výjezdů', icon: CalendarIcon },
     { id: 'employees', label: 'Tým & Řemeslníci', icon: Users },

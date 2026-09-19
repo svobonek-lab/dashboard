@@ -326,10 +326,21 @@ export const CustomerPortalPage: React.FC<CustomerPortalPageProps> = ({
                     <span>Kompletní PDF rozpis materiálů a prací</span>
                   </div>
                   <button 
-                    onClick={() => alert('Stahuji PDF rozpočet...')}
-                    className="px-3.5 py-2 rounded-xl bg-slate-800 border border-slate-300 text-xs font-bold text-slate-800 hover:bg-slate-700 flex items-center gap-1.5"
+                    onClick={() => {
+                      const text = `POLOŽKOVÝ ROZPIS DÍLA\nZakázka: ${lead.title}\nZhotovitel: ${activeCompanyName}\nCena díla: ${lead.price.toLocaleString('cs-CZ')} Kč vč. DPH\n\n1. Dodávka a montáž konstrukce vč. kotvení: 140 000 Kč\n2. Zastřešení a izolační doplňky: 50 000 Kč\n3. Doprava a stavební příprava: 30 000 Kč\n\nCelkem: ${lead.price.toLocaleString('cs-CZ')} Kč`;
+                      const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
+                      const url = URL.createObjectURL(blob);
+                      const a = document.createElement('a');
+                      a.href = url;
+                      a.download = `polozkovy_rozpocet_${lead.title.toLowerCase().replace(/\s+/g, '_')}.txt`;
+                      document.body.appendChild(a);
+                      a.click();
+                      document.body.removeChild(a);
+                      URL.revokeObjectURL(url);
+                    }}
+                    className="px-3.5 py-2 rounded-xl bg-slate-900 text-white text-xs font-bold hover:bg-slate-800 flex items-center gap-1.5 transition-colors shadow-2xs"
                   >
-                    <Download className="w-3.5 h-3.5" /> Stáhnout PDF
+                    <Download className="w-3.5 h-3.5" /> Stáhnout rozpis
                   </button>
                 </div>
               </div>

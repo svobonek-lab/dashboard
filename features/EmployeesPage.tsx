@@ -144,7 +144,8 @@ export const EmployeesPage: React.FC<EmployeesPageProps> = ({ employees, brandin
       setActionNotice(`Pozvánka pro ${emp.name} byla obnovena.`);
       setTimeout(() => setActionNotice(null), 5000);
     } catch (err: any) {
-      alert(err?.message || 'Chyba při odesílání pozvánky');
+      setActionNotice(err?.message || 'Chyba při odesílání pozvánky');
+      setTimeout(() => setActionNotice(null), 5000);
     }
   };
 
@@ -166,7 +167,8 @@ export const EmployeesPage: React.FC<EmployeesPageProps> = ({ employees, brandin
       setActionNotice(`Heslo pro ${resetModalState.employee.name} (${resetModalState.employee.email}) bylo úspěšně nastaveno na: ${resetModalState.newPassword}`);
       setTimeout(() => setActionNotice(null), 8000);
     } catch (err: any) {
-      alert(err?.message || 'Chyba při resetování hesla');
+      setActionNotice(err?.message || 'Chyba při resetování hesla');
+      setTimeout(() => setActionNotice(null), 5000);
     } finally {
       setResetModalState(prev => ({ ...prev, isSubmitting: false }));
     }
@@ -185,13 +187,15 @@ export const EmployeesPage: React.FC<EmployeesPageProps> = ({ employees, brandin
       setActionNotice(`Účet zaměstnance ${emp.name} byl ${isCurrentlyActive ? 'deaktivován' : 'aktivován'}.`);
       setTimeout(() => setActionNotice(null), 4000);
     } catch (err: any) {
-      alert(err?.message || 'Chyba při změně stavu');
+      setActionNotice(err?.message || 'Chyba při změně stavu');
+      setTimeout(() => setActionNotice(null), 4000);
     }
   };
 
   const handleDeleteEmployee = async (id: string) => {
     if (!canDeleteEmployees(dbUser?.role)) {
-      alert("Nemáte oprávnění odstraňovat zaměstnance z organizace.");
+      setActionNotice("Nemáte oprávnění odstraňovat zaměstnance z organizace.");
+      setTimeout(() => setActionNotice(null), 4000);
       return;
     }
     if (!window.confirm("Opravdu chcete smazat tohoto zaměstnance z organizace?")) return;
@@ -201,7 +205,8 @@ export const EmployeesPage: React.FC<EmployeesPageProps> = ({ employees, brandin
       setActionNotice("Zaměstnanec byl úspěšně odstraněn.");
       setTimeout(() => setActionNotice(null), 4000);
     } catch (err: any) {
-      alert(err?.message || 'Chyba při mazání');
+      setActionNotice(err?.message || 'Chyba při mazání');
+      setTimeout(() => setActionNotice(null), 4000);
     }
   };
 
@@ -443,7 +448,10 @@ export const EmployeesPage: React.FC<EmployeesPageProps> = ({ employees, brandin
                   <span>Zpráva</span>
                 </a>
                 <AppButton
-                  onClick={() => alert(`Plánování kalendáře pro ${emp.name}`)}
+                  onClick={() => {
+                    setActionNotice(`Harmonogram a kapacity pro ${emp.name} byly zobrazeny.`);
+                    setTimeout(() => setActionNotice(null), 4000);
+                  }}
                   variant="outline"
                   size="sm"
                   className="w-full"

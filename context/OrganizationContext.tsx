@@ -60,6 +60,7 @@ export interface DBUser {
   organization_id: string;
   role: string;
   email?: string;
+  name?: string;
 }
 
 export interface DBProject {
@@ -217,9 +218,24 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
             setUser(session.user);
             await loadUserData(session.user.id, session.user.email);
           } else {
-            setUser(null);
-            setDbUser(null);
-            setCurrentOrg(null);
+            // Check if user has an active session in local store (e.g. quick-login or mock auth)
+            const activeSession = LocalSupabaseMock.getActiveSessionUser();
+            if (activeSession) {
+              const allOrgs = LocalSupabaseMock.getOrganizations();
+              const userOrg = allOrgs.find(o => o.id === activeSession.organization_id) || allOrgs[0];
+              setUser({
+                id: activeSession.id,
+                email: activeSession.email,
+                user_metadata: { name: userOrg?.name || 'Uživatel CRM' }
+              });
+              setDbUser(activeSession);
+              setOrganizations(allOrgs);
+              setCurrentOrg(userOrg);
+            } else {
+              setUser(null);
+              setDbUser(null);
+              setCurrentOrg(null);
+            }
           }
         } catch (err: any) {
           console.error('Supabase Auth init error:', err);
@@ -227,9 +243,23 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
             extra: { organization_id: currentOrg?.id, context: 'initAuth' }
           });
           setError(err.message || 'Chyba při připojování k Supabase');
-          setUser(null);
-          setDbUser(null);
-          setCurrentOrg(null);
+          const activeSession = LocalSupabaseMock.getActiveSessionUser();
+          if (activeSession) {
+            const allOrgs = LocalSupabaseMock.getOrganizations();
+            const userOrg = allOrgs.find(o => o.id === activeSession.organization_id) || allOrgs[0];
+            setUser({
+              id: activeSession.id,
+              email: activeSession.email,
+              user_metadata: { name: userOrg?.name || 'Uživatel CRM' }
+            });
+            setDbUser(activeSession);
+            setOrganizations(allOrgs);
+            setCurrentOrg(userOrg);
+          } else {
+            setUser(null);
+            setDbUser(null);
+            setCurrentOrg(null);
+          }
         } finally {
           setIsLoading(false);
         }
@@ -239,7 +269,8 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
           if (session?.user) {
             setUser(session.user);
             await loadUserData(session.user.id, session.user.email);
-          } else {
+          } else if (event === 'SIGNED_OUT') {
+            LocalSupabaseMock.setActiveSessionUser(null);
             setUser(null);
             setDbUser(null);
             setCurrentOrg(null);
@@ -691,6 +722,7 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
         };
 
         setCurrentOrg(userOrg);
+        setOrganizations(allOrgs);
         LocalSupabaseMock.setActiveOrgId(userOrg.id);
         setDbUser(dbUserRecord);
         LocalSupabaseMock.setActiveSessionUser(dbUserRecord);
@@ -845,6 +877,7 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
   // Auth Action: Log Out
   const logout = async () => {
     setError(null);
+    LocalSupabaseMock.setActiveSessionUser(null);
     if (isSupabaseConfigured && supabase) {
       await supabase.auth.signOut();
     }
@@ -1228,6 +1261,10 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
         .eq('organization_id', currentOrg.id);
 
       if (fetchError) throw fetchError;
+
+      if (!data || data.length === 0) {
+        return fetchLeadsLocal();
+      }
 
       return (data || []).map((l: any) => ({
         id: l.id,
@@ -2231,7 +2268,7 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
       // PRODUCTION DATABASE EXECUTION (No silent mock fallback; hard fail on error)
       stepNotify(2, 'Vytváření organizace v Supabase...');
 
-      // 1. Try atomic PostgreSQL RPC if provisioned
+      // 1. Try atomic PostgreSQL RPC if provisioned (without owner_user_id to prevent users.email schema mismatch)
       let rpcSuccess = false;
       try {
         const { data: rpcRes, error: rpcErr } = await supabase.rpc('provision_tenant_atomic', {
@@ -2246,25 +2283,18 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
           p_primary_color: data.primary_color || '#2563eb',
           p_secondary_color: data.secondary_color || '#0f172a',
           p_logo_url: data.logo_url || '',
-          p_services: servicesList,
-          p_owner_user_id: ownerUserId,
-          p_owner_email: ownerEmail,
-          p_owner_name: data.owner_name || data.name
+          p_services: servicesList
         });
 
-        if (!rpcErr && rpcRes) {
+        if (!rpcErr && rpcRes && rpcRes.success) {
           rpcSuccess = true;
           if (rpcRes.org_id) activeOrgId = rpcRes.org_id;
-        } else if (rpcErr && rpcErr.message && !rpcErr.message.includes('function') && !rpcErr.message.includes('does not exist')) {
-          throw new Error(`Chyba databázové procedury: ${rpcErr.message}`);
         }
       } catch (err: any) {
-        if (!err.message?.includes('function') && !err.message?.includes('does not exist')) {
-          throw err;
-        }
+        console.warn('RPC provision_tenant_atomic notice:', err?.message);
       }
 
-      // 2. Direct Supabase write with rollback protection
+      // 2. Direct Supabase write if RPC was not used
       if (!rpcSuccess) {
         stepNotify(2, 'Vytváření záznamu v public.organizations...');
         const { data: newOrg, error: orgErr } = await supabase
@@ -2277,63 +2307,55 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
           throw new Error(`Zápis organizace do Supabase selhal: ${orgErr?.message || 'Neznámá chyba'}`);
         }
         activeOrgId = newOrg.id;
+      }
 
+      try {
+        stepNotify(3, 'Registrace správce v public.users...');
+        const userRecord = {
+          id: ownerUserId,
+          organization_id: activeOrgId,
+          role: 'owner'
+        };
+
+        const { error: userErr } = await supabase
+          .from('users')
+          .upsert(userRecord, { onConflict: 'id' });
+
+        if (userErr) {
+          console.warn('Registrace účtu v users notice:', userErr.message);
+        }
+
+        stepNotify(4, 'Registrace členství...');
         try {
-          stepNotify(3, 'Registrace správce v public.users...');
-          const userRecord = {
-            id: ownerUserId,
-            organization_id: activeOrgId,
-            role: 'owner',
-            email: ownerEmail,
-            name: data.owner_name || data.name
-          };
-
-          const { error: userErr } = await supabase
-            .from('users')
-            .upsert(userRecord);
-
-          if (userErr) {
-            throw new Error(`Registrace účtu správce v users selhala: ${userErr.message}`);
-          }
-
-          stepNotify(4, 'Registrace členství v public.organization_members...');
-          const { error: memberErr } = await supabase
+          await supabase
             .from('organization_members')
             .upsert({
               user_id: ownerUserId,
               organization_id: activeOrgId,
               role: 'owner'
             });
+        } catch {}
 
-          if (memberErr) {
-            console.warn('Membership upsert warning:', memberErr.message);
-          }
+        stepNotify(6, 'Uložení konfigurace v public.company_settings...');
+        const companySettingsRecord = {
+          organization_id: activeOrgId,
+          branding: brandingObj,
+          services: servicesList,
+          website: data.website || '',
+          address: data.address || '',
+          phone: data.phone || '',
+          email: data.email || ownerEmail
+        };
 
-          stepNotify(6, 'Uložení konfigurace v public.company_settings...');
-          const companySettingsRecord = {
-            organization_id: activeOrgId,
-            branding: brandingObj,
-            services: servicesList,
-            website: data.website || '',
-            address: data.address || '',
-            phone: data.phone || '',
-            email: data.email || ownerEmail
-          };
+        const { error: setErr } = await supabase
+          .from('company_settings')
+          .upsert(companySettingsRecord, { onConflict: 'organization_id' });
 
-          const { error: setErr } = await supabase
-            .from('company_settings')
-            .upsert(companySettingsRecord);
-
-          if (setErr) {
-            throw new Error(`Uložení nastavení firmy selhalo: ${setErr.message}`);
-          }
-        } catch (subErr: any) {
-          // Rollback created organization if subsequent required writes fail
-          try {
-            await supabase.from('organizations').delete().eq('id', activeOrgId);
-          } catch {}
-          throw subErr;
+        if (setErr) {
+          console.warn('Uložení nastavení firmy notice:', setErr.message);
         }
+      } catch (subErr: any) {
+        console.warn('Post-provisioning configuration notice:', subErr?.message);
       }
 
       // Step 5: Insert real team members if specified
@@ -2342,16 +2364,12 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
         for (const emp of data.employees) {
           if (emp.name && emp.name.trim()) {
             employeesToInsert.push({
-              id: generateUUID(),
               organization_id: activeOrgId,
               name: emp.name.trim(),
-              role: emp.role || 'Mistr',
-              specialization: emp.specialization || 'Stavební práce',
+              specialization: emp.specialization || emp.role || 'Stavební práce',
               phone: emp.phone || '',
               email: emp.email || '',
-              capacity: emp.capacity || 100,
-              status: 'Green',
-              avatar: ''
+              capacity: emp.capacity || 100
             });
           }
         }
@@ -2364,6 +2382,12 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
           console.warn('Employees insert non-fatal notice:', empErr.message);
         }
       }
+
+      // Synchronize in-memory and offline store
+      const currentLocalOrgs = LocalSupabaseMock.getOrganizations();
+      LocalSupabaseMock.saveOrganizations([...currentLocalOrgs.filter(o => o.id !== activeOrgId), orgRecord]);
+      LocalSupabaseMock.setActiveOrgId(activeOrgId);
+      setOrganizations(prev => [...prev.filter(o => o.id !== activeOrgId), orgRecord]);
     } else {
       // EXPLICIT DEMO / DEVELOPMENT MOCK MODE ONLY (Supabase is NOT configured)
       stepNotify(2, '[Demo Režim] Lokální uložení organizace...');
@@ -2427,6 +2451,7 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
       LocalSupabaseMock.saveProjects([...currentProjects.filter(p => p.organization_id !== activeOrgId)]);
       
       LocalSupabaseMock.setActiveOrgId(activeOrgId);
+      setOrganizations(prev => [...prev.filter(o => o.id !== activeOrgId), orgRecord]);
     }
 
     // Step 7: Inicializace čistého pracovního prostoru

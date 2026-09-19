@@ -6,6 +6,7 @@ import analyzeWebsiteHandler from './api/analyze-website';
 import testSqlHandler from './api/test-sql';
 import inviteEmployeeHandler from './api/invite-employee';
 import resetEmployeePasswordHandler from './api/reset-employee-password';
+import outboxSchedulerHandler from './api/outbox-scheduler';
 
 function apiMiddlewarePlugin(): Plugin {
   return {
@@ -63,6 +64,11 @@ function apiMiddlewarePlugin(): Plugin {
 
         if (req.url === '/api/reset-employee-password' && req.method === 'POST') {
           handleRoute(resetEmployeePasswordHandler);
+          return;
+        }
+
+        if ((req.url === '/api/outbox-scheduler' || req.url?.startsWith('/api/outbox-scheduler')) && (req.method === 'POST' || req.method === 'GET')) {
+          handleRoute(outboxSchedulerHandler);
           return;
         }
 

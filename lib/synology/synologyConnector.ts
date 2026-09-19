@@ -107,7 +107,7 @@ services:
       # ------------------------------------------------------------------
       # 2. ZABEZPEČENÝ TRANSPORT (HTTPS & TLS 1.3)
       # ------------------------------------------------------------------
-      - BUILDFLOW_ENDPOINT=https://ais-dev-yafu5oubxe3o6hzzewfzd2-440069837434.europe-west2.run.app/api/v1/synology/webhook/${organizationId}
+      - BUILDFLOW_ENDPOINT=${typeof window !== 'undefined' ? window.location.origin : ''}/api/v1/synology/webhook/${organizationId}
       - HTTPS_STRICT_TLS=true
       - TLS_MIN_VERSION=TLSv1.3
       - SSL_VERIFY=true

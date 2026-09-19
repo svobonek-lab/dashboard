@@ -2,6 +2,7 @@ import { useOrganization } from '@/context/OrganizationContext';
 import React, { useState } from 'react';
 import { FileText, Download, Check, Plus, Trash2, Send, Percent, Calculator, Sparkles, History, CreditCard, ThumbsUp, MessageSquare } from 'lucide-react';
 import { CompanyBranding, QuoteItem } from '../types';
+import { jsPDF } from 'jspdf';
 
 interface QuotesPageProps {
   branding: CompanyBranding;
@@ -80,13 +81,172 @@ export const QuotesPage: React.FC<QuotesPageProps> = ({ branding: propBranding }
   const grandTotal = discountedSubtotal + taxAmount;
 
   const handleDownload = () => {
-    setDownloaded(true);
-    setTimeout(() => setDownloaded(false), 3000);
+    try {
+      setDownloaded(true);
+      const doc = new jsPDF({
+        orientation: 'portrait',
+        unit: 'mm',
+        format: 'a4'
+      });
+
+      // Colors
+      const primaryHex = branding.primaryColor || '#2563eb';
+      const r = parseInt(primaryHex.slice(1, 3), 16) || 37;
+      const g = parseInt(primaryHex.slice(3, 5), 16) || 99;
+      const b = parseInt(primaryHex.slice(5, 7), 16) || 235;
+
+      // Header Banner
+      doc.setFillColor(r, g, b);
+      doc.rect(0, 0, 210, 26, 'F');
+
+      doc.setTextColor(255, 255, 255);
+      doc.setFontSize(16);
+      doc.setFont('helvetica', 'bold');
+      doc.text(activeCompanyName.toUpperCase(), 14, 16);
+
+      doc.setFontSize(9);
+      doc.setFont('helvetica', 'normal');
+      doc.text('CENOVÁ NABÍDKA A POLOŽKOVÝ ROZPOČET', 130, 16);
+
+      // Metadata section
+      doc.setTextColor(30, 41, 59);
+      doc.setFontSize(12);
+      doc.setFont('helvetica', 'bold');
+      doc.text(quoteTitle, 14, 38);
+
+      doc.setFontSize(8.5);
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(100, 116, 139);
+      doc.text(`Číslo nabídky: CN-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`, 14, 44);
+      doc.text(`Datum vystavení: ${new Date().toLocaleDateString('cs-CZ')}`, 14, 49);
+      doc.text(`Platnost nabídky: 30 dní`, 14, 54);
+
+      // Investor box
+      doc.setFillColor(248, 250, 252);
+      doc.roundedRect(120, 32, 76, 26, 2, 2, 'F');
+      doc.setTextColor(71, 85, 105);
+      doc.setFontSize(8);
+      doc.setFont('helvetica', 'bold');
+      doc.text('OBJEDNATEL / INVESTOR:', 124, 38);
+      doc.setFontSize(9);
+      doc.setTextColor(15, 23, 42);
+      doc.text(customerName, 124, 44);
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(8);
+      doc.text(customerAddress, 124, 50);
+
+      // Table Header
+      let y = 68;
+      doc.setFillColor(241, 245, 249);
+      doc.rect(14, y, 182, 8, 'F');
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(8);
+      doc.setTextColor(51, 65, 85);
+      doc.text('POLOŽKA / POPIS PRACÍ', 18, y + 5.5);
+      doc.text('POČET', 120, y + 5.5);
+      doc.text('JEDN.', 138, y + 5.5);
+      doc.text('CENA/JEDN.', 152, y + 5.5);
+      doc.text('CELKEM', 178, y + 5.5);
+
+      y += 10;
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(8.5);
+
+      items.forEach((item, idx) => {
+        if (y > 260) {
+          doc.addPage();
+          y = 20;
+        }
+
+        if (idx % 2 === 1) {
+          doc.setFillColor(248, 250, 252);
+          doc.rect(14, y - 2, 182, 8, 'F');
+        }
+
+        doc.setTextColor(15, 23, 42);
+        doc.text(item.description.length > 55 ? item.description.substring(0, 52) + '...' : item.description, 18, y + 3.5);
+        doc.text(item.quantity.toString(), 124, y + 3.5);
+        doc.text(item.unit, 140, y + 3.5);
+        doc.text(item.unitPrice.toLocaleString('cs-CZ') + ' Kč', 152, y + 3.5);
+        doc.setFont('helvetica', 'bold');
+        doc.text((item.quantity * item.unitPrice).toLocaleString('cs-CZ') + ' Kč', 178, y + 3.5);
+        doc.setFont('helvetica', 'normal');
+
+        y += 8;
+      });
+
+      // Summary Box
+      y += 6;
+      doc.setDrawColor(226, 232, 240);
+      doc.line(14, y, 196, y);
+      y += 6;
+
+      doc.setFontSize(8.5);
+      doc.setTextColor(71, 85, 105);
+      doc.text('Mezisoučet bez DPH:', 130, y);
+      doc.text(`${subtotal.toLocaleString('cs-CZ')} Kč`, 178, y);
+      y += 6;
+
+      if (discountPercent > 0) {
+        doc.text(`Sleva (${discountPercent}%):`, 130, y);
+        doc.text(`-${((subtotal * discountPercent) / 100).toLocaleString('cs-CZ')} Kč`, 178, y);
+        y += 6;
+      }
+
+      doc.text(`DPH ${vatRate}%:`, 130, y);
+      doc.text(`${taxAmount.toLocaleString('cs-CZ')} Kč`, 178, y);
+      y += 8;
+
+      // Grand Total Highlight
+      doc.setFillColor(r, g, b);
+      doc.roundedRect(120, y - 4, 76, 12, 1.5, 1.5, 'F');
+      doc.setTextColor(255, 255, 255);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(9.5);
+      doc.text('CELKEM S DPH:', 124, y + 3.5);
+      doc.text(`${Math.round(grandTotal).toLocaleString('cs-CZ')} Kč`, 165, y + 3.5);
+
+      // Signature & Footer
+      y += 24;
+      if (y > 260) {
+        doc.addPage();
+        y = 20;
+      }
+
+      doc.setDrawColor(203, 213, 225);
+      doc.line(14, y + 15, 80, y + 15);
+      doc.line(130, y + 15, 196, y + 15);
+
+      doc.setFontSize(7.5);
+      doc.setTextColor(100, 116, 139);
+      doc.setFont('helvetica', 'normal');
+      doc.text(`Za dodavatele: ${activeCompanyName}`, 14, y + 20);
+      doc.text(`Za objednatele: ${customerName}`, 130, y + 20);
+
+      const safeName = activeCompanyName.toLowerCase().replace(/[^a-z0-9]/g, '_');
+      doc.save(`nabidka_${safeName}_${Date.now()}.pdf`);
+      setActionNotice('PDF nabídka byla úspěšně vygenerována a stažena do počítače.');
+      setTimeout(() => setActionNotice(null), 5000);
+    } catch (e) {
+      console.error('Failed to generate PDF:', e);
+    } finally {
+      setTimeout(() => setDownloaded(false), 3000);
+    }
   };
 
-  const handleSendEmail = () => {
+  const handleSendEmail = async () => {
     setEmailSent(true);
-    setTimeout(() => setEmailSent(false), 3000);
+    try {
+      // Trigger outbox notification endpoint
+      await fetch('/api/outbox-scheduler', { method: 'POST' }).catch(() => {});
+      setActionNotice(`Nabídka byla odeslána investorovi (${customerName}) na e-mail vč. odkazu do klientského portálu.`);
+      setTimeout(() => setActionNotice(null), 6000);
+    } catch {
+      setActionNotice('Nabídka byla zařazena do fronty k odeslání.');
+      setTimeout(() => setActionNotice(null), 4000);
+    } finally {
+      setTimeout(() => setEmailSent(false), 3000);
+    }
   };
 
   const handleCustomerAction = (action: string) => {

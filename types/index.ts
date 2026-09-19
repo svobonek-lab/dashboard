@@ -102,6 +102,8 @@ export interface Lead {
   projectType?: string;
   phone?: string;
   email?: string;
+  location?: string;
+  calculatedMargin?: number;
   history: {
     id: string;
     timestamp: string;

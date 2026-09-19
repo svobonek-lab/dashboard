@@ -1,6 +1,6 @@
 {
   "name": "StavbaCore",
-  "description": "Komplexní systém pro řízení stavebních firem.",
+  "description": "Obchodně-provozní systém pro české stavební firmy. Propojí poptávku, cenovou nabídku, realizaci, práci týmu a marži do jednoho pracovního toku.",
   "requestFramePermissions": ["microphone"],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

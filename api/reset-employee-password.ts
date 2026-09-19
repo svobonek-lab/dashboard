@@ -73,13 +73,17 @@ export default async function handler(req: any, res: any) {
     // 3. Issue fresh invite/activation token
     const resetToken = 'rst_' + Math.random().toString(36).substring(2, 15);
     if (employeeId) {
-      await supabase
-        .from('employees')
-        .update({
-          invite_token: resetToken,
-          invitation_status: 'Pending'
-        })
-        .eq('id', employeeId);
+      try {
+        await supabase
+          .from('employees')
+          .update({
+            invite_token: resetToken,
+            invitation_status: 'Pending'
+          })
+          .eq('id', employeeId);
+      } catch (tokenUpdateErr) {
+        console.warn('Employee token update notice:', tokenUpdateErr);
+      }
     }
 
     const appUrl = process.env.APP_URL || '';

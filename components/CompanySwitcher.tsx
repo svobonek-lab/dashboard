@@ -38,10 +38,10 @@ export const CompanySwitcher: React.FC<CompanySwitcherProps> = ({ variant = 'dar
   // Load organizations
   useEffect(() => {
     const isSuperAdmin = (dbUser?.email || '').trim().toLowerCase() === 'svobonek@gmail.com' || dbUser?.role === 'super_admin';
+    const localOrgs = LocalSupabaseMock.getOrganizations();
     if (isSuperAdmin) {
-      const orgs = LocalSupabaseMock.getOrganizations();
-      if (orgs && orgs.length > 0) {
-        setAllOrgs(orgs);
+      if (localOrgs && localOrgs.length > 0) {
+        setAllOrgs(localOrgs);
       } else if (organizations && organizations.length > 0) {
         setAllOrgs(organizations);
       }
@@ -52,11 +52,8 @@ export const CompanySwitcher: React.FC<CompanySwitcherProps> = ({ variant = 'dar
         }).catch(() => {});
       }
     } else {
-      if (currentOrg) {
-        setAllOrgs([currentOrg]);
-      } else {
-        setAllOrgs([]);
-      }
+      const available = organizations && organizations.length > 1 ? organizations : localOrgs;
+      setAllOrgs(available && available.length > 0 ? available : (currentOrg ? [currentOrg] : []));
     }
   }, [organizations, dbUser, currentOrg, fetchAllOrganizationsAdmin]);
 

@@ -50,6 +50,8 @@ import { LoginPage } from '@/components/LoginPage';
 import { WidgetIframePage } from '@/features/WidgetIframePage';
 import { InquiryFormPage } from '@/features/InquiryFormPage';
 import { CustomerPortalPage } from '@/features/CustomerPortalPage';
+import { LandingPage } from '@/features/LandingPage';
+import { InteractiveStoryDemo } from '@/features/InteractiveStoryDemo';
 
 // Types
 import { Lead, LeadStatus } from '@/types';
@@ -356,6 +358,18 @@ function AppContent() {
     );
   }
 
+  if (pathname === '/landing' || pathname === '/prezentace') {
+    return <LandingPage />;
+  }
+
+  if (pathname === '/demo' || pathname === '/interaktivni-demo') {
+    return (
+      <div className="min-h-screen bg-[#F8FAFC] p-4 sm:p-8">
+        <InteractiveStoryDemo />
+      </div>
+    );
+  }
+
   if (pathname === '/portal') {
     return (
       <div className="min-h-screen bg-slate-50 p-6">
@@ -471,6 +485,8 @@ function AppContent() {
           <SynologyNAS leads={leads} employees={employees} onAddLead={handleAddLead} />
         ) : pathname === '/settings' ? (
           <OwnerSettingsPage />
+        ) : pathname === '/demo' ? (
+          <InteractiveStoryDemo />
         ) : (
           <OwnerDashboardPage leads={leads} employees={employees} onSelectLead={setSelectedLead} />
         )}
