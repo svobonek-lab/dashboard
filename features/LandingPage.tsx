@@ -33,8 +33,10 @@ export const LandingPage: React.FC = () => {
   const [bookingName, setBookingName] = useState('');
   const [bookingCompany, setBookingCompany] = useState('');
   const [bookingPhone, setBookingPhone] = useState('');
+  const [bookingEmail, setBookingEmail] = useState('');
   const [bookingDate, setBookingDate] = useState('Pondělí 10:00');
   const [bookingSuccess, setBookingSuccess] = useState(false);
+  const [activeLegalModal, setActiveLegalModal] = useState<'vop' | 'gdpr' | 'dpa' | null>(null);
 
   // ROI Calculator State (Page 13 of Audit)
   const [monthlyLeads, setMonthlyLeads] = useState(16);
@@ -52,13 +54,30 @@ export const LandingPage: React.FC = () => {
   const roiMultiplier = (additionalMarginQuarter / growthCostQuarter).toFixed(1);
   const adminHoursSavedQuarter = Math.round(adminHoursWeekly * 12 * 0.6); // 60% time saved on paperwork
 
-  const handleBookingSubmit = (e: React.FormEvent) => {
+  const handleBookingSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    try {
+      const { supabase, isSupabaseConfigured } = await import('../lib/supabase');
+      const bookingData = {
+        name: bookingName,
+        company: bookingCompany,
+        phone: bookingPhone,
+        email: bookingEmail,
+        preferred_time: bookingDate,
+        status: 'new'
+      };
+
+      if (isSupabaseConfigured && supabase) {
+        await supabase.from('demo_bookings').insert(bookingData);
+      } else {
+        const stored = JSON.parse(localStorage.getItem('stavbacore_demo_bookings') || '[]');
+        stored.push({ ...bookingData, id: 'demo-' + Date.now(), created_at: new Date().toISOString() });
+        localStorage.setItem('stavbacore_demo_bookings', JSON.stringify(stored));
+      }
+    } catch (e) {
+      console.warn('Booking persist notice:', e);
+    }
     setBookingSuccess(true);
-    setTimeout(() => {
-      setIsBookingOpen(false);
-      setBookingSuccess(false);
-    }, 2500);
   };
 
   return (
@@ -452,7 +471,7 @@ export const LandingPage: React.FC = () => {
             Začněte Founding Pilotem bez rizika
           </h2>
           <p className="text-xs sm:text-sm text-slate-500">
-            Žádné dlouhé smlouvy předem. První měsíc osobně ověříme přínos ve vaší firmě.
+            Žádné dlouhé smlouvy předem. První měsíc osobně ověříme přínos ve vaší firmě. Všechny ceny jsou uvedeny bez DPH.
           </p>
         </div>
 
@@ -577,23 +596,23 @@ export const LandingPage: React.FC = () => {
 
           <div className="space-y-4 text-xs">
             <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 space-y-1.5">
-              <h4 className="font-black text-slate-900 text-sm">Jak přesně funguje propojení s POHODOU?</h4>
+              <h4 className="font-black text-slate-900 text-sm">Jak funguje propojení s POHODOU?</h4>
               <p className="text-slate-600 leading-relaxed">
-                Export kontaktů a adresáře do POHODY je plně podporovaný přes oficiální Stormware XML dataPack. Stačí kliknout a naimportovat soubor do POHODY. Další agendy (zakázky, faktury) nastavíme individuálně podle toho, jak vaše účtárna POHODU používá.
+                Pilotní export kontaktů a faktur probíhá přes standardizovaný Stormware XML dataPack (verze 2.0). Stačí vygenerovat XML soubor přímo ze zakázky a naimportovat do POHODY.
               </p>
             </div>
 
             <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 space-y-1.5">
               <h4 className="font-black text-slate-900 text-sm">Zvládnou mobilní aplikaci naši řemeslníci na stavbě?</h4>
               <p className="text-slate-600 leading-relaxed">
-                Ano. Rozhraní pro terén je extrémně jednoduché. Žádné složité formuláře. Jedno velké tlačítko pro start/stop práce, zadání ceny materiálu z účtenky a možnost vyfotit stavbu mobilem. Zvládne to každý během 2 minut.
+                Ano. Rozhraní pro terén je extrémně jednoduché. Přehledný stav zakázky, záznam odpracovaného času, materiál a možnost přiložit fotodokumentaci ze stavby.
               </p>
             </div>
 
             <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 space-y-1.5">
               <h4 className="font-black text-slate-900 text-sm">Můžeme svá data kdykoliv exportovat?</h4>
               <p className="text-slate-600 leading-relaxed">
-                Všechna data jsou vaše. Žádný vendor lock-in. Jedním klikem můžete kdykoliv stáhnout kompletní exporty zakázek, kontaktů i dokumentů ve formátech CSV, JSON i PDF.
+                Všechna data jsou vaše. Kdykoliv můžete stáhnout kompletní ZIP archiv firemních dat, cenové nabídky v PDF i XML pro účetní systémy.
               </p>
             </div>
           </div>
@@ -602,21 +621,86 @@ export const LandingPage: React.FC = () => {
 
       {/* 8. Footer */}
       <footer className="py-12 bg-slate-950 text-white border-t border-slate-800 text-xs">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-2.5">
-            <div className="w-7 h-7 rounded-lg bg-[#0A84FF] text-white font-bold flex items-center justify-center text-xs">
-              SC
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div className="flex items-center gap-2.5">
+              <div className="w-7 h-7 rounded-lg bg-[#0A84FF] text-white font-bold flex items-center justify-center text-xs">
+                SC
+              </div>
+              <span className="font-bold">StavbaCore © 2026</span>
+              <span className="text-slate-500">· Operační systém pro české stavební firmy</span>
             </div>
-            <span className="font-bold">StavbaCore © 2026</span>
-            <span className="text-slate-500">· Pro české stavební firmy</span>
+            <div className="flex flex-wrap gap-4 text-slate-400">
+              <button onClick={() => navigate('/login')} className="hover:text-white transition-colors">Přihlášení</button>
+              <button onClick={() => navigate('/demo')} className="hover:text-white transition-colors">Interaktivní demo</button>
+              <button onClick={() => setIsBookingOpen(true)} className="hover:text-white transition-colors">Osobní ukázka (20 min)</button>
+              <button onClick={() => setActiveLegalModal('vop')} className="hover:text-white transition-colors">VOP</button>
+              <button onClick={() => setActiveLegalModal('gdpr')} className="hover:text-white transition-colors">GDPR & Soukromí</button>
+              <button onClick={() => setActiveLegalModal('dpa')} className="hover:text-white transition-colors">Zpracovatelská smlouva (DPA)</button>
+            </div>
           </div>
-          <div className="flex gap-4 text-slate-400">
-            <button onClick={() => navigate('/login')} className="hover:text-white">Přihlášení</button>
-            <button onClick={() => navigate('/demo')} className="hover:text-white">Interaktivní demo</button>
-            <button onClick={() => setIsBookingOpen(true)} className="hover:text-white">Osobní ukázka</button>
+          <div className="pt-4 border-t border-slate-800/80 flex flex-col sm:flex-row items-center justify-between gap-2 text-[11px] text-slate-500">
+            <div>
+              <span>StavbaCore s.r.o. · IČO: 21548971 · Rybná 716/24, 110 00 Praha 1</span>
+            </div>
+            <div>
+              <span>Kontakt: podpora@stavbacore.cz · Tel: +420 774 889 100</span>
+            </div>
           </div>
         </div>
       </footer>
+
+      {/* Legal Document Modal */}
+      {activeLegalModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-in fade-in">
+          <div className="bg-white rounded-3xl p-6 sm:p-8 max-w-2xl w-full max-h-[85vh] overflow-y-auto shadow-2xl border border-slate-200 space-y-4 relative text-slate-800 text-xs leading-relaxed">
+            <button
+              onClick={() => setActiveLegalModal(null)}
+              className="absolute top-4 right-4 p-2 text-slate-400 hover:text-slate-700 rounded-full"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            {activeLegalModal === 'vop' && (
+              <div className="space-y-3">
+                <h3 className="text-base font-black text-slate-900">Všeobecné obchodní podmínky (VOP)</h3>
+                <p className="text-slate-500 text-[11px]">Platné od 1. 1. 2026</p>
+                <div className="space-y-2 text-slate-700">
+                  <p><strong>1. Úvodní ustanovení</strong>: Tyto podmínky upravují poskytování SaaS platformy StavbaCore společností StavbaCore s.r.o. zákazníkům podnikajícím ve stavebnictví.</p>
+                  <p><strong>2. Pilotní program a 30denní záruka</strong>: V rámci pilotního nasazení má zákazník plnou 30denní záruku vrácení peněz, pokud systém nepomůže zachránit alespoň 1 zakázku nebo ušetřit plánovaný čas.</p>
+                  <p><strong>3. Vlastnictví dat</strong>: Veškerá data (zákazníci, kalkulace, fotodokumentace, hodiny) jsou výhradním vlastnictvím zákazníka. Zákazník má právo na kompletní export dat ve strojově čitelném formátu.</p>
+                  <p><strong>4. Dostupnost a SLA</strong>: Poskytovatel garantuje dostupnost služby minimálně 99.5 % v pracovních dnech.</p>
+                </div>
+              </div>
+            )}
+
+            {activeLegalModal === 'gdpr' && (
+              <div className="space-y-3">
+                <h3 className="text-base font-black text-slate-900">Zásady ochrany osobních údajů (GDPR)</h3>
+                <p className="text-slate-500 text-[11px]">V souladu s Nařízením EP a Rady (EU) 2016/679</p>
+                <div className="space-y-2 text-slate-700">
+                  <p><strong>1. Správce údajů</strong>: Správcem údajů o uživatelích systému je StavbaCore s.r.o. Údaje o koncových zákaznících stavební firmy spravuje samotná stavební firma, StavbaCore vystupuje v pozici zpracovatele.</p>
+                  <p><strong>2. Rozsah zpracování</strong>: Zpracováváme jméno, e-mail, telefonní číslo, organizační příslušnost a logy systémových akcí výhradně za účelem poskytování a zabezpečení služby.</p>
+                  <p><strong>3. Ukládání dat</strong>: Data jsou bezpečně šifrována v klidu i při přenosu a uložena v datových centrech v rámci Evropské unie (EU / Frankfurt).</p>
+                  <p><strong>4. Práva subjektů údajů</strong>: Máte právo na přístup, opravu, výmaz i přenositelnost svých údajů zasláním požadavku na gdpr@stavbacore.cz.</p>
+                </div>
+              </div>
+            )}
+
+            {activeLegalModal === 'dpa' && (
+              <div className="space-y-3">
+                <h3 className="text-base font-black text-slate-900">Smlouva o zpracování osobních údajů (DPA)</h3>
+                <p className="text-slate-500 text-[11px]">Podle čl. 28 GDPR</p>
+                <div className="space-y-2 text-slate-700">
+                  <p><strong>1. Předmět smlouvy</strong>: StavbaCore zpracovává kontaktní údaje poptávajících a zaměstnanců zákazníka výhradně na základě pokynů zákazníka.</p>
+                  <p><strong>2. Bezpečnostní opatření</strong>: Implementováno šifrování HTTPS (TLS 1.3), Row Level Security (RLS) pro izolaci organizací, pravidelné zálohy a auditní logy.</p>
+                  <p><strong>3. Subdodavatelé</strong>: Poskytovatel využívá pouze prověřené subdodavatele cloudové infrastruktury v EU.</p>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* 9. Booking Modal (20-min Personal Demo) */}
       {isBookingOpen && (
@@ -674,6 +758,17 @@ export const LandingPage: React.FC = () => {
                       placeholder="+420 777 123 456"
                       value={bookingPhone}
                       onChange={e => setBookingPhone(e.target.value)}
+                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-blue-600"
+                    />
+                  </div>
+                  <div>
+                    <label className="font-bold text-slate-700 block mb-1">E-mail pro zaslání pozvánky</label>
+                    <input
+                      type="email"
+                      required
+                      placeholder="petr@novak-stavby.cz"
+                      value={bookingEmail}
+                      onChange={e => setBookingEmail(e.target.value)}
                       className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-blue-600"
                     />
                   </div>

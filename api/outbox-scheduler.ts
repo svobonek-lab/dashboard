@@ -8,6 +8,14 @@ export default async function outboxSchedulerHandler(req: any, res: any) {
     return;
   }
 
+  // Check Cron Secret if configured in environment
+  const cronSecret = process.env.CRON_SECRET;
+  const authHeader = req.headers?.authorization || req.headers?.['x-cron-secret'];
+  if (cronSecret && authHeader !== `Bearer ${cronSecret}` && authHeader !== cronSecret) {
+    res.status(401).json({ error: 'Neautorizovaný přístup. Neplatný CRON_SECRET token.' });
+    return;
+  }
+
   const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
   const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
@@ -64,9 +72,8 @@ export default async function outboxSchedulerHandler(req: any, res: any) {
           .update({ status: 'processing', updated_at: new Date().toISOString() })
           .eq('id', email.id);
 
-        // Simulate or execute sending (Resend API if configured)
         const resendApiKey = process.env.RESEND_API_KEY;
-        let providerMessageId = `mock-msg-${Date.now()}-${Math.random().toString(36).substring(7)}`;
+        let providerMessageId = `dev-local-${Date.now()}`;
 
         if (resendApiKey) {
           const resendResponse = await fetch('https://api.resend.com/emails', {
@@ -83,7 +90,10 @@ export default async function outboxSchedulerHandler(req: any, res: any) {
             })
           });
           const resendData = await resendResponse.json();
-          if (resendResponse.ok && resendData.id) {
+          if (!resendResponse.ok) {
+            throw new Error(`Resend API error (${resendResponse.status}): ${JSON.stringify(resendData)}`);
+          }
+          if (resendData?.id) {
             providerMessageId = resendData.id;
           }
         }

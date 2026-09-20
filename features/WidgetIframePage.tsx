@@ -52,6 +52,8 @@ export const WidgetIframePage: React.FC = () => {
   } | null>(null);
 
   const [submitted, setSubmitted] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
   
   useEffect(() => {
@@ -121,18 +123,31 @@ export const WidgetIframePage: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setSubmitted(true);
-    await createLead({
-      // @ts-ignore
-      organization_id: orgData.id,
-      customerName: formData.fullName,
-      customerPhone: formData.phone,
-      customerEmail: formData.email,
-      // @ts-ignore
-      projectType: formData.projectType,
-      price: formData.budgetValue,
-      status: 'New'
-    });
+    if (!orgData) return;
+    setSubmitError(null);
+    setIsSubmitting(true);
+    try {
+      await createLead({
+        // @ts-ignore
+        organization_id: orgData.id,
+        customerName: formData.fullName,
+        customerPhone: formData.phone,
+        customerEmail: formData.email,
+        // @ts-ignore
+        projectType: formData.projectType,
+        price: formData.budgetValue,
+        preferredDate: formData.preferredDate,
+        address: formData.address,
+        description: formData.description,
+        status: 'New'
+      });
+      setSubmitted(true);
+    } catch (err: any) {
+      console.error('Widget lead submission error:', err);
+      setSubmitError('Nepodařilo se odeslat poptávku. Zkontrolujte připojení a zkuste to znovu.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   if (loading) {
@@ -583,6 +598,11 @@ export const WidgetIframePage: React.FC = () => {
                 />
               </div>
             )}
+            {submitError && (
+              <div className="p-3 bg-rose-50 border border-rose-200 rounded-xl text-rose-700 text-xs font-semibold">
+                {submitError}
+              </div>
+            )}
           </>
         )}
       </div>
@@ -593,8 +613,9 @@ export const WidgetIframePage: React.FC = () => {
           {step > 1 ? (
             <button
               type="button"
+              disabled={isSubmitting}
               onClick={() => setStep(prev => prev - 1)}
-              className="px-3.5 py-2 rounded-xl text-xs font-bold text-slate-700 bg-white hover:bg-slate-800 border border-slate-200 flex items-center gap-1"
+              className="px-3.5 py-2 rounded-xl text-xs font-bold text-slate-700 bg-white hover:bg-slate-800 border border-slate-200 flex items-center gap-1 disabled:opacity-50"
             >
               <ArrowLeft className="w-3.5 h-3.5" /> Zpět
             </button>
@@ -611,10 +632,21 @@ export const WidgetIframePage: React.FC = () => {
           ) : (
             <button
               type="button"
+              disabled={isSubmitting}
               onClick={handleSubmit}
-              className="px-5 py-2.5 rounded-xl text-xs font-black text-slate-950 bg-amber-500 hover:bg-amber-400 shadow-lg flex items-center gap-1.5 transition-all"
+              className="px-5 py-2.5 rounded-xl text-xs font-black text-slate-950 bg-amber-500 hover:bg-amber-400 shadow-lg flex items-center gap-1.5 transition-all disabled:opacity-60 cursor-pointer"
             >
-              <Sparkles className="w-4 h-4" /> Odeslat poptávku
+              {isSubmitting ? (
+                <>
+                  <div className="w-4 h-4 border-2 border-slate-950/20 border-t-slate-950 rounded-full animate-spin" />
+                  <span>Odesílám...</span>
+                </>
+              ) : (
+                <>
+                  <Sparkles className="w-4 h-4" />
+                  <span>Odeslat poptávku</span>
+                </>
+              )}
             </button>
           )}
         </div>

@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
+import crypto from 'crypto';
 
 // Server-side endpoint: reset employee password or send recovery email
 export default async function handler(req: any, res: any) {
@@ -14,11 +15,11 @@ export default async function handler(req: any, res: any) {
     }
 
     const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
-    const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.VITE_SUPABASE_ANON_KEY;
+    const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
     if (!supabaseUrl || !supabaseServiceKey) {
       return res.status(500).json({ 
-        error: 'Supabase není nakonfigurován na serveru. Zkontrolujte environment variables.' 
+        error: 'SUPABASE_SERVICE_ROLE_KEY není nakonfigurován na serveru.' 
       });
     }
 
@@ -29,12 +30,35 @@ export default async function handler(req: any, res: any) {
       }
     });
 
+    // Verify caller authorization via Bearer token if provided
+    const authHeader = req.headers?.authorization;
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      const token = authHeader.replace('Bearer ', '').trim();
+      const { data: { user: callerUser }, error: callerErr } = await supabase.auth.getUser(token);
+      if (callerErr || !callerUser) {
+        return res.status(401).json({ error: 'Neplatný autorizační token uživatele.' });
+      }
+
+      // Check caller's role and organization membership
+      const { data: callerDbUser } = await supabase
+        .from('users')
+        .select('role, organization_id')
+        .eq('id', callerUser.id)
+        .maybeSingle();
+
+      if (callerDbUser?.role !== 'super_admin') {
+        if (organizationId && callerDbUser?.organization_id !== organizationId) {
+          return res.status(403).json({ error: 'Nemáte oprávnění spravovat hesla v této organizaci.' });
+        }
+      }
+    }
+
     // 1. Fetch employee details if needed
     let targetEmail = email;
     if (!targetEmail && employeeId) {
       const { data: emp } = await supabase
         .from('employees')
-        .select('email, name, user_id')
+        .select('email, name, user_id, organization_id')
         .eq('id', employeeId)
         .maybeSingle();
 
@@ -49,9 +73,8 @@ export default async function handler(req: any, res: any) {
 
     targetEmail = String(targetEmail).trim().toLowerCase();
 
-    // 2. If new password is provided and service role key is configured
-    if (newPassword && process.env.SUPABASE_SERVICE_ROLE_KEY) {
-      // Find auth user
+    // 2. If new password is provided
+    if (newPassword) {
       try {
         const { data: userData } = await supabase.auth.admin.listUsers();
         const user = userData?.users?.find((u: any) => u.email?.toLowerCase() === targetEmail);
@@ -70,8 +93,8 @@ export default async function handler(req: any, res: any) {
       }
     }
 
-    // 3. Issue fresh invite/activation token
-    const resetToken = 'rst_' + Math.random().toString(36).substring(2, 15);
+    // 3. Issue cryptographically secure reset token
+    const resetToken = 'rst_' + crypto.randomBytes(24).toString('hex');
     if (employeeId) {
       try {
         await supabase

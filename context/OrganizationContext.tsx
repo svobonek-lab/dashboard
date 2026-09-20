@@ -13,27 +13,12 @@ function generateUUID(): string {
   });
 }
 
-// Strict Super Admin Access Enforcer:
-// ONLY and SOLELY svobonek@gmail.com with password AP11hynek is allowed super_admin access.
-// All other users are strictly restricted to 'owner' or 'employee'.
-
-export const enforceRole = (email?: string, pass?: string, candidateRole?: string): 'super_admin' | 'owner' | 'employee' => {
-  const cleanEmail = (email || '').trim().toLowerCase();
-  
-  if (cleanEmail === 'svobonek@gmail.com') {
-    if (!pass || pass === 'AP11hynek') {
-      return 'super_admin';
-    }
-  }
-
-  if (candidateRole === 'employee' || candidateRole === 'owner') {
+// Role Enforcer:
+// Roles are resolved strictly from authenticated user profiles in the database.
+export const enforceRole = (_email?: string, _pass?: string, candidateRole?: string): 'super_admin' | 'owner' | 'employee' => {
+  if (candidateRole === 'super_admin' || candidateRole === 'owner' || candidateRole === 'employee') {
     return candidateRole;
   }
-
-  if (cleanEmail.includes('zamestnanec') || cleanEmail.includes('worker') || cleanEmail.includes('montaznik')) {
-    return 'employee';
-  }
-
   return 'owner';
 };
 
@@ -544,14 +529,6 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
   const login = async (email: string, pass: string) => {
     setError(null);
     const cleanEmail = email.trim();
-    const isSuperAdminEmail = cleanEmail.toLowerCase() === 'svobonek@gmail.com';
-
-    // Strict validation: svobonek@gmail.com MUST supply AP11hynek
-    if (isSuperAdminEmail && pass !== 'AP11hynek') {
-      const err = new Error('Nesprávné heslo pro Super Admin účet (svobonek@gmail.com). Přístup odepřen.');
-      setError(err.message);
-      throw err;
-    }
 
     if (!isSupabaseConfigured || !supabase) {
       const allUsers = LocalSupabaseMock.getUsers();
@@ -653,86 +630,9 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
         password: pass
       });
       if (authErr) {
-        console.warn('Supabase auth returned notice, falling back to organization session:', authErr.message);
-        
-        // If Supabase credentials failed or user is not registered in remote auth yet,
-        // check mock/local store or auto-provision session seamlessly
-        const allUsers = LocalSupabaseMock.getUsers();
-        let foundUser = allUsers.find((u: any) => u.email?.toLowerCase() === cleanEmail.toLowerCase());
-        const allOrgs = LocalSupabaseMock.getOrganizations();
-        
-        let userOrg: Organization | null = null;
-        if (foundUser) {
-          userOrg = allOrgs.find((o: any) => o.id === foundUser.organization_id) || null;
-        }
-
-        // If not found directly, check if matching any deployed company
-        if (!foundUser || !userOrg) {
-          const matchingOrg = allOrgs.find((o: any) => o.email?.toLowerCase() === cleanEmail.toLowerCase()) ||
-                              allOrgs.find((o: any) => cleanEmail.includes(o.slug || ''));
-          
-          if (matchingOrg) {
-            userOrg = matchingOrg;
-            foundUser = {
-              id: 'user-' + matchingOrg.id,
-              email: cleanEmail,
-              password: pass,
-              organization_id: matchingOrg.id,
-              role: enforceRole(cleanEmail, pass),
-              name: matchingOrg.name
-            };
-            LocalSupabaseMock.saveUsers([...allUsers, foundUser]);
-          } else {
-            const nonDemoOrgs = allOrgs.filter(o => o.id !== DEFAULT_DEMO_ORG_ID && o.slug !== 'pergoly-praha');
-            userOrg = nonDemoOrgs.length > 0 ? nonDemoOrgs[nonDemoOrgs.length - 1] : allOrgs[0];
-            foundUser = {
-              id: generateUUID(),
-              email: cleanEmail,
-              password: pass,
-              organization_id: userOrg.id,
-              role: enforceRole(cleanEmail, pass),
-              name: cleanEmail.split('@')[0] || userOrg.name
-            };
-            LocalSupabaseMock.saveUsers([...allUsers, foundUser]);
-          }
-        }
-
-        const role = enforceRole(cleanEmail, pass, foundUser?.role);
-        
-        // Check if employee account is deactivated or pending activation
-        const allEmployees = LocalSupabaseMock.getEmployees() as any[];
-        const empRecord = allEmployees.find(e => e.email?.toLowerCase() === cleanEmail.toLowerCase() || e.id === foundUser?.id);
-        if (empRecord) {
-          if ((empRecord as any).active === false || (empRecord as any).status === 'Inactive') {
-            throw new Error('Tento zaměstnanecký účet byl deaktivován administrátorem.');
-          }
-          // Activate account on login if it was pending
-          if ((empRecord as any).invitationStatus === 'Pending' || !(empRecord as any).activated_at) {
-            empRecord.invitationStatus = 'Active';
-            empRecord.activated_at = new Date().toISOString();
-            LocalSupabaseMock.saveEmployees(allEmployees);
-          }
-        }
-
-        const dbUserRecord: DBUser = {
-          id: foundUser.id,
-          organization_id: userOrg.id,
-          role: role,
-          email: cleanEmail
-        };
-
-        setCurrentOrg(userOrg);
-        setOrganizations(allOrgs);
-        LocalSupabaseMock.setActiveOrgId(userOrg.id);
-        setDbUser(dbUserRecord);
-        LocalSupabaseMock.setActiveSessionUser(dbUserRecord);
-        setUser({ 
-          id: foundUser.id, 
-          email: cleanEmail,
-          user_metadata: { name: foundUser.name || userOrg.name }
-        });
-
-        return dbUserRecord;
+        const errorMsg = 'Nesprávný e-mail nebo heslo. Ověřte zadané údaje.';
+        setError(errorMsg);
+        throw new Error(errorMsg);
       }
 
       const authUser = data.user;
@@ -1263,39 +1163,42 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
       if (fetchError) throw fetchError;
 
       if (!data || data.length === 0) {
-        return fetchLeadsLocal();
+        if (currentOrg.id === DEFAULT_DEMO_ORG_ID) {
+          return fetchLeadsLocal();
+        }
+        return [];
       }
 
       return (data || []).map((l: any) => ({
         id: l.id,
-        title: l.project_type + ' - ' + l.customer_name,
-        description: 'Načteno v reálném čase ze Supabase databáze.',
-        city: currentOrg.name,
-        address: 'Pražská 1, ' + currentOrg.name,
+        title: l.title || (l.project_type ? `${l.project_type} - ${l.customer_name || 'Nová poptávka'}` : (l.customer_name || 'Nová poptávka')),
+        description: l.description || 'Poptávka ze systému StavbaCore.',
+        city: l.city || '',
+        address: l.address || '',
         customerName: l.customer_name || 'Neznámý zákazník',
         customerPhone: l.phone || '',
         customerEmail: l.email || '',
-        preferredDate: l.created_at ? l.created_at.substring(0, 10) : new Date().toISOString().substring(0, 10),
-        price: l.budget || 0,
+        preferredDate: l.preferred_date || (l.created_at ? l.created_at.substring(0, 10) : new Date().toISOString().substring(0, 10)),
+        price: l.budget || l.price || 0,
         status: (l.status as any) || 'New',
-        priority: 'Medium' as any,
-        assignedEmployeeId: 'emp-1',
-        assignedEmployeeName: 'Petr Novotný',
-        thumbnail: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=600&q=80',
-        photos: [],
-        files: [],
-        checklist: [],
-        aiSummary: {
-          jobType: l.project_type || 'Pergola',
+        priority: (l.priority as any) || 'Medium',
+        assignedEmployeeId: l.assigned_employee_id || undefined,
+        assignedEmployeeName: l.assigned_employee_name || undefined,
+        thumbnail: l.thumbnail || undefined,
+        photos: l.photos || [],
+        files: l.files || [],
+        checklist: l.checklist || [],
+        aiSummary: l.ai_summary || {
+          jobType: l.project_type || 'Zakázka',
           complexity: 'Medium' as any,
-          estimatedRange: `${(l.budget * 0.9 || 100000).toLocaleString()} - ${(l.budget * 1.1 || 150000).toLocaleString()} CZK`,
-          assignedEmployee: 'Petr Novotný',
+          estimatedRange: l.budget ? `${(l.budget * 0.9).toLocaleString('cs-CZ')} - ${(l.budget * 1.1).toLocaleString('cs-CZ')} Kč` : undefined,
+          assignedEmployee: l.assigned_employee_name,
           risks: [],
-          recommendedNextStep: 'Ověřit stavební připravenost.'
+          recommendedNextStep: 'Telefonický kontakt investora.'
         },
-        timeline: [],
-        aiChat: [],
-        history: [],
+        timeline: l.timeline || [],
+        aiChat: l.ai_chat || [],
+        history: l.history || [],
       }));
     } catch (err: any) {
       console.error('fetchLeads error:', err);

@@ -14,12 +14,12 @@ services:
       - /volume1/shared_crm_files:/app/data/files:ro
     environment:
       # Security: API Token required for the Cloud CRM to authenticate against this connector
-      - API_TOKEN=${CONNECTOR_API_TOKEN:-super-secret-token-123}
+      - API_TOKEN=${CONNECTOR_API_TOKEN:?CONNECTOR_API_TOKEN is required}
       # Database connection (e.g. MariaDB running on Synology)
       - SQL_HOST=${SQL_HOST:-mariadb}
       - SQL_PORT=${SQL_PORT:-3306}
       - SQL_USER=${SQL_USER:-crm_user}
-      - SQL_PASSWORD=${SQL_PASSWORD:-crm_pass}
+      - SQL_PASSWORD=${SQL_PASSWORD:?SQL_PASSWORD is required}
       - SQL_DATABASE=${SQL_DATABASE:-crm_db}
       # Network configuration
       - PORT=8080
@@ -34,10 +34,10 @@ services:
     container_name: stavbacore-mariadb
     restart: unless-stopped
     environment:
-      MYSQL_ROOT_PASSWORD: root_password
-      MYSQL_DATABASE: crm_db
-      MYSQL_USER: crm_user
-      MYSQL_PASSWORD: crm_pass
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?MYSQL_ROOT_PASSWORD is required}
+      MYSQL_DATABASE: ${SQL_DATABASE:-crm_db}
+      MYSQL_USER: ${SQL_USER:-crm_user}
+      MYSQL_PASSWORD: ${SQL_PASSWORD:?SQL_PASSWORD is required}
     volumes:
       - /volume1/docker/mariadb_data:/var/lib/mysql
     networks:

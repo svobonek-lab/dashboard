@@ -13,7 +13,20 @@
   ],
   "headers": [
     {
-      "source": "/(.*)",
+      "source": "/widget-iframe",
+      "headers": [
+        {
+          "key": "Content-Security-Policy",
+          "value": "frame-ancestors *"
+        },
+        {
+          "key": "X-Content-Type-Options",
+          "value": "nosniff"
+        }
+      ]
+    },
+    {
+      "source": "/((?!widget-iframe).*)",
       "headers": [
         {
           "key": "X-Content-Type-Options",

@@ -52,6 +52,25 @@ export default async function testSqlHandler(req: any, res: any) {
     return;
   }
 
+  // Sanitize host string
+  const cleanHost = String(host).trim();
+  if (cleanHost.length > 255 || cleanHost.includes(' ') || cleanHost.includes(';') || cleanHost.includes('\n')) {
+    res.status(400).json({
+      success: false,
+      latencyMs: 0,
+      message: 'Neplatný formát adresy hostitele databáze.',
+      foundProjectsCount: 0,
+      tablesCount: 0,
+      recordsCount: 0,
+      availableTables: [],
+      sampleColumns: [],
+      sampleRows: [],
+      connectedStatus: 'error',
+      testedAt: new Date().toISOString()
+    });
+    return;
+  }
+
   // Realistic artificial latency for test connection handshake
   await new Promise(r => setTimeout(r, 450 + Math.random() * 300));
   const latencyMs = Date.now() - startTime;

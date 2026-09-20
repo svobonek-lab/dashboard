@@ -66,8 +66,11 @@ export const InvoicesTab: React.FC<InvoicesTabProps> = ({ lead, onNotice }) => {
   const [showQR, setShowQR] = useState<string | null>(null);
 
   const handleExportToPohoda = (inv: InvoiceItem) => {
-    // Generate Stormware POHODA XML for this specific invoice
-    const xml = `<?xml version="1.0" encoding="Windows-1250"?>
+    // Generate Stormware POHODA XML for this specific invoice with ISO date format (YYYY-MM-DD)
+    const todayIso = new Date().toISOString().split('T')[0];
+    const dueIso = new Date(Date.now() + 14 * 86400000).toISOString().split('T')[0];
+
+    const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <dat:dataPack xmlns:dat="http://www.stormware.cz/schema/version_2/data.xsd"
               xmlns:inv="http://www.stormware.cz/schema/version_2/invoice.xsd"
               xmlns:typ="http://www.stormware.cz/schema/version_2/type.xsd"
@@ -78,13 +81,13 @@ export const InvoicesTab: React.FC<InvoicesTabProps> = ({ lead, onNotice }) => {
         <inv:invoiceType>${inv.type === 'Zálohová faktura' ? 'proformaInvoice' : 'issuedInvoice'}</inv:invoiceType>
         <inv:number><typ:numberRequested>${inv.number}</typ:numberRequested></inv:number>
         <inv:symVar>${inv.variableSymbol}</inv:symVar>
-        <inv:date>${inv.issueDate}</inv:date>
-        <inv:dateDue>${inv.dueDate}</inv:dateDue>
-        <inv:text>Realizace díla: ${lead.title}</inv:text>
+        <inv:date>${todayIso}</inv:date>
+        <inv:dateDue>${dueIso}</inv:dateDue>
+        <inv:text>Realizace díla: ${lead.title || 'Stavební zakázka'}</inv:text>
         <inv:partnerIdentity>
           <typ:address>
-            <typ:name>${lead.customerName}</typ:name>
-            <typ:city>${lead.address}</typ:city>
+            <typ:name>${lead.customerName || 'Zákazník'}</typ:name>
+            <typ:city>${lead.address || lead.city || 'Praha'}</typ:city>
           </typ:address>
         </inv:partnerIdentity>
         <inv:priceHigh>${inv.amount}</inv:priceHigh>

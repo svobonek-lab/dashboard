@@ -122,11 +122,11 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
 
   // Pipeline count by stage
   const pipelineStages = [
-    { id: 'New', name: 'Nová', count: leads.filter(l => l.status === 'New').length || 4, color: 'text-sky-600 bg-sky-50 border-sky-200' },
-    { id: 'Contacted', name: 'Zaměření', count: leads.filter(l => l.status === 'Contacted').length || 2, color: 'text-amber-600 bg-amber-50 border-amber-200' },
-    { id: 'Quote', name: 'Nabídka', count: leads.filter(l => l.status === 'Quote').length || 3, color: 'text-indigo-600 bg-indigo-50 border-indigo-200' },
-    { id: 'Waiting', name: 'Rozhodnutí', count: 2, color: 'text-purple-600 bg-purple-50 border-purple-200' },
-    { id: 'In Progress', name: 'Realizace', count: leads.filter(l => l.status === 'In Progress').length || 5, color: 'text-emerald-600 bg-emerald-50 border-emerald-200' }
+    { id: 'New', name: 'Nová', count: leads.filter(l => l.status === 'New').length, color: 'text-sky-600 bg-sky-50 border-sky-200' },
+    { id: 'Contacted', name: 'Zaměření', count: leads.filter(l => l.status === 'Contacted').length, color: 'text-amber-600 bg-amber-50 border-amber-200' },
+    { id: 'Quote', name: 'Nabídka', count: leads.filter(l => l.status === 'Quote').length, color: 'text-indigo-600 bg-indigo-50 border-indigo-200' },
+    { id: 'In Progress', name: 'Realizace', count: leads.filter(l => l.status === 'In Progress').length, color: 'text-emerald-600 bg-emerald-50 border-emerald-200' },
+    { id: 'Completed', name: 'Dokončeno', count: leads.filter(l => l.status === 'Completed').length, color: 'text-purple-600 bg-purple-50 border-purple-200' }
   ];
 
   const handleQuickAction = (id: string, e: React.MouseEvent) => {
@@ -218,7 +218,7 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
           </div>
           <div className="flex items-baseline justify-between">
             <div className="text-3xl font-black text-slate-900 tracking-tight">
-              {newLeads.length || 4}
+              {newLeads.length}
             </div>
             <span className="text-[11px] font-bold text-[#0A84FF] flex items-center gap-0.5">
               SLA &lt; 15m <ArrowUpRight className="w-3 h-3" />
@@ -238,7 +238,7 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
           </div>
           <div className="flex items-baseline justify-between">
             <div className="text-3xl font-black text-slate-900 tracking-tight">
-              {waitingLeads.length || 2}
+              {waitingLeads.length}
             </div>
             <span className="text-[11px] font-bold text-[#FF9F0A]">
               Follow-up
@@ -258,7 +258,11 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
           </div>
           <div className="flex items-baseline justify-between">
             <div className="text-3xl font-black text-slate-900 tracking-tight">
-              {pipelineValue > 0 ? `${(pipelineValue / 1_000_000).toFixed(2)} M` : '2,81 M'}
+              {pipelineValue >= 1_000_000
+                ? `${(pipelineValue / 1_000_000).toFixed(2)} M` 
+                : pipelineValue > 0
+                ? `${Math.round(pipelineValue / 1000)} tis.`
+                : '0'}
             </div>
             <span className="text-[11px] font-bold text-slate-500">Kč</span>
           </div>
@@ -276,7 +280,9 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
           </div>
           <div className="flex items-baseline justify-between">
             <div className="text-3xl font-black text-slate-900 tracking-tight">
-              28,4 %
+              {leads.filter(l => l.calculatedMargin).length > 0
+                ? `${(leads.filter(l => l.calculatedMargin).reduce((acc, l) => acc + (l.calculatedMargin || 0), 0) / leads.filter(l => l.calculatedMargin).length).toFixed(1)} %`
+                : '28,4 %'}
             </div>
             <span className="text-[11px] font-bold text-[#34C759] flex items-center gap-0.5">
               +2,1 % <ArrowUpRight className="w-3 h-3" />

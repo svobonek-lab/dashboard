@@ -820,11 +820,38 @@ INSTRUCTIONS:
   return extracted;
 }
 
+// Simple in-memory sliding window rate limiter
+const ipRequests = new Map<string, number[]>();
+const RATE_LIMIT_WINDOW_MS = 60 * 1000;
+const MAX_REQUESTS_PER_WINDOW = 15;
+
+function checkRateLimit(ip: string): boolean {
+  const now = Date.now();
+  const timestamps = ipRequests.get(ip) || [];
+  const validTimestamps = timestamps.filter(t => now - t < RATE_LIMIT_WINDOW_MS);
+  
+  if (validTimestamps.length >= MAX_REQUESTS_PER_WINDOW) {
+    ipRequests.set(ip, validTimestamps);
+    return false; // rate limited
+  }
+
+  validTimestamps.push(now);
+  ipRequests.set(ip, validTimestamps);
+  return true;
+}
+
 // 6. Main API Handler
 export default async function handler(req: any, res: any) {
   if (req.method !== 'POST') {
     res.setHeader('Allow', ['POST']);
     return res.status(405).json({ error: `Method ${req.method} Not Allowed` });
+  }
+
+  const clientIp = req.headers['x-forwarded-for'] || req.socket?.remoteAddress || '127.0.0.1';
+  const ipKey = Array.isArray(clientIp) ? clientIp[0] : String(clientIp).split(',')[0].trim();
+  
+  if (!checkRateLimit(ipKey)) {
+    return res.status(429).json({ error: 'Příliš mnoho požadavků na analýzu webu. Zkuste to prosím za chvíli.' });
   }
 
   const { url } = req.body || {};

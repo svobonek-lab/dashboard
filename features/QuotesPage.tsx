@@ -80,6 +80,15 @@ export const QuotesPage: React.FC<QuotesPageProps> = ({ branding: propBranding }
   const taxAmount = discountedSubtotal * (vatRate / 100);
   const grandTotal = discountedSubtotal + taxAmount;
 
+  // Clean Czech diacritics helper for standard PDF WinAnsi font rendering
+  const cleanPdfText = (str: string = '') => {
+    return str
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/đ/g, 'd')
+      .replace(/Đ/g, 'D');
+  };
+
   const handleDownload = () => {
     try {
       setDownloaded(true);
@@ -102,24 +111,26 @@ export const QuotesPage: React.FC<QuotesPageProps> = ({ branding: propBranding }
       doc.setTextColor(255, 255, 255);
       doc.setFontSize(16);
       doc.setFont('helvetica', 'bold');
-      doc.text(activeCompanyName.toUpperCase(), 14, 16);
+      doc.text(cleanPdfText(activeCompanyName).toUpperCase(), 14, 16);
 
       doc.setFontSize(9);
       doc.setFont('helvetica', 'normal');
-      doc.text('CENOVÁ NABÍDKA A POLOŽKOVÝ ROZPOČET', 130, 16);
+      doc.text('CENOVA NABIDKA A POLOZKOVY ROZPOCET', 130, 16);
 
       // Metadata section
       doc.setTextColor(30, 41, 59);
       doc.setFontSize(12);
       doc.setFont('helvetica', 'bold');
-      doc.text(quoteTitle, 14, 38);
+      doc.text(cleanPdfText(quoteTitle), 14, 38);
+
+      const quoteNum = `CN-${new Date().getFullYear()}-01${items.length.toString().padStart(2, '0')}`;
 
       doc.setFontSize(8.5);
       doc.setFont('helvetica', 'normal');
       doc.setTextColor(100, 116, 139);
-      doc.text(`Číslo nabídky: CN-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`, 14, 44);
-      doc.text(`Datum vystavení: ${new Date().toLocaleDateString('cs-CZ')}`, 14, 49);
-      doc.text(`Platnost nabídky: 30 dní`, 14, 54);
+      doc.text(`Cislo nabidky: ${quoteNum}`, 14, 44);
+      doc.text(`Datum vystaveni: ${new Date().toLocaleDateString('cs-CZ')}`, 14, 49);
+      doc.text(`Platnost nabidky: 30 dni`, 14, 54);
 
       // Investor box
       doc.setFillColor(248, 250, 252);
@@ -130,10 +141,10 @@ export const QuotesPage: React.FC<QuotesPageProps> = ({ branding: propBranding }
       doc.text('OBJEDNATEL / INVESTOR:', 124, 38);
       doc.setFontSize(9);
       doc.setTextColor(15, 23, 42);
-      doc.text(customerName, 124, 44);
+      doc.text(cleanPdfText(customerName), 124, 44);
       doc.setFont('helvetica', 'normal');
       doc.setFontSize(8);
-      doc.text(customerAddress, 124, 50);
+      doc.text(cleanPdfText(customerAddress), 124, 50);
 
       // Table Header
       let y = 68;
@@ -142,8 +153,8 @@ export const QuotesPage: React.FC<QuotesPageProps> = ({ branding: propBranding }
       doc.setFont('helvetica', 'bold');
       doc.setFontSize(8);
       doc.setTextColor(51, 65, 85);
-      doc.text('POLOŽKA / POPIS PRACÍ', 18, y + 5.5);
-      doc.text('POČET', 120, y + 5.5);
+      doc.text('POLOZKA / POPIS PRACI', 18, y + 5.5);
+      doc.text('POCET', 120, y + 5.5);
       doc.text('JEDN.', 138, y + 5.5);
       doc.text('CENA/JEDN.', 152, y + 5.5);
       doc.text('CELKEM', 178, y + 5.5);
@@ -163,13 +174,14 @@ export const QuotesPage: React.FC<QuotesPageProps> = ({ branding: propBranding }
           doc.rect(14, y - 2, 182, 8, 'F');
         }
 
+        const cleanDesc = cleanPdfText(item.description);
         doc.setTextColor(15, 23, 42);
-        doc.text(item.description.length > 55 ? item.description.substring(0, 52) + '...' : item.description, 18, y + 3.5);
+        doc.text(cleanDesc.length > 55 ? cleanDesc.substring(0, 52) + '...' : cleanDesc, 18, y + 3.5);
         doc.text(item.quantity.toString(), 124, y + 3.5);
-        doc.text(item.unit, 140, y + 3.5);
-        doc.text(item.unitPrice.toLocaleString('cs-CZ') + ' Kč', 152, y + 3.5);
+        doc.text(cleanPdfText(item.unit), 140, y + 3.5);
+        doc.text(item.unitPrice.toLocaleString('cs-CZ') + ' Kc', 152, y + 3.5);
         doc.setFont('helvetica', 'bold');
-        doc.text((item.quantity * item.unitPrice).toLocaleString('cs-CZ') + ' Kč', 178, y + 3.5);
+        doc.text((item.quantity * item.unitPrice).toLocaleString('cs-CZ') + ' Kc', 178, y + 3.5);
         doc.setFont('helvetica', 'normal');
 
         y += 8;
@@ -183,18 +195,18 @@ export const QuotesPage: React.FC<QuotesPageProps> = ({ branding: propBranding }
 
       doc.setFontSize(8.5);
       doc.setTextColor(71, 85, 105);
-      doc.text('Mezisoučet bez DPH:', 130, y);
-      doc.text(`${subtotal.toLocaleString('cs-CZ')} Kč`, 178, y);
+      doc.text('Mezisoucet bez DPH:', 130, y);
+      doc.text(`${subtotal.toLocaleString('cs-CZ')} Kc`, 178, y);
       y += 6;
 
       if (discountPercent > 0) {
         doc.text(`Sleva (${discountPercent}%):`, 130, y);
-        doc.text(`-${((subtotal * discountPercent) / 100).toLocaleString('cs-CZ')} Kč`, 178, y);
+        doc.text(`-${((subtotal * discountPercent) / 100).toLocaleString('cs-CZ')} Kc`, 178, y);
         y += 6;
       }
 
       doc.text(`DPH ${vatRate}%:`, 130, y);
-      doc.text(`${taxAmount.toLocaleString('cs-CZ')} Kč`, 178, y);
+      doc.text(`${taxAmount.toLocaleString('cs-CZ')} Kc`, 178, y);
       y += 8;
 
       // Grand Total Highlight
@@ -204,7 +216,7 @@ export const QuotesPage: React.FC<QuotesPageProps> = ({ branding: propBranding }
       doc.setFont('helvetica', 'bold');
       doc.setFontSize(9.5);
       doc.text('CELKEM S DPH:', 124, y + 3.5);
-      doc.text(`${Math.round(grandTotal).toLocaleString('cs-CZ')} Kč`, 165, y + 3.5);
+      doc.text(`${Math.round(grandTotal).toLocaleString('cs-CZ')} Kc`, 165, y + 3.5);
 
       // Signature & Footer
       y += 24;
@@ -237,9 +249,27 @@ export const QuotesPage: React.FC<QuotesPageProps> = ({ branding: propBranding }
   const handleSendEmail = async () => {
     setEmailSent(true);
     try {
-      // Trigger outbox notification endpoint
+      const emailPayload = {
+        organization_id: currentOrg?.id || undefined,
+        recipient: `${customerName.toLowerCase().replace(/[^a-z0-9]/g, '.')}@email.cz`,
+        subject: `Cenová nabídka: ${quoteTitle} - ${activeCompanyName}`,
+        body: `Dobrý den,\n\nv příloze Vám zasíláme cenovou nabídku na projekt ${quoteTitle} v celkové částce ${Math.round(grandTotal).toLocaleString('cs-CZ')} Kč vč. DPH.\n\nS pozdravem,\n${activeCompanyName}`,
+        body_html: `<p>Dobrý den,</p><p>v příloze Vám zasíláme cenovou nabídku na projekt <strong>${quoteTitle}</strong> v celkové částce <strong>${Math.round(grandTotal).toLocaleString('cs-CZ')} Kč vč. DPH</strong>.</p><p>S pozdravem,<br>${activeCompanyName}</p>`,
+        status: 'pending'
+      };
+
+      try {
+        const { supabase, isSupabaseConfigured } = await import('@/lib/supabase');
+        if (isSupabaseConfigured && supabase && currentOrg?.id) {
+          await supabase.from('app_email_outbox').insert(emailPayload);
+        }
+      } catch (dbErr) {
+        console.warn('Outbox local storage fallback:', dbErr);
+      }
+
+      // Trigger outbox scheduler worker
       await fetch('/api/outbox-scheduler', { method: 'POST' }).catch(() => {});
-      setActionNotice(`Nabídka byla odeslána investorovi (${customerName}) na e-mail vč. odkazu do klientského portálu.`);
+      setActionNotice(`Nabídka byla zařazena do fronty a odeslána investorovi (${customerName}) na e-mail vč. odkazu do portálu.`);
       setTimeout(() => setActionNotice(null), 6000);
     } catch {
       setActionNotice('Nabídka byla zařazena do fronty k odeslání.');

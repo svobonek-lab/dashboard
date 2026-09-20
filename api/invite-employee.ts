@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
+import crypto from 'crypto';
 
 // Server-side endpoint: invite employee with Supabase Admin / Service Role
 export default async function handler(req: any, res: any) {
@@ -23,11 +24,11 @@ export default async function handler(req: any, res: any) {
 
     const normalizedEmail = String(email).trim().toLowerCase();
     const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
-    const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.VITE_SUPABASE_ANON_KEY;
+    const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
     if (!supabaseUrl || !supabaseServiceKey) {
       return res.status(500).json({ 
-        error: 'Supabase není nakonfigurován na serveru. Zkontrolujte environment variables.' 
+        error: 'SUPABASE_SERVICE_ROLE_KEY není nakonfigurován na serveru.' 
       });
     }
 
@@ -38,28 +39,48 @@ export default async function handler(req: any, res: any) {
       }
     });
 
-    const inviteToken = 'inv_' + Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+    // Verify caller authorization via Bearer token if provided
+    const authHeader = req.headers?.authorization;
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      const token = authHeader.replace('Bearer ', '').trim();
+      const { data: { user: callerUser }, error: callerErr } = await supabase.auth.getUser(token);
+      if (callerErr || !callerUser) {
+        return res.status(401).json({ error: 'Neplatný autorizační token uživatele.' });
+      }
+
+      const { data: callerDbUser } = await supabase
+        .from('users')
+        .select('role, organization_id')
+        .eq('id', callerUser.id)
+        .maybeSingle();
+
+      if (callerDbUser?.role !== 'super_admin') {
+        if (callerDbUser?.organization_id !== organizationId) {
+          return res.status(403).json({ error: 'Nemáte oprávnění zvát zaměstnance do této organizace.' });
+        }
+      }
+    }
+
+    const inviteToken = 'inv_' + crypto.randomBytes(24).toString('hex');
     const invitedAt = new Date().toISOString();
 
     let createdAuthUserId: string | null = null;
 
-    // 1. Try Supabase Auth Admin invite if service role key is available
-    if (process.env.SUPABASE_SERVICE_ROLE_KEY) {
-      try {
-        const { data: authData, error: authError } = await supabase.auth.admin.inviteUserByEmail(normalizedEmail, {
-          data: {
-            name,
-            organization_id: organizationId,
-            role: 'employee'
-          }
-        });
-
-        if (!authError && authData?.user?.id) {
-          createdAuthUserId = authData.user.id;
+    // 1. Try Supabase Auth Admin invite
+    try {
+      const { data: authData, error: authError } = await supabase.auth.admin.inviteUserByEmail(normalizedEmail, {
+        data: {
+          name,
+          organization_id: organizationId,
+          role: 'employee'
         }
-      } catch (authErr: any) {
-        console.warn('Supabase auth.admin.inviteUserByEmail notice:', authErr.message);
+      });
+
+      if (!authError && authData?.user?.id) {
+        createdAuthUserId = authData.user.id;
       }
+    } catch (authErr: any) {
+      console.warn('Supabase auth.admin.inviteUserByEmail notice:', authErr.message);
     }
 
     // 2. Check if employee record already exists in database

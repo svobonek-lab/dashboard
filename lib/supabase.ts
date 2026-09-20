@@ -214,7 +214,6 @@ export class LocalSupabaseMock {
         organization_id: DEFAULT_DEMO_ORG_ID,
         role: 'super_admin',
         email: 'svobonek@gmail.com',
-        password: 'AP11hynek',
         name: 'Jan Svoboda'
       },
       {
@@ -222,7 +221,6 @@ export class LocalSupabaseMock {
         organization_id: DEFAULT_DEMO_ORG_ID,
         role: 'owner',
         email: 'majitel@firma.cz',
-        password: 'demo123',
         name: 'Majitel Pergoly Praha'
       },
       {
@@ -230,7 +228,6 @@ export class LocalSupabaseMock {
         organization_id: DEFAULT_DEMO_ORG_ID,
         role: 'employee',
         email: 'zamestnanec@firma.cz',
-        password: 'zam123',
         name: 'Petr Novotný (Mistr)'
       },
       {
@@ -238,7 +235,6 @@ export class LocalSupabaseMock {
         organization_id: IDEAL_DEMO_ORG_ID,
         role: 'owner',
         email: 'majitel@idealkonstrukce.cz',
-        password: 'demo123',
         name: 'Ing. Marek Dvořák (Ideal)'
       },
       {
@@ -246,26 +242,24 @@ export class LocalSupabaseMock {
         organization_id: NOVAK_DEMO_ORG_ID,
         role: 'owner',
         email: 'majitel@novakstavby.cz',
-        password: 'demo123',
         name: 'Josef Novák (Novák Stavby)'
       }
     ];
 
     const stored = this.getStored('users', defaultUsers);
-    // Sanitize: ONLY svobonek@gmail.com can EVER have super_admin role
+    // Sanitize: ONLY svobonek@gmail.com can EVER have super_admin role in demo mode
     return stored.map((u: any) => {
       const email = (u.email || '').trim().toLowerCase();
       if (email === 'svobonek@gmail.com') {
         return {
           ...u,
-          role: 'super_admin',
-          password: 'AP11hynek'
+          role: 'super_admin'
         };
       }
       if (u.role === 'super_admin' || u.role === 'superadmin') {
         return {
           ...u,
-          role: email.includes('zamestnanec') || email.includes('worker') ? 'employee' : 'owner'
+          role: 'owner'
         };
       }
       return u;

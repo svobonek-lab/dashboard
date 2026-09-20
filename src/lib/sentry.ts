@@ -15,7 +15,7 @@ export function initSentry() {
     integrations: [
       Sentry.browserTracingIntegration(),
     ],
-    tracesSampleRate: 1.0,
+    tracesSampleRate: meta.env?.PROD ? 0.2 : 1.0,
   });
   
   console.log('Sentry úspěšně inicializováno.');
