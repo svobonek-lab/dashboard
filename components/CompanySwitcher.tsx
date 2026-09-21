@@ -37,7 +37,7 @@ export const CompanySwitcher: React.FC<CompanySwitcherProps> = ({ variant = 'dar
 
   // Load organizations
   useEffect(() => {
-    const isSuperAdmin = (dbUser?.email || '').trim().toLowerCase() === 'svobonek@gmail.com' || dbUser?.role === 'super_admin';
+    const isSuperAdmin = dbUser?.role === 'super_admin';
     const localOrgs = LocalSupabaseMock.getOrganizations();
     if (isSuperAdmin) {
       if (localOrgs && localOrgs.length > 0) {

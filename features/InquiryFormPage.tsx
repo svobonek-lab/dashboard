@@ -1,8 +1,9 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Sparkles, ArrowLeft, Building2 } from 'lucide-react';
 import { CompanyBranding } from '../types';
 import { EnterpriseInquiryForm } from '../components/EnterpriseInquiryForm';
 import { useOrganization } from '../context/OrganizationContext';
+import { supabase, isSupabaseConfigured, LocalSupabaseMock } from '../lib/supabase';
 
 interface InquiryFormPageProps {
   branding: CompanyBranding;
@@ -16,9 +17,49 @@ export const InquiryFormPage: React.FC<InquiryFormPageProps> = ({
   onBackToDashboard
 }) => {
   const { currentOrg } = useOrganization();
-  const effectiveLogo = currentOrg?.logo_url !== undefined ? currentOrg.logo_url : (branding.logoUrl || '');
-  const effectiveName = currentOrg?.name || branding.name || 'Stavební Firma';
-  const activeColor = currentOrg?.primary_color || branding.primaryColor || '#2563eb';
+  const [tenantOrg, setTenantOrg] = useState<{ name?: string; logo_url?: string; primary_color?: string } | null>(null);
+
+  useEffect(() => {
+    async function resolveTenant() {
+      if (typeof window === 'undefined') return;
+      const params = new URLSearchParams(window.location.search);
+      let orgParam = params.get('org') || params.get('slug');
+      
+      // Check path like /form/:org
+      const pathParts = window.location.pathname.split('/');
+      if (pathParts.length >= 3 && (pathParts[1] === 'form' || pathParts[1] === 'inquiry')) {
+        orgParam = pathParts[2];
+      }
+
+      if (!orgParam) return;
+
+      try {
+        if (isSupabaseConfigured && supabase) {
+          const { data } = await supabase.from('organizations').select('*').or(`id.eq.${orgParam},slug.eq.${orgParam}`).single();
+          if (data) setTenantOrg(data);
+        } else {
+          const mockOrgs = LocalSupabaseMock.getOrganizations();
+          const found = mockOrgs.find((o: any) => o.id === orgParam || o.slug === orgParam);
+          if (found) setTenantOrg(found as any);
+        }
+      } catch (e) {
+        console.warn('Could not resolve tenant org from param:', e);
+      }
+    }
+    resolveTenant();
+  }, []);
+
+  const activeBranding: CompanyBranding = {
+    ...branding,
+    name: tenantOrg?.name || currentOrg?.name || branding.name || 'Stavební Firma',
+    logoUrl: tenantOrg?.logo_url !== undefined ? tenantOrg.logo_url : (currentOrg?.logo_url !== undefined ? currentOrg.logo_url : (branding.logoUrl || '')),
+    primaryColor: tenantOrg?.primary_color || currentOrg?.primary_color || branding.primaryColor || '#2563eb',
+    city: currentOrg?.city || branding.city || 'Praha'
+  };
+
+  const effectiveLogo = activeBranding.logoUrl;
+  const effectiveName = activeBranding.name;
+  const activeColor = activeBranding.primaryColor || '#2563eb';
 
   return (
     <div className="fixed inset-0 z-[9999] bg-slate-50 w-screen h-screen flex flex-col overflow-hidden font-sans text-slate-800">
@@ -66,7 +107,7 @@ export const InquiryFormPage: React.FC<InquiryFormPageProps> = ({
         <div className="w-full max-w-[1600px] flex flex-col justify-between min-h-full">
           <div className="flex-1 pb-10">
             <EnterpriseInquiryForm
-              branding={branding}
+              branding={activeBranding}
               onSubmit={onSubmitInquiry}
               onCancel={onBackToDashboard}
             />
@@ -74,7 +115,7 @@ export const InquiryFormPage: React.FC<InquiryFormPageProps> = ({
 
           {/* Minimal Footer */}
           <footer className="text-center py-6 text-xs text-slate-400 border-t border-slate-200/50 mt-auto shrink-0">
-            <p>© 2026 {branding.name || 'Stavební Firma'}. Všechna práva vyhrazena. Zabezpečeno SSL šifrováním.</p>
+            <p>© 2026 {activeBranding.name || 'Stavební Firma'}. Všechna práva vyhrazena. Zabezpečeno SSL šifrováním.</p>
           </footer>
         </div>
       </div>

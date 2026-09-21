@@ -53,7 +53,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   ];
 
   const menuItems = [...baseMenuItems];
-  if (dbUser?.email?.toLowerCase() === 'svobonek@gmail.com' && (dbUser?.role === 'super_admin' || dbUser?.role === 'superadmin')) {
+  if (dbUser?.role === 'super_admin' || dbUser?.role === 'superadmin') {
     menuItems.unshift({ id: 'admin', label: 'Super Admin', icon: ShieldAlert });
   }
 

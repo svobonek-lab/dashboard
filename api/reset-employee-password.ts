@@ -30,26 +30,40 @@ export default async function handler(req: any, res: any) {
       }
     });
 
-    // Verify caller authorization via Bearer token if provided
-    const authHeader = req.headers?.authorization;
-    if (authHeader && authHeader.startsWith('Bearer ')) {
-      const token = authHeader.replace('Bearer ', '').trim();
-      const { data: { user: callerUser }, error: callerErr } = await supabase.auth.getUser(token);
-      if (callerErr || !callerUser) {
-        return res.status(401).json({ error: 'Neplatný autorizační token uživatele.' });
-      }
+    // Verify caller authorization via MANDATORY Bearer token
+    const authHeader = req.headers?.authorization || req.headers?.Authorization;
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return res.status(401).json({ error: 'Chybí povinná autorizační hlavička Authorization: Bearer <token>.' });
+    }
 
-      // Check caller's role and organization membership
-      const { data: callerDbUser } = await supabase
-        .from('users')
-        .select('role, organization_id')
-        .eq('id', callerUser.id)
-        .maybeSingle();
+    const token = authHeader.replace(/^Bearer\s+/i, '').trim();
+    if (!token) {
+      return res.status(401).json({ error: 'Autorizační token je prázdný.' });
+    }
 
-      if (callerDbUser?.role !== 'super_admin') {
-        if (organizationId && callerDbUser?.organization_id !== organizationId) {
-          return res.status(403).json({ error: 'Nemáte oprávnění spravovat hesla v této organizaci.' });
-        }
+    const { data: { user: callerUser }, error: callerErr } = await supabase.auth.getUser(token);
+    if (callerErr || !callerUser) {
+      return res.status(401).json({ error: 'Neplatný autorizační token uživatele.' });
+    }
+
+    // Check caller's role and organization membership
+    const { data: callerDbUser, error: dbUserErr } = await supabase
+      .from('users')
+      .select('role, organization_id')
+      .eq('id', callerUser.id)
+      .maybeSingle();
+
+    if (dbUserErr || !callerDbUser) {
+      return res.status(403).json({ error: 'Uživatel nemá oprávnění v systému.' });
+    }
+
+    if (callerDbUser.role !== 'owner' && callerDbUser.role !== 'super_admin' && callerDbUser.role !== 'superadmin') {
+      return res.status(403).json({ error: 'Operace je povolena pouze pro role owner nebo super_admin.' });
+    }
+
+    if (callerDbUser.role !== 'super_admin' && callerDbUser.role !== 'superadmin') {
+      if (!organizationId || callerDbUser.organization_id !== organizationId) {
+        return res.status(403).json({ error: 'Nemáte oprávnění spravovat hesla v jiné organizaci než vlastní.' });
       }
     }
 

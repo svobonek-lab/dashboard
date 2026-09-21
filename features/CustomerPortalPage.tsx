@@ -1,11 +1,12 @@
 import { useOrganization } from '@/context/OrganizationContext';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Sparkles, CheckCircle2, Clock, FileText, Download, Calendar, MapPin, Phone, MessageSquare, ShieldCheck, Check, Send, ArrowLeft } from 'lucide-react';
 import { CompanyBranding, Lead } from '../types';
+import { supabase, isSupabaseConfigured, LocalSupabaseMock } from '../lib/supabase';
 
 interface CustomerPortalPageProps {
   branding: CompanyBranding;
-  lead: Lead;
+  lead?: Lead;
   onBackToCRM: () => void;
 }
 
@@ -17,11 +18,47 @@ export const CustomerPortalPage: React.FC<CustomerPortalPageProps> = ({
   const { currentOrg } = useOrganization();
   const [activeTab, setActiveTab] = useState<'timeline' | 'documents' | 'chat'>('timeline');
   const [chatMessage, setChatMessage] = useState('');
-  
+  const [fetchedLead, setFetchedLead] = useState<Lead | null>(null);
+
+  useEffect(() => {
+    async function loadPortalLead() {
+      if (typeof window === 'undefined') return;
+      const params = new URLSearchParams(window.location.search);
+      let token = params.get('token') || params.get('lead') || params.get('id');
+
+      const pathParts = window.location.pathname.split('/');
+      if (pathParts.length >= 3 && pathParts[1] === 'portal') {
+        token = pathParts[2];
+      }
+
+      if (!token) return;
+
+      // Check prop lead first if available
+      if (propLead && (propLead.id === token || (propLead as any).token === token)) {
+        setFetchedLead(propLead);
+        return;
+      }
+
+      try {
+        if (isSupabaseConfigured && supabase) {
+          const { data } = await supabase.from('leads').select('*').or(`id.eq.${token},portal_token.eq.${token}`).single();
+          if (data) setFetchedLead(data as any);
+        } else {
+          const mockLeads = LocalSupabaseMock.getLeads();
+          const found = mockLeads.find((l: any) => l.id === token || l.portal_token === token);
+          if (found) setFetchedLead(found as any);
+        }
+      } catch (e) {
+        console.warn('Could not load portal lead by token:', e);
+      }
+    }
+    loadPortalLead();
+  }, [propLead]);
+
   const activeCompanyName = currentOrg?.name || propBranding.name || 'Stavební Společnost';
   const activeLogo = currentOrg?.logo_url !== undefined ? currentOrg.logo_url : (propBranding.logoUrl || '');
 
-  const safeLead: Lead = propLead || {
+  const safeLead: Lead = fetchedLead || propLead || {
     id: 'lead-preview-demo',
     title: 'Realizace stavebního projektu',
     description: 'Kompletní realizace stavebního projektu na klíč.',

@@ -531,74 +531,36 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
     const cleanEmail = email.trim();
 
     if (!isSupabaseConfigured || !supabase) {
+      if (!(import.meta as any).env?.DEV) {
+        const errorMsg = 'Přihlášení selhalo. Databáze není nakonfigurována.';
+        setError(errorMsg);
+        throw new Error(errorMsg);
+      }
+
       const allUsers = LocalSupabaseMock.getUsers();
       const allOrgs = LocalSupabaseMock.getOrganizations();
       
       // 1. Find user by email in local storage
-      let foundUser = allUsers.find((u: any) => u.email?.toLowerCase() === cleanEmail.toLowerCase());
-      let userOrg: Organization | null = null;
-
-      if (foundUser) {
-        userOrg = allOrgs.find((o: any) => o.id === foundUser.organization_id) || null;
+      const foundUser = allUsers.find((u: any) => u.email?.toLowerCase() === cleanEmail.toLowerCase());
+      if (!foundUser) {
+        const errorMsg = 'Nesprávný e-mail nebo heslo.';
+        setError(errorMsg);
+        throw new Error(errorMsg);
       }
 
-      // 2. If user not found directly, check if email matches any deployed company contact or settings
-      if (!foundUser || !userOrg) {
-        const matchingOrg = allOrgs.find((o: any) => o.email?.toLowerCase() === cleanEmail.toLowerCase()) ||
-                            allOrgs.find((o: any) => cleanEmail.includes(o.slug || ''));
-        
-        if (matchingOrg) {
-          userOrg = matchingOrg;
-          foundUser = {
-            id: 'user-' + matchingOrg.id,
-            email: cleanEmail,
-            password: pass,
-            organization_id: matchingOrg.id,
-            role: enforceRole(cleanEmail, pass),
-            name: matchingOrg.name
-          };
-          LocalSupabaseMock.saveUsers([...allUsers, foundUser]);
-        }
+      // Password validation in mock mode
+      if (!foundUser.password || foundUser.password !== pass) {
+        const errorMsg = 'Nesprávný e-mail nebo heslo.';
+        setError(errorMsg);
+        throw new Error(errorMsg);
       }
 
-      // 3. Fallback: if user is logging in and non-demo companies exist, attach to the active/latest deployed company
-      if (!userOrg) {
-        const nonDemoOrgs = allOrgs.filter(o => o.id !== DEFAULT_DEMO_ORG_ID && o.slug !== 'pergoly-praha');
-        if (nonDemoOrgs.length > 0) {
-          userOrg = nonDemoOrgs[nonDemoOrgs.length - 1];
-          foundUser = {
-            id: 'user-' + userOrg.id,
-            email: cleanEmail,
-            password: pass,
-            organization_id: userOrg.id,
-            role: enforceRole(cleanEmail, pass),
-            name: userOrg.name
-          };
-          LocalSupabaseMock.saveUsers([...allUsers, foundUser]);
-        } else {
-          userOrg = allOrgs[0] || {
-            id: DEFAULT_DEMO_ORG_ID,
-            name: 'Pergoly & Terasy Praha s.r.o.',
-            slug: 'pergoly-praha',
-            primary_color: '#2563eb',
-            logo_url: 'https://images.unsplash.com/photo-1513694203232-719a280e022f?auto=format&fit=crop&w=160&q=80'
-          };
-          foundUser = {
-            id: 'user-default-' + Date.now(),
-            email: cleanEmail,
-            password: pass,
-            organization_id: userOrg.id,
-            role: enforceRole(cleanEmail, pass),
-            name: 'Uživatel CRM'
-          };
-        }
-      }
-
-      const role = enforceRole(cleanEmail, pass, foundUser?.role);
+      const userOrg = allOrgs.find((o: any) => o.id === foundUser.organization_id) || allOrgs[0];
+      const role = foundUser.role || 'owner';
       const defaultUser = {
-        id: foundUser?.id || 'user-' + Date.now(),
+        id: foundUser.id,
         email: cleanEmail,
-        user_metadata: { name: foundUser?.name || userOrg.name }
+        user_metadata: { name: foundUser.name || userOrg?.name }
       };
       
       setUser(defaultUser);
@@ -610,7 +572,8 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
         id: defaultUser.id,
         organization_id: userOrg.id,
         role: role,
-        email: cleanEmail
+        email: cleanEmail,
+        name: foundUser.name
       };
       
       setDbUser(dbUserRecord);
@@ -701,7 +664,12 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
   const signUp = async (email: string, pass: string, orgName: string) => {
     setError(null);
     if (!isSupabaseConfigured || !supabase) {
-      // Create new virtual tenant in mock LocalStorage representation
+      if (!(import.meta as any).env?.DEV) {
+        const errorMsg = 'Registrace selhala. Databáze není nakonfigurována.';
+        setError(errorMsg);
+        throw new Error(errorMsg);
+      }
+      // Create new virtual tenant in mock LocalStorage representation (DEV only)
       const newOrgId = 'org-virtual-' + Date.now();
       const newOrg: Organization = {
         id: newOrgId,
@@ -1264,25 +1232,53 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
   const saveLead = async (leadData: Partial<Lead>): Promise<Lead> => {
     const targetOrgId = currentOrg?.id || LocalSupabaseMock.getActiveOrgId() || DEFAULT_DEMO_ORG_ID;
 
-    const customerName = leadData.customerName || (leadData as any).fullName || leadData.title || 'Nová poptávka';
+    const customerName = leadData.customerName || (leadData as any).fullName || leadData.title || '';
     const phone = leadData.customerPhone || (leadData as any).phone || '';
     const email = leadData.customerEmail || (leadData as any).email || '';
-    const projectType = leadData.aiSummary?.jobType || (leadData as any).projectType || leadData.title?.split(' - ')[0] || 'Pergoly';
-    const budget = Number(leadData.price || (leadData as any).budgetValue) || 150000;
+    const projectType = leadData.aiSummary?.jobType || (leadData as any).projectType || (leadData.title && leadData.title.includes(' - ') ? leadData.title.split(' - ')[0] : '') || '';
+    const budget = Number(leadData.price !== undefined ? leadData.price : (leadData as any).budgetValue !== undefined ? (leadData as any).budgetValue : (leadData as any).budget) || 0;
     const status = leadData.status || 'New';
+    const address = leadData.address || '';
+    const city = leadData.city || '';
+    const description = leadData.description || '';
+    const preferredDate = leadData.preferredDate || (leadData as any).preferred_date || null;
+    const priority = leadData.priority || 'Medium';
+    const notes = (leadData as any).notes || '';
 
-    const leadRecord = {
+    const leadRecord: any = {
       organization_id: targetOrgId,
       customer_name: customerName,
       phone: phone,
       email: email,
       project_type: projectType,
       budget: budget,
-      status: status
+      status: status,
+      title: leadData.title || (projectType ? `${projectType} - ${customerName || 'Nová poptávka'}` : customerName || 'Nová poptávka'),
+      address: address,
+      city: city,
+      description: description,
+      preferred_date: preferredDate,
+      priority: priority,
+      notes: notes
     };
 
+    if (leadData.assignedEmployeeId) leadRecord.assigned_employee_id = leadData.assignedEmployeeId;
+    if (leadData.assignedEmployeeName) leadRecord.assigned_employee_name = leadData.assignedEmployeeName;
+    if (leadData.thumbnail) leadRecord.thumbnail = leadData.thumbnail;
+    if (leadData.photos) leadRecord.photos = leadData.photos;
+    if (leadData.files) leadRecord.files = leadData.files;
+    if (leadData.checklist) leadRecord.checklist = leadData.checklist;
+    if (leadData.aiSummary) leadRecord.ai_summary = leadData.aiSummary;
+    if (leadData.timeline) leadRecord.timeline = leadData.timeline;
+    if (leadData.aiChat) leadRecord.ai_chat = leadData.aiChat;
+    if (leadData.history) leadRecord.history = leadData.history;
+    if (leadData.voiceNotes) leadRecord.voice_notes = leadData.voiceNotes;
+
     if (!isSupabaseConfigured || !supabase || !isValidUUID(targetOrgId)) {
-      return saveLeadLocal({ ...leadData, customerName, customerPhone: phone, customerEmail: email, price: budget });
+      if (IS_PRODUCTION) {
+        throw new Error('Poptávku se nepodařilo odeslat. Databáze není nakonfigurována.');
+      }
+      return saveLeadLocal({ ...leadData, customerName, customerPhone: phone, customerEmail: email, price: budget, address, city, description, preferredDate, priority });
     }
 
     try {
@@ -1297,8 +1293,11 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
           .maybeSingle();
 
         if (updateError) {
-          console.warn('saveLead update warning (falling back to local storage):', updateError.message);
-          return saveLeadLocal({ ...leadData, customerName, customerPhone: phone, customerEmail: email, price: budget });
+          console.error('saveLead update error:', updateError.message);
+          if (IS_PRODUCTION) {
+            throw updateError;
+          }
+          return saveLeadLocal({ ...leadData, customerName, customerPhone: phone, customerEmail: email, price: budget, address, city, description, preferredDate, priority });
         }
         result = data;
       } else {
@@ -1316,9 +1315,10 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
               p_org_id: targetOrgId,
               p_customer_name: customerName,
               p_phone: phone,
-              p_email: email,
-              p_project_type: projectType,
-              p_budget: budget
+              p_email: email || null,
+              p_project_type: projectType || 'Poptávka',
+              p_budget: budget,
+              p_notes: notes || description || null
             });
 
             if (!rpcError && rpcLeadId) {
@@ -1330,21 +1330,40 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
                 customerEmail: email,
                 price: budget,
                 status: status,
+                address,
+                city,
+                description,
+                preferredDate,
+                priority,
                 organization_id: targetOrgId,
               } as Lead;
             }
+            if (rpcError && IS_PRODUCTION) {
+              throw rpcError;
+            }
           } catch (rpcCatch) {
-            // Non-blocking catch
+            if (IS_PRODUCTION) {
+              console.error('saveLead RPC error in production:', rpcCatch);
+              throw rpcCatch;
+            }
+          }
+
+          if (IS_PRODUCTION) {
+            console.error('saveLead insert error in production:', insertError);
+            throw insertError;
           }
 
           console.warn('saveLead insert notice (synced to local sandbox):', insertError.message);
-          return saveLeadLocal({ ...leadData, customerName, customerPhone: phone, customerEmail: email, price: budget });
+          return saveLeadLocal({ ...leadData, customerName, customerPhone: phone, customerEmail: email, price: budget, address, city, description, preferredDate, priority });
         }
         result = data;
       }
 
       if (!result) {
-        return saveLeadLocal({ ...leadData, customerName, customerPhone: phone, customerEmail: email, price: budget });
+        if (IS_PRODUCTION) {
+          throw new Error('Poptávku se nepodařilo odeslat. Prázdná odpověď databáze.');
+        }
+        return saveLeadLocal({ ...leadData, customerName, customerPhone: phone, customerEmail: email, price: budget, address, city, description, preferredDate, priority });
       }
 
       return {
@@ -1353,13 +1372,22 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
         customerName: result.customer_name || customerName,
         customerPhone: result.phone || phone,
         customerEmail: result.email || email,
-        price: result.budget || budget,
+        price: result.budget !== undefined ? result.budget : budget,
         status: result.status || status,
+        address: result.address || address,
+        city: result.city || city,
+        description: result.description || description,
+        preferredDate: result.preferred_date || preferredDate,
+        priority: result.priority || priority,
         organization_id: targetOrgId,
       } as Lead;
     } catch (err: any) {
+      if (IS_PRODUCTION) {
+        console.error('saveLead fatal error in production:', err);
+        throw err;
+      }
       console.warn('saveLead operation notice (saved locally):', err?.message || err);
-      return saveLeadLocal({ ...leadData, customerName, customerPhone: phone, customerEmail: email, price: budget });
+      return saveLeadLocal({ ...leadData, customerName, customerPhone: phone, customerEmail: email, price: budget, address, city, description, preferredDate, priority });
     }
   };
 
@@ -1447,9 +1475,20 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
     if (isSupabaseConfigured) {
       // PRODUCTION FLOW: Call server-side /api/invite-employee endpoint
       try {
+        let authHeader = '';
+        if (supabase) {
+          const { data: sessionData } = await supabase.auth.getSession();
+          if (sessionData?.session?.access_token) {
+            authHeader = `Bearer ${sessionData.session.access_token}`;
+          }
+        }
+
         const response = await fetch('/api/invite-employee', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 
+            'Content-Type': 'application/json',
+            ...(authHeader ? { 'Authorization': authHeader } : {})
+          },
           body: JSON.stringify({
             organizationId: currentOrg.id,
             name: empData.name,
@@ -1594,9 +1633,20 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
     
     if (isSupabaseConfigured) {
       try {
+        let authHeader = '';
+        if (supabase) {
+          const { data: sessionData } = await supabase.auth.getSession();
+          if (sessionData?.session?.access_token) {
+            authHeader = `Bearer ${sessionData.session.access_token}`;
+          }
+        }
+
         const response = await fetch('/api/reset-employee-password', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 
+            'Content-Type': 'application/json',
+            ...(authHeader ? { 'Authorization': authHeader } : {})
+          },
           body: JSON.stringify({
             employeeId,
             email: target.email,
@@ -1649,9 +1699,20 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
 
     if (isSupabaseConfigured) {
       try {
+        let authHeader = '';
+        if (supabase) {
+          const { data: sessionData } = await supabase.auth.getSession();
+          if (sessionData?.session?.access_token) {
+            authHeader = `Bearer ${sessionData.session.access_token}`;
+          }
+        }
+
         const response = await fetch('/api/reset-employee-password', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 
+            'Content-Type': 'application/json',
+            ...(authHeader ? { 'Authorization': authHeader } : {})
+          },
           body: JSON.stringify({
             employeeId,
             email: target.email,

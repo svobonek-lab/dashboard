@@ -130,8 +130,6 @@ export const OwnerLayout: React.FC<OwnerLayoutProps> = ({
 
   const navItems = [
     { label: 'Přehled stavby (Executive)', path: '/dashboard', icon: LayoutDashboard, exact: true },
-    { label: 'Interaktivní Demo (Příběh)', path: '/demo', icon: Sparkles },
-    { label: 'Prodejní Landing Page', path: '/landing', icon: Globe },
     { label: 'Poptávky & Kanban', path: '/leads', icon: Kanban, badge: leads.filter(l => l.status === 'New').length ? `${leads.filter(l => l.status === 'New').length} nové` : undefined },
     { label: 'Poptávkový formulář', path: '/inquiry', icon: Sparkles },
     { label: 'Realizace & Stavby', path: '/projects', icon: HardHat },
@@ -148,7 +146,7 @@ export const OwnerLayout: React.FC<OwnerLayoutProps> = ({
     { label: 'Nastavení & Export', path: '/settings', icon: Settings },
   ];
 
-  const isSuperAdminUser = (dbUser?.email || user?.email || '').trim().toLowerCase() === 'svobonek@gmail.com' || Boolean(impersonatingOrgId);
+  const isSuperAdminUser = dbUser?.role === 'super_admin' || Boolean(impersonatingOrgId);
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-800 flex flex-col font-sans selection:bg-brand-primary-soft">

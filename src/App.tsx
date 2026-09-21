@@ -152,16 +152,23 @@ function AppContent() {
     }
   }, [currentOrg?.id]);
 
-  // Root path routing
+  // Root path routing and redirects
   useEffect(() => {
     if (isAuthLoading) return;
 
-    if (pathname === '/') {
-      const role = (dbUser?.role as UserRole) || 'owner';
-      const target = getDefaultRouteForRole(role);
-      navigate(target, { replace: true });
+    if (pathname === '/landing' || pathname === '/prezentace') {
+      navigate('/', { replace: true });
+      return;
     }
-  }, [pathname, isAuthLoading, dbUser, navigate]);
+
+    if (pathname === '/') {
+      if (user || dbUser) {
+        const role = (dbUser?.role as UserRole) || (user?.role as UserRole) || 'owner';
+        const target = getDefaultRouteForRole(role);
+        navigate(target, { replace: true });
+      }
+    }
+  }, [pathname, isAuthLoading, user, dbUser, navigate]);
 
   // Dynamic White Labeling (Browser Title & Favicon Update)
   useEffect(() => {
@@ -326,7 +333,34 @@ function AppContent() {
     city: currentOrg?.city || branding.city
   };
 
-  // 1. Standalone / Public / Embed Routes (No Layout)
+  // 1. Standalone / Public / Embed Routes (No Layout, No Auth required, No company data leakage)
+  if (pathname === '/') {
+    if (isAuthLoading) {
+      return (
+        <div className="min-h-screen bg-slate-900 flex items-center justify-center text-slate-400">
+          <div className="w-8 h-8 border-2 border-cyan-500 border-t-transparent rounded-full animate-spin"></div>
+        </div>
+      );
+    }
+    if (user || dbUser) {
+      // Authenticated user arriving at '/' - useEffect redirects to role default route
+      return null;
+    }
+    return <LandingPage />;
+  }
+
+  if (pathname === '/landing' || pathname === '/prezentace') {
+    return <LandingPage />;
+  }
+
+  if (pathname === '/demo' || pathname === '/interaktivni-demo') {
+    return (
+      <div className="min-h-screen bg-[#F8FAFC] p-4 sm:p-8">
+        <InteractiveStoryDemo />
+      </div>
+    );
+  }
+
   if (pathname === '/unauthorized') {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center p-6 text-slate-800">
@@ -348,32 +382,24 @@ function AppContent() {
     return <WidgetIframePage />;
   }
 
-  if (pathname === '/inquiry' || pathname === '/poptavka') {
+  if (pathname === '/inquiry' || pathname === '/poptavka' || pathname === '/form' || pathname.startsWith('/form/')) {
     return (
       <InquiryFormPage 
         branding={activeBranding} 
         onSubmitInquiry={handleAddLead}
-        onBackToDashboard={() => navigate('/dashboard')} 
+        onBackToDashboard={() => (user || dbUser ? navigate('/dashboard') : navigate('/'))} 
       />
     );
   }
 
-  if (pathname === '/landing' || pathname === '/prezentace') {
-    return <LandingPage />;
-  }
-
-  if (pathname === '/demo' || pathname === '/interaktivni-demo') {
+  if (pathname === '/portal' || pathname.startsWith('/portal/')) {
     return (
-      <div className="min-h-screen bg-[#F8FAFC] p-4 sm:p-8">
-        <InteractiveStoryDemo />
-      </div>
-    );
-  }
-
-  if (pathname === '/portal') {
-    return (
-      <div className="min-h-screen bg-slate-50 p-6">
-        <CustomerPortalPage branding={activeBranding} lead={leads[0]} onBackToCRM={() => navigate('/dashboard')} />
+      <div className="min-h-screen bg-slate-50 p-4 sm:p-6">
+        <CustomerPortalPage 
+          branding={activeBranding} 
+          lead={leads[0]} 
+          onBackToCRM={() => (user || dbUser ? navigate('/dashboard') : navigate('/'))} 
+        />
       </div>
     );
   }
@@ -485,8 +511,6 @@ function AppContent() {
           <SynologyNAS leads={leads} employees={employees} onAddLead={handleAddLead} />
         ) : pathname === '/settings' ? (
           <OwnerSettingsPage />
-        ) : pathname === '/demo' ? (
-          <InteractiveStoryDemo />
         ) : (
           <OwnerDashboardPage leads={leads} employees={employees} onSelectLead={setSelectedLead} />
         )}

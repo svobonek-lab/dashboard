@@ -242,10 +242,10 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onSuccess }) => {
                 </div>
               </div>
 
-              {mode === 'login' && (
+              {(import.meta as any).env?.DEV && mode === 'login' && (
                 <div className="pt-1 space-y-2">
                   <div className="flex items-center justify-between text-[11px] font-bold text-muted uppercase tracking-wider">
-                    <span>Rychlé přihlášení (1-klik role):</span>
+                    <span>Rychlé přihlášení (1-klik role - pouze DEV):</span>
                   </div>
                   <div className="grid grid-cols-3 gap-2">
                     <button

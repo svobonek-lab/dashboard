@@ -8,11 +8,16 @@ export default async function outboxSchedulerHandler(req: any, res: any) {
     return;
   }
 
-  // Check Cron Secret if configured in environment
+  // Check Cron Secret (fail-closed: return 500 if CRON_SECRET is not configured)
   const cronSecret = process.env.CRON_SECRET;
-  const authHeader = req.headers?.authorization || req.headers?.['x-cron-secret'];
-  if (cronSecret && authHeader !== `Bearer ${cronSecret}` && authHeader !== cronSecret) {
-    res.status(401).json({ error: 'Neautorizovaný přístup. Neplatný CRON_SECRET token.' });
+  if (!cronSecret) {
+    res.status(500).json({ error: 'CRON_SECRET není nakonfigurován na serveru (fail-closed).' });
+    return;
+  }
+
+  const authHeader = req.headers?.authorization || req.headers?.Authorization;
+  if (!authHeader || authHeader !== `Bearer ${cronSecret}`) {
+    res.status(401).json({ error: 'Neautorizovaný přístup. Neplatný nebo chybějící CRON_SECRET Bearer token.' });
     return;
   }
 

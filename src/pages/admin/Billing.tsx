@@ -29,7 +29,7 @@ export const AdminBillingPage: React.FC = () => {
       </div>
 
       {/* High-Level Revenue Overview */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5">
         <div className="bg-[#0C111D] p-6 rounded-3xl border border-slate-800/80 shadow-lg">
           <div className="flex items-center justify-between text-slate-400">
             <span className="text-xs font-mono uppercase font-bold">Celkové měsíční MRR</span>
@@ -64,7 +64,7 @@ export const AdminBillingPage: React.FC = () => {
       {/* SaaS Plans Tier Matrix */}
       <div className="space-y-4">
         <h2 className="text-lg font-bold text-white">Dostupné B2B Tarify pro stavební firmy</h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
           {plans.map((p, i) => (
             <div 
               key={i} 

@@ -160,15 +160,6 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
 
         <div className="flex items-center gap-2.5 w-full sm:w-auto justify-end">
           <button
-            onClick={() => onNavigateTab('demo')}
-            className="px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition-colors flex items-center gap-1.5"
-            title="Spustit interaktivní 4-krokový příběh zakázky"
-          >
-            <PlayCircle className="w-3.5 h-3.5 text-[#0A84FF]" />
-            <span>Spustit interaktivní demo</span>
-          </button>
-
-          <button
             onClick={() => onNavigateTab('leads')}
             className="px-4 py-2 bg-[#0A84FF] hover:bg-blue-600 text-white rounded-xl text-xs font-bold shadow-xs hover:shadow-md transition-all flex items-center gap-1.5 shrink-0"
           >

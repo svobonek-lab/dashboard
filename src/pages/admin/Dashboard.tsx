@@ -77,7 +77,7 @@ export const AdminDashboardPage: React.FC = () => {
       </div>
 
       {/* 5 High-Density Metric Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
         
         <div className="bg-[#0C111D] p-5 rounded-2xl border border-slate-800/80 shadow-md">
           <div className="flex items-center justify-between text-slate-400">

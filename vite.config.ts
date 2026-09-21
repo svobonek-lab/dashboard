@@ -23,6 +23,7 @@ function apiMiddlewarePlugin(): Plugin {
               const parsedBody = body ? JSON.parse(body) : {};
               const customReq = {
                 method: req.method,
+                headers: req.headers,
                 body: parsedBody,
                 url: req.url
               };

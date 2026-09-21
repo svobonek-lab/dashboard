@@ -113,8 +113,8 @@ export const OnboardingChecklist: React.FC<{ leadsCount: number; employeesCount:
       description: 'Vyzkoušejte mobilní rozhraní pro start práce a fotodokumentaci ze stavby.',
       icon: Smartphone,
       completed: !!manualChecks['mobil'],
-      action: () => navigate('/demo'),
-      cta: 'Otestovat terén'
+      action: () => navigate('/leads'),
+      cta: 'Správa zakázek'
     },
     {
       id: 'finance',
