@@ -6,3 +6,14 @@ coverage/
 *.log
 .env*
 !.env.example
+.vercel
+
+# Local credentials and private artifacts
+.npmrc
+*.pem
+*.key
+*.p12
+*.pfx
+secrets/
+.supabase/
+.worktrees/
