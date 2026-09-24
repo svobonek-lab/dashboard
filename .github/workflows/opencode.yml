@@ -1,4 +1,4 @@
-name: opencode
+﻿name: opencode
 
 on:
   issue_comment:
@@ -18,7 +18,6 @@ jobs:
       contents: write
       issues: write
       pull-requests: write
-      id-token: write
 
     steps:
       - name: Checkout repository
@@ -31,6 +30,8 @@ jobs:
         uses: anomalyco/opencode/github@latest
         env:
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           model: openrouter/openrouter/free
           share: false
+          use_github_token: true
