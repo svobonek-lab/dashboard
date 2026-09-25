@@ -60,22 +60,6 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onSuccess }) => {
     }
   };
 
-  const handleQuickRole = async (targetEmail: string, targetPass: string) => {
-    setEmail(targetEmail);
-    setPassword(targetPass);
-    setError(null);
-    setSuccessMessage(null);
-    setIsLoading(true);
-    try {
-      const user = await login(targetEmail, targetPass);
-      onSuccess(user);
-    } catch (err: any) {
-      setError(err.message || 'Přihlášení se nezdařilo');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   return (
     <div className="min-h-screen bg-surface-secondary flex font-sans">
       
@@ -241,43 +225,6 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onSuccess }) => {
                   </div>
                 </div>
               </div>
-
-              {(import.meta as any).env?.DEV && mode === 'login' && (
-                <div className="pt-1 space-y-2">
-                  <div className="flex items-center justify-between text-[11px] font-bold text-muted uppercase tracking-wider">
-                    <span>Rychlé přihlášení (1-klik role - pouze DEV):</span>
-                  </div>
-                  <div className="grid grid-cols-3 gap-2">
-                    <button
-                      type="button"
-                      disabled={isLoading}
-                      onClick={() => handleQuickRole('majitel@firma.cz', 'demo123')}
-                      className="p-2 rounded-xl bg-slate-100 hover:bg-blue-50 border border-slate-200 text-left transition-all group cursor-pointer disabled:opacity-50"
-                    >
-                      <div className="text-[11px] font-bold text-slate-800 group-hover:text-blue-600">👔 Majitel</div>
-                      <div className="text-[9px] text-slate-500 truncate">CRM & Finance</div>
-                    </button>
-                    <button
-                      type="button"
-                      disabled={isLoading}
-                      onClick={() => handleQuickRole('zamestnanec@firma.cz', 'zam123')}
-                      className="p-2 rounded-xl bg-slate-100 hover:bg-blue-50 border border-slate-200 text-left transition-all group cursor-pointer disabled:opacity-50"
-                    >
-                      <div className="text-[11px] font-bold text-slate-800 group-hover:text-blue-600">👷 Řemeslník</div>
-                      <div className="text-[9px] text-slate-500 truncate">Terén & Deník</div>
-                    </button>
-                    <button
-                      type="button"
-                      disabled={isLoading}
-                      onClick={() => handleQuickRole('svobonek@gmail.com', 'AP11hynek')}
-                      className="p-2 rounded-xl bg-slate-100 hover:bg-blue-50 border border-slate-200 text-left transition-all group cursor-pointer disabled:opacity-50"
-                    >
-                      <div className="text-[11px] font-bold text-slate-800 group-hover:text-blue-600">⚡ SuperAdmin</div>
-                      <div className="text-[9px] text-slate-500 truncate">Multi-tenant</div>
-                    </button>
-                  </div>
-                </div>
-              )}
 
               <button
                 type="submit"
