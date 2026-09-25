@@ -34,6 +34,6 @@ jobs:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          model: openrouter/nvidia/nemotron-3-ultra-550b-a55b:free
+          model: openrouter/inclusionai/ling-3.0-flash-fin:free
           share: false
           use_github_token: true
