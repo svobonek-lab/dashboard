@@ -1,5 +1,16 @@
 {
   "$schema": "https://opencode.ai/config.json",
+  "model": "openrouter/cohere/north-mini-code:free",
+  "provider": {
+    "openrouter": {
+      "whitelist": [
+        "cohere/north-mini-code:free",
+        "poolside/laguna-xs-2.1:free",
+        "nvidia/nemotron-3-ultra-550b-a55b:free",
+        "inclusionai/ling-3.0-flash-fin:free"
+      ]
+    }
+  },
   "mcp": {
     "servers": {
       "supabase-ci": {
