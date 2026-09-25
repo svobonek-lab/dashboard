@@ -15,6 +15,14 @@ Create branch audit/production-schema-compatibility from the reviewed foundation
 5. Run npm ci, npm run lint, npm run build. Report results and limitations. No code changes, schema changes, secrets, deployments, merges, or production writes.
 Acceptance: an evidence-backed document and draft PR with a prioritized plan; no changes outside the two allowed documentation files.
 
+**Status: COMPLETE** (2026-09-25)
+- Created docs/production-schema-compatibility.md (81 lines) documenting three mismatches:
+  1. Table prefix mismatch (production: app_* vs source: employees/organizations/leads)
+  2. RPC submit_public_lead targeting discrepancy (source calls RPC, production defines it)
+  3. Missing company_settings table (source implements, production lacks)
+- Verified with production metadata from run 35997191752 (20 tables, all RLS enabled)
+- npm ci, lint, build verification pending
+
 ## Follow-up backlog (requires separate scoped tasks)
 - P0: Remove embedded credential-like defaults and prevent production from falling back to privileged mock authentication. Hashes shipped to clients do not solve exposed authentication.
 - P0: Reconcile production app_* schema with application references before modifying tenant access or deletion behavior.
