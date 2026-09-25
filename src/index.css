@@ -145,4 +145,27 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   opacity: 0.6;
 }
 
+.demo-shell { font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+.demo-banner { background: #17474a; color: #f2f7f5; }
+.demo-rail { background: #123d40; }
+.demo-mark { display: grid; width: 38px; height: 38px; place-items: center; border-radius: 11px; background: #f0a466; color: #18343a; font-size: 13px; font-weight: 900; letter-spacing: -.04em; }
+.rail-icon { display: grid; width: 40px; height: 40px; place-items: center; border-radius: 10px; color: #a9c1bd; }
+.rail-active { background: #245759; color: white; }
+.demo-primary { background: #d87943; color: #fff; transition: background .15s ease, transform .15s ease; }
+.demo-primary:hover { background: #bd6233; transform: translateY(-1px); }
+.demo-primary:disabled { cursor: not-allowed; opacity: .45; transform: none; }
+.demo-summary, .demo-column { background: #fff; border: 1px solid #e1e8e6; }
+.demo-column { background: #f7f9f8; }
+.demo-ticket { background: #fff; border: 1px solid #e3e9e7; box-shadow: 0 1px 2px rgb(17 51 53 / 4%); }
+.demo-count { min-width: 23px; border-radius: 999px; background: #e6edeb; padding: 3px 7px; color: #5e7777; text-align: center; font-size: 10px; font-weight: 800; }
+.demo-next { background: #edf4f2; color: #356564; }
+.demo-next:hover { background: #dcebe7; }
+.demo-overlay { background: rgb(12 35 37 / 48%); backdrop-filter: blur(2px); }
+.demo-panel { background: #fff; box-shadow: 0 15px 50px rgb(9 34 36 / 18%); }
+.demo-toast { background: #163f42; color: white; }
+.demo-input { display: block; width: 100%; min-height: 44px; border: 1px solid #d8e2df; border-radius: 8px; background: #fbfcfc; padding: 0 12px; color: #18343a; font-size: 14px; outline: none; }
+.demo-input:focus { border-color: #39817b; box-shadow: 0 0 0 3px rgb(57 129 123 / 14%); }
+@media (max-width: 767px) { .demo-board { display: flex; overflow-x: auto; scroll-snap-type: x mandatory; } .demo-column { flex: 0 0 min(82vw, 340px); scroll-snap-align: start; } }
+@media (prefers-reduced-motion: reduce) { .demo-primary { transition: none; } }
+
 

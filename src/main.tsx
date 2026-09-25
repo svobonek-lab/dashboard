@@ -1,20 +1,27 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
-import App from './App.tsx';
 import './index.css';
-import { OrganizationProvider } from '@/context/OrganizationContext';
-import { ErrorBoundary } from '../components/ErrorBoundary';
-import { initSentry } from './lib/sentry';
+import { PublicDemoWorkspace } from '@/features/publicDemo/PublicDemoWorkspace';
 
-initSentry();
+const isPublicDemo = window.location.pathname === '/demo' || window.location.pathname === '/interaktivni-demo';
 
-createRoot(document.getElementById('root')!).render(
-  <StrictMode>
-    <ErrorBoundary>
-      <OrganizationProvider>
-        <App />
-      </OrganizationProvider>
-    </ErrorBoundary>
-  </StrictMode>,
-);
+async function startApplication() {
+  const root = createRoot(document.getElementById('root')!);
+
+  if (isPublicDemo) {
+    root.render(<StrictMode><PublicDemoWorkspace /></StrictMode>);
+    return;
+  }
+
+  const [{ default: App }, { OrganizationProvider }, { ErrorBoundary }, { initSentry }] = await Promise.all([
+    import('./App.tsx'),
+    import('@/context/OrganizationContext'),
+    import('../components/ErrorBoundary'),
+    import('./lib/sentry'),
+  ]);
+  initSentry();
+  root.render(<StrictMode><ErrorBoundary><OrganizationProvider><App /></OrganizationProvider></ErrorBoundary></StrictMode>);
+}
+
+void startApplication();
 
