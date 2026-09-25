@@ -1,13 +1,7 @@
 import React, { useState } from 'react';
 import { 
-  Receipt, 
-  DollarSign, 
-  TrendingUp, 
   AlertTriangle, 
   Plus, 
-  FileText, 
-  CheckCircle2, 
-  ExternalLink,
   Trash2
 } from 'lucide-react';
 import { Lead } from '../../types';
@@ -68,7 +62,7 @@ export const CostsTab: React.FC<CostsTabProps> = ({ lead, onNotice }) => {
   const [newAmount, setNewAmount] = useState(4500);
 
   const totalMaterialCosts = expenses.reduce((acc, e) => acc + e.amountWithoutVat, 0);
-  const laborCosts = 19500; // estimated labor hours recorded
+  const laborCosts = 19500;
   const contractPriceWithoutVat = (lead.price || 353000) / 1.21;
   const currentTotalCost = totalMaterialCosts + laborCosts;
   const grossProfit = contractPriceWithoutVat - currentTotalCost;
@@ -94,35 +88,43 @@ export const CostsTab: React.FC<CostsTabProps> = ({ lead, onNotice }) => {
     setNewSupplier('');
     setNewDesc('');
     setNewDoc('FP-' + Math.floor(1000 + Math.random() * 9000));
-    onNotice(`Nákladový doklad od ${newSupplier} (${amt.toLocaleString('cs-CZ')} Kč) byl zaúčtován.`);
+    onNotice(`Ukázková položka od ${newSupplier} (${amt.toLocaleString('cs-CZ')} Kč) byla přidána pouze do této ukázky.`);
   };
 
   const handleRemoveExpense = (id: string, doc: string) => {
     setExpenses(prev => prev.filter(e => e.id !== id));
-    onNotice(`Doklad ${doc} byl odstraněn.`);
+    onNotice(`Ukázkový doklad ${doc} byl odebrán pouze z tohoto přehledu.`);
   };
 
   return (
     <div className="space-y-6 font-sans">
-      {/* Live Margin & Financial Health */}
+      <div role="note" className="flex items-start gap-3 rounded-2xl border border-amber-300 bg-amber-50 p-4 text-amber-950">
+        <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-amber-700" aria-hidden="true" />
+        <div>
+          <p className="text-sm font-bold">Ukázkový přehled · není to účetní evidence</p>
+          <p className="mt-1 text-xs leading-relaxed">Zobrazené doklady, práce i rezerva jsou pouze fiktivní příklady. Přidání nebo odebrání položky se neukládá a po zavření přehledu zmizí. Nezadávejte sem skutečné finanční údaje.</p>
+        </div>
+      </div>
+
+      {/* Illustrative demo margin, not persisted financial data */}
       <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
         <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-2xs">
-          <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Materiálové náklady</span>
+          <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Ukázkový materiál</span>
           <p className="text-xl font-black text-slate-900 mt-1">{totalMaterialCosts.toLocaleString('cs-CZ')} Kč</p>
-          <span className="text-[10px] text-slate-500">{expenses.length} přijatých faktur / účtenek</span>
+          <span className="text-[10px] text-slate-500">{expenses.length} fiktivní doklady</span>
         </div>
         <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-2xs">
-          <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Mzdové náklady</span>
+          <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Ukázková práce</span>
           <p className="text-xl font-black text-slate-900 mt-1">{laborCosts.toLocaleString('cs-CZ')} Kč</p>
-          <span className="text-[10px] text-slate-500">Montáž a tesařské práce</span>
+          <span className="text-[10px] text-slate-500">Fiktivní částka</span>
         </div>
         <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-2xs">
-          <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Aktuální čistá marže</span>
+          <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Orientační marže ukázky</span>
           <p className="text-xl font-black text-emerald-600 mt-1">{currentMargin.toFixed(1)} %</p>
-          <span className="text-[10px] text-emerald-600 font-bold">Zisk: {Math.round(grossProfit).toLocaleString('cs-CZ')} Kč</span>
+          <span className="text-[10px] text-emerald-600 font-bold">Modelový rozdíl: {Math.round(grossProfit).toLocaleString('cs-CZ')} Kč</span>
         </div>
         <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-2xs">
-          <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Rozpočtová rezerva</span>
+          <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Modelová rezerva</span>
           <p className="text-xl font-black text-[#0A84FF] mt-1">21 400 Kč</p>
           <span className="text-[10px] text-slate-500">Zbývá k vyčerpání</span>
         </div>
@@ -132,8 +134,8 @@ export const CostsTab: React.FC<CostsTabProps> = ({ lead, onNotice }) => {
       <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
         <div className="p-5 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
-            <h2 className="text-sm font-black text-slate-900">Kniha skutečných nákladů stavby</h2>
-            <p className="text-xs text-slate-500 mt-0.5">Přijaté faktury za materiál, subdodávky a dopravu</p>
+            <h2 className="text-sm font-black text-slate-900">Ukázkový přehled nákladů</h2>
+            <p className="text-xs text-slate-500 mt-0.5">Fiktivní příklady materiálu, subdodávek a dopravy</p>
           </div>
         </div>
 
@@ -167,14 +169,14 @@ export const CostsTab: React.FC<CostsTabProps> = ({ lead, onNotice }) => {
                       exp.paid ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' :
                       'bg-amber-50 text-amber-700 border border-amber-200'
                     }`}>
-                      {exp.paid ? 'Uhrazeno' : 'K proplacení'}
+                      {exp.paid ? 'Vzorově uhrazeno' : 'Vzorově čeká'}
                     </span>
                   </td>
                   <td className="py-3 px-4 text-center">
                     <button
                       onClick={() => handleRemoveExpense(exp.id, exp.docNumber)}
                       className="p-1 text-slate-400 hover:text-rose-600 rounded transition-colors"
-                      title="Smazat doklad"
+                      title="Odebrat ukázkový doklad"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
                     </button>
@@ -225,7 +227,7 @@ export const CostsTab: React.FC<CostsTabProps> = ({ lead, onNotice }) => {
             className="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-xl font-bold flex items-center gap-1.5 transition-colors"
           >
             <Plus className="w-3.5 h-3.5" />
-            Zaúčtovat nákup
+            Přidat do ukázky
           </button>
         </form>
       </div>
