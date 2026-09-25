@@ -22,7 +22,7 @@ Status: COMPLETE — PR #7 merged after npm ci, npm run lint, and npm run build 
 - P0: Reconcile production app_* schema with application references before modifying tenant access or deletion behavior.
 - P0: Review tenant isolation and authorization using local/staging tests; RLS enabled alone is insufficient evidence.
 - P1: Remove Synology token fallback and validate configuration with targeted tests.
-  Status: Implementation and seven local tests are complete on branch fix/remove-synology-token-fallback; PR checks are pending.
+  Status: Draft PR #9 is open; npm ci, npm test (7 passed), npm run lint, npm run build, GitHub verify, and Vercel previews passed.
 - P1: Plan soft deletion only after checking real schema and allowed status values. No automatic migrations.
 - P1: Validate environment configuration; explicitly distinguish synthetic demo mode and production.
 - P2: Add focused tests, then consider context extraction and naming cleanup. Preserve existing localStorage data when renaming keys.
