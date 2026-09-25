@@ -1,4 +1,15 @@
 export type DemoStatus = 'new' | 'contacted' | 'scheduled' | 'quote' | 'job';
+export type DemoJourneyStep = 0 | 1 | 2 | 3;
+export const DEMO_JOURNEY_STEPS = ['Poptávka', 'Nabídka', 'Terénní náklady', 'Výsledek'] as const;
+
+export function nextDemoJourneyStep(step: DemoJourneyStep): DemoJourneyStep | null {
+  return step < DEMO_JOURNEY_STEPS.length - 1 ? (step + 1) as DemoJourneyStep : null;
+}
+
+export function calculateDemoMargin(revenue: number, costs: number): number | null {
+  if (!Number.isFinite(revenue) || !Number.isFinite(costs) || revenue <= 0 || costs < 0) return null;
+  return Math.round(((revenue - costs) / revenue) * 1000) / 10;
+}
 
 export type DemoLead = {
   id: string;

@@ -26,6 +26,7 @@ import {
 import { CompanyBranding, Lead } from '../types';
 import { useOrganization } from '@/context/OrganizationContext';
 import { isSupabaseConfigured } from '@/lib/supabase';
+import { getOwnerActiveJobs, getOwnerAttentionItems, getOwnerAverageMargin } from './ownerDashboard/dashboardMetrics';
 
 interface OwnerDashboardProps {
   branding: CompanyBranding;
@@ -43,82 +44,21 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
 }) => {
   const { currentOrg, dbUser, user } = useOrganization();
   const [searchQuery, setSearchQuery] = useState('');
-  const [actionDone, setActionDone] = useState<Record<string, boolean>>({});
 
   const branding = currentOrg?.branding || propBranding;
   const userName = dbUser?.name?.split(' ')[0] || user?.email?.split('@')[0] || 'Petře';
 
   // Compute operational KPIs
   const newLeads = leads.filter(l => l.status === 'New');
-  const waitingLeads = leads.filter(l => l.status === 'Contacted' || l.status === 'Quote');
+  const waitingLeads = leads.filter(l => l.status === 'Quote');
   const pipelineValue = leads
     .filter(l => l.status !== 'Lost')
     .reduce((acc, l) => acc + (l.price || 0), 0);
   
-  // High-density attention items (controlled realistic operational alerts)
-  const attentionItems = [
-    {
-      id: 'att-1',
-      type: 'critical',
-      tag: 'Nabídka 3 dny bez odp.',
-      client: 'Karel Beneš · Střecha',
-      amount: '486 000 Kč',
-      deadline: 'Čeká 72 h',
-      actionText: 'Odeslat follow-up',
-      leadId: leads.find(l => l.customerName?.includes('Beneš'))?.id || leads[0]?.id
-    },
-    {
-      id: 'att-2',
-      type: 'warning',
-      tag: 'Faktura 8 dní po spl.',
-      client: 'Jan Richter · Koupelna',
-      amount: '62 400 Kč',
-      deadline: 'Po splatnosti',
-      actionText: 'Zaslat upomínku',
-      leadId: leads.find(l => l.customerName?.includes('Richter'))?.id || leads[1]?.id
-    },
-    {
-      id: 'att-3',
-      type: 'urgent',
-      tag: 'Lead SLA za 12 min',
-      client: 'Petra Dvořáková · Koupelna',
-      amount: '353 000 Kč',
-      deadline: 'SLA limit 15 min',
-      actionText: 'Zavolat hned',
-      leadId: leads.find(l => l.customerName?.includes('Dvořáková'))?.id || leads[0]?.id
-    }
-  ];
-
-  // Today's field realization schedule
-  const todayJobs = [
-    {
-      time: '08:00',
-      client: 'Novák / Střecha',
-      crew: 'Tesaři: Jan & Martin',
-      status: 'Probíhá (6,5 h hotovo)',
-      costNote: 'Materiál: vaznice + spojky',
-      badge: 'Na stavbě',
-      badgeColor: 'bg-emerald-50 text-emerald-700 border-emerald-200'
-    },
-    {
-      time: '09:30',
-      client: 'Richter / Koupelna',
-      crew: 'Obkladači: Pavel K.',
-      status: 'Materiál 7 840 Kč zaúčtován',
-      costNote: 'Hydroizolace + obklad',
-      badge: 'Vykázáno',
-      badgeColor: 'bg-sky-50 text-sky-700 border-sky-200'
-    },
-    {
-      time: '13:00',
-      client: 'Dvořák / Zaměření',
-      crew: 'Dispečink / Petr',
-      status: 'Příprava kalkulace & zaměření',
-      costNote: 'Laserové měření terénu',
-      badge: 'Naplánováno',
-      badgeColor: 'bg-amber-50 text-amber-700 border-amber-200'
-    }
-  ];
+  const attentionItems = getOwnerAttentionItems(leads);
+  const activeJobs = getOwnerActiveJobs(leads);
+  const averageMargin = getOwnerAverageMargin(leads);
+  const attentionNoun = attentionItems.length === 1 ? 'položka' : attentionItems.length >= 2 && attentionItems.length <= 4 ? 'položky' : 'položek';
 
   // Pipeline count by stage
   const pipelineStages = [
@@ -128,11 +68,6 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
     { id: 'In Progress', name: 'Realizace', count: leads.filter(l => l.status === 'In Progress').length, color: 'text-emerald-600 bg-emerald-50 border-emerald-200' },
     { id: 'Completed', name: 'Dokončeno', count: leads.filter(l => l.status === 'Completed').length, color: 'text-purple-600 bg-purple-50 border-purple-200' }
   ];
-
-  const handleQuickAction = (id: string, e: React.MouseEvent) => {
-    e.stopPropagation();
-    setActionDone(prev => ({ ...prev, [id]: true }));
-  };
 
   const filteredLeads = searchQuery.trim()
     ? leads.filter(l => 
@@ -181,7 +116,7 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
             </span>
           </div>
           <p className="text-xs sm:text-sm text-slate-600 font-medium">
-            Dnes jsou <span className="font-bold text-[#FF453A]">3 věci</span>, které potřebují vaši pozornost.
+            {attentionItems.length ? <>K vyřízení máte <span className="font-bold text-[#FF453A]">{attentionItems.length} {attentionNoun}</span>.</> : 'Všechny nové poptávky a nabídky máte pod kontrolou.'}
           </p>
         </div>
 
@@ -211,11 +146,9 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
             <div className="text-3xl font-black text-slate-900 tracking-tight">
               {newLeads.length}
             </div>
-            <span className="text-[11px] font-bold text-[#0A84FF] flex items-center gap-0.5">
-              SLA &lt; 15m <ArrowUpRight className="w-3 h-3" />
-            </span>
+            <span className="text-[11px] font-bold text-[#0A84FF] flex items-center gap-0.5">K vyřízení</span>
           </div>
-          <p className="text-[11px] text-slate-500 mt-2 font-medium">Reakce do 15 min z formuláře</p>
+          <p className="text-[11px] text-slate-500 mt-2 font-medium">Poptávky bez zaznamenaného kontaktu</p>
         </div>
 
         {/* KPI 2: Čeká na reakci */}
@@ -235,7 +168,7 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
               Follow-up
             </span>
           </div>
-          <p className="text-[11px] text-slate-500 mt-2 font-medium">Odeslané nabídky bez odpovědi</p>
+          <p className="text-[11px] text-slate-500 mt-2 font-medium">Nabídky čekající na rozhodnutí zákazníka</p>
         </div>
 
         {/* KPI 3: Pipeline */}
@@ -271,15 +204,11 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
           </div>
           <div className="flex items-baseline justify-between">
             <div className="text-3xl font-black text-slate-900 tracking-tight">
-              {leads.filter(l => l.calculatedMargin).length > 0
-                ? `${(leads.filter(l => l.calculatedMargin).reduce((acc, l) => acc + (l.calculatedMargin || 0), 0) / leads.filter(l => l.calculatedMargin).length).toFixed(1)} %`
-                : '28,4 %'}
+              {averageMargin === null ? '—' : `${averageMargin.toFixed(1)} %`}
             </div>
-            <span className="text-[11px] font-bold text-[#34C759] flex items-center gap-0.5">
-              +2,1 % <ArrowUpRight className="w-3 h-3" />
-            </span>
+            {averageMargin !== null && <span className="text-[11px] font-bold text-[#34C759]">Z evidovaných zakázek</span>}
           </div>
-          <p className="text-[11px] text-slate-500 mt-2 font-medium">Skutečnost proti rozpočtu</p>
+          <p className="text-[11px] text-slate-500 mt-2 font-medium">{averageMargin === null ? 'Zatím bez vyčíslených marží' : 'Průměr evidovaných marží'}</p>
         </div>
       </div>
 
@@ -293,27 +222,18 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
               <div className="flex items-center gap-2">
                 <span className="w-2.5 h-2.5 rounded-full bg-[#FF453A] animate-pulse"></span>
                 <h2 className="text-xs font-black uppercase tracking-wider text-slate-900">
-                  Potřebuje pozornost (3 položky)
+                  Potřebuje pozornost ({attentionItems.length})
                 </h2>
               </div>
-              <span className="text-[11px] text-slate-400 font-medium">Pravidlo okamžité akce</span>
+              <span className="text-[11px] text-slate-400 font-medium">Nové poptávky a nabídky bez odpovědi</span>
             </div>
 
             <div className="space-y-3">
               {attentionItems.map((item) => {
-                const isDone = actionDone[item.id];
                 return (
                   <div
                     key={item.id}
-                    onClick={() => {
-                      const target = leads.find(l => l.id === item.leadId) || leads[0];
-                      if (target) onSelectLead(target);
-                    }}
-                    className={`p-3.5 rounded-xl border transition-all cursor-pointer flex items-center justify-between gap-3 ${
-                      isDone 
-                        ? 'bg-slate-50 border-slate-200 opacity-60' 
-                        : 'bg-slate-50/70 hover:bg-slate-100/80 border-slate-200/80'
-                    }`}
+                    className="p-3.5 rounded-xl border transition-all bg-slate-50/70 hover:bg-slate-100/80 border-slate-200/80 flex items-center justify-between gap-3"
                   >
                     <div className="space-y-1">
                       <div className="flex items-center gap-2">
@@ -331,15 +251,13 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
                     </div>
 
                     <button
-                      onClick={(e) => handleQuickAction(item.id, e)}
-                      disabled={isDone}
-                      className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all shrink-0 ${
-                        isDone 
-                          ? 'bg-emerald-100 text-emerald-800' 
-                          : 'bg-[#0A84FF] text-white hover:bg-blue-600 shadow-2xs'
-                      }`}
+                      onClick={() => {
+                        const target = leads.find((lead) => lead.id === item.leadId);
+                        if (target) onSelectLead(target);
+                      }}
+                      className="px-3 py-1.5 rounded-lg text-xs font-bold transition-all shrink-0 bg-[#0A84FF] text-white hover:bg-blue-600 shadow-2xs"
                     >
-                      {isDone ? '✓ Vyřešeno' : item.actionText}
+                      {item.actionText}
                     </button>
                   </div>
                 );
@@ -348,7 +266,7 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
           </div>
 
           <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500 font-medium">
-            <span>Žádné ztracené poptávky ani zapomenuté nabídky.</span>
+            <span>{attentionItems.length ? 'Položky vycházejí z aktuálních poptávek firmy.' : 'Žádné nové poptávky ani nabídky teď nečekají na další krok.'}</span>
             <button 
               onClick={() => onNavigateTab('leads')}
               className="text-[#0A84FF] font-bold hover:underline flex items-center gap-1"
@@ -365,41 +283,38 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
               <div className="flex items-center gap-2">
                 <span className="w-2.5 h-2.5 rounded-full bg-[#34C759]"></span>
                 <h2 className="text-xs font-black uppercase tracking-wider text-slate-900">
-                  Dnešní realizace & terén
+                  Zakázky v realizaci ({activeJobs.length})
                 </h2>
               </div>
-              <span className="text-[11px] text-slate-400 font-medium">Aktuální denní harmonogram</span>
+              <span className="text-[11px] text-slate-400 font-medium">Předané realizačnímu týmu</span>
             </div>
 
             <div className="space-y-3">
-              {todayJobs.map((job, idx) => (
-                <div 
-                  key={idx}
-                  className="p-3.5 rounded-xl border border-slate-200/80 bg-slate-50/70 hover:bg-slate-100/80 transition-all flex items-center justify-between gap-3"
-                >
+              {activeJobs.map((lead) => (
+                <button key={lead.id} onClick={() => onSelectLead(leads.find((item) => item.id === lead.id)!)} className="w-full text-left p-3.5 rounded-xl border border-slate-200/80 bg-slate-50/70 hover:bg-slate-100/80 transition-all flex items-center justify-between gap-3">
                   <div className="flex items-start gap-3">
                     <div className="text-xs font-black text-slate-900 bg-white px-2.5 py-1.5 rounded-lg border border-slate-200 font-mono shrink-0">
-                      {job.time}
+                      <HardHat className="w-4 h-4" />
                     </div>
                     <div>
                       <div className="flex items-center gap-2">
-                        <span className="text-xs font-bold text-slate-900">{job.client}</span>
-                        <span className="text-[11px] text-slate-500 font-medium">({job.crew})</span>
+                        <span className="text-xs font-bold text-slate-900">{lead.customerName} · {lead.title}</span>
                       </div>
-                      <p className="text-[11px] text-slate-600 mt-0.5">{job.status} · <span className="text-slate-400">{job.costNote}</span></p>
+                      <p className="text-[11px] text-slate-600 mt-0.5">{lead.assignedEmployeeName || 'Tým zatím není přiřazen'} · {lead.price > 0 ? `${lead.price.toLocaleString('cs-CZ')} Kč` : 'Cena není uvedena'}</p>
                     </div>
                   </div>
 
-                  <span className={`px-2 py-1 rounded-md text-[10px] font-bold border shrink-0 ${job.badgeColor}`}>
-                    {job.badge}
+                  <span className="px-2 py-1 rounded-md text-[10px] font-bold border shrink-0 bg-emerald-50 text-emerald-700 border-emerald-200">
+                    V realizaci
                   </span>
-                </div>
+                </button>
               ))}
+              {!activeJobs.length && <div className="p-7 text-center text-xs text-slate-500">Zatím nemáte žádnou zakázku předanou do realizace.</div>}
             </div>
           </div>
 
           <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500 font-medium">
-            <span>Data z terénních výkazů zaměstnanců v reálném čase.</span>
+            <span>Zakázky vycházejí ze záznamů ve vaší firmě.</span>
             <button 
               onClick={() => onNavigateTab('calendar')}
               className="text-[#0A84FF] font-bold hover:underline flex items-center gap-1"
@@ -476,9 +391,9 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
                     <span className="text-xs font-normal text-slate-500">· {lead.title}</span>
                   </h3>
                   <p className="text-xs text-slate-500 flex items-center gap-2 mt-0.5">
-                    <span>{lead.location || lead.city || lead.address || 'Praha'}</span>
+                    <span>{lead.location || lead.city || lead.address || 'Lokalita neuvedena'}</span>
                     <span>•</span>
-                    <span>Termín: {lead.preferredDate || 'Dohodou'}</span>
+                    <span>Termín: {lead.preferredDate || 'neuveden'}</span>
                   </p>
                 </div>
               </div>
@@ -486,11 +401,11 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
               <div className="flex items-center justify-between sm:justify-end gap-4 shrink-0">
                 <div className="text-right">
                   <div className="text-sm font-black text-slate-900">
-                    {(lead.price || 350000).toLocaleString('cs-CZ')} Kč
+                    {lead.price > 0 ? `${lead.price.toLocaleString('cs-CZ')} Kč` : 'Cena neuvedena'}
                   </div>
-                  <span className="text-[10px] font-bold text-emerald-600">
-                    Marže {(lead.calculatedMargin || 27.8).toFixed(1)} %
-                  </span>
+                  {typeof lead.calculatedMargin === 'number' && Number.isFinite(lead.calculatedMargin)
+                    ? <span className="text-[10px] font-bold text-emerald-600">Marže {lead.calculatedMargin.toFixed(1)} %</span>
+                    : <span className="text-[10px] text-slate-500">Marže nevyčíslena</span>}
                 </div>
                 <span className={`px-2.5 py-1 rounded-full text-[11px] font-bold border ${
                   lead.status === 'New' ? 'bg-sky-50 text-sky-700 border-sky-200' :

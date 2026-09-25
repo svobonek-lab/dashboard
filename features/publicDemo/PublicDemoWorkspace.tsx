@@ -1,14 +1,19 @@
 import { useMemo, useState } from 'react';
 import type { FormEvent, ReactNode } from 'react';
 import { ArrowRight, ArrowUpRight, Banknote, Bell, BriefcaseBusiness, CalendarCheck2, CalendarDays, ChartNoAxesCombined, Check, CheckCircle2, ChevronRight, CircleDot, CirclePlus, ClipboardList, Clock3, FileText, FolderOpen, HardHat, House, MapPin, Menu, Phone, RotateCcw, Search, Settings, ShieldCheck, Users, X } from 'lucide-react';
-import { createDemoLead, DEMO_COLUMNS, DEMO_SEED, DemoLead, DemoStatus, moveDemoLead, nextDemoStatus, parseDemoLeads } from './demoState';
+import { calculateDemoMargin, createDemoLead, DEMO_COLUMNS, DEMO_JOURNEY_STEPS, DEMO_SEED, DemoJourneyStep, DemoLead, DemoStatus, moveDemoLead, nextDemoJourneyStep, nextDemoStatus, parseDemoLeads } from './demoState';
 
 type Screen = 'overview' | 'leads' | 'quotes' | 'jobs' | 'calendar' | 'clients' | 'team' | 'documents' | 'analytics' | 'settings';
 type DemoCompany = { name: string; area: string };
 const LEADS_KEY = 'stavbacore_public_demo_v1';
 const COMPANY_KEY = 'stavbacore_public_demo_company_v1';
+const JOURNEY_KEY = 'stavbacore_public_demo_journey_v1';
+const DEMO_CONTRACT_VALUE = 353000;
+const DEMO_FIELD_COSTS = 214500;
 const DEFAULT_COMPANY: DemoCompany = { name: 'Novákova stavební firma', area: 'Brno a okolí' };
 const money = new Intl.NumberFormat('cs-CZ', { style: 'currency', currency: 'CZK', maximumFractionDigits: 0 });
+const percent = new Intl.NumberFormat('cs-CZ', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+const margin = calculateDemoMargin(DEMO_CONTRACT_VALUE, DEMO_FIELD_COSTS) ?? 0;
 const NAV: { id: Screen; label: string; icon: typeof House }[] = [
   { id: 'overview', label: 'Přehled', icon: House },
   { id: 'leads', label: 'Poptávky', icon: ClipboardList },
@@ -32,11 +37,18 @@ function readCompany(): DemoCompany {
   try { const value = JSON.parse(window.localStorage.getItem(COMPANY_KEY) || 'null'); return value && typeof value.name === 'string' && typeof value.area === 'string' ? value : DEFAULT_COMPANY; }
   catch { return DEFAULT_COMPANY; }
 }
+function readJourneyStep(): DemoJourneyStep {
+  try {
+    const value = Number(window.localStorage.getItem(JOURNEY_KEY));
+    return Number.isInteger(value) && value >= 0 && value <= 3 ? value as DemoJourneyStep : 0;
+  } catch { return 0; }
+}
 
 export function PublicDemoWorkspace() {
   const [screen, setScreen] = useState<Screen>('overview');
   const [leads, setLeads] = useState<DemoLead[]>(readLeads);
   const [company, setCompany] = useState<DemoCompany>(readCompany);
+  const [journeyStep, setJourneyStep] = useState<DemoJourneyStep>(readJourneyStep);
   const [selected, setSelected] = useState<DemoLead | null>(null);
   const [adding, setAdding] = useState(false);
   const [mobileNav, setMobileNav] = useState(false);
@@ -65,8 +77,16 @@ export function PublicDemoWorkspace() {
     persistLeads(DEMO_SEED.map((lead) => ({ ...lead })));
     setCompany(DEFAULT_COMPANY);
     setSelected(null);
+    setJourneyStep(0);
     try { window.localStorage.setItem(COMPANY_KEY, JSON.stringify(DEFAULT_COMPANY)); } catch { /* Keep the demo usable without storage. */ }
+    try { window.localStorage.setItem(JOURNEY_KEY, '0'); } catch { /* Keep the demo usable without storage. */ }
     setNotice('Ukázka byla obnovena do původního stavu.');
+  };
+  const advanceJourney = () => {
+    const next = nextDemoJourneyStep(journeyStep);
+    const value = next ?? 0;
+    setJourneyStep(value);
+    try { window.localStorage.setItem(JOURNEY_KEY, String(value)); } catch { setNotice('Prohlížeč neumožnil uložit ukázkový postup.'); }
   };
   const addLead = (input: { customer: string; project: string; city: string }) => {
     const lead = createDemoLead(input);
@@ -95,7 +115,7 @@ export function PublicDemoWorkspace() {
       <section className="od-main">
         <header className="od-topbar"><div className="od-top-left"><button className="od-menu" aria-label="Otevřít menu" onClick={() => setMobileNav(true)}><Menu size={19} /></button><div className="od-breadcrumb"><span>Pracovní prostor</span><ChevronRight size={13} /><b>{screenTitle(screen)}</b></div></div><div className="od-top-actions"><label className="od-search"><Search size={15} /><input aria-label="Hledat v poptávkách" placeholder="Hledat klienta nebo zakázku" value={query} onFocus={() => navigate('leads')} onChange={(event) => setQuery(event.target.value)} /><kbd>⌘K</kbd></label><button className="od-bell" aria-label="Upozornění" onClick={() => navigate('calendar')}><Bell size={17} /><i /></button><span className="od-presence"><span /> Den v práci</span></div></header>
         <div className="od-content">
-          {screen === 'overview' && <Overview company={company} leads={leads} totals={totals} onNavigate={navigate} onAdd={() => setAdding(true)} onSelect={setSelected} onAdvance={advance} />}
+          {screen === 'overview' && <Overview company={company} leads={leads} totals={totals} journeyStep={journeyStep} onAdvanceJourney={advanceJourney} onNavigate={navigate} onAdd={() => setAdding(true)} onSelect={setSelected} onAdvance={advance} />}
           {screen === 'leads' && <LeadsPage leads={filteredLeads} onAdd={() => setAdding(true)} onSelect={setSelected} onAdvance={advance} />}
           {screen === 'quotes' && <QuotesPage leads={leads.filter((lead) => lead.status === 'quote')} onSelect={setSelected} onAdvance={advance} />}
           {screen === 'jobs' && <JobsPage leads={leads.filter((lead) => lead.status === 'job')} onSelect={setSelected} />}
@@ -120,18 +140,38 @@ function screenTitle(screen: Screen) { return NAV.find((item) => item.id === scr
 function PageHeading({ eyebrow, title, text, action }: { eyebrow: string; title: string; text: string; action?: ReactNode }) { return <div className="od-page-heading"><div><span>{eyebrow}</span><h1>{title}</h1><p>{text}</p></div>{action}</div>; }
 function PrimaryButton({ children, onClick }: { children: ReactNode; onClick: () => void }) { return <button className="od-primary" onClick={onClick}>{children}</button>; }
 
-function Overview({ company, leads, totals, onNavigate, onAdd, onSelect, onAdvance }: { company: DemoCompany; leads: DemoLead[]; totals: { leads: number; visits: number; quotes: number; jobs: number; pipeline: number }; onNavigate: (screen: Screen) => void; onAdd: () => void; onSelect: (lead: DemoLead) => void; onAdvance: (lead: DemoLead) => void }) {
+function Overview({ company, leads, totals, journeyStep, onAdvanceJourney, onNavigate, onAdd, onSelect, onAdvance }: { company: DemoCompany; leads: DemoLead[]; totals: { leads: number; visits: number; quotes: number; jobs: number; pipeline: number }; journeyStep: DemoJourneyStep; onAdvanceJourney: () => void; onNavigate: (screen: Screen) => void; onAdd: () => void; onSelect: (lead: DemoLead) => void; onAdvance: (lead: DemoLead) => void }) {
   const todo = leads.filter((lead) => ['new', 'contacted', 'scheduled', 'quote'].includes(lead.status)).sort((a, b) => DEMO_COLUMNS.findIndex((column) => column.id === a.status) - DEMO_COLUMNS.findIndex((column) => column.id === b.status)).slice(0, 4);
   const jobs = leads.filter((lead) => lead.status === 'job');
   const today = new Intl.DateTimeFormat('cs-CZ', { weekday: 'long', day: 'numeric', month: 'long' }).format(new Date());
   return <>
     <PageHeading eyebrow={`${today.toLocaleUpperCase('cs-CZ')} · ${company.area.toLocaleUpperCase('cs-CZ')}`} title="Dobrý den, Marku" text="Tady je přehled práce, která dnes posune vaši firmu dál." action={<PrimaryButton onClick={onAdd}><CirclePlus size={17} /> Nová poptávka</PrimaryButton>} />
+    <GuidedJobStory step={journeyStep} onAdvance={onAdvanceJourney} />
     <div className="od-metrics"><Metric icon={Phone} label="K vyřízení" value={String(totals.leads)} note="nové a k zavolání" tint="orange" onClick={() => onNavigate('leads')} /><Metric icon={CalendarCheck2} label="Zaměření" value={String(totals.visits)} note="domluvené návštěvy" tint="blue" onClick={() => onNavigate('calendar')} /><Metric icon={FileText} label="Nabídky čekají" value={String(totals.quotes)} note={money.format(leads.filter((lead) => lead.status === 'quote').reduce((sum, lead) => sum + lead.value, 0)) + ' v přípravě'} tint="violet" onClick={() => onNavigate('quotes')} /><Metric icon={HardHat} label="Probíhající zakázky" value={String(totals.jobs)} note="předané týmu" tint="green" onClick={() => onNavigate('jobs')} /></div>
     <div className="od-overview-grid"><section className="od-card od-todo-card"><CardHeading title="Co dnes vyřídit" subtitle="Nejdůležitější další kroky" action={<button className="od-link" onClick={() => onNavigate('leads')}>Všechny poptávky <ArrowRight size={14} /></button>} />{todo.length ? <div className="od-todo-list">{todo.map((lead) => <TodoRow key={lead.id} lead={lead} onSelect={() => onSelect(lead)} onAdvance={() => onAdvance(lead)} />)}</div> : <EmptyState icon={CheckCircle2} title="Všechno vyřízeno" text="Nové úkoly se ukážou tady." />}</section>
       <section className="od-card od-day-card"><CardHeading title="Nejbližší termíny" subtitle="Zaměření a práce vašeho týmu" action={<button className="od-icon-link" aria-label="Otevřít kalendář" onClick={() => onNavigate('calendar')}><ArrowRight size={15} /></button>} /><div className="od-agenda">{leads.filter((lead) => lead.status === 'scheduled').map((lead) => <button className="od-agenda-row" key={lead.id} onClick={() => onSelect(lead)}><time><b>10:30</b><small>ZÍTRA</small></time><span className="od-agenda-line" /><span className="od-agenda-copy"><b>Zaměření · {lead.project}</b><small>{lead.customer} · {lead.city}</small></span><ChevronRight size={15} /></button>)}{jobs.map((lead) => <button className="od-agenda-row" key={lead.id} onClick={() => onSelect(lead)}><time><b>13:00</b><small>DNES</small></time><span className="od-agenda-line od-line-green" /><span className="od-agenda-copy"><b>Kontrola zakázky · {lead.project}</b><small>{lead.customer} · {lead.city}</small></span><ChevronRight size={15} /></button>)}{todo.filter((lead) => lead.status === 'new').map((lead) => <button className="od-agenda-row" key={lead.id} onClick={() => onSelect(lead)}><time><b>15:00</b><small>DNES</small></time><span className="od-agenda-line od-line-orange" /><span className="od-agenda-copy"><b>Ozvat se · {lead.project}</b><small>{lead.customer} · {lead.city}</small></span><ChevronRight size={15} /></button>)}</div><button className="od-calendar-link" onClick={() => onNavigate('calendar')}><CalendarDays size={15} /> Otevřít týdenní kalendář <ArrowRight size={13} /></button></section>
     </div>
     <div className="od-bottom-grid"><section className="od-card"><CardHeading title="Zakázky v běhu" subtitle="Práce předaná realizačnímu týmu" action={<button className="od-link" onClick={() => onNavigate('jobs')}>Všechny zakázky <ArrowRight size={14} /></button>} />{jobs.length ? <div className="od-job-list">{jobs.slice(0, 3).map((lead) => <JobRow key={lead.id} lead={lead} onClick={() => onSelect(lead)} />)}</div> : <EmptyState icon={HardHat} title="Zatím žádné zakázky" text="Potvrzené nabídky se objeví po předání do realizace." />}</section><section className="od-card od-pipeline-card"><CardHeading title="Obchodní přehled" subtitle="Od prvního kontaktu k potvrzené práci" action={<button className="od-icon-link" aria-label="Otevřít poptávky" onClick={() => onNavigate('leads')}><ArrowRight size={15} /></button>} /><div className="od-funnel">{DEMO_COLUMNS.map((column) => { const count = leads.filter((lead) => lead.status === column.id).length; const max = Math.max(...DEMO_COLUMNS.map((item) => leads.filter((lead) => lead.status === item.id).length), 1); return <button key={column.id} className="od-funnel-row" onClick={() => onNavigate(column.id === 'quote' ? 'quotes' : column.id === 'job' ? 'jobs' : 'leads')}><span>{column.label}</span><span className="od-funnel-track"><i style={{ width: `${Math.max(count / max * 100, count ? 16 : 0)}%` }} /></span><b>{count}</b></button>; })}</div><div className="od-pipeline-value"><span>Hodnota rozpracovaných případů</span><b>{money.format(totals.pipeline)}</b></div></section></div>
   </>;
+}
+
+function GuidedJobStory({ step, onAdvance }: { step: DemoJourneyStep; onAdvance: () => void }) {
+  const nextLabel = nextDemoJourneyStep(step) === null ? 'Spustit ukázku znovu' : ['Zaznamenat první reakci', 'Předat přijatou nabídku do realizace', 'Zapsat ukázkové náklady', 'Zobrazit výsledek'][step];
+  const titles = ['Nová poptávka je zachycená', 'Nabídka je přijatá', 'Náklady z realizace', 'Majitel vidí výsledek'];
+  const descriptions = [
+    'Rodina Nových poptává rekonstrukci koupelny. Projděte si modelový postup od prvního kontaktu.',
+    'Zákazník přijal nabídku. Případ se předává z obchodu realizačnímu týmu.',
+    'Tým zapsal materiál a práci. Náklady jsou v této ukázce pouze fiktivní.',
+    'Jedna zakázka, jeden přehled: tržba, náklady a orientační výsledek pro majitele.',
+  ];
+  const amount = step === 2 ? DEMO_FIELD_COSTS : DEMO_CONTRACT_VALUE;
+  return <section className="od-story-card" aria-label="Ukázkový průchod zakázky">
+    <div className="od-story-head"><div><span>UKÁZKOVÝ PRŮCHOD · FIKTIVNÍ DATA</span><h2>{titles[step]}</h2><p>{descriptions[step]}</p></div><span className="od-story-value"><small>{step === 2 ? 'VZOROVÉ NÁKLADY' : 'VZOROVÁ NABÍDKA · BEZ DPH'}</small><b>{money.format(amount)}</b></span></div>
+    <div className="od-story-steps" aria-label={`Krok ${step + 1} ze 4`}>
+      {DEMO_JOURNEY_STEPS.map((label, index) => <div className={index === step ? 'od-story-current' : index < step ? 'od-story-done' : ''} key={label}><span>{index < step ? <Check size={12} /> : index + 1}</span><b>{label}</b></div>)}
+    </div>
+    <div className="od-story-foot"><span>{step === 3 ? <><b>{money.format(DEMO_CONTRACT_VALUE - DEMO_FIELD_COSTS)}</b> hrubý výsledek · marže <b>{percent.format(margin)} %</b><small>Před režií a daní. Jde o výpočet z fiktivních dat, ne účetní výkaz.</small></> : 'Všechna ukázková data se ukládají jen v tomto prohlížeči.'}</span><button onClick={onAdvance}>{nextLabel}<ArrowRight size={14} /></button></div>
+  </section>;
 }
 
 function Metric({ icon: Icon, label, value, note, tint, onClick }: { icon: typeof House; label: string; value: string; note: string; tint: string; onClick: () => void }) { return <button className="od-metric" onClick={onClick}><span className={`od-metric-icon od-tint-${tint}`}><Icon size={18} /></span><span className="od-metric-label">{label}</span><b className="od-metric-value">{value}</b><small>{note}</small><ArrowUpRight className="od-metric-arrow" size={14} /></button>; }
