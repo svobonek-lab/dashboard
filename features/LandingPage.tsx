@@ -190,11 +190,11 @@ export const LandingPage: React.FC = () => {
             <ArrowRight className="w-4 h-4" />
           </button>
           <button
-            onClick={() => navigate('/demo')}
+            onClick={() => window.location.assign('/demo')}
             className="w-full sm:w-auto px-6 py-3.5 bg-white hover:bg-slate-50 text-slate-800 border border-slate-300 rounded-xl text-xs font-black shadow-2xs transition-all flex items-center justify-center gap-2"
           >
             <PlayCircle className="w-4 h-4 text-[#0A84FF]" />
-            <span>Projít 4-krokové interaktivní demo</span>
+            <span>Vyzkoušet StavbaCore na ukázkových datech</span>
           </button>
         </div>
 
@@ -348,7 +348,7 @@ export const LandingPage: React.FC = () => {
                 <p className="text-emerald-400 font-bold pt-1">Výsledná marže: 27,8 % (98 134 Kč)</p>
               </div>
               <button
-                onClick={() => navigate('/demo')}
+                onClick={() => window.location.assign('/demo')}
                 className="w-full mt-3 py-2 bg-[#0A84FF] text-white rounded-xl text-xs font-sans font-bold hover:bg-blue-600 transition-all"
               >
                 Vyzkoušet tento scénář v demu →
@@ -676,7 +676,7 @@ export const LandingPage: React.FC = () => {
             </div>
             <div className="flex flex-wrap gap-4 text-slate-400">
               <button onClick={() => navigate('/login')} className="hover:text-white transition-colors">Přihlášení</button>
-              <button onClick={() => navigate('/demo')} className="hover:text-white transition-colors">Interaktivní demo</button>
+              <button onClick={() => window.location.assign('/demo')} className="hover:text-white transition-colors">Interaktivní demo</button>
               <button onClick={() => setIsBookingOpen(true)} className="hover:text-white transition-colors">Osobní ukázka (20 min)</button>
               <button onClick={() => setActiveLegalModal('vop')} className="hover:text-white transition-colors">VOP</button>
               <button onClick={() => setActiveLegalModal('gdpr')} className="hover:text-white transition-colors">GDPR & Soukromí</button>
