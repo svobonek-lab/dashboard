@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Database, HardDrive, Wifi, RefreshCw, CheckCircle2, AlertCircle, Settings2, X } from 'lucide-react';
 import { repositoryManager, crmRepo } from '../lib/data/repositoryFactory';
 import { RepositoryHealthStatus, StorageMode } from '../lib/data/types';
+import { getConfiguredSynologyToken } from '../lib/data/synologyToken';
 
 export const ConnectionStatusBanner: React.FC = () => {
   const [health, setHealth] = useState<RepositoryHealthStatus | null>(null);
@@ -13,7 +14,7 @@ export const ConnectionStatusBanner: React.FC = () => {
     return localStorage.getItem('crm_synology_endpoint') || 'http://synology.local:8080/api';
   });
   const [synologyToken, setSynologyToken] = useState(() => {
-    return localStorage.getItem('crm_synology_token') || 'synology-nas-bearer-token';
+    return getConfiguredSynologyToken(localStorage.getItem('crm_synology_token')) || '';
   });
 
   const checkHealth = async () => {

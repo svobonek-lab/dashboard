@@ -1,4 +1,5 @@
 import { SynologyConfig, SynologyDatabaseConfig, SynologyDiscoveredFile } from '@/types/synology';
+import { getConfiguredSynologyToken } from '../data/synologyToken';
 
 export interface SynologyConnectionTestResult {
   success: boolean;
@@ -76,7 +77,11 @@ export async function testSynologyConnection(
 }
 
 export function generateSynologyDockerCompose(config: SynologyConfig, organizationId: string): string {
-  const token = config.apiToken || 'buildflow-syn-token-replace-me';
+  const token = getConfiguredSynologyToken(config.apiToken);
+  if (!token) {
+    throw new Error('Synology API token musí být nastaven před vygenerováním konfigurace.');
+  }
+
   const nasHost = config.nasAddress || 'localhost';
   const nasPort = config.port || (config.useHttps ? 5001 : 5000);
   const endpointProtocol = config.useHttps ? 'https' : 'http';

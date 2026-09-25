@@ -127,8 +127,13 @@ export function saveSynologyConfig(orgId: string, config: SynologyConfig): void 
 }
 
 export function generateSynologyToken(orgId: string): string {
-  const token = `syn_tok_${orgId.substring(0, 8)}_${Math.random().toString(36).substring(2, 12)}_${Date.now().toString(36)}`;
-  return token;
+  if (!globalThis.crypto?.getRandomValues) {
+    throw new Error('Secure random token generation is unavailable in this environment.');
+  }
+
+  const randomBytes = globalThis.crypto.getRandomValues(new Uint8Array(32));
+  const randomHex = Array.from(randomBytes, byte => byte.toString(16).padStart(2, '0')).join('');
+  return `syn_tok_${orgId.substring(0, 8)}_${randomHex}`;
 }
 
 export function getSynologyDiscoveredFiles(orgId: string): SynologyDiscoveredFile[] {

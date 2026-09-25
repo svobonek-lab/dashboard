@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { SynologyConfig } from '@/types/synology';
 import { generateSynologyDockerCompose } from '@/lib/synology/synologyConnector';
+import { getConfiguredSynologyToken } from '@/lib/data/synologyToken';
 import { 
   X, 
   Copy, 
@@ -34,9 +35,33 @@ export const DockerComposeModal: React.FC<DockerComposeModalProps> = ({
   organizationId
 }) => {
   const [copied, setCopied] = useState(false);
-  const dockerComposeContent = generateSynologyDockerCompose(config, organizationId);
+  const hasApiToken = Boolean(getConfiguredSynologyToken(config.apiToken));
+  const dockerComposeContent = hasApiToken
+    ? generateSynologyDockerCompose(config, organizationId)
+    : '';
 
   if (!isOpen) return null;
+
+  if (!hasApiToken) {
+    return (
+      <div className="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-xs flex items-center justify-center p-4">
+        <div role="dialog" aria-modal="true" aria-labelledby="synology-token-required-title" className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-lg p-6">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <h3 id="synology-token-required-title" className="text-lg font-bold text-slate-900">Chybí API token</h3>
+              <p className="mt-2 text-sm text-slate-600">Nejdřív nastavte API token v průvodci připojení Synology. Bez něj nelze bezpečně vygenerovat konfiguraci konektoru.</p>
+            </div>
+            <button onClick={onClose} aria-label="Zavřít" className="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-600 transition-colors">
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+          <button onClick={onClose} className="mt-6 px-5 py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-sm font-bold transition-colors">
+            Zavřít
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   const handleCopy = () => {
     navigator.clipboard.writeText(dockerComposeContent);
