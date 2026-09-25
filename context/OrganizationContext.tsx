@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { supabase, isSupabaseConfigured, LocalSupabaseMock, isValidUUID, DEFAULT_DEMO_ORG_ID } from '../lib/supabase';
+import { supabase, isSupabaseConfigured, LocalSupabaseMock, isValidUUID, DEFAULT_DEMO_ORG_ID, canUseLocalMockAuth } from '../lib/supabase';
 import { CompanyBranding, Lead, Employee } from '../types';
 import * as Sentry from "@sentry/react";
 
@@ -204,7 +204,7 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
             await loadUserData(session.user.id, session.user.email);
           } else {
             // Check if user has an active session in local store (e.g. quick-login or mock auth)
-            const activeSession = LocalSupabaseMock.getActiveSessionUser();
+            const activeSession = canUseLocalMockAuth(IS_PRODUCTION) ? LocalSupabaseMock.getActiveSessionUser() : null;
             if (activeSession) {
               const allOrgs = LocalSupabaseMock.getOrganizations();
               const userOrg = allOrgs.find(o => o.id === activeSession.organization_id) || allOrgs[0];
@@ -228,7 +228,7 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
             extra: { organization_id: currentOrg?.id, context: 'initAuth' }
           });
           setError(err.message || 'Chyba při připojování k Supabase');
-          const activeSession = LocalSupabaseMock.getActiveSessionUser();
+          const activeSession = canUseLocalMockAuth(IS_PRODUCTION) ? LocalSupabaseMock.getActiveSessionUser() : null;
           if (activeSession) {
             const allOrgs = LocalSupabaseMock.getOrganizations();
             const userOrg = allOrgs.find(o => o.id === activeSession.organization_id) || allOrgs[0];
@@ -277,6 +277,15 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
 
   // Helper: Setup mock local data in state
   const setupLocalDemoData = () => {
+    if (!canUseLocalMockAuth(IS_PRODUCTION)) {
+      setError('Databáze není nakonfigurována nebo neodpovídá. Přihlášení do lokálního režimu je v produkci vypnuté.');
+      setUser(null);
+      setDbUser(null);
+      setOrganizations([]);
+      setCurrentOrg(null);
+      return;
+    }
+
     const orgs = LocalSupabaseMock.getOrganizations();
     const mockUsers = LocalSupabaseMock.getUsers();
     
@@ -505,7 +514,9 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
       };
 
       setDbUser(formattedDbUser);
-      LocalSupabaseMock.setActiveSessionUser(formattedDbUser);
+      if (canUseLocalMockAuth(IS_PRODUCTION)) {
+        LocalSupabaseMock.setActiveSessionUser(formattedDbUser);
+      }
     } catch (err: any) {
       console.error('Error loading user organization details:', err);
       Sentry.captureException(err, {
