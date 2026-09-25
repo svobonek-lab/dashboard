@@ -18,9 +18,11 @@ Status: COMPLETE — PR #7 merged after npm ci, npm run lint, and npm run build 
 
 ## Follow-up backlog (requires separate scoped tasks)
 - P0: Remove embedded credential-like defaults and prevent production from falling back to privileged mock authentication. Hashes shipped to clients do not solve exposed authentication.
-  Status: Production mock-auth fallback hardening is prepared on branch fix/production-mock-auth-fallback; local validation is complete.- P0: Reconcile production app_* schema with application references before modifying tenant access or deletion behavior.
+  Status: COMPLETE — PR #8 merged to main on 2026-09-25; npm test, npm run lint, and npm run build passed.
+- P0: Reconcile production app_* schema with application references before modifying tenant access or deletion behavior.
 - P0: Review tenant isolation and authorization using local/staging tests; RLS enabled alone is insufficient evidence.
 - P1: Remove Synology token fallback and validate configuration with targeted tests.
+  Status: Implementation and seven local tests are complete on branch fix/remove-synology-token-fallback; PR checks are pending.
 - P1: Plan soft deletion only after checking real schema and allowed status values. No automatic migrations.
 - P1: Validate environment configuration; explicitly distinguish synthetic demo mode and production.
 - P2: Add focused tests, then consider context extraction and naming cleanup. Preserve existing localStorage data when renaming keys.

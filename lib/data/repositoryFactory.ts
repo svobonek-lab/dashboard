@@ -1,6 +1,7 @@
 import { ICRMRepository, StorageMode } from './types';
 import { SupabaseRepository } from './SupabaseRepository';
 import { SynologyLocalRepository } from './SynologyLocalRepository';
+import { getConfiguredSynologyToken } from './synologyToken';
 
 const STORAGE_MODE_KEY = 'crm_storage_mode_preference';
 const SYNOLOGY_ENDPOINT_KEY = 'crm_synology_endpoint';
@@ -24,9 +25,13 @@ class RepositoryManager {
     const savedEndpoint = typeof localStorage !== 'undefined' 
       ? localStorage.getItem(SYNOLOGY_ENDPOINT_KEY)
       : null;
-    const savedToken = typeof localStorage !== 'undefined' 
+    const storedToken = typeof localStorage !== 'undefined'
       ? localStorage.getItem(SYNOLOGY_TOKEN_KEY)
       : null;
+    const savedToken = getConfiguredSynologyToken(storedToken);
+    if (storedToken && !savedToken && typeof localStorage !== 'undefined') {
+      localStorage.removeItem(SYNOLOGY_TOKEN_KEY);
+    }
 
     this.supabaseRepo = new SupabaseRepository();
     this.synologyRepo = new SynologyLocalRepository(
@@ -54,8 +59,10 @@ class RepositoryManager {
         localStorage.setItem(SYNOLOGY_ENDPOINT_KEY, synologyConfig.endpoint);
         this.synologyRepo.setEndpoint(synologyConfig.endpoint, synologyConfig.token);
       }
-      if (synologyConfig?.token) {
-        localStorage.setItem(SYNOLOGY_TOKEN_KEY, synologyConfig.token);
+      if (mode === 'synology' && synologyConfig) {
+        const token = getConfiguredSynologyToken(synologyConfig.token);
+        if (token) localStorage.setItem(SYNOLOGY_TOKEN_KEY, token);
+        else localStorage.removeItem(SYNOLOGY_TOKEN_KEY);
       }
     } catch (e) {
       console.warn('LocalStorage mode save failed', e);

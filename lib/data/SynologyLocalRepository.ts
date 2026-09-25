@@ -1,23 +1,31 @@
 import { ICRMRepository, RepositoryHealthStatus } from './types';
 import { Lead, Employee, CompanyBranding } from '../../types';
 import { LocalSupabaseMock } from '../supabase';
+import { getConfiguredSynologyToken } from './synologyToken';
 
 export class SynologyLocalRepository implements ICRMRepository {
   readonly mode = 'synology' as const;
   private baseUrl: string;
-  private apiToken: string;
+  private apiToken?: string;
 
   constructor(endpoint?: string, apiToken?: string) {
     this.baseUrl = (endpoint || 'http://synology.local:8080/api').replace(/\/$/, '');
-    this.apiToken = apiToken || 'synology-nas-bearer-token';
+    this.apiToken = getConfiguredSynologyToken(apiToken);
   }
 
   setEndpoint(url: string, token?: string) {
-    this.baseUrl = url.replace(/\/$/, '');
-    if (token !== undefined) this.apiToken = token;
+    const nextBaseUrl = url.replace(/\/$/, '');
+    const endpointChanged = nextBaseUrl !== this.baseUrl;
+    this.baseUrl = nextBaseUrl;
+    if (token !== undefined) this.apiToken = getConfiguredSynologyToken(token);
+    else if (endpointChanged) this.apiToken = undefined;
   }
 
   private async request<T>(path: string, options: RequestInit = {}): Promise<T> {
+    if (!this.apiToken) {
+      throw new Error('Synology API token není nastaven. Nastavte jej před připojením.');
+    }
+
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 6000);
 
