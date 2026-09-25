@@ -1,163 +1,124 @@
 import { useMemo, useState } from 'react';
-import { ArrowLeft, ArrowRight, BriefcaseBusiness, Check, ChevronDown, CirclePlus, HardHat, House, RotateCcw, UsersRound, X } from 'lucide-react';
+import type { FormEvent, ReactNode } from 'react';
+import { Activity, ArrowDownRight, ArrowRight, ArrowUpRight, Bell, Building2, Check, ChevronDown, CircleHelp, Cloud, CreditCard, ExternalLink, FilePlus2, Globe2, HardDrive, House, LayoutDashboard, LifeBuoy, Menu, Plus, RotateCcw, Search, Settings, ShieldCheck, Sparkles, Users, WandSparkles, X } from 'lucide-react';
 import { createDemoLead, DEMO_COLUMNS, DEMO_SEED, DemoLead, DemoStatus, moveDemoLead, parseDemoLeads } from './demoState';
 
-const STORAGE_KEY = 'stavbacore_public_demo_v1';
+type Screen = 'overview' | 'companies' | 'install' | 'creator' | 'domains' | 'billing' | 'logs' | 'settings' | 'landing' | 'pipeline';
+type Company = { id: string; name: string; initials: string; city: string; plan: string; inquiries: number; color: string; updated: string };
+const LEAD_KEY = 'stavbacore_public_demo_v1';
+const COMPANY_KEY = 'stavbacore_public_demo_companies_v1';
 const money = new Intl.NumberFormat('cs-CZ', { style: 'currency', currency: 'CZK', maximumFractionDigits: 0 });
+const SEED_COMPANIES: Company[] = [
+  { id: 'demo-tenant-01', name: 'Ukázkové Stavby', initials: 'US', city: 'Brno', plan: 'PRO', inquiries: 42, color: '#168b82', updated: 'Před 8 min' },
+  { id: 'demo-tenant-02', name: 'Fiktivní střechy', initials: 'FS', city: 'Olomouc', plan: 'START', inquiries: 27, color: '#c17b40', updated: 'Před 24 min' },
+  { id: 'demo-tenant-03', name: 'Modelová rekonstrukce', initials: 'MR', city: 'Praha', plan: 'PRO', inquiries: 31, color: '#7185d2', updated: 'Včera' },
+];
+const NAV: { id: Screen; label: string; icon: typeof House }[] = [
+  { id: 'overview', label: 'Přehled systému', icon: LayoutDashboard }, { id: 'companies', label: 'Firmy a pracovní prostory', icon: Building2 },
+  { id: 'install', label: 'Průvodce instalací', icon: WandSparkles }, { id: 'creator', label: 'Tvorba AI ukázky', icon: Sparkles },
+  { id: 'domains', label: 'Vlastní domény', icon: Globe2 }, { id: 'billing', label: 'Tarify a přehled plateb', icon: CreditCard },
+  { id: 'logs', label: 'Aktivita systému', icon: Activity }, { id: 'settings', label: 'Nastavení platformy', icon: Settings },
+];
 
-function readLeads(): DemoLead[] {
-  try { return parseDemoLeads(window.localStorage.getItem(STORAGE_KEY)); }
-  catch { return DEMO_SEED.map((lead) => ({ ...lead })); }
-}
+function readLeads() { try { return parseDemoLeads(window.localStorage.getItem(LEAD_KEY)); } catch { return DEMO_SEED.map((lead) => ({ ...lead })); } }
+function readCompanies(): Company[] { try { const stored = JSON.parse(window.localStorage.getItem(COMPANY_KEY) || 'null'); return Array.isArray(stored) && stored.every((item) => item?.id?.startsWith('demo-')) ? stored : SEED_COMPANIES.map((item) => ({ ...item })); } catch { return SEED_COMPANIES.map((item) => ({ ...item })); } }
 
 export function PublicDemoWorkspace() {
+  const [screen, setScreen] = useState<Screen>('overview');
   const [leads, setLeads] = useState<DemoLead[]>(readLeads);
+  const [companies, setCompanies] = useState<Company[]>(readCompanies);
   const [selected, setSelected] = useState<DemoLead | null>(null);
-  const [adding, setAdding] = useState(false);
-  const [notice, setNotice] = useState('');
-  const totals = useMemo(() => ({
-    pipeline: leads.filter((lead) => lead.status !== 'job').reduce((sum, lead) => sum + lead.value, 0),
-    open: leads.filter((lead) => lead.status !== 'job').length,
-    jobs: leads.filter((lead) => lead.status === 'job').length,
-  }), [leads]);
-
-  const persist = (next: DemoLead[]) => {
-    setLeads(next);
-    try { window.localStorage.setItem(STORAGE_KEY, JSON.stringify(next)); }
-    catch { setNotice('Prohlížeč neumožnil uložit ukázkové změny.'); }
-  };
-
-  const advance = (lead: DemoLead) => {
-    const nextStatus: DemoStatus = lead.status === 'new' ? 'contacted' : lead.status === 'contacted' ? 'quote' : 'job';
-    const changed = moveDemoLead(lead, nextStatus);
-    persist(leads.map((item) => item.id === lead.id ? changed : item));
-    setSelected(changed);
-    setNotice(nextStatus === 'job' ? 'Poptávka převedena na zakázku.' : 'Stav poptávky byl změněn.');
-  };
-
-  const reset = () => {
-    const fresh = DEMO_SEED.map((lead) => ({ ...lead }));
-    persist(fresh);
-    setSelected(null);
-    setNotice('Ukázka je znovu v původním stavu.');
-  };
-
-  return (
-    <main className="demo-shell min-h-screen bg-[#eef2f1] text-[#18343a]">
-      <div className="demo-banner flex flex-wrap items-center justify-center gap-x-2 gap-y-1 px-4 py-2 text-center text-xs font-semibold">
-        <span className="rounded-full bg-white/20 px-2 py-0.5 uppercase tracking-wider">Ukázkové prostředí</span>
-        <span>Smyšlená data. Změny se ukládají jen v tomto prohlížeči.</span>
-        <button onClick={reset} className="inline-flex items-center gap-1 underline underline-offset-2" aria-label="Obnovit ukázková data"><RotateCcw size={13} /> Obnovit ukázku</button>
-      </div>
-
-      <div className="mx-auto flex min-h-[calc(100vh-36px)] max-w-[1600px]">
-        <aside className="demo-rail hidden w-[76px] shrink-0 flex-col px-3 py-6 md:flex lg:w-[232px] lg:px-4">
-          <a href="/" className="mb-9 flex items-center gap-3 rounded-lg px-1" aria-label="StavbaCore, zpět na web">
-            <span className="demo-mark">SC</span>
-            <span className="hidden lg:block"><span className="block text-sm font-extrabold tracking-wide text-white">STAVBACORE</span><span className="mt-0.5 block text-[9px] font-bold tracking-[0.16em] text-white/55">OPERAČNÍ SYSTÉM STAVBY</span></span>
-          </a>
-          <p className="mb-2 hidden px-2 text-[9px] font-extrabold tracking-[0.16em] text-white/45 lg:block">PRACOVNÍ PROSTOR</p>
-          <nav aria-label="Navigace ukázkového workspace" className="space-y-1">
-            <a href="#prehled" className="rail-link" aria-label="Přehled stavby"><House size={17} /><span className="hidden lg:inline">Přehled stavby</span></a>
-            <a href="#poptavky" className="rail-link rail-link-active" aria-label="Poptávky a Kanban"><BriefcaseBusiness size={17} /><span className="hidden lg:inline">Poptávky & Kanban</span></a>
-            <a href="#zakazky" className="rail-link" aria-label="Zakázky"><HardHat size={17} /><span className="hidden lg:inline">Zakázky</span></a>
-          </nav>
-          <div className="mt-auto border-t border-white/10 pt-4 lg:border-0">
-            <div className="flex items-center gap-2.5 rounded-lg px-2 py-2">
-              <span className="demo-avatar">MN</span>
-              <span className="hidden min-w-0 lg:block"><span className="block truncate text-xs font-bold text-white">Marek Novák</span><span className="block text-[10px] text-white/55">Majitel · ukázkový účet</span></span>
-              <UsersRound size={14} className="ml-auto hidden shrink-0 text-white/50 lg:block" />
-            </div>
-          </div>
-        </aside>
-
-        <section id="prehled" className="min-w-0 flex-1 px-4 py-5 sm:px-7 lg:px-10 lg:py-8">
-          <header className="mb-8 flex flex-wrap items-start justify-between gap-4">
-            <div>
-              <a href="/" className="mb-4 inline-flex items-center gap-1.5 text-xs font-bold text-[#60777a] hover:text-[#17363c]"><ArrowLeft size={14} /> Zpět na StavbaCore</a>
-              <div className="flex items-center gap-3">
-                <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#17474a] text-white"><HardHat size={23} /></div>
-                <div><p className="text-xs font-bold uppercase tracking-[0.16em] text-[#718689]">Pracovní přehled</p><h1 className="text-2xl font-extrabold tracking-tight sm:text-3xl">Dobré ráno, Marku</h1></div>
-              </div>
-              <p className="mt-2 text-sm text-[#687d80]">Malířství a rekonstrukce Novák · Brno a okolí</p>
-            </div>
-            <button onClick={() => setAdding(true)} className="demo-primary inline-flex min-h-11 items-center gap-2 rounded-lg px-4 text-sm font-bold"><CirclePlus size={17} /> Nová poptávka</button>
-          </header>
-
-          <div className="mb-8 grid grid-cols-1 gap-3 sm:grid-cols-3">
-            <Summary label="Rozpracované poptávky" value={String(totals.open)} note="od prvního kontaktu po nabídku" />
-            <Summary label="Hodnota v jednání" value={money.format(totals.pipeline)} note="orientační cena zakázek" />
-            <Summary label="Aktivní zakázky" value={String(totals.jobs)} note="předané realizačnímu týmu" />
-          </div>
-
-          <div className="mb-3 flex flex-wrap items-end justify-between gap-3">
-            <div><p className="text-xs font-bold uppercase tracking-[0.14em] text-[#718689]">Obchod</p><h2 className="mt-1 text-xl font-extrabold">Poptávky a zakázky</h2></div>
-            <span className="text-xs font-medium text-[#718689]">Tento týden <ChevronDown size={14} className="inline" /></span>
-          </div>
-
-          <div id="poptavky" className="demo-board grid gap-3 pb-3 md:grid-cols-2 xl:grid-cols-4" aria-label="Přehled obchodních případů">
-            {DEMO_COLUMNS.map((column) => {
-              const items = leads.filter((lead) => lead.status === column.id);
-              return <section key={column.id} className="demo-column min-w-0 rounded-xl p-3" aria-label={column.label}>
-                <div id={column.id === 'job' ? 'zakazky' : undefined} className="mb-3 flex items-center justify-between px-1"><h3 className="text-[13px] font-extrabold">{column.label}</h3><span className="demo-count">{items.length}</span></div>
-                <div className="space-y-2.5">
-                  {items.map((lead) => <article key={lead.id} className="demo-ticket rounded-lg p-3.5">
-                    <button onClick={() => setSelected(lead)} className="block w-full text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1f7470]">
-                      <div className="mb-2 flex items-start justify-between gap-2"><span className="text-[10px] font-bold uppercase tracking-wider text-[#819194]">{lead.city}</span><span className="text-[10px] text-[#8a999a]">{lead.updated}</span></div>
-                      <h4 className="text-sm font-extrabold leading-snug">{lead.project}</h4><p className="mt-1 text-xs text-[#687d80]">{lead.customer}</p>
-                      <div className="mt-4 flex items-center justify-between border-t border-[#e7eceb] pt-3"><span className="text-xs font-bold text-[#24494b]">{lead.value ? money.format(lead.value) : 'Cena k doplnění'}</span><span className="text-[10px] font-semibold text-[#849395]">Detail →</span></div>
-                    </button>
-                    {lead.status !== 'job' && <button onClick={() => advance(lead)} className="demo-next mt-3 inline-flex w-full items-center justify-center gap-1.5 rounded-md py-2 text-xs font-bold">{lead.status === 'quote' ? 'Převést na zakázku' : 'Posunout dál'} <ArrowRight size={13} /></button>}
-                  </article>)}
-                  {items.length === 0 && <p className="rounded-lg border border-dashed border-[#d5dfdd] px-3 py-5 text-center text-xs text-[#819194]">Zatím tu nic není</p>}
-                </div>
-              </section>;
-            })}
-          </div>
-          <p className="mt-4 text-center text-xs text-[#849395]">Vyzkoušejte celý průchod: přidejte poptávku, otevřete detail a posuňte ji až do zakázek.</p>
-          <footer className="mt-10 flex flex-wrap items-center justify-between gap-2 border-t border-[#dce4e2] pt-4 text-xs text-[#819194]"><span>© 2026 StavbaCore · Ukázka produktu</span><a className="font-bold text-[#315d5c] hover:underline" href="/login">Přihlásit se k účtu <ArrowRight size={12} className="inline" /></a></footer>
-        </section>
-      </div>
-
-      {notice && <div role="status" className="demo-toast fixed bottom-5 left-1/2 z-50 -translate-x-1/2 rounded-lg px-4 py-3 text-sm font-semibold shadow-xl">{notice}<button onClick={() => setNotice('')} className="ml-3 align-middle" aria-label="Zavřít oznámení"><X size={14} /></button></div>}
-      {selected && <DetailPanel lead={selected} onClose={() => setSelected(null)} onAdvance={() => advance(selected)} />}
-      {adding && <AddLeadDialog onClose={() => setAdding(false)} onAdd={(input) => { const lead = createDemoLead(input); persist([lead, ...leads]); setAdding(false); setSelected(lead); setNotice('Ukázková poptávka byla přidána.'); }} />}
-    </main>
-  );
-}
-
-function Summary({ label, value, note }: { label: string; value: string; note: string }) {
-  return <div className="demo-summary rounded-xl px-4 py-4"><p className="text-xs font-semibold text-[#718689]">{label}</p><p className="mt-2 text-2xl font-extrabold tracking-tight">{value}</p><p className="mt-1 text-[11px] text-[#849395]">{note}</p></div>;
-}
-
-function DetailPanel({ lead, onClose, onAdvance }: { lead: DemoLead; onClose: () => void; onAdvance: () => void }) {
-  const status = DEMO_COLUMNS.find((column) => column.id === lead.status)?.label;
-  return <div className="demo-overlay fixed inset-0 z-40 flex justify-end" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }}>
-    <aside role="dialog" aria-modal="true" aria-labelledby="demo-detail-title" className="demo-panel h-full w-full max-w-md overflow-y-auto p-6 sm:p-8">
-      <button onClick={onClose} className="mb-8 inline-flex items-center gap-1 text-sm font-bold text-[#60777a]"><X size={16} /> Zavřít detail</button>
-      <p className="text-xs font-bold uppercase tracking-widest text-[#768b8c]">{status}</p><h2 id="demo-detail-title" className="mt-2 text-2xl font-extrabold">{lead.project}</h2><p className="mt-2 text-sm text-[#60777a]">{lead.customer} · {lead.city}</p>
-      <div className="my-7 border-y border-[#e2e9e7] py-5"><p className="text-xs text-[#819194]">Předběžná hodnota</p><p className="mt-1 text-xl font-extrabold">{lead.value ? money.format(lead.value) : 'Doplnit po zaměření'}</p></div>
-      <h3 className="text-sm font-extrabold">Další krok</h3><p className="mt-2 text-sm leading-6 text-[#60777a]">{lead.status === 'new' ? 'Ozvat se zákazníkovi a domluvit prohlídku.' : lead.status === 'contacted' ? 'Připravit rozsah prací a cenovou nabídku.' : lead.status === 'quote' ? 'Po přijetí nabídky předat případ do realizace.' : 'Zakázka je připravená pro plánování práce týmu.'}</p>
-      {lead.status !== 'job' && <button onClick={onAdvance} className="demo-primary mt-8 flex min-h-11 w-full items-center justify-center gap-2 rounded-lg text-sm font-bold">{lead.status === 'quote' ? <><Check size={17} /> Nabídka přijata · vytvořit zakázku</> : <>Označit další krok <ArrowRight size={16} /></>}</button>}
-      <p className="mt-5 text-xs leading-5 text-[#8a999a]">Jde o smyšlený záznam pro předvedení pracovního postupu.</p>
-    </aside>
-  </div>;
-}
-
-function AddLeadDialog({ onClose, onAdd }: { onClose: () => void; onAdd: (input: { customer: string; project: string; city: string }) => void }) {
-  const [customer, setCustomer] = useState('');
-  const [project, setProject] = useState('');
+  const [addingLead, setAddingLead] = useState(false);
+  const [installOpen, setInstallOpen] = useState(false);
+  const [companyName, setCompanyName] = useState('');
   const [city, setCity] = useState('');
-  const valid = customer.trim() && project.trim() && city.trim();
-  return <div className="demo-overlay fixed inset-0 z-40 flex items-center justify-center p-4" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }}>
-    <form role="dialog" aria-modal="true" aria-labelledby="demo-add-title" onSubmit={(event) => { event.preventDefault(); if (valid) onAdd({ customer, project, city }); }} className="demo-panel w-full max-w-lg rounded-2xl p-6 sm:p-8">
-      <div className="mb-6 flex items-start justify-between"><div><p className="text-xs font-bold uppercase tracking-widest text-[#768b8c]">Ukázkový záznam</p><h2 id="demo-add-title" className="mt-1 text-2xl font-extrabold">Nová poptávka</h2></div><button type="button" onClick={onClose} aria-label="Zavřít formulář"><X size={19} /></button></div>
-      <div className="space-y-4">
-        <label className="block text-xs font-bold">Zákazník nebo firma<input autoFocus required maxLength={80} value={customer} onChange={(event) => setCustomer(event.target.value)} className="demo-input mt-1.5" placeholder="např. Rodina Novákových" /></label>
-        <label className="block text-xs font-bold">Co se má postavit nebo opravit<input required maxLength={100} value={project} onChange={(event) => setProject(event.target.value)} className="demo-input mt-1.5" placeholder="např. Rekonstrukce koupelny" /></label>
-        <label className="block text-xs font-bold">Město nebo oblast<input required maxLength={60} value={city} onChange={(event) => setCity(event.target.value)} className="demo-input mt-1.5" placeholder="např. Brno-venkov" /></label>
-      </div>
-      <div className="mt-7 flex justify-end gap-2"><button type="button" onClick={onClose} className="rounded-lg px-4 py-2.5 text-sm font-bold text-[#61777a]">Zrušit</button><button disabled={!valid} className="demo-primary inline-flex items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-bold"><CirclePlus size={16} /> Přidat do ukázky</button></div>
-    </form>
-  </div>;
+  const [notice, setNotice] = useState('');
+  const [mobileNav, setMobileNav] = useState(false);
+  const [query, setQuery] = useState('');
+  const [period, setPeriod] = useState('Tento měsíc');
+  const [generated, setGenerated] = useState(false);
+  const [plan, setPlan] = useState('PRO');
+  const metrics = useMemo(() => ({ inquiries: companies.reduce((sum, company) => sum + company.inquiries, 0), active: companies.length, leads: leads.filter((lead) => lead.status !== 'job').length, value: leads.filter((lead) => lead.status !== 'job').reduce((sum, lead) => sum + lead.value, 0) }), [companies, leads]);
+
+  const saveLeads = (next: DemoLead[]) => { setLeads(next); try { window.localStorage.setItem(LEAD_KEY, JSON.stringify(next)); } catch { setNotice('Prohlížeč neumožnil uložit ukázkové změny.'); } };
+  const saveCompanies = (next: Company[]) => { setCompanies(next); try { window.localStorage.setItem(COMPANY_KEY, JSON.stringify(next)); } catch { setNotice('Prohlížeč neumožnil uložit ukázkové změny.'); } };
+  const reset = () => { saveLeads(DEMO_SEED.map((lead) => ({ ...lead }))); saveCompanies(SEED_COMPANIES.map((company) => ({ ...company }))); setSelected(null); setNotice('Ukázková data byla obnovena.'); };
+  const advance = (lead: DemoLead) => { const status: DemoStatus = lead.status === 'new' ? 'contacted' : lead.status === 'contacted' ? 'quote' : 'job'; const changed = moveDemoLead(lead, status); saveLeads(leads.map((item) => item.id === lead.id ? changed : item)); setSelected(changed); setNotice(status === 'job' ? 'Poptávka převedena do ukázkových zakázek.' : 'Stav poptávky byl změněn.'); };
+  const navigate = (next: Screen) => { setScreen(next); setMobileNav(false); setSelected(null); window.history.replaceState({}, '', next === 'pipeline' ? '/demo#interaktivni-demo' : `/demo#${next}`); };
+
+  const createCompany = (event: FormEvent) => { event.preventDefault(); const name = companyName.trim(); if (!name || !city.trim()) return; const next: Company = { id: `demo-tenant-${Date.now()}`, name, initials: name.split(/\s+/).map((part) => part[0]).join('').slice(0, 2).toUpperCase(), city: city.trim(), plan, inquiries: 0, color: '#168b82', updated: 'Právě vytvořeno' }; saveCompanies([next, ...companies]); setCompanyName(''); setCity(''); setInstallOpen(false); navigate('companies'); setNotice('Ukázkový pracovní prostor byl vytvořen pouze v tomto prohlížeči.'); };
+
+  return <main className="pf-shell min-h-screen text-slate-100">
+    <div className="pf-demo-notice"><ShieldCheck size={14} /><span>Veřejná ukázka · firmy, události i čísla jsou smyšlená</span><button onClick={reset}><RotateCcw size={13} /> Obnovit ukázku</button></div>
+    <div className="flex min-h-[calc(100vh-38px)]">
+      <aside className={`pf-sidebar ${mobileNav ? 'pf-sidebar-open' : ''}`}>
+        <a href="/" className="pf-brand" aria-label="StavbaCore"><span className="pf-brand-mark"><HardDrive size={20} /></span><span><b>STAVBACORE</b><small>PLATFORM CONTROL</small></span><button className="pf-close-mobile" aria-label="Zavřít navigaci" onClick={() => setMobileNav(false)}><X size={18} /></button></a>
+        <p className="pf-group-title">Infrastruktura a firmy</p><nav className="pf-nav" aria-label="Navigace administrace ukázky">{NAV.map(({ id, label, icon: Icon }) => <button key={id} onClick={() => navigate(id)} className={screen === id ? 'pf-nav-active' : ''}><Icon size={17} /><span>{label}</span>{id === 'install' && <i>Nové</i>}</button>)}</nav>
+        <div className="pf-nav-divider" /><p className="pf-group-title">Prodejní ukázka</p><nav className="pf-nav"><button onClick={() => navigate('landing')} className={screen === 'landing' ? 'pf-nav-active' : ''}><House size={17} /><span>Úvodní stránka</span><ExternalLink size={13} /></button><button onClick={() => navigate('pipeline')} className={screen === 'pipeline' ? 'pf-nav-active' : ''}><Activity size={17} /><span>Poptávka až zakázka</span></button></nav>
+        <div className="pf-sidebar-bottom"><div className="pf-server"><span className="pf-online-dot" /><span><b>Demo prostředí online</b><small>Lokální ukázková data</small></span></div><div className="pf-profile"><span className="pf-avatar">SC</span><span><b>Ukázkový správce</b><small>Demo účet</small></span><ChevronDown size={14} /></div></div>
+      </aside>
+      {mobileNav && <button className="pf-mobile-scrim" aria-label="Zavřít navigaci" onClick={() => setMobileNav(false)} />}
+      <section className="pf-main min-w-0 flex-1">
+        <header className="pf-topbar"><div className="flex min-w-0 items-center gap-3"><button className="pf-menu-button" aria-label="Otevřít navigaci" onClick={() => setMobileNav(true)}><Menu size={19} /></button><div className="pf-crumb"><span>StavbaCore</span><b>/</b><strong>{screenTitle(screen)}</strong></div></div><div className="pf-top-actions"><label className="pf-search"><Search size={15} /><input aria-label="Hledat ve firmách" placeholder="Hledat firmy…" value={query} onChange={(event) => setQuery(event.target.value)} /><kbd>⌘ K</kbd></label><button aria-label="Nápověda" className="pf-icon-button" onClick={() => setNotice('Toto je samostatná ukázka platformy bez připojeného produkčního účtu.')}><CircleHelp size={17} /></button><button aria-label="Oznámení" className="pf-icon-button pf-bell" onClick={() => navigate('logs')}><Bell size={17} /><i /></button><span className="pf-user-initials">SD</span></div></header>
+        <div className="pf-content">
+          {screen === 'overview' && <Overview companies={companies} metrics={metrics} onNavigate={navigate} onInstall={() => setInstallOpen(true)} />}
+          {screen === 'companies' && <Companies companies={companies.filter((company) => company.name.toLowerCase().includes(query.toLowerCase()) || company.city.toLowerCase().includes(query.toLowerCase()))} onInstall={() => setInstallOpen(true)} onOpenWorkspace={() => navigate('pipeline')} />}
+          {screen === 'install' && <InstallStudio onInstall={() => setInstallOpen(true)} companies={companies} />}
+          {screen === 'creator' && <Creator generated={generated} onGenerate={() => { setGenerated(true); setNotice('Ukázkový návrh je připraven. Generování AI je v této veřejné ukázce simulované.'); }} />}
+          {screen === 'domains' && <Domains companies={companies} onNotify={setNotice} />}
+          {screen === 'billing' && <Billing companies={companies} />}
+          {screen === 'logs' && <Logs />}
+          {screen === 'settings' && <SettingsPage />}
+          {screen === 'landing' && <SalesLanding onOpenDemo={() => navigate('pipeline')} />}
+          {screen === 'pipeline' && <Pipeline leads={leads} period={period} onPeriodChange={setPeriod} onAdd={() => setAddingLead(true)} onSelect={setSelected} onAdvance={advance} />}
+          <footer className="pf-footer"><span>STAVBACORE · INTERAKTIVNÍ UKÁZKA</span><span>Všechny změny zůstávají v tomto prohlížeči</span></footer>
+        </div>
+      </section>
+    </div>
+    {installOpen && <div className="pf-modal-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) setInstallOpen(false); }}><form className="pf-modal" onSubmit={createCompany} aria-labelledby="pf-install-title"><div className="pf-modal-head"><div><span className="pf-eyebrow">NOVÝ PRACOVNÍ PROSTOR</span><h2 id="pf-install-title">Založit ukázkovou firmu</h2></div><button type="button" aria-label="Zavřít" onClick={() => setInstallOpen(false)}><X size={18} /></button></div><p className="pf-muted">Vyzkoušejte úvodní nastavení. Nic se neodešle na server.</p><label>Název firmy<input autoFocus required maxLength={80} value={companyName} onChange={(event) => setCompanyName(event.target.value)} placeholder="např. Stavební firma Novák" /></label><label>Město<input required maxLength={60} value={city} onChange={(event) => setCity(event.target.value)} placeholder="např. Brno" /></label><label>Tarif<select value={plan} onChange={(event) => setPlan(event.target.value)}><option>START</option><option>PRO</option></select></label><div className="pf-modal-actions"><button type="button" className="pf-button-secondary" onClick={() => setInstallOpen(false)}>Zrušit</button><button className="pf-button-primary"><Plus size={16} /> Vytvořit ukázku</button></div></form></div>}
+    {selected && <LeadDetail lead={selected} onClose={() => setSelected(null)} onAdvance={() => advance(selected)} />}
+    {addingLead && <AddLeadDialog onClose={() => setAddingLead(false)} onAdd={(input) => { const lead = createDemoLead(input); saveLeads([lead, ...leads]); setAddingLead(false); setSelected(lead); setNotice('Ukázková poptávka byla přidána.'); }} />}
+    {notice && <div role="status" className="pf-toast">{notice}<button onClick={() => setNotice('')} aria-label="Zavřít oznámení"><X size={14} /></button></div>}
+  </main>;
 }
+
+function screenTitle(screen: Screen) { return ({ overview: 'Přehled systému', companies: 'Firmy', install: 'Průvodce instalací', creator: 'Tvorba AI ukázky', domains: 'Vlastní domény', billing: 'Tarify a platby', logs: 'Aktivita systému', settings: 'Nastavení platformy', landing: 'Úvodní stránka', pipeline: 'Poptávka až zakázka' })[screen]; }
+function PageHeading({ eyebrow, title, text, action }: { eyebrow: string; title: string; text: string; action?: ReactNode }) { return <div className="pf-page-heading"><div><span className="pf-eyebrow">{eyebrow}</span><h1>{title}</h1><p>{text}</p></div>{action}</div>; }
+
+function Overview({ companies, metrics, onNavigate, onInstall }: { companies: Company[]; metrics: { inquiries: number; active: number; leads: number; value: number }; onNavigate: (screen: Screen) => void; onInstall: () => void }) {
+  return <><div className="pf-tenant-strip"><span><span className="pf-online-dot" /> TENANT ENGINE <b>Ukázkový cloud</b></span><span>INTEGRACE <b><Cloud size={13} /> Připojeno k demo prostředí</b></span><span>ÚDAJE <b>Syntetické · bez produkčních přístupů</b></span></div>
+    <PageHeading eyebrow="OVLÁDACÍ CENTRUM" title="Přehled platformy" text="Firmy, pracovní prostory a provoz StavbaCore na jednom místě." action={<button className="pf-button-primary" onClick={onInstall}><Plus size={16} /> Nová firma</button>} />
+    <div className="pf-metrics"><Metric icon={Building2} label="Ukázkové firmy" value={String(metrics.active)} note="pracovní prostory" tone="teal" /><Metric icon={Users} label="Aktivní majitelé" value="10" note="ilustrační ukazatel" tone="blue" /><Metric icon={HardDrive} label="Členové týmů" value="28" note="ilustrační ukazatel" tone="violet" /><Metric icon={Activity} label="Měsíční poptávky" value="142" note="ilustrační ukazatel" tone="green" /><Metric icon={CreditCard} label="Odhadovaný měsíční obrat" value="12 450 Kč" note="fiktivní hodnota · bez plateb" tone="amber" /></div><p className="pf-metric-disclaimer">Číselné ukazatele jsou pouze ilustrativní a neodrážejí skutečné zákazníky, provoz ani platby.</p>
+    <div className="pf-section-title"><div><h2>Rychlé akce</h2><p>Nejčastější kroky správy pracovního prostoru</p></div></div><div className="pf-quick-actions"><QuickAction icon={Building2} title="Založit firmu" text="Vyzkoušet počáteční nastavení" onClick={onInstall} /><QuickAction icon={WandSparkles} title="Průvodce instalací" text="Nastavit nový workspace" onClick={() => onNavigate('install')} /><QuickAction icon={Sparkles} title="Vytvořit AI ukázku" text="Připravit ukázkový obsah" onClick={() => onNavigate('creator')} /><QuickAction icon={ArrowRight} title="Otevřít přehled firem" text={`${companies.length} smyšlené příklady`} onClick={() => onNavigate('companies')} /></div>
+    <div className="pf-lower-grid"><section className="pf-panel"><div className="pf-panel-heading"><div><h2>Nedávné instalace a firmy</h2><p>Příklad pracovních prostorů v ukázce</p></div><button className="pf-text-button" onClick={() => onNavigate('companies')}>Všechny firmy <ArrowRight size={14} /></button></div><div className="pf-company-list">{companies.slice(0, 4).map((company) => <div className="pf-company-row" key={company.id}><span className="pf-company-mark" style={{ background: company.color }}>{company.initials}</span><div className="pf-company-name"><b>{company.name}</b><small>{company.city} · demo identifikátor</small></div><span className={`pf-plan pf-plan-${company.plan.toLowerCase()}`}>{company.plan}</span><span className="pf-row-updated">{company.updated}</span><button className="pf-icon-button" onClick={() => onNavigate('companies')} aria-label={`Otevřít ${company.name}`}><ArrowRight size={15} /></button></div>)}</div></section>
+      <section className="pf-panel"><div className="pf-panel-heading"><div><h2>Ukázková aktivita</h2><p>Simulované systémové události</p></div><button className="pf-icon-button" aria-label="Zobrazit vše" onClick={() => onNavigate('logs')}><ArrowRight size={15} /></button></div><div className="pf-feed"><FeedItem time="10:42:01" status="200" title="Přihlášení správce" detail="Ukázkový pracovní prostor" tone="green" /><FeedItem time="10:38:15" status="NOVÁ" title="Poptávka z formuláře" detail="Fiktivní stavba · demo data" tone="blue" /><FeedItem time="10:22:40" status="PDF" title="Návrh nabídky připraven" detail="Pouze náhled v ukázce" tone="violet" /><FeedItem time="10:10:04" status="SYNC" title="Tým potvrdil termín" detail="Simulovaná synchronizace" tone="amber" /></div></section></div>
+  </>;
+}
+function Metric({ icon: Icon, label, value, note, tone }: { icon: typeof House; label: string; value: string; note: string; tone: string }) { return <article className="pf-metric"><div className={`pf-metric-icon pf-tone-${tone}`}><Icon size={18} /></div><div className="pf-metric-label">{label}</div><strong>{value}</strong><small>{note}</small></article>; }
+function QuickAction({ icon: Icon, title, text, onClick }: { icon: typeof House; title: string; text: string; onClick: () => void }) { return <button className="pf-quick-card" onClick={onClick}><span className="pf-quick-icon"><Icon size={18} /></span><span><b>{title}</b><small>{text}</small></span><ArrowRight size={15} className="pf-quick-arrow" /></button>; }
+function FeedItem({ time, status, title, detail, tone }: { time: string; status: string; title: string; detail: string; tone: string }) { return <div className="pf-feed-item"><time>{time}</time><span className={`pf-feed-status pf-tone-${tone}`}>{status}</span><div><b>{title}</b><small>{detail}</small></div></div>; }
+
+function Companies({ companies, onInstall, onOpenWorkspace }: { companies: Company[]; onInstall: () => void; onOpenWorkspace: () => void }) { return <><PageHeading eyebrow="INFRASTRUKTURA A FIRMY" title="Firmy a pracovní prostory" text="Příklad přehledu oddělených workspace. Všechny záznamy na této stránce jsou smyšlené." action={<button className="pf-button-primary" onClick={onInstall}><Plus size={16} /> Nová firma</button>} /><div className="pf-filter-row"><span>{companies.length} ukázkové firmy</span><span className="pf-filter-chip"><span className="pf-online-dot" /> Demo tenanty</span></div><div className="pf-company-grid">{companies.map((company) => <article className="pf-company-card" key={company.id}><div className="pf-company-card-top"><span className="pf-company-mark pf-company-mark-lg" style={{ background: company.color }}>{company.initials}</span><span className={`pf-plan pf-plan-${company.plan.toLowerCase()}`}>{company.plan}</span><button aria-label="Další možnosti" className="pf-icon-button"><ChevronDown size={16} /></button></div><h2>{company.name}</h2><p>{company.city} · Česko</p><div className="pf-company-stats"><span><b>{company.inquiries}</b><small>poptávek v ukázce</small></span><span><b>Aktivní</b><small>stav pracovního prostoru</small></span></div><div className="pf-card-footer"><span><span className="pf-online-dot" /> Ukázkový workspace</span><button onClick={onOpenWorkspace}>Otevřít <ArrowRight size={13} /></button></div></article>)}</div>{companies.length === 0 && <div className="pf-empty"><Building2 size={24} /><b>Nic jsme nenašli</b><span>Zkuste upravit hledaný název firmy nebo město.</span></div>}</>; }
+
+function InstallStudio({ onInstall, companies }: { onInstall: () => void; companies: Company[] }) { return <><PageHeading eyebrow="INSTAL STUDIO 2.0" title="Průvodce instalací" text="Projděte si založení pracovního prostoru pro stavební firmu. Změny se ukládají jen lokálně v prohlížeči." action={<button className="pf-button-primary" onClick={onInstall}><Plus size={16} /> Spustit průvodce</button>} /><div className="pf-install-layout"><section className="pf-panel pf-install-hero"><span className="pf-install-icon"><WandSparkles size={22} /></span><span className="pf-eyebrow">NOVÝ WORKSPACE</span><h2>Od firmy k první zakázce</h2><p>Ukázkový průvodce vytvoří pracovní prostor a připraví ho pro práci s poptávkami, týmem a zakázkami.</p><div className="pf-install-steps"><Step number="1" title="Informace o firmě" text="Název, oblast působení a tarif" /><Step number="2" title="Pracovní prostor" text="Přehled a obchodní pipeline" /><Step number="3" title="První poptávka" text="Ukázka průchodu k zakázce" /></div><button onClick={onInstall} className="pf-button-primary">Vyzkoušet založení <ArrowRight size={15} /></button></section><section className="pf-panel"><div className="pf-panel-heading"><div><h2>Nedávné workspace</h2><p>Fiktivní účty v této ukázce</p></div></div><div className="pf-company-list">{companies.map((company) => <div className="pf-company-row" key={company.id}><span className="pf-company-mark" style={{ background: company.color }}>{company.initials}</span><div className="pf-company-name"><b>{company.name}</b><small>{company.updated}</small></div><span className="pf-plan pf-plan-active">PŘIPRAVENO</span></div>)}</div></section></div></>; }
+function Step({ number, title, text }: { number: string; title: string; text: string }) { return <div className="pf-step"><span>{number}</span><div><b>{title}</b><small>{text}</small></div><Check size={15} /></div>; }
+
+function Creator({ generated, onGenerate }: { generated: boolean; onGenerate: () => void }) { return <><PageHeading eyebrow="AI DEMO CREATOR" title="Vytvořit produktovou ukázku" text="Připravte fiktivní obsah pro předvedení pracovního prostoru. Tvorba je v této veřejné ukázce pouze simulovaná." /><div className="pf-creator-grid"><section className="pf-panel pf-creator-form"><span className="pf-install-icon"><Sparkles size={20} /></span><h2>Co má ukázka předvést?</h2><p>Vytvoříme náhled vhodný pro menší stavební firmu.</p><label>Typ firmy<select defaultValue="Rekonstrukce a dokončovací práce"><option>Rekonstrukce a dokončovací práce</option><option>Střechy a klempířství</option><option>Novostavby a hrubé stavby</option></select></label><label>Oblast<select defaultValue="Jihomoravský kraj"><option>Jihomoravský kraj</option><option>Praha a okolí</option><option>Olomoucký kraj</option></select></label><label>Styl komunikace<select defaultValue="Věcný a přátelský"><option>Věcný a přátelský</option><option>Prémiový</option><option>Neformální</option></select></label><button className="pf-button-primary" onClick={onGenerate}><Sparkles size={16} /> Připravit ukázkový návrh</button></section><section className="pf-panel pf-creator-preview"><div className="pf-panel-heading"><div><h2>Náhled obsahu</h2><p>Vygenerovaný text se nikam neodesílá</p></div><span className="pf-preview-tag">{generated ? 'NÁHLED PŘIPRAVEN' : 'ČEKÁ NA SPUŠTĚNÍ'}</span></div><div className="pf-preview-paper"><span className="pf-eyebrow">REKONSTRUKCE · BRNO A OKOLÍ</span><h3>Poctivá práce.<br />Jasný plán.</h3><p>Ukázkový text pro stavební firmu. Poptávku přijmeme, ozveme se a společně připravíme další postup.</p><button className="pf-button-primary" onClick={onGenerate}>Nezávazně poptat <ArrowRight size={14} /></button><div className="pf-preview-footer"><span>✓ Jasná domluva</span><span>✓ Přehledný postup</span><span>✓ Fiktivní obsah</span></div></div></section></div></>; }
+
+function Domains({ companies, onNotify }: { companies: Company[]; onNotify: (notice: string) => void }) { return <><PageHeading eyebrow="DOMÉNY A BRANDING" title="Vlastní domény" text="Ukázka přehledu domén a jejich ověření. Žádné DNS ani produkční nastavení zde neměníme." action={<button className="pf-button-secondary" onClick={() => onNotify('Veřejná ukázka nepřipojuje ani neověřuje skutečné domény.')}><Plus size={15} /> Přidat doménu</button>} /><section className="pf-panel"><div className="pf-panel-heading"><div><h2>Domény pracovních prostorů</h2><p>Fiktivní adresy pro produktový náhled</p></div><span className="pf-preview-tag">SIMULOVANÝ STAV</span></div><div className="pf-table-wrap"><table className="pf-table"><thead><tr><th>FIRMA</th><th>DOMÉNA</th><th>STAV</th><th>SSL</th><th></th></tr></thead><tbody>{companies.map((company, index) => <tr key={company.id}><td><b>{company.name}</b><small>{company.city}</small></td><td><code>{['ukazkove-stavby', 'fiktivni-strechy', 'modelova-rekonstrukce'][index % 3]}.demo.test</code></td><td><span className="pf-domain-status"><span className="pf-online-dot" /> Ukázka</span></td><td><ShieldCheck size={15} /> Demo SSL</td><td><button className="pf-icon-button" aria-label="Doménu nelze v demu měnit"><ChevronDown size={15} /></button></td></tr>)}</tbody></table></div></section><div className="pf-note"><ShieldCheck size={16} /><span><b>Bezpečná ukázka.</b> Vlastní domény, DNS záznamy ani certifikáty se nekontrolují a nemění.</span></div></>; }
+
+function Billing({ companies }: { companies: Company[] }) { return <><PageHeading eyebrow="OBCHODNÍ PŘEHLED" title="Tarify a přehled plateb" text="Náhled na plány a fakturaci. Částky i účty jsou smyšlené; platby se neprovádějí." /><div className="pf-metrics pf-billing-metrics"><Metric icon={CreditCard} label="Ukázkový měsíční přehled" value="12 450 Kč" note="ilustrační, nejde o skutečné MRR" tone="teal" /><Metric icon={Building2} label="Pracovní prostory" value={String(companies.length)} note="fiktivní firmy v ukázce" tone="blue" /><Metric icon={ArrowUpRight} label="Tarif PRO" value={String(companies.filter((company) => company.plan === 'PRO').length)} note="ukázkové účty" tone="violet" /><Metric icon={ArrowDownRight} label="Platby" value="0 Kč" note="veřejná ukázka nic neúčtuje" tone="green" /></div><section className="pf-panel"><div className="pf-panel-heading"><div><h2>Tarify firem</h2><p>Ukázkové rozdělení účtů</p></div><span className="pf-preview-tag">BEZ PLATEBNÍ BRÁNY</span></div><div className="pf-table-wrap"><table className="pf-table"><thead><tr><th>FIRMA</th><th>TARIF</th><th>STAV</th><th>DALŠÍ OBNOVA</th><th>PLATBA</th></tr></thead><tbody>{companies.map((company) => <tr key={company.id}><td><b>{company.name}</b><small>demo účet</small></td><td><span className={`pf-plan pf-plan-${company.plan.toLowerCase()}`}>{company.plan}</span></td><td><span className="pf-domain-status"><span className="pf-online-dot" /> Ukázkově aktivní</span></td><td>—</td><td>Neprovádí se</td></tr>)}</tbody></table></div></section></>; }
+
+function Logs() { const rows = [['10:42:01', 'Přihlášení správce', 'Demo účet', 'OK'], ['10:38:15', 'Nová poptávka z formuláře', 'Ukázkové Stavby', 'NOVÁ'], ['10:22:40', 'Příprava PDF nabídky', 'Modelová rekonstrukce', 'NÁHLED'], ['10:10:04', 'Potvrzení termínu', 'Fiktivní střechy', 'SYNC'], ['09:55:19', 'Otevření klientského portálu', 'Ukázkový projekt', 'OK']]; return <><PageHeading eyebrow="AUDIT A TELEMETRIE" title="Aktivita systému" text="Příklad provozních událostí pro orientaci v platformě. Nejde o skutečné logy." action={<span className="pf-filter-chip"><span className="pf-online-dot" /> Simulovaný živý přehled</span>} /><section className="pf-panel"><div className="pf-panel-heading"><div><h2>Události ukázky</h2><p>Fiktivní záznamy bez uživatelských a produkčních dat</p></div><button className="pf-button-secondary" onClick={() => window.location.reload()}><RotateCcw size={14} /> Obnovit</button></div><div className="pf-table-wrap"><table className="pf-table"><thead><tr><th>ČAS</th><th>UDÁLOST</th><th>PRACOVNÍ PROSTOR</th><th>VÝSLEDEK</th></tr></thead><tbody>{rows.map(([time, title, detail, status]) => <tr key={time}><td><code>{time}</code></td><td><b>{title}</b></td><td>{detail}</td><td><span className="pf-plan pf-plan-active">{status}</span></td></tr>)}</tbody></table></div></section></>; }
+
+function SettingsPage() { return <><PageHeading eyebrow="KONFIGURACE" title="Nastavení platformy" text="Přehled konfiguračních oblastí. Ve veřejné ukázce nelze změnit žádné produkční nastavení." /><div className="pf-settings-grid"><Setting icon={ShieldCheck} title="Přístup a zabezpečení" text="Role, přihlášení a oddělení pracovních prostorů" status="Pouze náhled" /><Setting icon={Cloud} title="Datové připojení" text="Tato veřejná ukázka není připojena k produkční Supabase" status="Bez produkčního přístupu" /><Setting icon={Bell} title="Upozornění" text="Notifikace pro správce a majitele firem" status="Simulované" /><Setting icon={LifeBuoy} title="Podpora a nápověda" text="Pomoc s nastavením účtu a workspace" status="Připraveno pro ukázku" /></div><div className="pf-note"><ShieldCheck size={16} /><span>Pro změny skutečného účtu se přihlaste do zabezpečené aplikace. Veřejná ukázka je od produkce oddělená.</span></div></>; }
+function Setting({ icon: Icon, title, text, status }: { icon: typeof House; title: string; text: string; status: string }) { return <article className="pf-panel pf-setting-card"><span className="pf-quick-icon"><Icon size={18} /></span><div><h2>{title}</h2><p>{text}</p><small>{status}</small></div><ChevronDown size={15} /></article>; }
+
+function SalesLanding({ onOpenDemo }: { onOpenDemo: () => void }) { return <><PageHeading eyebrow="STAVBACORE" title="Řízení stavební firmy na jednom místě" text="Ukázka systému pro malé stavební týmy. Od první poptávky přes nabídku až po předání zakázky." action={<button className="pf-button-primary" onClick={onOpenDemo}>Vyzkoušet pracovní tok <ArrowRight size={15} /></button>} /><div className="pf-sales-hero"><div><span className="pf-eyebrow">PRACOVNÍ PROSTOR MALÉ FIRMY</span><h2>Přehled práce,<br />který drží pohromadě.</h2><p>Poptávky, nabídky, termíny i realizační tým v jednom přehledu. Tady si můžete bezpečně vyzkoušet celý obchodní postup.</p><button className="pf-button-primary" onClick={onOpenDemo}>Otevřít interaktivní demo <ArrowRight size={15} /></button></div><div className="pf-sales-graphic"><span>STAVBACORE</span><b>3</b><small>poptávky čekají na další krok</small><div><i /><i /><i /></div></div></div><div className="pf-value-grid"><Setting icon={Activity} title="Poptávky" text="Zachyťte zájem a neztraťte další krok." status="Nové → kontakt → nabídka" /><Setting icon={FilePlus2} title="Nabídky" text="Připravte přehlednou cenu a rozsah prací." status="Jasné předání klientovi" /><Setting icon={HardDrive} title="Zakázky" text="Předávejte potvrzené práce realizačnímu týmu." status="Termíny a stav realizace" /></div></>; }
+
+function Pipeline({ leads, period, onPeriodChange, onAdd, onSelect, onAdvance }: { leads: DemoLead[]; period: string; onPeriodChange: (value: string) => void; onAdd: () => void; onSelect: (lead: DemoLead) => void; onAdvance: (lead: DemoLead) => void }) { const totals = { open: leads.filter((lead) => lead.status !== 'job').length, value: leads.filter((lead) => lead.status !== 'job').reduce((sum, lead) => sum + lead.value, 0), jobs: leads.filter((lead) => lead.status === 'job').length }; return <><PageHeading eyebrow="PRACOVNÍ PROSTOR · UKÁZKOVÁ FIRMA" title="Poptávky a zakázky" text="Vyzkoušejte průchod od nového zájmu až po zakázku. Záznamy jsou smyšlené a ukládají se pouze v tomto prohlížeči." action={<button onClick={onAdd} className="pf-button-primary"><Plus size={16} /> Nová poptávka</button>} /><div className="pf-pipeline-metrics"><span><small>Rozpracované poptávky</small><b>{totals.open}</b></span><span><small>Hodnota v jednání</small><b>{money.format(totals.value)}</b></span><span><small>Aktivní zakázky</small><b>{totals.jobs}</b></span><label><span>Období</span><select value={period} onChange={(event) => onPeriodChange(event.target.value)}><option>Tento týden</option><option>Tento měsíc</option><option>Tento rok</option></select></label></div><div className="pf-pipeline-board">{DEMO_COLUMNS.map((column) => { const items = leads.filter((lead) => lead.status === column.id); return <section className="pf-pipeline-column" key={column.id}><header><b>{column.label}</b><span>{items.length}</span></header>{items.map((lead) => <article className="pf-lead-card" key={lead.id}><button onClick={() => onSelect(lead)}><small>{lead.city}</small><b>{lead.project}</b><span>{lead.customer}</span><strong>{lead.value ? money.format(lead.value) : 'Cena k doplnění'}</strong></button>{lead.status !== 'job' && <button className="pf-next-step" onClick={() => onAdvance(lead)}>{lead.status === 'quote' ? 'Předat do zakázek' : 'Posunout dál'} <ArrowRight size={13} /></button>}</article>)}{items.length === 0 && <div className="pf-column-empty">Zatím bez záznamů</div>}</section>; })}</div></>; }
+
+
+function LeadDetail({ lead, onClose, onAdvance }: { lead: DemoLead; onClose: () => void; onAdvance: () => void }) { const status = DEMO_COLUMNS.find((column) => column.id === lead.status)?.label; return <div className="pf-modal-backdrop pf-right-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }}><aside role="dialog" aria-modal="true" aria-labelledby="pf-lead-title" className="pf-detail-panel"><button className="pf-detail-close" onClick={onClose}><X size={16} /> Zavřít detail</button><span className="pf-eyebrow">{status}</span><h2 id="pf-lead-title">{lead.project}</h2><p>{lead.customer} · {lead.city}</p><div className="pf-detail-value"><small>Předběžná hodnota</small><b>{lead.value ? money.format(lead.value) : 'Doplnit po zaměření'}</b></div><h3>Další krok</h3><p>{lead.status === 'new' ? 'Ozvat se zákazníkovi a domluvit prohlídku.' : lead.status === 'contacted' ? 'Připravit rozsah prací a cenovou nabídku.' : lead.status === 'quote' ? 'Po přijetí nabídky předat případ do realizace.' : 'Zakázka je připravená pro plánování práce týmu.'}</p>{lead.status !== 'job' && <button onClick={onAdvance} className="pf-button-primary pf-detail-action">{lead.status === 'quote' ? 'Převést na zakázku' : 'Označit další krok'} <ArrowRight size={15} /></button>}<div className="pf-note"><ShieldCheck size={15} /><span>Smyšlený ukázkový záznam. Změna zůstane v prohlížeči.</span></div></aside></div>; }
+
+function AddLeadDialog({ onClose, onAdd }: { onClose: () => void; onAdd: (input: { customer: string; project: string; city: string }) => void }) { const [customer, setCustomer] = useState(''); const [project, setProject] = useState(''); const [city, setCity] = useState(''); const valid = customer.trim() && project.trim() && city.trim(); return <div className="pf-modal-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }}><form className="pf-modal" onSubmit={(event) => { event.preventDefault(); if (valid) onAdd({ customer, project, city }); }}><div className="pf-modal-head"><div><span className="pf-eyebrow">UKÁZKOVÝ ZÁZNAM</span><h2>Nová poptávka</h2></div><button type="button" onClick={onClose} aria-label="Zavřít"><X size={18} /></button></div><p className="pf-muted">Záznam se uloží pouze v tomto prohlížeči.</p><label>Zákazník nebo firma<input autoFocus required maxLength={80} value={customer} onChange={(event) => setCustomer(event.target.value)} placeholder="např. Rodina Novákových" /></label><label>Co se má postavit nebo opravit<input required maxLength={100} value={project} onChange={(event) => setProject(event.target.value)} placeholder="např. Rekonstrukce koupelny" /></label><label>Město nebo oblast<input required maxLength={60} value={city} onChange={(event) => setCity(event.target.value)} placeholder="např. Brno-venkov" /></label><div className="pf-modal-actions"><button type="button" className="pf-button-secondary" onClick={onClose}>Zrušit</button><button disabled={!valid} className="pf-button-primary"><Plus size={15} /> Přidat do ukázky</button></div></form></div>; }
