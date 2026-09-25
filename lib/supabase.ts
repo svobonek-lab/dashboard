@@ -10,6 +10,10 @@ export const isSupabaseConfigured = Boolean(
   !supabaseUrl.includes('placeholder')
 );
 
+export function canUseLocalMockAuth(isProduction: boolean): boolean {
+  return !isProduction;
+}
+
 export const supabase = isSupabaseConfigured
   ? createClient(supabaseUrl, supabaseAnonKey)
   : null;
@@ -214,7 +218,6 @@ export class LocalSupabaseMock {
         organization_id: DEFAULT_DEMO_ORG_ID,
         role: 'super_admin',
         email: 'svobonek@gmail.com',
-        password: 'AP11hynek',
         name: 'Jan Svoboda'
       },
       {
@@ -222,7 +225,6 @@ export class LocalSupabaseMock {
         organization_id: DEFAULT_DEMO_ORG_ID,
         role: 'owner',
         email: 'majitel@firma.cz',
-        password: 'demo123',
         name: 'Majitel Pergoly Praha'
       },
       {
@@ -230,7 +232,6 @@ export class LocalSupabaseMock {
         organization_id: DEFAULT_DEMO_ORG_ID,
         role: 'employee',
         email: 'zamestnanec@firma.cz',
-        password: 'zam123',
         name: 'Petr Novotný (Mistr)'
       },
       {
@@ -238,7 +239,6 @@ export class LocalSupabaseMock {
         organization_id: IDEAL_DEMO_ORG_ID,
         role: 'owner',
         email: 'majitel@idealkonstrukce.cz',
-        password: 'demo123',
         name: 'Ing. Marek Dvořák (Ideal)'
       },
       {
@@ -246,16 +246,19 @@ export class LocalSupabaseMock {
         organization_id: NOVAK_DEMO_ORG_ID,
         role: 'owner',
         email: 'majitel@novakstavby.cz',
-        password: 'demo123',
         name: 'Josef Novák (Novák Stavby)'
       }
     ];
 
     const stored = this.getStored('users', defaultUsers);
-    return stored.map((u: any) => ({
-      ...u,
-      role: u.role || 'owner'
-    }));
+    const seededUserIds = new Set(defaultUsers.map(user => user.id));
+    return stored.map((u: any) => {
+      const { password, ...safeUser } = u;
+      return {
+        ...(seededUserIds.has(u.id) ? safeUser : u),
+        role: u.role || 'owner'
+      };
+    });
   }
 
   static saveUsers(users: any[]) {
