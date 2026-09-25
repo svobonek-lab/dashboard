@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { ArrowLeft, ArrowRight, BriefcaseBusiness, Check, ChevronDown, CirclePlus, HardHat, House, RotateCcw, X } from 'lucide-react';
+import { ArrowLeft, ArrowRight, BriefcaseBusiness, Check, ChevronDown, CirclePlus, HardHat, House, RotateCcw, UsersRound, X } from 'lucide-react';
 import { createDemoLead, DEMO_COLUMNS, DEMO_SEED, DemoLead, DemoStatus, moveDemoLead, parseDemoLeads } from './demoState';
 
 const STORAGE_KEY = 'stavbacore_public_demo_v1';
@@ -51,14 +51,27 @@ export function PublicDemoWorkspace() {
       </div>
 
       <div className="mx-auto flex min-h-[calc(100vh-36px)] max-w-[1600px]">
-        <aside className="demo-rail hidden w-[76px] shrink-0 flex-col items-center gap-7 py-6 md:flex">
-          <a href="/" className="demo-mark" aria-label="StavbaCore, zpět na web">SC</a>
-          <button className="rail-icon rail-active" aria-label="Přehled"><House size={19} /></button>
-          <button className="rail-icon" aria-label="Zakázky"><BriefcaseBusiness size={19} /></button>
-          <div className="mt-auto text-[10px] font-bold tracking-widest text-white/55">DEMO</div>
+        <aside className="demo-rail hidden w-[76px] shrink-0 flex-col px-3 py-6 md:flex lg:w-[232px] lg:px-4">
+          <a href="/" className="mb-9 flex items-center gap-3 rounded-lg px-1" aria-label="StavbaCore, zpět na web">
+            <span className="demo-mark">SC</span>
+            <span className="hidden lg:block"><span className="block text-sm font-extrabold tracking-wide text-white">STAVBACORE</span><span className="mt-0.5 block text-[9px] font-bold tracking-[0.16em] text-white/55">OPERAČNÍ SYSTÉM STAVBY</span></span>
+          </a>
+          <p className="mb-2 hidden px-2 text-[9px] font-extrabold tracking-[0.16em] text-white/45 lg:block">PRACOVNÍ PROSTOR</p>
+          <nav aria-label="Navigace ukázkového workspace" className="space-y-1">
+            <a href="#prehled" className="rail-link" aria-label="Přehled stavby"><House size={17} /><span className="hidden lg:inline">Přehled stavby</span></a>
+            <a href="#poptavky" className="rail-link rail-link-active" aria-label="Poptávky a Kanban"><BriefcaseBusiness size={17} /><span className="hidden lg:inline">Poptávky & Kanban</span></a>
+            <a href="#zakazky" className="rail-link" aria-label="Zakázky"><HardHat size={17} /><span className="hidden lg:inline">Zakázky</span></a>
+          </nav>
+          <div className="mt-auto border-t border-white/10 pt-4 lg:border-0">
+            <div className="flex items-center gap-2.5 rounded-lg px-2 py-2">
+              <span className="demo-avatar">MN</span>
+              <span className="hidden min-w-0 lg:block"><span className="block truncate text-xs font-bold text-white">Marek Novák</span><span className="block text-[10px] text-white/55">Majitel · ukázkový účet</span></span>
+              <UsersRound size={14} className="ml-auto hidden shrink-0 text-white/50 lg:block" />
+            </div>
+          </div>
         </aside>
 
-        <section className="min-w-0 flex-1 px-4 py-5 sm:px-7 lg:px-10 lg:py-8">
+        <section id="prehled" className="min-w-0 flex-1 px-4 py-5 sm:px-7 lg:px-10 lg:py-8">
           <header className="mb-8 flex flex-wrap items-start justify-between gap-4">
             <div>
               <a href="/" className="mb-4 inline-flex items-center gap-1.5 text-xs font-bold text-[#60777a] hover:text-[#17363c]"><ArrowLeft size={14} /> Zpět na StavbaCore</a>
@@ -82,11 +95,11 @@ export function PublicDemoWorkspace() {
             <span className="text-xs font-medium text-[#718689]">Tento týden <ChevronDown size={14} className="inline" /></span>
           </div>
 
-          <div className="demo-board grid gap-3 pb-3 md:grid-cols-2 xl:grid-cols-4" aria-label="Přehled obchodních případů">
+          <div id="poptavky" className="demo-board grid gap-3 pb-3 md:grid-cols-2 xl:grid-cols-4" aria-label="Přehled obchodních případů">
             {DEMO_COLUMNS.map((column) => {
               const items = leads.filter((lead) => lead.status === column.id);
               return <section key={column.id} className="demo-column min-w-0 rounded-xl p-3" aria-label={column.label}>
-                <div className="mb-3 flex items-center justify-between px-1"><h3 className="text-[13px] font-extrabold">{column.label}</h3><span className="demo-count">{items.length}</span></div>
+                <div id={column.id === 'job' ? 'zakazky' : undefined} className="mb-3 flex items-center justify-between px-1"><h3 className="text-[13px] font-extrabold">{column.label}</h3><span className="demo-count">{items.length}</span></div>
                 <div className="space-y-2.5">
                   {items.map((lead) => <article key={lead.id} className="demo-ticket rounded-lg p-3.5">
                     <button onClick={() => setSelected(lead)} className="block w-full text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1f7470]">

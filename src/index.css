@@ -149,8 +149,10 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 .demo-banner { background: #17474a; color: #f2f7f5; }
 .demo-rail { background: #123d40; }
 .demo-mark { display: grid; width: 38px; height: 38px; place-items: center; border-radius: 11px; background: #f0a466; color: #18343a; font-size: 13px; font-weight: 900; letter-spacing: -.04em; }
-.rail-icon { display: grid; width: 40px; height: 40px; place-items: center; border-radius: 10px; color: #a9c1bd; }
-.rail-active { background: #245759; color: white; }
+.rail-link { display: flex; min-height: 42px; align-items: center; justify-content: center; gap: 11px; border-radius: 9px; padding: 0 11px; color: #a9c1bd; font-size: 12px; font-weight: 700; transition: background .15s ease, color .15s ease; }
+.rail-link:hover { background: #1a4a4c; color: white; }
+.rail-link-active { background: #28595a; color: white; }
+.demo-avatar { display: grid; width: 30px; height: 30px; flex: 0 0 auto; place-items: center; border-radius: 50%; background: #d87943; color: white; font-size: 9px; font-weight: 900; }
 .demo-primary { background: #d87943; color: #fff; transition: background .15s ease, transform .15s ease; }
 .demo-primary:hover { background: #bd6233; transform: translateY(-1px); }
 .demo-primary:disabled { cursor: not-allowed; opacity: .45; transform: none; }
@@ -165,6 +167,8 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 .demo-toast { background: #163f42; color: white; }
 .demo-input { display: block; width: 100%; min-height: 44px; border: 1px solid #d8e2df; border-radius: 8px; background: #fbfcfc; padding: 0 12px; color: #18343a; font-size: 14px; outline: none; }
 .demo-input:focus { border-color: #39817b; box-shadow: 0 0 0 3px rgb(57 129 123 / 14%); }
+@media (min-width: 768px) and (max-width: 1023px) { .rail-link { width: 44px; margin-inline: auto; padding: 0; } }
+@media (min-width: 1024px) { .rail-link { justify-content: flex-start; } }
 @media (max-width: 767px) { .demo-board { display: flex; overflow-x: auto; scroll-snap-type: x mandatory; } .demo-column { flex: 0 0 min(82vw, 340px); scroll-snap-align: start; } }
 @media (prefers-reduced-motion: reduce) { .demo-primary { transition: none; } }
 
