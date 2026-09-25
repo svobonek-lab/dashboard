@@ -18,11 +18,11 @@ Status: COMPLETE — PR #7 merged after npm ci, npm run lint, and npm run build 
 
 ## Follow-up backlog (requires separate scoped tasks)
 - P0: Remove embedded credential-like defaults and prevent production from falling back to privileged mock authentication. Hashes shipped to clients do not solve exposed authentication.
-  Status: COMPLETE — PR #8 merged to main on 2026-09-25; npm test, npm run lint, and npm run build passed.
+  Status: PARTIAL — PR #8 merged production mock-auth hardening and removed seeded passwords. DEV-only quick-login credential constants were later found in components/LoginPage.tsx; their removal is in draft PR #10. Do not assume any value is active; rotate through the account owner if independently confirmed.
 - P0: Reconcile production app_* schema with application references before modifying tenant access or deletion behavior.
 - P0: Review tenant isolation and authorization using local/staging tests; RLS enabled alone is insufficient evidence.
 - P1: Remove Synology token fallback and validate configuration with targeted tests.
-  Status: Draft PR #9 is open; npm ci, npm test (7 passed), npm run lint, npm run build, GitHub verify, and Vercel previews passed.
+  Status: Draft PR #9 is open; built-in token fallbacks are removed, persisted legacy markers are rejected, endpoint changes clear prior tokens, and generated tokens use Web Crypto. Local validation passed: npm ci, npm test (8 passed), npm run lint, and npm run build.
 - P1: Plan soft deletion only after checking real schema and allowed status values. No automatic migrations.
 - P1: Validate environment configuration; explicitly distinguish synthetic demo mode and production.
 - P2: Add focused tests, then consider context extraction and naming cleanup. Preserve existing localStorage data when renaming keys.

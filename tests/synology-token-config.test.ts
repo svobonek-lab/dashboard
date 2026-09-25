@@ -4,6 +4,7 @@ import React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { DockerComposeModal } from '../components/synology/DockerComposeModal.tsx';
 import { generateSynologyDockerCompose } from '../lib/synology/synologyConnector.ts';
+import { generateSynologyToken } from '../lib/synology/storage.ts';
 import { SynologyLocalRepository } from '../lib/data/SynologyLocalRepository.ts';
 import type { SynologyConfig } from '../types/synology.ts';
 
@@ -57,6 +58,20 @@ test('Docker Compose generation rejects a missing or blank API token', () => {
 test('Docker Compose generation uses an explicitly configured API token', () => {
   const generated = generateSynologyDockerCompose(config('fixture-token'), 'fixture-company');
   assert.match(generated, /BUILDFLOW_API_TOKEN=fixture-token/);
+});
+
+test('generated Synology API tokens use cryptographic randomness', () => {
+  const originalRandom = Math.random;
+  Math.random = () => { throw new Error('Math.random must not generate API tokens'); };
+
+  try {
+    const first = generateSynologyToken('fixture-company');
+    const second = generateSynologyToken('fixture-company');
+    assert.match(first, /^syn_tok_fixture-_[0-9a-f]{64}$/);
+    assert.notEqual(first, second);
+  } finally {
+    Math.random = originalRandom;
+  }
 });
 
 test('Docker Compose modal asks for a token instead of crashing when configuration is incomplete', () => {
