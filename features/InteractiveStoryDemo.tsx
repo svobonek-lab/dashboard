@@ -32,7 +32,7 @@ export const InteractiveStoryDemo: React.FC = () => {
 
   // Controlled Demo Pipeline
   const demoProjects = [
-    { client: 'Petra Dvořáková', project: 'Rekonstrukce koupelny', amount: '353 000 Kč', status: step2QuoteSent ? 'Realizace' : step1Called ? 'Zaměření' : 'Nová poptávka', badge: step1Called ? 'SLA splněno (9 min)' : 'Zbývá 12 min SLA' },
+    { client: 'Petra Dvořáková', project: 'Rekonstrukce koupelny', amount: '353 000 Kč', status: step2QuoteSent ? 'Realizace' : step1Called ? 'Zaměření' : 'Nová poptávka', badge: step1Called ? 'Modelový cíl: 9 min' : 'Modelový cíl: 12 min' },
     { client: 'SVJ Javorová', project: 'Zateplení bytového domu', amount: '640 000 Kč', status: 'Realizace', badge: 'Harmonogram OK' },
     { client: 'Karel Beneš', project: 'Výměna střešní krytiny', amount: '486 000 Kč', status: 'Nabídka', badge: 'Čeká 4 dny na odpověď' },
     { client: 'Novostavba RD Černý', project: 'Hrubá stavba RD', amount: '1 548 000 Kč', status: 'Smlouva', badge: 'Faktura 8 dní po splatnosti' },
@@ -60,20 +60,20 @@ export const InteractiveStoryDemo: React.FC = () => {
       <div className="bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 text-white rounded-3xl p-6 sm:p-8 shadow-lg relative overflow-hidden">
         <div className="max-w-2xl space-y-2 relative z-10">
           <span className="px-3 py-1 rounded-full text-xs font-bold bg-white/20 uppercase tracking-wider backdrop-blur-xs">
-            Interaktivní 4-krokový scénář
+            Interaktivní 4-kroková ukázka · fiktivní data
           </span>
           <h1 className="text-2xl sm:text-3xl font-black tracking-tight">
             Příběh zakázky: Od poptávky po marži v kapse
           </h1>
           <p className="text-xs sm:text-sm text-blue-100 leading-relaxed">
-            Vyzkoušejte si, jak StavbaCore zařídí, že žádná poptávka nezapadne, nabídka se nezapomene a terén okamžitě propíše skutečné náklady majiteli.
+            Vyzkoušejte si modelový průchod od poptávky přes nabídku až k orientačnímu výsledku majitele. Ukázka nepracuje s produkčními daty.
           </p>
         </div>
 
         {/* 4 Step Progress Pills */}
         <div className="grid grid-cols-4 gap-2 mt-6 pt-4 border-t border-white/20 relative z-10 text-xs font-bold">
           <div className={`p-2 rounded-xl text-center transition-all ${currentStep === 1 ? 'bg-white text-blue-900 shadow-md' : 'bg-white/10 text-white'}`}>
-            1. Poptávka & SLA
+            1. Poptávka & modelový cíl
           </div>
           <div className={`p-2 rounded-xl text-center transition-all ${currentStep === 2 ? 'bg-white text-blue-900 shadow-md' : 'bg-white/10 text-white'}`}>
             2. Nabídka & Přijetí
@@ -97,11 +97,11 @@ export const InteractiveStoryDemo: React.FC = () => {
                 Poptávka z webu: Petra Dvořáková — Rekonstrukce koupelny (353 000 Kč)
               </h2>
               <p className="text-xs text-slate-500 mt-1">
-                Formulář přišel před 3 minutami. Bez systému by ležel v e-mailu. Ve StavbaCore běží SLA odpočet 15 minut.
+                Formulář přišel před 3 minutami. Pro ukázku sledujeme modelový cíl reakce do 15 minut; skutečné SLA se nastavuje až podle dohody a dat konkrétní firmy.
               </p>
             </div>
             <span className={`px-3 py-1.5 rounded-full text-xs font-bold border ${step1Called ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-rose-50 text-rose-700 border-rose-200 animate-pulse'}`}>
-              {step1Called ? '✓ Kontaktováno (SLA splněno)' : 'SLA vyprší za 12 min'}
+              {step1Called ? '✓ Modelový cíl splněn' : 'Modelový cíl: 12 min'}
             </span>
           </div>
 
@@ -123,7 +123,7 @@ export const InteractiveStoryDemo: React.FC = () => {
           {!step1Called ? (
             <div className="pt-2 flex flex-col sm:flex-row gap-3 items-center justify-between">
               <span className="text-xs text-slate-500">
-                👉 Klikněte na tlačítko níže pro simulaci hovoru a zastavení SLA:
+                👉 Klikněte na tlačítko níže pro simulaci hovoru a splnění modelového cíle:
               </span>
               <button
                 onClick={() => setStep1Called(true)}
@@ -137,7 +137,7 @@ export const InteractiveStoryDemo: React.FC = () => {
             <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-2xl space-y-3 animate-in fade-in">
               <div className="flex items-center gap-2 text-emerald-800 text-xs font-bold">
                 <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-                <span>SLA se zastavilo v čase 9 minut. Do historie zapsán hovor s Petrou Dvořákovou a vytvořen úkol: „Osobní zaměření ve čtvrtek 09:00“.</span>
+                <span>Modelový cíl byl splněn v čase 9 minut. Ukázka pouze simuluje záznam hovoru a další úkol; nic se nezapisuje do produkční firmy.</span>
               </div>
               <button
                 onClick={() => setCurrentStep(2)}
