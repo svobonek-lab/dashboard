@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useOrganization } from '../context/OrganizationContext';
 import { useRouter } from '../src/app/router';
 import { 
@@ -21,21 +21,31 @@ import {
 export const OnboardingChecklist: React.FC<{ leadsCount: number; employeesCount: number }> = ({ leadsCount, employeesCount }) => {
   const { currentOrg } = useOrganization();
   const { navigate } = useRouter();
+  const storageKey = `stavbacore_onboarding_manual_checks:${currentOrg?.id || 'unknown'}`;
 
   const [manualChecks, setManualChecks] = useState<Record<string, boolean>>(() => {
     try {
-      const saved = localStorage.getItem('stavbacore_onboarding_manual_checks');
+      const saved = localStorage.getItem(storageKey);
       return saved ? JSON.parse(saved) : {};
     } catch {
       return {};
     }
   });
 
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem(storageKey);
+      setManualChecks(saved ? JSON.parse(saved) : {});
+    } catch {
+      setManualChecks({});
+    }
+  }, [storageKey]);
+
   const toggleManualCheck = (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
     setManualChecks(prev => {
       const updated = { ...prev, [id]: !prev[id] };
-      localStorage.setItem('stavbacore_onboarding_manual_checks', JSON.stringify(updated));
+      localStorage.setItem(storageKey, JSON.stringify(updated));
       return updated;
     });
   };
