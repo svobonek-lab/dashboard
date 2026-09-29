@@ -64,8 +64,8 @@ export const CustomerPortalPage: React.FC<CustomerPortalPageProps> = ({
     description: 'Kompletní realizace stavebního projektu na klíč.',
     city: currentOrg?.city || 'Praha',
     customerName: 'Vážený zákazník',
-    customerPhone: '+420 777 123 456',
-    customerEmail: 'klient@email.cz',
+    customerPhone: 'Kontakt není v ukázce uveden',
+    customerEmail: 'Ukázkový kontakt není aktivní',
     address: currentOrg?.city || 'Praha',
     preferredDate: new Date().toISOString().substring(0, 10),
     price: 185000,
@@ -101,6 +101,7 @@ export const CustomerPortalPage: React.FC<CustomerPortalPageProps> = ({
     history: []
   };
   const lead = safeLead;
+  const isDemoLead = !fetchedLead && !propLead;
 
   const [messages, setMessages] = useState(lead.aiChat || [
     { id: '1', sender: 'ai', text: `Dobrý den, pane ${lead.customerName.split(' ').pop()}. Váš projekt "${lead.title}" je aktivně naplánován a materiály jsou připraveny na skladě společnosti ${activeCompanyName}.`, timestamp: 'Dnes 09:30' },
@@ -127,7 +128,7 @@ export const CustomerPortalPage: React.FC<CustomerPortalPageProps> = ({
       setMessages(prev => [...prev, {
         id: 'msg-ai-' + Date.now(),
         sender: 'ai',
-        text: `Děkuji za Váš dotaz. Předal jsem informaci vedoucímu projektu ve firmě ${activeCompanyName}. Ozveme se Vám do 15 minut.`,
+        text: `Děkuji za Váš dotaz. Předal jsem informaci vedoucímu projektu ve firmě ${activeCompanyName}. Termín odpovědi se řídí nastavením a pracovní dobou firmy.`,
         timestamp: 'Právě teď'
       }]);
     }, 1000);
@@ -198,6 +199,11 @@ export const CustomerPortalPage: React.FC<CustomerPortalPageProps> = ({
       </div>
 
       <div className="max-w-4xl mx-auto px-4 py-6 space-y-6">
+        {isDemoLead && (
+          <div role="note" className="rounded-2xl border border-amber-300 bg-amber-50 px-4 py-3 text-xs leading-relaxed text-amber-950">
+            <strong>Ukázkový klientský portál.</strong> Tento obsah je fiktivní náhled bez skutečného zákazníka, smlouvy nebo produkčního zápisu.
+          </div>
+        )}
         {/* Status Overview Card */}
         <div 
           className="bg-white/90 backdrop-blur-md p-6 rounded-[24px] border border-slate-200 shadow-xl grid grid-cols-1 sm:grid-cols-3 gap-6"
@@ -211,13 +217,13 @@ export const CustomerPortalPage: React.FC<CustomerPortalPageProps> = ({
               <span className="w-3 h-3 rounded-full animate-pulse" style={{ backgroundColor: 'var(--brand-primary)' }} />
               <span className="font-extrabold text-slate-900 text-sm">{lead.status}</span>
             </div>
-            <p className="text-[11px] text-slate-500">Předpokládané dokončení za 3 dny</p>
+            <p className="text-[11px] text-slate-500">{isDemoLead ? 'Ukázkový termín dokončení' : 'Předpokládané dokončení'}</p>
           </div>
 
           <div className="space-y-1">
             <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Přiřazený mistr</span>
             <p className="font-bold text-slate-900 text-sm">{lead.assignedEmployeeName}</p>
-            <p className="text-[11px] text-slate-500">Tel: +420 777 999 111</p>
+            <p className="text-[11px] text-slate-500">{isDemoLead ? 'Ukázkový kontakt' : 'Kontakt týmu firmy'}</p>
           </div>
 
           <div className="space-y-1">
@@ -225,7 +231,7 @@ export const CustomerPortalPage: React.FC<CustomerPortalPageProps> = ({
             <p className="font-black text-lg font-mono" style={{ color: 'var(--brand-primary)' }}>
               {lead.price.toLocaleString()} Kč
             </p>
-            <p className="text-[11px] text-green-600 font-medium">Vč. DPH a záruky 5 let</p>
+            <p className="text-[11px] text-green-600 font-medium">{isDemoLead ? 'Modelová cena v ukázce' : 'Cena dle zakázky'}</p>
           </div>
         </div>
 
