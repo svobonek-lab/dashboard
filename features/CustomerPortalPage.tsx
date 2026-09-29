@@ -41,11 +41,16 @@ export const CustomerPortalPage: React.FC<CustomerPortalPageProps> = ({
 
       try {
         if (isSupabaseConfigured && supabase) {
-          const { data } = await supabase.from('leads').select('*').or(`id.eq.${token},portal_token.eq.${token}`).single();
+          let query = supabase.from('leads').select('*').or(`id.eq.${token},portal_token.eq.${token}`);
+          if (currentOrg?.id) query = query.eq('organization_id', currentOrg.id);
+          const { data } = await query.single();
           if (data) setFetchedLead(data as any);
         } else {
           const mockLeads = LocalSupabaseMock.getLeads();
-          const found = mockLeads.find((l: any) => l.id === token || l.portal_token === token);
+          const found = mockLeads.find((l: any) =>
+            (l.id === token || l.portal_token === token) &&
+            (!currentOrg?.id || l.organization_id === currentOrg.id)
+          );
           if (found) setFetchedLead(found as any);
         }
       } catch (e) {
@@ -53,7 +58,7 @@ export const CustomerPortalPage: React.FC<CustomerPortalPageProps> = ({
       }
     }
     loadPortalLead();
-  }, [propLead]);
+  }, [propLead, currentOrg?.id]);
 
   const activeCompanyName = currentOrg?.name || propBranding.name || 'Stavební Společnost';
   const activeLogo = currentOrg?.logo_url !== undefined ? currentOrg.logo_url : (propBranding.logoUrl || '');
