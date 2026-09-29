@@ -489,6 +489,7 @@ function AppContent() {
         ) : pathname === '/employees' ? (
           <OwnerEmployeesPage 
             employees={employees} 
+            leads={leads}
             onEmployeeAdded={() => {
               fetchEmployees().then(dbEmp => {
                 if (dbEmp && dbEmp.length > 0) setEmployees(dbEmp);

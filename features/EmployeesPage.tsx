@@ -21,7 +21,6 @@ import {
   ShieldCheck
 } from 'lucide-react';
 import { autoAssignEmployee } from '../lib/autoAssignment';
-import { generateRealisticLeads } from '../lib/demoData';
 import { canDeleteEmployees } from '../src/app/permissions';
 import { useOrganization } from '../context/OrganizationContext';
 import { 
@@ -33,11 +32,12 @@ import {
 
 interface EmployeesPageProps {
   employees: Employee[];
+  leads: import('../types').Lead[];
   branding: any;
   onEmployeeAdded?: (newEmp?: any) => void;
 }
 
-export const EmployeesPage: React.FC<EmployeesPageProps> = ({ employees, branding, onEmployeeAdded }) => {
+export const EmployeesPage: React.FC<EmployeesPageProps> = ({ employees, leads, branding, onEmployeeAdded }) => {
   const { 
     dbUser, 
     fetchEmployees, 
@@ -48,7 +48,7 @@ export const EmployeesPage: React.FC<EmployeesPageProps> = ({ employees, brandin
     deactivateEmployee,
     deleteEmployee 
   } = useOrganization();
-  const [selectedLeadId, setSelectedLeadId] = useState<string>('lead-1');
+  const [selectedLeadId, setSelectedLeadId] = useState<string>('');
   const [assignmentResult, setAssignmentResult] = useState<any | null>(null);
   const [isAssignSuccessModalOpen, setIsAssignSuccessModalOpen] = useState(false);
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
@@ -117,10 +117,10 @@ export const EmployeesPage: React.FC<EmployeesPageProps> = ({ employees, brandin
   };
   const [assignedEmployeeName, setAssignedEmployeeName] = useState('');
 
-  const sampleLeads = generateRealisticLeads(branding);
-  const selectedLead = sampleLeads.find(l => l.id === selectedLeadId) || sampleLeads[0];
+  const selectedLead = leads.find(l => l.id === selectedLeadId) || leads[0];
 
   const handleRunAIAssignment = (lead: any) => {
+    if (!lead || employees.length === 0) return;
     const result = autoAssignEmployee({ lead, employees });
     setAssignmentResult({ lead, ...result });
   };
@@ -274,7 +274,7 @@ export const EmployeesPage: React.FC<EmployeesPageProps> = ({ employees, brandin
                   setSelectedLeadId(e.target.value);
                   setAssignmentResult(null);
                 }}
-                options={sampleLeads.map(l => ({
+                options={leads.map(l => ({
                   value: l.id,
                   label: `${l.title} (${l.customerName})`
                 }))}
@@ -283,6 +283,7 @@ export const EmployeesPage: React.FC<EmployeesPageProps> = ({ employees, brandin
             <AppButton
               onClick={() => handleRunAIAssignment(selectedLead)}
               variant="primary"
+              disabled={!selectedLead || employees.length === 0}
             >
               <Sparkles className="w-4 h-4" />
               <span>Spočítat optimální partu</span>
@@ -325,6 +326,11 @@ export const EmployeesPage: React.FC<EmployeesPageProps> = ({ employees, brandin
               <strong className="text-brand-primary">Zdůvodnění:</strong> {assignmentResult.reasoning}
             </p>
           </div>
+        )}
+        {!leads.length && (
+          <p className="text-xs text-muted border border-dashed border-border rounded-app p-3">
+            Přiřazování se zobrazí po přidání první poptávky této firmy.
+          </p>
         )}
       </AppCard>
 
