@@ -99,16 +99,8 @@ function getDefaultConfigs(orgId: string): IntegrationConfig[] {
       organizationId: orgId,
       type: 'rest_api',
       name: 'REST API & Inbound Webhook Listener',
-      status: 'connected',
-      lastSync: new Date(Date.now() - 1000 * 60 * 5).toISOString(),
-      lastSyncStatus: 'success',
-      recordsCount: isDefaultDemo ? 8 : 0,
-      restConfig: {
-        webhookSecret: `whsec_${orgId.substring(0, 8)}_${Math.random().toString(36).substring(2, 10)}`,
-        webhookUrl: `https://api.buildflow.app/v1/webhooks/inbound/${orgId}`,
-        apiKey: `bf_live_${orgId.substring(0, 8)}_${Math.random().toString(36).substring(2, 12)}`,
-        autoSyncLeads: true
-      },
+      status: 'disconnected',
+      recordsCount: 0,
       createdAt: new Date('2026-01-01').toISOString(),
       updatedAt: new Date().toISOString()
     },
