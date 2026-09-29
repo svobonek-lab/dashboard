@@ -102,10 +102,10 @@ export function PublicDemoWorkspace() {
   };
 
   return <main className="owner-demo min-h-screen">
-    <div className="od-banner"><ShieldCheck size={14} /><span>UKÁZKOVÝ ÚČET · Všechna data jsou smyšlená a zůstávají v tomto prohlížeči</span><button onClick={reset}><RotateCcw size={13} /> Obnovit ukázku</button></div>
+    <div className="od-banner"><ShieldCheck size={14} /><span>Ukázkový účet · data zůstávají jen v tomto prohlížeči</span><button onClick={reset}><RotateCcw size={13} /> Obnovit ukázku</button></div>
     <div className="od-app">
       <aside className={`od-sidebar ${mobileNav ? 'od-sidebar-open' : ''}`}>
-        <div className="od-brand-row"><a className="od-brand" href="/" aria-label="StavbaCore, úvodní stránka"><span className="od-brand-mark"><HardHat size={20} /></span><span><b>StavbaCore</b><small>ŘÍZENÍ VAŠÍ STAVEBNÍ FIRMY</small></span></a><button className="od-close-mobile" onClick={() => setMobileNav(false)} aria-label="Zavřít menu"><X size={18} /></button></div>
+        <div className="od-brand-row"><a className="od-brand" href="/" aria-label="StavbaCore, úvodní stránka"><span className="od-brand-mark"><HardHat size={20} /></span><span><b>StavbaCore</b><small>Dashboard stavební firmy</small></span></a><button className="od-close-mobile" onClick={() => setMobileNav(false)} aria-label="Zavřít menu"><X size={18} /></button></div>
         <div className="od-company-switch"><span className="od-company-initials">{initials(company.name)}</span><span><b>{company.name}</b><small>{company.area}</small></span><ChevronRight size={15} /></div>
         <span className="od-nav-label">PRACOVNÍ PROSTOR</span>
         <nav className="od-nav" aria-label="Navigace dashboardu">{NAV.map(({ id, label, icon: Icon }) => <button key={id} onClick={() => navigate(id)} className={screen === id ? 'od-nav-active' : ''}><Icon size={17} /><span>{label}</span>{id === 'leads' && totals.leads > 0 && <i>{totals.leads}</i>}</button>)}</nav>
