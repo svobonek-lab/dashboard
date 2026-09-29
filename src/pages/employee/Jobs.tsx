@@ -23,8 +23,8 @@ export const EmployeeJobsPage: React.FC<EmployeeJobsPageProps> = ({ leads, onSel
   const { navigate } = useRouter();
   const [filter, setFilter] = useState<'today' | 'upcoming' | 'completed'>('today');
 
-  // Filter assigned jobs (excluding unassigned or general)
-  const myJobs = leads.slice(0, 4);
+  // App supplies only jobs assigned to the authenticated employee.
+  const myJobs = leads;
 
   return (
     <div className="space-y-6 text-slate-900 font-sans pb-12">
@@ -54,7 +54,7 @@ export const EmployeeJobsPage: React.FC<EmployeeJobsPageProps> = ({ leads, onSel
             filter === 'today' ? 'bg-white text-brand-primary shadow-xs border border-slate-200/80' : 'text-slate-600 hover:text-slate-900'
           }`}
         >
-          Dnešní výjezdy (2)
+          Dnešní výjezdy ({myJobs.filter((job) => job.status === 'In Progress').length})
         </button>
         <button
           onClick={() => setFilter('upcoming')}
@@ -62,7 +62,7 @@ export const EmployeeJobsPage: React.FC<EmployeeJobsPageProps> = ({ leads, onSel
             filter === 'upcoming' ? 'bg-white text-brand-primary shadow-xs border border-slate-200/80' : 'text-slate-600 hover:text-slate-900'
           }`}
         >
-          Plánované (2)
+          Plánované ({myJobs.filter((job) => job.status !== 'In Progress').length})
         </button>
         <button
           onClick={() => setFilter('completed')}
