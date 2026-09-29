@@ -67,6 +67,9 @@ export const LeadDetail: React.FC<LeadDetailProps> = ({
   const [activeTab, setActiveTab] = useState<OperationalTab>('prehled');
   const [newChecklistText, setNewChecklistText] = useState('');
   const [quickOutputNotice, setQuickOutputNotice] = useState<string | null>(null);
+  const priceLabel = typeof lead.price === 'number' && lead.price > 0
+    ? `${lead.price.toLocaleString('cs-CZ')} Kč`
+    : 'Cena není zadána';
 
   const handleNotice = (msg: string) => {
     setQuickOutputNotice(msg);
@@ -80,7 +83,7 @@ export const LeadDetail: React.FC<LeadDetailProps> = ({
     { time: '08:42', title: 'Poptávka z webu', note: 'Zákazník odeslal kontaktní formulář na webu', author: 'Webový widget' },
     { time: '08:51', title: 'Petr zavolal', note: 'První kontakt proveden za 9 minut (v SLA limitu)', author: 'Petr Novotný (Dispečink)' },
     { time: '09:04', title: 'Domluveno zaměření', note: 'Osobní prohlídka a zaměření stavby naplánováno', author: 'Petr Novotný' },
-    { time: '14:38', title: 'Nabídka odeslána', note: `Položkový rozpočet ${(lead.price || 353000).toLocaleString('cs-CZ')} Kč odeslán klientovi`, author: 'Obchodní oddělení' },
+    { time: '14:38', title: 'Nabídka odeslána', note: `Položkový rozpočet ${priceLabel} odeslán klientovi`, author: 'Obchodní oddělení' },
     { time: 'o 2 dny později', title: 'Nabídka přijata', note: 'Klient digitálně potvrdil nabídku přes Klientský portál', author: lead.customerName },
     { time: '11. 10.', title: 'Realizace zahájena', note: 'Závoz materiálu a předání staveniště realizační partě', author: lead.assignedEmployeeName || 'Jan Svoboda' },
     { time: 'Dnes', title: 'Výkaz práce a nákladů', note: 'Jan přidal 6,5 h montáže + materiál 7 840 Kč', author: 'Jan Svoboda (Terén)' },
@@ -88,7 +91,7 @@ export const LeadDetail: React.FC<LeadDetailProps> = ({
 
   // AI Chat
   const [chatMessages, setChatMessages] = useState<AIChatMessage[]>(lead.aiChat || [
-    { id: 'msg-1', sender: 'ai', text: `Dobrý den, jsem stavební asistent pro zakázku "${lead.title}". Paměť projektu: Klient: ${lead.customerName}, Rozpočet: ${(lead.price || 353000).toLocaleString()} Kč, Marže: 27,8 %, Termín: ${lead.preferredDate}. Jak vám mohu pomoci?`, timestamp: '09:00' }
+    { id: 'msg-1', sender: 'ai', text: `Dobrý den, jsem stavební asistent pro zakázku "${lead.title}". Paměť projektu: Klient: ${lead.customerName}, Rozpočet: ${priceLabel}, Termín: ${lead.preferredDate || 'termín není zadán'}. Jak vám mohu pomoci?`, timestamp: '09:00' }
   ]);
   const [chatInput, setChatInput] = useState('');
 
@@ -103,7 +106,7 @@ export const LeadDetail: React.FC<LeadDetailProps> = ({
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
     };
 
-    let reply = `Analyzuji zakázku "${lead.title}". Všechny položky jsou pod kontrolou s marží 27,8 %.`;
+    let reply = `Analyzuji zakázku "${lead.title}". Pro přesný přehled doplňte skutečné náklady a cenu nabídky.`;
     if (text.toLowerCase().includes('follow-up')) {
       reply = `📧 Připraven e-mail pro ${lead.customerName}:\nDobrý den, navazujeme na nabídku na zakázku ${lead.title}. Rádi bychom ověřili termín nástupu.`;
     } else if (text.toLowerCase().includes('materiál') || text.toLowerCase().includes('naklady')) {
@@ -174,9 +177,7 @@ export const LeadDetail: React.FC<LeadDetailProps> = ({
               <span className="text-slate-400">·</span>
               <span className="text-xs sm:text-sm font-bold text-slate-700">{lead.title}</span>
               <span className="text-slate-400">·</span>
-              <span className="text-xs sm:text-sm font-black text-[#0A84FF] font-mono">
-                {(lead.price || 353000).toLocaleString('cs-CZ')} Kč
-              </span>
+              <span className="text-xs sm:text-sm font-black text-[#0A84FF] font-mono">{priceLabel}</span>
               <span className="text-slate-400">·</span>
               <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
                 {lead.status === 'In Progress' ? 'Realizace' : lead.status}
@@ -339,7 +340,7 @@ export const LeadDetail: React.FC<LeadDetailProps> = ({
               <div className="space-y-3 text-xs">
                 <div className="flex items-center justify-between p-2.5 rounded-xl bg-slate-50 border border-slate-200/60">
                   <span className="text-slate-500 font-medium">Smluvní cena (vč. DPH)</span>
-                  <strong className="text-slate-900 font-black">{(lead.price || 353000).toLocaleString('cs-CZ')} Kč</strong>
+                  <strong className="text-slate-900 font-black">{priceLabel}</strong>
                 </div>
                 <div className="flex items-center justify-between p-2.5 rounded-xl bg-slate-50 border border-slate-200/60">
                   <span className="text-slate-500 font-medium">Skutečné náklady materiálu</span>
@@ -351,7 +352,7 @@ export const LeadDetail: React.FC<LeadDetailProps> = ({
                 </div>
                 <div className="flex items-center justify-between p-2.5 rounded-xl bg-emerald-50 border border-emerald-200">
                   <span className="text-emerald-800 font-bold">Průběžná marže</span>
-                  <strong className="text-emerald-700 font-black">27,8 % (bezpečné)</strong>
+                  <strong className="text-emerald-700 font-black">Dopočítá se ze skutečných nákladů</strong>
                 </div>
               </div>
             </div>
@@ -513,7 +514,7 @@ export const LeadDetail: React.FC<LeadDetailProps> = ({
             <p><strong>Dílo:</strong> {lead.title}</p>
             <p><strong>Objednatel:</strong> {lead.customerName} ({lead.address})</p>
             <p><strong>Zhotovitel:</strong> StavbaCore realizační tým</p>
-            <p><strong>Předávací cena:</strong> {(lead.price || 353000).toLocaleString('cs-CZ')} Kč</p>
+            <p><strong>Předávací cena:</strong> {priceLabel}</p>
             <p><strong>Závady a nedodělky:</strong> Dílo předáno bez vad a nedodělků bránících užívání.</p>
           </div>
 

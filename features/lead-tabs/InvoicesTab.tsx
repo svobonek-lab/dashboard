@@ -32,11 +32,11 @@ interface InvoiceItem {
 }
 
 export const InvoicesTab: React.FC<InvoicesTabProps> = ({ lead, onNotice }) => {
-  const totalPrice = lead.price || 353000;
-  const depositPrice = Math.round(totalPrice * 0.5);
-  const finalPrice = totalPrice - depositPrice;
+  const totalPrice = typeof lead.price === 'number' && lead.price > 0 ? lead.price : null;
+  const depositPrice = totalPrice === null ? 0 : Math.round(totalPrice * 0.5);
+  const finalPrice = totalPrice === null ? 0 : totalPrice - depositPrice;
 
-  const [invoices, setInvoices] = useState<InvoiceItem[]>([
+  const [invoices, setInvoices] = useState<InvoiceItem[]>(totalPrice === null ? [] : [
     {
       id: 'inv-1',
       type: 'Zálohová faktura',
@@ -121,8 +121,8 @@ export const InvoicesTab: React.FC<InvoicesTabProps> = ({ lead, onNotice }) => {
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-2xs">
           <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Celková hodnota díla</span>
-          <p className="text-xl font-black text-slate-900 mt-1">{totalPrice.toLocaleString('cs-CZ')} Kč</p>
-          <span className="text-[10px] text-slate-500">Včetně 21 % DPH</span>
+          <p className="text-xl font-black text-slate-900 mt-1">{totalPrice === null ? 'Cena není zadána' : `${totalPrice.toLocaleString('cs-CZ')} Kč`}</p>
+          <span className="text-[10px] text-slate-500">{totalPrice === null ? 'Doplňte cenu poptávky před vystavením dokladu' : 'Včetně 21 % DPH'}</span>
         </div>
         <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-2xs">
           <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Uhrazená záloha</span>

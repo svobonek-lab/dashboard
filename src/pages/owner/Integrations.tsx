@@ -415,7 +415,18 @@ export const Integrations: React.FC<IntegrationsProps> = ({
 
   // POHODA XML Invoices Exporter (Audit recommendation)
   const handleExportPohodaInvoicesXML = () => {
-    const activeLeads = leads || [];
+    const activeLeads = (leads || []).filter(
+      (lead) => typeof lead.price === 'number' && lead.price > 0
+    ).slice(0, 5);
+
+    if (activeLeads.length === 0) {
+      setGlobalNotification({
+        type: 'error',
+        message: 'Fakturu nelze exportovat: žádná poptávka této firmy nemá zadanou cenu.'
+      });
+      return;
+    }
+
     const xmlHeader = `<?xml version="1.0" encoding="UTF-8"?>
 <dat:dataPack xmlns:dat="http://www.stormware.cz/xml/data/dataPack.xsd"
               xmlns:inv="http://www.stormware.cz/xml/data/invoice.xsd"
@@ -427,8 +438,9 @@ export const Integrations: React.FC<IntegrationsProps> = ({
               note="Export vydaných faktur ze systému StavbaCore">`;
 
     const invoiceItems = activeLeads.slice(0, 5).map((l, index) => {
-      const priceWithoutVat = Math.round((l.price || 353000) / 1.21);
-      const vatAmount = (l.price || 353000) - priceWithoutVat;
+      const price = l.price as number;
+      const priceWithoutVat = Math.round(price / 1.21);
+      const vatAmount = price - priceWithoutVat;
       return `
   <dat:dataPackItem id="inv_${index + 1}" version="2.0">
     <inv:invoice version="2.0">
@@ -465,7 +477,7 @@ export const Integrations: React.FC<IntegrationsProps> = ({
           <typ:priceNone>0</typ:priceNone>
           <typ:priceHigh>${priceWithoutVat}</typ:priceHigh>
           <typ:priceHighVAT>${vatAmount}</typ:priceHighVAT>
-          <typ:priceHighSum>${l.price || 353000}</typ:priceHighSum>
+          <typ:priceHighSum>${price}</typ:priceHighSum>
         </inv:homeCurrency>
       </inv:invoiceSummary>
     </inv:invoice>
@@ -496,12 +508,8 @@ export const Integrations: React.FC<IntegrationsProps> = ({
   const totalImportedRecords = configs.reduce((acc, c) => acc + (c.recordsCount || 0), 0);
   const sqlConfig = configs.find(c => c.type === 'sql');
   const sheetsConfig = configs.find(c => c.type === 'google_sheets');
-  const restConfig = configs.find(c => c.type === 'rest_api')?.restConfig || {
-    webhookSecret: `whsec_${orgId.substring(0, 8)}_demo`,
-    webhookUrl: `https://api.buildflow.app/v1/webhooks/inbound/${orgId}`,
-    apiKey: `bf_live_${orgId.substring(0, 8)}_token`,
-    autoSyncLeads: true
-  };
+  const restIntegration = configs.find(c => c.type === 'rest_api');
+  const restConfig = restIntegration?.restConfig;
 
   const filteredLogs = logs.filter(l => {
     if (logFilter === 'all') return true;
@@ -845,9 +853,9 @@ export const Integrations: React.FC<IntegrationsProps> = ({
                   <div className="w-12 h-12 rounded-2xl bg-purple-500/10 border border-purple-500/20 text-purple-400 flex items-center justify-center font-bold">
                     <Webhook className="w-6 h-6" />
                   </div>
-                  <span className="px-2.5 py-1 rounded-full text-[11px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 flex items-center gap-1.5">
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-                    Live Webhook
+                  <span className={`px-2.5 py-1 rounded-full text-[11px] font-bold border flex items-center gap-1.5 ${restIntegration?.status === 'connected' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 'bg-slate-700/60 text-slate-300 border-slate-600'}`}>
+                    <span className={`w-1.5 h-1.5 rounded-full ${restIntegration?.status === 'connected' ? 'bg-emerald-400 animate-pulse' : 'bg-slate-400'}`}></span>
+                    {restIntegration?.status === 'connected' ? 'Live Webhook' : 'Nenakonfigurováno'}
                   </span>
                 </div>
 
@@ -875,11 +883,12 @@ export const Integrations: React.FC<IntegrationsProps> = ({
               <div className="pt-3 border-t border-slate-700/60 flex items-center justify-between gap-2">
                 <button
                   type="button"
-                  onClick={() => setActiveModal('webhook')}
-                  className="w-full py-2 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold flex items-center justify-center gap-2 transition-all shadow-md cursor-pointer"
+                  onClick={() => restConfig && setActiveModal('webhook')}
+                  disabled={!restConfig}
+                  className="w-full py-2 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold flex items-center justify-center gap-2 transition-all shadow-md cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <Webhook className="w-3.5 h-3.5" />
-                  Zobrazit Webhook URL & Token
+                  {restConfig ? 'Zobrazit Webhook URL & Token' : 'Webhook není nakonfigurován'}
                 </button>
               </div>
             </div>
@@ -919,7 +928,7 @@ export const Integrations: React.FC<IntegrationsProps> = ({
                 </button>
                 <div className="flex items-center justify-between text-[11px] text-slate-400 pt-1">
                   <span>Formát: dataPack 2.0 (Stormware)</span>
-                  <span className="text-emerald-400 font-bold">100% Kompatibilní</span>
+                  <span className="text-emerald-400 font-bold">Export kontaktů ověřen</span>
                 </div>
               </div>
             </div>
@@ -1088,14 +1097,16 @@ export const Integrations: React.FC<IntegrationsProps> = ({
       />
 
       {/* Webhook Details Modal */}
-      <WebhookDetailsModal
-        isOpen={activeModal === 'webhook'}
-        onClose={() => setActiveModal(null)}
-        config={restConfig}
-        organizationId={orgId}
-        organizationName={currentOrg?.name || 'Firma'}
-        onSendTestPayload={handleSendWebhookTest}
-      />
+      {restConfig && (
+        <WebhookDetailsModal
+          isOpen={activeModal === 'webhook'}
+          onClose={() => setActiveModal(null)}
+          config={restConfig}
+          organizationId={orgId}
+          organizationName={currentOrg?.name || 'Firma'}
+          onSendTestPayload={handleSendWebhookTest}
+        />
+      )}
 
     </div>
   );
