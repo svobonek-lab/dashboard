@@ -31,6 +31,7 @@ const COMPANY_ICO = ((import.meta as any).env?.VITE_COMPANY_ICO || '').trim();
 const COMPANY_ADDRESS = ((import.meta as any).env?.VITE_COMPANY_ADDRESS || '').trim() || 'DOPLNIT';
 const COMPANY_EMAIL = ((import.meta as any).env?.VITE_COMPANY_EMAIL || '').trim() || 'DOPLNIT';
 const COMPANY_PHONE = ((import.meta as any).env?.VITE_COMPANY_PHONE || '').trim() || 'DOPLNIT';
+const COMPANY_DETAILS_CONFIGURED = [COMPANY_NAME, COMPANY_ADDRESS, COMPANY_EMAIL, COMPANY_PHONE].every((value) => value !== 'DOPLNIT');
 
 export const LandingPage: React.FC = () => {
   const { navigate } = useRouter();
@@ -169,12 +170,12 @@ export const LandingPage: React.FC = () => {
       <section className="pt-16 pb-14 px-4 sm:px-6 lg:px-8 max-w-5xl mx-auto text-center space-y-6">
         <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold bg-blue-50 text-blue-700 border border-blue-200">
           <Building2 className="w-3.5 h-3.5" />
-          <span>Pro stavební firmy 5–40 lidí</span>
+          <span>Pro majitele menších stavebních firem</span>
         </div>
 
         <h1 className="text-3xl sm:text-5xl font-black text-slate-900 tracking-tight leading-tight max-w-4xl mx-auto">
-          Méně ztracených poptávek.<br />
-          <span className="text-[#0A84FF]">Více schválených zakázek.</span>
+          Od první poptávky<br />
+          <span className="text-[#0A84FF]">k hotové zakázce.</span>
         </h1>
 
         <p className="text-base sm:text-lg text-slate-600 max-w-2xl mx-auto leading-relaxed font-medium">
@@ -186,7 +187,7 @@ export const LandingPage: React.FC = () => {
             onClick={() => setIsBookingOpen(true)}
             className="w-full sm:w-auto px-6 py-3.5 bg-[#0A84FF] hover:bg-blue-600 text-white rounded-xl text-xs font-black shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2"
           >
-            <span>Ukázat StavbaCore na mém procesu</span>
+            <span>Ukázat mi StavbaCore</span>
             <ArrowRight className="w-4 h-4" />
           </button>
           <button
@@ -194,7 +195,7 @@ export const LandingPage: React.FC = () => {
             className="w-full sm:w-auto px-6 py-3.5 bg-white hover:bg-slate-50 text-slate-800 border border-slate-300 rounded-xl text-xs font-black shadow-2xs transition-all flex items-center justify-center gap-2"
           >
             <PlayCircle className="w-4 h-4 text-[#0A84FF]" />
-            <span>Vyzkoušet StavbaCore na ukázkových datech</span>
+            <span>Spustit interaktivní demo</span>
           </button>
         </div>
 
@@ -241,7 +242,7 @@ export const LandingPage: React.FC = () => {
                 </span>
                 <h3 className="text-base font-black text-slate-900">Poptávka bez okamžité reakce</h3>
                 <p className="text-xs text-slate-600 leading-relaxed">
-                  Zákazník odešle poptávku přes web. Zpráva spadne do hromadného e-mailu. Nikdo není vlastník, nikdo nezavolá do 15 minut. Zákazník mezitím osloví tři další stavební firmy a zakázka je ztracena.
+                  Zákazník odešle poptávku přes web. Zpráva zapadne v e-mailu a nikdo neví, kdo ji má převzít. Mezitím zákazník osloví další firmy a zakázka se ztrácí.
                 </p>
               </div>
               <div className="p-3 bg-blue-50/80 border border-blue-200 rounded-xl text-xs text-blue-900 font-medium">
@@ -683,7 +684,7 @@ export const LandingPage: React.FC = () => {
               <button onClick={() => setActiveLegalModal('dpa')} className="hover:text-white transition-colors">Zpracovatelská smlouva (DPA)</button>
             </div>
           </div>
-          <div className="pt-4 border-t border-slate-800/80 flex flex-col sm:flex-row items-center justify-between gap-2 text-[11px] text-slate-500">
+          {COMPANY_DETAILS_CONFIGURED && <div className="pt-4 border-t border-slate-800/80 flex flex-col sm:flex-row items-center justify-between gap-2 text-[11px] text-slate-500">
             <div>
               <span>
                 {[COMPANY_NAME, COMPANY_ICO ? `IČO: ${COMPANY_ICO}` : null, COMPANY_ADDRESS]
@@ -694,7 +695,7 @@ export const LandingPage: React.FC = () => {
             <div>
               <span>Kontakt: {COMPANY_EMAIL} · Tel: {COMPANY_PHONE}</span>
             </div>
-          </div>
+          </div>}
         </div>
       </footer>
 
