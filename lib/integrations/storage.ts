@@ -146,7 +146,25 @@ export function getOrganizationIntegrations(organizationId: string): Integration
   try {
     const raw = localStorage.getItem(`${STORAGE_KEY_CONFIGS}_${organizationId}`);
     if (raw) {
-      return JSON.parse(raw);
+      const parsed = JSON.parse(raw) as IntegrationConfig[];
+      return parsed.map((config) => {
+        const restConfig = config.type === 'rest_api' ? config.restConfig : undefined;
+        const isGeneratedFallback = Boolean(
+          restConfig?.webhookUrl?.includes('api.buildflow.app/v1/webhooks/inbound/') &&
+          restConfig?.apiKey?.startsWith('bf_live_')
+        );
+
+        if (!isGeneratedFallback) return config;
+
+        return {
+          ...config,
+          status: 'disconnected' as const,
+          lastSync: undefined,
+          lastSyncStatus: undefined,
+          recordsCount: 0,
+          restConfig: undefined
+        };
+      });
     }
   } catch (e) {
     console.warn('Failed to read integrations from localStorage', e);
