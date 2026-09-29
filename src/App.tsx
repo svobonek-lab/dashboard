@@ -6,6 +6,7 @@ import { RouterProvider, useRouter } from './app/router';
 import { ProtectedRoute } from './app/ProtectedRoute';
 import { RoleGuard } from './app/RoleGuard';
 import { getDefaultRouteForRole, UserRole } from './app/permissions';
+import { getEmployeeLeads } from './app/employeeScope';
 
 // Layouts
 import { SuperAdminLayout } from './layouts/SuperAdminLayout';
@@ -97,6 +98,9 @@ function AppContent() {
   });
   const [employees, setEmployees] = useState(() => isDemoOrg ? generateRealisticEmployees() : []);
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
+  const employeeLeads = dbUser?.role === 'employee'
+    ? getEmployeeLeads(leads, employees, dbUser.id, dbUser.email)
+    : leads;
 
   // Synchronize leads & employees from active organization
   useEffect(() => {
@@ -442,25 +446,25 @@ function AppContent() {
   if (pathname === '/employee' || pathname.startsWith('/employee/')) {
     return (
       <ProtectedRoute allowedRole={['employee', 'super_admin']}>
-        <EmployeeLayout leads={leads}>
+        <EmployeeLayout leads={employeeLeads}>
           {pathname === '/employee' || pathname === '/employee/dashboard' ? (
-            <EmployeeDashboardPage leads={leads} onSelectLead={setSelectedLead} onUpdateLead={handleUpdateLead} />
+            <EmployeeDashboardPage leads={employeeLeads} onSelectLead={setSelectedLead} onUpdateLead={handleUpdateLead} />
           ) : pathname === '/employee/jobs' ? (
-            <EmployeeJobsPage leads={leads} onSelectLead={setSelectedLead} />
+            <EmployeeJobsPage leads={employeeLeads} onSelectLead={setSelectedLead} />
           ) : pathname === '/employee/schedule' ? (
-            <EmployeeSchedulePage leads={leads} />
+            <EmployeeSchedulePage leads={employeeLeads} />
           ) : pathname === '/employee/map' ? (
-            <EmployeeMapPage leads={leads} onSelectLead={setSelectedLead} />
+            <EmployeeMapPage leads={employeeLeads} onSelectLead={setSelectedLead} />
           ) : pathname === '/employee/photos' ? (
-            <EmployeePhotosPage leads={leads} onUpdateLead={handleUpdateLead} />
+            <EmployeePhotosPage leads={employeeLeads} onUpdateLead={handleUpdateLead} />
           ) : pathname === '/employee/checklist' ? (
-            <EmployeeChecklistPage leads={leads} onUpdateLead={handleUpdateLead} />
+            <EmployeeChecklistPage leads={employeeLeads} onUpdateLead={handleUpdateLead} />
           ) : pathname === '/employee/messages' ? (
-            <OwnerCommunicationPage leads={leads} />
+            <OwnerCommunicationPage leads={employeeLeads} />
           ) : pathname === '/employee/profile' ? (
             <EmployeeProfilePage />
           ) : (
-            <EmployeeDashboardPage leads={leads} onSelectLead={setSelectedLead} onUpdateLead={handleUpdateLead} />
+            <EmployeeDashboardPage leads={employeeLeads} onSelectLead={setSelectedLead} onUpdateLead={handleUpdateLead} />
           )}
         </EmployeeLayout>
       </ProtectedRoute>
