@@ -1,0 +1,76 @@
+import type { Organization } from '../../context/OrganizationContext';
+import { AppMemberRow } from './productionSchema';
+
+export interface AppCompanyRow {
+  id: string;
+  name: string;
+  slug: string;
+  email?: string;
+  phone?: string;
+  address?: string;
+  color?: string;
+  logo_url?: string;
+  active?: boolean;
+  onboarding_completed?: boolean;
+  plan?: string;
+}
+
+export interface AppSchemaIdentity {
+  member: AppMemberRow;
+  organization: Organization;
+  organizations: Organization[];
+}
+
+export function toAppOrganization(row: AppCompanyRow): Organization {
+  return {
+    id: row.id,
+    name: row.name || 'Stavební firma',
+    slug: row.slug || row.id,
+    email: row.email || '',
+    phone: row.phone || '',
+    address: row.address || '',
+    primary_color: row.color || '#2563eb',
+    logo_url: row.logo_url || '',
+    status: row.active === false ? 'Suspended' : 'Active',
+  };
+}
+
+export function resolveAppIdentity(members: AppMemberRow[], companies: AppCompanyRow[], userId: string, email?: string): AppSchemaIdentity | null {
+  const normalizedEmail = email?.trim().toLowerCase();
+  const member = members.find((item) => item.user_id === userId && item.active)
+    || members.find((item) => normalizedEmail && item.email.trim().toLowerCase() === normalizedEmail && item.active);
+  if (!member) return null;
+  const organization = companies.find((company) => company.id === member.company_id && company.active !== false);
+  if (!organization) return null;
+  const mapped = toAppOrganization(organization);
+  return { member, organization: mapped, organizations: [mapped] };
+}
+
+export async function readAppSchemaIdentity(client: any, userId: string, email?: string): Promise<AppSchemaIdentity | null> {
+  // Resolve the membership server-side by the authenticated identity first.
+  // Never download every company's member list into the browser.
+  const { data: userMembers, error: memberError } = await client
+    .from('app_members')
+    .select('company_id,user_id,name,email,role,active')
+    .eq('user_id', userId)
+    .eq('active', true);
+  if (memberError) throw memberError;
+  let matchingMembers = (userMembers || []) as AppMemberRow[];
+  if (!matchingMembers.length && email) {
+    const { data: emailMembers, error: emailError } = await client
+      .from('app_members')
+      .select('company_id,user_id,name,email,role,active')
+      .eq('email', email.trim().toLowerCase())
+      .eq('active', true);
+    if (emailError) throw emailError;
+    matchingMembers = (emailMembers || []) as AppMemberRow[];
+  }
+  if (!matchingMembers.length) return null;
+  const companyIds = [...new Set(matchingMembers.map((item) => item.company_id))];
+  const { data: companies, error: companyError } = await client
+    .from('app_companies')
+    .select('id,name,slug,email,phone,address,color,logo_url,active,onboarding_completed,plan')
+    .in('id', companyIds);
+  if (companyError) throw companyError;
+  return resolveAppIdentity(matchingMembers, (companies || []) as AppCompanyRow[], userId, email);
+}

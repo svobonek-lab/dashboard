@@ -1,9 +1,10 @@
 # StavbaCore production schema contract matrix
 
-**Status:** Read-only design artifact, 2026-09-30  
-**Purpose:** Define the evidence required before replacing the legacy client repository with an adapter for the verified `app_*` production schema.
+**Status:** Read-only adapter groundwork implemented; production enablement still gated, 2026-09-30`r`n**Purpose:** Define the evidence required before replacing the legacy client repository with an adapter for the verified `app_*` production schema.
 
 This document does not claim that similarly named tables or columns are compatible. The production inventory was obtained from the approved metadata-only audit and contains `app_companies`, `app_members`, `app_invites`, `app_leads`, `app_quotes`, `app_tasks`, `app_time_entries`, `app_costs`, `app_invoices`, and `app_job_budgets`. No customer rows, writes, migrations, or RPC calls were used.
+
+The current adapter groundwork resolves a signed-in identity from active `app_members` and an active `app_companies` row, and routes opt-in lead/member reads through the verified names. It remains behind `VITE_APP_SCHEMA_READS=true`; the default is unchanged until policies, grants, and RPC boundaries are independently verified.
 
 ## Operation matrix
 
