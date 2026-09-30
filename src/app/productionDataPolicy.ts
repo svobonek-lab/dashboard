@@ -6,5 +6,8 @@ export function isAppSchemaReadsEnabled(env: Record<string, unknown> = {}): bool
 }
 
 export function shouldBlockLegacyWrites(env: Record<string, unknown> = {}): boolean {
-  return isAppSchemaReadsEnabled(env);
+  // A configured production client must never write to the historical schema.
+  // The feature flag remains useful for local/staging rehearsal, but production
+  // is fail-closed even when an old deployment omitted the flag.
+  return Boolean(env.PROD) || isAppSchemaReadsEnabled(env);
 }

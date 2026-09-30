@@ -9,7 +9,9 @@ import { getRuntimePolicy } from '../src/app/runtimePolicy';
 import { readAppSchemaIdentity } from '../src/app/appSchemaIdentity';
 
 const IS_PRODUCTION = !!(import.meta as any).env?.PROD;
-const APP_SCHEMA_READS = isAppSchemaReadsEnabled((import.meta as any).env || {});
+// Production always resolves identity/data through the verified app_* model.
+// Never let an old deployment silently select the removed legacy tables.
+const APP_SCHEMA_READS = IS_PRODUCTION || isAppSchemaReadsEnabled((import.meta as any).env || {});
 const BLOCK_LEGACY_WRITES = shouldBlockLegacyWrites((import.meta as any).env || {});
 const RUNTIME_POLICY = getRuntimePolicy((import.meta as any).env || {});
 
@@ -1466,8 +1468,9 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
 
   // Data Action: Update lead status
   const updateLeadStatus = async (leadId: string, status: string) => {
-    // Always persist into local storage immediately for zero-lag UI and offline robustness
-    updateLeadStatusLocal(leadId, status);
+    // Production must never make a successful-looking local-only mutation.
+    // Optimistic local state is reserved for the synthetic development demo.
+    if (!IS_PRODUCTION) updateLeadStatusLocal(leadId, status);
 
     if (!isSupabaseConfigured || !supabase || !isValidUUID(leadId)) {
       return;
