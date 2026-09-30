@@ -145,11 +145,11 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onSuccess, expectedRole })
                  {displayOrgName.substring(0, 2).toUpperCase()}
               </div>
               <h2 className="text-2xl font-black text-text tracking-tight">
-                {mode === 'login' ? (roleCopy?.title || 'Přihlášení do workspace') : 'Vytvořit firemní workspace'}
+                {mode === 'login' ? (roleCopy?.title || 'Přihlášení do StavbaFlow') : 'Vytvořit firemní workspace'}
               </h2>
               <p className="text-sm text-muted font-medium mt-2">
                 {mode === 'login' 
-                  ? (roleCopy?.description || `Vstupte do zabezpečeného prostoru firmy ${displayOrgName}`)
+                  ? (roleCopy?.description || 'Po přihlášení vás StavbaFlow automaticky pošle do dashboardu podle vaší role.')
                   : 'Vytvořte si vlastní oddělený prostor (tenant) na platformě.'}
               </p>
             </div>
@@ -296,26 +296,6 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onSuccess, expectedRole })
                 </>
               )}
             </div>
-            {mode === 'login' && (
-              <div className="mt-8 border-t border-border pt-5">
-                <p className="text-[10px] font-bold uppercase tracking-wider text-muted text-center mb-3">Jiný typ přístupu</p>
-                <div className="grid grid-cols-3 gap-2 text-[10px] font-bold">
-                  {(Object.keys(ROLE_COPY) as UserRole[]).map((role) => {
-                    const item = ROLE_COPY[role];
-                    const active = expectedRole === role;
-                    return (
-                      <a
-                        key={role}
-                        href={item.route}
-                        className={`rounded-app border px-2 py-2 text-center transition-colors ${active ? 'border-brand-primary/40 bg-brand-primary/10 text-brand-primary' : 'border-border text-muted hover:text-text hover:border-brand-primary/30'}`}
-                      >
-                        {role === 'super_admin' ? 'Admin' : role === 'owner' ? 'Majitel' : 'Zaměstnanec'}
-                      </a>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
          </div>
       </div>
     </div>

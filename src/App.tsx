@@ -75,6 +75,20 @@ function ExternalRedirect({ url }: { url: string }) {
   );
 }
 
+function InternalRedirect({ url }: { url: string }) {
+  const { navigate } = useRouter();
+
+  useEffect(() => {
+    navigate(url, { replace: true });
+  }, [navigate, url]);
+
+  return (
+    <div className="min-h-screen bg-surface-secondary flex items-center justify-center text-muted">
+      Otevírám přihlášení…
+    </div>
+  );
+}
+
 function AppSetupRequired() {
   return (
     <main className="min-h-screen bg-slate-950 text-white flex items-center justify-center p-6">
@@ -473,6 +487,9 @@ function AppContent() {
   if (pathname === '/login' || roleLoginRoutes[pathname]) {
     if (deploymentSurface === 'landing' && appUrl) {
       return <ExternalRedirect url={buildAppLoginUrl(appUrl, window.location.search)} />;
+    }
+    if (roleLoginRoutes[pathname]) {
+      return <InternalRedirect url={`/login${window.location.search}`} />;
     }
     const expectedRole = roleLoginRoutes[pathname];
     return <LoginPage onSuccess={(user) => {
