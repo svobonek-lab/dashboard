@@ -24,12 +24,12 @@ test('import endpoint exposes a tenant-scoped CSV dry run without writing', asyn
   assert.match(response.body.fingerprint, /^csv_/);
 });
 
-test('import endpoint refuses commit mode until the staging worker contract exists', async () => {
+test('import endpoint keeps commit mode disabled unless the deployment enables the worker', async () => {
   const response = responseProbe();
   await importHandler({ method: 'POST', body: {
     mode: 'commit', companyId: 'company-a', fileName: 'leads.csv', csv: 'id\nA-1',
   } }, response);
 
-  assert.equal(response.statusCode, 501);
-  assert.equal(response.body.code, 'IMPORT_WORKER_CONTRACT_PENDING');
+  assert.equal(response.statusCode, 503);
+  assert.equal(response.body.code, 'IMPORT_WORKER_DISABLED');
 });

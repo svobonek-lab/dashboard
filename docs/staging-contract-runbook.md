@@ -17,8 +17,8 @@ contract is verified with metadata-only evidence.
 - Public intake uses `app_submit_public_lead` with an idempotency key and a
   per-company event table.
 - CSV import is service-only. The browser endpoint supports a dry-run preview;
-  commit mode stays blocked until the server worker and provenance tables are
-  reviewed.
+  the staging worker records provenance, is idempotent by fingerprint and source
+  record, and exposes rollback only to service_role.
 
 ## Required staging verification
 
@@ -34,13 +34,14 @@ actual columns and helper function signatures. Capture catalog output for:
 Run the staging smoke path with synthetic tenants only: provision two companies,
 invite one employee, submit one public lead per tenant, and prove that the owner
 and employee queries cannot cross the company boundary. Repeat the same import
-file twice and verify the second run is a no-op after the worker contract is
-approved. Do not use customer rows or production credentials in this check.
+file twice and verify the second run is a no-op, then roll it back through the
+service-only worker. Do not use customer rows or production credentials in this
+check.
 
 ## Current release boundary
 
-The repository intentionally does not claim that this proposal is deployed.
-`api/import-leads` therefore returns a dry-run preview and a clear `501` for
-commit mode. The preview is safe to show in a sales demo; “live import” and
-“live production intake” must remain disabled until the staging evidence above
-is attached to a reviewed release.
+The repository intentionally does not enable import writes by default.
+api/import-leads requires APP_IMPORT_WORKER_ENABLED=true, a valid Supabase
+session, active owner membership and a server-side service key. The flag must
+remain disabled in production until the staging evidence above is attached to a
+reviewed release.
