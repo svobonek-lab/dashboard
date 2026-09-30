@@ -57,6 +57,7 @@ import { InteractiveStoryDemo } from '@/features/InteractiveStoryDemo';
 // Types
 import { Lead, LeadStatus } from '@/types';
 import { buildAppLoginUrl, getDeploymentConfig } from './app/deploymentSurface';
+import { getLeadTransitionError } from './app/leadLifecycle';
 
 const { surface: deploymentSurface, appUrl } = getDeploymentConfig((import.meta as any).env || {});
 
@@ -254,6 +255,16 @@ function AppContent() {
     if (!targetLead) return;
     const previousStatus = targetLead.status;
     if (previousStatus === newStatus) return;
+
+    const transitionError = getLeadTransitionError(
+      previousStatus,
+      newStatus,
+      (dbUser?.role as 'owner' | 'employee' | 'super_admin') || 'owner',
+    );
+    if (transitionError) {
+      showToast(transitionError, 'error');
+      return;
+    }
 
     const statusLabel = STATUS_LABELS[newStatus] || newStatus;
     const timestamp = new Date().toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit' });
