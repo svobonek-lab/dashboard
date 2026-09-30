@@ -28,62 +28,15 @@ interface Milestone {
 }
 
 export const ScheduleTab: React.FC<ScheduleTabProps> = ({ lead, onNotice }) => {
-  const [milestones, setMilestones] = useState<Milestone[]>([
-    {
-      id: 'm-1',
-      name: '1. Osobní prohlídka a laserové zaměření',
-      startDate: '28. 09. 2026',
-      endDate: '28. 09. 2026',
-      responsiblePerson: 'Jan Svoboda',
-      status: 'Hotovo',
-      note: 'Zaměřen sklon terénu 4,2°, odsouhlaseny kotevní body s investorem.'
-    },
-    {
-      id: 'm-2',
-      name: '2. Výroba prvků a závoz materiálu',
-      startDate: '03. 10. 2026',
-      endDate: '05. 10. 2026',
-      responsiblePerson: 'Sklad & Logistika',
-      status: 'Hotovo',
-      note: 'KVH trámy nařezány a naimpregnovány, závoz na staveniště proběhl vč. skládání rukou.'
-    },
-    {
-      id: 'm-3',
-      name: '3. Výkop a betonáž základových patek',
-      startDate: '07. 10. 2026',
-      endDate: '08. 10. 2026',
-      responsiblePerson: 'Pavel Kolář',
-      status: 'Hotovo',
-      note: 'Zabetonováno 6 ocelových kotev H-profil, rychlotuhnoucí směs vyzrálá.'
-    },
-    {
-      id: 'm-4',
-      name: '4. Montáž nosného rámu a sloupků',
-      startDate: '11. 10. 2026',
-      endDate: '13. 10. 2026',
-      responsiblePerson: 'Jan Svoboda',
-      status: 'Probíhá',
-      note: 'Probíhá osazení hlavních nosníků a zavětrování konstrukce (aktuální stav: 70 % hotovo).'
-    },
-    {
-      id: 'm-5',
-      name: '5. Zastřešení a hydroizolační práce',
-      startDate: '15. 10. 2026',
-      endDate: '17. 10. 2026',
-      responsiblePerson: 'Jan Svoboda',
-      status: 'Naplánováno',
-      note: 'Montáž komorového polykarbonátu, klempířské lemování a odvodnění.'
-    },
-    {
-      id: 'm-6',
-      name: '6. Závěrečný úklid a předání díla',
-      startDate: '19. 10. 2026',
-      endDate: '19. 10. 2026',
-      responsiblePerson: 'Petr Novotný',
-      status: 'Čeká',
-      note: 'Generální úklid pracoviště, podpis předávacího protokolu a zaškolení obsluhy.'
-    }
-  ]);
+  const [milestones, setMilestones] = useState<Milestone[]>(() => (lead.timeline || []).map((item, index) => ({
+    id: item.id || `timeline-${index}`,
+    name: item.title,
+    startDate: item.date || item.timestamp || '—',
+    endDate: item.date || item.timestamp || '—',
+    responsiblePerson: item.responsibleEmployee || lead.assignedEmployeeName || 'Nepřiřazeno',
+    status: item.status === 'Completed' ? 'Hotovo' : item.status === 'Current' ? 'Probíhá' : item.status === 'Pending' ? 'Naplánováno' : 'Čeká',
+    note: item.description || item.notes || 'Bez doplňující poznámky'
+  })));
 
   const toggleMilestoneStatus = (id: string) => {
     setMilestones(prev => prev.map(m => {

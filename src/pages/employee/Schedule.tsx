@@ -9,18 +9,23 @@ interface EmployeeSchedulePageProps {
 export const EmployeeSchedulePage: React.FC<EmployeeSchedulePageProps> = ({ leads }) => {
   const [selectedDay, setSelectedDay] = useState(0);
 
-  const days = [
-    { name: 'Dnes', date: 'Čtvrtek 10.9.', count: 2, active: true },
-    { name: 'Zítra', date: 'Pátek 11.9.', count: 2 },
-    { name: 'So', date: 'Sobota 12.9.', count: 1 },
-    { name: 'Ne', date: 'Neděle 13.9.', count: 0 },
-    { name: 'Po', date: 'Pondělí 14.9.', count: 3 },
-  ];
+  const days = Array.from({ length: 5 }, (_, index) => {
+    const date = new Date();
+    date.setDate(date.getDate() + index);
+    return {
+      name: index === 0 ? 'Dnes' : index === 1 ? 'Zítra' : new Intl.DateTimeFormat('cs-CZ', { weekday: 'short' }).format(date),
+      date: new Intl.DateTimeFormat('cs-CZ', { day: 'numeric', month: 'numeric' }).format(date),
+      count: index === 0 ? leads.length : 0
+    };
+  });
 
-  const scheduleItems = [
-    { time: '08:30 - 11:30', title: 'Založení patek a kotvení', location: 'Praha 6 - Dejvice', customer: 'Pavel Horák', status: 'Dokončeno' },
-    { time: '13:30 - 17:00', title: 'Montáž bioklimatické pergoly 6x4m', location: 'Praha 4 - Kunratice', customer: 'Ing. Jan Svoboda', status: 'Probíhá' },
-  ];
+  const scheduleItems = leads.map((lead) => ({
+    time: lead.preferredDate || 'Termín dle zakázky',
+    title: lead.title,
+    location: lead.address || lead.city || 'Adresa není zadána',
+    customer: lead.customerName || 'Zákazník není uveden',
+    status: lead.status === 'Completed' ? 'Dokončeno' : lead.status === 'In Progress' ? 'Probíhá' : 'Naplánováno'
+  }));
 
   return (
     <div className="space-y-6 text-slate-900 font-sans pb-12">
@@ -60,7 +65,11 @@ export const EmployeeSchedulePage: React.FC<EmployeeSchedulePageProps> = ({ lead
 
       {/* Schedule Items List */}
       <div className="space-y-3">
-        {scheduleItems.map((item, i) => (
+        {scheduleItems.length === 0 ? (
+          <div className="rounded-3xl border border-dashed border-slate-200 bg-slate-50 p-8 text-center text-xs text-slate-500">
+            Nemáte žádné přiřazené termíny. Harmonogram se zobrazí po přiřazení zakázky.
+          </div>
+        ) : scheduleItems.map((item, i) => (
           <div
             key={i}
             className="bg-white border border-slate-200/80 rounded-3xl p-5 shadow-xs space-y-3"

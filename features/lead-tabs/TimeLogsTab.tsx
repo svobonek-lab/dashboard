@@ -26,48 +26,15 @@ interface TimeEntry {
 }
 
 export const TimeLogsTab: React.FC<TimeLogsTabProps> = ({ lead, onNotice }) => {
-  const [entries, setEntries] = useState<TimeEntry[]>([
-    {
-      id: 't-1',
-      date: '11. 10. 2026',
-      workerName: lead.assignedEmployeeName || 'Jan Svoboda',
-      hours: 6.5,
-      activity: 'Montáž a vyrovnání nosných sloupků, nivelace a kotvení do základových patek.',
-      approved: true
-    },
-    {
-      id: 't-2',
-      date: '11. 10. 2026',
-      workerName: 'Pavel Kolář',
-      hours: 6.5,
-      activity: 'Řezání konstrukčních trámů, ošetření řezů impregnací a příprava kotevního materiálu.',
-      approved: true
-    },
-    {
-      id: 't-3',
-      date: '12. 10. 2026',
-      workerName: lead.assignedEmployeeName || 'Jan Svoboda',
-      hours: 8.0,
-      activity: 'Instalace pozednic a střešních krokví, příprava žlabových háků a svodů.',
-      approved: true
-    },
-    {
-      id: 't-4',
-      date: '12. 10. 2026',
-      workerName: 'Pavel Kolář',
-      hours: 5.5,
-      activity: 'Montáž zavětrovacích pásků a podkladních profilů pro polykarbonát.',
-      approved: false
-    }
-  ]);
+  const [entries, setEntries] = useState<TimeEntry[]>([]);
 
-  const [newWorker, setNewWorker] = useState(lead.assignedEmployeeName || 'Jan Svoboda');
+  const [newWorker, setNewWorker] = useState(lead.assignedEmployeeName || '');
   const [newHours, setNewHours] = useState(7.5);
   const [newActivity, setNewActivity] = useState('');
   const [newDate, setNewDate] = useState('Dnes');
 
   const totalHours = entries.reduce((acc, e) => acc + e.hours, 0);
-  const plannedHours = 48.0;
+  const plannedHours = 0;
 
   const handleAddEntry = (e: React.FormEvent) => {
     e.preventDefault();

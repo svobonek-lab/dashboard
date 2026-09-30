@@ -78,16 +78,14 @@ export const LeadDetail: React.FC<LeadDetailProps> = ({
     }, 4500);
   };
 
-  // Chronological Audit Timeline from audit recommendation (Page 10)
-  const auditTimeline = [
-    { time: '08:42', title: 'Poptávka z webu', note: 'Zákazník odeslal kontaktní formulář na webu', author: 'Webový widget' },
-    { time: '08:51', title: 'Petr zavolal', note: 'První kontakt proveden za 9 minut (v SLA limitu)', author: 'Petr Novotný (Dispečink)' },
-    { time: '09:04', title: 'Domluveno zaměření', note: 'Osobní prohlídka a zaměření stavby naplánováno', author: 'Petr Novotný' },
-    { time: '14:38', title: 'Nabídka odeslána', note: `Položkový rozpočet ${priceLabel} odeslán klientovi`, author: 'Obchodní oddělení' },
-    { time: 'o 2 dny později', title: 'Nabídka přijata', note: 'Klient digitálně potvrdil nabídku přes Klientský portál', author: lead.customerName },
-    { time: '11. 10.', title: 'Realizace zahájena', note: 'Závoz materiálu a předání staveniště realizační partě', author: lead.assignedEmployeeName || 'Jan Svoboda' },
-    { time: 'Dnes', title: 'Výkaz práce a nákladů', note: 'Jan přidal 6,5 h montáže + materiál 7 840 Kč', author: 'Jan Svoboda (Terén)' },
-  ];
+  // Show only persisted events. The previous implementation invented a
+  // complete sales history for every lead, which was unsafe in production.
+  const auditTimeline = (lead.timeline || []).map((item) => ({
+    time: item.time || item.date || item.timestamp || '—',
+    title: item.title,
+    note: item.description || item.notes || 'Bez doplňující poznámky',
+    author: item.responsibleEmployee || 'Systém'
+  }));
 
   // AI Chat
   const [chatMessages, setChatMessages] = useState<AIChatMessage[]>(lead.aiChat || [
@@ -110,7 +108,7 @@ export const LeadDetail: React.FC<LeadDetailProps> = ({
     if (text.toLowerCase().includes('follow-up')) {
       reply = `📧 Připraven e-mail pro ${lead.customerName}:\nDobrý den, navazujeme na nabídku na zakázku ${lead.title}. Rádi bychom ověřili termín nástupu.`;
     } else if (text.toLowerCase().includes('materiál') || text.toLowerCase().includes('naklady')) {
-      reply = `📦 Aktuální náklady: materiál 7 840 Kč zaúčtován, zbývá rezerva 18 200 Kč pro udržení cílové marže.`;
+      reply = '📦 Nákladová data zatím nejsou připojena. Doplňte skutečný doklad nebo aktivujte účetní integraci.';
     }
 
     const aiMsg: AIChatMessage = {
@@ -146,12 +144,12 @@ export const LeadDetail: React.FC<LeadDetailProps> = ({
     { id: 'komunikace', label: 'Komunikace', count: '3' },
     { id: 'nabidka', label: 'Nabídka', count: '1' },
     { id: 'harmonogram', label: 'Harmonogram' },
-    { id: 'tym', label: 'Tým', count: '2' },
-    { id: 'cas', label: 'Čas', count: '14,5 h' },
-    { id: 'naklady', label: 'Náklady', count: '7 840 Kč' },
-    { id: 'dokumenty', label: 'Dokumenty', count: '4' },
-    { id: 'fotky', label: 'Fotky', count: `${lead.photos.length + 1}` },
-    { id: 'faktury', label: 'Faktury', count: '1' },
+    { id: 'tym', label: 'Tým' },
+    { id: 'cas', label: 'Čas' },
+    { id: 'naklady', label: 'Náklady' },
+    { id: 'dokumenty', label: 'Dokumenty', count: lead.files.length ? String(lead.files.length) : undefined },
+    { id: 'fotky', label: 'Fotky', count: lead.photos.length ? String(lead.photos.length) : undefined },
+    { id: 'faktury', label: 'Faktury' },
     { id: 'predani', label: 'Předání' }
   ];
 
@@ -184,11 +182,11 @@ export const LeadDetail: React.FC<LeadDetailProps> = ({
               </span>
               <span className="text-slate-400">·</span>
               <span className="text-xs font-bold text-emerald-600">
-                marže {(lead.calculatedMargin || 27.8).toFixed(1)} %
+                {typeof lead.calculatedMargin === 'number' ? `marže ${lead.calculatedMargin.toFixed(1)} %` : 'marže neuvedena'}
               </span>
             </div>
             <p className="text-[11px] text-slate-500 mt-0.5">
-              {lead.address} · Odpovědný: {lead.assignedEmployeeName || 'Jan Svoboda'} · Termín: {lead.preferredDate || '11. 10. 2026'}
+              {lead.address || 'Adresa není zadána'} · Odpovědný: {lead.assignedEmployeeName || 'Nepřiřazeno'} · Termín: {lead.preferredDate || 'Termín není zadán'}
             </p>
           </div>
         </div>
@@ -260,7 +258,11 @@ export const LeadDetail: React.FC<LeadDetailProps> = ({
               </div>
 
               <div className="space-y-4">
-                {auditTimeline.map((item, idx) => (
+                {auditTimeline.length === 0 ? (
+                  <div className="rounded-xl border border-dashed border-slate-200 bg-slate-50 p-4 text-xs text-slate-500">
+                    Zatím nejsou uložené žádné události. Časová osa se naplní skutečnými změnami zakázky.
+                  </div>
+                ) : auditTimeline.map((item, idx) => (
                   <div key={idx} className="flex items-start gap-4 text-xs group">
                     <div className="w-24 text-[11px] font-mono font-bold text-slate-500 shrink-0 pt-0.5">
                       {item.time}
@@ -344,11 +346,11 @@ export const LeadDetail: React.FC<LeadDetailProps> = ({
                 </div>
                 <div className="flex items-center justify-between p-2.5 rounded-xl bg-slate-50 border border-slate-200/60">
                   <span className="text-slate-500 font-medium">Skutečné náklady materiálu</span>
-                  <strong className="text-slate-900 font-bold">7 840 Kč</strong>
+                  <strong className="text-slate-500 font-bold">—</strong>
                 </div>
                 <div className="flex items-center justify-between p-2.5 rounded-xl bg-slate-50 border border-slate-200/60">
                   <span className="text-slate-500 font-medium">Vykázané hodiny týmu</span>
-                  <strong className="text-slate-900 font-bold">14,5 h</strong>
+                  <strong className="text-slate-500 font-bold">—</strong>
                 </div>
                 <div className="flex items-center justify-between p-2.5 rounded-xl bg-emerald-50 border border-emerald-200">
                   <span className="text-emerald-800 font-bold">Průběžná marže</span>

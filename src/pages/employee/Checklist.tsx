@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { CheckSquare, CheckCircle2, Square, PenTool, Send, Check, Building } from 'lucide-react';
-import { Lead, LeadChecklistItem } from '@/types';
+import { Lead } from '@/types';
 
 interface EmployeeChecklistPageProps {
   leads: Lead[];
@@ -17,18 +17,7 @@ export const EmployeeChecklistPage: React.FC<EmployeeChecklistPageProps> = ({
 
   const activeLead = leads.find(l => l.id === activeLeadId) || leads[0];
 
-  const defaultChecklist: LeadChecklistItem[] = [
-    { id: '1', text: 'Bezpečnostní kontrola pracoviště (BOZP) & OOPP', completed: true },
-    { id: '2', text: 'Laserové zaměření rovin a kontrola stavební připravenosti', completed: true },
-    { id: '3', text: 'Kotvení profilů k fasádě a nosné zdi domu', completed: true },
-    { id: '4', text: 'Montáž motorického pohonu lamel a odzkoušení chodu', completed: false },
-    { id: '5', text: 'Začištění pracoviště, úklid odřezků a odvoz odpadu', completed: false },
-    { id: '6', text: 'Podpis předávacího protokolu investorem na tabletu', completed: false },
-  ];
-
-  const currentChecklist = activeLead 
-    ? (activeLead.checklist && activeLead.checklist.length > 0 ? activeLead.checklist : defaultChecklist)
-    : [];
+  const currentChecklist = activeLead?.checklist || [];
 
   const completedCount = currentChecklist.filter(i => i.completed).length;
 

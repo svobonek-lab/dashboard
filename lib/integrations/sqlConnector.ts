@@ -161,7 +161,7 @@ export async function executeSQLSync(
   for (const row of testRes.sampleRows) {
     let customerName = 'Zákazník ze SQL';
     let title = 'Projekt z externí SQL DB';
-    let price = 200000;
+    let price = 0;
     let employeeName = 'Dispečink';
     let status = 'New';
     let phone = '';
@@ -239,7 +239,7 @@ export async function executeSQLSync(
       city,
       address,
       preferredDate: date,
-      price: price || 180000,
+      price,
       status: normalizeLeadStatus(status),
       priority: normalizePriority(priority),
       assignedEmployeeId: 'emp-sql',
@@ -257,7 +257,7 @@ export async function executeSQLSync(
       aiSummary: {
         jobType: 'SQL Synchronizovaná zakázka',
         complexity: 'Medium',
-        estimatedRange: `${price.toLocaleString('cs-CZ')} Kč`,
+        estimatedRange: price > 0 ? `${price.toLocaleString('cs-CZ')} Kč` : 'Cena není uvedena',
         assignedEmployee: employeeName,
         risks: ['Ověřit dostupnost subdodavatelských materiálů'],
         recommendedNextStep: 'Potvrdit termín zahájení se zákazníkem.'

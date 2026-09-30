@@ -163,7 +163,7 @@ export async function executeGoogleSheetsSync(
   for (const row of testRes.previewRows) {
     let customerName = 'Zákazník z Google Sheets';
     let title = 'Projekt z Google Sheets';
-    let price = 190000;
+    let price = 0;
     let employeeName = 'Dispečink';
     let status = 'New';
     let phone = '';
@@ -229,7 +229,7 @@ export async function executeGoogleSheetsSync(
       city,
       address,
       preferredDate: date,
-      price: price || 210000,
+      price,
       status: normalizeLeadStatus(status),
       priority: normalizePriority(priority),
       assignedEmployeeId: 'emp-gs',
@@ -246,7 +246,7 @@ export async function executeGoogleSheetsSync(
       aiSummary: {
         jobType: 'Google Sheets synchronizovaná zakázka',
         complexity: 'Medium',
-        estimatedRange: `${price.toLocaleString('cs-CZ')} Kč`,
+        estimatedRange: price > 0 ? `${price.toLocaleString('cs-CZ')} Kč` : 'Cena není uvedena',
         assignedEmployee: employeeName,
         risks: ['Ověřit kompatibilitu rozměrů dle tabulky'],
         recommendedNextStep: 'Odeslat potvrzení termínu zákazníkovi.'
