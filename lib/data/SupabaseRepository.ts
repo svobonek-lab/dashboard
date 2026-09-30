@@ -1,6 +1,9 @@
 import { ICRMRepository, RepositoryHealthStatus } from './types';
 import { Lead, Employee, CompanyBranding } from '../../types';
 import { supabase, isSupabaseConfigured, isValidUUID, LocalSupabaseMock } from '../supabase';
+import { AppLeadRow, AppMemberRow, toAppLead, toAppMember } from '../../src/app/productionSchema';
+
+const appSchemaReadsEnabled = (import.meta as any).env?.VITE_APP_SCHEMA_READS === 'true';
 
 export class SupabaseRepository implements ICRMRepository {
   readonly mode = 'cloud' as const;
@@ -92,6 +95,21 @@ export class SupabaseRepository implements ICRMRepository {
     }
 
     try {
+      if (appSchemaReadsEnabled) {
+        const { data, error } = await supabase
+          .from('app_leads')
+          .select('id,company_id,title,customer,email,phone,address,description,status,priority,assigned_to,scheduled_at,duration_minutes,value,source,created_at,updated_at,revision')
+          .eq('company_id', orgId)
+          .order('created_at', { ascending: false });
+
+        if (error) {
+          console.warn('Supabase app_leads read failed closed:', error.message);
+          return [];
+        }
+
+        return ((data || []) as AppLeadRow[]).map((row) => toAppLead(row));
+      }
+
       const { data, error } = await supabase
         .from('leads')
         .select('*')
@@ -218,6 +236,21 @@ export class SupabaseRepository implements ICRMRepository {
   async getEmployees(orgId: string): Promise<Employee[]> {
     if (!isSupabaseConfigured || !supabase || !isValidUUID(orgId)) {
       return LocalSupabaseMock.getEmployees() as any;
+    }
+
+    if (appSchemaReadsEnabled) {
+      const { data, error } = await supabase
+        .from('app_members')
+        .select('company_id,user_id,name,email,role,active')
+        .eq('company_id', orgId)
+        .eq('active', true);
+
+      if (error) {
+        console.warn('Supabase app_members read failed closed:', error.message);
+        return [];
+      }
+
+      return ((data || []) as AppMemberRow[]).map(toAppMember);
     }
 
     const { data, error } = await supabase
