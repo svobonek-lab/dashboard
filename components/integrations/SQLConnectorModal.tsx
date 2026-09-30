@@ -47,10 +47,10 @@ export const SQLConnectorModal: React.FC<SQLConnectorModalProps> = ({
   onRunSync
 }) => {
   const [driver, setDriver] = useState<SQLDriver>(initialConfig?.driver || 'postgresql');
-  const [host, setHost] = useState(initialConfig?.host || 'db.vase-firma.cz');
+  const [host, setHost] = useState(initialConfig?.host || '');
   const [port, setPort] = useState(initialConfig?.port || 5432);
-  const [database, setDatabase] = useState(initialConfig?.database || 'projekty_stavby');
-  const [username, setUsername] = useState(initialConfig?.username || 'buildflow_readonly');
+  const [database, setDatabase] = useState(initialConfig?.database || '');
+  const [username, setUsername] = useState(initialConfig?.username || '');
   const [password, setPassword] = useState(initialConfig?.passwordEncrypted || '');
   const [showPassword, setShowPassword] = useState(false);
   const [ssl, setSsl] = useState<SSLMode>(initialConfig?.ssl || 'require');
@@ -174,6 +174,10 @@ export const SQLConnectorModal: React.FC<SQLConnectorModalProps> = ({
   };
 
   const handleSaveAndConnect = () => {
+    if (!testResult?.success) {
+      setSyncFeedback('Přímé SQL připojení není ověřené. Pro první pilot použijte CSV/API import v režimu dry-run.');
+      return;
+    }
     const config: SQLConnectionConfig = {
       driver,
       host,
@@ -379,7 +383,7 @@ export const SQLConnectorModal: React.FC<SQLConnectorModalProps> = ({
                 type="text"
                 value={username}
                 onChange={e => setUsername(e.target.value)}
-                placeholder="buildflow_readonly"
+                        placeholder="uživatel pouze pro čtení"
                 className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono font-bold text-slate-900 focus:ring-2 focus:ring-blue-500 focus:bg-white"
               />
             </div>
@@ -508,7 +512,7 @@ export const SQLConnectorModal: React.FC<SQLConnectorModalProps> = ({
                         <span>Počet záznamů</span>
                       </div>
                       <p className="text-base font-black text-emerald-900" id="sql-records-count">
-                        {testResult.recordsCount || 142}
+                        {testResult.recordsCount || 0}
                       </p>
                       <span className="text-[10px] text-slate-500">v tabulce {tableName}</span>
                     </div>
@@ -624,42 +628,9 @@ export const SQLConnectorModal: React.FC<SQLConnectorModalProps> = ({
       <TablePreviewModal
         isOpen={isPreviewOpen}
         onClose={() => setIsPreviewOpen(false)}
-        availableTables={testResult?.availableTables || ['v_zakazky_crm', 'projekty_stavby', 'rozpocty_polozky', 'zamestnanci_technici', 'faktury_vydane', 'subdodavatele_partneri']}
-        sampleColumns={testResult?.sampleColumns || [
-          'id', 'nazev_projektu', 'zakaznik_jmeno', 'telefon', 'email', 
-          'mesto', 'adresa_stavby', 'cena_smluvni', 'stav', 'odpovedny_technik', 
-          'termin_zahajeni', 'poznamka'
-        ]}
-        sampleRows={testResult?.sampleRows && testResult.sampleRows.length > 0 ? testResult.sampleRows : [
-          {
-            id: 'SQL-1082',
-            nazev_projektu: 'Výroba a montáž bioklimatické pergoly 7x4m',
-            zakaznik_jmeno: 'JUDr. Radim Holub',
-            telefon: '+420 608 123 999',
-            email: 'holub.radim@advokati.cz',
-            mesto: 'Průhonice',
-            adresa_stavby: 'K Lesu 18, Průhonice',
-            cena_smluvni: 345000,
-            stav: 'V realizaci',
-            odpovedny_technik: 'Petr Novotný',
-            termin_zahajeni: '2026-09-22',
-            poznamka: 'Integrované LED osvětlení po celém obvodu, dešťový senzor Somfy.'
-          },
-          {
-            id: 'SQL-1083',
-            nazev_projektu: 'Kompletní zateplení a rekonstrukce krovu RD',
-            zakaznik_jmeno: 'Ing. arch. Klára Veselá',
-            telefon: '+420 775 444 321',
-            email: 'klara.vesela@archstudio.cz',
-            mesto: 'Praha 5 - Smíchov',
-            adresa_stavby: 'Na Císařce 42, Praha 5',
-            cena_smluvni: 520000,
-            stav: 'Kalkulace',
-            odpovedny_technik: 'Martin Kovář',
-            termin_zahajeni: '2026-10-05',
-            poznamka: 'Zákaznice požaduje certifikované konstrukční dřevo KVH.'
-          }
-        ]}
+        availableTables={testResult?.availableTables || []}
+        sampleColumns={testResult?.sampleColumns || []}
+        sampleRows={testResult?.sampleRows || []}
       />
 
       {/* Field Mapping Sub-Modal */}

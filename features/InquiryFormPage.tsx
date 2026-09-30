@@ -3,7 +3,7 @@ import { Sparkles, ArrowLeft, Building2 } from 'lucide-react';
 import { CompanyBranding } from '../types';
 import { EnterpriseInquiryForm } from '../components/EnterpriseInquiryForm';
 import { useOrganization } from '../context/OrganizationContext';
-import { supabase, isSupabaseConfigured, LocalSupabaseMock } from '../lib/supabase';
+import { supabase, isSupabaseConfigured, LocalSupabaseMock, isValidUUID } from '../lib/supabase';
 
 interface InquiryFormPageProps {
   branding: CompanyBranding;
@@ -35,12 +35,26 @@ export const InquiryFormPage: React.FC<InquiryFormPageProps> = ({
 
       try {
         if (isSupabaseConfigured && supabase) {
-          const { data } = await supabase.from('organizations').select('*').or(`id.eq.${orgParam},slug.eq.${orgParam}`).single();
-          if (data) setTenantOrg(data);
-        } else {
+          const query = supabase
+            .from('app_companies')
+            .select('id,name,slug,color,logo_url,active')
+            .eq('active', true);
+          const { data } = isValidUUID(orgParam)
+            ? await query.eq('id', orgParam).maybeSingle()
+            : await query.eq('slug', orgParam).maybeSingle();
+          if (data) {
+            setTenantOrg({
+              name: data.name,
+              logo_url: data.logo_url,
+              primary_color: data.color,
+            });
+          }
+        } else if (!(import.meta as any).env?.PROD) {
           const mockOrgs = LocalSupabaseMock.getOrganizations();
           const found = mockOrgs.find((o: any) => o.id === orgParam || o.slug === orgParam);
           if (found) setTenantOrg(found as any);
+        } else {
+          setTenantOrg(null);
         }
       } catch (e) {
         console.warn('Could not resolve tenant org from param:', e);
