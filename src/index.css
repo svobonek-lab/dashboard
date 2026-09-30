@@ -17,25 +17,31 @@
 @layer base {
   :root {
     /* Design Tokens */
-    --brand-primary: #f59e0b;
-    --brand-primary-soft: rgba(245, 158, 11, 0.12);
+    --workspace-canvas: #f7f8fa;
+    --workspace-primary: #2563eb;
+    --workspace-primary-soft: rgba(37, 99, 235, 0.10);
+    --workspace-success: #0f766e;
+    --workspace-warning: #f59e0b;
+    --workspace-danger: #dc2626;
+    --brand-primary: var(--workspace-primary);
+    --brand-primary-soft: var(--workspace-primary-soft);
     --surface: #ffffff;
-    --surface-secondary: #f8fafc;
-    --surface-tertiary: #f1f5f9;
-    --text: #0f172a;
-    --muted: #64748b;
-    --border: #e2e8f0;
+    --surface-secondary: var(--workspace-canvas);
+    --surface-tertiary: #eef1f5;
+    --text: #111827;
+    --muted: #667085;
+    --border: #e4e7ec;
 
     --radius-app: 12px;
     --shadow-app: 0 1px 3px 0 rgba(0, 0, 0, 0.05), 0 1px 2px 0 rgba(0, 0, 0, 0.03);
 
     /* Legacy Mappings for compatibility */
     --primary: var(--brand-primary);
-    --primary-hover: #d97706;
+    --primary-hover: #1d4ed8;
     --primary-light: var(--brand-primary-soft);
     --primary-subtle: var(--brand-primary-soft);
     --primary-border: var(--border);
-    --primary-ring: var(--brand-primary-soft);
+    --primary-ring: rgba(37, 99, 235, 0.24);
     --surface-card: var(--surface);
     --surface-card-subtle: var(--surface-tertiary);
     --border-strong: #cbd5e1;
@@ -49,6 +55,65 @@
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  }
+}
+
+/* Shared clean workspace language. Components opt in through these shells. */
+.workspace-shell {
+  background: var(--workspace-canvas);
+  color: var(--text);
+  letter-spacing: -0.01em;
+}
+
+.workspace-shell button:focus-visible,
+.workspace-shell a:focus-visible,
+.workspace-shell input:focus-visible,
+.workspace-shell textarea:focus-visible,
+.workspace-shell select:focus-visible {
+  outline: 3px solid var(--primary-ring);
+  outline-offset: 2px;
+}
+
+.workspace-rail {
+  background: rgba(255, 255, 255, 0.92);
+  border-color: var(--border);
+}
+
+.workspace-panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: 0 1px 2px rgba(16, 24, 40, 0.03);
+}
+
+.workspace-primary-action {
+  background: var(--workspace-primary);
+  color: #fff;
+  border-radius: 10px;
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.18);
+  transition: background-color 160ms ease, transform 160ms ease, box-shadow 160ms ease;
+}
+
+.workspace-primary-action:hover {
+  background: #1d4ed8;
+  box-shadow: 0 6px 16px rgba(37, 99, 235, 0.24);
+  transform: translateY(-1px);
+}
+
+.workspace-empty-state {
+  background: linear-gradient(180deg, #fff 0%, #fbfcfe 100%);
+  border: 1px dashed #cdd5df;
+  border-radius: 12px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .workspace-shell *,
+  .workspace-shell *::before,
+  .workspace-shell *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
   }
 }
 

@@ -126,7 +126,7 @@ export const LandingPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] text-slate-900 font-sans selection:bg-blue-100">
+    <div className="workspace-shell min-h-screen bg-[#F7F8FA] text-slate-900 font-sans selection:bg-blue-100">
       
       {/* 1. Header Navigation */}
       <header className="sticky top-0 z-40 bg-white/90 backdrop-blur-md border-b border-slate-200/80">
@@ -142,11 +142,10 @@ export const LandingPage: React.FC = () => {
           </div>
 
           <nav className="hidden md:flex items-center gap-6 text-xs font-bold text-slate-600">
-            <a href="#problemy" className="hover:text-blue-600 transition-colors">3 Drahé problémy</a>
-            <a href="#pribeh" className="hover:text-blue-600 transition-colors">Příběh zakázky</a>
-            <a href="#kalkulacka" className="hover:text-blue-600 transition-colors">ROI kalkulačka</a>
-            <a href="#cenik" className="hover:text-blue-600 transition-colors">Ceník & Pilot</a>
-            <a href="#faq" className="hover:text-blue-600 transition-colors">FAQ</a>
+            <a href="#jak-to-funguje" className="hover:text-blue-600 transition-colors">Jak to funguje</a>
+            <a href="#problemy" className="hover:text-blue-600 transition-colors">Pro majitele</a>
+            <a href="#kalkulacka" className="hover:text-blue-600 transition-colors">Spočítat přínos</a>
+            <a href="#cenik" className="hover:text-blue-600 transition-colors">Pilot</a>
           </nav>
 
           <div className="flex items-center gap-3">
@@ -160,7 +159,7 @@ export const LandingPage: React.FC = () => {
               onClick={() => setIsBookingOpen(true)}
               className="px-4 py-2 bg-[#0A84FF] hover:bg-blue-600 text-white rounded-xl text-xs font-black shadow-xs hover:shadow-md transition-all"
             >
-              Ukázat na mém procesu (20 min)
+              Domluvit ukázku
             </button>
           </div>
         </div>
@@ -174,12 +173,12 @@ export const LandingPage: React.FC = () => {
         </div>
 
         <h1 className="text-3xl sm:text-5xl font-black text-slate-900 tracking-tight leading-tight max-w-4xl mx-auto">
-          Od první poptávky<br />
-          <span className="text-[#0A84FF]">k hotové zakázce.</span>
+          Mějte každou zakázku<br />
+          <span className="text-[#2563EB]">pod kontrolou.</span>
         </h1>
 
         <p className="text-base sm:text-lg text-slate-600 max-w-2xl mx-auto leading-relaxed font-medium">
-          StavbaCore propojí poptávku, cenovou nabídku, realizaci, práci týmu a marži do jednoho pracovního toku. Každý ví, co má udělat dál — od prvního telefonu po předání zákazníkovi.
+          StavbaCore je pracovní dashboard pro stavební firmy. Poptávka, nabídka, tým i realizace jsou na jednom místě a každý vidí svůj další krok.
         </p>
 
         <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
@@ -195,14 +194,14 @@ export const LandingPage: React.FC = () => {
             className="w-full sm:w-auto px-6 py-3.5 bg-white hover:bg-slate-50 text-slate-800 border border-slate-300 rounded-xl text-xs font-black shadow-2xs transition-all flex items-center justify-center gap-2"
           >
             <PlayCircle className="w-4 h-4 text-[#0A84FF]" />
-            <span>Spustit interaktivní demo</span>
+            <span>Prohlédnout živou ukázku</span>
           </button>
         </div>
 
         {/* Horizontal Workflow Chain */}
-        <div className="pt-8 border-t border-slate-200/80 max-w-3xl mx-auto">
+        <div id="jak-to-funguje" className="pt-8 border-t border-slate-200/80 max-w-3xl mx-auto">
           <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-3">
-            Kompletní uzavřený cyklus zakázky
+            Jeden pracovní tok pro celou firmu
           </span>
           <div className="flex flex-wrap items-center justify-center gap-2 text-xs font-bold text-slate-700">
             <span className="px-3 py-1 bg-white border border-slate-200 rounded-lg shadow-2xs">Poptávky</span>
