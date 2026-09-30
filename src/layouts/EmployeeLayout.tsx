@@ -44,7 +44,7 @@ export const EmployeeLayout: React.FC<EmployeeLayoutProps> = ({ children, leads 
   ];
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col font-sans selection:bg-brand-primary-soft pb-20 md:pb-0">
+    <div className="workspace-shell min-h-screen bg-slate-50 text-slate-900 flex flex-col font-sans selection:bg-brand-primary-soft pb-20 md:pb-0">
       
       {/* Top Header */}
       <header className="bg-white border-b border-slate-200/80 px-4 sm:px-6 py-3 sticky top-0 z-30 flex items-center justify-between shadow-xs">
@@ -111,7 +111,7 @@ export const EmployeeLayout: React.FC<EmployeeLayoutProps> = ({ children, leads 
       <div className="flex-1 flex">
         
         {/* Desktop Sidebar (hidden on mobile) */}
-        <aside className="hidden md:flex w-64 bg-white border-r border-slate-200/80 flex-col justify-between shrink-0 p-4 sticky top-16 h-[calc(100vh-64px)]">
+        <aside className="workspace-rail hidden md:flex w-60 bg-white border-r border-slate-200/80 flex-col justify-between shrink-0 p-4 sticky top-16 h-[calc(100vh-64px)]">
           
           <div className="space-y-1">
             <div className="px-3.5 py-2 text-[10px] font-bold uppercase tracking-wider text-slate-400">
@@ -156,7 +156,7 @@ export const EmployeeLayout: React.FC<EmployeeLayoutProps> = ({ children, leads 
         </aside>
 
         {/* Main Employee App Canvas */}
-        <main className="flex-1 p-4 sm:p-6 md:p-8 max-w-4xl w-full mx-auto">
+        <main className="flex-1 p-4 sm:p-6 md:p-8 max-w-5xl w-full mx-auto">
           {children}
         </main>
 

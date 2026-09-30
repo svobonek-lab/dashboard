@@ -150,7 +150,7 @@ export const OwnerLayout: React.FC<OwnerLayoutProps> = ({
   const isSuperAdminUser = dbUser?.role === 'super_admin' || Boolean(impersonatingOrgId);
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-800 flex flex-col font-sans selection:bg-brand-primary-soft">
+    <div className="workspace-shell min-h-screen bg-slate-50 text-slate-800 flex flex-col font-sans selection:bg-brand-primary-soft">
       
       {/* Super Admin Company Workspace Top Bar */}
       {isSuperAdminUser && (
@@ -212,7 +212,7 @@ export const OwnerLayout: React.FC<OwnerLayoutProps> = ({
           onTouchStart={handleTouchStart}
           onTouchMove={handleTouchMove}
           onTouchEnd={handleTouchEnd}
-          className={`w-72 max-w-[calc(100vw-36px)] lg:max-w-none lg:w-72 bg-surface border-r border-border flex flex-col justify-between shrink-0 fixed inset-y-0 left-0 z-50 shadow-app transition-transform duration-300 ease-out font-sans ${
+          className={`workspace-rail w-64 max-w-[calc(100vw-36px)] lg:max-w-none lg:w-64 bg-surface border-r border-border flex flex-col justify-between shrink-0 fixed inset-y-0 left-0 z-50 shadow-app transition-transform duration-300 ease-out font-sans ${
             isMobileDrawerOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
           }`} 
           style={{ top: isSuperAdminUser ? '56px' : '0' }}
@@ -339,10 +339,10 @@ export const OwnerLayout: React.FC<OwnerLayoutProps> = ({
         </aside>
 
         {/* Main Executive Content Canvas */}
-        <div className="flex-1 lg:ml-72 w-full min-w-0 flex flex-col min-h-screen bg-surface-secondary relative overflow-x-hidden">
+        <div className="flex-1 lg:ml-64 w-full min-w-0 flex flex-col min-h-screen bg-surface-secondary relative overflow-x-hidden">
 
         {/* Rebuilt Header - Visual-Noise-Free with Design Tokens */}
-        <header className="h-16 bg-surface border-b border-border px-3 sm:px-6 lg:px-8 flex items-center justify-between sticky top-0 z-20 text-text">
+        <header className="workspace-panel !rounded-none !border-x-0 !border-t-0 h-16 bg-surface border-b border-border px-3 sm:px-6 lg:px-8 flex items-center justify-between sticky top-0 z-20 text-text">
           {/* Left: Mobile Hamburger & Company Name */}
           <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
             <button
@@ -377,7 +377,7 @@ export const OwnerLayout: React.FC<OwnerLayoutProps> = ({
             {/* Search Bar / Command Palette Trigger */}
             <button
               onClick={() => setIsCommandPaletteOpen(true)}
-              className="hidden lg:flex items-center gap-3 w-64 bg-surface-secondary border border-border rounded-app px-3.5 py-1.5 text-xs text-muted hover:border-brand-primary transition-all text-left cursor-pointer"
+              className="hidden lg:flex items-center gap-3 w-72 bg-surface-secondary border border-border rounded-app px-3.5 py-1.5 text-xs text-muted hover:border-brand-primary transition-all text-left cursor-pointer"
             >
               <Search className="w-3.5 h-3.5 text-muted" />
               <span className="flex-1 truncate text-muted">Hledat zakázky, klienty...</span>
