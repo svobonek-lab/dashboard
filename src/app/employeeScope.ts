@@ -27,3 +27,18 @@ export function getEmployeeLeads(
     employeeIds.has(lead.assignedEmployeeId) || lead.assignedEmployeeId === userId
   ));
 }
+
+/**
+ * Client-side guard for mutation handlers. Server-side RLS remains the
+ * authority, but the UI must also fail closed when a forged lead object is
+ * passed into an employee action.
+ */
+export function canEmployeeAccessLead(
+  leadId: string,
+  leads: Lead[],
+  employees: Employee[],
+  userId?: string | null,
+  email?: string | null
+): boolean {
+  return getEmployeeLeads(leads, employees, userId, email).some((lead) => lead.id === leadId);
+}

@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { getEmployeeLeads } from '../src/app/employeeScope';
+import { canEmployeeAccessLead, getEmployeeLeads } from '../src/app/employeeScope';
 
 const lead = (id: string, assignedEmployeeId: string) => ({
   id,
@@ -57,4 +57,12 @@ test('employee lookup supports the invited email before auth_user_id is linked',
 
 test('missing employee identity fails closed', () => {
   assert.deepEqual(getEmployeeLeads([lead('mine', 'emp-1')], [employee('emp-1', 'worker@firma.cz')]), []);
+});
+
+test('employee mutation guard fails closed for an unassigned lead', () => {
+  const leads = [lead('mine', 'emp-1'), lead('other', 'emp-2')];
+  const employees = [employee('emp-1', 'worker@firma.cz', 'auth-1'), employee('emp-2', 'other@firma.cz', 'auth-2')];
+
+  assert.equal(canEmployeeAccessLead('mine', leads, employees, 'auth-1', 'worker@firma.cz'), true);
+  assert.equal(canEmployeeAccessLead('other', leads, employees, 'auth-1', 'worker@firma.cz'), false);
 });
