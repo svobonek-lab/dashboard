@@ -2,8 +2,12 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { supabase, isSupabaseConfigured, LocalSupabaseMock, isValidUUID, DEFAULT_DEMO_ORG_ID, canUseLocalMockAuth } from '../lib/supabase';
 import { CompanyBranding, Lead, Employee } from '../types';
 import * as Sentry from "@sentry/react";
+import { crmRepo } from '../lib/data/repositoryFactory';
+import { APP_SCHEMA_WRITES_BLOCKED_MESSAGE, isAppSchemaReadsEnabled, shouldBlockLegacyWrites } from '../src/app/productionDataPolicy';
 
 const IS_PRODUCTION = !!(import.meta as any).env?.PROD;
+const APP_SCHEMA_READS = isAppSchemaReadsEnabled((import.meta as any).env || {});
+const BLOCK_LEGACY_WRITES = shouldBlockLegacyWrites((import.meta as any).env || {});
 
 function generateUUID(): string {
   return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
@@ -1128,6 +1132,11 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
   // Data Fetch: Leads filtered by active organization_id
   const fetchLeads = async (): Promise<Lead[]> => {
     if (!currentOrg) return [];
+
+    if (APP_SCHEMA_READS) {
+      if (!isSupabaseConfigured || !supabase || !isValidUUID(currentOrg.id)) return [];
+      return crmRepo.getLeads(currentOrg.id);
+    }
     
     if (!isSupabaseConfigured || !supabase || !isValidUUID(currentOrg.id)) {
       return fetchLeadsLocal();
@@ -1198,6 +1207,10 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
 
   // Data Action: Create New Lead (Unified)
   const createLead = async (payload: any): Promise<Lead> => {
+    if (BLOCK_LEGACY_WRITES && isSupabaseConfigured) {
+      throw new Error(APP_SCHEMA_WRITES_BLOCKED_MESSAGE);
+    }
+
     const targetOrgId = currentOrg?.id || LocalSupabaseMock.getActiveOrgId() || DEFAULT_DEMO_ORG_ID;
 
     // Call unified saveLead logic
@@ -1241,6 +1254,10 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
   };
 
   const saveLead = async (leadData: Partial<Lead>): Promise<Lead> => {
+    if (BLOCK_LEGACY_WRITES && isSupabaseConfigured) {
+      throw new Error(APP_SCHEMA_WRITES_BLOCKED_MESSAGE);
+    }
+
     const targetOrgId = currentOrg?.id || LocalSupabaseMock.getActiveOrgId() || DEFAULT_DEMO_ORG_ID;
 
     const customerName = leadData.customerName || (leadData as any).fullName || leadData.title || '';
@@ -1404,6 +1421,10 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
 
   // Data Action: Update lead status
   const updateLeadStatus = async (leadId: string, status: string) => {
+    if (BLOCK_LEGACY_WRITES && isSupabaseConfigured) {
+      throw new Error(APP_SCHEMA_WRITES_BLOCKED_MESSAGE);
+    }
+
     // Always persist into local storage immediately for zero-lag UI and offline robustness
     updateLeadStatusLocal(leadId, status);
 
@@ -1429,6 +1450,11 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
   // Data Fetch: Employees filtered by active organization_id
   const fetchEmployees = async (): Promise<Employee[]> => {
     if (!currentOrg) return [];
+
+    if (APP_SCHEMA_READS) {
+      if (!isSupabaseConfigured || !supabase || !isValidUUID(currentOrg.id)) return [];
+      return crmRepo.getEmployees(currentOrg.id);
+    }
 
     if (!isSupabaseConfigured || !supabase || !isValidUUID(currentOrg.id)) {
       return fetchEmployeesLocal();
@@ -1582,6 +1608,10 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
   };
 
   const saveEmployee = async (empData: Partial<Employee>): Promise<Employee> => {
+    if (BLOCK_LEGACY_WRITES && isSupabaseConfigured) {
+      throw new Error(APP_SCHEMA_WRITES_BLOCKED_MESSAGE);
+    }
+
     if (!currentOrg) throw new Error('Organizace není vybrána');
 
     const empRecord = {
