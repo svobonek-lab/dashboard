@@ -58,6 +58,7 @@ import { InteractiveStoryDemo } from '@/features/InteractiveStoryDemo';
 import { Lead, LeadStatus } from '@/types';
 import { buildAppLoginUrl, getDeploymentConfig } from './app/deploymentSurface';
 import { getLeadTransitionError } from './app/leadLifecycle';
+import { readTenantCache, removeTenantCache, writeTenantCache, TENANT_CACHE_NAMES } from './app/tenantCache';
 
 const { surface: deploymentSurface, appUrl } = getDeploymentConfig((import.meta as any).env || {});
 
@@ -112,28 +113,20 @@ function AppContent() {
   const [leads, setLeads] = useState<Lead[]>(() => {
     if (!isDemoOrg) {
       if (!currentOrg?.id) return [];
-      try {
-        const cached = localStorage.getItem(`leads_cache_${currentOrg.id}`);
-        if (cached) {
-          const parsed = JSON.parse(cached);
-          if (Array.isArray(parsed)) return parsed;
-        }
-      } catch {}
+      const cached = readTenantCache<Lead[]>(TENANT_CACHE_NAMES.leads, currentOrg.id);
+      if (Array.isArray(cached)) return cached;
       return [];
     }
     try {
-      const cached = localStorage.getItem('demo_leads_cache');
-      if (cached) {
-        const parsed = JSON.parse(cached);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
-      }
+      const cached = readTenantCache<Lead[]>(TENANT_CACHE_NAMES.leads, DEFAULT_DEMO_ORG_ID);
+      if (Array.isArray(cached) && cached.length > 0) return cached;
     } catch {}
     return generateRealisticLeads(branding);
   });
   const [employees, setEmployees] = useState(() => isDemoOrg ? generateRealisticEmployees() : []);
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
   const employeeLeads = dbUser?.role === 'employee'
-    ? getEmployeeLeads(leads, employees, dbUser.id, dbUser.email)
+    ? getEmployeeLeads(leads, employees, dbUser.id, dbUser.email, currentOrg?.id)
     : leads;
 
   // Synchronize leads & employees from active organization
@@ -146,9 +139,9 @@ function AppContent() {
             setLeads(dbLeads);
             try {
               if (isDemo) {
-                localStorage.setItem('demo_leads_cache', JSON.stringify(dbLeads));
+                writeTenantCache(TENANT_CACHE_NAMES.leads, dbLeads, DEFAULT_DEMO_ORG_ID);
               } else {
-                localStorage.setItem(`leads_cache_${currentOrg.id}`, JSON.stringify(dbLeads));
+                writeTenantCache(TENANT_CACHE_NAMES.leads, dbLeads, currentOrg.id);
               }
             } catch {}
           } else if (isDemo) {
@@ -161,14 +154,14 @@ function AppContent() {
               .then(saved => {
                 setLeads(saved);
                 try {
-                  localStorage.setItem('demo_leads_cache', JSON.stringify(saved));
+                writeTenantCache(TENANT_CACHE_NAMES.leads, saved, DEFAULT_DEMO_ORG_ID);
                 } catch {}
               })
               .catch(() => setLeads(initialLeads));
           } else {
             setLeads([]);
             try {
-              localStorage.removeItem(`leads_cache_${currentOrg.id}`);
+              removeTenantCache(TENANT_CACHE_NAMES.leads, currentOrg.id);
             } catch {}
           }
 
@@ -247,7 +240,7 @@ function AppContent() {
   };
 
   const handleUpdateLeadStatus = async (leadId: string, newStatus: LeadStatus) => {
-    if (dbUser?.role === 'employee' && !canEmployeeAccessLead(leadId, leads, employees, dbUser.id, dbUser.email)) {
+    if (dbUser?.role === 'employee' && !canEmployeeAccessLead(leadId, leads, employees, dbUser.id, dbUser.email, currentOrg?.id)) {
       showToast('Tuto zakázku nemáte přiřazenou.', 'error');
       return;
     }
@@ -298,7 +291,7 @@ function AppContent() {
         timeline: updatedTimeline
       } : l);
       try {
-        localStorage.setItem('demo_leads_cache', JSON.stringify(next));
+        writeTenantCache(TENANT_CACHE_NAMES.leads, next, currentOrg?.id);
       } catch {}
       return next;
     });
@@ -323,7 +316,7 @@ function AppContent() {
       setLeads(prev => {
         const rolledBack = prev.map(l => l.id === leadId ? targetLead : l);
         try {
-          localStorage.setItem('demo_leads_cache', JSON.stringify(rolledBack));
+          writeTenantCache(TENANT_CACHE_NAMES.leads, rolledBack, currentOrg?.id);
         } catch {}
         return rolledBack;
       });
@@ -335,7 +328,7 @@ function AppContent() {
   };
 
   const handleUpdateLead = (updatedLead: Lead) => {
-    if (dbUser?.role === 'employee' && !canEmployeeAccessLead(updatedLead.id, leads, employees, dbUser.id, dbUser.email)) {
+    if (dbUser?.role === 'employee' && !canEmployeeAccessLead(updatedLead.id, leads, employees, dbUser.id, dbUser.email, currentOrg?.id)) {
       showToast('Tuto zakázku nemáte přiřazenou.', 'error');
       return;
     }

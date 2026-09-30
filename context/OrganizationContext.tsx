@@ -4,6 +4,7 @@ import { CompanyBranding, Lead, Employee } from '../types';
 import * as Sentry from "@sentry/react";
 import { crmRepo } from '../lib/data/repositoryFactory';
 import { APP_SCHEMA_WRITES_BLOCKED_MESSAGE, isAppSchemaReadsEnabled, shouldBlockLegacyWrites } from '../src/app/productionDataPolicy';
+import { removeTenantCache, TENANT_CACHE_NAMES } from '../src/app/tenantCache';
 
 const IS_PRODUCTION = !!(import.meta as any).env?.PROD;
 const APP_SCHEMA_READS = isAppSchemaReadsEnabled((import.meta as any).env || {});
@@ -797,6 +798,8 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
       try {
         localStorage.removeItem('demo_leads_cache');
         localStorage.removeItem(`leads_cache_${newOrg.id}`);
+        removeTenantCache(TENANT_CACHE_NAMES.leads, newOrg.id);
+        removeTenantCache(TENANT_CACHE_NAMES.onboarding, newOrg.id);
       } catch {}
 
       setOrganizations(updatedOrgs);
@@ -2465,6 +2468,8 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
       localStorage.removeItem('demo_leads_cache');
       localStorage.removeItem(`demo_leads_cache_${activeOrgId}`);
       localStorage.removeItem(`leads_cache_${activeOrgId}`);
+      removeTenantCache(TENANT_CACHE_NAMES.leads, activeOrgId);
+      removeTenantCache(TENANT_CACHE_NAMES.onboarding, activeOrgId);
     } catch {}
     await new Promise(r => setTimeout(r, 100));
 

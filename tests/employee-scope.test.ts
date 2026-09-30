@@ -66,3 +66,13 @@ test('employee mutation guard fails closed for an unassigned lead', () => {
   assert.equal(canEmployeeAccessLead('mine', leads, employees, 'auth-1', 'worker@firma.cz'), true);
   assert.equal(canEmployeeAccessLead('other', leads, employees, 'auth-1', 'worker@firma.cz'), false);
 });
+
+test('employee scope rejects records from another company even when ids match', () => {
+  const leads = [
+    { ...lead('mine', 'emp-1'), organization_id: 'company-a' },
+    { ...lead('foreign', 'emp-1'), organization_id: 'company-b' },
+  ];
+  const employees = [{ ...employee('emp-1', 'worker@firma.cz', 'auth-1'), organization_id: 'company-a' }];
+  assert.deepEqual(getEmployeeLeads(leads, employees, 'auth-1', 'worker@firma.cz', 'company-a').map((item) => item.id), ['mine']);
+  assert.equal(canEmployeeAccessLead('foreign', leads, employees, 'auth-1', 'worker@firma.cz', 'company-a'), false);
+});
