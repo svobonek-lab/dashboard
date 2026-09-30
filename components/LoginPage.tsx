@@ -1,13 +1,13 @@
 import React, { useState } from 'react';
 import { useOrganization } from '@/context/OrganizationContext';
-import { Building, Lock, Mail, ArrowRight, CheckCircle2, ShieldAlert, LayoutDashboard, Users, Calendar, Inbox } from 'lucide-react';
+import { Building, Lock, Mail, ArrowRight, CheckCircle2, ShieldAlert, LayoutDashboard, Users, Calendar, Inbox, Chrome } from 'lucide-react';
 
 interface LoginPageProps {
   onSuccess: (user?: any) => void;
 }
 
 export const LoginPage: React.FC<LoginPageProps> = ({ onSuccess }) => {
-  const { currentOrg, isConfigured, login, signUp, error: contextError } = useOrganization();
+  const { currentOrg, isConfigured, login, loginWithGoogle, signUp, error: contextError } = useOrganization();
   const branding = currentOrg?.branding || {};
   
   const [mode, setMode] = useState<'login' | 'signup'>('login');
@@ -20,6 +20,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onSuccess }) => {
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
 
   React.useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -60,8 +61,19 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onSuccess }) => {
     }
   };
 
+  const handleGoogleLogin = async () => {
+    setError(null);
+    setIsGoogleLoading(true);
+    try {
+      await loginWithGoogle();
+    } catch (err: any) {
+      setError(err.message || 'Přihlášení přes Google selhalo.');
+      setIsGoogleLoading(false);
+    }
+  };
+
   return (
-    <div className="min-h-screen bg-surface-secondary flex font-sans">
+    <div className="workspace-shell min-h-screen bg-surface-secondary flex font-sans">
       
       {/* Dynamic Left Preview Area (Sidebar Mockup) */}
       <div className="hidden lg:flex w-72 bg-surface border-r border-border flex-col shadow-app transition-colors duration-300">
@@ -109,8 +121,8 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onSuccess }) => {
       </div>
 
       {/* Right Login/Signup Form Area */}
-      <div className="flex-1 flex flex-col justify-center items-center p-6 bg-surface-secondary">
-         <div className="max-w-md w-full bg-surface border border-border p-8 sm:p-10 rounded-[24px] shadow-app">
+      <div className="flex-1 flex flex-col justify-center items-center p-5 sm:p-8 bg-surface-secondary">
+         <div className="max-w-[430px] w-full bg-surface border border-border p-7 sm:p-10 rounded-2xl shadow-app">
             
             <div className="text-center mb-8">
               <div 
@@ -119,15 +131,34 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onSuccess }) => {
               >
                  {displayOrgName.substring(0, 2).toUpperCase()}
               </div>
-              <h2 className="text-2xl font-black text-text tracking-tight">
-                {mode === 'login' ? 'Přihlášení do workspace' : 'Vytvořit firemní workspace'}
+              <h2 className="text-2xl font-semibold text-text tracking-tight">
+                {mode === 'login' ? 'Vstupte do StavbaCore' : 'Vytvořit firemní workspace'}
               </h2>
               <p className="text-sm text-muted font-medium mt-2">
                 {mode === 'login' 
-                  ? `Vstupte do zabezpečeného prostoru firmy ${displayOrgName}` 
+                  ? 'Vyberte účet nebo pokračujte e-mailem.'
                   : 'Vytvořte si vlastní oddělený prostor (tenant) na platformě.'}
               </p>
             </div>
+
+            {mode === 'login' && (
+              <>
+                <button
+                  type="button"
+                  onClick={handleGoogleLogin}
+                  disabled={!isConfigured || isGoogleLoading || isLoading}
+                  className="w-full min-h-12 rounded-xl border border-border bg-white text-sm font-semibold text-text hover:bg-surface-secondary disabled:cursor-not-allowed disabled:opacity-50 transition-colors flex items-center justify-center gap-3"
+                >
+                  {isGoogleLoading ? <span className="inline-block w-4 h-4 border-2 border-slate-300 border-t-brand-primary rounded-full animate-spin" /> : <Chrome className="w-4 h-4 text-brand-primary" />}
+                  Pokračovat s Google
+                </button>
+                <div className="flex items-center gap-3 my-5" aria-hidden="true">
+                  <span className="h-px flex-1 bg-border" />
+                  <span className="text-[11px] font-medium text-muted">nebo e-mailem</span>
+                  <span className="h-px flex-1 bg-border" />
+                </div>
+              </>
+            )}
 
             <form onSubmit={handleSubmit} className="space-y-5">
               {inviteToken && (
@@ -191,7 +222,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onSuccess }) => {
 
               <div className="space-y-4">
                 <div>
-                  <label className="text-xs font-bold uppercase tracking-wider text-muted block mb-1.5">E-mail</label>
+                    <label className="text-xs font-semibold text-muted block mb-1.5">E-mail</label>
                   <div className="relative">
                     <span className="absolute inset-y-0 left-0 pl-4 flex items-center text-muted">
                       <Mail className="w-4 h-4" />
@@ -208,7 +239,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onSuccess }) => {
                   </div>
                 </div>
                 <div>
-                  <label className="text-xs font-bold uppercase tracking-wider text-muted block mb-1.5">Heslo</label>
+                    <label className="text-xs font-semibold text-muted block mb-1.5">Heslo</label>
                   <div className="relative">
                     <span className="absolute inset-y-0 left-0 pl-4 flex items-center text-muted">
                       <Lock className="w-4 h-4" />

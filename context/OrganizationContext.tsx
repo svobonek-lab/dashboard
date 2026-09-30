@@ -77,6 +77,7 @@ interface OrganizationContextType {
   
   // Auth actions
   login: (email: string, pass: string) => Promise<any>;
+  loginWithGoogle: () => Promise<void>;
   signUp: (email: string, pass: string, orgName: string) => Promise<any>;
   logout: () => Promise<void>;
   
@@ -705,6 +706,28 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
       });
       setError(err.message || 'Přihlášení selhalo');
       throw err;
+    }
+  };
+
+  // Auth Action: Google account picker. Supabase redirects back to /login and
+  // the normal auth listener then resolves the company membership fail-closed.
+  const loginWithGoogle = async () => {
+    setError(null);
+    if (!isSupabaseConfigured || !supabase) {
+      const errorMsg = 'Přihlášení přes Google je dostupné po připojení firemní databáze.';
+      setError(errorMsg);
+      throw new Error(errorMsg);
+    }
+
+    const { error: authError } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: `${window.location.origin}/login`,
+      },
+    });
+    if (authError) {
+      setError('Přihlášení přes Google se nepodařilo spustit.');
+      throw authError;
     }
   };
 
@@ -2546,6 +2569,7 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
       schemaError,
       clearSchemaError,
       login,
+      loginWithGoogle,
       signUp,
       logout,
       createOrganization,
