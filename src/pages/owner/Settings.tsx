@@ -18,7 +18,7 @@ import {
   Sparkles, 
   Save, 
   RefreshCw,
-  Copy,
+  Shield,
   Upload,
   Trash2,
   Image as ImageIcon
@@ -80,7 +80,6 @@ export const OwnerSettingsPage: React.FC = () => {
   const [savedSuccess, setSavedSuccess] = useState(false);
   const [permissionError, setPermissionError] = useState<string | null>(null);
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
-  const [copiedKey, setCopiedKey] = useState(false);
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -149,9 +148,8 @@ export const OwnerSettingsPage: React.FC = () => {
   };
 
   const handleCopyApiKey = () => {
-    navigator.clipboard.writeText('sk_live_stavbacore_984f839a2b9104');
-    setCopiedKey(true);
-    setTimeout(() => setCopiedKey(false), 2000);
+    setPermissionError('Produkční API token se vytváří v zabezpečeném prostředí administrace. V aplikaci se nikdy nezobrazuje ani nekopíruje.');
+    setTimeout(() => setPermissionError(null), 4000);
   };
 
   const activeColor = formData.primaryColor || branding.primaryColor || '#2563eb';
@@ -497,15 +495,15 @@ export const OwnerSettingsPage: React.FC = () => {
           <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3 font-mono text-xs">
             <div className="space-y-1">
               <span className="text-slate-500 text-[11px] block">Produkční API Token:</span>
-              <span className="text-amber-500 font-bold">sk_live_stavbacore_984f839a2b9104</span>
+              <span className="text-slate-500 font-semibold">Není nastaven — bezpečné prostředí administrace</span>
             </div>
             <button
               type="button"
               onClick={handleCopyApiKey}
-              className="px-3.5 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold flex items-center gap-1.5 self-start sm:self-auto transition-colors"
+              className="px-3.5 py-1.5 rounded-xl bg-slate-100 text-slate-500 text-xs font-bold flex items-center gap-1.5 self-start sm:self-auto transition-colors"
             >
-              {copiedKey ? <Check className="w-3.5 h-3.5 text-green-400" /> : <Copy className="w-3.5 h-3.5" />}
-              <span>{copiedKey ? 'Zkopírováno' : 'Kopírovat'}</span>
+              <Shield className="w-3.5 h-3.5" />
+              <span>Spravovat bezpečně</span>
             </button>
           </div>
         </div>
