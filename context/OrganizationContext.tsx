@@ -5,10 +5,13 @@ import * as Sentry from "@sentry/react";
 import { crmRepo } from '../lib/data/repositoryFactory';
 import { APP_SCHEMA_WRITES_BLOCKED_MESSAGE, isAppSchemaReadsEnabled, shouldBlockLegacyWrites } from '../src/app/productionDataPolicy';
 import { removeTenantCache, TENANT_CACHE_NAMES } from '../src/app/tenantCache';
+import { getRuntimePolicy } from '../src/app/runtimePolicy';
+import { readAppSchemaIdentity } from '../src/app/appSchemaIdentity';
 
 const IS_PRODUCTION = !!(import.meta as any).env?.PROD;
 const APP_SCHEMA_READS = isAppSchemaReadsEnabled((import.meta as any).env || {});
 const BLOCK_LEGACY_WRITES = shouldBlockLegacyWrites((import.meta as any).env || {});
+const RUNTIME_POLICY = getRuntimePolicy((import.meta as any).env || {});
 
 function generateUUID(): string {
   return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
@@ -362,6 +365,29 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
     if (!supabase) return;
 
     try {
+      // The verified app_* contract is deliberately isolated from the legacy
+      // organizations/users tables. No fallback or write is allowed here.
+      if (APP_SCHEMA_READS) {
+        const identity = await readAppSchemaIdentity(supabase, userId, email);
+        if (!identity) {
+          setSchemaError('Účet nemá aktivní členství v žádné firmě. Kontaktujte majitele workspace.');
+          setDbUser(null);
+          setCurrentOrg(null);
+          setOrganizations([]);
+          return;
+        }
+        setOrganizations(identity.organizations);
+        setCurrentOrg(identity.organization);
+        setDbUser({
+          id: identity.member.user_id,
+          organization_id: identity.member.company_id,
+          role: enforceRole(identity.member.email, undefined, identity.member.role),
+          email: identity.member.email,
+          name: identity.member.name,
+        });
+        return;
+      }
+
       // 1. Fetch user record from public.users table
       let { data: dbUserData, error: dbUserError } = await supabase
         .from('users')
@@ -535,8 +561,14 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
           setSchemaError('V Supabase databázi chybí tabulky. CRM automaticky spustilo lokální režim (Local Storage) pro zachování plné funkčnosti.');
           setupLocalDemoData();
         }
-      } else {
+      } else if (RUNTIME_POLICY.allowLocalDataFallback) {
         setupLocalDemoData();
+      } else {
+        setSchemaError(RUNTIME_POLICY.failClosedMessage);
+        setUser(null);
+        setDbUser(null);
+        setCurrentOrg(null);
+        setOrganizations([]);
       }
     }
   };
