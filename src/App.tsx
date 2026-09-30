@@ -57,6 +57,22 @@ import { InteractiveStoryDemo } from '@/features/InteractiveStoryDemo';
 // Types
 import { Lead, LeadStatus } from '@/types';
 
+type DeploymentSurface = 'unified' | 'landing' | 'app';
+const deploymentSurface = ((import.meta as any).env?.VITE_DEPLOYMENT_SURFACE || 'unified') as DeploymentSurface;
+const appUrl = String((import.meta as any).env?.VITE_APP_URL || '').replace(/\/$/, '');
+
+function ExternalRedirect({ url }: { url: string }) {
+  useEffect(() => {
+    window.location.assign(url);
+  }, [url]);
+
+  return (
+    <div className="min-h-screen bg-slate-950 flex items-center justify-center text-slate-300">
+      Přesměrování do přihlášení…
+    </div>
+  );
+}
+
 function AppContent() {
   const { currentOrg } = useOrganization();
   const branding = currentOrg?.branding || {};
@@ -358,6 +374,12 @@ function AppContent() {
       // Authenticated user arriving at '/' - useEffect redirects to role default route
       return null;
     }
+    if (deploymentSurface === 'app') {
+      return <LoginPage onSuccess={(signedInUser) => {
+        const targetRole = signedInUser?.role || dbUser?.role || 'owner';
+        navigate(getDefaultRouteForRole(targetRole), { replace: true });
+      }} />;
+    }
     return <LandingPage />;
   }
 
@@ -417,6 +439,9 @@ function AppContent() {
   }
 
   if (pathname === '/login') {
+    if (deploymentSurface === 'landing' && appUrl) {
+      return <ExternalRedirect url={`${appUrl}/login`} />;
+    }
     return <LoginPage onSuccess={(user) => {
       const targetRole = user?.role || dbUser?.role || 'owner';
       navigate(getDefaultRouteForRole(targetRole), { replace: true });
