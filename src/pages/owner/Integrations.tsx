@@ -368,9 +368,9 @@ export const Integrations: React.FC<IntegrationsProps> = ({
               xmlns:typ="http://www.stormware.cz/xml/data/type.xsd"
               id="export_stavbacore_${Date.now()}"
               ico="${currentOrg?.id?.substring(0, 8) || '12345678'}"
-              application="StavbaCore"
+              application="StavbaFlow"
               version="2.0"
-              note="Export kontaktů ze systému StavbaCore">`;
+              note="Export kontaktů ze systému StavbaFlow">`;
 
     const addressbookItems = activeLeads.map((l, index) => `
   <dat:dataPackItem id="item_${index + 1}" version="2.0">
@@ -433,9 +433,9 @@ export const Integrations: React.FC<IntegrationsProps> = ({
               xmlns:typ="http://www.stormware.cz/xml/data/type.xsd"
               id="export_faktury_${Date.now()}"
               ico="${currentOrg?.id?.substring(0, 8) || '12345678'}"
-              application="StavbaCore"
+              application="StavbaFlow"
               version="2.0"
-              note="Export vydaných faktur ze systému StavbaCore">`;
+              note="Export vydaných faktur ze systému StavbaFlow">`;
 
     const invoiceItems = activeLeads.slice(0, 5).map((l, index) => {
       const price = l.price as number;

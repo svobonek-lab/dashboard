@@ -138,7 +138,7 @@ export const LandingPage: React.FC = () => {
               SC
             </div>
             <div>
-              <span className="text-base font-black text-slate-900 tracking-tight">StavbaCore</span>
+              <span className="text-base font-black text-slate-900 tracking-tight">StavbaFlow</span>
               <span className="text-[10px] font-bold text-slate-500 block -mt-1 uppercase tracking-wider">Operační systém stavby</span>
             </div>
           </div>
@@ -180,7 +180,7 @@ export const LandingPage: React.FC = () => {
         </h1>
 
         <p className="text-base sm:text-lg text-slate-600 max-w-2xl mx-auto leading-relaxed font-medium">
-          StavbaCore je pracovní dashboard pro stavební firmy. Poptávka, nabídka, tým i realizace jsou na jednom místě a každý vidí svůj další krok.
+          StavbaFlow je pracovní dashboard pro stavební firmy. Poptávka, nabídka, tým i realizace jsou na jednom místě a každý vidí svůj další krok.
         </p>
 
         <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
@@ -188,7 +188,7 @@ export const LandingPage: React.FC = () => {
             onClick={() => setIsBookingOpen(true)}
             className="w-full sm:w-auto px-6 py-3.5 bg-[#0A84FF] hover:bg-blue-600 text-white rounded-xl text-xs font-black shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2"
           >
-            <span>Ukázat mi StavbaCore</span>
+            <span>Ukázat mi StavbaFlow</span>
             <ArrowRight className="w-4 h-4" />
           </button>
           <button
@@ -247,7 +247,7 @@ export const LandingPage: React.FC = () => {
                 </p>
               </div>
               <div className="p-3 bg-blue-50/80 border border-blue-200 rounded-xl text-xs text-blue-900 font-medium">
-                <strong className="block text-blue-950 font-bold mb-0.5">Řešení StavbaCore:</strong>
+                <strong className="block text-blue-950 font-bold mb-0.5">Řešení StavbaFlow:</strong>
                 Každá poptávka má přiděleného vlastníka, SLA odpočet a předpřipravený hovor.
               </div>
             </div>
@@ -264,7 +264,7 @@ export const LandingPage: React.FC = () => {
                 </p>
               </div>
               <div className="p-3 bg-blue-50/80 border border-blue-200 rounded-xl text-xs text-blue-900 font-medium">
-                <strong className="block text-blue-950 font-bold mb-0.5">Řešení StavbaCore:</strong>
+                <strong className="block text-blue-950 font-bold mb-0.5">Řešení StavbaFlow:</strong>
                 Automatický systém hlídá datum dalšího kontaktu a upozorní majitele dřív, než klient odejde.
               </div>
             </div>
@@ -281,7 +281,7 @@ export const LandingPage: React.FC = () => {
                 </p>
               </div>
               <div className="p-3 bg-blue-50/80 border border-blue-200 rounded-xl text-xs text-blue-900 font-medium">
-                <strong className="block text-blue-950 font-bold mb-0.5">Řešení StavbaCore:</strong>
+                <strong className="block text-blue-950 font-bold mb-0.5">Řešení StavbaFlow:</strong>
                 Terén zapisuje materiál a hodiny přes mobil. Majitel vidí plán vs. skutečnost v reálném čase.
               </div>
             </div>
@@ -673,7 +673,7 @@ export const LandingPage: React.FC = () => {
               <div className="w-7 h-7 rounded-lg bg-[#0A84FF] text-white font-bold flex items-center justify-center text-xs">
                 SC
               </div>
-              <span className="font-bold">StavbaCore © 2026</span>
+              <span className="font-bold">StavbaFlow © 2026</span>
               <span className="text-slate-500">· Operační systém pro české stavební firmy</span>
             </div>
             <div className="flex flex-wrap gap-4 text-slate-400">
@@ -719,7 +719,7 @@ export const LandingPage: React.FC = () => {
                   Tento náhled běží v demonstračním režimu. Identifikační údaje provozovatele a finální znění dokumentů se doplní před podpisem smlouvy a ostrým spuštěním.
                 </p>
                 <p className="text-slate-500 text-[11px]">
-                  Pro obchodní ukázku kontaktujte tým StavbaCore. Do produkce se tato stránka nasadí až po právní kontrole a vyplnění firemních údajů.
+                  Pro obchodní ukázku kontaktujte tým StavbaFlow. Do produkce se tato stránka nasadí až po právní kontrole a vyplnění firemních údajů.
                 </p>
               </div>
             ) : (
@@ -785,7 +785,7 @@ export const LandingPage: React.FC = () => {
                     Nezávazná konzultace (20 min)
                   </span>
                   <h3 className="text-lg font-black text-slate-900 mt-0.5">
-                    Ukázat StavbaCore na mém procesu
+                    Ukázat StavbaFlow na mém procesu
                   </h3>
                   <p className="text-xs text-slate-500 mt-1">
                     Společně projdeme vaše současné tabulky a ukážeme, co by systém převzal a kolik marže zachrání.
