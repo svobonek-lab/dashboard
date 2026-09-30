@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useOrganization } from '../context/OrganizationContext';
 import { useRouter } from '../src/app/router';
+import { readTenantCache, writeTenantCache, TENANT_CACHE_NAMES } from '../src/app/tenantCache';
 import { 
   Building2, 
   Users, 
@@ -24,8 +25,7 @@ export const OnboardingChecklist: React.FC<{ leadsCount: number; employeesCount:
 
   const [manualChecks, setManualChecks] = useState<Record<string, boolean>>(() => {
     try {
-      const saved = localStorage.getItem('stavbacore_onboarding_manual_checks');
-      return saved ? JSON.parse(saved) : {};
+      return readTenantCache<Record<string, boolean>>(TENANT_CACHE_NAMES.onboarding, currentOrg?.id) || {};
     } catch {
       return {};
     }
@@ -35,7 +35,7 @@ export const OnboardingChecklist: React.FC<{ leadsCount: number; employeesCount:
     e.stopPropagation();
     setManualChecks(prev => {
       const updated = { ...prev, [id]: !prev[id] };
-      localStorage.setItem('stavbacore_onboarding_manual_checks', JSON.stringify(updated));
+      writeTenantCache(TENANT_CACHE_NAMES.onboarding, updated, currentOrg?.id);
       return updated;
     });
   };

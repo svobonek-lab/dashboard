@@ -8,13 +8,15 @@ export function getEmployeeLeads(
   leads: Lead[],
   employees: Employee[],
   userId?: string | null,
-  email?: string | null
+  email?: string | null,
+  organizationId?: string | null
 ): Lead[] {
   if (!userId && !email) return [];
 
   const normalizedEmail = email?.trim().toLowerCase();
   const employeeIds = new Set(
     employees
+      .filter((employee) => !organizationId || employee.organization_id === organizationId)
       .filter((employee) => (
         employee.auth_user_id === userId ||
         employee.id === userId ||
@@ -24,7 +26,8 @@ export function getEmployeeLeads(
   );
 
   return leads.filter((lead) => (
-    employeeIds.has(lead.assignedEmployeeId) || lead.assignedEmployeeId === userId
+    (!organizationId || lead.organization_id === organizationId) &&
+    (employeeIds.has(lead.assignedEmployeeId) || lead.assignedEmployeeId === userId)
   ));
 }
 
@@ -38,7 +41,8 @@ export function canEmployeeAccessLead(
   leads: Lead[],
   employees: Employee[],
   userId?: string | null,
-  email?: string | null
+  email?: string | null,
+  organizationId?: string | null
 ): boolean {
-  return getEmployeeLeads(leads, employees, userId, email).some((lead) => lead.id === leadId);
+  return getEmployeeLeads(leads, employees, userId, email, organizationId).some((lead) => lead.id === leadId);
 }
