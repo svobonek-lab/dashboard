@@ -32,48 +32,7 @@ interface CommLog {
 }
 
 export const CommunicationTab: React.FC<CommunicationTabProps> = ({ lead, onNotice }) => {
-  const [logs, setLogs] = useState<CommLog[]>([
-    {
-      id: 'c-1',
-      type: 'call',
-      direction: 'out',
-      timestamp: 'Dnes, 08:51',
-      senderOrRecipient: 'Petr Novotný (Dispečink)',
-      subjectOrDuration: 'Délka: 4 min 12 s',
-      content: 'Zákazník potvrdil zájem o bioklimatickou pergolu. Domluvena osobní návštěva technika a zaměření na místě zítra v 10:00.',
-      status: 'Zodpovězeno'
-    },
-    {
-      id: 'c-2',
-      type: 'sms',
-      direction: 'out',
-      timestamp: 'Dnes, 08:58',
-      senderOrRecipient: lead.customerPhone || '+420 777 445 566',
-      subjectOrDuration: 'SMS notifikace',
-      content: `Dobrý den, potvrzujeme zaměření zakázky "${lead.title}" na zítra v 10:00. Technik: Jan Svoboda (+420 777 123 456). StavbaCore tým.`,
-      status: 'Doručeno'
-    },
-    {
-      id: 'c-3',
-      type: 'email',
-      direction: 'out',
-      timestamp: 'Včera, 15:40',
-      senderOrRecipient: lead.customerEmail || 'klient@email.cz',
-      subjectOrDuration: `Cenová nabídka: ${lead.title}`,
-      content: 'Zasíláme položkový rozpočet stavby a odkaz na klientský portál pro schválení specifikace a termínu zahájení.',
-      status: 'Přečteno'
-    },
-    {
-      id: 'c-4',
-      type: 'call',
-      direction: 'in',
-      timestamp: 'Předevčírem, 11:20',
-      senderOrRecipient: lead.customerName || 'Petra Dvořáková',
-      subjectOrDuration: 'Délka: 2 min 45 s',
-      content: 'Dotaz na možnost barevného sladění s fasádou RD a termín dodání hliníkových lamel.',
-      status: 'Zodpovězeno'
-    }
-  ]);
+  const [logs, setLogs] = useState<CommLog[]>([]);
 
   const [channel, setChannel] = useState<'sms' | 'email'>('sms');
   const [recipient, setRecipient] = useState(lead.customerPhone || '');

@@ -68,7 +68,7 @@ export class SupabaseRepository implements ICRMRepository {
         customerPhone: r.phone || '',
         customerEmail: r.email || '',
         preferredDate: 'Dle dohody',
-        price: r.budget || 250000,
+        price: r.budget || r.price || 0,
         status: (r.status as any) || 'New',
         priority: 'Medium',
         assignedEmployeeId: 'emp-1',
@@ -80,7 +80,7 @@ export class SupabaseRepository implements ICRMRepository {
         aiSummary: {
           jobType: r.project_type || 'Realizace',
           complexity: 'Medium',
-          estimatedRange: `${((r.budget || 250000) * 0.9 / 1000).toFixed(0)}k - ${((r.budget || 250000) * 1.15 / 1000).toFixed(0)}k CZK`,
+          estimatedRange: (r.budget || r.price) ? `${((r.budget || r.price) * 0.9 / 1000).toFixed(0)}k - ${((r.budget || r.price) * 1.15 / 1000).toFixed(0)}k CZK` : 'Cena není uvedena',
           assignedEmployee: 'Petr Novotný',
           risks: [],
           recommendedNextStep: 'Zkontaktovat klienta a upřesnit zaměření.'

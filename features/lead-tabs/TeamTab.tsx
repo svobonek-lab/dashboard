@@ -31,41 +31,17 @@ interface WorkerAssignment {
 }
 
 export const TeamTab: React.FC<TeamTabProps> = ({ lead, onNotice }) => {
-  const [team, setTeam] = useState<WorkerAssignment[]>([
-    {
-      id: 'w-1',
-      name: lead.assignedEmployeeName || 'Jan Svoboda',
-      role: 'Stavbyvedoucí / Mistr',
-      phone: '+420 777 123 456',
-      email: 'jan.svoboda@stavbacore.cz',
-      status: 'Na stavbě',
-      loggedHours: 14.5,
-      hourlyRate: 650,
-      certifications: ['BOZP Koordinátor', 'Montáž Würth', 'Práce ve výškách']
-    },
-    {
-      id: 'w-2',
-      name: 'Pavel Kolář',
-      role: 'Tesař / Montér',
-      phone: '+420 777 234 567',
-      email: 'pavel.kolar@stavbacore.cz',
-      status: 'Na stavbě',
-      loggedHours: 12.0,
-      hourlyRate: 520,
-      certifications: ['Obrábění dřeva', 'Svářečský průkaz ZK-111']
-    },
-    {
-      id: 'w-3',
-      name: 'Martin Dvořák',
-      role: 'Pomocný dělník',
-      phone: '+420 777 345 678',
-      email: 'martin.dvorak@stavbacore.cz',
-      status: 'Naplánován',
-      loggedHours: 0,
-      hourlyRate: 350,
-      certifications: ['Školení BOZP 2026']
-    }
-  ]);
+  const [team, setTeam] = useState<WorkerAssignment[]>(() => lead.assignedEmployeeName ? [{
+    id: lead.assignedEmployeeId || 'assigned-employee',
+    name: lead.assignedEmployeeName,
+    role: 'Stavbyvedoucí / Mistr',
+    phone: '',
+    email: '',
+    status: 'Naplánován',
+    loggedHours: 0,
+    hourlyRate: 0,
+    certifications: []
+  }] : []);
 
   const [newWorkerName, setNewWorkerName] = useState('');
   const [newWorkerRole, setNewWorkerRole] = useState<WorkerAssignment['role']>('Tesař / Montér');
@@ -78,12 +54,12 @@ export const TeamTab: React.FC<TeamTabProps> = ({ lead, onNotice }) => {
       id: 'w-' + Date.now(),
       name: newWorkerName,
       role: newWorkerRole,
-      phone: '+420 777 000 111',
-      email: `${newWorkerName.toLowerCase().replace(/\s+/g, '.')}@stavbacore.cz`,
+      phone: '',
+      email: '',
       status: 'Naplánován',
       loggedHours: 0,
-      hourlyRate: 480,
-      certifications: ['Základní BOZP']
+      hourlyRate: 0,
+      certifications: []
     };
 
     setTeam(prev => [...prev, newWorker]);

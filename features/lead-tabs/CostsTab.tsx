@@ -23,38 +23,9 @@ interface Expense {
 }
 
 export const CostsTab: React.FC<CostsTabProps> = ({ lead, onNotice }) => {
-  const [expenses, setExpenses] = useState<Expense[]>([
-    {
-      id: 'e-1',
-      docNumber: 'FP-2026-118',
-      supplier: 'Stavebniny DEK a.s.',
-      description: 'Hydroizolační asfaltové pásy, penetrační nátěr a kotevní terče',
-      date: '09. 10. 2026',
-      amountWithoutVat: 7840,
-      vatAmount: 1646,
-      paid: true
-    },
-    {
-      id: 'e-2',
-      docNumber: 'FP-2026-124',
-      supplier: 'Würth spol. s r.o.',
-      description: 'Konstrukční vruty s talířovou hlavou 8x240, chemické kotvy a doplňky',
-      date: '10. 10. 2026',
-      amountWithoutVat: 3420,
-      vatAmount: 718,
-      paid: true
-    },
-    {
-      id: 'e-3',
-      docNumber: 'FP-2026-135',
-      supplier: 'Dřevomateriál Holý',
-      description: 'KVH sušené lepené hranoly Si 140x140mm délky 4m (nosná konstrukce)',
-      date: '11. 10. 2026',
-      amountWithoutVat: 48200,
-      vatAmount: 10122,
-      paid: false
-    }
-  ]);
+  // Costs are intentionally empty until app_costs is connected. Never show
+  // invented supplier invoices or labour totals in a real company workspace.
+  const [expenses, setExpenses] = useState<Expense[]>([]);
 
   const [newSupplier, setNewSupplier] = useState('');
   const [newDoc, setNewDoc] = useState('FP-' + Math.floor(1000 + Math.random() * 9000));
@@ -62,11 +33,11 @@ export const CostsTab: React.FC<CostsTabProps> = ({ lead, onNotice }) => {
   const [newAmount, setNewAmount] = useState(4500);
 
   const totalMaterialCosts = expenses.reduce((acc, e) => acc + e.amountWithoutVat, 0);
-  const laborCosts = 19500;
-  const contractPriceWithoutVat = (lead.price || 353000) / 1.21;
+  const laborCosts = 0;
+  const contractPriceWithoutVat = lead.price > 0 ? lead.price / 1.21 : 0;
   const currentTotalCost = totalMaterialCosts + laborCosts;
-  const grossProfit = contractPriceWithoutVat - currentTotalCost;
-  const currentMargin = (grossProfit / contractPriceWithoutVat) * 100;
+  const grossProfit = contractPriceWithoutVat > 0 ? contractPriceWithoutVat - currentTotalCost : 0;
+  const currentMargin = contractPriceWithoutVat > 0 ? (grossProfit / contractPriceWithoutVat) * 100 : 0;
 
   const handleAddExpense = (e: React.FormEvent) => {
     e.preventDefault();
@@ -101,32 +72,32 @@ export const CostsTab: React.FC<CostsTabProps> = ({ lead, onNotice }) => {
       <div role="note" className="flex items-start gap-3 rounded-2xl border border-amber-300 bg-amber-50 p-4 text-amber-950">
         <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-amber-700" aria-hidden="true" />
         <div>
-          <p className="text-sm font-bold">Ukázkový přehled · není to účetní evidence</p>
-          <p className="mt-1 text-xs leading-relaxed">Zobrazené doklady, práce i rezerva jsou pouze fiktivní příklady. Přidání nebo odebrání položky se neukládá a po zavření přehledu zmizí. Nezadávejte sem skutečné finanční údaje.</p>
+          <p className="text-sm font-bold">Náklady zatím nejsou napojené na účetní data</p>
+          <p className="mt-1 text-xs leading-relaxed">Tato obrazovka zobrazuje pouze doklady připojené k zakázce. Dokud není aktivní napojení na náklady, částky a marže zůstávají prázdné. Záznamy přidané v tomto náhledu se neukládají.</p>
         </div>
       </div>
 
       {/* Illustrative demo margin, not persisted financial data */}
       <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
         <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-2xs">
-          <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Ukázkový materiál</span>
-          <p className="text-xl font-black text-slate-900 mt-1">{totalMaterialCosts.toLocaleString('cs-CZ')} Kč</p>
-          <span className="text-[10px] text-slate-500">{expenses.length} fiktivní doklady</span>
+          <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Materiál</span>
+          <p className="text-xl font-black text-slate-900 mt-1">{expenses.length ? `${totalMaterialCosts.toLocaleString('cs-CZ')} Kč` : '—'}</p>
+          <span className="text-[10px] text-slate-500">{expenses.length ? `${expenses.length} dokladů v náhledu` : 'Bez připojených dokladů'}</span>
         </div>
         <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-2xs">
-          <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Ukázková práce</span>
-          <p className="text-xl font-black text-slate-900 mt-1">{laborCosts.toLocaleString('cs-CZ')} Kč</p>
-          <span className="text-[10px] text-slate-500">Fiktivní částka</span>
+          <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Práce</span>
+          <p className="text-xl font-black text-slate-900 mt-1">—</p>
+          <span className="text-[10px] text-slate-500">Časové výkazy nejsou připojené</span>
         </div>
         <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-2xs">
-          <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Orientační marže ukázky</span>
-          <p className="text-xl font-black text-emerald-600 mt-1">{currentMargin.toFixed(1)} %</p>
-          <span className="text-[10px] text-emerald-600 font-bold">Modelový rozdíl: {Math.round(grossProfit).toLocaleString('cs-CZ')} Kč</span>
+          <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Marže</span>
+          <p className="text-xl font-black text-slate-500 mt-1">—</p>
+          <span className="text-[10px] text-slate-500">Dopočítá se ze skutečných nákladů</span>
         </div>
         <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-2xs">
-          <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Modelová rezerva</span>
-          <p className="text-xl font-black text-[#0A84FF] mt-1">21 400 Kč</p>
-          <span className="text-[10px] text-slate-500">Zbývá k vyčerpání</span>
+          <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Rezerva</span>
+          <p className="text-xl font-black text-slate-500 mt-1">—</p>
+          <span className="text-[10px] text-slate-500">Dostupná po napojení rozpočtu</span>
         </div>
       </div>
 

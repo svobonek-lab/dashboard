@@ -82,7 +82,7 @@ export async function ingestRecordsIntoOrganization(params: {
     try {
       let customerName = 'Importovaný zákazník';
       let title = `Zakázka #${i + 1}`;
-      let price = 150000;
+      let price = 0;
       let employeeName = 'Dispečink';
       let status: LeadStatus = 'New';
       let phone = '';
@@ -175,7 +175,7 @@ export async function ingestRecordsIntoOrganization(params: {
         city,
         address,
         preferredDate: date,
-        price: price || 120000,
+        price,
         status,
         priority: normalizePriority(priority),
         assignedEmployeeId: assignedEmpId,
@@ -193,7 +193,7 @@ export async function ingestRecordsIntoOrganization(params: {
         aiSummary: {
           jobType: 'Externě importovaná zakázka',
           complexity: 'Medium',
-          estimatedRange: `${(price || 120000).toLocaleString('cs-CZ')} Kč`,
+        estimatedRange: price > 0 ? `${price.toLocaleString('cs-CZ')} Kč` : 'Cena není uvedena',
           assignedEmployee: employeeName,
           risks: ['Zkontrolovat termínovou dostupnost montážní party'],
           recommendedNextStep: 'Kontaktovat zákazníka a potvrdit technické parametry.'

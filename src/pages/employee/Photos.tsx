@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Camera, UploadCloud, CheckCircle2, Trash2, Filter, Building } from 'lucide-react';
+import { Camera, UploadCloud, CheckCircle2, Trash2, Building } from 'lucide-react';
 import { Lead, LeadFile } from '@/types';
 
 interface EmployeePhotosPageProps {
@@ -17,16 +17,7 @@ export const EmployeePhotosPage: React.FC<EmployeePhotosPageProps> = ({
 
   const activeLead = leads.find(l => l.id === activeLeadId) || leads[0];
 
-  // Fallback demo photos if active lead has no uploaded photos yet
-  const defaultPhotos: LeadFile[] = [
-    { id: 'def-1', name: 'Původní stav terasy před montáží', type: 'photo', url: 'https://images.unsplash.com/photo-1513694203232-719a280e022f?auto=format&fit=crop&w=600&q=80', uploadedAt: '08:45', category: 'Before' },
-    { id: 'def-2', name: 'Kotvení nosných sloupů do betonu', type: 'photo', url: 'https://images.unsplash.com/photo-1541888946425-d0fbb180c5f5?auto=format&fit=crop&w=600&q=80', uploadedAt: '11:20', category: 'During' },
-    { id: 'def-3', name: 'Usazení otočných lamel střechy', type: 'photo', url: 'https://images.unsplash.com/photo-1503387762-592deb58ef4e?auto=format&fit=crop&w=600&q=80', uploadedAt: '14:10', category: 'During' },
-  ];
-
-  const photosToDisplay = activeLead
-    ? (activeLead.photos && activeLead.photos.length > 0 ? activeLead.photos : defaultPhotos)
-    : [];
+  const photosToDisplay = activeLead?.photos || [];
 
   const filteredPhotos = photosToDisplay.filter(p => {
     if (category === 'All') return true;
@@ -49,7 +40,7 @@ export const EmployeePhotosPage: React.FC<EmployeePhotosPageProps> = ({
             category: category === 'All' ? 'During' : category
           };
           
-          const currentPhotos = activeLead.photos && activeLead.photos.length > 0 ? activeLead.photos : defaultPhotos;
+          const currentPhotos = activeLead.photos || [];
           const updatedLead = {
             ...activeLead,
             photos: [newPhoto, ...currentPhotos]
@@ -65,7 +56,7 @@ export const EmployeePhotosPage: React.FC<EmployeePhotosPageProps> = ({
 
   const handleDeletePhoto = (photoId: string) => {
     if (activeLead && onUpdateLead) {
-      const currentPhotos = activeLead.photos && activeLead.photos.length > 0 ? activeLead.photos : defaultPhotos;
+      const currentPhotos = activeLead.photos || [];
       const updatedLead = {
         ...activeLead,
         photos: currentPhotos.filter(p => p.id !== photoId)
