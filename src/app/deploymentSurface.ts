@@ -6,7 +6,13 @@ export interface DeploymentConfig {
 }
 
 export function getDeploymentConfig(env: Record<string, unknown> = {}): DeploymentConfig {
-  const rawSurface = String(env.VITE_DEPLOYMENT_SURFACE || 'unified').toLowerCase();
+  const hostname = typeof window !== 'undefined' ? window.location.hostname.toLowerCase() : '';
+  const hostnameSurface = hostname.startsWith('jobflow-pro')
+    ? 'landing'
+    : hostname.startsWith('dashboard')
+      ? 'app'
+      : '';
+  const rawSurface = String(env.VITE_DEPLOYMENT_SURFACE || hostnameSurface || 'unified').toLowerCase();
   const surface: DeploymentSurface = rawSurface === 'landing' || rawSurface === 'app' ? rawSurface : 'unified';
   const appUrl = String(env.VITE_APP_URL || '').trim().replace(/\/$/, '');
   return { surface, appUrl };
