@@ -20,7 +20,7 @@ export class SupabaseRepository implements ICRMRepository {
     const start = performance.now();
     try {
       // Ping Supabase with a lightweight query
-      const { error } = await supabase.from('organizations').select('id').limit(1);
+      const { error } = await supabase.from('app_companies').select('id').limit(1);
       const latencyMs = Math.round(performance.now() - start);
 
       if (error && error.code !== 'PGRST116') {
