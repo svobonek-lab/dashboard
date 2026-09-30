@@ -73,6 +73,24 @@ function ExternalRedirect({ url }: { url: string }) {
   );
 }
 
+function AppSetupRequired() {
+  return (
+    <main className="min-h-screen bg-slate-950 text-white flex items-center justify-center p-6">
+      <section className="max-w-lg rounded-3xl border border-white/10 bg-white/5 p-8 shadow-2xl">
+        <p className="text-xs font-bold uppercase tracking-[0.18em] text-cyan-300">StavbaCore workspace</p>
+        <h1 className="mt-3 text-3xl font-black tracking-tight">Systém čeká na připojení produkce</h1>
+        <p className="mt-4 text-sm leading-6 text-slate-300">
+          Tento Vercel projekt je nastavený jako firemní aplikace, ale nemá dostupné Supabase připojení.
+          Přihlášení a data firmy jsou proto zablokované, aby se nikdy nespustil ukázkový režim.
+        </p>
+        <p className="mt-6 rounded-2xl border border-cyan-300/20 bg-cyan-300/10 p-4 text-sm text-cyan-100">
+          Nastavte VITE_SUPABASE_URL a VITE_SUPABASE_ANON_KEY ve Vercelu a znovu nasaďte projekt.
+        </p>
+      </section>
+    </main>
+  );
+}
+
 function AppContent() {
   const { currentOrg } = useOrganization();
   const branding = currentOrg?.branding || {};
@@ -360,6 +378,10 @@ function AppContent() {
     primaryColor: currentOrg?.primary_color || branding.primaryColor,
     city: currentOrg?.city || branding.city
   };
+
+  if (deploymentSurface === 'app' && !isConfigured) {
+    return <AppSetupRequired />;
+  }
 
   // 1. Standalone / Public / Embed Routes (No Layout, No Auth required, No company data leakage)
   if (pathname === '/') {
