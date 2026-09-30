@@ -58,6 +58,7 @@ import { InteractiveStoryDemo } from '@/features/InteractiveStoryDemo';
 import { Lead, LeadStatus } from '@/types';
 import { buildAppLoginUrl, getDeploymentConfig } from './app/deploymentSurface';
 import { getLeadTransitionError } from './app/leadLifecycle';
+import { SalesWorkspace } from '@/features/SalesWorkspace';
 import { readTenantCache, removeTenantCache, writeTenantCache, TENANT_CACHE_NAMES } from './app/tenantCache';
 
 const { surface: deploymentSurface, appUrl } = getDeploymentConfig((import.meta as any).env || {});
@@ -535,6 +536,14 @@ function AppContent() {
       <OwnerLayout leads={leads} onSelectLead={setSelectedLead}>
         {pathname === '/dashboard' || pathname === '/' ? (
           <OwnerDashboardPage leads={leads} onSelectLead={setSelectedLead} />
+        ) : pathname === '/sales' ? (
+          <SalesWorkspace
+            leads={leads}
+            employees={employees}
+            onSelectLead={setSelectedLead}
+            onUpdateLeadStatus={handleUpdateLeadStatus}
+            onNavigate={navigate}
+          />
         ) : pathname === '/leads' ? (
           <OwnerLeadsPage 
             leads={leads} 

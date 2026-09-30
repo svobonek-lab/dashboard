@@ -130,7 +130,8 @@ export const OwnerLayout: React.FC<OwnerLayoutProps> = ({
 
   const navItems = [
     { label: 'Přehled stavby (Executive)', path: '/dashboard', icon: LayoutDashboard, exact: true },
-    { label: 'Poptávky & Kanban', path: '/leads', icon: Kanban, badge: leads.filter(l => l.status === 'New').length ? `${leads.filter(l => l.status === 'New').length} nové` : undefined },
+    { label: 'Prodejní cockpit', path: '/sales', icon: Kanban, badge: leads.filter(l => l.status === 'New').length ? `${leads.filter(l => l.status === 'New').length} nové` : undefined },
+    { label: 'Poptávky & Kanban', path: '/leads', icon: Kanban },
     { label: 'Poptávkový formulář', path: '/inquiry', icon: Sparkles },
     { label: 'Realizace & Stavby', path: '/projects', icon: HardHat },
     { label: 'Harmonogram výjezdů', path: '/calendar', icon: Calendar },
