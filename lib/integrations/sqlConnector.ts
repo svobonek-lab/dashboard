@@ -1,6 +1,7 @@
 import { SQLConnectionConfig, SQLDriver, FieldMappingConfig } from '@/types/integrations';
 import { Lead, Employee } from '@/types';
 import { normalizeLeadStatus, normalizePrice, normalizePhone, normalizePriority } from './fieldMapping';
+import { unsupportedSqlConnection } from './pilotImport';
 
 export interface SQLTestResult {
   success: boolean;
@@ -28,118 +29,10 @@ export function maskPassword(pwd?: string): string {
 /**
  * Simulates a robust SQL test connection ping with server handshake diagnostics
  */
-export async function testSQLConnection(config: SQLConnectionConfig): Promise<SQLTestResult> {
-  const startTime = Date.now();
-
-  // Basic validation
-  if (!config.host || !config.database || !config.username) {
-    return {
-      success: false,
-      latencyMs: 0,
-      message: 'Chybí povinné parametry připojení (Host, Databáze nebo Uživatel).',
-      foundProjectsCount: 0,
-      tablesCount: 0,
-      recordsCount: 0,
-      availableTables: [],
-      sampleColumns: [],
-      sampleRows: [],
-      connectedStatus: 'error',
-      testedAt: new Date().toISOString()
-    };
-  }
-
-  // Artificial network round-trip simulation
-  await new Promise(r => setTimeout(r, 650 + Math.random() * 400));
-  const latencyMs = Date.now() - startTime;
-
-  // Realistic sample construction database tables and rows based on driver
-  const tables = ['v_zakazky_crm', 'projekty', 'zamestnanci', 'faktury_vydane', 'subdodavatele'];
-  const sampleColumns = [
-    'id', 'nazev_projektu', 'zakaznik_jmeno', 'telefon', 'email', 
-    'mesto', 'adresa_stavby', 'cena_smluvni', 'stav', 'odpovedny_technik', 
-    'termin_zahajeni', 'poznamka'
-  ];
-
-  const sampleRows: Record<string, any>[] = [
-    {
-      id: 'SQL-1082',
-      nazev_projektu: 'Výroba a montáž bioklimatické pergoly 7x4m',
-      zakaznik_jmeno: 'JUDr. Radim Holub',
-      telefon: '+420 608 123 999',
-      email: 'holub.radim@advokati.cz',
-      mesto: 'Průhonice',
-      adresa_stavby: 'K Lesu 18, Průhonice',
-      cena_smluvni: 345000,
-      stav: 'V realizaci',
-      odpovedny_technik: 'Petr Novotný',
-      termin_zahajeni: '2026-09-22',
-      poznamka: 'Integrované LED osvětlení po celém obvodu, dešťový senzor.'
-    },
-    {
-      id: 'SQL-1083',
-      nazev_projektu: 'Kompletní zateplení a rekonstrukce krovu',
-      zakaznik_jmeno: 'Ing. arch. Klára Veselá',
-      telefon: '+420 775 444 321',
-      email: 'klara.vesela@archstudio.cz',
-      mesto: 'Praha 5 - Smíchov',
-      adresa_stavby: 'Na Císařce 42, Praha 5',
-      cena_smluvni: 520000,
-      stav: 'Kalkulace',
-      odpovedny_technik: 'Martin Kovář',
-      termin_zahajeni: '2026-10-05',
-      poznamka: 'Zákaznice požaduje certifikované dřevo KVH s impregnací.'
-    },
-    {
-      id: 'SQL-1084',
-      nazev_projektu: 'Ocelový přístřešek pro firemní flotilu (6 stání)',
-      zakaznik_jmeno: 'Tomáš Kratochvíl (TransLogistics)',
-      telefon: '+420 602 999 111',
-      email: 'tomas.kratochvil@translog.cz',
-      mesto: 'Říčany u Prahy',
-      adresa_stavby: 'Logistická zóna Sever, Říčany',
-      cena_smluvni: 890000,
-      stav: 'Poptávka',
-      odpovedny_technik: 'Lukáš Beran',
-      termin_zahajeni: '2026-10-15',
-      poznamka: 'Příprava pro instalaci FVE panelů na střeše přístřešku.'
-    },
-    {
-      id: 'SQL-1085',
-      nazev_projektu: 'Posuvné bezrámové zasklení lodžie a zimní zahrada',
-      zakaznik_jmeno: 'MUDr. Jiří Černý',
-      telefon: '+420 731 888 222',
-      email: 'cerny.jiri@fnmotol.cz',
-      mesto: 'Praha 6 - Břevnov',
-      adresa_stavby: 'Bělohorská 112, Praha 6',
-      cena_smluvni: 215000,
-      stav: 'Nová',
-      odpovedny_technik: 'Petr Novotný',
-      termin_zahajeni: '2026-09-29',
-      poznamka: 'Tónovaná skla s UV filtrem, montáž v 3. patře.'
-    }
-  ];
-
-  const driverNames: Record<SQLDriver, string> = {
-    postgresql: 'PostgreSQL 16.2 (Debian)',
-    mysql: 'MySQL 8.3.0 Enterprise',
-    mssql: 'Microsoft SQL Server 2022 (RTM)',
-    mariadb: 'MariaDB 11.2.3 Enterprise'
-  };
-
-  return {
-    success: true,
-    latencyMs,
-    message: `Spojení s databází ${config.database} na serveru ${config.host}:${config.port} proběhlo úspěšně (${latencyMs} ms).`,
-    foundProjectsCount: sampleRows.length,
-    tablesCount: tables.length,
-    recordsCount: 142,
-    availableTables: tables,
-    sampleColumns,
-    sampleRows,
-    serverVersion: driverNames[config.driver] || 'SQL Server 2024',
-    connectedStatus: 'connected',
-    testedAt: new Date().toISOString()
-  };
+export async function testSQLConnection(_config: SQLConnectionConfig): Promise<SQLTestResult> {
+  // A browser-only helper cannot establish a safe customer database connection.
+  // Keep this explicit until a server-side read-only connector is reviewed.
+  return unsupportedSqlConnection();
 }
 
 /**
