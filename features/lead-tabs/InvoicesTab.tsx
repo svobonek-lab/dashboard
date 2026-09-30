@@ -74,7 +74,7 @@ export const InvoicesTab: React.FC<InvoicesTabProps> = ({ lead, onNotice }) => {
 <dat:dataPack xmlns:dat="http://www.stormware.cz/schema/version_2/data.xsd"
               xmlns:inv="http://www.stormware.cz/schema/version_2/invoice.xsd"
               xmlns:typ="http://www.stormware.cz/schema/version_2/type.xsd"
-              id="INV_${inv.variableSymbol}" ico="12345678" application="StavbaCore CRM" version="2.0">
+              id="INV_${inv.variableSymbol}" ico="12345678" application="StavbaFlow CRM" version="2.0">
   <dat:dataPackItem id="${inv.variableSymbol}" version="2.0">
     <inv:invoice version="2.0">
       <inv:invoiceHeader>

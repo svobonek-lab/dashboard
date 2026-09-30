@@ -50,11 +50,11 @@ export const AdminDashboardPage: React.FC = () => {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2">
-            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">
+            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold bg-blue-500/20 text-blue-300 border border-blue-500/30">
               TENANT ENGINE v1.4
             </span>
             <span className="text-xs font-mono text-slate-400">
-              StavbaCore Cloud Ingress
+              StavbaFlow Cloud Ingress
             </span>
           </div>
           <h1 className="text-3xl font-black text-white tracking-tight mt-1">
@@ -68,7 +68,7 @@ export const AdminDashboardPage: React.FC = () => {
         <div className="flex items-center gap-2.5">
           <button
             onClick={() => navigate('/admin/install')}
-            className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white text-xs font-black transition-all shadow-lg shadow-cyan-500/20 flex items-center gap-2"
+            className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-400 hover:to-blue-500 text-white text-xs font-black transition-all shadow-lg shadow-blue-500/20 flex items-center gap-2"
           >
             <Wand2 className="w-4 h-4" />
             <span>Spustit Install Studio 2.0</span>
@@ -82,7 +82,7 @@ export const AdminDashboardPage: React.FC = () => {
         <div className="bg-[#0C111D] p-5 rounded-2xl border border-slate-800/80 shadow-md">
           <div className="flex items-center justify-between text-slate-400">
             <span className="text-[11px] font-mono uppercase font-bold">Total Companies</span>
-            <Building2 className="w-4 h-4 text-cyan-400" />
+            <Building2 className="w-4 h-4 text-blue-400" />
           </div>
           <p className="text-2xl font-black text-white mt-2 font-mono">
             {loading ? '...' : orgs.length}
@@ -154,7 +154,7 @@ export const AdminDashboardPage: React.FC = () => {
         <div className="bg-[#0C111D] rounded-2xl border border-slate-800/80 p-5 lg:col-span-1 flex flex-col gap-3">
           <h3 className="text-sm font-bold text-white mb-2">Quick Actions</h3>
           <button onClick={() => navigate('/admin/install')} className="flex items-center gap-3 w-full p-3 bg-slate-800/30 hover:bg-slate-800/60 rounded-xl transition-colors text-sm font-semibold text-white group text-left">
-            <div className="p-2 rounded-lg bg-cyan-500/10 text-cyan-400 group-hover:bg-cyan-500/20"><Building2 className="w-4 h-4" /></div>
+            <div className="p-2 rounded-lg bg-blue-500/10 text-blue-400 group-hover:bg-blue-500/20"><Building2 className="w-4 h-4" /></div>
             Create Company
           </button>
           <button onClick={() => navigate('/admin/install')} className="flex items-center gap-3 w-full p-3 bg-slate-800/30 hover:bg-slate-800/60 rounded-xl transition-colors text-sm font-semibold text-white group text-left">
@@ -176,13 +176,13 @@ export const AdminDashboardPage: React.FC = () => {
           <div className="flex items-center justify-between">
             <div>
               <h3 className="text-sm font-bold text-white flex items-center gap-2">
-                <Building2 className="w-4 h-4 text-cyan-400" />
+                <Building2 className="w-4 h-4 text-blue-400" />
                 Recent Installs & Activity
               </h3>
             </div>
             <button
               onClick={() => navigate('/admin/companies')}
-              className="text-[10px] font-mono text-cyan-400 hover:underline flex items-center gap-1 font-bold"
+              className="text-[10px] font-mono text-blue-400 hover:underline flex items-center gap-1 font-bold"
             >
               <span>Všechny firmy ({orgs.length})</span>
               <ArrowRight className="w-3.5 h-3.5" />
@@ -193,7 +193,7 @@ export const AdminDashboardPage: React.FC = () => {
             {orgs.slice(0, 3).map((org) => (
               <div 
                 key={org.id} 
-                className="p-4 bg-[#090D16] rounded-2xl border border-slate-800/80 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:border-cyan-500/40 transition-colors"
+                className="p-4 bg-[#090D16] rounded-2xl border border-slate-800/80 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:border-blue-500/40 transition-colors"
               >
                 <div className="flex items-center gap-3.5">
                   <div 
@@ -216,7 +216,7 @@ export const AdminDashboardPage: React.FC = () => {
                       await impersonateOrganization(org.id);
                       navigate('/dashboard');
                     }}
-                    className="px-3.5 py-2 rounded-xl bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-300 border border-cyan-500/40 text-xs font-bold transition-all flex items-center gap-1.5"
+                    className="px-3.5 py-2 rounded-xl bg-blue-500/20 hover:bg-blue-500/30 text-blue-300 border border-blue-500/40 text-xs font-bold transition-all flex items-center gap-1.5"
                   >
                     <span>Open Workspace</span>
                     <ExternalLink className="w-3.5 h-3.5" />

@@ -151,7 +151,7 @@ export const OnboardingChecklist: React.FC<{ leadsCount: number; employeesCount:
           <span>První „aha moment“ do 1 pracovního dne</span>
         </div>
         <h1 className="text-3xl sm:text-4xl font-black text-slate-900 tracking-tight">
-          Startovací proces: {currentOrg?.name || 'StavbaCore'}
+          Startovací proces: {currentOrg?.name || 'StavbaFlow'}
         </h1>
         <p className="text-sm text-slate-600 max-w-2xl mx-auto font-medium">
           Cílem onboardingu není pouhé založení účtu. Onboarding je dokončen, jakmile vaše firma <strong>zpracuje první skutečnou poptávku od přijetí po další krok</strong>.

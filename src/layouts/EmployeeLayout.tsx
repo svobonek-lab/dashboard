@@ -61,7 +61,7 @@ export const EmployeeLayout: React.FC<EmployeeLayoutProps> = ({ children, leads 
           <div>
             <div className="flex items-center gap-2">
               <span className="text-xs font-bold text-slate-900 tracking-tight">
-                {currentOrg?.name || 'StavbaCore'}
+                {currentOrg?.name || 'StavbaFlow'}
               </span>
               <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 uppercase">
                 Terénní režim

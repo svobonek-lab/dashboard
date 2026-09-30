@@ -79,7 +79,7 @@ function AppSetupRequired() {
   return (
     <main className="min-h-screen bg-slate-950 text-white flex items-center justify-center p-6">
       <section className="max-w-lg rounded-3xl border border-white/10 bg-white/5 p-8 shadow-2xl">
-        <p className="text-xs font-bold uppercase tracking-[0.18em] text-cyan-300">StavbaCore workspace</p>
+        <p className="text-xs font-bold uppercase tracking-[0.18em] text-cyan-300">StavbaFlow workspace</p>
         <h1 className="mt-3 text-3xl font-black tracking-tight">Systém čeká na připojení produkce</h1>
         <p className="mt-4 text-sm leading-6 text-slate-300">
           Tento Vercel projekt je nastavený jako firemní aplikace, ale nemá dostupné Supabase připojení.
@@ -204,7 +204,7 @@ function AppContent() {
 
   // Dynamic White Labeling (Browser Title & Favicon Update)
   useEffect(() => {
-    const activeName = currentOrg?.name || 'StavbaCore CRM';
+    const activeName = currentOrg?.name || 'StavbaFlow CRM';
     document.title = `${activeName} | Stavební OS`;
 
     const activeLogo = currentOrg?.logo_url;

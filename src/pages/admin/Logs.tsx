@@ -28,7 +28,7 @@ export const AdminLogsPage: React.FC = () => {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-black text-white tracking-tight flex items-center gap-2.5">
-            <Terminal className="w-6 h-6 text-cyan-400" />
+            <Terminal className="w-6 h-6 text-blue-400" />
             Audit & Systémové telemetrické logy
           </h1>
           <p className="text-xs text-slate-400 mt-0.5">
@@ -38,7 +38,7 @@ export const AdminLogsPage: React.FC = () => {
 
         <div className="flex items-center gap-2">
           <button className="px-3.5 py-2 rounded-xl bg-[#0C111D] border border-slate-800 text-xs font-mono text-slate-300 hover:text-white flex items-center gap-2">
-            <RefreshCw className="w-3.5 h-3.5 text-cyan-400" />
+            <RefreshCw className="w-3.5 h-3.5 text-blue-400" />
             <span>Aktualizovat</span>
           </button>
         </div>
@@ -53,14 +53,14 @@ export const AdminLogsPage: React.FC = () => {
             placeholder="Filtrovat logy podle tenantu nebo akce..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-9 pr-4 py-2 bg-[#090D16] border border-slate-800 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:border-cyan-500/50"
+            className="w-full pl-9 pr-4 py-2 bg-[#090D16] border border-slate-800 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:border-blue-500/50"
           />
         </div>
 
         <div className="flex items-center gap-2 flex-wrap">
           <button
             onClick={() => setFilterSeverity('all')}
-            className={`px-3 py-1.5 rounded-xl text-xs font-mono font-bold transition-all ${filterSeverity === 'all' ? 'bg-cyan-500 text-slate-950' : 'bg-[#090D16] border border-slate-800 text-slate-400 hover:text-white'}`}
+            className={`px-3 py-1.5 rounded-xl text-xs font-mono font-bold transition-all ${filterSeverity === 'all' ? 'bg-blue-500 text-slate-950' : 'bg-[#090D16] border border-slate-800 text-slate-400 hover:text-white'}`}
           >
             Vše (ALL)
           </button>
@@ -113,7 +113,7 @@ export const AdminLogsPage: React.FC = () => {
                     </span>
                   </td>
                   <td className="py-3.5 font-sans font-bold text-white">{log.tenant}</td>
-                  <td className="py-3.5 text-cyan-300 font-semibold">{log.action}</td>
+                  <td className="py-3.5 text-blue-300 font-semibold">{log.action}</td>
                   <td className="py-3.5 text-slate-300 max-w-md truncate">{log.details}</td>
                   <td className="py-3.5 text-slate-400">{log.user}</td>
                 </tr>

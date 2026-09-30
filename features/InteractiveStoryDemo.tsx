@@ -52,7 +52,7 @@ export const InteractiveStoryDemo: React.FC = () => {
           <span>Zpět do CRM přehledu</span>
         </button>
         <span className="text-xs font-bold text-slate-400">
-          StavbaCore Interactive Demo
+          StavbaFlow Interactive Demo
         </span>
       </div>
 
@@ -66,7 +66,7 @@ export const InteractiveStoryDemo: React.FC = () => {
             Příběh zakázky: Od poptávky po marži v kapse
           </h1>
           <p className="text-xs sm:text-sm text-blue-100 leading-relaxed">
-            Vyzkoušejte si, jak StavbaCore zařídí, že žádná poptávka nezapadne, nabídka se nezapomene a terén okamžitě propíše skutečné náklady majiteli.
+            Vyzkoušejte si, jak StavbaFlow zařídí, že žádná poptávka nezapadne, nabídka se nezapomene a terén okamžitě propíše skutečné náklady majiteli.
           </p>
         </div>
 
@@ -97,7 +97,7 @@ export const InteractiveStoryDemo: React.FC = () => {
                 Poptávka z webu: Petra Dvořáková — Rekonstrukce koupelny (353 000 Kč)
               </h2>
               <p className="text-xs text-slate-500 mt-1">
-                Formulář přišel před 3 minutami. Bez systému by ležel v e-mailu. Ve StavbaCore běží SLA odpočet 15 minut.
+                Formulář přišel před 3 minutami. Bez systému by ležel v e-mailu. Ve StavbaFlow běží SLA odpočet 15 minut.
               </p>
             </div>
             <span className={`px-3 py-1.5 rounded-full text-xs font-bold border ${step1Called ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-rose-50 text-rose-700 border-rose-200 animate-pulse'}`}>
@@ -161,7 +161,7 @@ export const InteractiveStoryDemo: React.FC = () => {
                 Kalkulace a digitální schválení nabídky klientem
               </h2>
               <p className="text-xs text-slate-500 mt-1">
-                Zaměření proběhlo. StavbaCore vygeneruje položkový rozpočet a pošle bezpečný klientský odkaz.
+                Zaměření proběhlo. StavbaFlow vygeneruje položkový rozpočet a pošle bezpečný klientský odkaz.
               </p>
             </div>
             <span className="px-3 py-1 rounded-full text-xs font-bold bg-indigo-50 text-indigo-700 border border-indigo-200">
@@ -299,7 +299,7 @@ export const InteractiveStoryDemo: React.FC = () => {
                 Okamžitý přepočet marže, nákladů a kapacity
               </h2>
               <p className="text-xs text-slate-500 mt-1">
-                Zatímco konkurence počítá zisk z papírů po víkendech, majitel StavbaCore vidí čistá čísla v reálném čase.
+                Zatímco konkurence počítá zisk z papírů po víkendech, majitel StavbaFlow vidí čistá čísla v reálném čase.
               </p>
             </div>
             <span className="px-3 py-1 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
@@ -332,7 +332,7 @@ export const InteractiveStoryDemo: React.FC = () => {
               <h3 className="text-xs font-black uppercase tracking-wider text-slate-800">
                 Přehled rizik a problémů pod kontrolou
               </h3>
-              <span className="text-[11px] text-slate-500">Reálná firma má problémy — StavbaCore je hlídá</span>
+              <span className="text-[11px] text-slate-500">Reálná firma má problémy — StavbaFlow je hlídá</span>
             </div>
             <div className="divide-y divide-slate-200 text-xs">
               {demoProjects.map((p, i) => (
@@ -357,7 +357,7 @@ export const InteractiveStoryDemo: React.FC = () => {
             <div>
               <h3 className="text-base font-black">Takhle může vypadat vaše firma.</h3>
               <p className="text-xs text-slate-400 mt-1 max-w-md">
-                Za 20 minut projdeme váš dnešní proces a ukážeme, co by StavbaCore převzal a kolik ušetří.
+                Za 20 minut projdeme váš dnešní proces a ukážeme, co by StavbaFlow převzal a kolik ušetří.
               </p>
             </div>
             <div className="flex gap-2 pt-2 sm:pt-0 justify-center">

@@ -112,7 +112,7 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
               Dobré ráno, {userName}
             </h1>
             <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-50 text-[#0A84FF] border border-blue-200">
-              {currentOrg?.name || 'StavbaCore'}
+              {currentOrg?.name || 'StavbaFlow'}
             </span>
           </div>
           <p className="text-xs sm:text-sm text-slate-600 font-medium">

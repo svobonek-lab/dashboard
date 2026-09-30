@@ -515,7 +515,7 @@ export const LeadDetail: React.FC<LeadDetailProps> = ({
           <div className="p-4 bg-slate-50 rounded-xl border border-slate-200 text-xs space-y-2">
             <p><strong>Dílo:</strong> {lead.title}</p>
             <p><strong>Objednatel:</strong> {lead.customerName} ({lead.address})</p>
-            <p><strong>Zhotovitel:</strong> StavbaCore realizační tým</p>
+            <p><strong>Zhotovitel:</strong> StavbaFlow realizační tým</p>
             <p><strong>Předávací cena:</strong> {priceLabel}</p>
             <p><strong>Závady a nedodělky:</strong> Dílo předáno bez vad a nedodělků bránících užívání.</p>
           </div>

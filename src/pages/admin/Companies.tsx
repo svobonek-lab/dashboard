@@ -24,6 +24,9 @@ import {
   Camera,
   Eye,
   Image as ImageIcon
+  , Loader2
+  , CheckCircle2
+  , Copy
 } from 'lucide-react';
 
 export const AdminCompaniesPage: React.FC = () => {
@@ -32,13 +35,20 @@ export const AdminCompaniesPage: React.FC = () => {
     impersonateOrganization, 
     deleteOrganizationAdmin,
     updateBrandingAdmin,
-    suspendOrganizationAdmin 
+    suspendOrganizationAdmin,
+    createCustomerAdmin
   } = useOrganization();
   const { navigate } = useRouter();
 
   const [organizations, setOrganizations] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const [createModalOpen, setCreateModalOpen] = useState(false);
+  const [createForm, setCreateForm] = useState({ name: '', ownerName: '', ownerEmail: '', city: '', phone: '', color: '#2563eb' });
+  const [createStep, setCreateStep] = useState(-1);
+  const [createMessage, setCreateMessage] = useState('');
+  const [createdWorkspace, setCreatedWorkspace] = useState<{ crmUrl: string; portalUrl: string; formUrl: string; ownerEmail: string } | null>(null);
+  const [createError, setCreateError] = useState('');
 
   // Edit Branding Modal
   const [editModalOpen, setEditModalOpen] = useState(false);
@@ -118,6 +128,43 @@ export const AdminCompaniesPage: React.FC = () => {
     }
   };
 
+  const handleCreateCompany = async (event: React.FormEvent) => {
+    event.preventDefault();
+    setCreateError('');
+    setCreatedWorkspace(null);
+    setCreateStep(0);
+    try {
+      const result = await createCustomerAdmin({
+        name: createForm.name.trim(),
+        city: createForm.city.trim(),
+        phone: createForm.phone.trim(),
+        email: createForm.ownerEmail.trim(),
+        owner_name: createForm.ownerName.trim(),
+        owner_email: createForm.ownerEmail.trim(),
+        primary_color: createForm.color,
+        secondary_color: '#0f172a',
+        onStepProgress: (step, message) => {
+          setCreateStep(step);
+          setCreateMessage(message);
+        }
+      });
+      setCreatedWorkspace({ crmUrl: result.crmUrl, portalUrl: result.portalUrl, formUrl: result.formUrl, ownerEmail: result.ownerEmail });
+      await loadData();
+    } catch (error: any) {
+      setCreateError(error?.message || 'Firmu se nepodařilo založit. Zkontrolujte oprávnění a zkuste to znovu.');
+      setCreateStep(-1);
+    }
+  };
+
+  const resetCreateModal = () => {
+    setCreateModalOpen(false);
+    setCreatedWorkspace(null);
+    setCreateError('');
+    setCreateStep(-1);
+    setCreateMessage('');
+    setCreateForm({ name: '', ownerName: '', ownerEmail: '', city: '', phone: '', color: '#2563eb' });
+  };
+
   const filteredOrgs = organizations.filter(org => {
     const matchesSearch = org.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
                           org.slug?.toLowerCase().includes(searchTerm.toLowerCase());
@@ -131,7 +178,7 @@ export const AdminCompaniesPage: React.FC = () => {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-black text-white tracking-tight flex items-center gap-2.5">
-            <Building2 className="w-6 h-6 text-cyan-400" />
+            <Building2 className="w-6 h-6 text-blue-400" />
             Adresář zákaznických firem
           </h1>
           <p className="text-xs text-slate-400 mt-0.5">
@@ -140,11 +187,11 @@ export const AdminCompaniesPage: React.FC = () => {
         </div>
 
         <button
-          onClick={() => navigate('/admin/install')}
-          className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white text-xs font-black transition-all shadow-md shadow-cyan-500/20 flex items-center gap-2 self-start sm:self-auto"
+          onClick={() => setCreateModalOpen(true)}
+          className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-400 hover:to-blue-500 text-white text-xs font-black transition-all shadow-md shadow-blue-500/20 flex items-center gap-2 self-start sm:self-auto"
         >
           <Plus className="w-4 h-4" />
-          <span>Vytvořit firmu (Install Studio)</span>
+          <span>Nová firma · rychlé nastavení</span>
         </button>
       </div>
 
@@ -157,7 +204,7 @@ export const AdminCompaniesPage: React.FC = () => {
             placeholder="Hledat firmu podle názvu..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-9 pr-4 py-2 bg-[#090D16] border border-slate-800 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:border-cyan-500/50"
+            className="w-full pl-9 pr-4 py-2 bg-[#090D16] border border-slate-800 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:border-blue-500/50"
           />
         </div>
 
@@ -167,7 +214,7 @@ export const AdminCompaniesPage: React.FC = () => {
             title="Aktualizovat data"
             className="p-2 rounded-xl bg-[#090D16] border border-slate-800 text-slate-400 hover:text-white transition-colors cursor-pointer"
           >
-            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin text-cyan-400' : ''}`} />
+            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin text-blue-400' : ''}`} />
           </button>
         </div>
       </div>
@@ -175,7 +222,7 @@ export const AdminCompaniesPage: React.FC = () => {
       {/* Companies Grid */}
       {loading ? (
         <div className="p-12 text-center space-y-3">
-          <div className="w-8 h-8 border-4 border-cyan-500/20 border-t-cyan-500 rounded-full animate-spin mx-auto"></div>
+          <div className="w-8 h-8 border-4 border-blue-500/20 border-t-blue-500 rounded-full animate-spin mx-auto"></div>
           <p className="text-xs font-mono text-slate-400">Načítání seznamu firem z databáze...</p>
         </div>
       ) : filteredOrgs.length === 0 ? (
@@ -191,7 +238,7 @@ export const AdminCompaniesPage: React.FC = () => {
             return (
               <div 
                 key={org.id}
-                className="bg-[#0C111D] border border-slate-800/80 hover:border-cyan-500/40 rounded-3xl p-5 shadow-lg flex flex-col justify-between space-y-5 transition-all group"
+                className="bg-[#0C111D] border border-slate-800/80 hover:border-blue-500/40 rounded-3xl p-5 shadow-lg flex flex-col justify-between space-y-5 transition-all group"
               >
                 <div className="space-y-4">
                   {/* Card Header */}
@@ -213,7 +260,7 @@ export const AdminCompaniesPage: React.FC = () => {
 
                         <label 
                           title="Změnit obrázek / logo z počítače" 
-                          className="absolute -bottom-1 -right-1 w-6 h-6 rounded-lg bg-cyan-500 hover:bg-cyan-400 text-slate-950 flex items-center justify-center shadow-md cursor-pointer transition-transform hover:scale-110"
+                          className="absolute -bottom-1 -right-1 w-6 h-6 rounded-lg bg-blue-500 hover:bg-blue-400 text-slate-950 flex items-center justify-center shadow-md cursor-pointer transition-transform hover:scale-110"
                         >
                           <Camera className="w-3.5 h-3.5" />
                           <input 
@@ -229,7 +276,7 @@ export const AdminCompaniesPage: React.FC = () => {
                       </div>
 
                       <div>
-                        <h3 className="text-sm font-bold text-white group-hover:text-cyan-300 transition-colors">
+                        <h3 className="text-sm font-bold text-white group-hover:text-blue-300 transition-colors">
                           {org.name}
                         </h3>
                         <p className="text-[11px] text-slate-400 font-mono mt-0.5">
@@ -258,8 +305,8 @@ export const AdminCompaniesPage: React.FC = () => {
                   <div className="text-[11px] text-slate-400 space-y-1 font-mono">
                     {org.website && (
                       <p className="flex items-center gap-1.5 truncate">
-                        <Globe className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
-                        <a href={org.website.startsWith('http') ? org.website : `https://${org.website}`} target="_blank" rel="noreferrer" className="text-cyan-300 hover:underline truncate">
+                        <Globe className="w-3.5 h-3.5 text-blue-400 shrink-0" />
+                        <a href={org.website.startsWith('http') ? org.website : `https://${org.website}`} target="_blank" rel="noreferrer" className="text-blue-300 hover:underline truncate">
                           {org.website.replace(/https?:\/\//, '')}
                         </a>
                       </p>
@@ -279,10 +326,10 @@ export const AdminCompaniesPage: React.FC = () => {
                 <div className="pt-3 border-t border-slate-800/80 flex items-center justify-between gap-2">
                   <button
                     onClick={() => handleImpersonate(org.id)}
-                    className="flex-1 py-2 px-3 rounded-xl bg-gradient-to-r from-cyan-500/20 to-blue-600/20 hover:from-cyan-500/30 hover:to-blue-600/30 text-cyan-300 border border-cyan-500/30 text-xs font-bold transition-all flex items-center justify-center gap-1.5 shadow-sm cursor-pointer"
+                    className="flex-1 py-2 px-3 rounded-xl bg-gradient-to-r from-blue-500/20 to-blue-600/20 hover:from-blue-500/30 hover:to-blue-600/30 text-blue-300 border border-blue-500/30 text-xs font-bold transition-all flex items-center justify-center gap-1.5 shadow-sm cursor-pointer"
                   >
                     <span>Otevřít Company Workspace</span>
-                    <ExternalLink className="w-3.5 h-3.5 text-cyan-400" />
+                    <ExternalLink className="w-3.5 h-3.5 text-blue-400" />
                   </button>
 
                   <a
@@ -290,7 +337,7 @@ export const AdminCompaniesPage: React.FC = () => {
                     target="_blank"
                     rel="noreferrer"
                     title="Otevřít veřejný poptávkový formulář firmy (Live Preview)"
-                    className="p-2 rounded-xl bg-[#090D16] hover:bg-slate-800 text-slate-400 hover:text-cyan-300 border border-slate-800 transition-colors flex items-center justify-center"
+                    className="p-2 rounded-xl bg-[#090D16] hover:bg-slate-800 text-slate-400 hover:text-blue-300 border border-slate-800 transition-colors flex items-center justify-center"
                   >
                     <Eye className="w-3.5 h-3.5" />
                   </a>
@@ -320,13 +367,60 @@ export const AdminCompaniesPage: React.FC = () => {
         </div>
       )}
 
+      {createModalOpen && (
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-[#0C111D] border border-blue-500/30 rounded-3xl max-w-lg w-full p-6 space-y-5 shadow-2xl">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <p className="text-[10px] uppercase tracking-[0.18em] text-blue-300 font-black">StavbaFlow onboarding</p>
+                <h3 className="text-xl font-black text-white mt-1">Nastavit novou firmu</h3>
+                <p className="text-xs text-slate-400 mt-1">Založíme čistý workspace, majitele a firemní branding v jednom průchodu.</p>
+              </div>
+              <button onClick={resetCreateModal} className="text-slate-400 hover:text-white cursor-pointer"><X className="w-5 h-5" /></button>
+            </div>
+
+            {createdWorkspace ? (
+              <div className="space-y-4">
+                <div className="rounded-2xl border border-emerald-500/30 bg-emerald-500/10 p-4 flex gap-3">
+                  <CheckCircle2 className="w-5 h-5 text-emerald-300 shrink-0" />
+                  <div><p className="text-sm font-bold text-white">Workspace je připraven</p><p className="text-xs text-emerald-100/80 mt-1">Majitel: {createdWorkspace.ownerEmail}</p></div>
+                </div>
+                <div className="space-y-2 text-xs">
+                  {[['Přihlášení / CRM', createdWorkspace.crmUrl], ['Veřejný formulář', createdWorkspace.formUrl], ['Klientský portál', createdWorkspace.portalUrl]].map(([label, url]) => (
+                    <div key={url} className="flex items-center gap-2 rounded-xl bg-[#090D16] border border-slate-800 p-2.5">
+                      <span className="text-slate-400 w-32 shrink-0">{label}</span><span className="font-mono text-blue-300 truncate flex-1">{url}</span>
+                      <button type="button" title="Kopírovat odkaz" onClick={() => navigator.clipboard?.writeText(url)} className="text-slate-400 hover:text-white"><Copy className="w-3.5 h-3.5" /></button>
+                    </div>
+                  ))}
+                </div>
+                <button type="button" onClick={resetCreateModal} className="w-full py-2.5 rounded-xl bg-blue-500 hover:bg-blue-400 text-slate-950 text-xs font-black">Hotovo</button>
+              </div>
+            ) : (
+              <form onSubmit={handleCreateCompany} className="space-y-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <label className="text-xs text-slate-400 font-bold">Název firmy<input required value={createForm.name} onChange={e => setCreateForm(p => ({ ...p, name: e.target.value }))} placeholder="Novák Stavby s.r.o." className="mt-1 w-full p-2.5 rounded-xl bg-[#090D16] border border-slate-800 text-white" /></label>
+                  <label className="text-xs text-slate-400 font-bold">Město<input required value={createForm.city} onChange={e => setCreateForm(p => ({ ...p, city: e.target.value }))} placeholder="Brno" className="mt-1 w-full p-2.5 rounded-xl bg-[#090D16] border border-slate-800 text-white" /></label>
+                  <label className="text-xs text-slate-400 font-bold">Majitel<input required value={createForm.ownerName} onChange={e => setCreateForm(p => ({ ...p, ownerName: e.target.value }))} placeholder="Jan Novák" className="mt-1 w-full p-2.5 rounded-xl bg-[#090D16] border border-slate-800 text-white" /></label>
+                  <label className="text-xs text-slate-400 font-bold">E-mail majitele<input required type="email" value={createForm.ownerEmail} onChange={e => setCreateForm(p => ({ ...p, ownerEmail: e.target.value }))} placeholder="jan@novakstavby.cz" className="mt-1 w-full p-2.5 rounded-xl bg-[#090D16] border border-slate-800 text-white" /></label>
+                  <label className="text-xs text-slate-400 font-bold">Telefon<input value={createForm.phone} onChange={e => setCreateForm(p => ({ ...p, phone: e.target.value }))} placeholder="+420 777 000 000" className="mt-1 w-full p-2.5 rounded-xl bg-[#090D16] border border-slate-800 text-white" /></label>
+                  <label className="text-xs text-slate-400 font-bold">Barva firmy<div className="mt-1 flex items-center gap-2"><input type="color" value={createForm.color} onChange={e => setCreateForm(p => ({ ...p, color: e.target.value }))} className="h-10 w-12 rounded-lg bg-transparent border border-slate-800" /><span className="font-mono text-blue-300">{createForm.color}</span></div></label>
+                </div>
+                {createError && <p className="rounded-xl border border-rose-500/30 bg-rose-500/10 p-3 text-xs text-rose-200">{createError}</p>}
+                {createStep >= 0 && <p className="rounded-xl border border-blue-500/20 bg-blue-500/10 p-3 text-xs text-blue-100 flex items-center gap-2"><Loader2 className="w-4 h-4 animate-spin" />{createMessage || 'Připravuji workspace…'}</p>}
+                <button type="submit" disabled={createStep >= 0} className="w-full py-3 rounded-xl bg-blue-500 hover:bg-blue-400 disabled:opacity-60 text-slate-950 text-xs font-black flex items-center justify-center gap-2"><Wand2 className="w-4 h-4" />{createStep >= 0 ? 'Nastavuji firmu…' : 'Založit čistý workspace'}</button>
+              </form>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* Edit Branding Modal with File Upload */}
       {editModalOpen && (
         <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-[#0C111D] border border-slate-800 rounded-3xl max-w-md w-full p-6 space-y-4 shadow-2xl">
             <div className="flex items-center justify-between">
               <h3 className="text-base font-bold text-white flex items-center gap-2">
-                <Palette className="w-4 h-4 text-cyan-400" />
+                <Palette className="w-4 h-4 text-blue-400" />
                 Upravit branding & logo firmy
               </h3>
               <button onClick={() => setEditModalOpen(false)} className="text-slate-400 hover:text-white cursor-pointer">
@@ -341,7 +435,7 @@ export const AdminCompaniesPage: React.FC = () => {
                   type="text"
                   value={editName}
                   onChange={(e) => setEditName(e.target.value)}
-                  className="w-full p-2.5 bg-[#090D16] border border-slate-800 rounded-xl text-white font-semibold focus:outline-none focus:border-cyan-500/50"
+                  className="w-full p-2.5 bg-[#090D16] border border-slate-800 rounded-xl text-white font-semibold focus:outline-none focus:border-blue-500/50"
                 />
               </div>
 
@@ -354,7 +448,7 @@ export const AdminCompaniesPage: React.FC = () => {
                     onChange={(e) => setEditColor(e.target.value)}
                     className="w-12 h-10 rounded-xl border border-slate-800 cursor-pointer bg-transparent"
                   />
-                  <span className="font-mono text-cyan-400 font-bold">{editColor}</span>
+                  <span className="font-mono text-blue-400 font-bold">{editColor}</span>
                 </div>
               </div>
 
@@ -383,8 +477,8 @@ export const AdminCompaniesPage: React.FC = () => {
                 ) : null}
 
                 {/* File Upload Trigger */}
-                <label className="cursor-pointer min-h-[48px] py-3 px-4 rounded-xl bg-gradient-to-r from-cyan-500/10 to-blue-600/10 hover:from-cyan-500/20 hover:to-blue-600/20 border border-cyan-500/30 text-cyan-300 font-bold text-xs flex items-center justify-center gap-2 transition-all">
-                  <UploadCloud className="w-4 h-4 text-cyan-400" />
+                <label className="cursor-pointer min-h-[48px] py-3 px-4 rounded-xl bg-gradient-to-r from-blue-500/10 to-blue-600/10 hover:from-blue-500/20 hover:to-blue-600/20 border border-blue-500/30 text-blue-300 font-bold text-xs flex items-center justify-center gap-2 transition-all">
+                  <UploadCloud className="w-4 h-4 text-blue-400" />
                   <span>Nahrát nové logo / fotku z počítače</span>
                   <input
                     type="file"
@@ -411,7 +505,7 @@ export const AdminCompaniesPage: React.FC = () => {
                     type="text"
                     value={editLogo}
                     onChange={(e) => setEditLogo(e.target.value)}
-                    className="w-full p-2.5 bg-[#090D16] border border-slate-800 rounded-xl text-white font-mono text-[11px] focus:outline-none focus:border-cyan-500/50"
+                    className="w-full p-2.5 bg-[#090D16] border border-slate-800 rounded-xl text-white font-mono text-[11px] focus:outline-none focus:border-blue-500/50"
                     placeholder="https://..."
                   />
                 </div>
@@ -427,7 +521,7 @@ export const AdminCompaniesPage: React.FC = () => {
               </button>
               <button
                 onClick={handleSaveEdit}
-                className="px-4 py-2 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 text-xs font-black cursor-pointer shadow-md shadow-cyan-500/20"
+                className="px-4 py-2 rounded-xl bg-blue-500 hover:bg-blue-400 text-slate-950 text-xs font-black cursor-pointer shadow-md shadow-blue-500/20"
               >
                 Uložit změny
               </button>

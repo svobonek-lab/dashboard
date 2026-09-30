@@ -54,7 +54,7 @@ export const SuperAdminLayout: React.FC<SuperAdminLayoutProps> = ({ children }) 
   ];
 
   return (
-    <div className="min-h-screen bg-[#090D16] text-slate-100 flex font-sans selection:bg-cyan-500/30">
+    <div className="min-h-screen bg-[#090D16] text-slate-100 flex font-sans selection:bg-blue-500/30">
       
       {/* Mobile Backdrop Overlay */}
       {isMobileMenuOpen && (
@@ -74,15 +74,15 @@ export const SuperAdminLayout: React.FC<SuperAdminLayoutProps> = ({ children }) 
         <div>
           <div className="p-6 border-b border-slate-800 flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-500 to-blue-600 p-0.5 shadow-lg shadow-cyan-500/20">
-                <div className="w-full h-full bg-[#0C111D] rounded-[10px] flex items-center justify-center text-cyan-400">
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 p-0.5 shadow-lg shadow-blue-500/20">
+                <div className="w-full h-full bg-[#0C111D] rounded-[10px] flex items-center justify-center text-blue-400">
                   <ShieldCheck className="w-5 h-5" />
                 </div>
               </div>
               <div>
                 <div className="flex items-center gap-1.5">
                   <span className="font-black text-sm text-white tracking-tight">STAVBACORE</span>
-                  <span className="px-1.5 py-0.2 rounded text-[9px] font-mono font-bold bg-cyan-500/20 text-cyan-300 border border-cyan-500/40">
+                  <span className="px-1.5 py-0.2 rounded text-[9px] font-mono font-bold bg-blue-500/20 text-blue-300 border border-blue-500/40">
                     SUPER ADMIN
                   </span>
                 </div>
@@ -119,16 +119,16 @@ export const SuperAdminLayout: React.FC<SuperAdminLayoutProps> = ({ children }) 
                   onClick={() => setIsMobileMenuOpen(false)}
                   className={`flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all group ${
                     active
-                      ? 'bg-cyan-500/15 text-cyan-300 border border-cyan-500/30 shadow-sm shadow-cyan-500/10'
+                      ? 'bg-blue-500/15 text-blue-300 border border-blue-500/30 shadow-sm shadow-blue-500/10'
                       : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
                   }`}
                 >
                   <div className="flex items-center gap-3">
-                    <Icon className={`w-4 h-4 transition-colors ${active ? 'text-cyan-400' : 'text-slate-400 group-hover:text-slate-200'}`} />
+                    <Icon className={`w-4 h-4 transition-colors ${active ? 'text-blue-400' : 'text-slate-400 group-hover:text-slate-200'}`} />
                     <span>{item.label}</span>
                   </div>
                   {item.badge && (
-                    <span className="text-[9px] font-mono font-bold px-1.5 py-0.5 rounded bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">
+                    <span className="text-[9px] font-mono font-bold px-1.5 py-0.5 rounded bg-blue-500/20 text-blue-300 border border-blue-500/30">
                       {item.badge}
                     </span>
                   )}
@@ -145,26 +145,26 @@ export const SuperAdminLayout: React.FC<SuperAdminLayoutProps> = ({ children }) 
               target="_blank"
               rel="noopener noreferrer"
               onClick={() => setIsMobileMenuOpen(false)}
-              className="flex items-center justify-between px-3.5 py-2 rounded-xl text-xs font-semibold text-slate-400 hover:text-cyan-300 hover:bg-slate-800/60 transition-all group"
+              className="flex items-center justify-between px-3.5 py-2 rounded-xl text-xs font-semibold text-slate-400 hover:text-blue-300 hover:bg-slate-800/60 transition-all group"
             >
               <div className="flex items-center gap-3">
-                <Globe2 className="w-4 h-4 text-slate-400 group-hover:text-cyan-400 transition-colors" />
+                <Globe2 className="w-4 h-4 text-slate-400 group-hover:text-blue-400 transition-colors" />
                 <span>Landing page</span>
               </div>
-              <ExternalLink className="w-3.5 h-3.5 text-slate-400 group-hover:text-cyan-400" />
+              <ExternalLink className="w-3.5 h-3.5 text-slate-400 group-hover:text-blue-400" />
             </a>
             <a
               href="/demo"
               target="_blank"
               rel="noopener noreferrer"
               onClick={() => setIsMobileMenuOpen(false)}
-              className="flex items-center justify-between px-3.5 py-2 rounded-xl text-xs font-semibold text-slate-400 hover:text-cyan-300 hover:bg-slate-800/60 transition-all group"
+              className="flex items-center justify-between px-3.5 py-2 rounded-xl text-xs font-semibold text-slate-400 hover:text-blue-300 hover:bg-slate-800/60 transition-all group"
             >
               <div className="flex items-center gap-3">
-                <Sparkles className="w-4 h-4 text-slate-400 group-hover:text-cyan-400 transition-colors" />
+                <Sparkles className="w-4 h-4 text-slate-400 group-hover:text-blue-400 transition-colors" />
                 <span>Interaktivní demo</span>
               </div>
-              <ExternalLink className="w-3.5 h-3.5 text-slate-400 group-hover:text-cyan-400" />
+              <ExternalLink className="w-3.5 h-3.5 text-slate-400 group-hover:text-blue-400" />
             </a>
           </nav>
         </div>
@@ -176,14 +176,14 @@ export const SuperAdminLayout: React.FC<SuperAdminLayoutProps> = ({ children }) 
           <div className="p-3 bg-[#090D16] border border-slate-800 rounded-2xl space-y-2">
             <div className="flex items-center justify-between text-[10px] font-mono">
               <span className="text-slate-400 flex items-center gap-1">
-                <Cpu className="w-3 h-3 text-cyan-400" />
+                <Cpu className="w-3 h-3 text-blue-400" />
                 Cluster Node
               </span>
               <span className="text-green-400 font-bold">online (99.99%)</span>
             </div>
             <div className="flex items-center justify-between text-[10px] font-mono">
               <span className="text-slate-400 flex items-center gap-1">
-                <Server className="w-3 h-3 text-cyan-400" />
+                <Server className="w-3 h-3 text-blue-400" />
                 Database RTT
               </span>
               <span className="text-slate-300 font-semibold">24 ms (Supabase)</span>
@@ -193,12 +193,12 @@ export const SuperAdminLayout: React.FC<SuperAdminLayoutProps> = ({ children }) 
           {/* Super Admin User Profile */}
           <div className="flex items-center justify-between pt-1">
             <div className="flex items-center gap-2.5 overflow-hidden">
-              <div className="w-8 h-8 rounded-xl bg-cyan-500/20 border border-cyan-500/40 text-cyan-300 flex items-center justify-center font-black text-xs shrink-0">
+              <div className="w-8 h-8 rounded-xl bg-blue-500/20 border border-blue-500/40 text-blue-300 flex items-center justify-center font-black text-xs shrink-0">
                 SA
               </div>
               <div className="overflow-hidden">
                 <p className="text-xs font-bold text-white truncate">{dbUser?.email || user?.email || 'admin@stavbacore.cz'}</p>
-                <p className="text-[10px] text-cyan-400 font-mono">System Architect</p>
+                <p className="text-[10px] text-blue-400 font-mono">System Architect</p>
               </div>
             </div>
 
@@ -258,10 +258,10 @@ export const SuperAdminLayout: React.FC<SuperAdminLayoutProps> = ({ children }) 
             </button>
 
             <div className="flex items-center gap-2 text-xs font-mono text-slate-400">
-              <span className="w-2 h-2 rounded-full bg-cyan-400 animate-ping"></span>
+              <span className="w-2 h-2 rounded-full bg-blue-400 animate-ping"></span>
               <span className="text-slate-300 font-bold hidden sm:inline">SUPERADMIN OS</span>
               <span className="text-slate-500 hidden sm:inline">/</span>
-              <span className="text-cyan-400 font-semibold truncate max-w-[140px] sm:max-w-none">{pathname}</span>
+              <span className="text-blue-400 font-semibold truncate max-w-[140px] sm:max-w-none">{pathname}</span>
             </div>
 
             <div className="h-5 w-px bg-slate-800 hidden sm:block"></div>
@@ -287,7 +287,7 @@ export const SuperAdminLayout: React.FC<SuperAdminLayoutProps> = ({ children }) 
 
             <button
               onClick={() => navigate('/admin/install')}
-              className="px-3 sm:px-3.5 py-2 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-slate-950 font-black text-xs transition-all shadow-md shadow-cyan-500/20 flex items-center gap-1.5 shrink-0"
+              className="px-3 sm:px-3.5 py-2 rounded-xl bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-400 hover:to-blue-500 text-slate-950 font-black text-xs transition-all shadow-md shadow-blue-500/20 flex items-center gap-1.5 shrink-0"
             >
               <Wand2 className="w-3.5 h-3.5" />
               <span>Nová instalace</span>

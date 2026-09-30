@@ -460,7 +460,7 @@ Systém je připraven k provozu.
       {currentStep === 1 && (
         <div className="bg-white border border-slate-200 rounded-3xl p-8 space-y-6 shadow-xl">
           <div className="max-w-2xl">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 text-xs font-bold mb-3">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/10 text-blue-400 border border-blue-500/20 text-xs font-bold mb-3">
               <Globe className="w-3.5 h-3.5" />
               <span>Krok 1: Extrakce reálného webu firmy</span>
             </div>
@@ -1159,7 +1159,7 @@ Systém je připraven k provozu.
       {currentStep === 6 && (
         <div className="bg-white border border-slate-200 rounded-3xl p-8 space-y-6 shadow-xl">
           <div>
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 text-xs font-bold mb-3">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/10 text-blue-400 border border-blue-500/20 text-xs font-bold mb-3">
               <Eye className="w-3.5 h-3.5" />
               <span>Krok 6: Živý náhled před nasazením</span>
             </div>
@@ -1204,7 +1204,7 @@ Systém je připraven k provozu.
                     <img src={logoPreview} alt="Logo" className="w-8 h-8 rounded-lg object-cover" />
                     <div>
                       <h4 className="text-xs font-bold text-slate-900">{companyName} OS</h4>
-                      <p className="text-[10px] text-slate-500">StavbaCore Cloud CRM</p>
+                      <p className="text-[10px] text-slate-500">StavbaFlow Cloud CRM</p>
                     </div>
                   </div>
                   <span className="px-2.5 py-1 rounded-full text-[10px] font-bold text-slate-900" style={{ backgroundColor: primaryColor }}>
@@ -1345,7 +1345,7 @@ Systém je připraven k provozu.
 
                 {/* Direct CRM Access Card */}
                 <div className="p-5 bg-slate-50 rounded-2xl border border-slate-200 space-y-3">
-                  <div className="flex items-center gap-2 text-xs font-bold text-cyan-400">
+                  <div className="flex items-center gap-2 text-xs font-bold text-blue-400">
                     <Layout className="w-4 h-4" />
                     <span>Přímý vstup do CRM administrace</span>
                   </div>
@@ -1357,7 +1357,7 @@ Systém je připraven k provozu.
                       impersonateOrganization(deploySuccessData.orgId);
                       window.location.href = deploySuccessData.crmUrl;
                     }}
-                    className="w-full py-2.5 px-4 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 text-xs font-black transition-all flex items-center justify-center gap-2 shadow-lg"
+                    className="w-full py-2.5 px-4 rounded-xl bg-blue-500 hover:bg-blue-400 text-slate-950 text-xs font-black transition-all flex items-center justify-center gap-2 shadow-lg"
                   >
                     <span>Otevřít nové CRM ({companyName})</span>
                     <ExternalLink className="w-4 h-4" />
