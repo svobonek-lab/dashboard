@@ -5,6 +5,11 @@ import { AppLeadRow, AppMemberRow, toAppLead, toAppMember } from '../../src/app/
 
 const appSchemaReadsEnabled = (import.meta as any).env?.VITE_APP_SCHEMA_READS === 'true';
 
+const appStatus: Record<string, AppLeadRow['status']> = {
+  New: 'new', Contacted: 'contacted', Quote: 'scheduled', 'In Progress': 'in_progress', Completed: 'won', Lost: 'lost'
+};
+const appPriority: Record<string, AppLeadRow['priority']> = { Low: 'low', Medium: 'normal', High: 'high' };
+
 export class SupabaseRepository implements ICRMRepository {
   readonly mode = 'cloud' as const;
 
@@ -164,6 +169,31 @@ export class SupabaseRepository implements ICRMRepository {
     }
 
     try {
+      if (appSchemaReadsEnabled) {
+        const payload: Record<string, unknown> = {
+          company_id: orgId,
+          title: lead.title || 'Nová poptávka',
+          customer: lead.customerName || '',
+          email: lead.customerEmail || '',
+          phone: lead.customerPhone || '',
+          address: lead.address || '',
+          description: lead.description || '',
+          status: appStatus[lead.status || 'New'] || 'new',
+          priority: appPriority[lead.priority || 'Medium'] || 'normal',
+          assigned_to: lead.assignedEmployeeId && isValidUUID(lead.assignedEmployeeId) ? lead.assignedEmployeeId : null,
+          scheduled_at: lead.preferredDate || null,
+          duration_minutes: 0,
+          value: Number(lead.price) || 0,
+          source: 'dashboard',
+          revision: 1,
+        };
+        if (lead.id && isValidUUID(lead.id)) payload.id = lead.id;
+
+        const { data, error } = await supabase.from('app_leads').upsert(payload).select().single();
+        if (error || !data) throw error || new Error('app_leads zápis nevrátil uloženou poptávku.');
+        return toAppLead(data as AppLeadRow, lead.assignedEmployeeName || '') as Lead;
+      }
+
       const payload: any = {
         organization_id: orgId,
         customer_name: lead.customerName,
@@ -222,15 +252,15 @@ export class SupabaseRepository implements ICRMRepository {
     }
 
     await supabase
-      .from('leads')
-      .update({ status })
+      .from(appSchemaReadsEnabled ? 'app_leads' : 'leads')
+      .update({ status: appSchemaReadsEnabled ? (appStatus[status] || 'new') : status })
       .eq('id', leadId)
-      .eq('organization_id', orgId);
+      .eq(appSchemaReadsEnabled ? 'company_id' : 'organization_id', orgId);
   }
 
   async deleteLead(orgId: string, leadId: string): Promise<void> {
     if (!isSupabaseConfigured || !supabase || !isValidUUID(leadId)) return;
-    await supabase.from('leads').delete().eq('id', leadId);
+    await supabase.from(appSchemaReadsEnabled ? 'app_leads' : 'leads').delete().eq('id', leadId).eq(appSchemaReadsEnabled ? 'company_id' : 'organization_id', orgId);
   }
 
   async getEmployees(orgId: string): Promise<Employee[]> {
@@ -279,6 +309,20 @@ export class SupabaseRepository implements ICRMRepository {
   async saveEmployee(orgId: string, employee: Partial<Employee>): Promise<Employee> {
     if (!isSupabaseConfigured || !supabase || !isValidUUID(orgId)) {
       return employee as Employee;
+    }
+
+    if (appSchemaReadsEnabled) {
+      const userId = employee.id && isValidUUID(employee.id) ? employee.id : crypto.randomUUID();
+      const { data, error } = await supabase.from('app_members').upsert({
+        company_id: orgId,
+        user_id: userId,
+        name: employee.name || 'Pracovník',
+        email: employee.email || '',
+        role: employee.role === 'owner' ? 'owner' : 'employee',
+        active: employee.active !== false,
+      }).select().single();
+      if (error || !data) throw error || new Error('app_members zápis nevrátil uloženého člena.');
+      return { ...toAppMember(data as AppMemberRow), ...employee, id: userId } as Employee;
     }
 
     const payload: any = {
