@@ -1242,10 +1242,6 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
 
   // Data Action: Create New Lead (Unified)
   const createLead = async (payload: any): Promise<Lead> => {
-    if (BLOCK_LEGACY_WRITES && isSupabaseConfigured) {
-      throw new Error(APP_SCHEMA_WRITES_BLOCKED_MESSAGE);
-    }
-
     const targetOrgId = currentOrg?.id || LocalSupabaseMock.getActiveOrgId() || DEFAULT_DEMO_ORG_ID;
 
     // Call unified saveLead logic
@@ -1289,10 +1285,6 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
   };
 
   const saveLead = async (leadData: Partial<Lead>): Promise<Lead> => {
-    if (BLOCK_LEGACY_WRITES && isSupabaseConfigured) {
-      throw new Error(APP_SCHEMA_WRITES_BLOCKED_MESSAGE);
-    }
-
     const targetOrgId = currentOrg?.id || LocalSupabaseMock.getActiveOrgId() || DEFAULT_DEMO_ORG_ID;
 
     const customerName = leadData.customerName || (leadData as any).fullName || leadData.title || '';
@@ -1307,6 +1299,24 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
     const preferredDate = leadData.preferredDate || (leadData as any).preferred_date || null;
     const priority = leadData.priority || 'Medium';
     const notes = (leadData as any).notes || '';
+
+    if (BLOCK_LEGACY_WRITES && isSupabaseConfigured) {
+      return crmRepo.saveLead(targetOrgId, {
+        ...leadData,
+        organization_id: targetOrgId,
+        customerName,
+        customerPhone: phone,
+        customerEmail: email,
+        price: budget,
+        status,
+        address,
+        city,
+        description,
+        preferredDate,
+        priority,
+        title: leadData.title || (projectType ? `${projectType} - ${customerName || 'Nová poptávka'}` : customerName || 'Nová poptávka'),
+      });
+    }
 
     const leadRecord: any = {
       organization_id: targetOrgId,
@@ -1456,14 +1466,15 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
 
   // Data Action: Update lead status
   const updateLeadStatus = async (leadId: string, status: string) => {
-    if (BLOCK_LEGACY_WRITES && isSupabaseConfigured) {
-      throw new Error(APP_SCHEMA_WRITES_BLOCKED_MESSAGE);
-    }
-
     // Always persist into local storage immediately for zero-lag UI and offline robustness
     updateLeadStatusLocal(leadId, status);
 
     if (!isSupabaseConfigured || !supabase || !isValidUUID(leadId)) {
+      return;
+    }
+
+    if (BLOCK_LEGACY_WRITES) {
+      await crmRepo.updateLeadStatus(currentOrg?.id || '', leadId, status);
       return;
     }
 
@@ -1643,11 +1654,11 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
   };
 
   const saveEmployee = async (empData: Partial<Employee>): Promise<Employee> => {
-    if (BLOCK_LEGACY_WRITES && isSupabaseConfigured) {
-      throw new Error(APP_SCHEMA_WRITES_BLOCKED_MESSAGE);
-    }
-
     if (!currentOrg) throw new Error('Organizace není vybrána');
+
+    if (BLOCK_LEGACY_WRITES && isSupabaseConfigured) {
+      return crmRepo.saveEmployee(currentOrg.id, empData);
+    }
 
     const empRecord = {
       organization_id: currentOrg.id,
