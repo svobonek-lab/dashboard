@@ -56,10 +56,9 @@ import { InteractiveStoryDemo } from '@/features/InteractiveStoryDemo';
 
 // Types
 import { Lead, LeadStatus } from '@/types';
+import { buildAppLoginUrl, getDeploymentConfig } from './app/deploymentSurface';
 
-type DeploymentSurface = 'unified' | 'landing' | 'app';
-const deploymentSurface = ((import.meta as any).env?.VITE_DEPLOYMENT_SURFACE || 'unified') as DeploymentSurface;
-const appUrl = String((import.meta as any).env?.VITE_APP_URL || '').replace(/\/$/, '');
+const { surface: deploymentSurface, appUrl } = getDeploymentConfig((import.meta as any).env || {});
 
 function ExternalRedirect({ url }: { url: string }) {
   useEffect(() => {
@@ -70,6 +69,24 @@ function ExternalRedirect({ url }: { url: string }) {
     <div className="min-h-screen bg-slate-950 flex items-center justify-center text-slate-300">
       Přesměrování do přihlášení…
     </div>
+  );
+}
+
+function AppSetupRequired() {
+  return (
+    <main className="min-h-screen bg-slate-950 text-white flex items-center justify-center p-6">
+      <section className="max-w-lg rounded-3xl border border-white/10 bg-white/5 p-8 shadow-2xl">
+        <p className="text-xs font-bold uppercase tracking-[0.18em] text-cyan-300">StavbaCore workspace</p>
+        <h1 className="mt-3 text-3xl font-black tracking-tight">Systém čeká na připojení produkce</h1>
+        <p className="mt-4 text-sm leading-6 text-slate-300">
+          Tento Vercel projekt je nastavený jako firemní aplikace, ale nemá dostupné Supabase připojení.
+          Přihlášení a data firmy jsou proto zablokované, aby se nikdy nespustil ukázkový režim.
+        </p>
+        <p className="mt-6 rounded-2xl border border-cyan-300/20 bg-cyan-300/10 p-4 text-sm text-cyan-100">
+          Nastavte VITE_SUPABASE_URL a VITE_SUPABASE_ANON_KEY ve Vercelu a znovu nasaďte projekt.
+        </p>
+      </section>
+    </main>
   );
 }
 
@@ -361,6 +378,10 @@ function AppContent() {
     city: currentOrg?.city || branding.city
   };
 
+  if (deploymentSurface === 'app' && !isConfigured) {
+    return <AppSetupRequired />;
+  }
+
   // 1. Standalone / Public / Embed Routes (No Layout, No Auth required, No company data leakage)
   if (pathname === '/') {
     if (isAuthLoading) {
@@ -440,7 +461,7 @@ function AppContent() {
 
   if (pathname === '/login') {
     if (deploymentSurface === 'landing' && appUrl) {
-      return <ExternalRedirect url={`${appUrl}/login`} />;
+      return <ExternalRedirect url={buildAppLoginUrl(appUrl, window.location.search)} />;
     }
     return <LoginPage onSuccess={(user) => {
       const targetRole = user?.role || dbUser?.role || 'owner';
