@@ -2249,6 +2249,10 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
     employees?: Array<{ name: string; specialization?: string; role?: string; phone?: string; email?: string; capacity?: number }>;
     onStepProgress?: (step: number, message: string) => void;
   }) => {
+    if (BLOCK_LEGACY_WRITES && isSupabaseConfigured) {
+      throw new Error(`${APP_SCHEMA_WRITES_BLOCKED_MESSAGE} Rychlé založení firmy bude dostupné po ověření provision RPC pro app_* schéma.`);
+    }
+
     const stepNotify = (step: number, msg: string) => {
       data.onStepProgress?.(step, msg);
     };
