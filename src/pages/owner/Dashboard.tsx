@@ -4,6 +4,7 @@ import { useRouter } from '../../app/router';
 import { OwnerDashboard } from '@/features/OwnerDashboard';
 import { OnboardingChecklist } from '@/features/OnboardingChecklist';
 import { Lead, Employee } from '@/types';
+import { WorkspaceReadinessPanel } from '@/features/WorkspaceReadinessPanel';
 
 interface OwnerDashboardPageProps {
   leads: Lead[];
@@ -23,21 +24,10 @@ export const OwnerDashboardPage: React.FC<OwnerDashboardPageProps> = ({
   // Condition for Empty Workspace
   const isEmptyWorkspace = leads.length === 0;
 
-  if (isEmptyWorkspace) {
-    return <OnboardingChecklist leadsCount={leads.length} employeesCount={employees.length} />;
-  }
+  if (isEmptyWorkspace) return <OnboardingChecklist leadsCount={leads.length} employeesCount={employees.length} />;
 
-  return (
-    <OwnerDashboard
-      branding={branding}
-      leads={leads}
-      onSelectLead={(l) => {
-        onSelectLead(l);
-        navigate('/leads');
-      }}
-      onNavigateTab={(tab) => {
-        navigate(`/${tab}`);
-      }}
-    />
-  );
+  return <div className="space-y-6">
+    <WorkspaceReadinessPanel organization={currentOrg} leads={leads} employees={employees} role="owner" compact />
+    <OwnerDashboard branding={branding} leads={leads} onSelectLead={(l) => { onSelectLead(l); navigate('/leads'); }} onNavigateTab={(tab) => { navigate(`/${tab}`); }} />
+  </div>;
 };
