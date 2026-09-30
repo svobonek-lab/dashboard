@@ -464,14 +464,21 @@ function AppContent() {
     );
   }
 
-  if (pathname === '/login') {
+  const roleLoginRoutes: Record<string, UserRole> = {
+    '/admin/login': 'super_admin',
+    '/owner/login': 'owner',
+    '/employee/login': 'employee',
+  };
+
+  if (pathname === '/login' || roleLoginRoutes[pathname]) {
     if (deploymentSurface === 'landing' && appUrl) {
       return <ExternalRedirect url={buildAppLoginUrl(appUrl, window.location.search)} />;
     }
+    const expectedRole = roleLoginRoutes[pathname];
     return <LoginPage onSuccess={(user) => {
       const targetRole = user?.role || dbUser?.role || 'owner';
       navigate(getDefaultRouteForRole(targetRole), { replace: true });
-    }} />;
+    }} expectedRole={expectedRole} />;
   }
 
   // 2. Super Admin Routes (`/admin*`)

@@ -1,13 +1,33 @@
 import React, { useState } from 'react';
 import { useOrganization } from '@/context/OrganizationContext';
 import { Building, Lock, Mail, ArrowRight, CheckCircle2, ShieldAlert, LayoutDashboard, Users, Calendar, Inbox } from 'lucide-react';
+import type { UserRole } from '@/src/app/permissions';
 
 interface LoginPageProps {
   onSuccess: (user?: any) => void;
+  expectedRole?: UserRole;
 }
 
-export const LoginPage: React.FC<LoginPageProps> = ({ onSuccess }) => {
-  const { currentOrg, isConfigured, login, signUp, error: contextError } = useOrganization();
+const ROLE_COPY: Record<UserRole, { title: string; description: string; route: string }> = {
+  super_admin: {
+    title: 'Přihlášení administrátora',
+    description: 'Správa firem, tarifů a nastavení platformy StavbaFlow.',
+    route: '/admin/login',
+  },
+  owner: {
+    title: 'Přihlášení majitele firmy',
+    description: 'Přehled zakázek, poptávek, týmu a výkonu vaší firmy.',
+    route: '/owner/login',
+  },
+  employee: {
+    title: 'Přihlášení zaměstnance',
+    description: 'Vaše přiřazené zakázky, termíny, checklisty a komunikace.',
+    route: '/employee/login',
+  },
+};
+
+export const LoginPage: React.FC<LoginPageProps> = ({ onSuccess, expectedRole }) => {
+  const { currentOrg, isConfigured, login, logout, signUp, error: contextError } = useOrganization();
   const branding = currentOrg?.branding || {};
   
   const [mode, setMode] = useState<'login' | 'signup'>('login');
@@ -34,6 +54,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onSuccess }) => {
   
   const displayBrandColor = mode === 'signup' && primaryColor !== 'var(--brand-primary)' ? primaryColor : 'var(--brand-primary)';
   const displayOrgName = mode === 'signup' && orgName ? orgName : activeCompanyName;
+  const roleCopy = expectedRole ? ROLE_COPY[expectedRole] : null;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -44,6 +65,10 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onSuccess }) => {
     try {
       if (mode === 'login') {
         const user = await login(email, password);
+        if (expectedRole && user?.role !== expectedRole) {
+          await logout();
+          throw new Error('Tento účet nemá oprávnění pro zvolený typ dashboardu. Přihlaste se přes správný vstup.');
+        }
         onSuccess(user);
       } else {
         await signUp(email, password, orgName);
@@ -120,11 +145,11 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onSuccess }) => {
                  {displayOrgName.substring(0, 2).toUpperCase()}
               </div>
               <h2 className="text-2xl font-black text-text tracking-tight">
-                {mode === 'login' ? 'Přihlášení do workspace' : 'Vytvořit firemní workspace'}
+                {mode === 'login' ? (roleCopy?.title || 'Přihlášení do workspace') : 'Vytvořit firemní workspace'}
               </h2>
               <p className="text-sm text-muted font-medium mt-2">
                 {mode === 'login' 
-                  ? `Vstupte do zabezpečeného prostoru firmy ${displayOrgName}` 
+                  ? (roleCopy?.description || `Vstupte do zabezpečeného prostoru firmy ${displayOrgName}`)
                   : 'Vytvořte si vlastní oddělený prostor (tenant) na platformě.'}
               </p>
             </div>
@@ -271,6 +296,26 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onSuccess }) => {
                 </>
               )}
             </div>
+            {mode === 'login' && (
+              <div className="mt-8 border-t border-border pt-5">
+                <p className="text-[10px] font-bold uppercase tracking-wider text-muted text-center mb-3">Jiný typ přístupu</p>
+                <div className="grid grid-cols-3 gap-2 text-[10px] font-bold">
+                  {(Object.keys(ROLE_COPY) as UserRole[]).map((role) => {
+                    const item = ROLE_COPY[role];
+                    const active = expectedRole === role;
+                    return (
+                      <a
+                        key={role}
+                        href={item.route}
+                        className={`rounded-app border px-2 py-2 text-center transition-colors ${active ? 'border-brand-primary/40 bg-brand-primary/10 text-brand-primary' : 'border-border text-muted hover:text-text hover:border-brand-primary/30'}`}
+                      >
+                        {role === 'super_admin' ? 'Admin' : role === 'owner' ? 'Majitel' : 'Zaměstnanec'}
+                      </a>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
          </div>
       </div>
     </div>
