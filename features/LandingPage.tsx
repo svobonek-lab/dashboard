@@ -44,6 +44,7 @@ export const LandingPage: React.FC = () => {
   const [bookingEmail, setBookingEmail] = useState('');
   const [bookingDate, setBookingDate] = useState('Pondělí 10:00');
   const [bookingSuccess, setBookingSuccess] = useState(false);
+  const [bookingStoredLocally, setBookingStoredLocally] = useState(false);
   const [bookingError, setBookingError] = useState<string | null>(null);
   const [isBookingLoading, setIsBookingLoading] = useState(false);
   const [activeLegalModal, setActiveLegalModal] = useState<'vop' | 'gdpr' | 'dpa' | null>(null);
@@ -111,6 +112,7 @@ export const LandingPage: React.FC = () => {
         const stored = JSON.parse(localStorage.getItem('stavbacore_demo_bookings') || '[]');
         stored.push({ ...bookingData, id: 'demo-' + Date.now(), created_at: new Date().toISOString() });
         localStorage.setItem('stavbacore_demo_bookings', JSON.stringify(stored));
+        setBookingStoredLocally(true);
       }
 
       setBookingSuccess(true);
@@ -710,6 +712,18 @@ export const LandingPage: React.FC = () => {
               <X className="w-5 h-5" />
             </button>
 
+            {!COMPANY_DETAILS_CONFIGURED ? (
+              <div className="space-y-3">
+                <h3 className="text-base font-black text-slate-900">Právní dokumenty připravujeme</h3>
+                <p className="text-slate-600 leading-relaxed">
+                  Tento náhled běží v demonstračním režimu. Identifikační údaje provozovatele a finální znění dokumentů se doplní před podpisem smlouvy a ostrým spuštěním.
+                </p>
+                <p className="text-slate-500 text-[11px]">
+                  Pro obchodní ukázku kontaktujte tým StavbaCore. Do produkce se tato stránka nasadí až po právní kontrole a vyplnění firemních údajů.
+                </p>
+              </div>
+            ) : (
+              <>
             {activeLegalModal === 'vop' && (
               <div className="space-y-3">
                 <h3 className="text-base font-black text-slate-900">Všeobecné obchodní podmínky (VOP)</h3>
@@ -746,6 +760,8 @@ export const LandingPage: React.FC = () => {
                   <p><strong>3. Mlčenlivost a subdodavatelé</strong>: Osoby mající přístup k datům jsou vázány mlčenlivostí. Zapojení prověření subdodavatelé podléhají standardním smluvním závazkům k ochraně osobních údajů.</p>
                 </div>
               </div>
+            )}
+              </>
             )}
           </div>
         </div>
@@ -886,9 +902,13 @@ export const LandingPage: React.FC = () => {
                 <div className="w-12 h-12 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center mx-auto">
                   <Check className="w-6 h-6" />
                 </div>
-                <h4 className="text-base font-black text-slate-900">Termín ukázky je zarezervován!</h4>
+                <h4 className="text-base font-black text-slate-900">
+                  {bookingStoredLocally ? 'Ukázka je připravena v tomto prohlížeči' : 'Termín ukázky je zarezervován'}
+                </h4>
                 <p className="text-xs text-slate-600 leading-relaxed">
-                  Děkujeme, pane/paní {bookingName}. Na číslo {bookingPhone} vám odešleme potvrzení termínu ({bookingDate}) a odkaz na videohovor.
+                  {bookingStoredLocally
+                    ? `Děkujeme, ${bookingName}. V tomto náhledu se rezervace pouze uložila lokálně a nikam se neodeslala. Pro skutečné potvrzení nám napište na firemní kontakt.`
+                    : `Děkujeme, ${bookingName}. Na číslo ${bookingPhone} vám odešleme potvrzení termínu (${bookingDate}) a odkaz na videohovor.`}
                 </p>
               </div>
             )}
