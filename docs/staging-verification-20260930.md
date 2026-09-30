@@ -11,6 +11,9 @@ customer rows. The production Supabase project was not modified.
   - 'bootstrap_stavbaflow_staging_contract'
   - 'deny_direct_public_intake_events'
   - 'tighten_staging_table_grants'
+  - 'app_import_worker_contract'
+  - 'fix_import_worker_conflict_target'
+  - 'deny_direct_app_imports'
 - Tables present in public: 'app_companies', 'app_members',
   'app_invites', 'app_leads', 'app_public_intake_events'
 - All five tables report RLS enabled and contain zero rows at verification time.
@@ -33,6 +36,8 @@ Metadata-only catalog checks confirmed:
 - Anonymous and authenticated table grants were revoked and re-added only for
   the minimum authenticated dashboard operations. Public intake events remain
   service-only.
+- The staging import worker now records provenance in 'app_imports', upserts by
+  tenant/fingerprint/source record, and supports service-only rollback.
 
 ## Advisor status
 
@@ -48,6 +53,6 @@ production write release; they are not evidence that production is ready.
 
 The dashboard project's Preview values for VITE_SUPABASE_URL and
 VITE_SUPABASE_ANON_KEY now point to this staging project. Production values
-were left unchanged. A new deployment is currently blocked by Vercel's
-account-level free daily deployment limit; the last READY deployment remains
-available and no production deployment was attempted.
+were left unchanged. A new deployment for the latest branch may be blocked by
+Vercel's account-level free daily deployment limit; the last READY deployment
+remains available and no production deployment was attempted.
