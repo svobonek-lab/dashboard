@@ -66,35 +66,19 @@ export const WidgetIframePage: React.FC = () => {
       }
 
       try {
-        if (isSupabaseConfigured && supabase && isValidUUID(orgId)) {
-          // 1) Load company branding exclusively via supabase.rpc('get_public_org_branding', { p_org_id })
-          const { data, error } = await supabase.rpc('get_public_org_branding', { p_org_id: orgId });
-          
-          if (!error && data && data.id && (data.status === null || data.status === 'Active')) {
+        if (isSupabaseConfigured && supabase) {
+          // Public branding is resolved through the staging app_* contract by tenant key.
+          const { data, error } = await supabase.rpc('app_get_public_company', { p_public_key: orgId });
+
+          if (!error && data && data.id && data.active !== false) {
             setOrgData({
               id: data.id,
               name: data.name || 'Stavební firma',
-              primary_color: data.primary_color || '#2563eb',
+              primary_color: data.color || '#2563eb',
               logo_url: data.logo_url || ''
             });
           } else {
-            // If RPC returns null or error, try direct select for backward compatibility
-            const { data: directOrg, error: directErr } = await supabase
-              .from('organizations')
-              .select('id, name, primary_color, logo_url, status')
-              .eq('id', orgId)
-              .maybeSingle();
-
-            if (!directErr && directOrg && (directOrg.status === null || directOrg.status === 'Active')) {
-              setOrgData({
-                id: directOrg.id,
-                name: directOrg.name || 'Stavební firma',
-                primary_color: directOrg.primary_color || '#2563eb',
-                logo_url: directOrg.logo_url || ''
-              });
-            } else {
-              setOrgData(null);
-            }
+            setOrgData(null);
           }
         } else {
           // Non-production local fallback
@@ -161,12 +145,15 @@ export const WidgetIframePage: React.FC = () => {
     setIsRecordingVoice(!isRecordingVoice);
   };
 
-  // 2) Poptávku odešli výhradně přes supabase.rpc('submit_public_lead', { p_org_id, p_customer_name, p_phone, p_email, p_project_type, p_budget, p_notes })
+  // 2) Poptávku odešli přes the tenant-safe app_* intake RPC with an idempotency key.
   // Organizaci vždy bereš z parametru `org` v URL, ne z kontextu přihlášené firmy.
+  const [requestKey] = useState(() => `web_${Date.now()}_${Math.random().toString(36).slice(2)}`);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const params = new URLSearchParams(window.location.search);
     const orgId = params.get('org') || orgData?.id;
+    const companyId = orgData?.id;
 
     if (!orgId || !orgData) {
       setSubmitError('Formulář není dostupný.');
@@ -184,19 +171,20 @@ export const WidgetIframePage: React.FC = () => {
     const combinedNotes = notesParts.join('\n');
 
     try {
-      if (isSupabaseConfigured && supabase && isValidUUID(orgId)) {
-        const { error } = await supabase.rpc('submit_public_lead', {
-          p_org_id: orgId,
-          p_customer_name: formData.fullName.trim(),
+      if (isSupabaseConfigured && supabase && companyId && isValidUUID(companyId)) {
+        const { error } = await supabase.rpc('app_submit_public_lead', {
+          p_company_id: companyId,
+          p_request_key: requestKey,
+          p_customer: formData.fullName.trim(),
           p_phone: formData.phone.trim(),
           p_email: formData.email.trim() || null,
-          p_project_type: formData.projectType.trim() || 'Poptávka z webu',
-          p_budget: formData.budgetValue || 0,
-          p_notes: combinedNotes || null
+          p_title: formData.projectType.trim() || 'Poptávka z webu',
+          p_description: combinedNotes || null,
+          p_value: formData.budgetValue || 0
         });
 
         if (error) {
-          console.error('submit_public_lead RPC error:', error);
+          console.error('app_submit_public_lead RPC error:', error);
           // 3) V produkčním buildu žádný fallback do localStorage: zobraz chybu a úspěch neukazuj
           setSubmitError('Poptávku se nepodařilo odeslat. Zkuste to prosím znovu nebo kontaktujte firmu přímo.');
           setIsSubmitting(false);

@@ -9,7 +9,9 @@ import { getRuntimePolicy } from '../src/app/runtimePolicy';
 import { readAppSchemaIdentity } from '../src/app/appSchemaIdentity';
 
 const IS_PRODUCTION = !!(import.meta as any).env?.PROD;
-const APP_SCHEMA_READS = isAppSchemaReadsEnabled((import.meta as any).env || {});
+// Production always resolves identity/data through the verified app_* model.
+// Never let an old deployment silently select the removed legacy tables.
+const APP_SCHEMA_READS = IS_PRODUCTION || isAppSchemaReadsEnabled((import.meta as any).env || {});
 const BLOCK_LEGACY_WRITES = shouldBlockLegacyWrites((import.meta as any).env || {});
 const RUNTIME_POLICY = getRuntimePolicy((import.meta as any).env || {});
 
@@ -656,7 +658,7 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
       
       // Check if employee is deactivated or pending activation
       let empRec = null;
-      if (isSupabaseConfigured && supabase) {
+      if (!APP_SCHEMA_READS && isSupabaseConfigured && supabase) {
         try {
           const { data: remoteEmp } = await supabase.from('employees').select('*').eq('email', cleanEmail).maybeSingle();
           empRec = remoteEmp;
@@ -665,7 +667,7 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
         }
       }
 
-      if (!empRec) {
+      if (!empRec && !APP_SCHEMA_READS) {
         const allEmps = LocalSupabaseMock.getEmployees() as any[];
         empRec = allEmps.find(e => e.email?.toLowerCase() === cleanEmail.toLowerCase());
       }
@@ -695,8 +697,8 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
 
       return {
         ...authUser,
-        role: activeSessionUser?.role || 'owner',
-        organization_id: activeSessionUser?.organization_id
+        role: dbUser?.role || activeSessionUser?.role || 'employee',
+        organization_id: dbUser?.organization_id || activeSessionUser?.organization_id
       };
     } catch (err: any) {
       console.error('login error:', err);
@@ -864,6 +866,12 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
   const switchOrganization = async (orgId: string) => {
     setError(null);
     const targetOrg = organizations.find(o => o.id === orgId);
+
+    if (APP_SCHEMA_READS) {
+      if (!targetOrg) throw new Error('Přepnutí firmy čeká na ověřený app_* membership kontrakt.');
+      setCurrentOrg(targetOrg);
+      return;
+    }
     
     if (!isSupabaseConfigured || !supabase || !isValidUUID(orgId)) {
       if (targetOrg) {
@@ -1466,8 +1474,9 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
 
   // Data Action: Update lead status
   const updateLeadStatus = async (leadId: string, status: string) => {
-    // Always persist into local storage immediately for zero-lag UI and offline robustness
-    updateLeadStatusLocal(leadId, status);
+    // Production must never make a successful-looking local-only mutation.
+    // Optimistic local state is reserved for the synthetic development demo.
+    if (!IS_PRODUCTION) updateLeadStatusLocal(leadId, status);
 
     if (!isSupabaseConfigured || !supabase || !isValidUUID(leadId)) {
       return;
@@ -1834,6 +1843,9 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
   };
 
   const deactivateEmployee = async (employeeId: string, deactivate: boolean = true): Promise<void> => {
+    if (BLOCK_LEGACY_WRITES && isSupabaseConfigured) {
+      throw new Error(`${APP_SCHEMA_WRITES_BLOCKED_MESSAGE} Aktivace zaměstnanců čeká na app_members/Auth kontrakt.`);
+    }
     const mockAll = LocalSupabaseMock.getEmployees() as any[];
     const idx = mockAll.findIndex(e => e.id === employeeId);
     if (idx !== -1) {
@@ -1855,6 +1867,9 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
   };
 
   const deleteEmployee = async (employeeId: string): Promise<void> => {
+    if (BLOCK_LEGACY_WRITES && isSupabaseConfigured) {
+      throw new Error(`${APP_SCHEMA_WRITES_BLOCKED_MESSAGE} Správa zaměstnanců čeká na app_members/Auth kontrakt.`);
+    }
     const mockAll = LocalSupabaseMock.getEmployees() as any[];
     const updated = mockAll.filter(e => e.id !== employeeId);
     LocalSupabaseMock.saveEmployees(updated);
@@ -1870,6 +1885,16 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
   // Data Fetch: Projects filtered by active organization_id
   const fetchProjects = async (): Promise<DBProject[]> => {
     if (!currentOrg) return [];
+
+    if (APP_SCHEMA_READS) {
+      setSchemaError('Zakázky čekají na ověřený app_* kontrakt pro projekty a úkoly.');
+      return [];
+    }
+
+    if (IS_PRODUCTION && (!isSupabaseConfigured || !supabase)) {
+      setSchemaError(RUNTIME_POLICY.failClosedMessage);
+      return [];
+    }
 
     if (!isSupabaseConfigured || !supabase || !isValidUUID(currentOrg.id)) {
       return fetchProjectsLocal();
@@ -1892,6 +1917,14 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
   // Data Action: Save Project to Supabase
   const saveProject = async (projectData: Partial<DBProject>): Promise<DBProject> => {
     if (!currentOrg) throw new Error('Organizace není vybrána');
+
+    if (BLOCK_LEGACY_WRITES && isSupabaseConfigured) {
+      throw new Error(`${APP_SCHEMA_WRITES_BLOCKED_MESSAGE} Projekty čekají na ověřený app_* kontrakt.`);
+    }
+
+    if (IS_PRODUCTION && (!isSupabaseConfigured || !supabase)) {
+      throw new Error(RUNTIME_POLICY.failClosedMessage);
+    }
 
     const projectRecord = {
       organization_id: currentOrg.id,
@@ -1943,6 +1976,11 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
   };
 
   const impersonateOrganization = async (orgId: string) => {
+    if (APP_SCHEMA_READS) {
+      const allowedOrg = organizations.find((o: any) => o.id === orgId);
+      if (allowedOrg) setCurrentOrg(allowedOrg as Organization);
+      return;
+    }
     if (!originalOrg) {
       setOriginalOrg(currentOrg);
     }
@@ -1987,6 +2025,10 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
   };
 
   const switchRoleToSuperAdmin = () => {
+    if (APP_SCHEMA_READS) {
+      setSchemaError('Platform admin role čeká na serverově vynucený app_* admin kontrakt.');
+      return;
+    }
     const currentEmail = (dbUser?.email || user?.email || '').trim().toLowerCase();
     if (currentEmail !== 'svobonek@gmail.com') {
       console.warn('Super Admin access is restricted solely to svobonek@gmail.com');
@@ -2005,12 +2047,18 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
         email: 'svobonek@gmail.com'
       });
     }
+
   };
 
   const fetchAllOrganizationsAdmin = async (): Promise<any[]> => {
     const localOrgs = LocalSupabaseMock.getOrganizations();
     const localEmps = LocalSupabaseMock.getEmployees();
     const localLeads = LocalSupabaseMock.getLeads();
+
+    if (IS_PRODUCTION && (!isSupabaseConfigured || !supabase)) {
+      setSchemaError(RUNTIME_POLICY.failClosedMessage);
+      return [];
+    }
 
     if (!isSupabaseConfigured || !supabase) {
       return localOrgs.map((org: any) => {
@@ -2023,6 +2071,16 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
           status: org.status || 'Active'
         };
       });
+    }
+
+    if (APP_SCHEMA_READS) {
+      setSchemaError('Platformní přehled firem čeká na oddělený app_* admin kontrakt.');
+      return [];
+    }
+
+    if (IS_PRODUCTION && (!isSupabaseConfigured || !supabase)) {
+      setSchemaError(RUNTIME_POLICY.failClosedMessage);
+      return [];
     }
 
     try {
@@ -2072,6 +2130,10 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
       Sentry.captureException(err, {
         extra: { organization_id: currentOrg?.id, context: 'fetchAllOrganizationsAdmin' }
       });
+      if (IS_PRODUCTION) {
+        setSchemaError(RUNTIME_POLICY.failClosedMessage);
+        return [];
+      }
       return localOrgs.map((org: any) => {
         const orgEmps = localEmps.filter((e: any) => e.organization_id === org.id);
         const orgLeads = localLeads.filter((l: any) => l.organization_id === org.id);
@@ -2086,6 +2148,12 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
   };
 
   const deleteOrganizationAdmin = async (orgId: string): Promise<void> => {
+    if (BLOCK_LEGACY_WRITES && isSupabaseConfigured) {
+      throw new Error(`${APP_SCHEMA_WRITES_BLOCKED_MESSAGE} Mazání firem čeká na platform-admin kontrakt a retenční pravidla.`);
+    }
+    if (IS_PRODUCTION && (!isSupabaseConfigured || !supabase)) {
+      throw new Error(RUNTIME_POLICY.failClosedMessage);
+    }
     if (!isSupabaseConfigured || !supabase) {
       const orgs = LocalSupabaseMock.getOrganizations().filter((o: any) => o.id !== orgId);
       LocalSupabaseMock.saveOrganizations(orgs);
@@ -2112,6 +2180,12 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
   };
 
   const updateBrandingAdmin = async (orgId: string, name: string, color: string, logo?: string): Promise<void> => {
+    if (BLOCK_LEGACY_WRITES && isSupabaseConfigured) {
+      throw new Error(`${APP_SCHEMA_WRITES_BLOCKED_MESSAGE} Firemní nastavení čeká na ověřený app_companies kontrakt.`);
+    }
+    if (IS_PRODUCTION && (!isSupabaseConfigured || !supabase)) {
+      throw new Error(RUNTIME_POLICY.failClosedMessage);
+    }
     // PATCH P5: Remove cache fallback to Unsplash demo image
     const finalLogo = logo !== undefined ? logo : '';
     const updatedRecord = {
@@ -2214,6 +2288,12 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
   };
 
   const suspendOrganizationAdmin = async (orgId: string, suspend: boolean): Promise<void> => {
+    if (BLOCK_LEGACY_WRITES && isSupabaseConfigured) {
+      throw new Error(`${APP_SCHEMA_WRITES_BLOCKED_MESSAGE} Stav firmy čeká na platform-admin kontrakt.`);
+    }
+    if (IS_PRODUCTION && (!isSupabaseConfigured || !supabase)) {
+      throw new Error(RUNTIME_POLICY.failClosedMessage);
+    }
     const status = suspend ? 'Suspended' : 'Active';
     
     if (!isSupabaseConfigured || !supabase) {

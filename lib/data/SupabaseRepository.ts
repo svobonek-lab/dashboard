@@ -2,8 +2,9 @@ import { ICRMRepository, RepositoryHealthStatus } from './types';
 import { Lead, Employee, CompanyBranding } from '../../types';
 import { supabase, isSupabaseConfigured, isValidUUID, LocalSupabaseMock } from '../supabase';
 import { AppLeadRow, AppMemberRow, toAppLead, toAppMember } from '../../src/app/productionSchema';
+import { APP_SCHEMA_WRITES_BLOCKED_MESSAGE } from '../../src/app/productionDataPolicy';
 
-const appSchemaReadsEnabled = (import.meta as any).env?.VITE_APP_SCHEMA_READS === 'true';
+const appSchemaReadsEnabled = Boolean((import.meta as any).env?.PROD) || (import.meta as any).env?.VITE_APP_SCHEMA_READS === 'true';
 
 const appStatus: Record<string, AppLeadRow['status']> = {
   New: 'new', Contacted: 'contacted', Quote: 'scheduled', 'In Progress': 'in_progress', Completed: 'won', Lost: 'lost'
@@ -170,28 +171,7 @@ export class SupabaseRepository implements ICRMRepository {
 
     try {
       if (appSchemaReadsEnabled) {
-        const payload: Record<string, unknown> = {
-          company_id: orgId,
-          title: lead.title || 'Nová poptávka',
-          customer: lead.customerName || '',
-          email: lead.customerEmail || '',
-          phone: lead.customerPhone || '',
-          address: lead.address || '',
-          description: lead.description || '',
-          status: appStatus[lead.status || 'New'] || 'new',
-          priority: appPriority[lead.priority || 'Medium'] || 'normal',
-          assigned_to: lead.assignedEmployeeId && isValidUUID(lead.assignedEmployeeId) ? lead.assignedEmployeeId : null,
-          scheduled_at: lead.preferredDate || null,
-          duration_minutes: 0,
-          value: Number(lead.price) || 0,
-          source: 'dashboard',
-          revision: 1,
-        };
-        if (lead.id && isValidUUID(lead.id)) payload.id = lead.id;
-
-        const { data, error } = await supabase.from('app_leads').upsert(payload).select().single();
-        if (error || !data) throw error || new Error('app_leads zápis nevrátil uloženou poptávku.');
-        return toAppLead(data as AppLeadRow, lead.assignedEmployeeName || '') as Lead;
+        throw new Error(APP_SCHEMA_WRITES_BLOCKED_MESSAGE);
       }
 
       const payload: any = {
@@ -241,6 +221,7 @@ export class SupabaseRepository implements ICRMRepository {
         id: data?.id || lead.id,
       } as Lead;
     } catch (err) {
+      if (appSchemaReadsEnabled) throw err;
       console.warn('saveLead exception, using local:', err);
       return lead as Lead;
     }
@@ -251,6 +232,7 @@ export class SupabaseRepository implements ICRMRepository {
       return;
     }
 
+    if (appSchemaReadsEnabled) throw new Error(APP_SCHEMA_WRITES_BLOCKED_MESSAGE);
     await supabase
       .from(appSchemaReadsEnabled ? 'app_leads' : 'leads')
       .update({ status: appSchemaReadsEnabled ? (appStatus[status] || 'new') : status })
@@ -260,6 +242,7 @@ export class SupabaseRepository implements ICRMRepository {
 
   async deleteLead(orgId: string, leadId: string): Promise<void> {
     if (!isSupabaseConfigured || !supabase || !isValidUUID(leadId)) return;
+    if (appSchemaReadsEnabled) throw new Error(APP_SCHEMA_WRITES_BLOCKED_MESSAGE);
     await supabase.from(appSchemaReadsEnabled ? 'app_leads' : 'leads').delete().eq('id', leadId).eq(appSchemaReadsEnabled ? 'company_id' : 'organization_id', orgId);
   }
 
@@ -312,17 +295,7 @@ export class SupabaseRepository implements ICRMRepository {
     }
 
     if (appSchemaReadsEnabled) {
-      const userId = employee.id && isValidUUID(employee.id) ? employee.id : crypto.randomUUID();
-      const { data, error } = await supabase.from('app_members').upsert({
-        company_id: orgId,
-        user_id: userId,
-        name: employee.name || 'Pracovník',
-        email: employee.email || '',
-        role: employee.role === 'owner' ? 'owner' : 'employee',
-        active: employee.active !== false,
-      }).select().single();
-      if (error || !data) throw error || new Error('app_members zápis nevrátil uloženého člena.');
-      return { ...toAppMember(data as AppMemberRow), ...employee, id: userId } as Employee;
+      throw new Error(APP_SCHEMA_WRITES_BLOCKED_MESSAGE);
     }
 
     const payload: any = {
@@ -341,12 +314,16 @@ export class SupabaseRepository implements ICRMRepository {
     if (!isSupabaseConfigured || !supabase || !isValidUUID(orgId)) {
       return LocalSupabaseMock.getProjects();
     }
+    // Projects are not part of the verified app_* contract. Do not query the
+    // removed legacy table from a configured deployment.
+    if (appSchemaReadsEnabled) return [];
     const { data } = await supabase.from('projects').select('*').eq('organization_id', orgId);
     return data || [];
   }
 
   async saveProject(orgId: string, project: any): Promise<any> {
     if (!isSupabaseConfigured || !supabase || !isValidUUID(orgId)) return project;
+    if (appSchemaReadsEnabled) throw new Error(APP_SCHEMA_WRITES_BLOCKED_MESSAGE);
     const { data } = await supabase.from('projects').upsert({ ...project, organization_id: orgId }).select().single();
     return data || project;
   }
@@ -367,10 +344,13 @@ export class SupabaseRepository implements ICRMRepository {
       };
     }
 
-    const { data } = await supabase.from('organizations').select('*').eq('id', orgId).single();
+    const { data, error } = await supabase.from('app_companies').select('id,name,slug,email,phone,address,color,logo_url,active').eq('id', orgId).single();
+    if (appSchemaReadsEnabled && (error || !data)) {
+      throw error || new Error('Firemní nastavení nebylo nalezeno v app_companies.');
+    }
     return {
       name: data?.name || 'Pergoly & Terasy Praha',
-      primaryColor: data?.primary_color || '#2563eb',
+      primaryColor: data?.color || '#2563eb',
       logoUrl: data?.logo_url,
       phone: '+420 603 456 789',
       email: 'info@pergoly-praha.cz',
@@ -382,6 +362,7 @@ export class SupabaseRepository implements ICRMRepository {
 
   async saveBranding(orgId: string, branding: CompanyBranding): Promise<void> {
     if (!isSupabaseConfigured || !supabase || !isValidUUID(orgId)) return;
+    if (appSchemaReadsEnabled) throw new Error(APP_SCHEMA_WRITES_BLOCKED_MESSAGE);
     await supabase.from('organizations').update({
       name: branding.name,
       primary_color: branding.primaryColor,
