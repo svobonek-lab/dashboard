@@ -1,0 +1,25 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+
+const source = readFileSync(new URL('../context/OrganizationContext.tsx', import.meta.url), 'utf8');
+
+test('production login does not inspect or activate legacy employees', () => {
+  assert.match(source, /if \(!APP_SCHEMA_READS && isSupabaseConfigured && supabase\)/);
+  assert.match(source, /if \(!empRec && !APP_SCHEMA_READS\)/);
+});
+
+test('production blocks legacy employee, project and platform mutations', () => {
+  for (const functionName of ['deactivateEmployee', 'deleteEmployee', 'saveProject', 'deleteOrganizationAdmin', 'updateBrandingAdmin', 'suspendOrganizationAdmin']) {
+    const functionStart = source.indexOf(`const ${functionName} =`);
+    assert.notEqual(functionStart, -1, `${functionName} should exist`);
+    const functionBody = source.slice(functionStart, functionStart + 900);
+    assert.match(functionBody, /BLOCK_LEGACY_WRITES && isSupabaseConfigured/);
+  }
+});
+
+test('production never elevates a browser session to platform admin', () => {
+  const start = source.indexOf('const switchRoleToSuperAdmin');
+  assert.notEqual(start, -1);
+  assert.match(source.slice(start, start + 420), /if \(APP_SCHEMA_READS\)/);
+});
