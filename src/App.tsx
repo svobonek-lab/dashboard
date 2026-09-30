@@ -6,7 +6,7 @@ import { RouterProvider, useRouter } from './app/router';
 import { ProtectedRoute } from './app/ProtectedRoute';
 import { RoleGuard } from './app/RoleGuard';
 import { getDefaultRouteForRole, UserRole } from './app/permissions';
-import { getEmployeeLeads } from './app/employeeScope';
+import { canEmployeeAccessLead, getEmployeeLeads } from './app/employeeScope';
 
 // Layouts
 import { SuperAdminLayout } from './layouts/SuperAdminLayout';
@@ -213,6 +213,10 @@ function AppContent() {
   };
 
   const handleUpdateLeadStatus = async (leadId: string, newStatus: LeadStatus) => {
+    if (dbUser?.role === 'employee' && !canEmployeeAccessLead(leadId, leads, employees, dbUser.id, dbUser.email)) {
+      showToast('Tuto zakázku nemáte přiřazenou.', 'error');
+      return;
+    }
     const targetLead = leads.find(l => l.id === leadId);
     if (!targetLead) return;
     const previousStatus = targetLead.status;
@@ -287,6 +291,10 @@ function AppContent() {
   };
 
   const handleUpdateLead = (updatedLead: Lead) => {
+    if (dbUser?.role === 'employee' && !canEmployeeAccessLead(updatedLead.id, leads, employees, dbUser.id, dbUser.email)) {
+      showToast('Tuto zakázku nemáte přiřazenou.', 'error');
+      return;
+    }
     setLeads(prev => prev.map(l => l.id === updatedLead.id ? updatedLead : l));
     setSelectedLead(updatedLead);
     saveLead(updatedLead).catch(e => console.error('Failed to save lead', e));
