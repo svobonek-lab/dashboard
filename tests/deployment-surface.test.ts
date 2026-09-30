@@ -23,3 +23,16 @@ test('login redirect preserves invite and email query parameters', () => {
 test('missing app URL keeps login local instead of creating a broken external link', () => {
   assert.equal(buildAppLoginUrl('', ''), '/login');
 });
+
+test('preview host keeps the two Vercel surfaces separated when env is missing', () => {
+  const previousWindow = (globalThis as typeof globalThis & { window?: unknown }).window;
+  (globalThis as typeof globalThis & { window?: unknown }).window = {
+    location: { hostname: 'jobflow-pro-git-sales-ready-pass.vercel.app' },
+  } as any;
+  try {
+    assert.equal(getDeploymentConfig({}).surface, 'landing');
+  } finally {
+    if (previousWindow === undefined) delete (globalThis as typeof globalThis & { window?: unknown }).window;
+    else (globalThis as typeof globalThis & { window?: unknown }).window = previousWindow;
+  }
+});
