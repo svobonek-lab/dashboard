@@ -1,5 +1,5 @@
-import { generateSmartMappings } from './fieldMapping';
-import type { SQLTestResult } from './sqlConnector';
+import { generateSmartMappings } from './fieldMapping.js';
+import type { SQLTestResult } from './sqlConnector.js';
 import Papa from 'papaparse';
 
 export interface CsvDryRunResult {

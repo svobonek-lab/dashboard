@@ -1,5 +1,5 @@
-import { FieldMappingConfig, FieldMappingRule, TargetFieldType } from '@/types/integrations';
-import { LeadStatus, Priority } from '@/types';
+import type { FieldMappingConfig, FieldMappingRule, TargetFieldType } from '../../types/integrations.js';
+import type { LeadStatus, Priority } from '../../types.js';
 
 // Normalized dictionary for construction CRM fields
 // Prioritizes PATCH P8 mappings: customer_name -> Customer, project_title -> Project, worker -> Employee, status -> Status
