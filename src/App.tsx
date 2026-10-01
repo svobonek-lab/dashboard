@@ -196,7 +196,10 @@ function AppContent() {
           }
         });
     }
-  }, [currentOrg?.id]);
+  // The organization can be restored before Supabase restores the authenticated
+  // session. Re-run once the user is known so RLS reads do not leave stale
+  // tenant-cache data on screen.
+  }, [currentOrg?.id, user?.id]);
 
   // Root path routing and redirects
   useEffect(() => {
