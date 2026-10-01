@@ -15,7 +15,7 @@ import {
   Building2,
   AlertCircle
 } from 'lucide-react';
-import { supabase, isSupabaseConfigured, LocalSupabaseMock, isValidUUID } from '../lib/supabase';
+import { supabase, isSupabaseConfigured, LocalSupabaseMock } from '../lib/supabase';
 
 const DEFAULT_PROJECT_TYPES = [
   { id: 'Pergoly a zastřešení', title: 'Pergoly a zastřešení', desc: 'Hliníkové i dřevěné pergoly, bioklimatické systémy', icon: '🏡' },
@@ -70,9 +70,9 @@ export const WidgetIframePage: React.FC = () => {
           // Public branding is resolved through the staging app_* contract by tenant key.
           const { data, error } = await supabase.rpc('app_get_public_company', { p_public_key: orgId });
 
-          if (!error && data && data.id && data.active !== false) {
+          if (!error && data && data.public_key && data.active !== false) {
             setOrgData({
-              id: data.id,
+              id: data.public_key,
               name: data.name || 'Stavební firma',
               primary_color: data.color || '#2563eb',
               logo_url: data.logo_url || ''
@@ -153,7 +153,6 @@ export const WidgetIframePage: React.FC = () => {
     e.preventDefault();
     const params = new URLSearchParams(window.location.search);
     const orgId = params.get('org') || orgData?.id;
-    const companyId = orgData?.id;
 
     if (!orgId || !orgData) {
       setSubmitError('Formulář není dostupný.');
@@ -171,9 +170,9 @@ export const WidgetIframePage: React.FC = () => {
     const combinedNotes = notesParts.join('\n');
 
     try {
-      if (isSupabaseConfigured && supabase && companyId && isValidUUID(companyId)) {
+      if (isSupabaseConfigured && supabase) {
         const { error } = await supabase.rpc('app_submit_public_lead', {
-          p_company_id: companyId,
+          p_public_key: orgId,
           p_request_key: requestKey,
           p_customer: formData.fullName.trim(),
           p_phone: formData.phone.trim(),

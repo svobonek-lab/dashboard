@@ -1,5 +1,6 @@
 import { generateSmartMappings } from './fieldMapping';
 import type { SQLTestResult } from './sqlConnector';
+import Papa from 'papaparse';
 
 export interface CsvDryRunResult {
   headers: string[];
@@ -40,20 +41,20 @@ function parseLine(line: string, delimiter: string): string[] {
 }
 
 export function parseCsvDryRun(input: string): CsvDryRunResult {
-  const lines = input.replace(/^\uFEFF/, '').split(/\r?\n/).filter((line) => line.trim().length > 0);
-  if (!lines.length) {
+  const source = input.replace(/^\uFEFF/, '');
+  if (!source.trim()) {
     return { headers: [], rows: [], mapping: {}, imported: false, source: 'csv-dry-run' };
   }
-
-  const delimiter = detectDelimiter(lines[0]);
-  const headers = parseLine(lines[0], delimiter).map((header) => header.trim());
-  const rows = lines.slice(1).map((line) => {
-    const values = parseLine(line, delimiter);
-    return headers.reduce<Record<string, string>>((row, header, index) => {
-      row[header] = values[index] || '';
-      return row;
-    }, {});
+  const parsed = Papa.parse<Record<string, string>>(source, {
+    header: true,
+    skipEmptyLines: 'greedy',
+    delimiter: detectDelimiter(source.split(/\r?\n/, 1)[0]),
+    transformHeader: (header) => header.trim(),
   });
+  const fatal = parsed.errors.find((error) => error.type === 'Quotes' || error.code === 'TooFewFields' || error.code === 'TooManyFields');
+  if (fatal) throw new Error(`CSV nelze bezpečně načíst: ${fatal.message}`);
+  const headers = parsed.meta.fields || [];
+  const rows = parsed.data;
   const suggestions = generateSmartMappings(headers, rows[0]);
   const mapping = suggestions.reduce<CsvDryRunResult['mapping']>((result, suggestion) => {
     result[suggestion.sourceColumn] = {
@@ -70,8 +71,9 @@ export function parseCsvDryRun(input: string): CsvDryRunResult {
  * Stable, tenant-scoped idempotency key for a dry-run/import request.
  * This is an identifier, not a credential or a security hash.
  */
-export function createImportFingerprint(companyId: string, fileName: string, content: string): string {
-  const value = `${companyId}\u0000${fileName}\u0000${content}`;
+export function createImportFingerprint(companyId: string, fileName: string, content: string, mapping: Record<string, unknown> = {}): string {
+  const stableMapping = JSON.stringify(Object.entries(mapping).sort(([left], [right]) => left.localeCompare(right)));
+  const value = `${companyId}\u0000${fileName}\u0000${content}\u0000${stableMapping}`;
   let hash = 2166136261;
   for (let index = 0; index < value.length; index += 1) {
     hash ^= value.charCodeAt(index);

@@ -16,8 +16,6 @@ import {
   Send,
   Power,
   PowerOff,
-  Copy,
-  Check,
   ShieldCheck
 } from 'lucide-react';
 import { autoAssignEmployee } from '../lib/autoAssignment';
@@ -54,12 +52,9 @@ export const EmployeesPage: React.FC<EmployeesPageProps> = ({ employees, leads, 
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
   const [isInviting, setIsInviting] = useState(false);
   const [inviteError, setInviteError] = useState<string | null>(null);
-  const [createdCredentials, setCreatedCredentials] = useState<{ email: string; password: string; name: string; inviteLink?: string; invitationStatus?: string } | null>(null);
+  const [createdCredentials, setCreatedCredentials] = useState<{ email: string; name: string; invitationStatus?: string } | null>(null);
   const [actionNotice, setActionNotice] = useState<string | null>(null);
-  const [copiedPassword, setCopiedPassword] = useState(false);
-  const [copiedInviteLink, setCopiedInviteLink] = useState(false);
-  
-  const [resetModalState, setResetModalState] = useState<{ isOpen: boolean; employee: Employee | null; newPassword?: string; isSubmitting?: boolean }>({
+  const [resetModalState, setResetModalState] = useState<{ isOpen: boolean; employee: Employee | null; isSubmitting?: boolean }>({
     isOpen: false,
     employee: null
   });
@@ -67,7 +62,6 @@ export const EmployeesPage: React.FC<EmployeesPageProps> = ({ employees, leads, 
   const [inviteForm, setInviteForm] = useState({ 
     name: '', 
     email: '', 
-    password: `Stavba${Math.floor(1000 + Math.random() * 9000)}`, 
     role: 'Montážník'
   });
 
@@ -83,22 +77,17 @@ export const EmployeesPage: React.FC<EmployeesPageProps> = ({ employees, leads, 
           role: inviteForm.role,
           capacity: 100, 
           email: inviteForm.email 
-        } as any,
-        inviteForm.password
+        } as any
       );
       setIsInviteModalOpen(false);
-      const inviteLink = result?.inviteLink || `${window.location.origin}/login?inviteToken=${result?.inviteToken || 'inv-1'}&email=${encodeURIComponent(inviteForm.email)}`;
       setCreatedCredentials({
         name: inviteForm.name,
         email: inviteForm.email,
-        password: inviteForm.password,
-        inviteLink,
         invitationStatus: 'Pending'
       });
       setInviteForm({ 
         name: '', 
         email: '', 
-        password: `Stavba${Math.floor(1000 + Math.random() * 9000)}`, 
         role: 'Montážník'
       });
       if (onEmployeeAdded) {
@@ -136,8 +125,6 @@ export const EmployeesPage: React.FC<EmployeesPageProps> = ({ employees, leads, 
       setCreatedCredentials({
         name: emp.name,
         email: emp.email,
-        password: 'Zanecháno stávající heslo',
-        inviteLink: res.inviteLink,
         invitationStatus: 'Pending'
       });
       await fetchEmployees();
@@ -150,22 +137,20 @@ export const EmployeesPage: React.FC<EmployeesPageProps> = ({ employees, leads, 
   };
 
   const handleOpenResetPassword = (emp: Employee) => {
-    const generated = `Stavba${Math.floor(1000 + Math.random() * 9000)}!`;
     setResetModalState({
       isOpen: true,
-      employee: emp,
-      newPassword: generated
+      employee: emp
     });
-    setCopiedPassword(false);
   };
 
   const handleConfirmResetPassword = async () => {
-    if (!resetModalState.employee || !resetModalState.newPassword) return;
+    if (!resetModalState.employee) return;
     setResetModalState(prev => ({ ...prev, isSubmitting: true }));
     try {
-      await resetEmployeePassword(resetModalState.employee.id, resetModalState.newPassword);
-      setActionNotice(`Heslo pro ${resetModalState.employee.name} (${resetModalState.employee.email}) bylo úspěšně nastaveno na: ${resetModalState.newPassword}`);
+      const result = await resetEmployeePassword(resetModalState.employee.id);
+      setActionNotice(result.message);
       setTimeout(() => setActionNotice(null), 8000);
+      setResetModalState({ isOpen: false, employee: null });
     } catch (err: any) {
       setActionNotice(err?.message || 'Chyba při resetování hesla');
       setTimeout(() => setActionNotice(null), 5000);
@@ -511,7 +496,8 @@ export const EmployeesPage: React.FC<EmployeesPageProps> = ({ employees, leads, 
                 </div>
                 
                 {/* Quick actions: resend, deactivate, remove */}
-                <div className="grid grid-cols-2 gap-1.5 text-[11px]">
+                <div className="grid grid-cols-1 gap-1.5 text-[11px]">
+                  {emp.invitationStatus === 'Pending' ? (
                   <button
                     type="button"
                     onClick={() => handleResendInvite(emp)}
@@ -521,6 +507,7 @@ export const EmployeesPage: React.FC<EmployeesPageProps> = ({ employees, leads, 
                     <Send className="w-3 h-3 text-brand-primary" />
                     <span>Znovu pozvat</span>
                   </button>
+                  ) : (
                   <button
                     type="button"
                     onClick={() => handleOpenResetPassword(emp)}
@@ -529,7 +516,9 @@ export const EmployeesPage: React.FC<EmployeesPageProps> = ({ employees, leads, 
                     <KeyRound className="w-3 h-3 text-brand-primary" />
                     <span>Reset hesla</span>
                   </button>
+                  )}
                 </div>
+                {emp.invitationStatus !== 'Pending' && (
                 <div className="flex items-center gap-1.5 pt-0.5">
                   <button
                     type="button"
@@ -557,6 +546,7 @@ export const EmployeesPage: React.FC<EmployeesPageProps> = ({ employees, leads, 
                     <Trash2 className="w-3.5 h-3.5" />
                   </button>
                 </div>
+                )}
               </div>
             </AppCard>
           );
@@ -579,36 +569,10 @@ export const EmployeesPage: React.FC<EmployeesPageProps> = ({ employees, leads, 
       >
         <div className="space-y-4 py-2 text-left font-sans text-xs">
           <p className="text-slate-600">
-            Zadejte nebo vygenerujte nové heslo pro zaměstnance <strong>{resetModalState.employee?.name}</strong> ({resetModalState.employee?.email}).
+            Na e-mail zaměstnance <strong>{resetModalState.employee?.name}</strong> ({resetModalState.employee?.email}) odešleme jednorázový odkaz. Nové heslo si nastaví sám po ověření účtu.
           </p>
-          <div className="space-y-1.5">
-            <label className="font-bold text-slate-700">Nové heslo</label>
-            <div className="flex gap-2">
-              <input
-                type="text"
-                value={resetModalState.newPassword || ''}
-                onChange={(e) => setResetModalState(prev => ({ ...prev, newPassword: e.target.value }))}
-                className="flex-1 px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl font-mono text-xs font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-brand-primary"
-              />
-              <button
-                type="button"
-                onClick={() => {
-                  if (resetModalState.newPassword) {
-                    navigator.clipboard.writeText(resetModalState.newPassword);
-                    setCopiedPassword(true);
-                    setTimeout(() => setCopiedPassword(false), 2000);
-                  }
-                }}
-                className="px-3 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold flex items-center gap-1 border border-slate-200 cursor-pointer"
-                title="Kopírovat heslo"
-              >
-                {copiedPassword ? <Check className="w-4 h-4 text-emerald-600" /> : <Copy className="w-4 h-4" />}
-                <span>{copiedPassword ? 'Zkopírováno' : 'Kopírovat'}</span>
-              </button>
-            </div>
-          </div>
-          <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl text-[11px] text-amber-900 leading-relaxed">
-            Zaměstnanec bude moci toto heslo použít okamžitě pro přihlášení do rozhraní "Moje práce".
+          <div className="p-3 bg-blue-50 border border-blue-200 rounded-xl text-[11px] text-blue-900 leading-relaxed">
+            Z bezpečnostních důvodů majitel firmy heslo zaměstnance nevidí ani nenastavuje.
           </div>
           <div className="pt-3 flex gap-2">
             <AppButton
@@ -621,10 +585,10 @@ export const EmployeesPage: React.FC<EmployeesPageProps> = ({ employees, leads, 
             <AppButton
               variant="primary"
               className="flex-1"
-              disabled={resetModalState.isSubmitting || !resetModalState.newPassword}
+              disabled={resetModalState.isSubmitting}
               onClick={handleConfirmResetPassword}
             >
-              {resetModalState.isSubmitting ? 'Ukládám...' : 'Nastavit heslo'}
+              {resetModalState.isSubmitting ? 'Odesílám...' : 'Odeslat odkaz'}
             </AppButton>
           </div>
         </div>
@@ -694,11 +658,6 @@ export const EmployeesPage: React.FC<EmployeesPageProps> = ({ employees, leads, 
             </select>
           </div>
 
-          <div className="space-y-1.5">
-            <label className="text-xs font-bold text-slate-700">4. První heslo pro přihlášení</label>
-            <AppInput required value={inviteForm.password} onChange={e => setInviteForm(prev => ({...prev, password: e.target.value}))} placeholder="Heslo pro první přihlášení" />
-          </div>
-
           <div className="pt-4 flex gap-3">
             <AppButton type="button" variant="outline" className="flex-1" onClick={() => setIsInviteModalOpen(false)}>Zrušit</AppButton>
             <AppButton type="submit" variant="primary" className="flex-1 flex items-center justify-center gap-2" disabled={isInviting}>
@@ -728,61 +687,12 @@ export const EmployeesPage: React.FC<EmployeesPageProps> = ({ employees, leads, 
             </div>
             
             <p className="text-slate-700 leading-relaxed">
-              Předat zaměstnanci odkaz k prvnímu přihlášení a aktivaci účtu. Po přihlášení se jeho stav automaticky změní na <strong>Active (Aktivní)</strong>.
+              Supabase odeslal bezpečný jednorázový odkaz na uvedený e-mail. Po jeho potvrzení se zaměstnanec automaticky přidá do této firmy.
             </p>
-
-            {/* Invitation Link Box */}
-            <div className="space-y-1.5 pt-1">
-              <label className="font-bold text-amber-900 text-[11px] block uppercase tracking-wider">Unikátní odkaz pozvánky</label>
-              <div className="flex gap-2">
-                <input
-                  readOnly
-                  type="text"
-                  value={createdCredentials?.inviteLink || ''}
-                  className="flex-1 px-3 py-2 bg-white border border-amber-300 rounded-xl font-mono text-[11px] font-bold text-slate-800 focus:outline-none"
-                />
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (createdCredentials?.inviteLink) {
-                      navigator.clipboard.writeText(createdCredentials.inviteLink);
-                      setCopiedInviteLink(true);
-                      setTimeout(() => setCopiedInviteLink(false), 2000);
-                    }
-                  }}
-                  className="px-3 py-2 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-bold flex items-center gap-1.5 text-xs transition-colors cursor-pointer shrink-0"
-                >
-                  {copiedInviteLink ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
-                  <span>{copiedInviteLink ? 'Zkopírováno' : 'Kopírovat odkaz'}</span>
-                </button>
-              </div>
-            </div>
-
-            {/* Account Credentials Summary */}
             <div className="bg-white p-3.5 rounded-xl border border-amber-200 font-mono text-xs space-y-2 shadow-xs mt-2">
               <div className="flex justify-between items-center">
                 <span className="text-slate-500 font-sans">Přihlašovací e-mail:</span> 
                 <strong className="text-brand-primary">{createdCredentials?.email}</strong>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-slate-500 font-sans">První heslo:</span> 
-                <div className="flex items-center gap-2">
-                  <strong className="text-emerald-700">{createdCredentials?.password}</strong>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      if (createdCredentials?.password) {
-                        navigator.clipboard.writeText(createdCredentials.password);
-                        setCopiedPassword(true);
-                        setTimeout(() => setCopiedPassword(false), 2000);
-                      }
-                    }}
-                    className="p-1 hover:bg-slate-100 rounded text-slate-500 cursor-pointer"
-                    title="Kopírovat heslo"
-                  >
-                    {copiedPassword ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
-                  </button>
-                </div>
               </div>
             </div>
           </div>

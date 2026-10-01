@@ -74,3 +74,18 @@ export async function readAppSchemaIdentity(client: any, userId: string, email?:
   if (companyError) throw companyError;
   return resolveAppIdentity(matchingMembers, (companies || []) as AppCompanyRow[], userId, email);
 }
+
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+export async function resolveOrAcceptAppIdentity(
+  client: any,
+  user: { id: string; email?: string; user_metadata?: Record<string, unknown> },
+): Promise<AppSchemaIdentity | null> {
+  const existing = await readAppSchemaIdentity(client, user.id, user.email);
+  if (existing) return existing;
+  const inviteId = String(user.user_metadata?.invite_id || '');
+  if (!UUID.test(inviteId)) return null;
+  const { error } = await client.rpc('app_accept_invite', { p_invite_id: inviteId });
+  if (error) throw new Error(error.message || 'Pozvánku se nepodařilo aktivovat.');
+  return readAppSchemaIdentity(client, user.id, user.email);
+}

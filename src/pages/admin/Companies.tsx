@@ -333,7 +333,7 @@ export const AdminCompaniesPage: React.FC = () => {
                   </button>
 
                   <a
-                    href={`/inquiry?org=${org.id}`}
+                    href={`/inquiry?org=${org.slug || org.id}`}
                     target="_blank"
                     rel="noreferrer"
                     title="Otevřít veřejný poptávkový formulář firmy (Live Preview)"

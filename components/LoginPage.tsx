@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { useOrganization } from '@/context/OrganizationContext';
 import { Building, Lock, Mail, ArrowRight, CheckCircle2, ShieldAlert, LayoutDashboard, Users, Calendar, Inbox } from 'lucide-react';
 import type { UserRole } from '@/src/app/permissions';
+import { supabase } from '@/lib/supabase';
+import { buildRecoveryRequest, parseRecoveryResponse, validateNewPassword } from '@/src/app/authRecovery';
 
 interface LoginPageProps {
   onSuccess: (user?: any) => void;
@@ -30,7 +32,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onSuccess, expectedRole })
   const { currentOrg, isConfigured, login, logout, signUp, error: contextError } = useOrganization();
   const branding = currentOrg?.branding || {};
   
-  const [mode, setMode] = useState<'login' | 'signup'>('login');
+  const [mode, setMode] = useState<'login' | 'signup' | 'recover' | 'new_password'>('login');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [orgName, setOrgName] = useState('');
@@ -47,6 +49,13 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onSuccess, expectedRole })
     const emailParam = params.get('email');
     if (token) setInviteToken(token);
     if (emailParam) setEmail(emailParam);
+    const { data } = supabase?.auth.onAuthStateChange((event) => {
+      if (event === 'PASSWORD_RECOVERY') {
+        setMode('new_password');
+        setSuccessMessage('Odkaz je ověřený. Nastavte si nové heslo.');
+      }
+    }) || { data: null };
+    return () => data?.subscription.unsubscribe();
   }, []);
 
   const activeCompanyName = currentOrg?.name || branding.name || 'Vaše Stavební Firma';
@@ -63,7 +72,23 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onSuccess, expectedRole })
     setIsLoading(true);
 
     try {
-      if (mode === 'login') {
+      if (mode === 'recover') {
+        const response = await fetch('/api/reset-employee-password', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(buildRecoveryRequest(email)),
+        });
+        const result = await response.json();
+        if (!response.ok) throw new Error(result?.error || 'Odkaz pro obnovu se nepodařilo odeslat.');
+        setSuccessMessage(parseRecoveryResponse(result));
+      } else if (mode === 'new_password') {
+        if (!supabase) throw new Error('Obnova hesla není na tomto prostředí dostupná.');
+        const { error: updateError } = await supabase.auth.updateUser({ password: validateNewPassword(password) });
+        if (updateError) throw updateError;
+        setSuccessMessage('Heslo bylo změněno. Nyní se můžete přihlásit.');
+        setPassword('');
+        setMode('login');
+      } else if (mode === 'login') {
         const user = await login(email, password);
         if (expectedRole && user?.role !== expectedRole) {
           await logout();
@@ -145,12 +170,22 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onSuccess, expectedRole })
                  {displayOrgName.substring(0, 2).toUpperCase()}
               </div>
               <h2 className="text-2xl font-black text-text tracking-tight">
-                {mode === 'login' ? (roleCopy?.title || 'Přihlášení do StavbaFlow') : 'Vytvořit firemní workspace'}
+                {mode === 'login'
+                  ? (roleCopy?.title || 'Přihlášení do StavbaFlow')
+                  : mode === 'signup'
+                    ? 'Vytvořit firemní workspace'
+                    : mode === 'recover'
+                      ? 'Obnovit heslo'
+                      : 'Nastavit nové heslo'}
               </h2>
               <p className="text-sm text-muted font-medium mt-2">
                 {mode === 'login' 
                   ? (roleCopy?.description || 'Po přihlášení vás StavbaFlow automaticky pošle do dashboardu podle vaší role.')
-                  : 'Vytvořte si vlastní oddělený prostor (tenant) na platformě.'}
+                  : mode === 'signup'
+                    ? 'Vytvořte si vlastní oddělený prostor (tenant) na platformě.'
+                    : mode === 'recover'
+                      ? 'Pošleme vám jednorázový odkaz na ověřený e-mail účtu.'
+                      : 'Nové heslo se uloží pouze do vašeho ověřeného účtu.'}
               </p>
             </div>
 
@@ -215,6 +250,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onSuccess, expectedRole })
               )}
 
               <div className="space-y-4">
+                {mode !== 'new_password' && (
                 <div>
                   <label className="text-xs font-bold uppercase tracking-wider text-muted block mb-1.5">E-mail</label>
                   <div className="relative">
@@ -232,6 +268,8 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onSuccess, expectedRole })
                     />
                   </div>
                 </div>
+                )}
+                {mode !== 'recover' && (
                 <div>
                   <label className="text-xs font-bold uppercase tracking-wider text-muted block mb-1.5">Heslo</label>
                   <div className="relative">
@@ -249,7 +287,16 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onSuccess, expectedRole })
                     />
                   </div>
                 </div>
+                )}
               </div>
+
+              {mode === 'login' && (
+                <div className="text-right -mt-2">
+                  <button type="button" onClick={() => { setMode('recover'); setError(null); setSuccessMessage(null); }} className="text-xs font-bold text-brand-primary hover:underline">
+                    Zapomenuté heslo
+                  </button>
+                </div>
+              )}
 
               <button
                 type="submit"
@@ -264,7 +311,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onSuccess, expectedRole })
                   <span className="inline-block w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
                 ) : (
                   <>
-                    <span>{mode === 'login' ? 'Pokračovat do workspace' : 'Vytvořit firmu & Spustit'}</span>
+                    <span>{mode === 'login' ? 'Pokračovat do workspace' : mode === 'signup' ? 'Vytvořit firmu & Spustit' : mode === 'recover' ? 'Odeslat bezpečný odkaz' : 'Uložit nové heslo'}</span>
                     <ArrowRight className="w-4 h-4" />
                   </>
                 )}
@@ -283,7 +330,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onSuccess, expectedRole })
                     Založit nový workspace
                   </button>
                 </>
-              ) : (
+              ) : mode === 'signup' ? (
                 <>
                   Již máte u nás účet?{' '}
                   <button 
@@ -294,6 +341,15 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onSuccess, expectedRole })
                     Přihlásit se
                   </button>
                 </>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => { setMode('login'); setError(null); setSuccessMessage(null); }}
+                  className="font-bold hover:underline transition-colors"
+                  style={{ color: displayBrandColor }}
+                >
+                  Zpět na přihlášení
+                </button>
               )}
             </div>
          </div>

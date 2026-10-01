@@ -21,6 +21,12 @@ export default async function outboxSchedulerHandler(req: any, res: any) {
     return;
   }
 
+  const resendApiKey = process.env.RESEND_API_KEY;
+  if (!resendApiKey) {
+    res.status(503).json({ success: false, code: 'EMAIL_PROVIDER_NOT_CONFIGURED', error: 'Odesílání e-mailů není nakonfigurované.' });
+    return;
+  }
+
   const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
   const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
@@ -48,9 +54,9 @@ export default async function outboxSchedulerHandler(req: any, res: any) {
 
     if (fetchErr) {
       // If table doesn't exist yet, return informative status
-      return res.status(200).json({
-        success: true,
-        message: 'Outbox scheduler checked. Table status: ' + fetchErr.message,
+      return res.status(503).json({
+        success: false,
+        message: 'Outbox není dostupný.',
         processedCount: 0,
         timestamp: new Date().toISOString()
       });
@@ -77,8 +83,7 @@ export default async function outboxSchedulerHandler(req: any, res: any) {
           .update({ status: 'processing', updated_at: new Date().toISOString() })
           .eq('id', email.id);
 
-        const resendApiKey = process.env.RESEND_API_KEY;
-        let providerMessageId = `dev-local-${Date.now()}`;
+        let providerMessageId: string;
 
         if (resendApiKey) {
           const resendResponse = await fetch('https://api.resend.com/emails', {
@@ -98,9 +103,8 @@ export default async function outboxSchedulerHandler(req: any, res: any) {
           if (!resendResponse.ok) {
             throw new Error(`Resend API error (${resendResponse.status}): ${JSON.stringify(resendData)}`);
           }
-          if (resendData?.id) {
-            providerMessageId = resendData.id;
-          }
+          if (!resendData?.id) throw new Error('E-mailová služba nepotvrdila přijetí zprávy.');
+          providerMessageId = resendData.id;
         }
 
         // Mark as delivered
