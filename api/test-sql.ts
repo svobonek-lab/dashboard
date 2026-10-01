@@ -1,4 +1,4 @@
-import { unsupportedSqlConnection } from '../lib/integrations/pilotImport';
+import { unsupportedSqlConnection } from '../lib/integrations/pilotImport.js';
 
 /**
  * Intentionally unavailable until a server-side, read-only connector is

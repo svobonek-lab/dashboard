@@ -384,8 +384,10 @@ function AppContent() {
     try {
       const created = await createLead(incoming);
       setLeads(prev => [created, ...prev.filter(l => l.id !== created.id)]);
+      return created;
     } catch (e) {
       console.error('Failed to add lead via unified createLead pipeline', e);
+      throw e;
     }
   };
 

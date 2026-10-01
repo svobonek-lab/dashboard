@@ -7,6 +7,7 @@ import { APP_SCHEMA_WRITES_BLOCKED_MESSAGE, isAppSchemaReadsEnabled, shouldBlock
 import { removeTenantCache, TENANT_CACHE_NAMES } from '../src/app/tenantCache';
 import { getRuntimePolicy } from '../src/app/runtimePolicy';
 import { resolveOrAcceptAppIdentity } from '../src/app/appSchemaIdentity';
+import { toAuthenticatedWorkspaceUser } from '../src/app/authWorkspaceUser';
 import { buildInviteRequest, toPendingEmployee } from '../src/app/inviteContract';
 import { buildRecoveryRequest, parseRecoveryResponse } from '../src/app/authRecovery';
 
@@ -365,8 +366,8 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
   };
 
   // Helper: Load user organization and tenant structures from Supabase
-  const loadUserData = async (userId: string, email?: string, userMetadata?: Record<string, unknown>) => {
-    if (!supabase) return;
+  const loadUserData = async (userId: string, email?: string, userMetadata?: Record<string, unknown>): Promise<DBUser | null> => {
+    if (!supabase) return null;
 
     try {
       // The verified app_* contract is deliberately isolated from the legacy
@@ -378,18 +379,19 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
           setDbUser(null);
           setCurrentOrg(null);
           setOrganizations([]);
-          return;
+          return null;
         }
         setOrganizations(identity.organizations);
         setCurrentOrg(identity.organization);
-        setDbUser({
+        const resolvedDbUser: DBUser = {
           id: identity.member.user_id,
           organization_id: identity.member.company_id,
           role: enforceRole(identity.member.email, undefined, identity.member.role),
           email: identity.member.email,
           name: identity.member.name,
-        });
-        return;
+        };
+        setDbUser(resolvedDbUser);
+        return resolvedDbUser;
       }
 
       // 1. Fetch user record from public.users table
@@ -552,6 +554,7 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
       if (canUseLocalMockAuth(IS_PRODUCTION)) {
         LocalSupabaseMock.setActiveSessionUser(formattedDbUser);
       }
+      return formattedDbUser;
     } catch (err: any) {
       console.error('Error loading user organization details:', err);
       Sentry.captureException(err, {
@@ -574,6 +577,7 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
         setCurrentOrg(null);
         setOrganizations([]);
       }
+      return null;
     }
   };
 
@@ -654,9 +658,12 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
       setUser(authUser);
 
       // 2. Load public.users row and organization
-      await loadUserData(authUser.id, cleanEmail, authUser.user_metadata);
-
-      const activeSessionUser = LocalSupabaseMock.getActiveSessionUser();
+      const resolvedDbUser = await loadUserData(authUser.id, cleanEmail, authUser.user_metadata);
+      if (!resolvedDbUser) {
+        await supabase.auth.signOut();
+        setUser(null);
+        throw new Error('Účet nemá aktivní členství v žádné firmě.');
+      }
       
       // Check if employee is deactivated or pending activation
       let empRec = null;
@@ -697,11 +704,7 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
         }
       }
 
-      return {
-        ...authUser,
-        role: dbUser?.role || activeSessionUser?.role || 'employee',
-        organization_id: dbUser?.organization_id || activeSessionUser?.organization_id
-      };
+      return toAuthenticatedWorkspaceUser(authUser, resolvedDbUser);
     } catch (err: any) {
       console.error('login error:', err);
       Sentry.captureException(err, {
