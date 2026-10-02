@@ -73,3 +73,5 @@ The current staging database contract was exercised again after the invitation a
 - import rollback: an edited imported lead was retained and its insert/update history remained present.
 
 All four checks returned their explicit `PASS` result. A separate query after the transactions confirmed zero rows for the reserved synthetic company, member, lead, invitation and Auth-user identifiers. The real-mail invitation remains unaccepted and was not modified by these checks.
+
+The same review found that staging Auth still used `http://localhost:3000` as its Site URL and had no redirect allow list. The staging configuration was corrected to the stable dashboard origin and three explicit, previously verified `/login` URLs; no wildcard was added. A full page reload confirmed the saved Site URL and all three entries. The invitation and recovery endpoints now also reject a missing, non-HTTPS or non-origin `APP_URL` before any database or Auth request, instead of constructing a relative `/login` redirect.
