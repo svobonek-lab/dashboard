@@ -77,3 +77,11 @@ All four checks returned their explicit `PASS` result. A separate query after th
 The same review found that staging Auth still used `http://localhost:3000` as its Site URL and had no redirect allow list. The staging configuration was corrected to the stable dashboard origin and three explicit, previously verified `/login` URLs; no wildcard was added. A full page reload confirmed the saved Site URL and all three entries. The invitation and recovery endpoints now also reject a missing, non-HTTPS or non-origin `APP_URL` before any database or Auth request, instead of constructing a relative `/login` redirect.
 
 After the redirect repair, Supabase Auth sent a new confirmation message to the already authorized real mailbox. The Auth request completed with HTTP 200, used the stable dashboard origin as its referer and emitted `mail.send` with `mail_type=confirmation`. The user's metadata still contains the same staged `invite_id` and `company_id`; the invitation remains unused until the recipient opens the new message.
+
+## Current protected Preview recheck — 2026-10-02
+
+The seven pilot runtime variables were scoped to `fix/pilot-auth-readiness` in the `dashboard` Vercel project. The staging service-role value remained write-only, `APP_URL` was corrected to the stable dashboard HTTPS origin, and the invite, recovery, import, app-schema read and pilot-write switches were limited to that Preview branch. Production variables and deployments were not changed.
+
+Vercel rebuilt the protected Preview as deployment `dpl_AhBU57qd6GUURmq3VzwuRxi4vtRx`. An authenticated owner request reached the deployed `/api/import-leads` function through Vercel's authorized protection bypass. The dry run parsed one row, the first commit created one lead, and the identical retry returned `duplicate: true` with fingerprint `csv_33101fc0`. The reviewed rollback then removed the imported lead; the follow-up count for that fingerprint was zero.
+
+The same deployment received an authenticated attempt by owner A to invite a synthetic address into company B. It returned HTTP 403 before Auth provisioning. A metadata check immediately afterward found zero matching `app_invites` rows and zero matching Auth users. The real-mail invitation was not changed by either check and remains pending recipient confirmation.

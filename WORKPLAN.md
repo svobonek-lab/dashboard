@@ -8,9 +8,10 @@ Deliver the first controlled pilot for a small construction company: owner login
 
 - PR #61 implemented and verified the staging-backed pilot flow.
 - PR #62 verified real invitation dispatch and hardened outbox claim, retry and idempotency behavior.
-- CI passes 89 tests, TypeScript checking and the production build.
+- CI passes 91 tests, TypeScript checking and the production build.
 - A direct Auth/REST test and browser test proved two-company isolation, employee assignment scope, owner writes, employee status-only writes, audit history and persistence after logout/login.
 - Public intake and CSV import/duplicate/rollback passed through the deployed Vercel Preview.
+- The current protected PR Preview was reconfigured with branch-scoped staging variables and rechecked: CSV dry-run/commit/idempotent retry/rollback passed, and a cross-company invitation attempt returned 403 without creating an invitation or Auth user.
 - Supabase Security Advisor reports only the two intentional anonymous public intake functions on staging. Both have a fixed search path and no `authenticated` execution grant.
 - Production Supabase was not written or migrated during pilot verification.
 
