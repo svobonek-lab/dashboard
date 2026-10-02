@@ -1,6 +1,6 @@
 # Pilot implementation ledger — 2026-09-30
 Branch: fix/pilot-operational-flow. Base: origin/main 0c8cf43 (PR #60).
-Goal is the complete two-company pilot. The code, isolated staging contract and deployed Preview flow are verified; real-mail delivery still requires an authorized test inbox.
+Goal is the complete two-company pilot. The code, isolated staging contract and deployed Preview flow are verified; Auth has now accepted and logged a real-mail invitation, while recipient-link completion remains pending.
 
 ## Verified progress
 - Reproduced outsider invitation authorization failure with executable SQL regression.
@@ -24,17 +24,20 @@ Goal is the complete two-company pilot. The code, isolated staging contract and 
 - Vercel Preview passed browser checks for owner/employee routing, manual lead persistence, employee lifecycle write, owner B isolation and anonymous public intake.
 - The deployed CSV API completed an import, returned an idempotent duplicate on retry and completed service-only rollback.
 - Runtime ESM paths and post-auth tenant refresh were repaired from failures reproduced only in Vercel/browser verification.
+- The live Preview invitation endpoint accepted the authorized real mailbox; staging Auth logged `user_invited`, HTTP 200 and `mail.send` for the invitation.
+- A separate synthetic browser activation consumed an invitation, created an employee membership, routed to `/employee`, enforced assigned-only visibility, persisted the employee status transition across logout/login and rejected a direct price change with SQLSTATE `42501`.
+- Synthetic activation rows and Auth user were removed; the real invitation remains pending for the recipient.
+- The outbox worker now claims rows conditionally, skips rows already claimed by another worker, uses the outbox id as the Resend idempotency key and refuses to report delivery when the provider result cannot be persisted. Provider-less deployments continue to fail before database access.
 
 ## Remaining required work (do not mark complete)
-1. Verify Auth invitation delivery with a deliberately authorized real test mailbox. Reserved synthetic domains are rejected by Supabase and the application correctly rolls back the pending invite.
-2. Review outbox concurrency before enabling optional business notifications; missing transport already fails closed.
-3. Obtain a reviewed production release decision. No production schema migration, data write or deploy is included in this branch.
+1. Open the delivered real-mail invitation and verify the exact email-link redirect, final account confirmation and member activation. Auth accepted and logged the send; inbox receipt and link completion are still pending.
+2. Obtain a reviewed production release decision. No production schema migration, data write or deploy is included in this branch. Optional business notifications still require an explicitly configured and verified provider before enablement.
 
 ## Checks
-- Initial 63 tests green; the final branch verification passes 86/86 tests, TypeScript and the production build.
+- Initial 63 tests green; the current branch verification passes 89/89 tests, TypeScript and the production build.
 - Advisor now has only two intentional anonymous SECURITY DEFINER warnings for public branding/intake. Internal membership helpers are no longer exposed through the public API schema.
 - No production reads/writes executed in this implementation.
-- No secrets added, no main commits/merge/push.
+- No secrets added and no direct commit to `main`; PR #61 was merged after its required checks passed.
 - SQL fixtures use reserved synthetic identifiers and rollback. Final query confirmed zero fixture companies and leads.
 - Ruling: Supabase staging schema edits authorized by user plan; no production release implied.
 - Ruling: Do not implement full Sheets/SQL integrations; selected pilot scope is CSV, unsupported integrations fail honestly.
