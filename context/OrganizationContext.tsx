@@ -182,7 +182,7 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
     root.style.setProperty('--primary-subtle', `rgba(${hexToRgb(primaryColor)}, 0.12)`);
     root.style.setProperty('--primary-light', `rgba(${hexToRgb(primaryColor)}, 0.12)`);
 
-    const name = currentOrg?.name || 'StavbaCore CRM';
+    const name = currentOrg?.name || 'StavbaFlow CRM';
     const logoUrl = currentOrg?.logo_url;
     
     document.title = `${name} | Stavební OS`;
