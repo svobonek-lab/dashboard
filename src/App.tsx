@@ -536,7 +536,7 @@ function AppContent() {
       <ProtectedRoute allowedRole={['employee', 'super_admin']}>
         <EmployeeLayout leads={employeeLeads}>
           {pathname === '/employee' || pathname === '/employee/dashboard' ? (
-            <EmployeeDashboardPage leads={employeeLeads} onSelectLead={setSelectedLead} onUpdateLead={handleUpdateLead} />
+            <EmployeeDashboardPage leads={employeeLeads} onSelectLead={setSelectedLead} onUpdateLead={handleUpdateLead} onUpdateLeadStatus={handleUpdateLeadStatus} />
           ) : pathname === '/employee/jobs' ? (
             <EmployeeJobsPage leads={employeeLeads} onSelectLead={setSelectedLead} />
           ) : pathname === '/employee/schedule' ? (
@@ -552,7 +552,7 @@ function AppContent() {
           ) : pathname === '/employee/profile' ? (
             <EmployeeProfilePage />
           ) : (
-            <EmployeeDashboardPage leads={employeeLeads} onSelectLead={setSelectedLead} onUpdateLead={handleUpdateLead} />
+            <EmployeeDashboardPage leads={employeeLeads} onSelectLead={setSelectedLead} onUpdateLead={handleUpdateLead} onUpdateLeadStatus={handleUpdateLeadStatus} />
           )}
         </EmployeeLayout>
       </ProtectedRoute>

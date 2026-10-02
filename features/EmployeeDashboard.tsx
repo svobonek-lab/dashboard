@@ -5,7 +5,6 @@ import {
   Clock, 
   Navigation, 
   CheckCircle, 
-  Car, 
   Camera, 
   Mic, 
   Sparkles, 
@@ -30,7 +29,8 @@ import {
   FileSpreadsheet,
   MessageSquare
 } from 'lucide-react';
-import { Lead, CompanyBranding } from '../types';
+import { Lead, CompanyBranding, LeadStatus } from '../types';
+import { getEmployeeNextStatus } from '../src/app/leadLifecycle';
 
 interface EmployeeDashboardProps {
   leads: Lead[];
@@ -38,6 +38,7 @@ interface EmployeeDashboardProps {
   onOpenVoiceNotes: () => void;
   onSelectLead: (lead: Lead) => void;
   onUpdateLead?: (lead: Lead) => void;
+  onUpdateLeadStatus?: (leadId: string, status: LeadStatus) => Promise<void> | void;
 }
 
 export const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({
@@ -45,10 +46,12 @@ export const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({
   branding,
   onOpenVoiceNotes,
   onSelectLead,
-  onUpdateLead
+  onUpdateLead,
+  onUpdateLeadStatus,
 }) => {
   const [activeTab, setActiveTab] = useState<'jobs' | 'siteVisit' | 'photos' | 'tools'>('jobs');
-  const [activeJobStatus, setActiveJobStatus] = useState<'Driving' | 'Arrived' | 'Finished'>('Arrived');
+  const [statusError, setStatusError] = useState('');
+  const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
   const [isOfflineMode, setIsOfflineMode] = useState(false);
   const [offlineQueueCount, setOfflineQueueCount] = useState(3);
   const [uploadSuccess, setUploadSuccess] = useState(false);
@@ -92,6 +95,26 @@ export const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({
   const [scannedReceipt, setScannedReceipt] = useState<{ supplier: string; price: number; vat: number; item: string } | null>(null);
 
   const activeLead = leads[0] || leads[1];
+  const nextLeadStatus = activeLead ? getEmployeeNextStatus(activeLead.status) : null;
+  const nextStatusLabel: Partial<Record<LeadStatus, string>> = {
+    Contacted: 'Potvrdit kontakt se zákazníkem',
+    Quote: 'Předat do nabídky',
+    'In Progress': 'Zahájit realizaci',
+    Completed: 'Dokončit zakázku',
+  };
+
+  const persistNextStatus = async () => {
+    if (!activeLead || !nextLeadStatus || !onUpdateLeadStatus) return;
+    setStatusError('');
+    setIsUpdatingStatus(true);
+    try {
+      await onUpdateLeadStatus(activeLead.id, nextLeadStatus);
+    } catch (error) {
+      setStatusError(error instanceof Error ? error.message : 'Stav zakázky se nepodařilo uložit.');
+    } finally {
+      setIsUpdatingStatus(false);
+    }
+  };
 
   // Before / During / After Timeline State
   const [timelinePhotos, setTimelinePhotos] = useState<{ id: string; stage: 'Before' | 'During' | 'After'; url: string; time: string }[]>([
@@ -584,44 +607,25 @@ export const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({
             </a>
           </div>
 
-          {/* Status Buttons */}
+          {/* Persisted lifecycle action */}
           <div className="space-y-2 pt-2">
-            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Stav v terénu</label>
-            <div className="grid grid-cols-3 gap-2">
+            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Stav zakázky</label>
+            <p className="text-xs text-slate-500">Aktuálně: <strong>{activeLead.status}</strong></p>
+            {statusError && <p role="alert" className="rounded-xl bg-red-50 px-3 py-2 text-xs font-bold text-red-700">{statusError}</p>}
+            {nextLeadStatus ? (
               <button
-                onClick={() => setActiveJobStatus('Driving')}
-                className={`py-3 rounded-2xl text-xs font-bold transition-all flex flex-col items-center justify-center gap-1 border cursor-pointer ${
-                  activeJobStatus === 'Driving'
-                    ? 'bg-brand-primary text-white border-brand-primary shadow-xs'
-                    : 'bg-slate-50 text-slate-600 border border-slate-200 hover:bg-slate-100'
-                }`}
+                type="button"
+                disabled={isUpdatingStatus || !onUpdateLeadStatus}
+                onClick={persistNextStatus}
+                className="w-full rounded-2xl border border-brand-primary bg-brand-primary px-4 py-3 text-sm font-bold text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
               >
-                <Car className="w-4 h-4" />
-                <span>Na cestě</span>
+                {isUpdatingStatus ? 'Ukládám stav…' : nextStatusLabel[nextLeadStatus] || 'Posunout zakázku'}
               </button>
-              <button
-                onClick={() => setActiveJobStatus('Arrived')}
-                className={`py-3 rounded-2xl text-xs font-bold transition-all flex flex-col items-center justify-center gap-1 border cursor-pointer ${
-                  activeJobStatus === 'Arrived'
-                    ? 'bg-brand-primary text-white border-brand-primary shadow-xs'
-                    : 'bg-slate-50 text-slate-600 border border-slate-200 hover:bg-slate-100'
-                }`}
-              >
-                <MapPin className="w-4 h-4" />
-                <span>Na místě (GPS)</span>
-              </button>
-              <button
-                onClick={() => setActiveJobStatus('Finished')}
-                className={`py-3 rounded-2xl text-xs font-bold transition-all flex flex-col items-center justify-center gap-1 border cursor-pointer ${
-                  activeJobStatus === 'Finished'
-                    ? 'bg-emerald-600 text-white border-emerald-600 shadow-xs'
-                    : 'bg-slate-50 text-slate-600 border border-slate-200 hover:bg-slate-100'
-                }`}
-              >
-                <CheckCircle className="w-4 h-4" />
-                <span>Dokončeno</span>
-              </button>
-            </div>
+            ) : (
+              <p className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-bold text-emerald-700">
+                {activeLead.status === 'Completed' ? 'Zakázka je dokončená.' : 'Zakázka je uzavřená.'}
+              </p>
+            )}
           </div>
         </div>
       )}

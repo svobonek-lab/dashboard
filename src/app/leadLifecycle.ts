@@ -11,6 +11,19 @@ const employeeTransitions: Record<LeadStatus, LeadStatus[]> = {
   Lost: [],
 };
 
+const employeeNextStatus: Record<LeadStatus, LeadStatus | null> = {
+  New: 'Contacted',
+  Contacted: 'Quote',
+  Quote: 'In Progress',
+  'In Progress': 'Completed',
+  Completed: null,
+  Lost: null,
+};
+
+export function getEmployeeNextStatus(status: LeadStatus): LeadStatus | null {
+  return employeeNextStatus[status] ?? null;
+}
+
 export function canTransitionLeadStatus(
   from: LeadStatus,
   to: LeadStatus,
