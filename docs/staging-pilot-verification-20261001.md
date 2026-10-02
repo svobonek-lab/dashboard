@@ -41,8 +41,24 @@ The branch Preview was configured with staging-only write flags and a branch-spe
 
 The executable direct REST check was repeated after the browser run and again passed tenant isolation, employee field restrictions, audit history and logout/reload persistence. Cleanup then removed every synthetic company, member, lead, event, invitation, import, intake event and Auth user; final counts were zero.
 
+## Live invitation and activation evidence — 2026-10-02
+
+The owner invitation endpoint was called through Vercel's authorized Preview channel with the user's explicitly authorized mailbox. The deployed endpoint returned `invited: true`; the staging Auth audit log recorded `user_invited`, the Auth request completed with HTTP 200, and the mail log recorded `mail.send` with type `invite`. The stored invitation is unused, unexpired and waiting for the recipient to open the delivered link.
+
+The activation contract was also exercised independently with a temporary confirmed staging user carrying a synthetic invitation id:
+
+- the first application login invoked `app_accept_invite`, consumed the invitation and created one active employee membership;
+- routing landed directly on `/employee` without a role selector;
+- the employee saw the assigned lead and did not see an unassigned lead from the same company;
+- the employee advanced the assigned lead from `new` to `contacted` in the browser;
+- the audit event preserved the actor and old/new status while the lead value remained `12500`;
+- a direct employee attempt to change the value was rejected with SQLSTATE `42501`;
+- logout followed by a new login restored the assigned lead and persisted `contacted` state.
+
+The temporary activation user, membership, invitation, leads and events were deleted. A final query confirmed zero remaining rows for those synthetic identifiers. The real mailbox invitation and its isolated synthetic owner/company remain only until the recipient completes the link or the invitation is explicitly cleaned up.
+
 ## Remaining release action
 
-Supabase rejected reserved synthetic addresses during the live Auth invitation email attempt with `email_address_invalid`. The application correctly removed the pending invitation and returned failure, so it did not claim delivery. End-to-end SMTP delivery therefore still requires a deliberately authorized real test mailbox. Leaked-password protection is also unavailable on the current Supabase Free plan; the dashboard identifies it as Pro-only. Security Advisor otherwise reports only the two intentional anonymous public-form functions.
+The recipient must open the real invitation link so receipt and the exact email-link redirect can be observed end to end. Leaked-password protection is unavailable on the current Supabase Free plan; the dashboard identifies it as Pro-only. Security Advisor otherwise reports only the two intentional anonymous public-form functions.
 
 This evidence does not authorize a production database migration, production data write or production deploy.
