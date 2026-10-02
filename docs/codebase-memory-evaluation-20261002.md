@@ -6,6 +6,8 @@ Evaluated `DeusData/codebase-memory-mcp` v0.11.0 for the StavbaFlow dashboard. T
 
 - installed the single executable under the user's local application-data directory;
 - registered one global MCP server named `codebase-memory` in Codex and OpenCode;
+- corrected the OpenCode entry to its native top-level MCP shape and verified it reports `connected` from this dashboard repository;
+- exposed `security-best-practices` and `gh-fix-ci` to OpenCode as directory junctions to the Codex installations, so there is one maintained copy of each skill rather than duplicates;
 - did not install the optional hooks, plugin, generated agents, global instruction files or PATH changes;
 - kept the graph in the tool's user cache with persistence disabled for repository files;
 - added no binary, index, secret or tool configuration to this repository.
