@@ -27,14 +27,14 @@ Goal is the complete two-company pilot. The code, isolated staging contract and 
 - The live Preview invitation endpoint accepted the authorized real mailbox; staging Auth logged `user_invited`, HTTP 200 and `mail.send` for the invitation.
 - A separate synthetic browser activation consumed an invitation, created an employee membership, routed to `/employee`, enforced assigned-only visibility, persisted the employee status transition across logout/login and rejected a direct price change with SQLSTATE `42501`.
 - Synthetic activation rows and Auth user were removed; the real invitation remains pending for the recipient.
+- The outbox worker now claims rows conditionally, skips rows already claimed by another worker, uses the outbox id as the Resend idempotency key and refuses to report delivery when the provider result cannot be persisted. Provider-less deployments continue to fail before database access.
 
 ## Remaining required work (do not mark complete)
 1. Open the delivered real-mail invitation and verify the exact email-link redirect, final account confirmation and member activation. Auth accepted and logged the send; inbox receipt and link completion are still pending.
-2. Review outbox concurrency before enabling optional business notifications; missing transport already fails closed.
-3. Obtain a reviewed production release decision. No production schema migration, data write or deploy is included in this branch.
+2. Obtain a reviewed production release decision. No production schema migration, data write or deploy is included in this branch. Optional business notifications still require an explicitly configured and verified provider before enablement.
 
 ## Checks
-- Initial 63 tests green; the final branch verification passes 86/86 tests, TypeScript and the production build.
+- Initial 63 tests green; the current branch verification passes 89/89 tests, TypeScript and the production build.
 - Advisor now has only two intentional anonymous SECURITY DEFINER warnings for public branding/intake. Internal membership helpers are no longer exposed through the public API schema.
 - No production reads/writes executed in this implementation.
 - No secrets added and no direct commit to `main`; PR #61 was merged after its required checks passed.

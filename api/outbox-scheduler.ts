@@ -1,7 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 
 // Server-side email scheduler & outbox worker
-// Implements the audit recommendation: DB event -> app_email_outbox -> scheduler worker -> Resend / mock delivery
+// Implements the audit recommendation: DB event -> app_email_outbox -> scheduler worker -> Resend.
 export default async function outboxSchedulerHandler(req: any, res: any) {
   if (req.method !== 'POST' && req.method !== 'GET') {
     res.status(405).json({ error: 'Method Not Allowed. Use GET or POST.' });
@@ -77,38 +77,48 @@ export default async function outboxSchedulerHandler(req: any, res: any) {
     // 2. Process each email
     for (const email of pendingEmails) {
       try {
-        // Update status to processing
-        await supabase
+        // Claim conditionally so concurrent workers cannot send the same row.
+        const { data: claimed, error: claimError } = await supabase
           .from('app_email_outbox')
           .update({ status: 'processing', updated_at: new Date().toISOString() })
-          .eq('id', email.id);
+          .eq('id', email.id)
+          .in('status', ['pending', 'retry'])
+          .select('id')
+          .maybeSingle();
+        if (claimError) {
+          results.push({ id: email.id, status: 'claim_failed', error: claimError.message });
+          continue;
+        }
+        if (!claimed) {
+          results.push({ id: email.id, status: 'skipped' });
+          continue;
+        }
 
         let providerMessageId: string;
 
-        if (resendApiKey) {
-          const resendResponse = await fetch('https://api.resend.com/emails', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${resendApiKey}`
-            },
-            body: JSON.stringify({
-              from: process.env.EMAIL_FROM || 'StavbaCore <notifikace@stavbacore.cz>',
-              to: email.recipient || email.to,
-              subject: email.subject,
-              html: email.body_html || email.body
-            })
-          });
-          const resendData = await resendResponse.json();
-          if (!resendResponse.ok) {
-            throw new Error(`Resend API error (${resendResponse.status}): ${JSON.stringify(resendData)}`);
-          }
-          if (!resendData?.id) throw new Error('E-mailová služba nepotvrdila přijetí zprávy.');
-          providerMessageId = resendData.id;
+        const resendResponse = await fetch('https://api.resend.com/emails', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${resendApiKey}`,
+            'Idempotency-Key': `outbox/${email.id}`,
+          },
+          body: JSON.stringify({
+            from: process.env.EMAIL_FROM || 'StavbaCore <notifikace@stavbacore.cz>',
+            to: email.recipient || email.to,
+            subject: email.subject,
+            html: email.body_html || email.body
+          })
+        });
+        const resendData = await resendResponse.json();
+        if (!resendResponse.ok) {
+          throw new Error(`Resend API error (${resendResponse.status}): ${JSON.stringify(resendData)}`);
         }
+        if (!resendData?.id) throw new Error('E-mailová služba nepotvrdila přijetí zprávy.');
+        providerMessageId = resendData.id;
 
         // Mark as delivered
-        await supabase
+        const { data: delivered, error: deliveryUpdateError } = await supabase
           .from('app_email_outbox')
           .update({ 
             status: 'delivered', 
@@ -116,7 +126,13 @@ export default async function outboxSchedulerHandler(req: any, res: any) {
             provider_message_id: providerMessageId,
             attempts: (email.attempts || 0) + 1
           })
-          .eq('id', email.id);
+          .eq('id', email.id)
+          .eq('status', 'processing')
+          .select('id')
+          .maybeSingle();
+        if (deliveryUpdateError || !delivered) {
+          throw new Error(deliveryUpdateError?.message || 'Stav odeslaného e-mailu se nepodařilo uložit.');
+        }
 
         processedCount++;
         results.push({ id: email.id, status: 'delivered', providerMessageId });
@@ -131,7 +147,8 @@ export default async function outboxSchedulerHandler(req: any, res: any) {
             attempts: nextAttempts,
             scheduled_for: new Date(Date.now() + 5 * 60 * 1000).toISOString() // Retry backoff: 5 minutes
           })
-          .eq('id', email.id);
+          .eq('id', email.id)
+          .eq('status', 'processing');
         
         results.push({ id: email.id, status: newStatus, error: sendErr.message });
       }
