@@ -1,69 +1,73 @@
-# DemoFactory - Personalized Construction CRM Demo Generator
+# StavbaFlow
 
-DemoFactory is a production-quality internal sales tool designed to instantly generate fully branded, hyper-realistic CRM demos for construction companies.
+StavbaFlow is a multi-company construction dashboard for small building firms. The pilot flow covers owner and employee sign-in, role-based routing, inquiries, employee assignment, lifecycle changes, audit history, public-form intake and controlled CSV import.
 
----
+## Pilot scope
 
-## Features
+The verified staging pilot supports:
 
-- **DemoFactory AI Generator**: Input any construction company website URL, and Gemini AI extracts branding colors, services, phone, email, and city.
-- **Website Audit Card**: Pre-CRM digital audit showing missing lead forms, slow response workflows, and upgraded system benefits before launching the CRM.
-- **Owner & Employee Dashboards**: Executive KPI metrics, sparklines, minimal charts, and a mobile-optimized employee field app with status toggles (Driving, Arrived, Finished).
-- **Leads Kanban & Detail View**: 6-stage Kanban pipeline, AI Job Assistant (ChatGPT style summary), checklist, and voice note transcription.
-- **Professional PDF Quotes**: Czech standard compliance quotes with pricing tables and signature areas.
-- **Auto-Assignment Engine**: Intelligent matching based on specialization, capacity, distance, and priority.
+- one login page with automatic owner or employee routing;
+- company isolation enforced by Supabase RLS and tested with two synthetic companies;
+- owner lead creation, assignment and lifecycle updates;
+- employee visibility limited to assigned jobs and status-only updates;
+- one-time, expiring employee invitations through Supabase Auth;
+- public inquiry intake resolved by a tenant slug, with idempotency and rate limiting;
+- CSV import with mapping, fingerprint-based idempotency and rollback of unchanged imports;
+- an append-only audit history for lead creation and status changes.
 
----
+Google Sheets, direct SQL connections, Synology synchronization and bidirectional database synchronization are not part of the first customer pilot. Their UI must not be presented as a working integration.
 
-## Installation & Setup
+## Environments
 
-1. Clone the repository and install dependencies:
-   ```bash
-   npm install
-   ```
+| Environment | Purpose | Data policy |
+| --- | --- | --- |
+| Local demo | UI development with synthetic data | Local browser storage only |
+| Supabase staging | Functional pilot and security verification | Synthetic test data only |
+| Production | Customer operation after a reviewed release decision | No migration or write enablement from CI |
 
-2. Configure environment variables in `.env.example` (rename to `.env`):
-   ```env
-   GEMINI_API_KEY="your_gemini_api_key"
-   ```
+Production Supabase remains read-only for agent work. Database migrations, production writes and production deployment require a separate reviewed release decision.
 
-3. Run development server:
-   ```bash
-   npm run dev
-   ```
+## Local verification
 
----
+Use Node 24 and the committed lockfile:
 
-## Supabase & Database Configuration
-
-DemoFactory integrates with Supabase for persistent data storage across sessions:
-1. Create a Supabase project at [supabase.com](https://supabase.com).
-2. Configure environment credentials in `.env` (`VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`).
-3. Run SQL migration schemas located in `supabase/migrations/`:
-   - `20260911000000_schema.sql`
-   - `20260916000000_atomic_tenant_provisioning.sql`
-   - `20260917000000_security_hardening.sql` (P0 Multi-tenant RLS isolation & employee activation)
-
----
-
-## Serverless Security Endpoints
-
-- `/api/invite-employee`: Server-side endpoint with service role privileges to invite team members and generate secure activation tokens.
-- `/api/reset-employee-password`: Server-side endpoint to trigger password resets and activation tokens.
-- `/api/analyze-website`: Gemini AI website intelligence extractor.
-- `/api/test-sql`: SQL verification connector.
-
----
-
-## Vercel Deployment
-
-Deploy instantly to Vercel with zero configuration:
 ```bash
-vercel --prod
+npm ci
+npm test
+npm run lint
+npm run build
 ```
 
----
+`npm run lint` performs TypeScript checking. The test suite includes authorization, invitation, import, public-intake, deployment-surface and outbox contracts.
 
-## Branding Workflow
+## Runtime configuration
 
-Everything is driven dynamically from `branding/company.json`. You can also dynamically generate or override company branding via the DemoFactory modal.
+Copy `.env.example` to a local untracked environment file. Never commit credentials.
+
+Client settings:
+
+- `VITE_DEPLOYMENT_SURFACE`: `landing`, `app` or `unified`.
+- `VITE_APP_URL`: login application URL used by the landing deployment.
+- `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY`: browser-safe Supabase configuration.
+- `VITE_APP_SCHEMA_READS`: enables the reviewed `app_*` read path.
+- `VITE_PILOT_WRITES`: enables writes only for the explicitly allowlisted staging project.
+
+Server-only settings:
+
+- `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY`: Vercel Functions only; never expose the service key through a `VITE_` variable.
+- `APP_INVITE_WORKER_ENABLED`: explicitly enables the invitation endpoint for the reviewed staging deployment.
+- `RESEND_API_KEY`: optional outbox delivery provider. Without it the worker fails before database access and never reports a false delivery.
+
+## Customer onboarding
+
+Follow [the pilot operator runbook](docs/pilot-operator-runbook.md). A customer is not active until owner login, employee activation, assigned-job visibility, public intake, CSV import and cross-company isolation have all been verified in the intended environment.
+
+Current staging evidence is recorded in [the pilot verification report](docs/staging-pilot-verification-20261001.md). The implementation ledger lists the remaining release actions in [docs/pilot-implementation-ledger.md](docs/pilot-implementation-ledger.md).
+
+## Release rules
+
+- Work on a feature branch and merge only after human review.
+- Do not enable auto-merge or automatic database migrations.
+- Do not run production writes to verify behavior.
+- A green build is necessary but does not replace browser, API and database isolation checks.
+- Never claim an email was delivered until the provider accepted it and the result was persisted.

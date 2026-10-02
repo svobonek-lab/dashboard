@@ -11,7 +11,7 @@
 - Review the staged diff and scan for secrets before committing. Report suspected historical exposure without reproducing values; owner-controlled rotation may be required.
 
 ## Setup and verification
-Use Node 24 and the committed package-lock.json. Run npm ci, npm run lint, and npm run build. lint is TypeScript checking (tsc --noEmit), not ESLint. No test script is currently configured. Add targeted verification when changing behavior. Do not weaken checks to obtain a green result.
+Use Node 24 and the committed package-lock.json. Run npm ci, npm test, npm run lint, and npm run build. lint is TypeScript checking (tsc --noEmit), not ESLint. Add targeted verification when changing behavior. Do not weaken checks to obtain a green result.
 CI verify runs on PRs and main pushes without production credentials. CI does not deploy or migrate. A required branch-protection check must be configured separately by the repository owner before it can prevent merging.
 
 ## Architecture
