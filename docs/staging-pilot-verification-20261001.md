@@ -62,3 +62,14 @@ The temporary activation user, membership, invitation, leads and events were del
 The recipient must open the real invitation link so receipt and the exact email-link redirect can be observed end to end. Leaked-password protection is unavailable on the current Supabase Free plan; the dashboard identifies it as Pro-only. Security Advisor otherwise reports only the two intentional anonymous public-form functions.
 
 This evidence does not authorize a production database migration, production data write or production deploy.
+
+## Contract recheck after PR #62 merge — 2026-10-02
+
+The current staging database contract was exercised again after the invitation and outbox changes reached `main`. Each check ran inside an explicit transaction and ended with `ROLLBACK`:
+
+- authorization: outsider invitation denied, employee visibility limited to assigned leads, employee price mutation denied, invalid lifecycle jump denied, owner cross-company read and mutation denied;
+- invitation: verified matching email required, expired and wrong-email invitations denied, membership created once, accepted invitation cannot be reused;
+- public intake: public tenant slug resolved, exact request retry returned the same lead, event retained the lead id, unknown tenant denied;
+- import rollback: an edited imported lead was retained and its insert/update history remained present.
+
+All four checks returned their explicit `PASS` result. A separate query after the transactions confirmed zero rows for the reserved synthetic company, member, lead, invitation and Auth-user identifiers. The real-mail invitation remains unaccepted and was not modified by these checks.
