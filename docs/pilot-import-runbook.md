@@ -15,13 +15,12 @@ The direct SQL connector is deliberately unavailable until a reviewed server-sid
 5. A reviewed staging job performs the import into `app_leads`; the browser never receives a database password and the first pilot never writes back to the source database.
 6. The result records source filename, fingerprint, mapping version, counts, skipped duplicates, and errors in an audit event.
 
-## Release gates still required
+## Verified staging contract
 
-- Staging-only `app_imports` write contract and RLS policy.
-- Server-side validation of the company membership and import fingerprint.
-- Idempotent create/update behavior for `app_leads`.
-- Dry-run and retry tests with the same file and with two different companies.
-- Explicit retention/deletion behavior for uploaded files and imported source data.
-- Owner-only import permission; employees can view assigned work but cannot start an import.
+- `app_imports` records company, source file, row count, summary and tenant-scoped fingerprint.
+- The API authenticates an active owner and the database RPC is service-only.
+- Repeating the same company/fingerprint is idempotent; source record ids prevent duplicates.
+- Rollback removes only untouched newly imported rows and refuses an unsafe rollback after edits.
+- The browser does not upload database credentials and direct SQL remains unavailable.
 
-Until those gates pass, the UI must label the flow **dry-run** and must not show “connected”, “synchronized”, or a successful imported-record count.
+The Preview release must still run one disposable API commit and rollback with the deployment service key before the import button is enabled for a pilot customer.

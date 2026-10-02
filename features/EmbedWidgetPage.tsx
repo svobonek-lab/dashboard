@@ -35,7 +35,7 @@ export const EmbedWidgetPage: React.FC<EmbedWidgetPageProps> = ({
   const [buttonText, setButtonText] = useState('Nezávazná poptávka');
   const [isWidgetModalOpen, setIsWidgetModalOpen] = useState(false);
 
-  const orgId = currentOrg?.id || 'org-1111-2222-3333-444444444444';
+  const orgId = currentOrg?.slug || (!(import.meta as any).env?.PROD ? currentOrg?.id : '') || 'FIRMA-SLUG';
   const appOrigin = typeof window !== 'undefined' ? window.location.origin : 'https://YOUR_DOMAIN';
 
   const snippetCodes = {

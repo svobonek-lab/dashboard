@@ -33,3 +33,29 @@ test('import endpoint keeps commit mode disabled unless the deployment enables t
   assert.equal(response.statusCode, 503);
   assert.equal(response.body.code, 'IMPORT_WORKER_DISABLED');
 });
+
+test('dry run binds the reviewed field mapping into its fingerprint', async () => {
+  const base = {
+    mode: 'dry_run', companyId: 'company-a', fileName: 'leads.csv', csv: 'name\nAlena',
+  };
+  const customerResponse = responseProbe();
+  const titleResponse = responseProbe();
+
+  await importHandler({ method: 'POST', body: { ...base, mapping: { name: 'customerName' } } }, customerResponse);
+  await importHandler({ method: 'POST', body: { ...base, mapping: { name: 'title' } } }, titleResponse);
+
+  assert.equal(customerResponse.statusCode, 200);
+  assert.equal(titleResponse.statusCode, 200);
+  assert.notEqual(customerResponse.body.fingerprint, titleResponse.body.fingerprint);
+});
+
+test('dry run rejects mappings to missing CSV columns', async () => {
+  const response = responseProbe();
+  await importHandler({ method: 'POST', body: {
+    mode: 'dry_run', companyId: 'company-a', fileName: 'leads.csv', csv: 'name\nAlena',
+    mapping: { missing_column: 'customerName' },
+  } }, response);
+
+  assert.equal(response.statusCode, 400);
+  assert.equal(response.body.code, 'IMPORT_MAPPING_INVALID');
+});

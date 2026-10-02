@@ -1,19 +1,21 @@
 import { useOrganization } from '@/context/OrganizationContext';
 import React from 'react';
 import { EmployeeDashboard } from '@/features/EmployeeDashboard';
-import { Lead } from '@/types';
+import { Lead, LeadStatus } from '@/types';
 import { WorkspaceReadinessPanel } from '@/features/WorkspaceReadinessPanel';
 
 interface EmployeeDashboardPageProps {
   leads: Lead[];
   onSelectLead: (lead: Lead) => void;
   onUpdateLead: (lead: Lead) => void;
+  onUpdateLeadStatus: (leadId: string, status: LeadStatus) => Promise<void> | void;
 }
 
 export const EmployeeDashboardPage: React.FC<EmployeeDashboardPageProps> = ({
   leads,
   onSelectLead,
-  onUpdateLead
+  onUpdateLead,
+  onUpdateLeadStatus,
 }) => {
   const { currentOrg } = useOrganization();
   const branding = currentOrg?.branding || {};
@@ -25,6 +27,6 @@ export const EmployeeDashboardPage: React.FC<EmployeeDashboardPageProps> = ({
       <p className="mt-2 max-w-xl text-sm leading-6 text-muted">Vidíte jen zakázky, které vám firma přiřadila.</p>
     </div>
     <WorkspaceReadinessPanel organization={currentOrg} leads={leads} employees={[]} role="employee" assignedLeads={leads} compact />
-    <EmployeeDashboard leads={leads} branding={branding} onOpenVoiceNotes={() => {}} onSelectLead={onSelectLead} onUpdateLead={onUpdateLead} />
+    <EmployeeDashboard leads={leads} branding={branding} onOpenVoiceNotes={() => {}} onSelectLead={onSelectLead} onUpdateLead={onUpdateLead} onUpdateLeadStatus={onUpdateLeadStatus} />
   </div>;
 };

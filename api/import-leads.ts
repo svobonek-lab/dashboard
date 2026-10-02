@@ -1,6 +1,6 @@
-import { createImportFingerprint, parseCsvDryRun } from '../lib/integrations/pilotImport';
+import { createImportFingerprint, parseCsvDryRun } from '../lib/integrations/pilotImport.js';
 import { createClient } from '@supabase/supabase-js';
-import type { FieldMappingConfig, TargetFieldType } from '../types/integrations';
+import type { FieldMappingConfig, TargetFieldType } from '../types/integrations.js';
 
 const MAX_CSV_BYTES = 2 * 1024 * 1024;
 
@@ -19,6 +19,29 @@ const TARGET_FIELDS: Record<TargetFieldType, string> = {
   assignedEmployeeName: 'assigned_employee_name',
   ignore: '',
 };
+
+function validateMapping(headers: string[], candidate: unknown): FieldMappingConfig {
+  if (candidate === undefined || candidate === null) return {};
+  if (typeof candidate !== 'object' || Array.isArray(candidate)) {
+    throw new Error('Mapování CSV musí být objekt.');
+  }
+  const allowed = new Set(Object.keys(TARGET_FIELDS));
+  const headerSet = new Set(headers);
+  const usedTargets = new Set<string>();
+  const mapping: FieldMappingConfig = {};
+  for (const [source, rawTarget] of Object.entries(candidate as Record<string, unknown>)) {
+    if (!headerSet.has(source)) throw new Error(`Sloupec ${source} v CSV neexistuje.`);
+    if (typeof rawTarget !== 'string' || !allowed.has(rawTarget)) {
+      throw new Error(`Cíl mapování pro ${source} není podporovaný.`);
+    }
+    if (rawTarget !== 'ignore' && usedTargets.has(rawTarget)) {
+      throw new Error(`Cílové pole ${rawTarget} je namapované vícekrát.`);
+    }
+    if (rawTarget !== 'ignore') usedTargets.add(rawTarget);
+    mapping[source] = rawTarget as TargetFieldType;
+  }
+  return mapping;
+}
 
 function normalizeImportRows(rows: Record<string, string>[], mapping: FieldMappingConfig) {
   return rows.map((row, index) => {
@@ -101,14 +124,30 @@ export default async function importLeadsHandler(req: any, res: any) {
       return;
     }
     const preview = parseCsvDryRun(csv);
-    const fingerprint = createImportFingerprint(companyId, fileName, csv);
+    let mapping: FieldMappingConfig;
+    try {
+      mapping = validateMapping(preview.headers, body.mapping);
+    } catch (error) {
+      res.status(400).json({ error: error instanceof Error ? error.message : 'Neplatné mapování CSV.', code: 'IMPORT_MAPPING_INVALID' });
+      return;
+    }
+    if (Object.values(mapping).every((target) => target === 'ignore')) {
+      res.status(400).json({ error: 'Před importem namapujte alespoň jedno pole.', code: 'IMPORT_MAPPING_REQUIRED' });
+      return;
+    }
+    const normalizedRows = normalizeImportRows(preview.rows, mapping);
+    if (normalizedRows.some((row) => !row.customer && !row.title)) {
+      res.status(400).json({ error: 'Každý řádek musí mít zákazníka nebo název zakázky.', code: 'IMPORT_ROW_INVALID' });
+      return;
+    }
+    const fingerprint = createImportFingerprint(companyId, fileName, csv, mapping);
     if (body.fingerprint && body.fingerprint !== fingerprint) {
       res.status(409).json({ error: 'Fingerprint importu neodpovídá náhledu.', code: 'IMPORT_FINGERPRINT_MISMATCH' });
       return;
     }
     const { data, error } = await serviceClient.rpc('app_import_leads', {
       p_company_id: companyId,
-      p_rows: normalizeImportRows(preview.rows, body.mapping || {}),
+      p_rows: normalizedRows,
       p_file_name: fileName,
       p_fingerprint: fingerprint,
     });
@@ -137,12 +176,19 @@ export default async function importLeadsHandler(req: any, res: any) {
   }
 
   const preview = parseCsvDryRun(csv);
+  let mapping: FieldMappingConfig;
+  try {
+    mapping = validateMapping(preview.headers, body.mapping);
+  } catch (error) {
+    res.status(400).json({ error: error instanceof Error ? error.message : 'Neplatné mapování CSV.', code: 'IMPORT_MAPPING_INVALID' });
+    return;
+  }
   res.status(200).json({
     ...preview,
     companyId,
     fileName,
     rows: preview.rows.length,
-    fingerprint: createImportFingerprint(companyId, fileName, csv),
+    fingerprint: createImportFingerprint(companyId, fileName, csv, mapping),
     expiresInMinutes: 30,
   });
 }

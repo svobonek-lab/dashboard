@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { isAssignedToMember, toAppLead, toAppMember } from '../src/app/productionSchema';
+import { isAssignedToMember, toAppLead, toAppMember, toPendingInvite } from '../src/app/productionSchema';
 
 const member = { company_id: 'company-a', user_id: 'user-a', name: 'Pracovník', email: 'worker@example.com', role: 'employee' as const, active: true };
 const row = {
@@ -30,4 +30,15 @@ test('assignment requires the same company and an active member', () => {
   assert.equal(isAssignedToMember(row, member), true);
   assert.equal(isAssignedToMember({ ...row, company_id: 'company-b' }, member), false);
   assert.equal(isAssignedToMember(row, { ...member, active: false }), false);
+});
+
+test('pending invitation is visible as pending team member without a fabricated auth id', () => {
+  const employee = toPendingInvite({
+    id: 'invite-a', company_id: 'company-a', name: 'Budoucí kolega', email: 'new@example.com',
+    expires_at: '2026-10-08T10:00:00Z', created_at: '2026-10-01T10:00:00Z', accepted_at: null,
+  });
+  assert.equal(employee.id, 'invite-a');
+  assert.equal(employee.invitationStatus, 'Pending');
+  assert.equal(employee.auth_user_id, undefined);
+  assert.equal(employee.active, false);
 });

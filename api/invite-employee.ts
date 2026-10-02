@@ -26,7 +26,9 @@ export default async function inviteEmployeeHandler(req: any, res: any) {
     res.status(503).json({ error: 'Pozvánky nemají nakonfigurované stagingové Supabase klíče.', code: 'APP_INVITE_CONFIG_MISSING' });
     return;
   }
-  const authClient = createClient(supabaseUrl, anonKey, { auth: { persistSession: false } });
+  const authClient = createClient(supabaseUrl, anonKey, {
+    auth: { persistSession: false }, global: { headers: { Authorization: `Bearer ${token}` } },
+  });
   const { data: authData, error: authError } = await authClient.auth.getUser(token);
   if (authError || !authData.user) {
     res.status(401).json({ error: 'Přihlášení pro pozvánku není platné.' });
@@ -44,7 +46,7 @@ export default async function inviteEmployeeHandler(req: any, res: any) {
     res.status(403).json({ error: 'Pozvánku může odeslat pouze aktivní majitel firmy.' });
     return;
   }
-  const { data: inviteId, error: inviteError } = await serviceClient.rpc('app_create_invite', {
+  const { data: inviteId, error: inviteError } = await authClient.rpc('app_create_invite', {
     p_company_id: companyId,
     p_email: email,
     p_name: name || email,
@@ -58,6 +60,7 @@ export default async function inviteEmployeeHandler(req: any, res: any) {
     redirectTo: (process.env.APP_URL || '') + '/login',
   });
   if (authInviteError) {
+    await serviceClient.from('app_invites').delete().eq('id', inviteId).eq('company_id', companyId).is('accepted_at', null);
     res.status(502).json({ error: 'Pozvánku se nepodařilo odeslat.', code: 'APP_INVITE_SEND_FAILED' });
     return;
   }

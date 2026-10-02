@@ -22,6 +22,19 @@ test('CSV import fingerprint is stable for idempotent retries', () => {
   assert.notEqual(first, otherCompany);
 });
 
+test('CSV parser preserves quoted multiline descriptions and every row', () => {
+  const result = parseCsvDryRun('id;zakaznik_jmeno;popis\nA-1;Alena;"První řádek\ndruhý řádek"\nA-2;Boris;Jednoduchý');
+  assert.equal(result.rows.length, 2);
+  assert.equal(result.rows[0].popis, 'První řádek\ndruhý řádek');
+  assert.equal(result.rows[1].zakaznik_jmeno, 'Boris');
+});
+
+test('CSV fingerprint includes field mapping so a remap is a distinct reviewed import', () => {
+  const first = createImportFingerprint('company-a', 'leads.csv', 'name\nA', { name: 'customerName' });
+  const remapped = createImportFingerprint('company-a', 'leads.csv', 'name\nA', { name: 'title' });
+  assert.notEqual(first, remapped);
+});
+
 test('SQL connector reports unavailable instead of inventing a successful connection', () => {
   const result = unsupportedSqlConnection();
 

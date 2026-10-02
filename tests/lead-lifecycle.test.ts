@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { canTransitionLeadStatus, getLeadTransitionError } from '../src/app/leadLifecycle';
+import { canTransitionLeadStatus, getEmployeeNextStatus, getLeadTransitionError } from '../src/app/leadLifecycle';
 
 test('employee can advance an assigned lead through the normal delivery flow', () => {
   assert.equal(canTransitionLeadStatus('New', 'Contacted', 'employee'), true);
@@ -27,4 +27,13 @@ test('owner and platform admin can correct any status', () => {
 test('same status is always idempotent', () => {
   assert.equal(canTransitionLeadStatus('Completed', 'Completed', 'employee'), true);
   assert.equal(getLeadTransitionError('Completed', 'Completed', 'employee'), null);
+});
+
+test('employee workspace exposes the next persisted lifecycle step', () => {
+  assert.equal(getEmployeeNextStatus('New'), 'Contacted');
+  assert.equal(getEmployeeNextStatus('Contacted'), 'Quote');
+  assert.equal(getEmployeeNextStatus('Quote'), 'In Progress');
+  assert.equal(getEmployeeNextStatus('In Progress'), 'Completed');
+  assert.equal(getEmployeeNextStatus('Completed'), null);
+  assert.equal(getEmployeeNextStatus('Lost'), null);
 });

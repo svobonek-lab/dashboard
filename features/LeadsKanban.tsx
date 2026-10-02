@@ -4,12 +4,13 @@ import { MapPin, DollarSign, User, Plus, Phone, MessageSquare, ShieldCheck, Cale
 import { canDeleteLead } from '../src/app/permissions';
 import { useOrganization } from '../context/OrganizationContext';
 import { supabase, isSupabaseConfigured, isValidUUID, LocalSupabaseMock, DEFAULT_DEMO_ORG_ID } from '../lib/supabase';
+import { createManualLeadDraft } from '../src/app/manualLeadDraft';
 
 interface LeadsKanbanProps {
   leads: Lead[];
   onSelectLead: (lead: Lead) => void;
   onUpdateLeadStatus: (leadId: string, newStatus: LeadStatus) => void;
-  onAddLead?: (lead: Lead) => void;
+  onAddLead?: (lead: Lead) => Promise<Lead> | Lead | void;
 }
 
 export const LeadsKanban: React.FC<LeadsKanbanProps> = ({
@@ -63,53 +64,34 @@ export const LeadsKanban: React.FC<LeadsKanbanProps> = ({
   const [formDate, setFormDate] = useState('');
   const [formDescription, setFormDescription] = useState('');
   const [formThumbnail, setFormThumbnail] = useState('');
+  const [submitError, setSubmitError] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleCreateLeadSubmit = (e: React.FormEvent) => {
+  const handleCreateLeadSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const newLead: Lead = {
-      id: `lead-${Date.now()}`,
-      title: formTitle,
-      description: formDescription,
-      city: 'Praha',
-      address: formAddress,
-      customerName: formCustomerName,
-      customerPhone: formPhone,
-      customerEmail: formEmail,
-      preferredDate: formDate,
-      price: Number(formBudget) || 200000,
-      status: 'New',
-      priority: 'High',
-      assignedEmployeeId: 'emp-1',
-      assignedEmployeeName: 'Petr Mistr',
-      thumbnail: formThumbnail,
-      photos: [],
-      files: [],
-      checklist: [
-        { id: 'c1', text: 'Úvodní zaměření a konzultace', completed: true },
-        { id: 'c2', text: 'Schválení cenové nabídky', completed: false }
-      ],
-      aiSummary: {
-        jobType: formTitle,
-        complexity: 'Medium',
-        estimatedRange: `${(Number(formBudget) * 0.9).toFixed(0)} - ${(Number(formBudget) * 1.1).toFixed(0)} Kč`,
-        assignedEmployee: 'Petr Mistr',
-        risks: ['Nutno ověřit podloží'],
-        recommendedNextStep: 'Sjednat termín osobní obhlídky'
-      },
-      timeline: [
-        { id: 't1', title: 'Nová poptávka přijata', status: 'Completed', timestamp: 'Dnes' }
-      ],
-      aiChat: [],
-      history: [
-        { id: 'h1', timestamp: new Date().toLocaleTimeString(), action: 'Poptávka vytvořena manuálně', author: dbUser?.email || 'owner' }
-      ]
-    };
-
-    if (onAddLead) {
-      onAddLead(newLead);
+    setSubmitError('');
+    setIsSubmitting(true);
+    try {
+      if (!onAddLead) throw new Error('Ukládání poptávek není dostupné.');
+      const newLead = createManualLeadDraft({
+        title: formTitle,
+        customerName: formCustomerName,
+        phone: formPhone,
+        email: formEmail,
+        address: formAddress,
+        budget: formBudget,
+        date: formDate,
+        description: formDescription,
+        thumbnail: formThumbnail,
+        author: dbUser?.email || 'owner',
+      });
+      await onAddLead(newLead);
+      setIsModalOpen(false);
+    } catch (error) {
+      setSubmitError(error instanceof Error ? error.message : 'Poptávku se nepodařilo uložit.');
+    } finally {
+      setIsSubmitting(false);
     }
-    setLeads(prev => [newLead, ...prev]);
-    setIsModalOpen(false);
   };
 
   return (
@@ -224,6 +206,7 @@ export const LeadsKanban: React.FC<LeadsKanbanProps> = ({
                 </div>
               </div>
 
+              {submitError && <p role="alert" className="rounded-xl bg-red-50 px-3 py-2 text-xs font-bold text-red-700">{submitError}</p>}
               {/* Sticky Submit Bar at Bottom */}
               <div className="sticky bottom-0 bg-white/95 backdrop-blur-md pt-3.5 pb-1 flex flex-col sm:flex-row justify-end gap-2.5 border-t border-slate-100 mt-4 shrink-0 shadow-[0_-6px_16px_-4px_rgba(0,0,0,0.05)]">
                 <button
@@ -235,10 +218,11 @@ export const LeadsKanban: React.FC<LeadsKanbanProps> = ({
                 </button>
                 <button
                   type="submit"
+                  disabled={isSubmitting}
                   className="w-full sm:w-auto px-6 py-3 rounded-xl font-extrabold shadow-md hover:shadow-lg transition-all text-center order-1 sm:order-2 cursor-pointer"
                   style={{ backgroundColor: 'var(--brand-primary)', color: '#ffffff' }}
                 >
-                  Vytvořit zakázku
+                  {isSubmitting ? 'Ukládám…' : 'Vytvořit zakázku'}
                 </button>
               </div>
             </form>

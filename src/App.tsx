@@ -196,7 +196,10 @@ function AppContent() {
           }
         });
     }
-  }, [currentOrg?.id]);
+  // The organization can be restored before Supabase restores the authenticated
+  // session. Re-run once the user is known so RLS reads do not leave stale
+  // tenant-cache data on screen.
+  }, [currentOrg?.id, user?.id]);
 
   // Root path routing and redirects
   useEffect(() => {
@@ -384,8 +387,10 @@ function AppContent() {
     try {
       const created = await createLead(incoming);
       setLeads(prev => [created, ...prev.filter(l => l.id !== created.id)]);
+      return created;
     } catch (e) {
       console.error('Failed to add lead via unified createLead pipeline', e);
+      throw e;
     }
   };
 
@@ -531,7 +536,7 @@ function AppContent() {
       <ProtectedRoute allowedRole={['employee', 'super_admin']}>
         <EmployeeLayout leads={employeeLeads}>
           {pathname === '/employee' || pathname === '/employee/dashboard' ? (
-            <EmployeeDashboardPage leads={employeeLeads} onSelectLead={setSelectedLead} onUpdateLead={handleUpdateLead} />
+            <EmployeeDashboardPage leads={employeeLeads} onSelectLead={setSelectedLead} onUpdateLead={handleUpdateLead} onUpdateLeadStatus={handleUpdateLeadStatus} />
           ) : pathname === '/employee/jobs' ? (
             <EmployeeJobsPage leads={employeeLeads} onSelectLead={setSelectedLead} />
           ) : pathname === '/employee/schedule' ? (
@@ -547,7 +552,7 @@ function AppContent() {
           ) : pathname === '/employee/profile' ? (
             <EmployeeProfilePage />
           ) : (
-            <EmployeeDashboardPage leads={employeeLeads} onSelectLead={setSelectedLead} onUpdateLead={handleUpdateLead} />
+            <EmployeeDashboardPage leads={employeeLeads} onSelectLead={setSelectedLead} onUpdateLead={handleUpdateLead} onUpdateLeadStatus={handleUpdateLeadStatus} />
           )}
         </EmployeeLayout>
       </ProtectedRoute>

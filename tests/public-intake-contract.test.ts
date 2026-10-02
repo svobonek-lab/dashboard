@@ -1,0 +1,14 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+
+const sql = readFileSync(new URL('../supabase/staging/pilot_public_intake.sql', import.meta.url), 'utf8');
+
+test('public intake uses tenant slug, stores the resulting lead id, and rate limits unique requests', () => {
+  assert.match(sql, /add column if not exists lead_id uuid/i);
+  assert.match(sql, /p_public_key text/i);
+  assert.match(sql, /where slug=lower\(trim\(p_public_key\)\)/i);
+  assert.match(sql, /set lead_id=v_lead_id/i);
+  assert.match(sql, /created_at>now\(\)-interval '1 minute'/i);
+  assert.doesNotMatch(sql, /p_company_id uuid/);
+});

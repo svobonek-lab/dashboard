@@ -6,7 +6,10 @@ import { crmRepo } from '../lib/data/repositoryFactory';
 import { APP_SCHEMA_WRITES_BLOCKED_MESSAGE, isAppSchemaReadsEnabled, shouldBlockLegacyWrites } from '../src/app/productionDataPolicy';
 import { removeTenantCache, TENANT_CACHE_NAMES } from '../src/app/tenantCache';
 import { getRuntimePolicy } from '../src/app/runtimePolicy';
-import { readAppSchemaIdentity } from '../src/app/appSchemaIdentity';
+import { resolveOrAcceptAppIdentity } from '../src/app/appSchemaIdentity';
+import { toAuthenticatedWorkspaceUser } from '../src/app/authWorkspaceUser';
+import { buildInviteRequest, toPendingEmployee } from '../src/app/inviteContract';
+import { buildRecoveryRequest, parseRecoveryResponse } from '../src/app/authRecovery';
 
 const IS_PRODUCTION = !!(import.meta as any).env?.PROD;
 // Production always resolves identity/data through the verified app_* model.
@@ -95,8 +98,8 @@ interface OrganizationContextType {
   fetchEmployees: () => Promise<Employee[]>;
   saveEmployee: (emp: Partial<Employee>) => Promise<Employee>;
   inviteEmployee: (emp: Partial<Employee>, tempPassword?: string) => Promise<Employee>;
-  resendEmployeeInvite: (employeeId: string) => Promise<{ email: string; inviteToken?: string; inviteLink?: string; message: string }>;
-  resetEmployeePassword: (employeeId: string, newPassword?: string) => Promise<{ email: string; newPassword: string }>;
+  resendEmployeeInvite: (employeeId: string) => Promise<{ email: string; message: string }>;
+  resetEmployeePassword: (employeeId: string) => Promise<{ email: string; message: string }>;
   deactivateEmployee: (employeeId: string, deactivate?: boolean) => Promise<void>;
   deleteEmployee: (employeeId: string) => Promise<void>;
   
@@ -211,7 +214,7 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
 
           if (session?.user) {
             setUser(session.user);
-            await loadUserData(session.user.id, session.user.email);
+            await loadUserData(session.user.id, session.user.email, session.user.user_metadata);
           } else {
             // Check if user has an active session in local store (e.g. quick-login or mock auth)
             const activeSession = canUseLocalMockAuth(IS_PRODUCTION) ? LocalSupabaseMock.getActiveSessionUser() : null;
@@ -263,7 +266,7 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
         const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
           if (session?.user) {
             setUser(session.user);
-            await loadUserData(session.user.id, session.user.email);
+            await loadUserData(session.user.id, session.user.email, session.user.user_metadata);
           } else if (event === 'SIGNED_OUT') {
             LocalSupabaseMock.setActiveSessionUser(null);
             setUser(null);
@@ -363,31 +366,32 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
   };
 
   // Helper: Load user organization and tenant structures from Supabase
-  const loadUserData = async (userId: string, email?: string) => {
-    if (!supabase) return;
+  const loadUserData = async (userId: string, email?: string, userMetadata?: Record<string, unknown>): Promise<DBUser | null> => {
+    if (!supabase) return null;
 
     try {
       // The verified app_* contract is deliberately isolated from the legacy
       // organizations/users tables. No fallback or write is allowed here.
       if (APP_SCHEMA_READS) {
-        const identity = await readAppSchemaIdentity(supabase, userId, email);
+        const identity = await resolveOrAcceptAppIdentity(supabase, { id: userId, email, user_metadata: userMetadata });
         if (!identity) {
           setSchemaError('Účet nemá aktivní členství v žádné firmě. Kontaktujte majitele workspace.');
           setDbUser(null);
           setCurrentOrg(null);
           setOrganizations([]);
-          return;
+          return null;
         }
         setOrganizations(identity.organizations);
         setCurrentOrg(identity.organization);
-        setDbUser({
+        const resolvedDbUser: DBUser = {
           id: identity.member.user_id,
           organization_id: identity.member.company_id,
           role: enforceRole(identity.member.email, undefined, identity.member.role),
           email: identity.member.email,
           name: identity.member.name,
-        });
-        return;
+        };
+        setDbUser(resolvedDbUser);
+        return resolvedDbUser;
       }
 
       // 1. Fetch user record from public.users table
@@ -550,6 +554,7 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
       if (canUseLocalMockAuth(IS_PRODUCTION)) {
         LocalSupabaseMock.setActiveSessionUser(formattedDbUser);
       }
+      return formattedDbUser;
     } catch (err: any) {
       console.error('Error loading user organization details:', err);
       Sentry.captureException(err, {
@@ -572,6 +577,7 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
         setCurrentOrg(null);
         setOrganizations([]);
       }
+      return null;
     }
   };
 
@@ -652,9 +658,12 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
       setUser(authUser);
 
       // 2. Load public.users row and organization
-      await loadUserData(authUser.id, cleanEmail);
-
-      const activeSessionUser = LocalSupabaseMock.getActiveSessionUser();
+      const resolvedDbUser = await loadUserData(authUser.id, cleanEmail, authUser.user_metadata);
+      if (!resolvedDbUser) {
+        await supabase.auth.signOut();
+        setUser(null);
+        throw new Error('Účet nemá aktivní členství v žádné firmě.');
+      }
       
       // Check if employee is deactivated or pending activation
       let empRec = null;
@@ -695,11 +704,7 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
         }
       }
 
-      return {
-        ...authUser,
-        role: dbUser?.role || activeSessionUser?.role || 'employee',
-        organization_id: dbUser?.organization_id || activeSessionUser?.organization_id
-      };
+      return toAuthenticatedWorkspaceUser(authUser, resolvedDbUser);
     } catch (err: any) {
       console.error('login error:', err);
       Sentry.captureException(err, {
@@ -922,7 +927,7 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
 
       // Reload user organization context if possible
       try {
-        await loadUserData(user.id, user.email);
+        await loadUserData(user.id, user.email, user.user_metadata);
       } catch (e) {
         console.warn('loadUserData warning after switch:', e);
       }
@@ -1312,17 +1317,6 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
       return crmRepo.saveLead(targetOrgId, {
         ...leadData,
         organization_id: targetOrgId,
-        customerName,
-        customerPhone: phone,
-        customerEmail: email,
-        price: budget,
-        status,
-        address,
-        city,
-        description,
-        preferredDate,
-        priority,
-        title: leadData.title || (projectType ? `${projectType} - ${customerName || 'Nová poptávka'}` : customerName || 'Nová poptávka'),
       });
     }
 
@@ -1581,39 +1575,14 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
             'Content-Type': 'application/json',
             ...(authHeader ? { 'Authorization': authHeader } : {})
           },
-          body: JSON.stringify({
-            organizationId: currentOrg.id,
-            name: empData.name,
-            email,
-            role,
-            specialization: empData.specialization || role,
-            phone: empData.phone || '',
-            capacity: empData.capacity || 100
-          })
+          body: JSON.stringify(buildInviteRequest(currentOrg.id, { name: empData.name, email }))
         });
 
         const resData = await response.json();
-        if (!response.ok || !resData.success) {
+        if (!response.ok || !resData.invited) {
           throw new Error(resData?.error || 'Pozvání zaměstnance přes serverový endpoint selhalo.');
         }
-
-        return {
-          id: resData.employeeId,
-          organization_id: currentOrg.id,
-          name: empData.name || 'Zaměstnanec',
-          email,
-          role,
-          specialization: empData.specialization || role,
-          capacity: empData.capacity || 100,
-          status: 'Green',
-          phone: empData.phone || '',
-          active: true,
-          invitationStatus: 'Pending',
-          inviteToken: resData.inviteToken,
-          invitedAt: resData.invitedAt,
-          inviteLink: resData.inviteLink,
-          avatar: ''
-        } as any;
+        return toPendingEmployee(resData, { ...empData, email, role: String(role) }, currentOrg.id) as any;
       } catch (err: any) {
         console.error('Production inviteEmployee failure:', err);
         throw new Error(`Pozvánka selhala: ${err.message}`);
@@ -1722,7 +1691,7 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
     }
   };
 
-  const resendEmployeeInvite = async (employeeId: string): Promise<{ email: string; inviteToken: string; inviteLink: string; message: string }> => {
+  const resendEmployeeInvite = async (employeeId: string): Promise<{ email: string; message: string }> => {
     const emps = await fetchEmployees();
     const target = emps.find(e => e.id === employeeId);
     if (!target || !target.email) throw new Error('Zaměstnanec nenalezen');
@@ -1737,40 +1706,33 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
           }
         }
 
-        const response = await fetch('/api/reset-employee-password', {
+        if (!currentOrg) throw new Error('Firma není načtená.');
+        const response = await fetch('/api/invite-employee', {
           method: 'POST',
           headers: { 
             'Content-Type': 'application/json',
             ...(authHeader ? { 'Authorization': authHeader } : {})
           },
-          body: JSON.stringify({
-            employeeId,
-            email: target.email,
-            organizationId: currentOrg?.id
-          })
+          body: JSON.stringify(buildInviteRequest(currentOrg.id, { name: target.name, email: target.email }))
         });
         const resData = await response.json();
-        if (!response.ok || !resData.success) {
+        if (!response.ok || resData?.invited !== true) {
           throw new Error(resData?.error || 'Obnovení pozvánky selhalo.');
         }
         return {
           email: target.email,
-          inviteToken: 'pending',
-          inviteLink: resData.resetLink || `${window.location.origin}/login?email=${encodeURIComponent(target.email)}`,
-          message: resData.message || `Pozvánka pro ${target.name} byla obnovena.`
+          message: `Nová jednorázová pozvánka pro ${target.name} byla odeslána.`
         };
       } catch (err: any) {
         throw new Error(`Obnovení pozvánky selhalo: ${err.message}`);
       }
     }
 
-    const inviteToken = target.inviteToken || `inv-tok-${Date.now()}-${Math.floor(1000 + Math.random() * 9000)}`;
     const invitedAt = new Date().toISOString();
 
     const mockAll = LocalSupabaseMock.getEmployees() as any[];
     const idx = mockAll.findIndex(e => e.id === employeeId || e.email?.toLowerCase() === target.email.toLowerCase());
     if (idx !== -1) {
-      mockAll[idx].inviteToken = inviteToken;
       mockAll[idx].invitedAt = invitedAt;
       if (mockAll[idx].invitationStatus !== 'Disabled') {
         mockAll[idx].invitationStatus = 'Pending';
@@ -1778,17 +1740,13 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
       LocalSupabaseMock.saveEmployees(mockAll);
     }
 
-    const inviteLink = `${window.location.origin}/login?inviteToken=${inviteToken}&email=${encodeURIComponent(target.email)}`;
-
     return {
       email: target.email,
-      inviteToken,
-      inviteLink,
-      message: `Pozvánka pro ${target.name} (${target.email}) byla obnovena. Link pro aktivaci: ${inviteLink}`
+      message: 'Demo režim neposílá e-maily. Stav pozvánky byl obnoven pouze v lokální ukázce.'
     };
   };
 
-  const resetEmployeePassword = async (employeeId: string, newPassword?: string): Promise<{ email: string; newPassword: string }> => {
+  const resetEmployeePassword = async (employeeId: string): Promise<{ email: string; message: string }> => {
     const emps = await fetchEmployees();
     const target = emps.find(e => e.id === employeeId);
     if (!target || !target.email) throw new Error('Zaměstnanec nenalezen');
@@ -1809,36 +1767,24 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
             'Content-Type': 'application/json',
             ...(authHeader ? { 'Authorization': authHeader } : {})
           },
-          body: JSON.stringify({
-            employeeId,
-            email: target.email,
-            organizationId: currentOrg?.id,
-            newPassword
-          })
+          body: JSON.stringify(buildRecoveryRequest(target.email))
         });
         const resData = await response.json();
-        if (!response.ok || !resData.success) {
+        if (!response.ok) {
           throw new Error(resData?.error || 'Obnova hesla selhala.');
         }
         return {
           email: target.email,
-          newPassword: newPassword || 'Zaslán resetovací odkaz'
+          message: parseRecoveryResponse(resData)
         };
       } catch (err: any) {
         throw new Error(`Reset hesla selhal: ${err.message}`);
       }
     }
 
-    const pwd = newPassword || `Stavba${Math.floor(1000 + Math.random() * 9000)}!`;
-    const authUsers = LocalSupabaseMock.getUsers();
-    const found = authUsers.find(u => u.email.toLowerCase() === target.email.toLowerCase());
-    if (found) {
-      found.password = pwd;
-      LocalSupabaseMock.saveUsers(authUsers);
-    }
     return {
       email: target.email,
-      newPassword: pwd
+      message: 'Demo režim neposílá e-maily. Heslo uživatele nebylo změněno.'
     };
   };
 
@@ -2368,8 +2314,8 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
     const origin = typeof window !== 'undefined' ? window.location.origin : 'https://buildflow.cz';
     const crmUrl = `${origin}/dashboard?org=${orgId}`;
     const portalUrl = `${origin}/portal?org=${orgId}`;
-    const formUrl = `${origin}/inquiry?org=${orgId}`;
-    const widgetScript = `<script src="${origin}/widget.js" data-org-id="${orgId}" async></script>`;
+    const formUrl = `${origin}/inquiry?org=${slug}`;
+    const widgetScript = `<script src="${origin}/widget.js" data-org="${slug}" async></script>`;
 
     // Step 1: Zpracování reálné vizuální identity
     stepNotify(1, 'Zpracování vizuální identity a barev...');

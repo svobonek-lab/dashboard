@@ -30,10 +30,20 @@ export interface AppLeadRow {
   revision: number;
 }
 
+export interface AppInviteRow {
+  id: string;
+  company_id: string;
+  name: string;
+  email: string;
+  expires_at: string;
+  created_at: string;
+  accepted_at: string | null;
+}
+
 const leadStatus: Record<AppLeadRow['status'], LeadStatus> = {
   new: 'New',
   contacted: 'Contacted',
-  scheduled: 'In Progress',
+  scheduled: 'Quote',
   in_progress: 'In Progress',
   won: 'Completed',
   lost: 'Lost',
@@ -54,6 +64,26 @@ export function toAppMember(row: AppMemberRow): Employee {
     email: row.email,
     role: row.role,
     active: row.active,
+    avatar: '',
+    specialization: '',
+    capacity: 0,
+    maxCapacity: 0,
+    todaysJobsCount: 0,
+    status: 'Green',
+    phone: '',
+  };
+}
+
+export function toPendingInvite(row: AppInviteRow): Employee {
+  return {
+    id: row.id,
+    organization_id: row.company_id,
+    name: row.name || row.email,
+    email: row.email,
+    role: 'employee',
+    active: false,
+    invitationStatus: 'Pending',
+    invitedAt: row.created_at,
     avatar: '',
     specialization: '',
     capacity: 0,

@@ -1,0 +1,48 @@
+# Staging pilot verification — 2026-10-01
+
+Project: isolated Supabase staging `oncmtmrhmjlerbwkrecv`. Production was not queried or changed.
+
+## Real Auth and REST result
+
+Three temporary confirmed Auth users represented owner A, employee A and owner B. Two temporary companies and their leads were inserted. The executable `scripts/staging-pilot-e2e.mjs` check then verified through the public Supabase client:
+
+- owner A reads only company A and owner B reads only company B;
+- employee A reads only leads assigned to that employee;
+- owner A creates a lead and changes its status;
+- employee A advances the assigned lead and cannot change its price;
+- owner B cannot read or mutate the new company A lead;
+- insert/update history is present;
+- the lead and assignment persist after sign-out and a new sign-in.
+
+Result: all assertions passed. Temporary leads, events, members, companies and Auth users were deleted. Final counts for those staging tables and Auth users were zero.
+
+## Transactional database checks
+
+The following rollback-only SQL checks passed:
+
+- `pilot_authorization.sql`: tenant isolation, owner invitation permission, employee field restrictions and lifecycle;
+- `pilot_invitation.sql`: verified matching email, expiry, one-time acceptance and membership activation;
+- `pilot_invitation_resend.sql`: replacement invitation expires the earlier unused invitation;
+- `pilot_import_rollback.sql`: history persistence and refusal to remove edited imported leads;
+- `pilot_public_intake.sql`: tenant slug resolution, exact idempotent retry and lead provenance.
+
+## Vercel Preview and browser result — 2026-10-02
+
+The branch Preview was configured with staging-only write flags and a branch-specific staging service-role key. No production environment variable was changed. The following full interactions passed in a real browser and through the deployed API functions:
+
+- owner A signed in and was routed directly to the owner dashboard;
+- a manual lead was persisted, returned after a clean sign-in and contained no fabricated employee assignment;
+- employee A was routed to the employee workspace and saw only the single assigned company A lead;
+- employee A advanced the persisted lifecycle from `New` to `Contacted`; the database revision and audit event both increased and the state survived reload;
+- owner B saw only the company B lead in the Kanban;
+- the anonymous public widget resolved company A by slug, submitted a lead and stored `source=public_form`, the intake request key and the selected value;
+- the deployed CSV worker completed one import, returned the same import on retry with `duplicate=true`, and the service-only rollback deleted the untouched imported lead;
+- GitHub Actions, both Vercel Preview checks and the browser deployment were green after the runtime module-resolution repair.
+
+The executable direct REST check was repeated after the browser run and again passed tenant isolation, employee field restrictions, audit history and logout/reload persistence. Cleanup then removed every synthetic company, member, lead, event, invitation, import, intake event and Auth user; final counts were zero.
+
+## Remaining release action
+
+Supabase rejected reserved synthetic addresses during the live Auth invitation email attempt with `email_address_invalid`. The application correctly removed the pending invitation and returned failure, so it did not claim delivery. End-to-end SMTP delivery therefore still requires a deliberately authorized real test mailbox. Leaked-password protection is also unavailable on the current Supabase Free plan; the dashboard identifies it as Pro-only. Security Advisor otherwise reports only the two intentional anonymous public-form functions.
+
+This evidence does not authorize a production database migration, production data write or production deploy.

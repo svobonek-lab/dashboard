@@ -1,8 +1,9 @@
 import { ICRMRepository, RepositoryHealthStatus } from './types';
 import { Lead, Employee, CompanyBranding } from '../../types';
 import { supabase, isSupabaseConfigured, isValidUUID, LocalSupabaseMock } from '../supabase';
-import { AppLeadRow, AppMemberRow, toAppLead, toAppMember } from '../../src/app/productionSchema';
+import { AppInviteRow, AppLeadRow, AppMemberRow, toAppLead, toAppMember, toPendingInvite } from '../../src/app/productionSchema';
 import { APP_SCHEMA_WRITES_BLOCKED_MESSAGE } from '../../src/app/productionDataPolicy';
+import { canWritePilot, toLeadPatch } from '../../src/app/pilotWrites';
 
 const appSchemaReadsEnabled = Boolean((import.meta as any).env?.PROD) || (import.meta as any).env?.VITE_APP_SCHEMA_READS === 'true';
 
@@ -110,10 +111,25 @@ export class SupabaseRepository implements ICRMRepository {
 
         if (error) {
           console.warn('Supabase app_leads read failed closed:', error.message);
-          return [];
+          throw new Error('Poptávky se nepodařilo načíst. Zkuste obnovit připojení.');
         }
 
-        return ((data || []) as AppLeadRow[]).map((row) => toAppLead(row));
+        let events: any[] = [];
+        if (canWritePilot((import.meta as any).env || {})) {
+          const historyResult = await supabase.from('app_lead_events')
+            .select('id,lead_id,actor_id,operation,old_status,new_status,created_at')
+            .eq('company_id', orgId).order('created_at', { ascending: false });
+          if (historyResult.error) throw new Error('Historii zakázek se nepodařilo načíst.');
+          events = historyResult.data || [];
+        }
+        return ((data || []) as AppLeadRow[]).map((row) => ({
+          ...toAppLead(row),
+          history: events.filter(event => event.lead_id === row.id).map(event => ({
+            id: event.id, timestamp: event.created_at,
+            action: event.operation === 'INSERT' ? 'Poptávka vytvořena' : event.old_status !== event.new_status ? `Změna stavu: ${event.old_status} → ${event.new_status}` : 'Zakázka upravena',
+            author: event.actor_id || 'Integrace',
+          })),
+        }));
       }
 
       const { data, error } = await supabase
@@ -159,12 +175,23 @@ export class SupabaseRepository implements ICRMRepository {
         history: r.history || []
       }));
     } catch (err) {
+      if (appSchemaReadsEnabled) throw err;
       console.error('Supabase fetch failed:', err);
       return [];
     }
   }
 
   async saveLead(orgId: string, lead: Partial<Lead>): Promise<Lead> {
+    if (appSchemaReadsEnabled) {
+      if (!canWritePilot((import.meta as any).env || {}) || !supabase || !isValidUUID(orgId)) throw new Error(APP_SCHEMA_WRITES_BLOCKED_MESSAGE);
+      const patch = toLeadPatch(lead);
+      const query = isValidUUID(lead.id)
+        ? supabase.from('app_leads').update(patch).eq('company_id', orgId).eq('id', lead.id)
+        : supabase.from('app_leads').insert({ ...patch, company_id: orgId });
+      const { data, error } = await query.select().single();
+      if (error || !data) throw new Error(error?.message || 'Zakázka nebyla uložena.');
+      return toAppLead(data as AppLeadRow);
+    }
     if (!isSupabaseConfigured || !supabase || !isValidUUID(orgId)) {
       return lead as Lead;
     }
@@ -228,6 +255,11 @@ export class SupabaseRepository implements ICRMRepository {
   }
 
   async updateLeadStatus(orgId: string, leadId: string, status: string): Promise<void> {
+    if (appSchemaReadsEnabled) {
+      if (!isValidUUID(leadId)) throw new Error('Neplatná zakázka.');
+      await this.saveLead(orgId, { id: leadId, status: status as Lead['status'] });
+      return;
+    }
     if (!isSupabaseConfigured || !supabase || !isValidUUID(orgId) || !isValidUUID(leadId)) {
       return;
     }
@@ -263,7 +295,19 @@ export class SupabaseRepository implements ICRMRepository {
         return [];
       }
 
-      return ((data || []) as AppMemberRow[]).map(toAppMember);
+      const members = ((data || []) as AppMemberRow[]).map(toAppMember);
+      const { data: inviteData, error: inviteError } = await supabase
+        .from('app_invites')
+        .select('id,company_id,name,email,expires_at,created_at,accepted_at')
+        .eq('company_id', orgId)
+        .is('accepted_at', null)
+        .gt('expires_at', new Date().toISOString());
+      if (inviteError) throw new Error('Čekající pozvánky se nepodařilo načíst.');
+      const memberEmails = new Set(members.map((member) => member.email.toLowerCase()));
+      const pending = ((inviteData || []) as AppInviteRow[])
+        .filter((invite) => !memberEmails.has(invite.email.toLowerCase()))
+        .map(toPendingInvite);
+      return [...members, ...pending];
     }
 
     const { data, error } = await supabase
