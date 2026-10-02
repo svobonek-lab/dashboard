@@ -26,6 +26,23 @@ The following rollback-only SQL checks passed:
 - `pilot_import_rollback.sql`: history persistence and refusal to remove edited imported leads;
 - `pilot_public_intake.sql`: tenant slug resolution, exact idempotent retry and lead provenance.
 
+## Vercel Preview and browser result — 2026-10-02
+
+The branch Preview was configured with staging-only write flags and a branch-specific staging service-role key. No production environment variable was changed. The following full interactions passed in a real browser and through the deployed API functions:
+
+- owner A signed in and was routed directly to the owner dashboard;
+- a manual lead was persisted, returned after a clean sign-in and contained no fabricated employee assignment;
+- employee A was routed to the employee workspace and saw only the single assigned company A lead;
+- employee A advanced the persisted lifecycle from `New` to `Contacted`; the database revision and audit event both increased and the state survived reload;
+- owner B saw only the company B lead in the Kanban;
+- the anonymous public widget resolved company A by slug, submitted a lead and stored `source=public_form`, the intake request key and the selected value;
+- the deployed CSV worker completed one import, returned the same import on retry with `duplicate=true`, and the service-only rollback deleted the untouched imported lead;
+- GitHub Actions, both Vercel Preview checks and the browser deployment were green after the runtime module-resolution repair.
+
+The executable direct REST check was repeated after the browser run and again passed tenant isolation, employee field restrictions, audit history and logout/reload persistence. Cleanup then removed every synthetic company, member, lead, event, invitation, import, intake event and Auth user; final counts were zero.
+
 ## Remaining release action
 
-Create a Vercel Preview using only this staging project, enable the reviewed flags there, confirm Auth SMTP delivery and run a browser smoke test. This evidence does not authorize a production database migration or production deploy.
+Supabase rejected reserved synthetic addresses during the live Auth invitation email attempt with `email_address_invalid`. The application correctly removed the pending invitation and returned failure, so it did not claim delivery. End-to-end SMTP delivery therefore still requires a deliberately authorized real test mailbox. Leaked-password protection is also unavailable on the current Supabase Free plan; the dashboard identifies it as Pro-only. Security Advisor otherwise reports only the two intentional anonymous public-form functions.
+
+This evidence does not authorize a production database migration, production data write or production deploy.

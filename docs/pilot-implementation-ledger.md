@@ -1,6 +1,6 @@
 # Pilot implementation ledger — 2026-09-30
 Branch: fix/pilot-operational-flow. Base: origin/main 0c8cf43 (PR #60).
-Goal is the complete two-company pilot. The code and isolated staging contract are now pilot-ready; deployment flags and mail delivery still require a reviewed Preview release.
+Goal is the complete two-company pilot. The code, isolated staging contract and deployed Preview flow are verified; real-mail delivery still requires an authorized test inbox.
 
 ## Verified progress
 - Reproduced outsider invitation authorization failure with executable SQL regression.
@@ -21,15 +21,17 @@ Goal is the complete two-company pilot. The code and isolated staging contract a
 - Public intake now uses the tenant slug rather than an internal UUID, persists the lead id for exact retry idempotence, and enforces a per-tenant minute rate limit.
 - RLS helper functions moved out of the exposed public API schema. Security Advisor now reports only the two intentionally anonymous public-form functions.
 - A real Auth + REST staging test passed for two companies: owner isolation, employee assignment scope, owner create/update, employee status-only update, audit history, logout/login persistence and cross-tenant mutation denial. All synthetic rows and Auth users were removed afterward.
+- Vercel Preview passed browser checks for owner/employee routing, manual lead persistence, employee lifecycle write, owner B isolation and anonymous public intake.
+- The deployed CSV API completed an import, returned an idempotent duplicate on retry and completed service-only rollback.
+- Runtime ESM paths and post-auth tenant refresh were repaired from failures reproduced only in Vercel/browser verification.
 
 ## Remaining required work (do not mark complete)
-1. Configure a Preview deployment with staging-only keys and enable the reviewed pilot flags; verify Auth SMTP delivery and browser interaction there.
-2. Run the service-key API import endpoint in Preview with a disposable CSV; the SQL worker, idempotence and rollback are verified independently.
-3. Review outbox concurrency before enabling optional business notifications; missing transport already fails closed.
-4. Run final secret scan, full CI, visual smoke test and draft PR review. No production release is included.
+1. Verify Auth invitation delivery with a deliberately authorized real test mailbox. Reserved synthetic domains are rejected by Supabase and the application correctly rolls back the pending invite.
+2. Review outbox concurrency before enabling optional business notifications; missing transport already fails closed.
+3. Obtain a reviewed production release decision. No production schema migration, data write or deploy is included in this branch.
 
 ## Checks
-- Initial 63 tests green; the final branch verification passes 82/82 tests, TypeScript and the production build.
+- Initial 63 tests green; the final branch verification passes 86/86 tests, TypeScript and the production build.
 - Advisor now has only two intentional anonymous SECURITY DEFINER warnings for public branding/intake. Internal membership helpers are no longer exposed through the public API schema.
 - No production reads/writes executed in this implementation.
 - No secrets added, no main commits/merge/push.
