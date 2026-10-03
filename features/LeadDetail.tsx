@@ -143,16 +143,7 @@ export const LeadDetail: React.FC<LeadDetailProps> = ({
 
   const tabs: { id: OperationalTab; label: string; count?: string }[] = [
     { id: 'prehled', label: 'Přehled' },
-    { id: 'komunikace', label: 'Komunikace', count: '3' },
-    { id: 'nabidka', label: 'Nabídka', count: '1' },
-    { id: 'harmonogram', label: 'Harmonogram' },
     { id: 'tym', label: 'Tým' },
-    { id: 'cas', label: 'Čas' },
-    { id: 'naklady', label: 'Náklady' },
-    { id: 'dokumenty', label: 'Dokumenty', count: lead.files.length ? String(lead.files.length) : undefined },
-    { id: 'fotky', label: 'Fotky', count: lead.photos.length ? String(lead.photos.length) : undefined },
-    { id: 'faktury', label: 'Faktury' },
-    { id: 'predani', label: 'Předání' }
   ];
 
   return (
@@ -201,12 +192,9 @@ export const LeadDetail: React.FC<LeadDetailProps> = ({
             <Phone className="w-3.5 h-3.5 text-[#0A84FF]" />
             <span>Zavolat</span>
           </a>
-          <button
-            onClick={() => setActiveTab('predani')}
-            className="px-3.5 py-1.5 bg-[#0A84FF] hover:bg-blue-600 text-white rounded-xl text-xs font-bold transition-all shadow-2xs"
-          >
-            Předávací protokol
-          </button>
+          <span className="px-3.5 py-1.5 bg-blue-50 text-blue-700 border border-blue-200 rounded-xl text-xs font-bold">
+            Ověřený pilotní detail
+          </span>
         </div>
       </div>
 
@@ -296,9 +284,8 @@ export const LeadDetail: React.FC<LeadDetailProps> = ({
               <div className="space-y-2">
                 {lead.checklist.map(c => (
                   <div 
-                    key={c.id} 
-                    onClick={() => toggleChecklist(c.id)}
-                    className="p-3 rounded-xl border border-slate-200/80 hover:bg-slate-50 transition-all cursor-pointer flex items-center justify-between text-xs"
+                    key={c.id}
+                    className="p-3 rounded-xl border border-slate-200/80 bg-slate-50 flex items-center justify-between text-xs"
                   >
                     <div className="flex items-center gap-2.5">
                       {c.completed ? (
@@ -314,21 +301,9 @@ export const LeadDetail: React.FC<LeadDetailProps> = ({
                 ))}
               </div>
 
-              <form onSubmit={addChecklist} className="mt-4 flex gap-2">
-                <input
-                  type="text"
-                  value={newChecklistText}
-                  onChange={e => setNewChecklistText(e.target.value)}
-                  placeholder="Přidat další kontrolní bod..."
-                  className="flex-1 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-[#0A84FF]"
-                />
-                <button
-                  type="submit"
-                  className="px-3.5 py-2 bg-slate-900 text-white rounded-xl text-xs font-bold hover:bg-slate-800"
-                >
-                  Přidat
-                </button>
-              </form>
+              <p className="mt-4 rounded-xl border border-blue-100 bg-blue-50 px-3 py-2 text-xs font-medium text-blue-800">
+                Úpravy checklistu budou aktivní až po dokončení jeho databázového kontraktu.
+              </p>
             </div>
           </div>
 
@@ -388,13 +363,13 @@ export const LeadDetail: React.FC<LeadDetailProps> = ({
                 </div>
               </div>
 
-              <div className="pt-3 border-t border-slate-100">
+              {lead.weather && <div className="pt-3 border-t border-slate-100">
                 <WeatherWidget weather={lead.weather} />
-              </div>
+              </div>}
             </div>
 
             {/* AI Assistant */}
-            <div className="bg-white rounded-2xl p-5 border border-slate-200/90 shadow-xs space-y-3">
+            <div className="hidden">
               <div className="flex items-center gap-2">
                 <Sparkles className="w-4 h-4 text-[#7C3AED]" />
                 <h3 className="text-xs font-black uppercase tracking-wider text-slate-900">

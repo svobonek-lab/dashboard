@@ -16,6 +16,7 @@ import {
   AlertCircle
 } from 'lucide-react';
 import { supabase, isSupabaseConfigured, LocalSupabaseMock } from '../lib/supabase';
+import { resolvePublicTenantKey } from '../src/app/publicIntakeRoute';
 
 const DEFAULT_PROJECT_TYPES = [
   { id: 'Pergoly a zastřešení', title: 'Pergoly a zastřešení', desc: 'Hliníkové i dřevěné pergoly, bioklimatické systémy', icon: '🏡' },
@@ -56,8 +57,7 @@ export const WidgetIframePage: React.FC = () => {
 
   useEffect(() => {
     async function loadOrgBranding() {
-      const params = new URLSearchParams(window.location.search);
-      const orgId = params.get('org');
+      const orgId = resolvePublicTenantKey(window.location.search, window.location.pathname);
 
       if (!orgId) {
         setOrgData(null);
@@ -151,8 +151,7 @@ export const WidgetIframePage: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const params = new URLSearchParams(window.location.search);
-    const orgId = params.get('org') || orgData?.id;
+    const orgId = resolvePublicTenantKey(window.location.search, window.location.pathname) || orgData?.id;
 
     if (!orgId || !orgData) {
       setSubmitError('Formulář není dostupný.');

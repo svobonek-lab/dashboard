@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { resolvePublicTenantKey } from '../src/app/publicIntakeRoute';
 import { readFileSync } from 'node:fs';
 
 const sql = readFileSync(new URL('../supabase/staging/pilot_public_intake.sql', import.meta.url), 'utf8');
@@ -11,4 +12,12 @@ test('public intake uses tenant slug, stores the resulting lead id, and rate lim
   assert.match(sql, /set lead_id=v_lead_id/i);
   assert.match(sql, /created_at>now\(\)-interval '1 minute'/i);
   assert.doesNotMatch(sql, /p_company_id uuid/);
+});
+
+test('public intake resolves only an explicit tenant key from query or supported path', () => {
+  assert.equal(resolvePublicTenantKey('?org=pilot-mail-test', '/inquiry'), 'pilot-mail-test');
+  assert.equal(resolvePublicTenantKey('', '/form/pilot-mail-test'), 'pilot-mail-test');
+  assert.equal(resolvePublicTenantKey('', '/inquiry/pilot-mail-test'), 'pilot-mail-test');
+  assert.equal(resolvePublicTenantKey('', '/inquiry'), '');
+  assert.equal(resolvePublicTenantKey('', '/portal/pilot-mail-test'), '');
 });

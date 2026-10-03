@@ -33,6 +33,8 @@ import { OwnerQuotesPage } from './pages/owner/Quotes';
 import { OwnerDocumentsPage } from './pages/owner/Documents';
 import { OwnerCommunicationPage } from './pages/owner/Communication';
 import { OwnerWidgetPage } from './pages/owner/Widget';
+import { PilotUnavailablePage } from './pages/owner/PilotUnavailable';
+import { isPilotUnavailablePath } from './app/pilotScope';
 import { OwnerSettingsPage } from './pages/owner/Settings';
 import { Integrations } from './pages/owner/Integrations';
 import { SynologyNAS } from './pages/owner/SynologyNAS';
@@ -49,7 +51,6 @@ import { EmployeeProfilePage } from './pages/employee/Profile';
 // Public & Embed Views
 import { LoginPage } from '@/components/LoginPage';
 import { WidgetIframePage } from '@/features/WidgetIframePage';
-import { InquiryFormPage } from '@/features/InquiryFormPage';
 import { CustomerPortalPage } from '@/features/CustomerPortalPage';
 import { LandingPage } from '@/features/LandingPage';
 import { InteractiveStoryDemo } from '@/features/InteractiveStoryDemo';
@@ -465,25 +466,11 @@ function AppContent() {
   }
 
   if (pathname === '/inquiry' || pathname === '/poptavka' || pathname === '/form' || pathname.startsWith('/form/')) {
-    return (
-      <InquiryFormPage 
-        branding={activeBranding} 
-        onSubmitInquiry={handleAddLead}
-        onBackToDashboard={() => (user || dbUser ? navigate('/dashboard') : navigate('/'))} 
-      />
-    );
+    return <WidgetIframePage />;
   }
 
   if (pathname === '/portal' || pathname.startsWith('/portal/')) {
-    return (
-      <div className="min-h-screen bg-slate-50 p-4 sm:p-6">
-        <CustomerPortalPage 
-          branding={activeBranding} 
-          lead={leads[0]} 
-          onBackToCRM={() => (user || dbUser ? navigate('/dashboard') : navigate('/'))} 
-        />
-      </div>
-    );
+    return <div className="min-h-screen bg-slate-50 p-6 pt-24"><PilotUnavailablePage /></div>;
   }
 
   const roleLoginRoutes: Record<string, UserRole> = {
@@ -588,8 +575,8 @@ function AppContent() {
           />
         ) : pathname === '/projects' ? (
           <OwnerProjectsPage leads={leads} onSelectLead={setSelectedLead} />
-        ) : pathname === '/calendar' ? (
-          <OwnerCalendarPage leads={leads} />
+        ) : isPilotUnavailablePath(pathname) ? (
+          <PilotUnavailablePage />
         ) : pathname === '/employees' ? (
           <OwnerEmployeesPage 
             employees={employees} 
