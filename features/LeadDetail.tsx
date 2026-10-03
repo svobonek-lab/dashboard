@@ -25,7 +25,7 @@ import {
   ShieldCheck,
   FolderOpen
 } from 'lucide-react';
-import { Lead, TimelineStep, AIChatMessage } from '../types';
+import { Employee, Lead, TimelineStep, AIChatMessage } from '../types';
 import { WeatherWidget } from '../components/WeatherWidget';
 import { BudgetTab } from './lead-tabs/BudgetTab';
 import { CommunicationTab } from './lead-tabs/CommunicationTab';
@@ -38,10 +38,11 @@ import { InvoicesTab } from './lead-tabs/InvoicesTab';
 
 interface LeadDetailProps {
   lead: Lead;
+  employees: Employee[];
   onBack: () => void;
   onOpenPhoto: (url: string, title: string, category: string) => void;
   onOpenVoiceNotes: () => void;
-  onUpdateLead: (updated: Lead) => void;
+  onUpdateLead: (updated: Lead) => Promise<unknown> | void;
 }
 
 type OperationalTab = 
@@ -59,6 +60,7 @@ type OperationalTab =
 
 export const LeadDetail: React.FC<LeadDetailProps> = ({
   lead,
+  employees,
   onBack,
   onOpenPhoto,
   onOpenVoiceNotes,
@@ -481,7 +483,7 @@ export const LeadDetail: React.FC<LeadDetailProps> = ({
       )}
 
       {activeTab === 'tym' && (
-        <TeamTab lead={lead} onNotice={handleNotice} />
+        <TeamTab lead={lead} employees={employees} onNotice={handleNotice} onUpdateLead={onUpdateLead} />
       )}
 
       {activeTab === 'cas' && (

@@ -336,20 +336,25 @@ function AppContent() {
     }
   };
 
-  const handleUpdateLead = (updatedLead: Lead) => {
+  const handleUpdateLead = async (updatedLead: Lead): Promise<void> => {
     if (!canEditLeadDetails(dbUser?.role)) {
       showToast('Zaměstnanec může měnit pouze stav přiřazené zakázky.', 'error');
-      return;
+      throw new Error('Zaměstnanec nemůže měnit detail zakázky.');
     }
-    void saveLead(updatedLead)
-      .then((savedLead) => {
-        setLeads(prev => prev.map(l => l.id === savedLead.id ? savedLead : l));
-        setSelectedLead(savedLead);
-      })
-      .catch((error) => {
-        console.error('Failed to save lead', error);
-        showToast('Změnu se nepodařilo uložit. Data zůstala beze změny.', 'error');
-      });
+    try {
+      const savedLead = await saveLead(updatedLead);
+      const assignedEmployee = employees.find((employee) => employee.id === savedLead.assignedEmployeeId);
+      const hydratedLead = {
+        ...savedLead,
+        assignedEmployeeName: assignedEmployee?.name || savedLead.assignedEmployeeName || '',
+      };
+      setLeads(prev => prev.map(l => l.id === hydratedLead.id ? hydratedLead : l));
+      setSelectedLead(hydratedLead);
+    } catch (error) {
+      console.error('Failed to save lead', error);
+      showToast('Změnu se nepodařilo uložit. Data zůstala beze změny.', 'error');
+      throw error;
+    }
   };
 
   React.useEffect(() => {
@@ -573,6 +578,7 @@ function AppContent() {
         ) : pathname === '/leads' ? (
           <OwnerLeadsPage 
             leads={leads} 
+            employees={employees}
             selectedLead={selectedLead} 
             onSelectLead={setSelectedLead} 
             onUpdateLeadStatus={handleUpdateLeadStatus}
