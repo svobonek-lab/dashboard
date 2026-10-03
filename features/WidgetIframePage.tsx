@@ -15,7 +15,7 @@ import {
   Building2,
   AlertCircle
 } from 'lucide-react';
-import { supabase, isSupabaseConfigured, LocalSupabaseMock } from '../lib/supabase';
+import { publicSupabase, isSupabaseConfigured, LocalSupabaseMock } from '../lib/supabase';
 import { resolvePublicTenantKey } from '../src/app/publicIntakeRoute';
 
 const DEFAULT_PROJECT_TYPES = [
@@ -66,9 +66,9 @@ export const WidgetIframePage: React.FC = () => {
       }
 
       try {
-        if (isSupabaseConfigured && supabase) {
+        if (isSupabaseConfigured && publicSupabase) {
           // Public branding is resolved through the staging app_* contract by tenant key.
-          const { data, error } = await supabase.rpc('app_get_public_company', { p_public_key: orgId });
+          const { data, error } = await publicSupabase.rpc('app_get_public_company', { p_public_key: orgId });
 
           if (!error && data && data.public_key && data.active !== false) {
             setOrgData({
@@ -169,8 +169,8 @@ export const WidgetIframePage: React.FC = () => {
     const combinedNotes = notesParts.join('\n');
 
     try {
-      if (isSupabaseConfigured && supabase) {
-        const { error } = await supabase.rpc('app_submit_public_lead', {
+      if (isSupabaseConfigured && publicSupabase) {
+        const { error } = await publicSupabase.rpc('app_submit_public_lead', {
           p_public_key: orgId,
           p_request_key: requestKey,
           p_customer: formData.fullName.trim(),
