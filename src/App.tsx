@@ -60,7 +60,7 @@ import { buildAppLoginUrl, getDeploymentConfig } from './app/deploymentSurface';
 import { getLeadTransitionError } from './app/leadLifecycle';
 import { SalesWorkspace } from '@/features/SalesWorkspace';
 import { readTenantCache, removeTenantCache, writeTenantCache, TENANT_CACHE_NAMES } from './app/tenantCache';
-import { canEditLeadDetails } from './app/pilotWrites';
+import { canEditLeadDetails, persistBeforeApply } from './app/pilotWrites';
 
 const { surface: deploymentSurface, appUrl } = getDeploymentConfig((import.meta as any).env || {});
 
@@ -281,7 +281,6 @@ function AppContent() {
     const statusLabel = STATUS_LABELS[newStatus] || newStatus;
     const timestamp = new Date().toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit' });
 
-    // 1. Optimistic Update (Immediate UI update, timeline update, history update, counter recalculation)
     const updatedHistory = [
       {
         id: 'hist-' + Date.now(),
@@ -302,47 +301,38 @@ function AppContent() {
       ...(targetLead.timeline || [])
     ];
 
-    setLeads(prev => {
-      const next = prev.map(l => l.id === leadId ? {
-        ...l,
-        status: newStatus,
-        history: updatedHistory,
-        timeline: updatedTimeline
-      } : l);
-      try {
-        writeTenantCache(TENANT_CACHE_NAMES.leads, next, currentOrg?.id);
-      } catch {}
-      return next;
-    });
-
-    if (selectedLead && selectedLead.id === leadId) {
-      setSelectedLead(prev => prev ? {
-        ...prev,
-        status: newStatus,
-        history: updatedHistory,
-        timeline: updatedTimeline
-      } : null);
-    }
-
-    showToast(`Stav zakázky "${targetLead.customerName}" změněn na: ${statusLabel}`, 'success');
-
-    // 2. Persist to cache & database with optimistic rollback on failure
     try {
-      await updateLeadStatus(leadId, newStatus);
+      await persistBeforeApply(
+        () => updateLeadStatus(leadId, newStatus),
+        () => {
+          setLeads(prev => {
+            const next = prev.map(l => l.id === leadId ? {
+              ...l,
+              status: newStatus,
+              history: updatedHistory,
+              timeline: updatedTimeline
+            } : l);
+            try {
+              writeTenantCache(TENANT_CACHE_NAMES.leads, next, currentOrg?.id);
+            } catch {}
+            return next;
+          });
+
+          if (selectedLead && selectedLead.id === leadId) {
+            setSelectedLead(prev => prev ? {
+              ...prev,
+              status: newStatus,
+              history: updatedHistory,
+              timeline: updatedTimeline
+            } : null);
+          }
+
+          showToast(`Stav zakázky "${targetLead.customerName}" změněn na: ${statusLabel}`, 'success');
+        },
+      );
     } catch (e: any) {
-      console.error('Failed to sync status with database, rolling back', e);
-      // Rollback on failure
-      setLeads(prev => {
-        const rolledBack = prev.map(l => l.id === leadId ? targetLead : l);
-        try {
-          writeTenantCache(TENANT_CACHE_NAMES.leads, rolledBack, currentOrg?.id);
-        } catch {}
-        return rolledBack;
-      });
-      if (selectedLead && selectedLead.id === leadId) {
-        setSelectedLead(targetLead);
-      }
-      showToast('Nepodařilo se uložit změnu stavu. Změna byla stornována.', 'error');
+      console.error('Failed to sync status with database', e);
+      showToast('Nepodařilo se uložit změnu stavu. Data zůstala beze změny.', 'error');
     }
   };
 
