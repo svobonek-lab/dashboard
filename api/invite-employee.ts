@@ -1,5 +1,16 @@
 import { createClient } from '@supabase/supabase-js';
 
+function getAuthRedirectUrl(rawUrl: string | undefined): string | null {
+  try {
+    const url = new URL(String(rawUrl || ''));
+    if (url.protocol !== 'https:' || url.username || url.password || url.search || url.hash || (url.pathname !== '/' && url.pathname !== '')) return null;
+    url.pathname = '/login';
+    return url.toString();
+  } catch {
+    return null;
+  }
+}
+
 export default async function inviteEmployeeHandler(req: any, res: any) {
   if (req.method !== 'POST') {
     res.status(405).json({ error: 'Method Not Allowed. Use POST.' });
@@ -17,6 +28,11 @@ export default async function inviteEmployeeHandler(req: any, res: any) {
   const name = String(req.body?.name || '').trim().slice(0, 160);
   if (!token || !companyId || !email || !/^\S+@\S+\.\S+$/.test(email)) {
     res.status(400).json({ error: 'Pozvánka vyžaduje přihlášený účet, firmu a platný e-mail.' });
+    return;
+  }
+  const redirectTo = getAuthRedirectUrl(process.env.APP_URL);
+  if (!redirectTo) {
+    res.status(503).json({ error: 'Pozvánky nemají bezpečnou cílovou adresu aplikace.', code: 'AUTH_REDIRECT_CONFIG_MISSING' });
     return;
   }
   const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
@@ -57,7 +73,7 @@ export default async function inviteEmployeeHandler(req: any, res: any) {
   }
   const { error: authInviteError } = await serviceClient.auth.admin.inviteUserByEmail(email, {
     data: { company_id: companyId, invite_id: inviteId },
-    redirectTo: (process.env.APP_URL || '') + '/login',
+    redirectTo,
   });
   if (authInviteError) {
     await serviceClient.from('app_invites').delete().eq('id', inviteId).eq('company_id', companyId).is('accepted_at', null);
