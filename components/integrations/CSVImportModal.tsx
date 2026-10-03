@@ -111,8 +111,8 @@ export const CSVImportModal: React.FC<CSVImportModalProps> = ({
               <UploadCloud className="w-5 h-5 text-amber-600" />
             </div>
             <div>
-              <h2 className="text-lg font-black text-slate-900 tracking-tight">Excel & CSV Ingestion Studio</h2>
-              <p className="text-xs text-slate-500 font-medium">Hromadný import poptávek, zákazníků a montáží ze souborů .xlsx, .xls a .csv</p>
+              <h2 className="text-lg font-black text-slate-900 tracking-tight">Kontrolovaný CSV import</h2>
+              <p className="text-xs text-slate-500 font-medium">Hromadný import poptávek s náhledem a kontrolou mapování</p>
             </div>
           </div>
           <button
@@ -142,7 +142,7 @@ export const CSVImportModal: React.FC<CSVImportModalProps> = ({
               <input
                 ref={fileInputRef}
                 type="file"
-                accept=".csv, .xlsx, .xls"
+                accept=".csv,text/csv"
                 onChange={e => {
                   if (e.target.files && e.target.files.length > 0) {
                     handleFile(e.target.files[0]);
@@ -154,10 +154,10 @@ export const CSVImportModal: React.FC<CSVImportModalProps> = ({
                 {isParsing ? <RefreshCw className="w-7 h-7 animate-spin" /> : <UploadCloud className="w-7 h-7" />}
               </div>
               <h3 className="text-sm font-black text-slate-900 mb-1">
-                {isParsing ? 'Zpracovávám soubor...' : 'Přetáhněte sem soubor CSV nebo Excel'}
+                {isParsing ? 'Zpracovávám soubor...' : 'Přetáhněte sem soubor CSV'}
               </h3>
               <p className="text-xs text-slate-500 max-w-md mx-auto">
-                Podporuje formáty <strong>.xlsx</strong>, <strong>.xls</strong> a <strong>.csv</strong> s automatickou detekcí kódování (UTF-8, Windows-1250) a oddělovačů.
+                Pilot podporuje <strong>.csv</strong> s náhledem před importem. Excel nejprve exportujte do CSV.
               </p>
               <div className="mt-4 inline-flex items-center gap-2 px-4 py-1.5 rounded-xl bg-slate-900 text-white text-xs font-bold shadow-sm">
                 <FileText className="w-3.5 h-3.5" />
