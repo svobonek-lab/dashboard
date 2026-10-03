@@ -1,5 +1,9 @@
 import type { Lead } from '../../types';
 
+export function canEditLeadDetails(role: string | undefined): boolean {
+  return role === 'owner' || role === 'super_admin';
+}
+
 export function canWritePilot(env: Record<string, unknown>): boolean {
   return env.VITE_PILOT_WRITES === 'true'
     && env.VITE_SUPABASE_URL === 'https://oncmtmrhmjlerbwkrecv.supabase.co';
@@ -36,4 +40,3 @@ export function toLeadPatch(lead: Partial<Lead>): Record<string,unknown> {
   }
   return patch;
 }
-

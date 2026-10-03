@@ -1,10 +1,9 @@
 import Papa from 'papaparse';
-import * as XLSX from 'xlsx';
 
 export interface ParsedFileResult {
   fileName: string;
   fileSize: number;
-  format: 'csv' | 'xlsx' | 'xls';
+  format: 'csv';
   headers: string[];
   rows: Record<string, any>[];
   totalRows: number;
@@ -12,33 +11,12 @@ export interface ParsedFileResult {
 }
 
 /**
- * Parses CSV or Excel file buffer / string
+ * Parses the reviewed CSV pilot format.
  */
 export async function parseUploadedFile(file: File): Promise<ParsedFileResult> {
   const fileName = file.name;
-  const isExcel = fileName.endsWith('.xlsx') || fileName.endsWith('.xls');
-
-  if (isExcel) {
-    const arrayBuffer = await file.arrayBuffer();
-    const workbook = XLSX.read(arrayBuffer, { type: 'array' });
-    const firstSheetName = workbook.SheetNames[0];
-    const worksheet = workbook.Sheets[firstSheetName];
-    const jsonData = XLSX.utils.sheet_to_json<Record<string, any>>(worksheet, { defval: '' });
-
-    if (!jsonData || jsonData.length === 0) {
-      throw new Error('Nahraný Excel soubor neobsahuje žádná data nebo řádky.');
-    }
-
-    const headers = Object.keys(jsonData[0] || {});
-
-    return {
-      fileName,
-      fileSize: file.size,
-      format: fileName.endsWith('.xlsx') ? 'xlsx' : 'xls',
-      headers,
-      rows: jsonData,
-      totalRows: jsonData.length
-    };
+  if (!fileName.toLowerCase().endsWith('.csv')) {
+    throw new Error('Pilot podporuje pouze CSV. Excel nejprve exportujte do CSV a znovu zkontrolujte mapování.');
   }
 
   // Handle CSV

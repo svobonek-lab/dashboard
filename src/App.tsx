@@ -60,6 +60,7 @@ import { buildAppLoginUrl, getDeploymentConfig } from './app/deploymentSurface';
 import { getLeadTransitionError } from './app/leadLifecycle';
 import { SalesWorkspace } from '@/features/SalesWorkspace';
 import { readTenantCache, removeTenantCache, writeTenantCache, TENANT_CACHE_NAMES } from './app/tenantCache';
+import { canEditLeadDetails } from './app/pilotWrites';
 
 const { surface: deploymentSurface, appUrl } = getDeploymentConfig((import.meta as any).env || {});
 
@@ -346,13 +347,19 @@ function AppContent() {
   };
 
   const handleUpdateLead = (updatedLead: Lead) => {
-    if (dbUser?.role === 'employee' && !canEmployeeAccessLead(updatedLead.id, leads, employees, dbUser.id, dbUser.email, currentOrg?.id)) {
-      showToast('Tuto zakázku nemáte přiřazenou.', 'error');
+    if (!canEditLeadDetails(dbUser?.role)) {
+      showToast('Zaměstnanec může měnit pouze stav přiřazené zakázky.', 'error');
       return;
     }
-    setLeads(prev => prev.map(l => l.id === updatedLead.id ? updatedLead : l));
-    setSelectedLead(updatedLead);
-    saveLead(updatedLead).catch(e => console.error('Failed to save lead', e));
+    void saveLead(updatedLead)
+      .then((savedLead) => {
+        setLeads(prev => prev.map(l => l.id === savedLead.id ? savedLead : l));
+        setSelectedLead(savedLead);
+      })
+      .catch((error) => {
+        console.error('Failed to save lead', error);
+        showToast('Změnu se nepodařilo uložit. Data zůstala beze změny.', 'error');
+      });
   };
 
   React.useEffect(() => {

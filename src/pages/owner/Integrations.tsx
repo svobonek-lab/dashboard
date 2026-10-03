@@ -813,15 +813,15 @@ export const Integrations: React.FC<IntegrationsProps> = ({
                   </span>
                 </div>
 
-                <h3 className="text-sm font-black text-white mb-1">Excel & CSV Ingestion Studio</h3>
+                <h3 className="text-sm font-black text-white mb-1">Kontrolovaný CSV import</h3>
                 <p className="text-xs text-slate-400 leading-relaxed mb-4">
-                  Drag & drop nahrávání .xlsx, .xls a .csv souborů s AI detekcí sloupců a inteligentní deduplikací.
+                  Kontrolovaný CSV import s náhledem sloupců, mapováním a ochranou proti duplicitám.
                 </p>
 
                 <div className="bg-slate-900/60 border border-slate-800 rounded-2xl p-3 space-y-1.5 text-[11px] text-slate-300 font-mono mb-4">
                   <div className="flex justify-between">
                     <span className="text-slate-400">Podpora formátů:</span>
-                    <span className="text-slate-200 font-bold">.xlsx, .xls, .csv</span>
+                    <span className="text-slate-200 font-bold">.csv</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-slate-400">Kódování:</span>
