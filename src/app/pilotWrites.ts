@@ -35,6 +35,15 @@ export function buildLeadAssignment(
   return { ...lead, assignedEmployeeId: employee.id, assignedEmployeeName: employee.name };
 }
 
+export function hydrateLeadAssignments(leads: Lead[], employees: Employee[]): Lead[] {
+  const employeesById = new Map(employees.map((employee) => [employee.id, employee]));
+  return leads.map((lead) => {
+    const employee = employeesById.get(lead.assignedEmployeeId || '');
+    if (!employee || employee.organization_id !== lead.organization_id || employee.active === false) return lead;
+    return { ...lead, assignedEmployeeName: employee.name };
+  });
+}
+
 export function canWritePilot(env: Record<string, unknown>): boolean {
   return env.VITE_PILOT_WRITES === 'true'
     && env.VITE_SUPABASE_URL === 'https://oncmtmrhmjlerbwkrecv.supabase.co';

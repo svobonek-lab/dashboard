@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { buildLeadAssignment, canEditLeadDetails, canWritePilot, getAssignableEmployees, persistBeforeApply, toLeadPatch } from '../src/app/pilotWrites';
+import { buildLeadAssignment, canEditLeadDetails, canWritePilot, getAssignableEmployees, hydrateLeadAssignments, persistBeforeApply, toLeadPatch } from '../src/app/pilotWrites';
 
 const lead = { id: 'lead-a', organization_id: 'company-a', assignedEmployeeId: '', assignedEmployeeName: '' } as any;
 const worker = (overrides: Record<string, unknown> = {}) => ({
@@ -60,6 +60,15 @@ test('lead assignment persists a real same-company employee identity', () => {
     buildLeadAssignment({ ...lead, assignedEmployeeId: eligible.id, assignedEmployeeName: eligible.name }, '', [eligible], 'company-a'),
     lead,
   );
+});
+
+test('freshly loaded leads recover the assigned employee name from the verified team list', () => {
+  const sameCompanyEmployee = worker();
+  const hydrated = hydrateLeadAssignments([
+    { ...lead, assignedEmployeeId: sameCompanyEmployee.id, assignedEmployeeName: '' },
+  ], [sameCompanyEmployee]);
+  assert.equal(hydrated[0].assignedEmployeeId, sameCompanyEmployee.id);
+  assert.equal(hydrated[0].assignedEmployeeName, sameCompanyEmployee.name);
 });
 
 test('a UI mutation is applied only after the database confirms persistence', async () => {

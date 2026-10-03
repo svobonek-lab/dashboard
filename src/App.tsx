@@ -60,7 +60,7 @@ import { buildAppLoginUrl, getDeploymentConfig } from './app/deploymentSurface';
 import { getLeadTransitionError } from './app/leadLifecycle';
 import { SalesWorkspace } from '@/features/SalesWorkspace';
 import { readTenantCache, removeTenantCache, writeTenantCache, TENANT_CACHE_NAMES } from './app/tenantCache';
-import { canEditLeadDetails, persistBeforeApply } from './app/pilotWrites';
+import { canEditLeadDetails, hydrateLeadAssignments, persistBeforeApply } from './app/pilotWrites';
 
 const { surface: deploymentSurface, appUrl } = getDeploymentConfig((import.meta as any).env || {});
 
@@ -151,13 +151,14 @@ function AppContent() {
       const isDemo = currentOrg.id === DEFAULT_DEMO_ORG_ID || currentOrg.slug === 'pergoly-praha';
       Promise.all([fetchLeads(), fetchEmployees()])
         .then(([dbLeads, dbEmployees]) => {
+          const hydratedLeads = hydrateLeadAssignments(dbLeads, dbEmployees);
           if (dbLeads.length > 0) {
-            setLeads(dbLeads);
+            setLeads(hydratedLeads);
             try {
               if (isDemo) {
-                writeTenantCache(TENANT_CACHE_NAMES.leads, dbLeads, DEFAULT_DEMO_ORG_ID);
+                writeTenantCache(TENANT_CACHE_NAMES.leads, hydratedLeads, DEFAULT_DEMO_ORG_ID);
               } else {
-                writeTenantCache(TENANT_CACHE_NAMES.leads, dbLeads, currentOrg.id);
+                writeTenantCache(TENANT_CACHE_NAMES.leads, hydratedLeads, currentOrg.id);
               }
             } catch {}
           } else if (isDemo) {
