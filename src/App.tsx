@@ -33,6 +33,8 @@ import { OwnerQuotesPage } from './pages/owner/Quotes';
 import { OwnerDocumentsPage } from './pages/owner/Documents';
 import { OwnerCommunicationPage } from './pages/owner/Communication';
 import { OwnerWidgetPage } from './pages/owner/Widget';
+import { PilotUnavailablePage } from './pages/owner/PilotUnavailable';
+import { isPilotUnavailablePath } from './app/pilotScope';
 import { OwnerSettingsPage } from './pages/owner/Settings';
 import { Integrations } from './pages/owner/Integrations';
 import { SynologyNAS } from './pages/owner/SynologyNAS';
@@ -49,7 +51,6 @@ import { EmployeeProfilePage } from './pages/employee/Profile';
 // Public & Embed Views
 import { LoginPage } from '@/components/LoginPage';
 import { WidgetIframePage } from '@/features/WidgetIframePage';
-import { InquiryFormPage } from '@/features/InquiryFormPage';
 import { CustomerPortalPage } from '@/features/CustomerPortalPage';
 import { LandingPage } from '@/features/LandingPage';
 import { InteractiveStoryDemo } from '@/features/InteractiveStoryDemo';
@@ -60,7 +61,7 @@ import { buildAppLoginUrl, getDeploymentConfig } from './app/deploymentSurface';
 import { getLeadTransitionError } from './app/leadLifecycle';
 import { SalesWorkspace } from '@/features/SalesWorkspace';
 import { readTenantCache, removeTenantCache, writeTenantCache, TENANT_CACHE_NAMES } from './app/tenantCache';
-import { canEditLeadDetails, persistBeforeApply } from './app/pilotWrites';
+import { canEditLeadDetails, hydrateLeadAssignments, persistBeforeApply } from './app/pilotWrites';
 
 const { surface: deploymentSurface, appUrl } = getDeploymentConfig((import.meta as any).env || {});
 
@@ -151,13 +152,14 @@ function AppContent() {
       const isDemo = currentOrg.id === DEFAULT_DEMO_ORG_ID || currentOrg.slug === 'pergoly-praha';
       Promise.all([fetchLeads(), fetchEmployees()])
         .then(([dbLeads, dbEmployees]) => {
+          const hydratedLeads = hydrateLeadAssignments(dbLeads, dbEmployees);
           if (dbLeads.length > 0) {
-            setLeads(dbLeads);
+            setLeads(hydratedLeads);
             try {
               if (isDemo) {
-                writeTenantCache(TENANT_CACHE_NAMES.leads, dbLeads, DEFAULT_DEMO_ORG_ID);
+                writeTenantCache(TENANT_CACHE_NAMES.leads, hydratedLeads, DEFAULT_DEMO_ORG_ID);
               } else {
-                writeTenantCache(TENANT_CACHE_NAMES.leads, dbLeads, currentOrg.id);
+                writeTenantCache(TENANT_CACHE_NAMES.leads, hydratedLeads, currentOrg.id);
               }
             } catch {}
           } else if (isDemo) {
@@ -336,20 +338,25 @@ function AppContent() {
     }
   };
 
-  const handleUpdateLead = (updatedLead: Lead) => {
+  const handleUpdateLead = async (updatedLead: Lead): Promise<void> => {
     if (!canEditLeadDetails(dbUser?.role)) {
       showToast('Zaměstnanec může měnit pouze stav přiřazené zakázky.', 'error');
-      return;
+      throw new Error('Zaměstnanec nemůže měnit detail zakázky.');
     }
-    void saveLead(updatedLead)
-      .then((savedLead) => {
-        setLeads(prev => prev.map(l => l.id === savedLead.id ? savedLead : l));
-        setSelectedLead(savedLead);
-      })
-      .catch((error) => {
-        console.error('Failed to save lead', error);
-        showToast('Změnu se nepodařilo uložit. Data zůstala beze změny.', 'error');
-      });
+    try {
+      const savedLead = await saveLead(updatedLead);
+      const assignedEmployee = employees.find((employee) => employee.id === savedLead.assignedEmployeeId);
+      const hydratedLead = {
+        ...savedLead,
+        assignedEmployeeName: assignedEmployee?.name || savedLead.assignedEmployeeName || '',
+      };
+      setLeads(prev => prev.map(l => l.id === hydratedLead.id ? hydratedLead : l));
+      setSelectedLead(hydratedLead);
+    } catch (error) {
+      console.error('Failed to save lead', error);
+      showToast('Změnu se nepodařilo uložit. Data zůstala beze změny.', 'error');
+      throw error;
+    }
   };
 
   React.useEffect(() => {
@@ -459,25 +466,11 @@ function AppContent() {
   }
 
   if (pathname === '/inquiry' || pathname === '/poptavka' || pathname === '/form' || pathname.startsWith('/form/')) {
-    return (
-      <InquiryFormPage 
-        branding={activeBranding} 
-        onSubmitInquiry={handleAddLead}
-        onBackToDashboard={() => (user || dbUser ? navigate('/dashboard') : navigate('/'))} 
-      />
-    );
+    return <WidgetIframePage />;
   }
 
   if (pathname === '/portal' || pathname.startsWith('/portal/')) {
-    return (
-      <div className="min-h-screen bg-slate-50 p-4 sm:p-6">
-        <CustomerPortalPage 
-          branding={activeBranding} 
-          lead={leads[0]} 
-          onBackToCRM={() => (user || dbUser ? navigate('/dashboard') : navigate('/'))} 
-        />
-      </div>
-    );
+    return <div className="min-h-screen bg-slate-50 p-6 pt-24"><PilotUnavailablePage /></div>;
   }
 
   const roleLoginRoutes: Record<string, UserRole> = {
@@ -573,6 +566,7 @@ function AppContent() {
         ) : pathname === '/leads' ? (
           <OwnerLeadsPage 
             leads={leads} 
+            employees={employees}
             selectedLead={selectedLead} 
             onSelectLead={setSelectedLead} 
             onUpdateLeadStatus={handleUpdateLeadStatus}
@@ -581,8 +575,8 @@ function AppContent() {
           />
         ) : pathname === '/projects' ? (
           <OwnerProjectsPage leads={leads} onSelectLead={setSelectedLead} />
-        ) : pathname === '/calendar' ? (
-          <OwnerCalendarPage leads={leads} />
+        ) : isPilotUnavailablePath(pathname) ? (
+          <PilotUnavailablePage />
         ) : pathname === '/employees' ? (
           <OwnerEmployeesPage 
             employees={employees} 

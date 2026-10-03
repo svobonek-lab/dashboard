@@ -8,20 +8,24 @@ Deliver the first controlled pilot for a small construction company: owner login
 
 - PR #61 implemented and verified the staging-backed pilot flow.
 - PR #62 verified real invitation dispatch and hardened outbox claim, retry and idempotency behavior.
-- CI passes 91 tests, TypeScript checking and the production build.
+- CI passes 101 tests, TypeScript checking and the production build.
 - A direct Auth/REST test and browser test proved two-company isolation, employee assignment scope, owner writes, employee status-only writes, audit history and persistence after logout/login.
 - Public intake and CSV import/duplicate/rollback passed through the deployed Vercel Preview.
+- The real employee account is active, can be assigned by the owner and the assignment persists after reload.
+- PR #65 fixes owner assignment, hides unverified pilot surfaces and keeps public intake anonymous even when an owner is signed in.
 - The current protected PR Preview was reconfigured with branch-scoped staging variables and rechecked: CSV dry-run/commit/idempotent retry/rollback passed, and a cross-company invitation attempt returned 403 without creating an invitation or Auth user.
 - Supabase Security Advisor reports only the two intentional anonymous public intake functions on staging. Both have a fixed search path and no `authenticated` execution grant.
 - Production Supabase was not written or migrated during pilot verification.
 
 ## Remaining release gates
 
-1. The recipient opens the delivered real-mail invitation so the exact provider email link, redirect, confirmation and final membership activation can be observed.
-2. Review the production metadata and proposed release changes separately. Do not copy the staging schema or configuration into production automatically.
-3. Decide whether optional business email notifications will be enabled. They require an explicitly configured and verified provider.
-4. Enable leaked-password protection when the selected Supabase plan supports it; the current staging Free plan reports it as unavailable.
-5. Record the customer-specific onboarding result using `docs/pilot-operator-runbook.md` before describing that customer as live.
+1. Review and merge PR #65, then verify the exact merged deployment in a browser.
+2. Rotate the staging service-role key before any real customer data is introduced.
+3. Review the production metadata and proposed release changes separately. Do not copy the staging schema or configuration into production automatically.
+4. Decide whether optional business email notifications will be enabled. They require an explicitly configured and verified provider.
+5. Make the public sales page match the verified pilot and replace its non-sending booking form with a real business contact path.
+6. Enable leaked-password protection when the selected Supabase plan supports it; the current staging Free plan reports it as unavailable.
+7. Record the customer-specific onboarding result using `docs/pilot-operator-runbook.md` before describing that customer as live.
 
 ## Explicitly outside the pilot
 

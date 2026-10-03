@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { isPilotOwnerNavigationPath, isPilotUnavailablePath } from '../src/app/pilotScope';
 import { buildWorkspaceReadiness } from '../src/app/workspaceReadiness';
 
 const lead = (status: any = 'New', assignedEmployeeId = '') => ({ status, assignedEmployeeId } as any);
@@ -35,4 +36,12 @@ test('employee readiness uses only assigned work and never owner metrics', () =>
   assert.equal(result.steps[1].complete, false);
   assert.equal(result.nextStep?.href, '/employee');
   assert.equal(result.total, 3);
+});
+
+test('the sellable pilot exposes only verified owner routes', () => {
+  assert.equal(isPilotOwnerNavigationPath('/leads'), true);
+  assert.equal(isPilotOwnerNavigationPath('/inquiry?org=pilot-company'), true);
+  assert.equal(isPilotOwnerNavigationPath('/quotes'), false);
+  assert.equal(isPilotUnavailablePath('/quotes'), true);
+  assert.equal(isPilotUnavailablePath('/portal'), true);
 });

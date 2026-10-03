@@ -63,6 +63,21 @@ The recipient must open the real invitation link so receipt and the exact email-
 
 This evidence does not authorize a production database migration, production data write or production deploy.
 
+## Assignment and signed-in public intake recheck — 2026-10-03
+
+The current PR #65 Preview was exercised with the retained synthetic company and the active real employee account:
+
+- the owner assigned the employee from the live same-company member list;
+- the database stored the employee auth id in `assigned_to`, incremented the lead revision and returned the employee name after reload;
+- the company public-form switch was enabled in staging;
+- opening the public form while the owner was still signed in initially exposed a client bug: the form inherited the dashboard session, but the public RPC correctly grants execution only to `anon`;
+- commit `06d50f2` introduced a non-persistent anonymous Supabase client for public branding and submission;
+- the repaired Preview resolved the company slug and submitted one synthetic inquiry;
+- direct authenticated reading confirmed exactly one lead with `source=public_form`, the expected company id and value `150000`;
+- the same inquiry appeared immediately in the owner's Kanban.
+
+CI, TypeScript checking, the production build and both Vercel checks passed for the repair. Production Supabase was not queried or changed.
+
 ## Contract recheck after PR #62 merge — 2026-10-02
 
 The current staging database contract was exercised again after the invitation and outbox changes reached `main`. Each check ran inside an explicit transaction and ended with `ROLLBACK`:

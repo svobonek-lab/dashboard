@@ -18,6 +18,20 @@ export const supabase = isSupabaseConfigured
   ? createClient(supabaseUrl, supabaseAnonKey)
   : null;
 
+// Public intake must remain anonymous even when it is opened by a signed-in
+// owner in the same browser. The public RPCs intentionally do not grant
+// execute to `authenticated`, so sharing the dashboard client would make a
+// valid form fail for signed-in users.
+export const publicSupabase = isSupabaseConfigured
+  ? createClient(supabaseUrl, supabaseAnonKey, {
+      auth: {
+        persistSession: false,
+        autoRefreshToken: false,
+        detectSessionInUrl: false
+      }
+    })
+  : null;
+
 export function isValidUUID(uuid: string): boolean {
   const regex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
   return regex.test(uuid);

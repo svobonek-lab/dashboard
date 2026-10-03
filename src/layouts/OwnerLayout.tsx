@@ -37,6 +37,8 @@ import { DemoGeneratorModal } from '@/components/DemoGeneratorModal';
 import { OnboardingWizardModal } from '@/components/OnboardingWizardModal';
 import { FloatingAIAssistant } from '@/components/FloatingAIAssistant';
 import { CompanySwitcher } from '@/components/CompanySwitcher';
+import { DEFAULT_DEMO_ORG_ID } from '@/lib/supabase';
+import { isPilotOwnerNavigationPath } from '@/src/app/pilotScope';
 
 interface OwnerLayoutProps {
   children: React.ReactNode;
@@ -108,11 +110,17 @@ export const OwnerLayout: React.FC<OwnerLayoutProps> = ({
   const activeCity = currentOrg?.city || 'Česká republika';
 
   // Notifications State
-  const [notifications, setNotifications] = useState<CRMNotification[]>([
+  const isDemoWorkspace = currentOrg?.id === DEFAULT_DEMO_ORG_ID || currentOrg?.slug === 'pergoly-praha';
+  const demoNotifications: CRMNotification[] = [
     { id: 'n-1', title: 'Nová poptávka na realizaci', message: `Zákazník odeslal formulář z webu ${activeCompanyName}.`, timestamp: '10 min', read: false, type: 'lead' },
     { id: 'n-2', title: 'Záloha připsána', message: 'Přijata platba zálohy 220 000 Kč k zakázce POL-2026-0492.', timestamp: '1 hod', read: false, type: 'quote' },
     { id: 'n-3', title: 'Fotografie ze stavby', message: 'Montážní tým nahrál 3 fotky z postupu výstavby.', timestamp: '3 hod', read: true, type: 'employee' }
-  ]);
+  ];
+  const [notifications, setNotifications] = useState<CRMNotification[]>(() => isDemoWorkspace ? demoNotifications : []);
+
+  useEffect(() => {
+    if (!isDemoWorkspace) setNotifications([]);
+  }, [isDemoWorkspace]);
 
   const unreadCount = notifications.filter(n => !n.read).length;
 
@@ -132,7 +140,7 @@ export const OwnerLayout: React.FC<OwnerLayoutProps> = ({
     { label: 'Přehled stavby (Executive)', path: '/dashboard', icon: LayoutDashboard, exact: true },
     { label: 'Prodejní cockpit', path: '/sales', icon: Kanban, badge: leads.filter(l => l.status === 'New').length ? `${leads.filter(l => l.status === 'New').length} nové` : undefined },
     { label: 'Poptávky & Kanban', path: '/leads', icon: Kanban },
-    { label: 'Poptávkový formulář', path: '/inquiry', icon: Sparkles },
+    { label: 'Poptávkový formulář', path: `/inquiry?org=${encodeURIComponent(currentOrg?.slug || '')}`, icon: Sparkles },
     { label: 'Realizace & Stavby', path: '/projects', icon: HardHat },
     { label: 'Harmonogram výjezdů', path: '/calendar', icon: Calendar },
     { label: 'Tým & Řemeslníci', path: '/employees', icon: Users },
@@ -145,7 +153,7 @@ export const OwnerLayout: React.FC<OwnerLayoutProps> = ({
     { label: 'Synology NAS', path: '/integrations/synology', icon: HardDrive },
     { label: 'Klientský portál', path: '/portal', icon: Globe },
     { label: 'Nastavení & Export', path: '/settings', icon: Settings },
-  ];
+  ].filter((item) => isDemoWorkspace || isPilotOwnerNavigationPath(item.path));
 
   const isSuperAdminUser = dbUser?.role === 'super_admin' || Boolean(impersonatingOrgId);
 

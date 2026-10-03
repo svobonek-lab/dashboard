@@ -64,6 +64,8 @@ Follow [the pilot operator runbook](docs/pilot-operator-runbook.md). A customer 
 
 Current staging evidence is recorded in [the pilot verification report](docs/staging-pilot-verification-20261001.md). The implementation ledger lists the remaining release actions in [docs/pilot-implementation-ledger.md](docs/pilot-implementation-ledger.md).
 
+The current decision about what can be sold, what must be completed before the first customer, and which landing-page claims exceed the verified pilot is recorded in [the 2026-10-03 sales-readiness audit](docs/audits/sales-readiness-audit-2026-10-03.md).
+
 ## Release rules
 
 - Work on a feature branch and merge only after human review.
