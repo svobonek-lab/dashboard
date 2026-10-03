@@ -85,3 +85,17 @@ The seven pilot runtime variables were scoped to `fix/pilot-auth-readiness` in t
 Vercel rebuilt the protected Preview as deployment `dpl_AhBU57qd6GUURmq3VzwuRxi4vtRx`. An authenticated owner request reached the deployed `/api/import-leads` function through Vercel's authorized protection bypass. The dry run parsed one row, the first commit created one lead, and the identical retry returned `duplicate: true` with fingerprint `csv_33101fc0`. The reviewed rollback then removed the imported lead; the follow-up count for that fingerprint was zero.
 
 The same deployment received an authenticated attempt by owner A to invite a synthetic address into company B. It returned HTTP 403 before Auth provisioning. A metadata check immediately afterward found zero matching `app_invites` rows and zero matching Auth users. The real-mail invitation was not changed by either check and remains pending recipient confirmation.
+
+## Real mailbox activation — 2026-10-03
+
+The authorized real recipient completed email confirmation and password recovery through the stable public dashboard origin. Staging metadata then proved that the original invitation was consumed, `accepted_at` was recorded, and exactly one active `employee` membership was linked to company A. No email address, token, password or user id is stored in this report.
+
+One clearly labelled synthetic lead was assigned to that membership for the final browser check. A rollback-only database test running under the real authenticated user identity proved that:
+
+- the employee could see exactly that assigned lead;
+- a permitted `in_progress` to `won` status change affected one row;
+- changing the lead value was rejected by the database authorization trigger;
+- a second synthetic company and its lead were neither visible nor mutable;
+- the rollback left the assigned lead unchanged and removed the temporary company B fixture.
+
+The stable login page is publicly reachable and waiting for the recipient to sign in. The remaining release observation is the real browser session: automatic `/employee` routing, assigned-lead rendering, persisted status change, logout and a clean second login.
