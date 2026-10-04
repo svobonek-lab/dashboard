@@ -2,7 +2,7 @@
 
 Date: 2026-10-04
 
-Status: proposed for implementation
+Status: approved for implementation planning
 
 Target: first sellable pilot for a small construction company (1–10 people)
 
