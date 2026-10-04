@@ -78,14 +78,11 @@
 
 ## Pull request checkpoints
 
-The work is delivered as six substantial review units. Each unit gets its own branch and draft PR; it is not merged by the agent. A later unit may be prepared as a stacked branch while an earlier one is under review, but its PR must state the exact base and dependency.
+The work is delivered as three substantial review units, as approved by the owner. Each unit gets its own branch and draft PR; it is not merged by the agent. A later unit may be prepared as a stacked branch while an earlier one is under review, but its PR must state the exact base and dependency.
 
-1. `feature/connector-protocol-core`: Tasks 1–2.
-2. `feature/connector-database-adapters`: Task 3, based on the protocol core until that PR merges.
-3. `feature/connector-sync-runtime`: Tasks 4–5, based on the adapter branch until its PR merges.
-4. `feature/connector-staging-ingestion`: Tasks 6–7, based on the protocol core and rebased onto current `main` after dependencies merge.
-5. `feature/connector-owner-workspace`: Tasks 8–9, based on staging ingestion until its PR merges.
-6. `feature/connector-release-pilot`: Tasks 10–12, based on the combined reviewed implementation.
+1. `feature/connector-core`: Tasks 1–5 — protocol, durable state, three database adapters, sync engine, runtime, and container packaging.
+2. `feature/connector-platform`: Tasks 6–9 — signed server API, staging/RLS contract, owner operations, and dashboard integration; based on connector core until the first PR merges.
+3. `feature/connector-release-pilot`: Tasks 10–12 — multi-architecture CI/release, updater rollback, two-company staging/browser acceptance, and operator documentation; based on the combined reviewed implementation.
 
 At every checkpoint: refresh from `origin/main`, resolve dependencies without force-pushing a reviewed branch, run that unit's checks, scan the staged diff for secrets, push, open or update the draft PR, attach it to this task, and record exact verification. Do not merge, enable auto-merge, apply production migrations, or deploy production.
 
