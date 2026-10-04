@@ -1,0 +1,28 @@
+{
+  "name": "@stavbaflow/synology-connector",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "test": "tsx --test \"test/**/*.test.ts\"",
+    "test:integration": "tsx --test \"test/adapters/*.test.ts\"",
+    "lint": "tsc --noEmit",
+    "build": "tsc",
+    "start": "node dist/connector/src/main.js"
+  },
+  "dependencies": {
+    "mssql": "^12.0.0",
+    "mysql2": "^3.15.0",
+    "pg": "^8.16.0"
+  },
+  "devDependencies": {
+    "@types/mssql": "^9.1.8",
+    "@types/node": "^24.0.0",
+    "@types/pg": "^8.15.0",
+    "tsx": "^4.21.0",
+    "typescript": "~5.8.2"
+  }
+}
