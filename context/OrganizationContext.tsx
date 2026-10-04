@@ -114,7 +114,7 @@ interface OrganizationContextType {
   switchRoleToSuperAdmin: () => void;
   fetchAllOrganizationsAdmin: () => Promise<any[]>;
   deleteOrganizationAdmin: (orgId: string) => Promise<void>;
-  updateBrandingAdmin: (orgId: string, name: string, color: string, logo?: string) => Promise<void>;
+  updateBrandingAdmin: (orgId: string, name: string, color: string, logo?: string, profile?: Pick<Organization, 'email' | 'phone' | 'address'>) => Promise<void>;
   suspendOrganizationAdmin: (orgId: string, suspend: boolean) => Promise<void>;
   createCustomerAdmin: (data: {
     name: string;
@@ -767,6 +767,14 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
         email: email
       });
       setCurrentOrg(newOrg);
+      LocalSupabaseMock.setActiveOrgId(newOrgId);
+      LocalSupabaseMock.setActiveSessionUser({
+        id: virtualUserId,
+        organization_id: newOrgId,
+        role: 'owner',
+        email,
+        name: orgName || email.split('@')[0]
+      });
       return defaultUser;
     }
 
@@ -1208,7 +1216,7 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
       return (data || []).map((l: any) => ({
         id: l.id,
         title: l.title || (l.project_type ? `${l.project_type} - ${l.customer_name || 'Nová poptávka'}` : (l.customer_name || 'Nová poptávka')),
-        description: l.description || 'Poptávka ze systému StavbaCore.',
+        description: l.description || 'Poptávka ze systému StavbaFlow.',
         city: l.city || '',
         address: l.address || '',
         customerName: l.customer_name || 'Neznámý zákazník',
@@ -1285,10 +1293,6 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
 
     LocalSupabaseMock.saveNotification(targetOrgId, notifItem);
     LocalSupabaseMock.saveActivity(targetOrgId, actItem);
-
-    if (typeof window !== 'undefined' && window.parent !== window) {
-      window.parent.postMessage({ type: 'LEAD_CREATED', payload: savedLead }, '*');
-    }
 
     if (typeof window !== 'undefined') {
       window.dispatchEvent(new CustomEvent('crm:lead_created', { detail: { lead: savedLead, notification: notifItem, activity: actItem } }));
@@ -2125,10 +2129,7 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
     }
   };
 
-  const updateBrandingAdmin = async (orgId: string, name: string, color: string, logo?: string): Promise<void> => {
-    if (BLOCK_LEGACY_WRITES && isSupabaseConfigured) {
-      throw new Error(`${APP_SCHEMA_WRITES_BLOCKED_MESSAGE} Firemní nastavení čeká na ověřený app_companies kontrakt.`);
-    }
+  const updateBrandingAdmin = async (orgId: string, name: string, color: string, logo?: string, profile?: Pick<Organization, 'email' | 'phone' | 'address'>): Promise<void> => {
     if (IS_PRODUCTION && (!isSupabaseConfigured || !supabase)) {
       throw new Error(RUNTIME_POLICY.failClosedMessage);
     }
@@ -2137,10 +2138,40 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
     const updatedRecord = {
       name,
       primary_color: color,
-      logo_url: finalLogo
+      logo_url: finalLogo,
+      ...(profile ? { email: profile.email || '', phone: profile.phone || '', address: profile.address || '' } : {}),
     };
 
     const targetOrgId = orgId || currentOrg?.id || '';
+
+    if (APP_SCHEMA_READS && isSupabaseConfigured && supabase) {
+      if (!isValidUUID(targetOrgId) || targetOrgId !== currentOrg?.id || dbUser?.role !== 'owner') {
+        throw new Error('Firemní profil může upravit pouze majitel aktivní firmy.');
+      }
+      const appRecord = {
+        name,
+        color,
+        logo_url: finalLogo,
+        ...(profile ? { email: profile.email || '', phone: profile.phone || '', address: profile.address || '' } : {}),
+      };
+      const { data, error: updateError } = await supabase.from('app_companies').update(appRecord).eq('id', targetOrgId).select('id,name,slug,email,phone,address,color,logo_url,active').single();
+      if (updateError || !data) throw updateError || new Error('Databáze nepotvrdila uložení firemního profilu.');
+      setCurrentOrg((previous) => previous ? {
+        ...previous,
+        name: data.name,
+        email: data.email || '',
+        phone: data.phone || '',
+        address: data.address || '',
+        primary_color: data.color || color,
+        logo_url: data.logo_url || '',
+        branding: { ...previous.branding, name: data.name, primaryColor: data.color || color, logoUrl: data.logo_url || '' },
+      } : previous);
+      return;
+    }
+
+    if (BLOCK_LEGACY_WRITES && isSupabaseConfigured) {
+      throw new Error(`${APP_SCHEMA_WRITES_BLOCKED_MESSAGE} Firemní nastavení čeká na ověřený app_companies kontrakt.`);
+    }
 
     // Update organizations in LocalSupabaseMock
     const orgs = LocalSupabaseMock.getOrganizations().map((o: any) => {

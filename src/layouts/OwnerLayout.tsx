@@ -442,7 +442,7 @@ export const OwnerLayout: React.FC<OwnerLayoutProps> = ({
       </div>
 
       {/* Floating AI Assistant */}
-      <FloatingAIAssistant branding={branding} leads={leads} />
+      {isDemoWorkspace && <FloatingAIAssistant branding={branding} leads={leads} />}
 
       {/* Modals & Command Palette */}
       <CommandPalette

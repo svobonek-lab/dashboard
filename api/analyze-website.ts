@@ -1,4 +1,5 @@
 import { GoogleGenAI } from '@google/genai';
+import { createClient } from '@supabase/supabase-js';
 import dns from 'dns';
 import net from 'net';
 
@@ -827,6 +828,11 @@ const MAX_REQUESTS_PER_WINDOW = 15;
 
 function checkRateLimit(ip: string): boolean {
   const now = Date.now();
+  if (ipRequests.size > 500) {
+    for (const [key, values] of ipRequests) {
+      if (!values.some(timestamp => now - timestamp < RATE_LIMIT_WINDOW_MS)) ipRequests.delete(key);
+    }
+  }
   const timestamps = ipRequests.get(ip) || [];
   const validTimestamps = timestamps.filter(t => now - t < RATE_LIMIT_WINDOW_MS);
   
@@ -845,6 +851,18 @@ export default async function handler(req: any, res: any) {
   if (req.method !== 'POST') {
     res.setHeader('Allow', ['POST']);
     return res.status(405).json({ error: `Method ${req.method} Not Allowed` });
+  }
+
+  const token = String(req.headers?.authorization || req.headers?.Authorization || '').replace(/^Bearer\s+/i, '').trim();
+  const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
+  const anonKey = process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY;
+  if (!token || !supabaseUrl || !anonKey) {
+    return res.status(401).json({ error: 'Pro analýzu webu je nutné přihlášení.' });
+  }
+  const authClient = createClient(supabaseUrl, anonKey, { auth: { persistSession: false } });
+  const { data: authData, error: authError } = await authClient.auth.getUser(token);
+  if (authError || !authData.user) {
+    return res.status(401).json({ error: 'Přihlášení pro analýzu webu není platné.' });
   }
 
   const clientIp = req.headers['x-forwarded-for'] || req.socket?.remoteAddress || '127.0.0.1';

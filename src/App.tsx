@@ -19,41 +19,24 @@ import { AdminCompaniesPage } from './pages/admin/Companies';
 import { AdminBillingPage } from './pages/admin/Billing';
 import { AdminDomainsPage } from './pages/admin/Domains';
 import { AdminLogsPage } from './pages/admin/Logs';
-import { InstallStudio } from '@/features/InstallStudio';
-import { AdminPanel } from '@/features/AdminPanel';
 
 // Owner Pages
 import { OwnerDashboardPage } from './pages/owner/Dashboard';
 import { OwnerLeadsPage } from './pages/owner/Leads';
 import { OwnerProjectsPage } from './pages/owner/Projects';
-import { OwnerCalendarPage } from './pages/owner/Calendar';
 import { OwnerEmployeesPage } from './pages/owner/Employees';
-import { OwnerAnalyticsPage } from './pages/owner/Analytics';
-import { OwnerQuotesPage } from './pages/owner/Quotes';
-import { OwnerDocumentsPage } from './pages/owner/Documents';
-import { OwnerCommunicationPage } from './pages/owner/Communication';
 import { OwnerWidgetPage } from './pages/owner/Widget';
 import { PilotUnavailablePage } from './pages/owner/PilotUnavailable';
 import { isPilotUnavailablePath } from './app/pilotScope';
 import { OwnerSettingsPage } from './pages/owner/Settings';
 import { Integrations } from './pages/owner/Integrations';
-import { SynologyNAS } from './pages/owner/SynologyNAS';
 
 // Employee Pages
 import { EmployeeDashboardPage } from './pages/employee/Dashboard';
-import { EmployeeJobsPage } from './pages/employee/Jobs';
-import { EmployeeSchedulePage } from './pages/employee/Schedule';
-import { EmployeeMapPage } from './pages/employee/Map';
-import { EmployeePhotosPage } from './pages/employee/Photos';
-import { EmployeeChecklistPage } from './pages/employee/Checklist';
-import { EmployeeProfilePage } from './pages/employee/Profile';
 
 // Public & Embed Views
 import { LoginPage } from '@/components/LoginPage';
 import { WidgetIframePage } from '@/features/WidgetIframePage';
-import { CustomerPortalPage } from '@/features/CustomerPortalPage';
-import { LandingPage } from '@/features/LandingPage';
-import { InteractiveStoryDemo } from '@/features/InteractiveStoryDemo';
 
 // Types
 import { Lead, LeadStatus } from '@/types';
@@ -64,6 +47,10 @@ import { readTenantCache, removeTenantCache, writeTenantCache, TENANT_CACHE_NAME
 import { canEditLeadDetails, hydrateLeadAssignments, persistBeforeApply } from './app/pilotWrites';
 
 const { surface: deploymentSurface, appUrl } = getDeploymentConfig((import.meta as any).env || {});
+const InstallStudio = React.lazy(() => import('@/features/InstallStudio').then(module => ({ default: module.InstallStudio })));
+const AdminPanel = React.lazy(() => import('@/features/AdminPanel').then(module => ({ default: module.AdminPanel })));
+const LandingPage = React.lazy(() => import('@/features/LandingPage').then(module => ({ default: module.LandingPage })));
+const InteractiveStoryDemo = React.lazy(() => import('@/features/InteractiveStoryDemo').then(module => ({ default: module.InteractiveStoryDemo })));
 
 function ExternalRedirect({ url }: { url: string }) {
   useEffect(() => {
@@ -360,12 +347,6 @@ function AppContent() {
   };
 
   React.useEffect(() => {
-    const handleMessage = (e: MessageEvent) => {
-      if (e.data?.type === 'LEAD_CREATED' && e.data?.payload) {
-        const incomingLead = e.data.payload;
-        setLeads(prev => [incomingLead, ...prev.filter(l => l.id !== incomingLead.id)]);
-      }
-    };
     const handleCrmLeadCreated = (e: any) => {
       if (e.detail?.lead) {
         const newLead = e.detail.lead;
@@ -377,11 +358,9 @@ function AppContent() {
         showToast(e.detail.message, e.detail.type || 'success');
       }
     };
-    window.addEventListener('message', handleMessage);
     window.addEventListener('crm:lead_created', handleCrmLeadCreated as EventListener);
     window.addEventListener('crm:toast', handleCrmToast as EventListener);
     return () => {
-      window.removeEventListener('message', handleMessage);
       window.removeEventListener('crm:lead_created', handleCrmLeadCreated as EventListener);
       window.removeEventListener('crm:toast', handleCrmToast as EventListener);
     };
@@ -468,7 +447,7 @@ function AppContent() {
     return <WidgetIframePage />;
   }
 
-  if (pathname === '/inquiry' || pathname === '/poptavka' || pathname === '/form' || pathname.startsWith('/form/')) {
+  if (pathname === '/inquiry' || pathname.startsWith('/inquiry/') || pathname === '/poptavka' || pathname === '/form' || pathname.startsWith('/form/')) {
     return <WidgetIframePage />;
   }
 
@@ -530,20 +509,6 @@ function AppContent() {
         <EmployeeLayout leads={employeeLeads}>
           {pathname === '/employee' || pathname === '/employee/dashboard' ? (
             <EmployeeDashboardPage leads={employeeLeads} onSelectLead={setSelectedLead} onUpdateLead={handleUpdateLead} onUpdateLeadStatus={handleUpdateLeadStatus} />
-          ) : pathname === '/employee/jobs' ? (
-            <EmployeeJobsPage leads={employeeLeads} onSelectLead={setSelectedLead} />
-          ) : pathname === '/employee/schedule' ? (
-            <EmployeeSchedulePage leads={employeeLeads} />
-          ) : pathname === '/employee/map' ? (
-            <EmployeeMapPage leads={employeeLeads} onSelectLead={setSelectedLead} />
-          ) : pathname === '/employee/photos' ? (
-            <EmployeePhotosPage leads={employeeLeads} onUpdateLead={handleUpdateLead} />
-          ) : pathname === '/employee/checklist' ? (
-            <EmployeeChecklistPage leads={employeeLeads} onUpdateLead={handleUpdateLead} />
-          ) : pathname === '/employee/messages' ? (
-            <OwnerCommunicationPage leads={employeeLeads} />
-          ) : pathname === '/employee/profile' ? (
-            <EmployeeProfilePage />
           ) : (
             <EmployeeDashboardPage leads={employeeLeads} onSelectLead={setSelectedLead} onUpdateLead={handleUpdateLead} onUpdateLeadStatus={handleUpdateLeadStatus} />
           )}
@@ -590,20 +555,10 @@ function AppContent() {
               }).catch(console.error);
             }} 
           />
-        ) : pathname === '/analytics' ? (
-          <OwnerAnalyticsPage />
-        ) : pathname === '/quotes' ? (
-          <OwnerQuotesPage />
-        ) : pathname === '/documents' ? (
-          <OwnerDocumentsPage />
-        ) : pathname === '/communication' ? (
-          <OwnerCommunicationPage leads={leads} />
         ) : pathname === '/widget' ? (
           <OwnerWidgetPage onAddLead={handleAddLead} />
         ) : pathname === '/integrations' ? (
           <Integrations leads={leads} employees={employees} onAddLead={handleAddLead} />
-        ) : pathname === '/integrations/synology' ? (
-          <SynologyNAS leads={leads} employees={employees} onAddLead={handleAddLead} />
         ) : pathname === '/settings' ? (
           <OwnerSettingsPage />
         ) : (
@@ -630,7 +585,9 @@ function AppContent() {
 export default function App() {
   return (
     <RouterProvider>
-      <AppContent />
+      <React.Suspense fallback={<div className="flex min-h-screen items-center justify-center bg-[#f5f5f7] text-sm font-semibold text-slate-500">Načítám StavbaFlow…</div>}>
+        <AppContent />
+      </React.Suspense>
     </RouterProvider>
   );
 }

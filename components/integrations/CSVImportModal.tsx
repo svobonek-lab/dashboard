@@ -22,7 +22,8 @@ interface CSVImportModalProps {
     rows: Record<string, any>[], 
     mapping: FieldMappingConfig, 
     deduplicate: boolean,
-    updateExisting: boolean
+    updateExisting: boolean,
+    source: { fileName: string; csv: string }
   ) => Promise<any>;
 }
 
@@ -34,6 +35,7 @@ export const CSVImportModal: React.FC<CSVImportModalProps> = ({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [parsedData, setParsedData] = useState<ParsedFileResult | null>(null);
+  const [sourceCsv, setSourceCsv] = useState('');
   const [parsingError, setParsingError] = useState<string | null>(null);
   const [isParsing, setIsParsing] = useState(false);
 
@@ -52,7 +54,9 @@ export const CSVImportModal: React.FC<CSVImportModalProps> = ({
     setParsingError(null);
     setImportSummary(null);
     try {
+      const csv = await file.text();
       const res = await parseUploadedFile(file);
+      setSourceCsv(csv);
       setParsedData(res);
       // Auto open mapping if needed
       setIsMappingOpen(true);
@@ -90,7 +94,8 @@ export const CSVImportModal: React.FC<CSVImportModalProps> = ({
         parsedData.rows,
         currentMapping,
         deduplicate,
-        updateExisting
+        updateExisting,
+        { fileName: parsedData.fileName, csv: sourceCsv }
       );
       setImportSummary(res.message || 'Import úspěšně dokončen.');
     } catch (e: any) {
@@ -193,6 +198,7 @@ export const CSVImportModal: React.FC<CSVImportModalProps> = ({
                     type="button"
                     onClick={() => {
                       setParsedData(null);
+                      setSourceCsv('');
                       setImportSummary(null);
                     }}
                     className="p-1.5 text-slate-400 hover:text-slate-700 rounded-lg hover:bg-slate-100"

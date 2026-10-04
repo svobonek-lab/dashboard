@@ -1,7 +1,7 @@
 (function() {
   // Prevent duplicate execution
-  if (window.__stavbacore_widget_loaded) return;
-  window.__stavbacore_widget_loaded = true;
+  if (window.__stavbaflow_widget_loaded) return;
+  window.__stavbaflow_widget_loaded = true;
 
   // 1. Identify the loader script tag to read attributes
   var script = document.currentScript || (function() {
@@ -15,14 +15,14 @@
   })();
 
   if (!script) {
-    console.error('StavbaCore Widget: Loader script not found.');
+    console.error('StavbaFlow Widget: Loader script not found.');
     return;
   }
 
   // 2. Parse multi-tenant arguments
   var orgId = script.getAttribute('data-org');
   if (!orgId) {
-    console.error('StavbaCore Widget: Missing data-org attribute.');
+    console.error('StavbaFlow Widget: Missing data-org attribute.');
     return;
   }
 
@@ -41,7 +41,7 @@
   // 3. Create the iframe element (hidden by default)
   var iframe = document.createElement('iframe');
   iframe.src = rootUrl + '/widget-iframe?org=' + encodeURIComponent(orgId) + '&color=' + encodeURIComponent(btnColor);
-  iframe.id = 'stavbacore-widget-iframe';
+  iframe.id = 'stavbaflow-widget-iframe';
   iframe.style.position = 'fixed';
   iframe.style.zIndex = '2147483647'; // Maximum possible z-index
   iframe.style.border = 'none';
@@ -118,7 +118,18 @@
   var sparklesIcon = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-sparkles"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275Z"/><path d="m5 3 1 2.5L8.5 6 6 7 5 9.5 4 7 1.5 6 4 5Z"/><path d="m19 17 1 2.5 2.5.5-2.5 1-1 2.5-1-2.5-2.5-1 2.5-1Z"/></svg>';
   var closeIcon = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-x"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>';
 
-  button.innerHTML = sparklesIcon + '<span>' + btnText + '</span>';
+  function setButtonContent(icon, label) {
+    button.replaceChildren();
+    var iconContainer = document.createElement('span');
+    iconContainer.setAttribute('aria-hidden', 'true');
+    iconContainer.innerHTML = icon;
+    var labelContainer = document.createElement('span');
+    labelContainer.textContent = label;
+    button.appendChild(iconContainer);
+    button.appendChild(labelContainer);
+  }
+
+  setButtonContent(sparklesIcon, btnText);
 
   button.onmouseover = function() { button.style.transform = 'scale(1.04)'; };
   button.onmouseout = function() { button.style.transform = 'scale(1)'; };
@@ -138,13 +149,13 @@
       iframe.offsetHeight;
       iframe.style.opacity = '1';
       iframe.style.transform = 'translateY(0)';
-      button.innerHTML = closeIcon + '<span>Zavřít</span>';
+      setButtonContent(closeIcon, 'Zavřít');
       button.style.backgroundColor = '#1e293b'; // Slate 800 dark mode fallback
     } else {
       // Close Widget
       iframe.style.opacity = '0';
       iframe.style.transform = 'translateY(15px)';
-      button.innerHTML = sparklesIcon + '<span>' + btnText + '</span>';
+      setButtonContent(sparklesIcon, btnText);
       button.style.backgroundColor = btnColor;
       setTimeout(function() {
         if (!isOpen) iframe.style.display = 'none';
@@ -156,7 +167,14 @@
 
   // 6. Listen for iframe postMessage callbacks
   window.addEventListener('message', function(event) {
-    if (event.data === 'demofactory-widget-close' || event.data === 'stavbacore-widget-close' || (event.data && event.data.type === 'stavbacore-widget-close')) {
+    var expectedOrigin;
+    try {
+      expectedOrigin = new URL(rootUrl).origin;
+    } catch (_) {
+      return;
+    }
+    if (event.origin !== expectedOrigin || event.source !== iframe.contentWindow) return;
+    if (event.data === 'stavbaflow-widget-close' || (event.data && event.data.type === 'stavbaflow-widget-close')) {
       if (isOpen) toggleWidget();
     }
   });

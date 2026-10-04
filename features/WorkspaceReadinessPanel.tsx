@@ -26,6 +26,27 @@ export const WorkspaceReadinessPanel: React.FC<WorkspaceReadinessPanelProps> = (
   const isEmployee = readiness.role === 'employee';
   const next = readiness.nextStep;
 
+  if (compact && next) {
+    return (
+      <section className="workspace-panel flex flex-col gap-4 p-4 sm:flex-row sm:items-center sm:justify-between sm:px-5">
+        <div className="flex min-w-0 items-center gap-3">
+          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
+            {isEmployee ? <BriefcaseBusiness className="h-5 w-5" /> : <Building2 className="h-5 w-5" />}
+          </span>
+          <div className="min-w-0">
+            <p className="text-xs font-semibold text-blue-600">Další krok · {readiness.completed}/{readiness.total}</p>
+            <h2 className="mt-0.5 truncate text-sm font-semibold text-slate-950">{next.label}</h2>
+            <p className="mt-0.5 truncate text-xs text-slate-500">{next.description}</p>
+          </div>
+        </div>
+        <div className="flex shrink-0 items-center gap-3">
+          <div className="h-1.5 w-24 overflow-hidden rounded-full bg-slate-100"><div className="h-full rounded-full bg-blue-600" style={{ width: `${readiness.percent}%` }} /></div>
+          <button type="button" onClick={() => navigate(next.href)} className="inline-flex min-h-9 items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 text-xs font-semibold text-slate-700 hover:bg-slate-50">Pokračovat <ArrowRight className="h-3.5 w-3.5" /></button>
+        </div>
+      </section>
+    );
+  }
+
   return (
     <section className={`relative overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm ${compact ? 'p-4' : 'p-5 sm:p-6'}`}>
       <div className="pointer-events-none absolute -right-12 -top-16 h-40 w-40 rounded-full bg-blue-50 blur-2xl" />
