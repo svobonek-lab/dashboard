@@ -1,4 +1,5 @@
 import { CompanyBranding, WebsiteAudit, WebsiteAnalysisResult } from '../types';
+import { supabase } from './supabase';
 
 function getFallbackData(url: string): WebsiteAnalysisResult & { branding: CompanyBranding; audit: WebsiteAudit } {
   const confidence = {
@@ -59,10 +60,14 @@ function getFallbackData(url: string): WebsiteAnalysisResult & { branding: Compa
 
 export async function analyzeWebsiteWithGemini(url: string): Promise<WebsiteAnalysisResult & { branding: CompanyBranding; audit: WebsiteAudit }> {
   try {
+    const { data: sessionData } = supabase ? await supabase.auth.getSession() : { data: { session: null } };
+    const token = sessionData.session?.access_token;
+    if (!token) throw new Error('Website analysis requires an authenticated account');
     const response = await fetch('/api/analyze-website', {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`
       },
       body: JSON.stringify({ url })
     });

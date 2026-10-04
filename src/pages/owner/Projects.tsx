@@ -1,229 +1,42 @@
 import React, { useState } from 'react';
-import { Lead } from '@/types';
-import { 
-  HardHat, 
-  MapPin, 
-  User, 
-  Calendar, 
-  DollarSign, 
-  CheckCircle2, 
-  Clock, 
-  AlertTriangle, 
-  Camera, 
-  Sparkles, 
-  Plus, 
-  ChevronRight,
-  ShieldCheck,
-  TrendingUp,
-  FileText
-} from 'lucide-react';
+import { ArrowRight, BriefcaseBusiness, CheckCircle2, MapPin, UserRound } from 'lucide-react';
+import type { Lead } from '@/types';
 import { useRouter } from '../../app/router';
 
-interface OwnerProjectsPageProps {
-  leads: Lead[];
-  onSelectLead: (lead: Lead) => void;
-}
+interface OwnerProjectsPageProps { leads: Lead[]; onSelectLead: (lead: Lead) => void; }
+const currency = new Intl.NumberFormat('cs-CZ', { style: 'currency', currency: 'CZK', maximumFractionDigits: 0 });
 
 export const OwnerProjectsPage: React.FC<OwnerProjectsPageProps> = ({ leads, onSelectLead }) => {
   const { navigate } = useRouter();
-  const [filter, setFilter] = useState<'all' | 'in_progress' | 'completed'>('all');
+  const [filter, setFilter] = useState<'active' | 'completed'>('active');
+  const active = leads.filter((lead) => lead.status === 'In Progress');
+  const completed = leads.filter((lead) => lead.status === 'Completed');
+  const projects = filter === 'active' ? active : completed;
+  const activeValue = active.reduce((sum, lead) => sum + (lead.price || 0), 0);
 
-  const projects = leads.filter(l => {
-    if (filter === 'in_progress') return l.status === 'In Progress';
-    if (filter === 'completed') return l.status === 'Completed';
-    return l.status === 'In Progress' || l.status === 'Completed' || l.status === 'Quote';
-  });
+  const open = (lead: Lead) => { onSelectLead(lead); navigate('/leads'); };
 
   return (
-    <div className="space-y-6 text-slate-900 font-sans">
-      
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-black text-slate-900 tracking-tight flex items-center gap-2.5">
-            <HardHat className="w-6 h-6 text-amber-400" />
-            Realizace & Stavební projekty
-          </h1>
-          <p className="text-xs text-slate-500 mt-0.5">
-            Přehled aktivních staveb v terénu, sledování milníků, čerpání rozpočtů a fotodokumentace.
-          </p>
-        </div>
-
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => navigate('/quotes')}
-            className="px-4 py-2.5 rounded-xl bg-white border border-slate-200 text-xs font-bold text-slate-800 hover:bg-slate-800 transition-all flex items-center gap-1.5"
-          >
-            <FileText className="w-3.5 h-3.5 text-brand-primary" />
-            <span>Rozpočty & Nabídky</span>
-          </button>
-        </div>
+    <div className="workspace-page">
+      <header className="workspace-page-header"><div><p className="workspace-kicker">Realizace</p><h1 className="workspace-title">Zakázky firmy</h1><p className="workspace-subtitle">Přehled skutečných zakázek podle uloženého stavu a přiřazení.</p></div></header>
+      <section className="grid gap-3 sm:grid-cols-3">
+        <button type="button" onClick={() => setFilter('active')} className="workspace-metric text-left"><span className="workspace-metric-icon bg-blue-50 text-blue-600"><BriefcaseBusiness className="h-5 w-5" /></span><span className="workspace-metric-label">V realizaci</span><strong>{active.length}</strong><small>aktivních zakázek</small></button>
+        <div className="workspace-metric"><span className="workspace-metric-icon bg-violet-50 text-violet-700"><BriefcaseBusiness className="h-5 w-5" /></span><span className="workspace-metric-label">Objem realizace</span><strong className="workspace-metric-money">{currency.format(activeValue)}</strong><small>součet evidovaných cen</small></div>
+        <button type="button" onClick={() => setFilter('completed')} className="workspace-metric text-left"><span className="workspace-metric-icon bg-emerald-50 text-emerald-700"><CheckCircle2 className="h-5 w-5" /></span><span className="workspace-metric-label">Dokončeno</span><strong>{completed.length}</strong><small>uložených zakázek</small></button>
+      </section>
+      <div className="flex gap-2">
+        <button type="button" onClick={() => setFilter('active')} className={`rounded-full px-4 py-2 text-sm font-semibold ${filter === 'active' ? 'bg-slate-950 text-white' : 'bg-white text-slate-600'}`}>V realizaci</button>
+        <button type="button" onClick={() => setFilter('completed')} className={`rounded-full px-4 py-2 text-sm font-semibold ${filter === 'completed' ? 'bg-slate-950 text-white' : 'bg-white text-slate-600'}`}>Dokončeno</button>
       </div>
-
-      {/* KPI Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-md">
-          <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">Probíhající stavby</span>
-          <p className="text-2xl font-black text-slate-900 mt-1">
-            {leads.filter(l => l.status === 'In Progress').length} staveb
-          </p>
-          <span className="text-[10px] text-amber-400 font-semibold mt-0.5 block">Všechny party na montážích</span>
-        </div>
-
-        <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-md">
-          <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">Rozpracovaný objem</span>
-          <p className="text-2xl font-black text-green-400 mt-1">
-            {leads.filter(l => l.status === 'In Progress').reduce((sum, l) => sum + (l.price || 0), 0).toLocaleString('cs-CZ')} Kč
-          </p>
-          <span className="text-[10px] text-green-400 font-semibold mt-0.5 block">Průměrná marže 34.2%</span>
-        </div>
-
-        <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-md">
-          <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">Předáno investorům tento měsíc</span>
-          <p className="text-2xl font-black text-slate-900 mt-1">
-            {leads.filter(l => l.status === 'Completed').length} zakázek
-          </p>
-          <span className="text-[10px] text-brand-primary font-semibold mt-0.5 block">100% podepsaných protokolů</span>
-        </div>
-      </div>
-
-      {/* Filter Tabs */}
-      <div className="flex items-center gap-2 border-b border-slate-200 pb-3">
-        <button
-          onClick={() => setFilter('all')}
-          className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all ${
-            filter === 'all' ? 'bg-amber-500 text-slate-950 shadow-md' : 'text-slate-500 hover:text-slate-900'
-          }`}
-        >
-          Všechny projekty ({projects.length})
-        </button>
-        <button
-          onClick={() => setFilter('in_progress')}
-          className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all ${
-            filter === 'in_progress' ? 'bg-amber-500 text-slate-950 shadow-md' : 'text-slate-500 hover:text-slate-900'
-          }`}
-        >
-          Probíhající montáže ({leads.filter(l => l.status === 'In Progress').length})
-        </button>
-        <button
-          onClick={() => setFilter('completed')}
-          className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all ${
-            filter === 'completed' ? 'bg-amber-500 text-slate-950 shadow-md' : 'text-slate-500 hover:text-slate-900'
-          }`}
-        >
-          Dokončené ({leads.filter(l => l.status === 'Completed').length})
-        </button>
-      </div>
-
-      {/* Projects Cards List */}
-      {projects.length === 0 ? (
-        <div className="bg-white rounded-3xl border border-slate-200 p-12 text-center space-y-3 shadow-xs">
-          <div className="w-12 h-12 rounded-2xl bg-slate-100 flex items-center justify-center mx-auto text-slate-400">
-            <HardHat className="w-6 h-6 text-amber-500" />
-          </div>
-          <h3 className="text-sm font-bold text-slate-800">Zatím žádné stavební projekty</h3>
-          <p className="text-xs text-slate-500 max-w-sm mx-auto">
-            V této organizaci zatím neprobíhá žádná stavba. Přidejte první poptávku v sekci Zakázky a přesuňte ji do realizace.
-          </p>
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-        {projects.map((project) => {
-          const completedTasks = project.checklist?.filter(c => c.completed).length || 0;
-          const totalTasks = project.checklist?.length || 5;
-          const progressPercent = Math.round((completedTasks / totalTasks) * 100);
-
-          return (
-            <div
-              key={project.id}
-              className="bg-white border border-slate-200 hover:border-slate-300 rounded-3xl p-6 shadow-lg space-y-5 transition-all group flex flex-col justify-between"
-            >
-              <div className="space-y-4">
-                
-                {/* Header */}
-                <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
-                      project.status === 'In Progress' ? 'bg-purple-500/20 text-purple-300 border border-purple-500/30' :
-                      project.status === 'Completed' ? 'bg-green-500/20 text-green-300 border border-green-500/30' :
-                      'bg-amber-500/20 text-amber-300 border border-amber-500/30'
-                    }`}>
-                      {project.status === 'In Progress' ? 'Probíhá realizace' : project.status === 'Completed' ? 'Dokončeno' : 'Příprava'}
-                    </span>
-                    <h3 className="text-base font-bold text-slate-900 mt-1.5 group-hover:text-amber-400 transition-colors">
-                      {project.title}
-                    </h3>
-                    <p className="text-xs text-slate-500 flex items-center gap-1.5 mt-0.5">
-                      <MapPin className="w-3.5 h-3.5 text-slate-500" />
-                      <span>{project.city} • {project.address}</span>
-                    </p>
-                  </div>
-
-                  <div className="text-right">
-                    <p className="text-sm font-black text-green-400 font-mono">
-                      {project.price?.toLocaleString('cs-CZ')} Kč
-                    </p>
-                    <span className="text-[10px] text-slate-500 block">Smluvní cena</span>
-                  </div>
-                </div>
-
-                {/* Progress bar */}
-                <div className="space-y-1.5 bg-slate-50/80 p-3.5 rounded-2xl border border-slate-200">
-                  <div className="flex items-center justify-between text-xs font-semibold">
-                    <span className="text-slate-500">Postup stavebního deníku:</span>
-                    <span className="text-amber-400 font-mono">{progressPercent}%</span>
-                  </div>
-                  <div className="w-full h-2 bg-slate-800 rounded-full overflow-hidden">
-                    <div 
-                      className="h-full bg-gradient-to-r from-amber-500 to-green-500 rounded-full transition-all duration-500"
-                      style={{ width: `${Math.max(15, progressPercent)}%` }}
-                    ></div>
-                  </div>
-                  <div className="flex items-center justify-between text-[10px] text-slate-500 pt-1">
-                    <span>Dokončeno {completedTasks} z {totalTasks} milníků</span>
-                    <span>Vedoucí: {project.assignedEmployeeName || 'Petr Novotný'}</span>
-                  </div>
-                </div>
-
-                {/* Info Pills */}
-                <div className="grid grid-cols-2 gap-2 text-xs">
-                  <div className="p-2.5 bg-slate-50/50 rounded-xl border border-slate-200 flex items-center gap-2">
-                    <User className="w-3.5 h-3.5 text-brand-primary" />
-                    <span className="text-slate-700 truncate">{project.customerName}</span>
-                  </div>
-                  <div className="p-2.5 bg-slate-50/50 rounded-xl border border-slate-200 flex items-center gap-2">
-                    <Calendar className="w-3.5 h-3.5 text-amber-400" />
-                    <span className="text-slate-700 truncate">{project.preferredDate || 'Září 2026'}</span>
-                  </div>
-                </div>
-
-              </div>
-
-              {/* Card Footer Actions */}
-              <div className="pt-3 border-t border-slate-200/80 flex items-center justify-between">
-                <div className="flex items-center gap-2 text-xs text-slate-500">
-                  <Camera className="w-3.5 h-3.5 text-slate-500" />
-                  <span>{project.photos?.length || 4} fotografií</span>
-                </div>
-
-                <button
-                  onClick={() => {
-                    onSelectLead(project);
-                    navigate('/leads');
-                  }}
-                  className="px-3.5 py-2 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 text-xs font-bold transition-all flex items-center gap-1.5"
-                >
-                  <span>Detail stavby & Deník</span>
-                  <ChevronRight className="w-3.5 h-3.5" />
-                </button>
-              </div>
-
-            </div>
-          );
-        })}
-        </div>
-      )}
-
+      <section className="grid gap-3 md:grid-cols-2">
+        {projects.map((project) => <button key={project.id} type="button" onClick={() => open(project)} className="workspace-panel group p-5 text-left sm:p-6">
+          <div className="flex items-start justify-between gap-3"><span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${project.status === 'Completed' ? 'bg-emerald-50 text-emerald-700' : 'bg-blue-50 text-blue-700'}`}>{project.status === 'Completed' ? 'Dokončeno' : 'V realizaci'}</span><strong className="text-sm font-semibold text-slate-800">{project.price ? currency.format(project.price) : 'Cena neuvedena'}</strong></div>
+          <h2 className="mt-4 text-base font-semibold tracking-tight text-slate-950">{project.title || 'Zakázka bez názvu'}</h2><p className="mt-1 text-sm text-slate-500">{project.customerName || 'Zákazník neuveden'}</p>
+          <div className="mt-5 flex flex-wrap gap-4 text-xs text-slate-500">{(project.address || project.city) && <span className="inline-flex items-center gap-1.5"><MapPin className="h-4 w-4" />{project.address || project.city}</span>}<span className="inline-flex items-center gap-1.5"><UserRound className="h-4 w-4" />{project.assignedEmployeeName || 'Bez přiřazení'}</span></div>
+          <span className="mt-5 inline-flex items-center gap-1.5 text-sm font-semibold text-blue-600">Otevřít zakázku <ArrowRight className="h-4 w-4 transition group-hover:translate-x-0.5" /></span>
+        </button>)}
+        {!projects.length && <div className="workspace-empty-state col-span-full px-6 py-14 text-center"><BriefcaseBusiness className="mx-auto h-8 w-8 text-slate-400" /><h2 className="mt-3 text-base font-semibold text-slate-950">V této části zatím nejsou zakázky</h2><p className="mt-1 text-sm text-slate-500">Zakázka se objeví po změně jejího stavu v přehledu poptávek.</p></div>}
+      </section>
     </div>
   );
 };

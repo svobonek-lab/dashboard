@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useOrganization } from '@/context/OrganizationContext';
-import { Building, Lock, Mail, ArrowRight, CheckCircle2, ShieldAlert, LayoutDashboard, Users, Calendar, Inbox } from 'lucide-react';
+import { Building, Lock, Mail, ArrowRight, CheckCircle2, ShieldAlert, Building2, BriefcaseBusiness, ShieldCheck } from 'lucide-react';
 import type { UserRole } from '@/src/app/permissions';
 import { supabase } from '@/lib/supabase';
 import { buildRecoveryRequest, parseRecoveryResponse, validateNewPassword } from '@/src/app/authRecovery';
@@ -59,8 +59,6 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onSuccess, expectedRole })
   }, []);
 
   const activeCompanyName = currentOrg?.name || branding.name || 'Vaše Stavební Firma';
-  const activeLogo = currentOrg?.branding?.logoUrl || branding.logoUrl;
-  
   const displayBrandColor = mode === 'signup' && primaryColor !== 'var(--brand-primary)' ? primaryColor : 'var(--brand-primary)';
   const displayOrgName = mode === 'signup' && orgName ? orgName : activeCompanyName;
   const roleCopy = expectedRole ? ROLE_COPY[expectedRole] : null;
@@ -112,55 +110,25 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onSuccess, expectedRole })
 
   return (
     <div className="min-h-screen bg-surface-secondary flex font-sans">
-      
-      {/* Dynamic Left Preview Area (Sidebar Mockup) */}
-      <div className="hidden lg:flex w-72 bg-surface border-r border-border flex-col shadow-app transition-colors duration-300">
-        <div className="p-5 border-b border-border flex items-center gap-3">
-          <div 
-            className="w-[36px] h-[36px] rounded-app text-white font-black text-sm shrink-0 flex items-center justify-center shadow-app transition-colors duration-300"
-            style={{ backgroundColor: displayBrandColor }}
-          >
-            {displayOrgName.substring(0, 2).toUpperCase()}
-          </div>
-          <div className="overflow-hidden">
-            <h1 className="text-[18px] font-bold text-text truncate tracking-tight leading-tight transition-all">
-              {displayOrgName}
-            </h1>
-            <p className="text-[10px] font-semibold text-muted tracking-wide mt-0.5 uppercase">
-              Workspace
-            </p>
+      <aside className="login-value-panel hidden lg:flex">
+        <div className="relative z-10 max-w-lg">
+          <div className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1.5 text-xs font-semibold text-blue-100"><ShieldCheck className="h-4 w-4" /> Ověřený firemní pilot</div>
+          <p className="mt-8 text-sm font-semibold text-blue-200">StavbaFlow</p>
+          <h1 className="mt-3 text-4xl font-semibold leading-tight tracking-[-0.04em] text-white">Zakázky, tým a další krok. Bez zbytečného chaosu.</h1>
+          <p className="mt-5 max-w-md text-base leading-7 text-slate-300">Jednoduchý pracovní prostor pro menší stavební firmu. Každý vidí jen to, co potřebuje ke své práci.</p>
+          <div className="mt-10 space-y-3">
+            {[
+              { icon: Building2, title: 'Jedno přihlášení, správný dashboard', text: 'Majitele i zaměstnance systém automaticky pošle do jejich pracovního prostoru.' },
+              { icon: BriefcaseBusiness, title: 'Poptávka až po realizaci', text: 'Stav zakázky, přiřazení a historie zůstávají na jednom místě.' },
+              { icon: ShieldCheck, title: 'Data firmy zůstávají oddělená', text: 'Přístup vynucuje role uživatele a příslušnost k firmě.' },
+            ].map(({ icon: Icon, title, text }) => <div key={title} className="flex gap-4 rounded-2xl border border-white/10 bg-white/[0.06] p-4"><span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-500/20 text-blue-200"><Icon className="h-5 w-5" /></span><span><strong className="block text-sm font-semibold text-white">{title}</strong><small className="mt-1 block text-sm leading-5 text-slate-300">{text}</small></span></div>)}
           </div>
         </div>
-        
-        <div className="flex-1 p-4 space-y-1">
-           <div className="px-2 pb-2 text-[10px] font-bold tracking-wider text-muted uppercase font-mono mt-2">
-             Aplikace (Náhled)
-           </div>
-           
-           {[
-             { icon: LayoutDashboard, label: 'Přehled stavby', active: true },
-             { icon: Inbox, label: 'Poptávky & Kanban', active: false },
-             { icon: Calendar, label: 'Harmonogram', active: false },
-             { icon: Users, label: 'Tým & Řemeslníci', active: false }
-           ].map((item, i) => (
-             <div 
-                key={i} 
-                className={`flex items-center gap-3 px-3 py-2.5 rounded-app text-xs font-semibold relative ${item.active ? 'text-brand-primary' : 'text-muted'}`}
-                style={item.active ? { backgroundColor: `${displayBrandColor}20`, color: displayBrandColor } : {}}
-              >
-                {item.active && (
-                  <span className="absolute left-0 top-0 bottom-0 w-[3px] rounded-r-xs transition-colors duration-300" style={{ backgroundColor: displayBrandColor }} />
-                )}
-                <item.icon className="w-4 h-4" />
-                <span>{item.label}</span>
-             </div>
-           ))}
-        </div>
-      </div>
+      </aside>
 
       {/* Right Login/Signup Form Area */}
-      <div className="flex-1 flex flex-col justify-center items-center p-6 bg-surface-secondary">
-         <div className="max-w-md w-full bg-surface border border-border p-8 sm:p-10 rounded-[24px] shadow-app">
+      <div className="flex-1 flex flex-col justify-center items-center p-5 sm:p-8 bg-surface-secondary">
+         <div className="max-w-md w-full bg-surface border border-border p-7 sm:p-10 rounded-[24px] shadow-app">
             
             <div className="text-center mb-8">
               <div 
@@ -319,7 +287,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onSuccess, expectedRole })
             </form>
 
             <div className="text-center mt-6 text-sm text-muted font-medium">
-              {mode === 'login' ? (
+              {mode === 'login' && !isConfigured ? (
                 <>
                   Nemáte firemní prostor?{' '}
                   <button 
@@ -330,6 +298,8 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onSuccess, expectedRole })
                     Založit nový workspace
                   </button>
                 </>
+              ) : mode === 'login' ? (
+                <span className="text-xs leading-5">Firemní prostor připravujeme při onboardingu. Přístup obdržíte od správce StavbaFlow.</span>
               ) : mode === 'signup' ? (
                 <>
                   Již máte u nás účet?{' '}

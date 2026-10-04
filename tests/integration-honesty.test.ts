@@ -12,11 +12,12 @@ test('unsupported Sheets never returns invented records or partial successful sy
 });
 
 test('outbox fails before database access when no mail provider is configured', async () => {
-  const names = ['CRON_SECRET','RESEND_API_KEY','SUPABASE_URL','SUPABASE_SERVICE_ROLE_KEY'];
+  const names = ['CRON_SECRET','RESEND_API_KEY','EMAIL_FROM','SUPABASE_URL','SUPABASE_SERVICE_ROLE_KEY'];
   const saved = Object.fromEntries(names.map(name => [name,process.env[name]]));
   try {
     process.env.CRON_SECRET='synthetic-cron';
     delete process.env.RESEND_API_KEY;
+    delete process.env.EMAIL_FROM;
     process.env.SUPABASE_URL='https://invalid.example';
     process.env.SUPABASE_SERVICE_ROLE_KEY='synthetic';
     const res = { code:0, body:null as any, status(code:number){this.code=code;return this;},json(body:any){this.body=body;return this;} };
@@ -30,13 +31,14 @@ test('outbox fails before database access when no mail provider is configured', 
 });
 
 test('outbox does not send an email when another worker already claimed it', async () => {
-  const names = ['CRON_SECRET','RESEND_API_KEY','SUPABASE_URL','SUPABASE_SERVICE_ROLE_KEY'];
+  const names = ['CRON_SECRET','RESEND_API_KEY','EMAIL_FROM','SUPABASE_URL','SUPABASE_SERVICE_ROLE_KEY'];
   const saved = Object.fromEntries(names.map(name => [name,process.env[name]]));
   const originalFetch = globalThis.fetch;
   let providerCalls = 0;
   try {
     process.env.CRON_SECRET='synthetic-cron';
     process.env.RESEND_API_KEY='synthetic-resend';
+    process.env.EMAIL_FROM='StavbaFlow <sender@example.test>';
     process.env.SUPABASE_URL='https://synthetic.supabase.test';
     process.env.SUPABASE_SERVICE_ROLE_KEY='synthetic-service-role';
     globalThis.fetch = async (input: string | URL | Request, init?: RequestInit) => {
@@ -72,13 +74,14 @@ test('outbox does not send an email when another worker already claimed it', asy
 });
 
 test('outbox sends to the provider with a stable idempotency key', async () => {
-  const names = ['CRON_SECRET','RESEND_API_KEY','SUPABASE_URL','SUPABASE_SERVICE_ROLE_KEY'];
+  const names = ['CRON_SECRET','RESEND_API_KEY','EMAIL_FROM','SUPABASE_URL','SUPABASE_SERVICE_ROLE_KEY'];
   const saved = Object.fromEntries(names.map(name => [name,process.env[name]]));
   const originalFetch = globalThis.fetch;
   let providerIdempotencyKey: string | null = null;
   try {
     process.env.CRON_SECRET='synthetic-cron';
     process.env.RESEND_API_KEY='synthetic-resend';
+    process.env.EMAIL_FROM='StavbaFlow <sender@example.test>';
     process.env.SUPABASE_URL='https://synthetic.supabase.test';
     process.env.SUPABASE_SERVICE_ROLE_KEY='synthetic-service-role';
     globalThis.fetch = async (input: string | URL | Request, init?: RequestInit) => {
@@ -110,12 +113,13 @@ test('outbox sends to the provider with a stable idempotency key', async () => {
 });
 
 test('outbox does not report delivered when persisting provider acceptance fails', async () => {
-  const names = ['CRON_SECRET','RESEND_API_KEY','SUPABASE_URL','SUPABASE_SERVICE_ROLE_KEY'];
+  const names = ['CRON_SECRET','RESEND_API_KEY','EMAIL_FROM','SUPABASE_URL','SUPABASE_SERVICE_ROLE_KEY'];
   const saved = Object.fromEntries(names.map(name => [name,process.env[name]]));
   const originalFetch = globalThis.fetch;
   try {
     process.env.CRON_SECRET='synthetic-cron';
     process.env.RESEND_API_KEY='synthetic-resend';
+    process.env.EMAIL_FROM='StavbaFlow <sender@example.test>';
     process.env.SUPABASE_URL='https://synthetic.supabase.test';
     process.env.SUPABASE_SERVICE_ROLE_KEY='synthetic-service-role';
     globalThis.fetch=async(input:string|URL|Request,init?:RequestInit)=>{

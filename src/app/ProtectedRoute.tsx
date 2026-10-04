@@ -38,7 +38,7 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, allowe
   }
 
   // Bypassing logic for public pages wrapped in ProtectedRoute
-  const isPublicRoute = pathname === '/login' || pathname.startsWith('/widget-iframe') || pathname === '/portal' || pathname === '/inquiry';
+  const isPublicRoute = pathname === '/login' || pathname.startsWith('/widget-iframe') || pathname === '/portal' || pathname === '/inquiry' || pathname.startsWith('/inquiry/') || pathname === '/form' || pathname.startsWith('/form/');
   if (isPublicRoute) {
     return <>{children}</>;
   }

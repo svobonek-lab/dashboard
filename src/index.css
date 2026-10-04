@@ -17,7 +17,7 @@
 @layer base {
   :root {
     /* Design Tokens */
-    --workspace-canvas: #f7f8fa;
+    --workspace-canvas: #f5f5f7;
     --workspace-primary: #2563eb;
     --workspace-primary-soft: rgba(37, 99, 235, 0.10);
     --workspace-success: #0f766e;
@@ -27,10 +27,10 @@
     --brand-primary-soft: var(--workspace-primary-soft);
     --surface: #ffffff;
     --surface-secondary: var(--workspace-canvas);
-    --surface-tertiary: #eef1f5;
-    --text: #111827;
-    --muted: #667085;
-    --border: #e4e7ec;
+    --surface-tertiary: #f0f1f3;
+    --text: #17181a;
+    --muted: #6e7178;
+    --border: #e2e4e8;
 
     --radius-app: 12px;
     --shadow-app: 0 1px 3px 0 rgba(0, 0, 0, 0.05), 0 1px 2px 0 rgba(0, 0, 0, 0.03);
@@ -82,8 +82,35 @@
 .workspace-panel {
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: 12px;
-  box-shadow: 0 1px 2px rgba(16, 24, 40, 0.03);
+  border-radius: 16px;
+  box-shadow: 0 1px 2px rgba(16, 24, 40, 0.025), 0 8px 24px rgba(16, 24, 40, 0.025);
+}
+
+.workspace-page { display: grid; gap: 20px; padding-bottom: 48px; color: var(--text); }
+.workspace-page-header { display: flex; align-items: flex-end; justify-content: space-between; gap: 24px; padding: 4px 2px 2px; }
+.workspace-kicker { margin: 0; color: var(--workspace-primary); font-size: 12px; font-weight: 650; }
+.workspace-title { margin: 5px 0 0; color: #17181a; font-size: clamp(28px, 3vw, 38px); font-weight: 680; letter-spacing: -0.045em; line-height: 1.08; }
+.workspace-subtitle { max-width: 620px; margin: 9px 0 0; color: var(--muted); font-size: 14px; line-height: 1.6; }
+.workspace-metric { display: grid; min-height: 126px; grid-template-columns: 42px 1fr; grid-template-rows: auto auto auto; align-content: center; gap: 2px 12px; border: 1px solid var(--border); border-radius: 16px; background: #fff; padding: 18px; box-shadow: 0 1px 2px rgba(16,24,40,.025); transition: border-color 160ms ease, box-shadow 160ms ease, transform 160ms ease; }
+button.workspace-metric:hover { border-color: #c9d9f7; box-shadow: 0 8px 24px rgba(37,99,235,.07); transform: translateY(-1px); }
+.workspace-metric-icon { display: grid; width: 40px; height: 40px; grid-row: 1 / 4; place-items: center; border-radius: 12px; }
+.workspace-metric-label { color: #5f636b; font-size: 12px; font-weight: 600; }
+.workspace-metric strong { color: #17181a; font-size: 26px; font-weight: 680; letter-spacing: -.04em; line-height: 1.1; }
+.workspace-metric strong.workspace-metric-money { font-size: clamp(18px, 2vw, 24px); }
+.workspace-metric small { color: #8a8d94; font-size: 11px; }
+.workspace-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 18px; border-bottom: 1px solid #eef0f2; padding: 18px 20px; }
+.workspace-search { width: 100%; min-height: 40px; border: 1px solid var(--border); border-radius: 11px; background: #f8f8fa; padding: 0 12px 0 36px; color: var(--text); font-size: 13px; outline: none; }
+.workspace-search:focus { border-color: #93b4ef; background: #fff; box-shadow: 0 0 0 3px rgba(37,99,235,.1); }
+.workspace-list-row { display: grid; width: 100%; grid-template-columns: minmax(0, 1fr) auto minmax(110px, auto) 18px; align-items: center; gap: 14px; padding: 15px 20px; text-align: left; transition: background 140ms ease; }
+.workspace-list-row:hover { background: #fafbfc; }
+.login-value-panel { position: relative; width: min(48vw, 680px); flex: 0 0 auto; align-items: center; overflow: hidden; background: #111827; padding: 64px clamp(44px, 6vw, 84px); }
+.login-value-panel::before { position: absolute; inset: -25% -30% auto auto; width: 520px; height: 520px; border-radius: 50%; background: radial-gradient(circle, rgba(37,99,235,.30), transparent 66%); content: ''; }
+
+@media (max-width: 640px) {
+  .workspace-page-header, .workspace-toolbar { align-items: stretch; flex-direction: column; }
+  .workspace-list-row { grid-template-columns: minmax(0, 1fr) auto 16px; padding: 14px 16px; }
+  .workspace-list-row > span:nth-child(2) { display: none; }
+  .workspace-title { font-size: 28px; }
 }
 
 .workspace-primary-action {

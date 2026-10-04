@@ -270,7 +270,7 @@ export const DemoGeneratorModal: React.FC<DemoGeneratorModalProps> = ({
                     ? 'CRM Ready for Launch' 
                     : isAnalyzing 
                     ? 'Synthesizing Custom Construction CRM...' 
-                    : 'StavbaCore AI Generator'}
+                    : 'StavbaFlow AI Generator'}
                 </h2>
               </div>
             </div>
@@ -624,7 +624,7 @@ export const DemoGeneratorModal: React.FC<DemoGeneratorModalProps> = ({
           <div className="px-6 py-3 border-t border-slate-200/60 bg-slate-50/60 flex items-center justify-between text-[11px] text-slate-500">
             <span className="flex items-center gap-1.5">
               <ShieldCheck className="w-3.5 h-3.5 text-brand-primary" />
-              StavbaCore Enterprise Engine
+              StavbaFlow Enterprise Engine
             </span>
             <span>Real-time Gemini & Computer Vision</span>
           </div>

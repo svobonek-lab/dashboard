@@ -1,4 +1,15 @@
 import { createClient } from '@supabase/supabase-js';
+import { timingSafeEqual } from 'node:crypto';
+
+function secretsMatch(provided: string, expected: string): boolean {
+  const actualBuffer = Buffer.from(provided);
+  const expectedBuffer = Buffer.from(expected);
+  if (actualBuffer.length !== expectedBuffer.length) {
+    timingSafeEqual(expectedBuffer, expectedBuffer);
+    return false;
+  }
+  return timingSafeEqual(actualBuffer, expectedBuffer);
+}
 
 // Server-side email scheduler & outbox worker
 // Implements the audit recommendation: DB event -> app_email_outbox -> scheduler worker -> Resend.
@@ -10,19 +21,16 @@ export default async function outboxSchedulerHandler(req: any, res: any) {
 
   // Check Cron Secret (fail-closed: return 500 if CRON_SECRET is not configured)
   const cronSecret = process.env.CRON_SECRET;
-  if (!cronSecret) {
-    res.status(500).json({ error: 'CRON_SECRET není nakonfigurován na serveru (fail-closed).' });
-    return;
-  }
-
   const authHeader = req.headers?.authorization || req.headers?.Authorization;
-  if (!authHeader || authHeader !== `Bearer ${cronSecret}`) {
-    res.status(401).json({ error: 'Neautorizovaný přístup. Neplatný nebo chybějící CRON_SECRET Bearer token.' });
+  const providedSecret = String(authHeader || '').replace(/^Bearer\s+/i, '').trim();
+  if (!cronSecret || !providedSecret || !secretsMatch(providedSecret, cronSecret)) {
+    res.status(401).json({ error: 'Neautorizovaný přístup.' });
     return;
   }
 
   const resendApiKey = process.env.RESEND_API_KEY;
-  if (!resendApiKey) {
+  const emailFrom = process.env.EMAIL_FROM;
+  if (!resendApiKey || !emailFrom) {
     res.status(503).json({ success: false, code: 'EMAIL_PROVIDER_NOT_CONFIGURED', error: 'Odesílání e-mailů není nakonfigurované.' });
     return;
   }
@@ -104,7 +112,7 @@ export default async function outboxSchedulerHandler(req: any, res: any) {
             'Idempotency-Key': `outbox/${email.id}`,
           },
           body: JSON.stringify({
-            from: process.env.EMAIL_FROM || 'StavbaCore <notifikace@stavbacore.cz>',
+            from: emailFrom,
             to: email.recipient || email.to,
             subject: email.subject,
             html: email.body_html || email.body

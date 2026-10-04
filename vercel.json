@@ -13,21 +13,33 @@
   ],
   "headers": [
     {
-      "source": "/widget-iframe",
+      "source": "/(widget-iframe|inquiry|form)/:path*",
       "headers": [
         {
           "key": "Content-Security-Policy",
-          "value": "frame-ancestors *"
+          "value": "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://unpkg.com; img-src 'self' data: blob: https:; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://*.ingest.sentry.io; font-src 'self' data:; frame-ancestors *; base-uri 'self'; form-action 'self'"
         },
         {
           "key": "X-Content-Type-Options",
           "value": "nosniff"
+        },
+        {
+          "key": "Referrer-Policy",
+          "value": "strict-origin-when-cross-origin"
+        },
+        {
+          "key": "Strict-Transport-Security",
+          "value": "max-age=31536000; includeSubDomains"
         }
       ]
     },
     {
-      "source": "/((?!widget-iframe).*)",
+      "source": "/((?!widget-iframe|inquiry|form).*)",
       "headers": [
+        {
+          "key": "Content-Security-Policy",
+          "value": "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://unpkg.com; img-src 'self' data: blob: https:; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://*.ingest.sentry.io; font-src 'self' data:; frame-src 'self'; frame-ancestors 'self'; base-uri 'self'; form-action 'self'"
+        },
         {
           "key": "X-Content-Type-Options",
           "value": "nosniff"
@@ -42,7 +54,11 @@
         },
         {
           "key": "Permissions-Policy",
-          "value": "camera=(), microphone=(self), geolocation=()"
+          "value": "camera=(), microphone=(), geolocation=()"
+        },
+        {
+          "key": "Strict-Transport-Security",
+          "value": "max-age=31536000; includeSubDomains"
         }
       ]
     }
