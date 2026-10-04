@@ -1,0 +1,11 @@
+**
+!connector/
+connector/**
+!connector/package.json
+!connector/package-lock.json
+!connector/tsconfig.json
+!connector/src/
+!connector/src/**
+!shared/
+shared/**
+!shared/connectorProtocol.ts

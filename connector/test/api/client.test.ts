@@ -29,6 +29,16 @@ test('signs canonical requests and retries only transient responses', async () =
   assert.equal(attempts, 2);
 });
 
+test('enrollment returns the server-bound connector and company identities', async () => {
+  const directory = await mkdtemp(join(tmpdir(), 'stavbaflow-client-'));
+  const identity = await loadOrCreateIdentity(join(directory, 'identity.json'));
+  const api = new ConnectorApi({
+    baseUrl: 'https://app.example.test', identity,
+    fetcher: async () => new Response(JSON.stringify({ connectorId: 'connector-1', companyId: 'company-1' }), { status: 200 }),
+  });
+  assert.deepEqual(await api.enroll('one-time-code'), { connectorId: 'connector-1', companyId: 'company-1' });
+});
+
 test('does not retry authorization failures or expose response details', async () => {
   const directory = await mkdtemp(join(tmpdir(), 'stavbaflow-client-'));
   const identity = await loadOrCreateIdentity(join(directory, 'identity.json'));
@@ -71,5 +81,6 @@ test('strict config reads password from a file and rejects unsafe paths and unkn
   }));
   assert.equal((await loadConnectorConfig(configPath)).database.password, 'file-secret');
   assert.throws(() => parseConnectorConfig({ apiBaseUrl: 'http://public.example.test', stateRoot: root, identityPath: join(root, 'identity'), mappingPath: join(root, 'mapping'), syncIntervalSeconds: 59, database: {}, extra: true }), /unknown config key: extra/);
+  assert.throws(() => parseConnectorConfig({ apiBaseUrl: 'https://app.example.test', stateRoot: './relative', identityPath: join(root, 'identity'), mappingPath: join(root, 'mapping'), syncIntervalSeconds: 60, database: { driver: 'postgres', host: 'db', port: 5432, database: 'x', username: 'x', passwordFile: passwordPath } }), /stateRoot must be absolute/);
   assert.throws(() => parseConnectorConfig({ apiBaseUrl: 'https://app.example.test', stateRoot: root, identityPath: 'C:/outside/identity', mappingPath: join(root, 'mapping'), syncIntervalSeconds: 60, database: { driver: 'postgres', host: 'db', port: 5432, database: 'x', username: 'x', passwordFile: passwordPath } }), /inside stateRoot/);
 });

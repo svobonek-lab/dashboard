@@ -36,7 +36,7 @@ export class ConnectorApi {
     this.maxBodyBytes = options.maxBodyBytes ?? 512 * 1024;
   }
 
-  async enroll(enrollmentCode: string): Promise<{ connectorId: string }> {
+  async enroll(enrollmentCode: string): Promise<{ connectorId: string; companyId: string }> {
     return this.request('/api/connector-register', { enrollmentCode, publicKey: this.options.identity.publicKey }, false);
   }
 

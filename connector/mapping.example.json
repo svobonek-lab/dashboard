@@ -1,0 +1,16 @@
+{
+  "version": 1,
+  "mappingVersion": 1,
+  "entityType": "lead",
+  "sourceSystem": "customer-database",
+  "schema": "public",
+  "table": "leads",
+  "externalIdColumn": "id",
+  "updatedAtColumn": "updated_at",
+  "deletedAtColumn": "deleted_at",
+  "fields": [
+    { "sourceColumn": "title", "targetField": "title", "conversion": { "kind": "text" }, "required": true },
+    { "sourceColumn": "email", "targetField": "description", "conversion": { "kind": "text" } },
+    { "sourceColumn": "value", "targetField": "value", "conversion": { "kind": "number" } }
+  ]
+}

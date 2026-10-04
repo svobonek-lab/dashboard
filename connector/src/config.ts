@@ -42,6 +42,12 @@ function assertInside(root: string, path: string, field: string): string {
   return absolutePath;
 }
 
+function absolutePath(value: unknown, field: string): string {
+  const path = requiredString(value, field);
+  if (!isAbsolute(path)) throw new Error(`${field} must be absolute`);
+  return resolve(path);
+}
+
 export function parseConnectorConfig(value: unknown): Omit<ConnectorConfig, 'database'> & { database: Omit<SourceAdapterConfig, 'password'>; databasePasswordFile: string } {
   if (!value || typeof value !== 'object' || Array.isArray(value)) throw new Error('connector config must be an object');
   const input = value as Record<string, unknown>;
@@ -53,8 +59,9 @@ export function parseConnectorConfig(value: unknown): Omit<ConnectorConfig, 'dat
   const apiBaseUrl = new URL(requiredString(input.apiBaseUrl, 'apiBaseUrl'));
   if (apiBaseUrl.protocol !== 'https:' && !(apiBaseUrl.protocol === 'http:' && ['localhost', '127.0.0.1'].includes(apiBaseUrl.hostname))) throw new Error('apiBaseUrl requires HTTPS');
   if (apiBaseUrl.username || apiBaseUrl.password || apiBaseUrl.search || apiBaseUrl.hash) throw new Error('apiBaseUrl must not contain credentials or query data');
-  const stateRoot = resolve(requiredString(input.stateRoot, 'stateRoot'));
-  if (!isAbsolute(stateRoot)) throw new Error('stateRoot must be absolute');
+  const stateRootInput = requiredString(input.stateRoot, 'stateRoot');
+  if (!isAbsolute(stateRootInput)) throw new Error('stateRoot must be absolute');
+  const stateRoot = resolve(stateRootInput);
   const syncIntervalSeconds = Number(input.syncIntervalSeconds);
   if (!Number.isInteger(syncIntervalSeconds) || syncIntervalSeconds < 60) throw new Error('syncIntervalSeconds must be at least 60');
   if (!['postgres', 'mysql', 'mariadb', 'mssql'].includes(database.driver)) throw new Error('database driver is unsupported');
@@ -65,11 +72,11 @@ export function parseConnectorConfig(value: unknown): Omit<ConnectorConfig, 'dat
     apiBaseUrl: apiBaseUrl.origin,
     stateRoot,
     identityPath: assertInside(stateRoot, requiredString(input.identityPath, 'identityPath'), 'identityPath'),
-    mappingPath: assertInside(stateRoot, requiredString(input.mappingPath, 'mappingPath'), 'mappingPath'),
+    mappingPath: absolutePath(input.mappingPath, 'mappingPath'),
     syncIntervalSeconds,
     connectorId: typeof input.connectorId === 'string' && input.connectorId.trim() ? input.connectorId.trim() : undefined,
-    enrollmentCodeFile: typeof input.enrollmentCodeFile === 'string' ? input.enrollmentCodeFile : undefined,
-    databasePasswordFile: requiredString(database.passwordFile, 'database.passwordFile'),
+    enrollmentCodeFile: typeof input.enrollmentCodeFile === 'string' ? absolutePath(input.enrollmentCodeFile, 'enrollmentCodeFile') : undefined,
+    databasePasswordFile: absolutePath(database.passwordFile, 'database.passwordFile'),
     database: {
       driver: database.driver,
       host: requiredString(database.host, 'database.host'),

@@ -1,0 +1,9 @@
+node_modules
+dist
+test
+compose.test.yaml
+*.log
+.env*
+config.json
+mapping.json
+secrets

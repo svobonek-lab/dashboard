@@ -26,7 +26,8 @@ function requireNonEmptyString(value: unknown, field: string): string {
 }
 
 function normalizeJson(value: unknown, path: string): JsonValue {
-  if (value === null || typeof value === 'boolean') return value;
+  if (value === null) return null;
+  if (typeof value === 'boolean') return value;
   if (typeof value === 'string') return value.normalize('NFC');
   if (typeof value === 'number') {
     if (!Number.isFinite(value)) throw new Error(`${path} must be JSON-safe`);

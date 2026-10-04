@@ -5,6 +5,7 @@ import {
   fingerprintCanonicalRecord,
   validateCanonicalRecord,
 } from '../../src/protocol/canonical.js';
+import type { JsonValue } from '../../../shared/connectorProtocol.js';
 
 const base = {
   version: 1 as const,
@@ -14,7 +15,7 @@ const base = {
   fingerprint: '0'.repeat(64),
 };
 
-function customer(payload: Record<string, unknown>) {
+function customer(payload: Record<string, JsonValue>) {
   return { ...base, type: 'customer' as const, payload };
 }
 

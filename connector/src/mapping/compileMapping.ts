@@ -92,7 +92,7 @@ export function compileMapping(mapping: EntityMappingV1, schema: SourceSchema): 
           continue;
         }
         const converted = convert(raw, rule.conversion);
-        if (!converted.ok) {
+        if (converted.ok === false) {
           issues.push({ sourceColumn: rule.sourceColumn, targetField: rule.targetField, code: converted.code });
           continue;
         }
