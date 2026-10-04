@@ -92,7 +92,7 @@ export class MssqlSourceAdapter implements SourceAdapter {
   async verifyReadOnly(): Promise<ReadOnlyReport> {
     const schema = this.schemaCache ?? await this.inspectSchema();
     const table = schema.tables[0];
-    if (!table) return { selectAllowed: true, writesDenied: true };
+    if (!table) return { selectAllowed: false, writesDenied: false };
     const transaction = new sql.Transaction(await this.connect());
     let writesDenied = false;
     await transaction.begin();

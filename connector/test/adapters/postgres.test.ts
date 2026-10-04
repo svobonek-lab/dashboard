@@ -17,6 +17,13 @@ test('selects the PostgreSQL adapter without opening a connection', () => {
   assert.equal(adapter.driver, 'postgres');
 });
 
+test('PostgreSQL read-only proof fails closed when no readable table exists', async () => {
+  const adapter = createSourceAdapter({ driver: 'postgres', host: 'db.example.test', port: 5432, database: 'fixture', username: 'reader', password: 'secret' });
+  adapter.inspectSchema = async () => ({ inspectedAt: new Date(0).toISOString(), tables: [] });
+  assert.deepEqual(await adapter.verifyReadOnly(), { selectAllowed: false, writesDenied: false });
+  await adapter.close();
+});
+
 test('PostgreSQL adapter contract', { skip: process.env.RUN_DB_INTEGRATION !== '1' }, async () => {
   await assertAdapterContract({
     create: createSourceAdapter,

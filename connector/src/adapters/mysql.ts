@@ -88,7 +88,7 @@ export class MysqlSourceAdapter implements SourceAdapter {
   async verifyReadOnly(): Promise<ReadOnlyReport> {
     const schema = this.schemaCache ?? await this.inspectSchema();
     const table = schema.tables[0];
-    if (!table) return { selectAllowed: true, writesDenied: true };
+    if (!table) return { selectAllowed: false, writesDenied: false };
     const connection = await this.connection();
     let writesDenied = false;
     try {

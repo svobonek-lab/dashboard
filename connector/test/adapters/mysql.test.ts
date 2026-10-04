@@ -16,6 +16,13 @@ test('selects MariaDB and MySQL adapters without opening a connection', () => {
   assert.equal(createSourceAdapter({ driver: 'mariadb', host: 'db.example.test', port: 3306, database: 'fixture', username: 'reader', password: 'secret' }).driver, 'mariadb');
 });
 
+test('MariaDB read-only proof fails closed when no readable table exists', async () => {
+  const adapter = createSourceAdapter({ driver: 'mariadb', host: 'db.example.test', port: 3306, database: 'fixture', username: 'reader', password: 'secret' });
+  adapter.inspectSchema = async () => ({ inspectedAt: new Date(0).toISOString(), tables: [] });
+  assert.deepEqual(await adapter.verifyReadOnly(), { selectAllowed: false, writesDenied: false });
+  await adapter.close();
+});
+
 test('MariaDB adapter contract', { skip: process.env.RUN_DB_INTEGRATION !== '1' }, async () => {
   await assertAdapterContract({
     create: createSourceAdapter,

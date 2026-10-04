@@ -78,7 +78,7 @@ export class PostgresSourceAdapter implements SourceAdapter {
   async verifyReadOnly(): Promise<ReadOnlyReport> {
     const schema = this.schemaCache ?? await this.inspectSchema();
     const table = schema.tables[0];
-    if (!table) return { selectAllowed: true, writesDenied: true };
+    if (!table) return { selectAllowed: false, writesDenied: false };
     const client = await this.pool.connect();
     let writesDenied = false;
     try {

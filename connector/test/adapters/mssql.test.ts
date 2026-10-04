@@ -15,6 +15,13 @@ test('selects the SQL Server adapter without opening a connection', () => {
   assert.equal(createSourceAdapter({ driver: 'mssql', host: 'db.example.test', port: 1433, database: 'fixture', username: 'reader', password: 'secret' }).driver, 'mssql');
 });
 
+test('SQL Server read-only proof fails closed when no readable table exists', async () => {
+  const adapter = createSourceAdapter({ driver: 'mssql', host: 'db.example.test', port: 1433, database: 'fixture', username: 'reader', password: 'secret' });
+  adapter.inspectSchema = async () => ({ inspectedAt: new Date(0).toISOString(), tables: [] });
+  assert.deepEqual(await adapter.verifyReadOnly(), { selectAllowed: false, writesDenied: false });
+  await adapter.close();
+});
+
 test('SQL Server adapter contract', { skip: process.env.RUN_DB_INTEGRATION !== '1' }, async () => {
   await assertAdapterContract({
     create: createSourceAdapter,
