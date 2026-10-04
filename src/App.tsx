@@ -50,7 +50,6 @@ const { surface: deploymentSurface, appUrl } = getDeploymentConfig((import.meta 
 const InstallStudio = React.lazy(() => import('@/features/InstallStudio').then(module => ({ default: module.InstallStudio })));
 const AdminPanel = React.lazy(() => import('@/features/AdminPanel').then(module => ({ default: module.AdminPanel })));
 const LandingPage = React.lazy(() => import('@/features/LandingPage').then(module => ({ default: module.LandingPage })));
-const InteractiveStoryDemo = React.lazy(() => import('@/features/InteractiveStoryDemo').then(module => ({ default: module.InteractiveStoryDemo })));
 
 function ExternalRedirect({ url }: { url: string }) {
   useEffect(() => {
@@ -416,14 +415,6 @@ function AppContent() {
 
   if (pathname === '/landing' || pathname === '/prezentace') {
     return <LandingPage />;
-  }
-
-  if (pathname === '/demo' || pathname === '/interaktivni-demo') {
-    return (
-      <div className="min-h-screen bg-[#F8FAFC] p-4 sm:p-8">
-        <InteractiveStoryDemo />
-      </div>
-    );
   }
 
   if (pathname === '/unauthorized') {

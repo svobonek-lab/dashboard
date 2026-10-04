@@ -26,13 +26,22 @@ import {
 import { useRouter } from '../src/app/router';
 import { buildSalesContact, getSalesContactMode } from '../src/app/salesContact';
 
-const COMPANY_NAME = ((import.meta as any).env?.VITE_COMPANY_NAME || '').trim() || 'DOPLNIT';
+const PUBLIC_CONTACT_EMAIL = 'svobonek@gmail.com';
+const PUBLIC_CONTACT_ADDRESS = 'Vincence Makovského 4428/11';
+const LEGAL_COMPANY_NAME = ((import.meta as any).env?.VITE_COMPANY_NAME || '').trim();
+const COMPANY_NAME = LEGAL_COMPANY_NAME || 'StavbaFlow';
 const COMPANY_ICO = ((import.meta as any).env?.VITE_COMPANY_ICO || '').trim();
-const COMPANY_ADDRESS = ((import.meta as any).env?.VITE_COMPANY_ADDRESS || '').trim() || 'DOPLNIT';
-const COMPANY_EMAIL = ((import.meta as any).env?.VITE_COMPANY_EMAIL || '').trim() || 'DOPLNIT';
-const COMPANY_PHONE = ((import.meta as any).env?.VITE_COMPANY_PHONE || '').trim() || 'DOPLNIT';
-const COMPANY_DETAILS_CONFIGURED = [COMPANY_NAME, COMPANY_ADDRESS, COMPANY_EMAIL, COMPANY_PHONE].every((value) => value !== 'DOPLNIT');
-const SALES_CONTACT = getSalesContactMode((import.meta as any).env || {});
+const COMPANY_ADDRESS = ((import.meta as any).env?.VITE_COMPANY_ADDRESS || '').trim() || PUBLIC_CONTACT_ADDRESS;
+const COMPANY_EMAIL = ((import.meta as any).env?.VITE_COMPANY_EMAIL || '').trim() || PUBLIC_CONTACT_EMAIL;
+const COMPANY_PHONE = ((import.meta as any).env?.VITE_COMPANY_PHONE || '').trim();
+const COMPANY_LEGAL_DETAILS_CONFIGURED = Boolean(COMPANY_ICO)
+  && Boolean(LEGAL_COMPANY_NAME)
+  && Boolean(COMPANY_ADDRESS)
+  && Boolean(COMPANY_EMAIL);
+const SALES_CONTACT = getSalesContactMode({
+  ...((import.meta as any).env || {}),
+  VITE_COMPANY_EMAIL: COMPANY_EMAIL,
+});
 
 export const LandingPage: React.FC = () => {
   const { navigate } = useRouter();
@@ -668,7 +677,7 @@ export const LandingPage: React.FC = () => {
               <button onClick={() => setActiveLegalModal('dpa')} className="hover:text-white transition-colors">Zpracovatelská smlouva (DPA)</button>
             </div>
           </div>
-          {COMPANY_DETAILS_CONFIGURED && <div className="pt-4 border-t border-slate-800/80 flex flex-col sm:flex-row items-center justify-between gap-2 text-[11px] text-slate-500">
+          <div className="pt-4 border-t border-slate-800/80 flex flex-col sm:flex-row items-center justify-between gap-2 text-[11px] text-slate-500">
             <div>
               <span>
                 {[COMPANY_NAME, COMPANY_ICO ? `IČO: ${COMPANY_ICO}` : null, COMPANY_ADDRESS]
@@ -677,9 +686,10 @@ export const LandingPage: React.FC = () => {
               </span>
             </div>
             <div>
-              <span>Kontakt: {COMPANY_EMAIL} · Tel: {COMPANY_PHONE}</span>
+              <a href={`mailto:${COMPANY_EMAIL}`} className="hover:text-white transition-colors">Kontakt: {COMPANY_EMAIL}</a>
+              {COMPANY_PHONE && <span> · Tel: {COMPANY_PHONE}</span>}
             </div>
-          </div>}
+          </div>
         </div>
       </footer>
 
@@ -695,14 +705,14 @@ export const LandingPage: React.FC = () => {
               <X className="w-5 h-5" />
             </button>
 
-            {!COMPANY_DETAILS_CONFIGURED ? (
+            {!COMPANY_LEGAL_DETAILS_CONFIGURED ? (
               <div className="space-y-3">
                 <h3 className="text-base font-black text-slate-900">Právní dokumenty připravujeme</h3>
                 <p className="text-slate-600 leading-relaxed">
-                  Tento náhled běží v demonstračním režimu. Identifikační údaje provozovatele a finální znění dokumentů se doplní před podpisem smlouvy a ostrým spuštěním.
+                  Kontaktní e-mail a adresa jsou zveřejněné. Finální právní identita provozovatele, IČO a znění dokumentů se doplní před podpisem smlouvy a ostrým spuštěním.
                 </p>
                 <p className="text-slate-500 text-[11px]">
-                  Pro obchodní ukázku kontaktujte tým StavbaFlow. Do produkce se tato stránka nasadí až po právní kontrole a vyplnění firemních údajů.
+                  Pro obchodní ukázku napište na {COMPANY_EMAIL}. Dokumenty se nezobrazují jako hotové, dokud neproběhne právní kontrola a doplnění identifikačních údajů.
                 </p>
               </div>
             ) : (

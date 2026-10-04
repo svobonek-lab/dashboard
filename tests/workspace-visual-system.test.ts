@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { test } from 'node:test';
 
 test('clean workspace visual system defines the shared product language', () => {
@@ -76,6 +76,32 @@ test('project overview never invents margin, staff, photos, or handover status',
 test('simulated AI copilot is excluded from the real company workspace', () => {
   const layout = readFileSync(new URL('../src/layouts/OwnerLayout.tsx', import.meta.url), 'utf8');
   assert.match(layout, /isDemoWorkspace && <FloatingAIAssistant/);
+  assert.doesNotMatch(layout, /DemoGeneratorModal|OnboardingWizardModal/);
+});
+
+test('command palette exposes only routes inside the verified owner pilot', () => {
+  const palette = readFileSync(new URL('../components/CommandPalette.tsx', import.meta.url), 'utf8');
+  assert.match(palette, /Přehled firmy/);
+  assert.match(palette, /Poptávky/);
+  assert.match(palette, /Tým/);
+  assert.doesNotMatch(palette, /Calendar|Weather|Revenue|Synology|Quick Quote|Contracts|Enterprise Integrations/i);
+});
+
+test('deprecated simulated product modules are removed from the application source', () => {
+  const removed = [
+    '../components/AuditCard.tsx',
+    '../components/ConnectionStatusBanner.tsx',
+    '../components/DemoGeneratorModal.tsx',
+    '../components/integrations/GoogleSheetsModal.tsx',
+    '../components/integrations/SQLConnectorModal.tsx',
+    '../components/synology/SynologyConnectionWizard.tsx',
+    '../features/CustomerPortalPage.tsx',
+    '../features/DocumentsPage.tsx',
+    '../features/InteractiveStoryDemo.tsx',
+    '../features/MapView.tsx',
+    '../features/QuotesPage.tsx',
+  ];
+  for (const path of removed) assert.equal(existsSync(new URL(path, import.meta.url)), false, path);
 });
 
 test('public form and embed page use the real tenant-safe intake without simulated capabilities', () => {
