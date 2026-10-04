@@ -1,0 +1,90 @@
+import { readFile } from 'node:fs/promises';
+import { isAbsolute, relative, resolve } from 'node:path';
+
+import type { SourceAdapterConfig, SourceDriver } from './adapters/types.js';
+
+interface ConfigDatabaseInput {
+  driver: SourceDriver;
+  host: string;
+  port: number;
+  database: string;
+  username: string;
+  passwordFile: string;
+  schema?: string;
+  ssl?: boolean;
+}
+
+export interface ConnectorConfig {
+  apiBaseUrl: string;
+  stateRoot: string;
+  identityPath: string;
+  mappingPath: string;
+  syncIntervalSeconds: number;
+  connectorId?: string;
+  enrollmentCodeFile?: string;
+  database: SourceAdapterConfig;
+  databasePasswordFile: string;
+}
+
+const CONFIG_KEYS = new Set(['apiBaseUrl', 'stateRoot', 'identityPath', 'mappingPath', 'syncIntervalSeconds', 'connectorId', 'enrollmentCodeFile', 'database']);
+const DATABASE_KEYS = new Set(['driver', 'host', 'port', 'database', 'username', 'passwordFile', 'schema', 'ssl']);
+
+function requiredString(value: unknown, field: string): string {
+  if (typeof value !== 'string' || !value.trim()) throw new Error(`${field} is required`);
+  return value.trim();
+}
+
+function assertInside(root: string, path: string, field: string): string {
+  const absoluteRoot = resolve(root);
+  const absolutePath = resolve(path);
+  const relation = relative(absoluteRoot, absolutePath);
+  if (!isAbsolute(absoluteRoot) || relation.startsWith('..') || isAbsolute(relation)) throw new Error(`${field} must be inside stateRoot`);
+  return absolutePath;
+}
+
+export function parseConnectorConfig(value: unknown): Omit<ConnectorConfig, 'database'> & { database: Omit<SourceAdapterConfig, 'password'>; databasePasswordFile: string } {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) throw new Error('connector config must be an object');
+  const input = value as Record<string, unknown>;
+  for (const key of Object.keys(input)) if (!CONFIG_KEYS.has(key)) throw new Error(`unknown config key: ${key}`);
+  if (!input.database || typeof input.database !== 'object' || Array.isArray(input.database)) throw new Error('database config is required');
+  const database = input.database as unknown as ConfigDatabaseInput & Record<string, unknown>;
+  for (const key of Object.keys(database)) if (!DATABASE_KEYS.has(key)) throw new Error(`unknown database config key: ${key}`);
+
+  const apiBaseUrl = new URL(requiredString(input.apiBaseUrl, 'apiBaseUrl'));
+  if (apiBaseUrl.protocol !== 'https:' && !(apiBaseUrl.protocol === 'http:' && ['localhost', '127.0.0.1'].includes(apiBaseUrl.hostname))) throw new Error('apiBaseUrl requires HTTPS');
+  if (apiBaseUrl.username || apiBaseUrl.password || apiBaseUrl.search || apiBaseUrl.hash) throw new Error('apiBaseUrl must not contain credentials or query data');
+  const stateRoot = resolve(requiredString(input.stateRoot, 'stateRoot'));
+  if (!isAbsolute(stateRoot)) throw new Error('stateRoot must be absolute');
+  const syncIntervalSeconds = Number(input.syncIntervalSeconds);
+  if (!Number.isInteger(syncIntervalSeconds) || syncIntervalSeconds < 60) throw new Error('syncIntervalSeconds must be at least 60');
+  if (!['postgres', 'mysql', 'mariadb', 'mssql'].includes(database.driver)) throw new Error('database driver is unsupported');
+  const port = Number(database.port);
+  if (!Number.isInteger(port) || port < 1 || port > 65535) throw new Error('database port is invalid');
+
+  return {
+    apiBaseUrl: apiBaseUrl.origin,
+    stateRoot,
+    identityPath: assertInside(stateRoot, requiredString(input.identityPath, 'identityPath'), 'identityPath'),
+    mappingPath: assertInside(stateRoot, requiredString(input.mappingPath, 'mappingPath'), 'mappingPath'),
+    syncIntervalSeconds,
+    connectorId: typeof input.connectorId === 'string' && input.connectorId.trim() ? input.connectorId.trim() : undefined,
+    enrollmentCodeFile: typeof input.enrollmentCodeFile === 'string' ? input.enrollmentCodeFile : undefined,
+    databasePasswordFile: requiredString(database.passwordFile, 'database.passwordFile'),
+    database: {
+      driver: database.driver,
+      host: requiredString(database.host, 'database.host'),
+      port,
+      database: requiredString(database.database, 'database.database'),
+      username: requiredString(database.username, 'database.username'),
+      schema: typeof database.schema === 'string' && database.schema.trim() ? database.schema.trim() : undefined,
+      ssl: database.ssl === true,
+    },
+  };
+}
+
+export async function loadConnectorConfig(path: string): Promise<ConnectorConfig> {
+  const parsed = parseConnectorConfig(JSON.parse(await readFile(path, 'utf8')) as unknown);
+  const password = (await readFile(parsed.databasePasswordFile, 'utf8')).trim();
+  if (!password) throw new Error('database password file is empty');
+  return { ...parsed, database: { ...parsed.database, password } };
+}
