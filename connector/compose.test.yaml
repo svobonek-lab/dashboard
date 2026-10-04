@@ -53,4 +53,4 @@ services:
     volumes:
       - ./test/fixtures/mssql.sql:/fixture.sql:ro
     entrypoint: ["/bin/bash", "-c"]
-    command: ["/opt/mssql-tools18/bin/sqlcmd -S mssql -U sa -P 'Synthetic_admin_password_1!' -C -i /fixture.sql"]
+    command: ["/opt/mssql-tools18/bin/sqlcmd -b -S mssql -U sa -P 'Synthetic_admin_password_1!' -C -i /fixture.sql"]

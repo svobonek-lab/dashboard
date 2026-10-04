@@ -22,7 +22,7 @@ CREATE TABLE dbo.payments (id bigint PRIMARY KEY, invoice_id bigint, amount deci
 GO
 USE master;
 GO
-CREATE LOGIN fixture_reader WITH PASSWORD = 'Fixture_reader_password_1!', CHECK_POLICY = ON;
+CREATE LOGIN fixture_reader WITH PASSWORD = 'Synthetic_ReadOnly_9!', CHECK_POLICY = ON;
 GO
 USE fixture;
 GO

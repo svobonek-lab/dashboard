@@ -25,12 +25,12 @@ test('SQL Server read-only proof fails closed when no readable table exists', as
 test('SQL Server adapter contract', { skip: process.env.RUN_DB_INTEGRATION !== '1' }, async () => {
   await assertAdapterContract({
     create: createSourceAdapter,
-    config: { driver: 'mssql', host: '127.0.0.1', port: 51433, database: 'fixture', username: 'fixture_reader', password: 'Fixture_reader_password_1!' },
+    config: { driver: 'mssql', host: '127.0.0.1', port: 51433, database: 'fixture', username: 'fixture_reader', password: 'Synthetic_ReadOnly_9!' },
   });
 });
 
 test('SQL Server fixture account denies direct writes', { skip: process.env.RUN_DB_INTEGRATION !== '1' }, async () => {
-  const pool = await sql.connect({ server: '127.0.0.1', port: 51433, database: 'fixture', user: 'fixture_reader', password: 'Fixture_reader_password_1!', options: { encrypt: false, trustServerCertificate: true } });
+  const pool = await sql.connect({ server: '127.0.0.1', port: 51433, database: 'fixture', user: 'fixture_reader', password: 'Synthetic_ReadOnly_9!', options: { encrypt: false, trustServerCertificate: true } });
   try {
     await assert.rejects(pool.request().query("INSERT INTO dbo.leads (id, title, updated_at) VALUES (99, 'denied', SYSDATETIMEOFFSET())"), /permission|denied/i);
     await assert.rejects(pool.request().query("UPDATE dbo.customers SET name = 'denied' WHERE id = 1"), /permission|denied/i);
