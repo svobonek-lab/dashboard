@@ -19,13 +19,15 @@ Deliver the first controlled pilot for a small construction company: owner login
 
 ## Remaining release gates
 
-1. Review and merge PR #65, then verify the exact merged deployment in a browser.
+1. Verify the exact merged PR #65 deployment in a browser.
 2. Rotate the staging service-role key before any real customer data is introduced.
 3. Review the production metadata and proposed release changes separately. Do not copy the staging schema or configuration into production automatically.
 4. Decide whether optional business email notifications will be enabled. They require an explicitly configured and verified provider.
-5. Make the public sales page match the verified pilot and replace its non-sending booking form with a real business contact path.
+5. Merge and deploy the honest pilot sales page, configure a real business contact path and add the public legal identity.
 6. Enable leaked-password protection when the selected Supabase plan supports it; the current staging Free plan reports it as unavailable.
 7. Record the customer-specific onboarding result using `docs/pilot-operator-runbook.md` before describing that customer as live.
+
+The repository now contains a staging-only provisioning command with dry-run-by-default behavior. It remains unverified for a new synthetic tenant until the staging service-role key is rotated and the operator runs the full checklist.
 
 ## Explicitly outside the pilot
 

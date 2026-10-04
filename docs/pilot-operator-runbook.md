@@ -16,13 +16,27 @@ Record the deployment URL, Git commit and Supabase project reference. Do not cop
 
 ## 2. Provision a synthetic rehearsal company
 
-- Create company A and its owner through the reviewed tenant provisioning path.
+- Prepare the staging-only operator variables outside the repository:
+  - `STAGING_SUPABASE_URL=https://oncmtmrhmjlerbwkrecv.supabase.co`
+  - `STAGING_SUPABASE_SERVICE_ROLE_KEY` from the server-side staging secret store
+  - `STAGING_APP_URL` set to the reviewed HTTPS dashboard deployment
+- Review the plan without sending an invitation or writing data:
+
+  ```text
+  npm run provision:staging -- --name "Synthetic Company A" --slug "synthetic-company-a" --owner-name "Synthetic Owner A" --owner-email "owner-a@example.test"
+  ```
+
+- Only after the JSON plan, redirect URL and public form URL are correct, repeat the same command with `--apply`. This sends the owner invitation and creates the staging company through the service-only provisioning contract.
+- Never put the service-role value in command history, documentation, screenshots or a `VITE_` variable. The script refuses every Supabase URL except the isolated StavbaFlow staging project.
+- Create company A and its owner through this reviewed tenant provisioning path.
 - Create company B and its owner for isolation checks.
 - Use synthetic names, addresses, emails and leads.
 - Confirm each owner is routed to the owner dashboard without choosing a role.
 - Confirm neither owner can select or infer the other company.
 
 Do not continue if the app falls back to demo data, legacy tables or a local successful result.
+
+If provisioning fails after creating an Auth user or company, the operator command attempts to remove the partial staging state. Confirm the slug and Auth user are absent before retrying. Do not retry against production.
 
 ## 3. Verify employee onboarding
 

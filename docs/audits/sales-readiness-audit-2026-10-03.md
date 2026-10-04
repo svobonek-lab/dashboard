@@ -1,7 +1,7 @@
 # StavbaFlow — audit připravenosti k prodeji
 
 Datum: 2026-10-03  
-Posuzovaný stav: PR #65, commit `06d50f2`, oddělený Supabase staging `oncmtmrhmjlerbwkrecv`
+Posuzovaný stav: sloučený PR #65, commit `ed3a590`, oddělený Supabase staging `oncmtmrhmjlerbwkrecv`
 
 ## Rozhodnutí
 
@@ -25,17 +25,17 @@ Při browser testu byla nalezena a opravena chyba, kdy veřejný formulář děd
 
 ## P0 — nutné před prvním placeným pilotem
 
-### 1. Sloučit a nasadit PR #65
+### 1. Ověřit sloučený deployment PR #65
 
-Oprava přiřazování, omezení neověřených obrazovek a oprava anonymního formuláře jsou zatím pouze v draft PR. Stabilní aplikace je nesmí prodávat dříve, než bude tento přesný commit zkontrolován, sloučen a nasazen.
+PR #65 je sloučený a CI pro merge commit `ed3a590` prošlo. Před předáním pilotní firmě je ještě nutné zaznamenat browser smoke test přesného stabilního deploymentu a jeho URL.
 
 ### 2. Otočit stagingový `service_role` klíč
 
 Stagingový serverový klíč byl během ověřování ručně přenesen mezi Supabase a Vercel. Před vložením skutečných zákaznických dat musí být preventivně zneplatněn, nahrazen novým a aktualizován pouze v serverovém Vercel prostředí. Nesmí mít prefix `VITE_` ani se objevit v repozitáři nebo klientském bundle.
 
-### 3. Zavést opakovatelný onboarding firmy
+### 3. Dokončit a provozně ověřit opakovatelný onboarding firmy
 
-Stagingový kontrakt umí firmu a ownera vytvořit, ale chybí bezpečný operátorský endpoint nebo dokončený interní průvodce. Dnešní pilot lze založit ručně podle runbooku, nikoli spolehlivě během několika minut pro každého dalšího zákazníka.
+Stagingový kontrakt umí firmu a ownera vytvořit. Připravený staging-only operátorský příkaz nyní vytváří plán bez zápisu, vyžaduje explicitní `--apply`, posílá owner pozvánku a při chybě uklízí částečně vytvořený stagingový stav. Před prvním zákazníkem musí být ještě jednou proveden se syntetickou firmou po rotaci klíče a výsledek zaznamenán podle runbooku.
 
 Onboarding musí jedním auditovatelným postupem:
 
@@ -46,15 +46,13 @@ Onboarding musí jedním auditovatelným postupem:
 - pozvat zaměstnance;
 - uložit výsledek checklistu bez ukládání tajných hodnot.
 
-### 4. Opravit prodejní landing page
+### 4. Doplnit veřejný obchodní kontakt a právní identitu
 
-Landing page dnes slibuje funkce mimo ověřený pilot: SLA automatizaci, automatický follow-up nabídek, živou marži z času a materiálu, klientský portál, PDF nabídky, POHODA XML faktury, kompletní ZIP export a vlastní ERP/SQL propojení. Rezervační formulář současně výslovně říká, že se nikam neodesílá.
+Landing page byla přepsána na ověřený 30denní pilot. Neověřené SQL/ERP propojení, fakturace, klientský portál, automatický follow-up a živá evidence času, materiálu a marže jsou označené jako mimo první pilot. Kontaktní formulář už nepředstírá uložení ani potvrzenou rezervaci: otevře pouze zkontrolovanou HTTPS rezervaci nebo připravený e-mail, jinak zobrazí nedostupnost.
 
 Před spuštěním prodeje je nutné:
 
-- přepsat nabídku na skutečný rozsah Founding Pilotu;
-- odstranit nebo označit roadmapu u neověřených funkcí;
-- zprovoznit jeden skutečný kontakt/rezervaci, který nepotvrdí úspěch bez doručení;
+- nakonfigurovat jeden skutečný firemní kontakt nebo HTTPS rezervační URL;
 - doplnit veřejnou identitu dodavatele, kontakt, VOP, zásady soukromí a DPA;
 - nepoužít soukromý e-mail jako veřejný obchodní kontakt bez výslovného rozhodnutí vlastníka.
 
@@ -93,11 +91,11 @@ Pro konkrétní pilotní firmu je nutné znovu projít `docs/pilot-operator-runb
 
 ## Nejrychlejší cesta k prvnímu prodeji
 
-1. Zkontrolovat a ručně sloučit PR #65.
-2. Nasadit přesný sloučený commit na dashboard a zopakovat krátký smoke test.
-3. Otočit stagingový serverový klíč.
-4. Upravit landing page na omezený Founding Pilot a zprovoznit skutečný obchodní kontakt.
-5. Vybrat jednu pilotní firmu, ručně ji provisionovat a projít zákaznický runbook.
+1. Ověřit stabilní deployment sloučeného commitu `ed3a590` krátkým browser smoke testem.
+2. Otočit stagingový serverový klíč a změnit pouze serverovou hodnotu ve Vercelu.
+3. Nasadit poctivou landing page a opakovatelný staging onboarding z navazujícího PR.
+4. Doplnit veřejný firemní kontakt, identitu dodavatele, VOP, zásady soukromí a DPA.
+5. Vybrat jednu pilotní firmu, provisionovat ji operátorským příkazem a projít zákaznický runbook.
 6. Nabídnout 30denní řízený pilot s jasně popsanými výlukami a osobním onboardingem.
 
 Po těchto krocích lze prodávat první řízený pilot. Označení „hotový SaaS pro libovolný počet firem“ zůstává předčasné, dokud nejsou splněné P1 body.

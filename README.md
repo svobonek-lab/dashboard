@@ -62,6 +62,14 @@ Server-only settings:
 
 Follow [the pilot operator runbook](docs/pilot-operator-runbook.md). A customer is not active until owner login, employee activation, assigned-job visibility, public intake, CSV import and cross-company isolation have all been verified in the intended environment.
 
+Review a staging onboarding plan without writing data:
+
+```bash
+npm run provision:staging -- --name "Synthetic Company" --slug "synthetic-company" --owner-name "Synthetic Owner" --owner-email "owner@example.test"
+```
+
+The command is restricted to the documented staging project and requires a separate `--apply` flag before it sends an invitation or creates a company. Keep `STAGING_SUPABASE_SERVICE_ROLE_KEY` outside the repository and never expose it through a `VITE_` variable.
+
 Current staging evidence is recorded in [the pilot verification report](docs/staging-pilot-verification-20261001.md). The implementation ledger lists the remaining release actions in [docs/pilot-implementation-ledger.md](docs/pilot-implementation-ledger.md).
 
 The current decision about what can be sold, what must be completed before the first customer, and which landing-page claims exceed the verified pilot is recorded in [the 2026-10-03 sales-readiness audit](docs/audits/sales-readiness-audit-2026-10-03.md).

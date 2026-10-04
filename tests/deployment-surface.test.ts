@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { buildAppLoginUrl, getDeploymentConfig } from '../src/app/deploymentSurface';
+import { buildAppLoginUrl, getDeploymentConfig, shouldShowLandingAtRoot } from '../src/app/deploymentSurface';
 
 test('unknown deployment surface stays on the safe unified default', () => {
   assert.deepEqual(getDeploymentConfig({ VITE_DEPLOYMENT_SURFACE: 'preview' }), { surface: 'unified', appUrl: '' });
@@ -35,4 +35,10 @@ test('preview host keeps the two Vercel surfaces separated when env is missing',
     if (previousWindow === undefined) delete (globalThis as typeof globalThis & { window?: unknown }).window;
     else (globalThis as typeof globalThis & { window?: unknown }).window = previousWindow;
   }
+});
+
+test('landing root remains public even when the browser has an app session', () => {
+  assert.equal(shouldShowLandingAtRoot('landing'), true);
+  assert.equal(shouldShowLandingAtRoot('app'), false);
+  assert.equal(shouldShowLandingAtRoot('unified'), false);
 });
