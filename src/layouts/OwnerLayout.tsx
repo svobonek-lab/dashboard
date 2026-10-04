@@ -33,8 +33,6 @@ import {
 import { CRMNotification, CompanyBranding, Lead } from '@/types';
 import { NotificationCenter } from '@/components/NotificationCenter';
 import { CommandPalette } from '@/components/CommandPalette';
-import { DemoGeneratorModal } from '@/components/DemoGeneratorModal';
-import { OnboardingWizardModal } from '@/components/OnboardingWizardModal';
 import { FloatingAIAssistant } from '@/components/FloatingAIAssistant';
 import { CompanySwitcher } from '@/components/CompanySwitcher';
 import { DEFAULT_DEMO_ORG_ID } from '@/lib/supabase';
@@ -51,7 +49,7 @@ export const OwnerLayout: React.FC<OwnerLayoutProps> = ({
   leads = [],
   onSelectLead
 }) => {
-  const { currentOrg, updateBrandingAdmin } = useOrganization();
+  const { currentOrg } = useOrganization();
   const branding = currentOrg?.branding || {};
   const { 
     user, 
@@ -65,8 +63,6 @@ export const OwnerLayout: React.FC<OwnerLayoutProps> = ({
 
   // Modals & popovers
   const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
-  const [isDemoModalOpen, setIsDemoModalOpen] = useState(false);
-  const [isOnboardingOpen, setIsOnboardingOpen] = useState(false);
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const [isMobileDrawerOpen, setIsMobileDrawerOpen] = useState(false);
 
@@ -457,25 +453,6 @@ export const OwnerLayout: React.FC<OwnerLayoutProps> = ({
         }}
         leads={leads}
         branding={branding}
-      />
-
-      <DemoGeneratorModal
-        isOpen={isDemoModalOpen}
-        onClose={() => setIsDemoModalOpen(false)}
-        onDemoGenerated={(newBranding) => {
-          updateBrandingAdmin(currentOrg?.id || '', newBranding.name, newBranding.primaryColor, newBranding.logoUrl);
-          setIsDemoModalOpen(false);
-        }}
-      />
-
-      <OnboardingWizardModal
-        isOpen={isOnboardingOpen}
-        onClose={() => setIsOnboardingOpen(false)}
-        currentBranding={branding}
-        onCompleteOnboarding={(updatedBranding) => {
-          updateBrandingAdmin(currentOrg?.id || '', updatedBranding.name, updatedBranding.primaryColor, updatedBranding.logoUrl);
-          setIsOnboardingOpen(false);
-        }}
       />
 
     </div>

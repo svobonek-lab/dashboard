@@ -24,6 +24,10 @@ This is ready for a **supervised first-company pilot** after the operator checkl
 - Vercel headers now include CSP and HSTS. Only the public intake surfaces are embeddable; the dashboard remains same-origin.
 - Cron authentication uses a constant-time secret comparison and a generic external error. Email delivery requires an explicit verified `EMAIL_FROM`.
 - Admin installation, admin demo generation, landing, and interactive demo are loaded as separate chunks. The main application chunk fell below the previous Vite warning threshold.
+- The owner-approved public contact now uses `svobonek@gmail.com` and `Vincence Makovského 4428/11`; the sales CTA prepares an email and never claims it was sent.
+- Legal modals remain gated until the provider's legal name and IČO are supplied. A brand name, contact email and address are not presented as a completed legal identity.
+- The command palette now links only to the verified pilot routes and no longer advertises calendar, weather, quote, document, analytics, SQL, Synology or revenue modules.
+- Deprecated simulated product modules and their unreachable route wrappers were removed from application source instead of remaining as dormant claims.
 
 ## Automated evidence
 
@@ -51,14 +55,14 @@ The current shell does not contain staging credentials, so this change did not r
 6. Send and consume one real employee invitation, then verify recovery, logout, session expiry, assignment visibility, and status persistence.
 7. Submit one synthetic enquiry through the company's real public tenant URL and confirm it appears only for that company.
 8. Run one reviewed CSV dry-run and one idempotent commit retry before importing customer data.
-9. Add the seller's real business identity, support contact, privacy information, data-processing terms, retention policy, backup/restore ownership, and incident contact.
+9. Complete the seller's legal name and IČO, then obtain legal review for privacy information, data-processing terms, retention policy, backup/restore ownership, and incident contact. The approved public email and address are already present.
 10. Agree in writing that the first offer includes form plus controlled import; direct SQL, Synology, Google Sheets, and two-way sync are excluded until separately verified.
 
 ## Remaining release risk
 
 - Live staging was not rerun from this workstation because the required credentials are absent.
 - Production writes and production database migrations remain intentionally disabled.
-- Initial-load performance should still be measured on the deployed mobile preview even though the main application chunk is now below Vite's warning threshold.
+- Initial-load performance should still be measured on the deployed mobile preview. The main App chunk is now approximately 291 kB (74 kB gzip), down from the earlier approximately 1.35 MB bundle, and the removed simulation modules no longer ship in the application source.
 - Legal, contractual, billing, support, and incident-response readiness are business tasks outside the source-code verification.
 
 ## Sellable claim

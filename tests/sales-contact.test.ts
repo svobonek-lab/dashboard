@@ -42,3 +42,10 @@ test('landing sells only the verified founding pilot and never fakes a booking',
   assert.match(landing, /Vstupní cena 30denního pilotu/);
   assert.match(landing, /Přímé SQL\/ERP propojení není součástí pilotu/);
 });
+
+test('landing publishes the owner-approved contact but keeps legal documents gated', () => {
+  assert.match(landing, /svobonek@gmail\.com/);
+  assert.match(landing, /Vincence Makovského 4428\/11/);
+  assert.match(landing, /COMPANY_LEGAL_DETAILS_CONFIGURED/);
+  assert.match(landing, /Boolean\(COMPANY_ICO\)/);
+});

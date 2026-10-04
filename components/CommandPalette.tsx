@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Search, LayoutDashboard, Kanban, Calendar, Users, FileText, FolderOpen, BarChart3, Plus, Sparkles, X, ArrowRight, Zap, HardDrive } from 'lucide-react';
+import { Search, LayoutDashboard, Kanban, HardHat, Users, Code2, Settings, X, ArrowRight, Upload } from 'lucide-react';
 import { CompanyBranding, Lead } from '../types';
 
 interface CommandPaletteProps {
@@ -37,23 +37,23 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
 
   if (!isOpen) return null;
 
-  const filteredLeads = leads.filter(l => 
-    l.title.toLowerCase().includes(query.toLowerCase()) ||
-    l.customerName.toLowerCase().includes(query.toLowerCase()) ||
-    l.city.toLowerCase().includes(query.toLowerCase())
+  const normalizedQuery = query.trim().toLocaleLowerCase('cs');
+  const filteredLeads = leads.filter(l =>
+    [l.title, l.customerName, l.city]
+      .filter(Boolean)
+      .some((value) => String(value).toLocaleLowerCase('cs').includes(normalizedQuery))
   );
 
   const navigationActions = [
-    { id: 'dashboard', label: 'Go to Dashboard', icon: LayoutDashboard },
-    { id: 'leads', label: 'View Leads Kanban', icon: Kanban },
-    { id: 'calendar', label: 'Open Calendar & Weather', icon: Calendar },
-    { id: 'employees', label: 'Employee Workload & Capacity', icon: Users },
-    { id: 'quotes', label: 'Quick Quote Builder & PDF', icon: FileText },
-    { id: 'documents', label: 'Documents & Contracts', icon: FolderOpen },
-    { id: 'analytics', label: 'Analytics & Revenue', icon: BarChart3 },
-    { id: 'integrations', label: 'Enterprise Integrations & Data Hub', icon: Zap },
-    { id: 'integrations/synology', label: 'Synology NAS Integration & Shared Folders', icon: HardDrive },
-  ].filter(item => item.label.toLowerCase().includes(query.toLowerCase()));
+    { id: 'dashboard', label: 'Přehled firmy', icon: LayoutDashboard },
+    { id: 'sales', label: 'Prodejní přehled', icon: Kanban },
+    { id: 'leads', label: 'Poptávky', icon: Kanban },
+    { id: 'projects', label: 'Zakázky v realizaci', icon: HardHat },
+    { id: 'employees', label: 'Tým', icon: Users },
+    { id: 'widget', label: 'Poptávkový formulář', icon: Code2 },
+    { id: 'integrations', label: 'CSV import', icon: Upload },
+    { id: 'settings', label: 'Nastavení firmy', icon: Settings },
+  ].filter(item => item.label.toLocaleLowerCase('cs').includes(normalizedQuery));
 
   return (
     <div className="fixed inset-0 z-50 bg-slate-50/60 backdrop-blur-xs flex items-start justify-center pt-20 px-4">
@@ -66,7 +66,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
             type="text"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Type a command or search leads, clients, reports..."
+            placeholder="Hledat poptávku nebo otevřít část systému…"
             className="w-full text-slate-800 placeholder-slate-400 text-base focus:outline-none bg-transparent font-medium"
           />
           <button onClick={onClose} className="p-1 rounded-lg hover:bg-slate-100 text-slate-500 hover:text-slate-600">
@@ -78,7 +78,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
         <div className="max-h-96 overflow-y-auto p-4 space-y-4">
           {navigationActions.length > 0 && (
             <div>
-              <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider px-3 pb-2">Navigation & Actions</p>
+              <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider px-3 pb-2">Navigace</p>
               <div className="space-y-1">
                 {navigationActions.map(action => {
                   const Icon = action.icon;
@@ -107,7 +107,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
 
           {filteredLeads.length > 0 && (
             <div>
-              <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider px-3 pb-2">Matching Leads & Projects</p>
+              <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider px-3 pb-2">Poptávky a zakázky</p>
               <div className="space-y-1">
                 {filteredLeads.map(lead => (
                   <button
@@ -119,10 +119,12 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
                     className="w-full flex items-center justify-between p-3 rounded-2xl hover:bg-slate-50 text-slate-700 hover:text-slate-900 transition-all text-sm group"
                   >
                     <div className="flex items-center gap-3 overflow-hidden text-left">
-                      <img src={lead.thumbnail} alt="" className="w-9 h-9 rounded-xl object-cover flex-shrink-0" />
+                      <span className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl bg-blue-50 text-xs font-black text-blue-700">
+                        {(lead.customerName || lead.title || 'Z').slice(0, 1).toUpperCase()}
+                      </span>
                       <div className="overflow-hidden">
                         <p className="text-xs font-bold text-slate-900 truncate">{lead.title}</p>
-                        <p className="text-[11px] text-slate-500 truncate">{lead.customerName} • {(lead.price/1000).toFixed(0)}k CZK</p>
+                        <p className="text-[11px] text-slate-500 truncate">{[lead.customerName, lead.city].filter(Boolean).join(' · ')}</p>
                       </div>
                     </div>
                     <span className="px-2.5 py-1 rounded-lg text-[10px] font-semibold bg-brand-primary-soft text-brand-primary">
@@ -138,8 +140,8 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
         {/* Footer */}
         <div className="p-3 bg-slate-50 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
           <div className="flex items-center gap-3">
-            <span>Press <kbd className="px-1.5 py-0.5 bg-white border border-slate-200 rounded-md shadow-2xs font-mono">ESC</kbd> to close</span>
-            <span>Use <kbd className="px-1.5 py-0.5 bg-white border border-slate-200 rounded-md shadow-2xs font-mono">Ctrl + K</kbd> anytime</span>
+            <span><kbd className="px-1.5 py-0.5 bg-white border border-slate-200 rounded-md shadow-2xs font-mono">ESC</kbd> zavře nabídku</span>
+            <span><kbd className="px-1.5 py-0.5 bg-white border border-slate-200 rounded-md shadow-2xs font-mono">Ctrl + K</kbd> otevře hledání</span>
           </div>
           <span className="font-semibold text-slate-600">{branding.name} CRM</span>
         </div>
