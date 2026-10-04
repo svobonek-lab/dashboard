@@ -133,7 +133,7 @@ test('fingerprint is independent of object key order', () => {
 
 - [ ] **Step 3: Run the protocol tests and confirm they fail**
 
-Run: `npm test -- canonical.test.ts` from `connector/`  
+Run: `npm test -- canonical.test.ts` from `connector/`
 Expected: FAIL because the protocol module does not exist.
 
 - [ ] **Step 4: Implement discriminated canonical types and explicit field allowlists**
@@ -157,7 +157,7 @@ Use `node:crypto` `generateKeyPairSync('ed25519')`, export the public key as SPK
 
 - [ ] **Step 7: Run connector unit checks**
 
-Run: `npm test && npm run lint && npm run build` from `connector/`  
+Run: `npm test && npm run lint && npm run build` from `connector/`
 Expected: all protocol and identity tests pass; TypeScript emits `connector/dist` without errors.
 
 - [ ] **Step 8: Commit the protocol boundary**
@@ -188,7 +188,7 @@ Create an acknowledged checkpoint, queue a second page, reconstruct all stores f
 
 - [ ] **Step 2: Run state tests and confirm missing modules fail**
 
-Run: `npm test -- outbox.test.ts checkpoints.test.ts` from `connector/`  
+Run: `npm test -- outbox.test.ts checkpoints.test.ts` from `connector/`
 Expected: FAIL with module-not-found errors.
 
 - [ ] **Step 3: Implement atomic JSON storage and filesystem outbox**
@@ -211,7 +211,7 @@ Keep record validation failures as `partial_failure`; count transport, authoriza
 
 - [ ] **Step 6: Verify and commit durable state**
 
-Run: `npm test && npm run lint` from `connector/`  
+Run: `npm test && npm run lint` from `connector/`
 Expected: crash recovery, deduplication, pause, and overlap tests pass.
 
 ```bash
@@ -254,7 +254,7 @@ For each engine, issue direct `INSERT`, `UPDATE`, and `DELETE` attempts through 
 
 - [ ] **Step 4: Start the three database containers and confirm tests fail**
 
-Run: `docker compose -f connector/compose.test.yaml up -d --wait` then `npm run test:integration` from `connector/`  
+Run: `docker compose -f connector/compose.test.yaml up -d --wait` then `npm run test:integration` from `connector/`
 Expected: FAIL because adapter implementations are absent.
 
 - [ ] **Step 5: Implement PostgreSQL adapter**
@@ -271,7 +271,7 @@ Use `mssql`, bracket identifiers only after allowlist validation, named paramete
 
 - [ ] **Step 8: Run integration tests twice to prove restart/idempotent behavior**
 
-Run: `npm run test:integration && npm run test:integration` from `connector/`  
+Run: `npm run test:integration && npm run test:integration` from `connector/`
 Expected: both runs pass; no fixture table contents change.
 
 - [ ] **Step 9: Stop containers and commit adapters**
