@@ -27,7 +27,8 @@ export const publicSupabase = isSupabaseConfigured
       auth: {
         persistSession: false,
         autoRefreshToken: false,
-        detectSessionInUrl: false
+        detectSessionInUrl: false,
+        storageKey: 'stavbaflow-public-anon'
       }
     })
   : null;

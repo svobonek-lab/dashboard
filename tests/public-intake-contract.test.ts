@@ -27,6 +27,7 @@ test('public intake resolves only an explicit tenant key from query or supported
 test('public intake never inherits an authenticated dashboard session', () => {
   assert.match(supabaseClient, /export const publicSupabase/);
   assert.match(supabaseClient, /persistSession:\s*false/);
+  assert.match(supabaseClient, /storageKey:\s*['"]stavbaflow-public-anon['"]/);
   assert.match(supabaseClient, /autoRefreshToken:\s*false/);
   assert.match(supabaseClient, /detectSessionInUrl:\s*false/);
   assert.match(widget, /publicSupabase\.rpc\('app_get_public_company'/);
