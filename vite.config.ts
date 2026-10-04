@@ -11,6 +11,10 @@ import connectorRegisterHandler from './api/connector-register';
 import connectorHeartbeatHandler from './api/connector-heartbeat';
 import connectorIngestHandler from './api/connector-ingest';
 import connectorCommandsHandler from './api/connector-commands';
+import connectorEnrollHandler from './api/connector-enroll';
+import connectorStatusHandler from './api/connector-status';
+import connectorMappingHandler from './api/connector-mapping';
+import connectorCommandHandler from './api/connector-command';
 
 function apiMiddlewarePlugin(): Plugin {
   return {
@@ -91,6 +95,10 @@ function apiMiddlewarePlugin(): Plugin {
           '/api/connector-heartbeat': connectorHeartbeatHandler,
           '/api/connector-ingest': connectorIngestHandler,
           '/api/connector-commands': connectorCommandsHandler,
+          '/api/connector-enroll': connectorEnrollHandler,
+          '/api/connector-status': connectorStatusHandler,
+          '/api/connector-mapping': connectorMappingHandler,
+          '/api/connector-command': connectorCommandHandler,
         };
         const connectorHandler = req.url ? connectorRoutes[req.url] : undefined;
         if (connectorHandler && req.method === 'POST') {

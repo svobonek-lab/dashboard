@@ -171,4 +171,51 @@ end; $$;
 revoke all on function public.app_ack_connector_command(uuid, uuid) from public, anon, authenticated;
 grant execute on function public.app_ack_connector_command(uuid, uuid) to service_role;
 
+create or replace function public.app_create_connector_enrollment(p_company_id uuid, p_user_id uuid, p_code_hash bytea, p_expires_at timestamptz)
+returns uuid language plpgsql security definer set search_path = public, pg_temp as $$
+declare v_id uuid;
+begin
+  if not exists(select 1 from public.app_members where company_id=p_company_id and user_id=p_user_id and active and role='owner') then raise exception 'owner required'; end if;
+  if p_expires_at>now()+interval '15 minutes' or p_expires_at<=now() then raise exception 'expiry invalid'; end if;
+  insert into public.app_connector_enrollments(company_id,code_hash,created_by,expires_at) values(p_company_id,p_code_hash,p_user_id,p_expires_at) returning id into v_id;
+  return v_id;
+end; $$;
+revoke all on function public.app_create_connector_enrollment(uuid, uuid, bytea, timestamptz) from public, anon, authenticated;
+grant execute on function public.app_create_connector_enrollment(uuid, uuid, bytea, timestamptz) to service_role;
+
+create or replace function public.app_owner_connector_status(p_company_id uuid, p_user_id uuid)
+returns jsonb language sql security definer set search_path = public, pg_temp as $$
+  select case when exists(select 1 from public.app_members where company_id=p_company_id and user_id=p_user_id and active and role='owner') then
+    coalesce((select jsonb_agg(jsonb_build_object('id',c.id,'status',case when c.revoked_at is not null then 'revoked' else c.status end,'version',c.version,'lastHeartbeatAt',c.last_heartbeat_at,'mappingVersion',(select max(m.version) from public.app_connector_mappings m where m.connector_id=c.id))) from public.app_connectors c where c.company_id=p_company_id),'[]'::jsonb)
+  else '[]'::jsonb end
+$$;
+revoke all on function public.app_owner_connector_status(uuid, uuid) from public, anon, authenticated;
+grant execute on function public.app_owner_connector_status(uuid, uuid) to service_role;
+
+create or replace function public.app_save_connector_mapping(p_company_id uuid,p_user_id uuid,p_connector_id uuid,p_definition jsonb)
+returns integer language plpgsql security definer set search_path = public, pg_temp as $$
+declare v_version integer;
+begin
+  if not exists(select 1 from public.app_members where company_id=p_company_id and user_id=p_user_id and active and role='owner') or not exists(select 1 from public.app_connectors where id=p_connector_id and company_id=p_company_id and revoked_at is null) then raise exception 'owner required'; end if;
+  select coalesce(max(version),0)+1 into v_version from public.app_connector_mappings where connector_id=p_connector_id;
+  insert into public.app_connector_mappings(connector_id,company_id,version,definition) values(p_connector_id,p_company_id,v_version,p_definition);
+  insert into public.app_connector_commands(company_id,connector_id,command_type,mapping_version,expires_at) values(p_company_id,p_connector_id,'refresh_mapping',v_version,now()+interval '15 minutes');
+  return v_version;
+end; $$;
+revoke all on function public.app_save_connector_mapping(uuid, uuid, uuid, jsonb) from public, anon, authenticated;
+grant execute on function public.app_save_connector_mapping(uuid, uuid, uuid, jsonb) to service_role;
+
+create or replace function public.app_owner_connector_command(p_company_id uuid,p_user_id uuid,p_connector_id uuid,p_command text)
+returns boolean language plpgsql security definer set search_path = public, pg_temp as $$
+begin
+  if not exists(select 1 from public.app_members where company_id=p_company_id and user_id=p_user_id and active and role='owner') then return false; end if;
+  if p_command='revoke' then update public.app_connectors set revoked_at=coalesce(revoked_at,now()),status='revoked' where id=p_connector_id and company_id=p_company_id; return found; end if;
+  if p_command not in ('sync_now','pause','resume','refresh_mapping','rotate_identity') then return false; end if;
+  insert into public.app_connector_commands(company_id,connector_id,command_type,expires_at)
+    select company_id,id,p_command,now()+interval '15 minutes' from public.app_connectors where id=p_connector_id and company_id=p_company_id and revoked_at is null;
+  return found;
+end; $$;
+revoke all on function public.app_owner_connector_command(uuid, uuid, uuid, text) from public, anon, authenticated;
+grant execute on function public.app_owner_connector_command(uuid, uuid, uuid, text) to service_role;
+
 commit;
