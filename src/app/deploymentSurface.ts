@@ -23,3 +23,7 @@ export function buildAppLoginUrl(appUrl: string, search = ''): string {
   if (!normalized) return '/login';
   return `${normalized}/login${search.startsWith('?') ? search : search ? `?${search}` : ''}`;
 }
+
+export function shouldShowLandingAtRoot(surface: DeploymentSurface): boolean {
+  return surface === 'landing';
+}

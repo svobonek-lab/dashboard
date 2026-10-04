@@ -24,7 +24,7 @@ import {
   X
 } from 'lucide-react';
 import { useRouter } from '../src/app/router';
-import { supabase, isSupabaseConfigured } from '../lib/supabase';
+import { buildSalesContact, getSalesContactMode } from '../src/app/salesContact';
 
 const COMPANY_NAME = ((import.meta as any).env?.VITE_COMPANY_NAME || '').trim() || 'DOPLNIT';
 const COMPANY_ICO = ((import.meta as any).env?.VITE_COMPANY_ICO || '').trim();
@@ -32,6 +32,7 @@ const COMPANY_ADDRESS = ((import.meta as any).env?.VITE_COMPANY_ADDRESS || '').t
 const COMPANY_EMAIL = ((import.meta as any).env?.VITE_COMPANY_EMAIL || '').trim() || 'DOPLNIT';
 const COMPANY_PHONE = ((import.meta as any).env?.VITE_COMPANY_PHONE || '').trim() || 'DOPLNIT';
 const COMPANY_DETAILS_CONFIGURED = [COMPANY_NAME, COMPANY_ADDRESS, COMPANY_EMAIL, COMPANY_PHONE].every((value) => value !== 'DOPLNIT');
+const SALES_CONTACT = getSalesContactMode((import.meta as any).env || {});
 
 export const LandingPage: React.FC = () => {
   const { navigate } = useRouter();
@@ -44,7 +45,6 @@ export const LandingPage: React.FC = () => {
   const [bookingEmail, setBookingEmail] = useState('');
   const [bookingDate, setBookingDate] = useState('Pondělí 10:00');
   const [bookingSuccess, setBookingSuccess] = useState(false);
-  const [bookingStoredLocally, setBookingStoredLocally] = useState(false);
   const [bookingError, setBookingError] = useState<string | null>(null);
   const [isBookingLoading, setIsBookingLoading] = useState(false);
   const [activeLegalModal, setActiveLegalModal] = useState<'vop' | 'gdpr' | 'dpa' | null>(null);
@@ -61,8 +61,8 @@ export const LandingPage: React.FC = () => {
   const wonPerQuarter = Math.round((calculatedQuotes * 3) * (winRate / 100));
   const additionalWonQuarter = Math.max(1, Math.round(wonPerQuarter * 0.2)); // +20% conversion or at least 1 lead
   const additionalMarginQuarter = additionalWonQuarter * avgMargin;
-  const growthCostQuarter = 6990 * 3; // 20 970 Kč
-  const roiMultiplier = (additionalMarginQuarter / growthCostQuarter).toFixed(1);
+  const foundingPilotCost = 7900;
+  const roiMultiplier = (additionalMarginQuarter / foundingPilotCost).toFixed(1);
   const adminHoursSavedQuarter = Math.round(adminHoursWeekly * 12 * 0.6); // 60% time saved on paperwork
 
   const handleBookingSubmit = async (e: React.FormEvent) => {
@@ -78,50 +78,35 @@ export const LandingPage: React.FC = () => {
       setBookingError('Zadejte prosím platné telefonní číslo (minimálně 5 znaků).');
       return;
     }
+    if (!bookingEmail.includes('@')) {
+      setBookingError('Zadejte prosím platný e-mail.');
+      return;
+    }
 
     setIsBookingLoading(true);
     try {
-      if (isSupabaseConfigured && supabase) {
-        const { error } = await supabase.rpc('submit_demo_booking', {
-          p_name: bookingName.trim(),
-          p_company: bookingCompany.trim(),
-          p_phone: bookingPhone.trim(),
-          p_email: bookingEmail.trim(),
-          p_preferred_time: bookingDate
-        });
-
-        if (error) {
-          console.error('submit_demo_booking RPC error:', error);
-          const contactMsg = COMPANY_PHONE !== 'DOPLNIT' && COMPANY_EMAIL !== 'DOPLNIT'
-            ? `kontaktujte nás prosím na ${COMPANY_PHONE} nebo ${COMPANY_EMAIL}.`
-            : 'kontaktujte prosím naši technickou podporu.';
-          setBookingError(`Rezervaci se nepodařilo odeslat, ${contactMsg}`);
-          setIsBookingLoading(false);
-          return;
-        }
-      } else {
-        // Režim bez Supabase (lokální demo)
-        const bookingData = {
-          name: bookingName.trim(),
-          company: bookingCompany.trim(),
-          phone: bookingPhone.trim(),
-          email: bookingEmail.trim(),
-          preferred_time: bookingDate,
-          status: 'new'
-        };
-        const stored = JSON.parse(localStorage.getItem('stavbacore_demo_bookings') || '[]');
-        stored.push({ ...bookingData, id: 'demo-' + Date.now(), created_at: new Date().toISOString() });
-        localStorage.setItem('stavbacore_demo_bookings', JSON.stringify(stored));
-        setBookingStoredLocally(true);
+      if (SALES_CONTACT.mode === 'booking') {
+        window.location.assign(SALES_CONTACT.target);
+        return;
       }
 
-      setBookingSuccess(true);
+      if (SALES_CONTACT.mode === 'email') {
+        const mailto = buildSalesContact(SALES_CONTACT.target, {
+          name: bookingName,
+          company: bookingCompany,
+          phone: bookingPhone,
+          email: bookingEmail,
+          preferredTime: bookingDate
+        });
+        setBookingSuccess(true);
+        window.location.assign(mailto);
+        return;
+      }
+
+      setBookingError('Obchodní kontakt zatím není nakonfigurovaný. Použijte prosím živé demo a vraťte se později.');
     } catch (err) {
-      console.error('Booking unexpected error:', err);
-      const contactMsg = COMPANY_PHONE !== 'DOPLNIT' && COMPANY_EMAIL !== 'DOPLNIT'
-        ? `kontaktujte nás prosím na ${COMPANY_PHONE} nebo ${COMPANY_EMAIL}.`
-        : 'kontaktujte prosím naši technickou podporu.';
-      setBookingError(`Rezervaci se nepodařilo odeslat, ${contactMsg}`);
+      console.error('Sales contact handoff failed:', err);
+      setBookingError('Kontaktní cestu se nepodařilo otevřít. Zkuste to prosím znovu.');
     } finally {
       setIsBookingLoading(false);
     }
@@ -180,7 +165,7 @@ export const LandingPage: React.FC = () => {
         </h1>
 
         <p className="text-base sm:text-lg text-slate-600 max-w-2xl mx-auto leading-relaxed font-medium">
-          StavbaFlow je pracovní dashboard pro stavební firmy. Poptávka, nabídka, tým i realizace jsou na jednom místě a každý vidí svůj další krok.
+          StavbaFlow je pracovní dashboard pro menší stavební firmy. Zachytí poptávku z webu, majitel ji přiřadí a zaměstnanec vidí jen práci, kterou má udělat.
         </p>
 
         <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
@@ -203,20 +188,18 @@ export const LandingPage: React.FC = () => {
         {/* Horizontal Workflow Chain */}
         <div id="jak-to-funguje" className="pt-8 border-t border-slate-200/80 max-w-3xl mx-auto">
           <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-3">
-            Jeden pracovní tok pro celou firmu
+            Ověřený pracovní tok Founding Pilotu
           </span>
           <div className="flex flex-wrap items-center justify-center gap-2 text-xs font-bold text-slate-700">
-            <span className="px-3 py-1 bg-white border border-slate-200 rounded-lg shadow-2xs">Poptávky</span>
+            <span className="px-3 py-1 bg-white border border-slate-200 rounded-lg shadow-2xs">Webový formulář</span>
             <ChevronRight className="w-3.5 h-3.5 text-slate-400" />
-            <span className="px-3 py-1 bg-white border border-slate-200 rounded-lg shadow-2xs">Nabídky</span>
+            <span className="px-3 py-1 bg-white border border-slate-200 rounded-lg shadow-2xs">Poptávka</span>
             <ChevronRight className="w-3.5 h-3.5 text-slate-400" />
-            <span className="px-3 py-1 bg-white border border-slate-200 rounded-lg shadow-2xs">Realizace</span>
+            <span className="px-3 py-1 bg-white border border-slate-200 rounded-lg shadow-2xs">Přiřazení</span>
             <ChevronRight className="w-3.5 h-3.5 text-slate-400" />
-            <span className="px-3 py-1 bg-white border border-slate-200 rounded-lg shadow-2xs">Náklady</span>
+            <span className="px-3 py-1 bg-white border border-slate-200 rounded-lg shadow-2xs">Stav zakázky</span>
             <ChevronRight className="w-3.5 h-3.5 text-slate-400" />
-            <span className="px-3 py-1 bg-white border border-slate-200 rounded-lg shadow-2xs">Předání</span>
-            <ChevronRight className="w-3.5 h-3.5 text-slate-400" />
-            <span className="px-3 py-1 bg-blue-50 border border-blue-200 text-blue-700 rounded-lg font-black">POHODA XML</span>
+            <span className="px-3 py-1 bg-blue-50 border border-blue-200 text-blue-700 rounded-lg font-black">Historie změn</span>
           </div>
         </div>
       </section>
@@ -248,7 +231,7 @@ export const LandingPage: React.FC = () => {
               </div>
               <div className="p-3 bg-blue-50/80 border border-blue-200 rounded-xl text-xs text-blue-900 font-medium">
                 <strong className="block text-blue-950 font-bold mb-0.5">Řešení StavbaFlow:</strong>
-                Každá poptávka má přiděleného vlastníka, SLA odpočet a předpřipravený hovor.
+                Každá webová poptávka se uloží do správné firmy, má jasný stav a lze ji přiřadit konkrétnímu zaměstnanci.
               </div>
             </div>
 
@@ -258,14 +241,14 @@ export const LandingPage: React.FC = () => {
                 <span className="w-8 h-8 rounded-xl bg-amber-100 text-[#FF9F0A] flex items-center justify-center font-bold text-xs">
                   02
                 </span>
-                <h3 className="text-base font-black text-slate-900">Cenová nabídka bez follow-upu</h3>
+                <h3 className="text-base font-black text-slate-900">Zakázka bez odpovědnosti</h3>
                 <p className="text-xs text-slate-600 leading-relaxed">
-                  Kancelář stráví 4 hodiny kalkulací a odešle PDF. Pak se na nabídku zapomene. Zákazník váhá nebo má doplňující dotaz, ale nikdo se neozve. Zakázka vyšumí.
+                  Majitel ví, že zakázka existuje, ale nevidí, kdo ji převzal a v jakém je stavu. Informace zůstávají v telefonech a skupinových chatech.
                 </p>
               </div>
               <div className="p-3 bg-blue-50/80 border border-blue-200 rounded-xl text-xs text-blue-900 font-medium">
                 <strong className="block text-blue-950 font-bold mb-0.5">Řešení StavbaFlow:</strong>
-                Automatický systém hlídá datum dalšího kontaktu a upozorní majitele dřív, než klient odejde.
+                Majitel vidí společný Kanban, přiřazeného pracovníka a skutečně uložený stav i po novém přihlášení.
               </div>
             </div>
 
@@ -275,14 +258,14 @@ export const LandingPage: React.FC = () => {
                 <span className="w-8 h-8 rounded-xl bg-emerald-100 text-[#34C759] flex items-center justify-center font-bold text-xs">
                   03
                 </span>
-                <h3 className="text-base font-black text-slate-900">Realizace bez průběžné marže</h3>
+                <h3 className="text-base font-black text-slate-900">Zaměstnanec vidí příliš mnoho</h3>
                 <p className="text-xs text-slate-600 leading-relaxed">
-                  Mistři a řemeslníci nosí účtenky za materiál v kapse. Hodiny a nákupy se spočítají až na konci stavby — když už s propadem marže nejde nic udělat.
+                  Běžné sdílené tabulky zpřístupní celý seznam klientů každému. To komplikuje práci a zbytečně rozšiřuje přístup k firemním datům.
                 </p>
               </div>
               <div className="p-3 bg-blue-50/80 border border-blue-200 rounded-xl text-xs text-blue-900 font-medium">
                 <strong className="block text-blue-950 font-bold mb-0.5">Řešení StavbaFlow:</strong>
-                Terén zapisuje materiál a hodiny přes mobil. Majitel vidí plán vs. skutečnost v reálném čase.
+                Zaměstnanec po přihlášení vidí pouze přidělené zakázky a může měnit jen povolené kroky realizace.
               </div>
             </div>
 
@@ -297,10 +280,10 @@ export const LandingPage: React.FC = () => {
             Jeden příběh zakázky
           </span>
           <h2 className="text-2xl sm:text-3xl font-black text-slate-900">
-            Petra Dvořáková · Rekonstrukce koupelny (353 000 Kč)
+            Formulář → poptávka → přiřazení → stav → historie
           </h2>
           <p className="text-xs sm:text-sm text-slate-500 max-w-xl mx-auto">
-            Podívejte se, jak se zakázka pohybuje systémem od prvního kliku po předávací protokol.
+            Tento průchod je ověřený v odděleném stagingu a nevrací demonstrační úspěch, pokud se zápis nepodaří.
           </p>
         </div>
 
@@ -310,44 +293,44 @@ export const LandingPage: React.FC = () => {
               <div className="flex items-center gap-3">
                 <span className="w-7 h-7 rounded-lg bg-blue-50 text-blue-600 font-black text-xs flex items-center justify-center">1</span>
                 <div>
-                  <h4 className="text-xs font-bold text-slate-900">08:42 Webová poptávka</h4>
-                  <p className="text-[11px] text-slate-500">Formulář na webu okamžitě založí kartu zakázky a spustí SLA.</p>
+                  <h4 className="text-xs font-bold text-slate-900">1. Webová poptávka</h4>
+                  <p className="text-[11px] text-slate-500">Formulář firmy vytvoří právě jednu poptávku v jejím workspace.</p>
                 </div>
               </div>
               <div className="flex items-center gap-3">
                 <span className="w-7 h-7 rounded-lg bg-blue-50 text-blue-600 font-black text-xs flex items-center justify-center">2</span>
                 <div>
-                  <h4 className="text-xs font-bold text-slate-900">08:51 Telefonát a domluvené zaměření</h4>
-                  <p className="text-[11px] text-slate-500">Hovor proveden za 9 minut. Do kalendáře naskakuje termín prohlídky.</p>
+                  <h4 className="text-xs font-bold text-slate-900">2. Kontrola majitelem</h4>
+                  <p className="text-[11px] text-slate-500">Majitel poptávku otevře, zkontroluje údaje a přiřadí odpovědného člověka.</p>
                 </div>
               </div>
               <div className="flex items-center gap-3">
                 <span className="w-7 h-7 rounded-lg bg-blue-50 text-blue-600 font-black text-xs flex items-center justify-center">3</span>
                 <div>
-                  <h4 className="text-xs font-bold text-slate-900">14:38 Nabídka odeslána & přijata</h4>
-                  <p className="text-[11px] text-slate-500">Klient schválí položkový rozpočet jedním klikem v klientském portálu.</p>
+                  <h4 className="text-xs font-bold text-slate-900">3. Práce zaměstnance</h4>
+                  <p className="text-[11px] text-slate-500">Zaměstnanec vidí jen přidělenou zakázku a provede povolený posun stavu.</p>
                 </div>
               </div>
               <div className="flex items-center gap-3">
                 <span className="w-7 h-7 rounded-lg bg-emerald-50 text-emerald-600 font-black text-xs flex items-center justify-center">4</span>
                 <div>
-                  <h4 className="text-xs font-bold text-slate-900">Dnes: Realizace & marže 27,8 %</h4>
-                  <p className="text-[11px] text-slate-500">Jan v terénu zapsal 6,5 h a materiál 7 840 Kč. Marže je chráněna.</p>
+                  <h4 className="text-xs font-bold text-slate-900">4. Trvalá historie</h4>
+                  <p className="text-[11px] text-slate-500">Stav, přiřazení a auditní událost zůstávají uložené po odhlášení i reloadu.</p>
                 </div>
               </div>
             </div>
 
             <div className="p-5 rounded-2xl bg-slate-900 text-white space-y-3 font-mono text-xs">
               <div className="flex items-center justify-between pb-2 border-b border-slate-800 text-slate-400">
-                <span>OPERAČNÍ KARTA ZAKÁZKY</span>
-                <span className="text-emerald-400">AKTIVNÍ REALIZACE</span>
+                <span>OVĚŘENÝ PILOTNÍ TOK</span>
+                <span className="text-emerald-400">TENANT-SAFE</span>
               </div>
               <div className="space-y-1 text-slate-200">
-                <p>Klient: Petra Dvořáková (Praha 6)</p>
-                <p>Smluvní cena: 353 000 Kč vč. DPH</p>
-                <p>Vykázaný materiál: 7 840 Kč</p>
-                <p>Odpracovaný čas: 14,5 h (Jan & Martin)</p>
-                <p className="text-emerald-400 font-bold pt-1">Výsledná marže: 27,8 % (98 134 Kč)</p>
+                <p>Zdroj: formulář na webu firmy</p>
+                <p>Role: majitel a přiřazený zaměstnanec</p>
+                <p>Oddělení: firma A nevidí firmu B</p>
+                <p>Import: kontrolovaný CSV dry-run a commit</p>
+                <p className="text-emerald-400 font-bold pt-1">Výsledek: skutečná uložená data bez demo fallbacku</p>
               </div>
               <button
                 onClick={() => window.location.assign('/demo')}
@@ -366,13 +349,13 @@ export const LandingPage: React.FC = () => {
           <div className="text-center space-y-2">
             <span className="text-xs font-black uppercase tracking-wider text-blue-600 flex items-center justify-center gap-1.5">
               <Calculator className="w-4 h-4" />
-              Realistická ROI kalkulačka pro vaši firmu
+              Modelová kalkulačka pro vaši firmu
             </span>
             <h2 className="text-2xl sm:text-3xl font-black text-slate-900">
               Spočítejte si přínos na vašich reálných číslech
             </h2>
             <p className="text-xs sm:text-sm text-slate-500 max-w-xl mx-auto">
-              Žádné marketingové sliby. Pohybujte posuvníky podle vaší skutečné situace a podívejte se na výsledek.
+              Výsledek je orientační scénář založený na vámi zadaných předpokladech. Není příslibem budoucího zisku ani úspory.
             </p>
           </div>
 
@@ -467,24 +450,24 @@ export const LandingPage: React.FC = () => {
             <div className="lg:col-span-5 bg-slate-900 text-white p-6 rounded-3xl space-y-5 shadow-xl">
               <div>
                 <span className="text-[10px] font-bold text-emerald-400 uppercase tracking-wider">
-                  Kvartální přínos pro firmu (3 měsíce)
+                  Modelový kvartální přínos (3 měsíce)
                 </span>
                 <div className="text-3xl font-black text-white mt-1">
                   +{additionalMarginQuarter.toLocaleString('cs-CZ')} Kč
                 </div>
                 <p className="text-xs text-slate-400 mt-1">
-                  Dodatečný zisk z {additionalWonQuarter} zachráněné zakázky díky rychlé reakci a hlídání follow-upů.
+                  Scénář počítá s {additionalWonQuarter} dodatečně získanou zakázkou. Skutečný výsledek závisí na procesu vaší firmy.
                 </p>
               </div>
 
               <div className="space-y-2.5 pt-4 border-t border-slate-800 text-xs">
                 <div className="flex justify-between">
-                  <span className="text-slate-400">Ušetřený čas kanceláře:</span>
+                  <span className="text-slate-400">Modelovaná úspora času:</span>
                   <strong className="text-white">{adminHoursSavedQuarter} hodin / kvartál</strong>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-slate-400">Cena tarifu Growth (3 měsíce):</span>
-                  <strong className="text-slate-300">20 970 Kč (bez DPH)</strong>
+                  <span className="text-slate-400">Vstupní cena 30denního pilotu:</span>
+                  <strong className="text-slate-300">{foundingPilotCost.toLocaleString('cs-CZ')} Kč (bez DPH)</strong>
                 </div>
                 <div className="flex justify-between pt-2 border-t border-slate-800 text-emerald-400 font-bold">
                   <span>Návratnost investice (ROI):</span>
@@ -493,7 +476,7 @@ export const LandingPage: React.FC = () => {
               </div>
 
               <div className="p-3.5 bg-slate-800/80 rounded-2xl border border-slate-700 text-[11px] text-slate-300 leading-relaxed">
-                „Pokud systém pomůže získat o pouhou jednu zakázku za 3 měsíce více, její příspěvek na marži je <strong>{additionalMarginQuarter.toLocaleString('cs-CZ')} Kč</strong>. Systém se zaplatí už v prvních týdnech.“
+                Model používá zadanou průměrnou marži a předpoklad lepšího zpracování poptávek. Výsledek společně ověříme na skutečných datech během pilotu.
               </div>
 
               <button
@@ -537,11 +520,11 @@ export const LandingPage: React.FC = () => {
           </div>
 
           <p className="text-xs text-blue-100 leading-relaxed">
-            Osobní nastavení vašich šablon a cen, import stávajících kontaktů, nasazení webového formuláře, zaškolení mistrů a kompletní Growth workflow.
+            Osobní založení firmy, přihlášení majitele, pozvání zaměstnanců, nasazení webového formuláře a kontrolovaný CSV import kontaktů a poptávek.
           </p>
 
           <div className="p-3 bg-white/10 rounded-xl text-xs text-blue-200 border border-white/15">
-            💡 <strong>Garance spokojenosti:</strong> Pokud budete po 30 dnech pokračovat na roční tarif Growth, částka 7 900 Kč se v plné výši započte proti ceně předplatného.
+            <strong>Jasný rozsah:</strong> Pilot ověřuje příjem poptávek, přiřazení, stav zakázky a oddělení dat firmy. Další moduly se zapnou až po samostatném ověření.
           </div>
 
           <button
@@ -559,73 +542,73 @@ export const LandingPage: React.FC = () => {
           {/* Start Plan */}
           <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs space-y-4 flex flex-col justify-between">
             <div className="space-y-3">
-              <h4 className="text-base font-black text-slate-900">Start</h4>
-              <p className="text-xs text-slate-500">Pro menší stavební partu s jedním dispečerem.</p>
+              <h4 className="text-base font-black text-slate-900">Součást pilotu</h4>
+              <p className="text-xs text-slate-500">Funkce ověřené ve stagingu a zahrnuté v prvním nasazení.</p>
               <div className="text-2xl font-black text-slate-900 font-mono">
-                2 990 Kč <span className="text-xs font-normal text-slate-500">/ měsíc (bez DPH)</span>
+                Ověřený základ
               </div>
               <ul className="space-y-2 text-xs text-slate-700 pt-2 border-t border-slate-100">
-                <li className="flex items-center gap-2">✓ Do 3 aktivních uživatelů</li>
-                <li className="flex items-center gap-2">✓ Poptávky, Kanban a SLA</li>
-                <li className="flex items-center gap-2">✓ PDF cenové nabídky</li>
-                <li className="flex items-center gap-2">✓ POHODA XML export kontaktů</li>
+                <li className="flex items-center gap-2">✓ Přihlášení majitele a zaměstnance</li>
+                <li className="flex items-center gap-2">✓ Webový formulář a Kanban poptávek</li>
+                <li className="flex items-center gap-2">✓ Přiřazení a povolené změny stavu</li>
+                <li className="flex items-center gap-2">✓ CSV import a auditní historie</li>
               </ul>
             </div>
             <button
               onClick={() => setIsBookingOpen(true)}
               className="w-full py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-xl text-xs font-bold transition-colors"
             >
-              Zvolit Start
+              Domluvit pilot
             </button>
           </div>
 
-          {/* Growth Plan */}
+          {/* Acceptance checklist */}
           <div className="bg-white p-6 rounded-2xl border-2 border-blue-500 shadow-md space-y-4 flex flex-col justify-between relative">
             <span className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-0.5 rounded-full text-[10px] font-black bg-blue-600 text-white uppercase tracking-wider">
-              Nejpopulárnější
+              Osobní onboarding
             </span>
             <div className="space-y-3">
-              <h4 className="text-base font-black text-slate-900">Growth</h4>
-              <p className="text-xs text-slate-500">Pro rostoucí firmu s terénními týmy a maržemi.</p>
+              <h4 className="text-base font-black text-slate-900">Společně ověříme</h4>
+              <p className="text-xs text-slate-500">Každá pilotní firma projde přejímkou před vložením ostrých dat.</p>
               <div className="text-2xl font-black text-[#0A84FF] font-mono">
-                6 990 Kč <span className="text-xs font-normal text-slate-500">/ měsíc (bez DPH)</span>
+                30 dní
               </div>
               <ul className="space-y-2 text-xs text-slate-700 pt-2 border-t border-slate-100">
-                <li className="flex items-center gap-2 font-bold">✓ Do 10 aktivních uživatelů</li>
-                <li className="flex items-center gap-2">✓ Mobilní rozhraní pro řemeslníky</li>
-                <li className="flex items-center gap-2">✓ Sledování materiálu a marže</li>
-                <li className="flex items-center gap-2">✓ Klientský portál investora</li>
-                <li className="flex items-center gap-2">✓ POHODA XML export</li>
+                <li className="flex items-center gap-2 font-bold">✓ Přijetí a aktivace pozvánky</li>
+                <li className="flex items-center gap-2">✓ Zaměstnanec vidí jen přidělenou práci</li>
+                <li className="flex items-center gap-2">✓ Formulář vytvoří jedinou poptávku</li>
+                <li className="flex items-center gap-2">✓ Import nevytváří duplicity</li>
+                <li className="flex items-center gap-2">✓ Závěrečná kontrola oddělení firem</li>
               </ul>
             </div>
             <button
               onClick={() => setIsBookingOpen(true)}
               className="w-full py-2.5 bg-[#0A84FF] hover:bg-blue-600 text-white rounded-xl text-xs font-black shadow-xs transition-all"
             >
-              Zvolit Growth
+              Projít připravenost
             </button>
           </div>
 
           {/* Custom Plan */}
           <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs space-y-4 flex flex-col justify-between">
             <div className="space-y-3">
-              <h4 className="text-base font-black text-slate-900">Custom</h4>
-              <p className="text-xs text-slate-500">Pro větší stavební firmy vyžadující individuální propojení.</p>
+              <h4 className="text-base font-black text-slate-900">Mimo první pilot</h4>
+              <p className="text-xs text-slate-500">Tyto části zatím nejsou součástí obchodního slibu.</p>
               <div className="text-2xl font-black text-slate-900 font-mono">
-                od 14 900 Kč <span className="text-xs font-normal text-slate-500">/ měsíc (bez DPH)</span>
+                Roadmapa
               </div>
               <ul className="space-y-2 text-xs text-slate-700 pt-2 border-t border-slate-100">
-                <li className="flex items-center gap-2">✓ Neomezený počet uživatelů</li>
-                <li className="flex items-center gap-2">✓ Zakázkové napojení ERP / SQL</li>
-                <li className="flex items-center gap-2">✓ Dedikovaný onboarding manažer</li>
-                <li className="flex items-center gap-2">✓ Vlastní SLA a podpora</li>
+                <li className="flex items-center gap-2">Přímé SQL/ERP propojení není součástí pilotu</li>
+                <li className="flex items-center gap-2">Obousměrná synchronizace databází</li>
+                <li className="flex items-center gap-2">Fakturace a účetní exporty</li>
+                <li className="flex items-center gap-2">Klientský portál a automatické follow-upy</li>
               </ul>
             </div>
             <button
               onClick={() => setIsBookingOpen(true)}
               className="w-full py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-xl text-xs font-bold transition-colors"
             >
-              Poptat Custom
+              Probrat roadmapu
             </button>
           </div>
 
@@ -642,23 +625,23 @@ export const LandingPage: React.FC = () => {
 
           <div className="space-y-4 text-xs">
             <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 space-y-1.5">
-              <h4 className="font-black text-slate-900 text-sm">Jak funguje propojení s POHODOU?</h4>
+              <h4 className="font-black text-slate-900 text-sm">Jak dostaneme do systému současná data?</h4>
               <p className="text-slate-600 leading-relaxed">
-                Pilotní export kontaktů a faktur probíhá přes standardizovaný Stormware XML dataPack (verze 2.0). Stačí vygenerovat XML soubor přímo ze zakázky a naimportovat do POHODY.
+                První pilot používá kontrolovaný CSV import. Nejdřív uvidíte mapování a chyby, teprve potom se import potvrdí. Do původní databáze nic nezapisujeme.
               </p>
             </div>
 
             <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 space-y-1.5">
-              <h4 className="font-black text-slate-900 text-sm">Zvládnou mobilní aplikaci naši řemeslníci na stavbě?</h4>
+              <h4 className="font-black text-slate-900 text-sm">Co zaměstnanec po přihlášení uvidí?</h4>
               <p className="text-slate-600 leading-relaxed">
-                Ano. Rozhraní pro terén je extrémně jednoduché. Přehledný stav zakázky, záznam odpracovaného času, materiál a možnost přiložit fotodokumentaci ze stavby.
+                Jen zakázky přiřazené jeho účtu. Nemůže měnit cenu, firmu ani cizí zakázky; omezení vynucuje databáze, ne pouze vzhled aplikace.
               </p>
             </div>
 
             <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 space-y-1.5">
-              <h4 className="font-black text-slate-900 text-sm">Můžeme svá data kdykoliv exportovat?</h4>
+              <h4 className="font-black text-slate-900 text-sm">Je systém připravený na přímé propojení s naší SQL databází?</h4>
               <p className="text-slate-600 leading-relaxed">
-                Všechna data jsou vaše. Kdykoliv můžete stáhnout kompletní ZIP archiv firemních dat, cenové nabídky v PDF i XML pro účetní systémy.
+                V prvním pilotu ne. Začínáme bezpečným CSV importem bez zápisu zpět. Přímé propojení se nacení a ověří samostatně až po úspěšném pilotu.
               </p>
             </div>
           </div>
@@ -788,14 +771,14 @@ export const LandingPage: React.FC = () => {
                     Ukázat StavbaFlow na mém procesu
                   </h3>
                   <p className="text-xs text-slate-500 mt-1">
-                    Společně projdeme vaše současné tabulky a ukážeme, co by systém převzal a kolik marže zachrání.
+                    Společně projdeme vaše současné tabulky a ukážeme ověřený tok formulář → poptávka → zaměstnanec → stav zakázky.
                   </p>
                 </div>
 
-                {!isSupabaseConfigured && (
+                {SALES_CONTACT.mode === 'unavailable' && (
                   <div className="p-2.5 bg-amber-50 border border-amber-200 text-amber-800 rounded-xl text-xs flex items-center gap-2">
                     <AlertCircle className="w-4 h-4 text-amber-600 shrink-0" />
-                    <span className="font-semibold">Ukázkový režim – rezervace se neodešle</span>
+                    <span className="font-semibold">Obchodní kontakt zatím není nakonfigurovaný. Formulář nebude předstírat úspěšné odeslání.</span>
                   </div>
                 )}
 
@@ -887,11 +870,11 @@ export const LandingPage: React.FC = () => {
                   {isBookingLoading ? (
                     <>
                       <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
-                      <span>Odesílám rezervaci...</span>
+                      <span>Otevírám kontakt...</span>
                     </>
                   ) : (
                     <>
-                      <span>Potvrdit nezávaznou rezervaci ukázky</span>
+                      <span>{SALES_CONTACT.mode === 'booking' ? 'Otevřít rezervační kalendář' : 'Připravit e-mail s žádostí'}</span>
                       <ArrowRight className="w-4 h-4" />
                     </>
                   )}
@@ -903,12 +886,10 @@ export const LandingPage: React.FC = () => {
                   <Check className="w-6 h-6" />
                 </div>
                 <h4 className="text-base font-black text-slate-900">
-                  {bookingStoredLocally ? 'Ukázka je připravena v tomto prohlížeči' : 'Termín ukázky je zarezervován'}
+                  E-mailová žádost je připravená
                 </h4>
                 <p className="text-xs text-slate-600 leading-relaxed">
-                  {bookingStoredLocally
-                    ? `Děkujeme, ${bookingName}. V tomto náhledu se rezervace pouze uložila lokálně a nikam se neodeslala. Pro skutečné potvrzení nám napište na firemní kontakt.`
-                    : `Děkujeme, ${bookingName}. Na číslo ${bookingPhone} vám odešleme potvrzení termínu (${bookingDate}) a odkaz na videohovor.`}
+                  Děkujeme, {bookingName}. Odeslání dokončete ve své e-mailové aplikaci. Termín {bookingDate} je potvrzený až po naší odpovědi.
                 </p>
               </div>
             )}

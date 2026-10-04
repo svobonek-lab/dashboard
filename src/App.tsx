@@ -57,7 +57,7 @@ import { InteractiveStoryDemo } from '@/features/InteractiveStoryDemo';
 
 // Types
 import { Lead, LeadStatus } from '@/types';
-import { buildAppLoginUrl, getDeploymentConfig } from './app/deploymentSurface';
+import { buildAppLoginUrl, getDeploymentConfig, shouldShowLandingAtRoot } from './app/deploymentSurface';
 import { getLeadTransitionError } from './app/leadLifecycle';
 import { SalesWorkspace } from '@/features/SalesWorkspace';
 import { readTenantCache, removeTenantCache, writeTenantCache, TENANT_CACHE_NAMES } from './app/tenantCache';
@@ -213,7 +213,7 @@ function AppContent() {
       return;
     }
 
-    if (pathname === '/') {
+    if (pathname === '/' && !shouldShowLandingAtRoot(deploymentSurface)) {
       if (user || dbUser) {
         const role = (dbUser?.role as UserRole) || (user?.role as UserRole) || 'owner';
         const target = getDefaultRouteForRole(role);
@@ -412,6 +412,9 @@ function AppContent() {
 
   // 1. Standalone / Public / Embed Routes (No Layout, No Auth required, No company data leakage)
   if (pathname === '/') {
+    if (shouldShowLandingAtRoot(deploymentSurface)) {
+      return <LandingPage />;
+    }
     if (isAuthLoading) {
       return (
         <div className="min-h-screen bg-slate-900 flex items-center justify-center text-slate-400">
