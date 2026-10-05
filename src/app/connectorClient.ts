@@ -12,9 +12,9 @@ async function request<T>(path: string, body: Record<string, unknown>, signal?: 
 }
 
 export const connectorClient = {
-  createEnrollment: (companyId: string, signal?: AbortSignal) => request<EnrollmentResponse>('/api/connector-enroll', { action: 'create', companyId }, signal),
-  status: (companyId: string, signal?: AbortSignal) => request<{ connectors: ConnectorSummary[] }>('/api/connector-status', { companyId }, signal),
-  saveMapping: (companyId: string, connectorId: string, mapping: ConnectorMappingV1, signal?: AbortSignal) => request<{ mappingVersion: number }>('/api/connector-mapping', { companyId, connectorId, mapping }, signal),
-  approveMapping: (companyId: string, connectorId: string, mappingVersion: number, signal?: AbortSignal) => request<{ accepted: boolean }>('/api/connector-command', { companyId, connectorId, command: 'approve_mapping', mappingVersion }, signal),
-  command: (companyId: string, connectorId: string, command: string, signal?: AbortSignal) => request<{ accepted: boolean }>('/api/connector-command', { companyId, connectorId, command }, signal),
+  createEnrollment: (companyId: string, signal?: AbortSignal) => request<EnrollmentResponse>('/api/connector/enroll', { action: 'create', companyId }, signal),
+  status: (companyId: string, signal?: AbortSignal) => request<{ connectors: ConnectorSummary[] }>('/api/connector/status', { companyId }, signal),
+  saveMapping: (companyId: string, connectorId: string, mapping: ConnectorMappingV1, signal?: AbortSignal) => request<{ mappingVersion: number }>('/api/connector/mapping', { companyId, connectorId, mapping }, signal),
+  approveMapping: (companyId: string, connectorId: string, mappingVersion: number, signal?: AbortSignal) => request<{ accepted: boolean }>('/api/connector/command', { companyId, connectorId, command: 'approve_mapping', mappingVersion }, signal),
+  command: (companyId: string, connectorId: string, command: string, signal?: AbortSignal) => request<{ accepted: boolean }>('/api/connector/command', { companyId, connectorId, command }, signal),
 };

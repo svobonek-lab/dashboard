@@ -14,7 +14,7 @@ const rawBody = JSON.stringify({ connectorId: 'connector-1', companyId: 'company
 function headers(overrides: Record<string, string> = {}) {
   const timestamp = overrides['x-sf-timestamp'] ?? now.toISOString();
   const requestId = overrides['x-sf-request-id'] ?? 'request-1';
-  const signature = sign(null, Buffer.from(canonicalSigningInput({ method: 'POST', pathname: '/api/connector-ingest', timestamp, requestId, body: rawBody }), 'utf8'), privateKey).toString('base64');
+  const signature = sign(null, Buffer.from(canonicalSigningInput({ method: 'POST', pathname: '/api/connector/ingest', timestamp, requestId, body: rawBody }), 'utf8'), privateKey).toString('base64');
   return { 'x-sf-connector-id': 'connector-1', 'x-sf-timestamp': timestamp, 'x-sf-request-id': requestId, 'x-sf-signature': signature, ...overrides };
 }
 
@@ -23,7 +23,7 @@ const identity = { connectorId: 'connector-1', companyId: 'company-1', publicKey
 test('accepts a valid tenant-bound Ed25519 request once', async () => {
   const reserved: string[] = [];
   const result = await authenticateConnectorRequest({
-    method: 'POST', pathname: '/api/connector-ingest', headers: headers(), rawBody,
+    method: 'POST', pathname: '/api/connector/ingest', headers: headers(), rawBody,
     body: JSON.parse(rawBody), now, requiredScope: 'ingest', identity,
     reserveNonce: async (_connectorId, requestId) => { reserved.push(requestId); return true; },
   });
@@ -33,20 +33,20 @@ test('accepts a valid tenant-bound Ed25519 request once', async () => {
 
 test('rejects modified body, stale or future timestamps, replay, revoke, scope and tenant mismatch', async () => {
   const cases: Array<Parameters<typeof authenticateConnectorRequest>[0]> = [
-    { method: 'POST', pathname: '/api/connector-ingest', headers: headers(), rawBody: `${rawBody} `, body: JSON.parse(rawBody), now, requiredScope: 'ingest', identity, reserveNonce: async () => true },
-    { method: 'POST', pathname: '/api/connector-ingest', headers: headers({ 'x-sf-timestamp': '2026-10-04T11:54:59.000Z' }), rawBody, body: JSON.parse(rawBody), now, requiredScope: 'ingest', identity, reserveNonce: async () => true },
-    { method: 'POST', pathname: '/api/connector-ingest', headers: headers({ 'x-sf-timestamp': '2026-10-04T12:05:01.000Z' }), rawBody, body: JSON.parse(rawBody), now, requiredScope: 'ingest', identity, reserveNonce: async () => true },
-    { method: 'POST', pathname: '/api/connector-ingest', headers: headers(), rawBody, body: JSON.parse(rawBody), now, requiredScope: 'ingest', identity, reserveNonce: async () => false },
-    { method: 'POST', pathname: '/api/connector-ingest', headers: headers(), rawBody, body: JSON.parse(rawBody), now, requiredScope: 'ingest', identity: { ...identity, revoked: true }, reserveNonce: async () => true },
-    { method: 'POST', pathname: '/api/connector-ingest', headers: headers(), rawBody, body: JSON.parse(rawBody), now, requiredScope: 'commands', identity, reserveNonce: async () => true },
-    { method: 'POST', pathname: '/api/connector-ingest', headers: headers(), rawBody, body: { ...JSON.parse(rawBody), companyId: 'company-2' }, now, requiredScope: 'ingest', identity, reserveNonce: async () => true },
+    { method: 'POST', pathname: '/api/connector/ingest', headers: headers(), rawBody: `${rawBody} `, body: JSON.parse(rawBody), now, requiredScope: 'ingest', identity, reserveNonce: async () => true },
+    { method: 'POST', pathname: '/api/connector/ingest', headers: headers({ 'x-sf-timestamp': '2026-10-04T11:54:59.000Z' }), rawBody, body: JSON.parse(rawBody), now, requiredScope: 'ingest', identity, reserveNonce: async () => true },
+    { method: 'POST', pathname: '/api/connector/ingest', headers: headers({ 'x-sf-timestamp': '2026-10-04T12:05:01.000Z' }), rawBody, body: JSON.parse(rawBody), now, requiredScope: 'ingest', identity, reserveNonce: async () => true },
+    { method: 'POST', pathname: '/api/connector/ingest', headers: headers(), rawBody, body: JSON.parse(rawBody), now, requiredScope: 'ingest', identity, reserveNonce: async () => false },
+    { method: 'POST', pathname: '/api/connector/ingest', headers: headers(), rawBody, body: JSON.parse(rawBody), now, requiredScope: 'ingest', identity: { ...identity, revoked: true }, reserveNonce: async () => true },
+    { method: 'POST', pathname: '/api/connector/ingest', headers: headers(), rawBody, body: JSON.parse(rawBody), now, requiredScope: 'commands', identity, reserveNonce: async () => true },
+    { method: 'POST', pathname: '/api/connector/ingest', headers: headers(), rawBody, body: { ...JSON.parse(rawBody), companyId: 'company-2' }, now, requiredScope: 'ingest', identity, reserveNonce: async () => true },
   ];
   for (const candidate of cases) await assert.rejects(authenticateConnectorRequest(candidate), ConnectorRequestError);
 });
 
 test('external errors never reveal connector existence or signature details', async () => {
   await assert.rejects(authenticateConnectorRequest({
-    method: 'POST', pathname: '/api/connector-ingest', headers: headers({ 'x-sf-signature': 'invalid' }), rawBody,
+    method: 'POST', pathname: '/api/connector/ingest', headers: headers({ 'x-sf-signature': 'invalid' }), rawBody,
     body: JSON.parse(rawBody), now, requiredScope: 'ingest', identity, reserveNonce: async () => true,
   }), (error: unknown) => {
     assert.ok(error instanceof ConnectorRequestError);

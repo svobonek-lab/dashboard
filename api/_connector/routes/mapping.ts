@@ -1,7 +1,7 @@
-import { authorizeConnectorOwner } from './_connector/ownerAuth.js';
-import { parseConnectorBody, requirePost, ConnectorHttpError } from './_connector/http.js';
-import { runConnectorHandler } from './_connector/handler.js';
-import { validateConnectorMapping, validateSourceSchema } from './_connector/validation.js';
+import { authorizeConnectorOwner } from '../ownerAuth.js';
+import { parseConnectorBody, requirePost, ConnectorHttpError } from '../http.js';
+import { runConnectorHandler } from '../handler.js';
+import { validateConnectorMapping, validateSourceSchema } from '../validation.js';
 export default async function connectorMappingHandler(request:any,response:any){await runConnectorHandler(response,async()=>{
   requirePost(request); const {body}=parseConnectorBody(request); const companyId=String(body.companyId??''), connectorId=String(body.connectorId??'');
   if(!body.mapping||typeof body.mapping!=='object'||JSON.stringify(body.mapping).length>100000) throw new ConnectorHttpError('MAPPING_INVALID',400);

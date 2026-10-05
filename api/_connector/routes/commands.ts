@@ -1,10 +1,10 @@
-import { authenticateConnectorHttpRequest } from './_connector/auth.js';
-import { ConnectorHttpError } from './_connector/http.js';
-import { runConnectorHandler } from './_connector/handler.js';
+import { authenticateConnectorHttpRequest } from '../auth.js';
+import { ConnectorHttpError } from '../http.js';
+import { runConnectorHandler } from '../handler.js';
 
 export default async function connectorCommandsHandler(request: any, response: any) {
   await runConnectorHandler(response, async () => {
-    const { body, identity, service } = await authenticateConnectorHttpRequest(request, '/api/connector-commands', 'commands');
+    const { body, identity, service } = await authenticateConnectorHttpRequest(request, '/api/connector/commands', 'commands');
     if (body.action === 'poll') {
       const { data, error } = await service.rpc('app_get_connector_commands', { p_connector_id: identity.connectorId });
       if (error) throw new ConnectorHttpError('COMMANDS_UNAVAILABLE', 502);

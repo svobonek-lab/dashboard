@@ -1,6 +1,6 @@
-import { parseConnectorBody, requirePost, ConnectorHttpError } from './_connector/http.js';
-import { runConnectorHandler } from './_connector/handler.js';
-import { getConnectorServiceClient } from './_connector/supabaseAdmin.js';
+import { parseConnectorBody, requirePost, ConnectorHttpError } from '../http.js';
+import { runConnectorHandler } from '../handler.js';
+import { getConnectorServiceClient } from '../supabaseAdmin.js';
 
 export default async function connectorRegisterHandler(request: any, response: any) {
   await runConnectorHandler(response, async () => {

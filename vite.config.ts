@@ -7,14 +7,14 @@ import testSqlHandler from './api/test-sql';
 import inviteEmployeeHandler from './api/invite-employee';
 import resetEmployeePasswordHandler from './api/reset-employee-password';
 import outboxSchedulerHandler from './api/outbox-scheduler';
-import connectorRegisterHandler from './api/connector-register';
-import connectorHeartbeatHandler from './api/connector-heartbeat';
-import connectorIngestHandler from './api/connector-ingest';
-import connectorCommandsHandler from './api/connector-commands';
-import connectorEnrollHandler from './api/connector-enroll';
-import connectorStatusHandler from './api/connector-status';
-import connectorMappingHandler from './api/connector-mapping';
-import connectorCommandHandler from './api/connector-command';
+import connectorRegisterHandler from './api/_connector/routes/register';
+import connectorHeartbeatHandler from './api/_connector/routes/heartbeat';
+import connectorIngestHandler from './api/_connector/routes/ingest';
+import connectorCommandsHandler from './api/_connector/routes/commands';
+import connectorEnrollHandler from './api/_connector/routes/enroll';
+import connectorStatusHandler from './api/_connector/routes/status';
+import connectorMappingHandler from './api/_connector/routes/mapping';
+import connectorCommandHandler from './api/_connector/routes/command';
 
 function apiMiddlewarePlugin(): Plugin {
   return {
@@ -91,14 +91,14 @@ function apiMiddlewarePlugin(): Plugin {
         }
 
         const connectorRoutes: Record<string, any> = {
-          '/api/connector-register': connectorRegisterHandler,
-          '/api/connector-heartbeat': connectorHeartbeatHandler,
-          '/api/connector-ingest': connectorIngestHandler,
-          '/api/connector-commands': connectorCommandsHandler,
-          '/api/connector-enroll': connectorEnrollHandler,
-          '/api/connector-status': connectorStatusHandler,
-          '/api/connector-mapping': connectorMappingHandler,
-          '/api/connector-command': connectorCommandHandler,
+          '/api/connector/register': connectorRegisterHandler,
+          '/api/connector/heartbeat': connectorHeartbeatHandler,
+          '/api/connector/ingest': connectorIngestHandler,
+          '/api/connector/commands': connectorCommandsHandler,
+          '/api/connector/enroll': connectorEnrollHandler,
+          '/api/connector/status': connectorStatusHandler,
+          '/api/connector/mapping': connectorMappingHandler,
+          '/api/connector/command': connectorCommandHandler,
         };
         const connectorHandler = req.url ? connectorRoutes[req.url] : undefined;
         if (connectorHandler && req.method === 'POST') {

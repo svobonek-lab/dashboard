@@ -1,7 +1,7 @@
 import { createHash, randomBytes } from 'node:crypto';
-import { authorizeConnectorOwner } from './_connector/ownerAuth.js';
-import { parseConnectorBody, requirePost, ConnectorHttpError } from './_connector/http.js';
-import { runConnectorHandler } from './_connector/handler.js';
+import { authorizeConnectorOwner } from '../ownerAuth.js';
+import { parseConnectorBody, requirePost, ConnectorHttpError } from '../http.js';
+import { runConnectorHandler } from '../handler.js';
 
 export default async function connectorEnrollHandler(request: any, response: any) {
   await runConnectorHandler(response, async () => {

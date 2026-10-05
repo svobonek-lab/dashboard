@@ -37,19 +37,19 @@ export class ConnectorApi {
   }
 
   async enroll(enrollmentCode: string): Promise<{ connectorId: string; companyId: string }> {
-    return this.request('/api/connector-register', { enrollmentCode, publicKey: this.options.identity.publicKey }, false);
+    return this.request('/api/connector/register', { enrollmentCode, publicKey: this.options.identity.publicKey }, false);
   }
 
   async heartbeat(status: { status: string; version: string; sourceSchema?: ConnectorSourceSchemaV1; metrics?: Record<string, unknown> }): Promise<{ accepted: boolean }> {
-    return this.request('/api/connector-heartbeat', status, true);
+    return this.request('/api/connector/heartbeat', status, true);
   }
 
   async ingest(envelope: IngestEnvelopeV1): Promise<IngestAckV1> {
-    return this.request('/api/connector-ingest', envelope, true);
+    return this.request('/api/connector/ingest', envelope, true);
   }
 
   async pollCommands(now = new Date()): Promise<ConnectorCommandV1[]> {
-    const result = await this.request<{ commands?: unknown }>('/api/connector-commands', { action: 'poll' }, true);
+    const result = await this.request<{ commands?: unknown }>('/api/connector/commands', { action: 'poll' }, true);
     if (!Array.isArray(result.commands) || result.commands.length > 100) throw new Error('connector command response is invalid');
     return result.commands.map(value => {
       if (!value || typeof value !== 'object' || Array.isArray(value)) throw new Error('connector command response is invalid');
@@ -65,7 +65,7 @@ export class ConnectorApi {
   }
 
   async acknowledgeCommand(commandId: string): Promise<void> {
-    await this.request('/api/connector-commands', { action: 'acknowledge', commandId }, true);
+    await this.request('/api/connector/commands', { action: 'acknowledge', commandId }, true);
   }
 
   private async request<T = { accepted: boolean }>(pathname: string, payload: unknown, signed: boolean): Promise<T> {

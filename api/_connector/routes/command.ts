@@ -1,6 +1,6 @@
-import { authorizeConnectorOwner } from './_connector/ownerAuth.js';
-import { parseConnectorBody, requirePost, ConnectorHttpError } from './_connector/http.js';
-import { runConnectorHandler } from './_connector/handler.js';
+import { authorizeConnectorOwner } from '../ownerAuth.js';
+import { parseConnectorBody, requirePost, ConnectorHttpError } from '../http.js';
+import { runConnectorHandler } from '../handler.js';
 const COMMANDS=new Set(['sync_now','pause','resume','refresh_mapping','rotate_identity','revoke','approve_mapping']);
 export default async function connectorCommandHandler(request:any,response:any){await runConnectorHandler(response,async()=>{
   requirePost(request); const {body}=parseConnectorBody(request,16*1024); const companyId=String(body.companyId??''),connectorId=String(body.connectorId??''),command=String(body.command??'');
