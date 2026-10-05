@@ -23,8 +23,9 @@ test('production blocks legacy employee, project and platform mutations', () => 
   assert.match(settingsBody, /BLOCK_LEGACY_WRITES && isSupabaseConfigured/);
 });
 
-test('production never elevates a browser session to platform admin', () => {
-  const start = source.indexOf('const switchRoleToSuperAdmin');
-  assert.notEqual(start, -1);
-  assert.match(source.slice(start, start + 420), /if \(APP_SCHEMA_READS\)/);
+test('production resolves platform role from the narrow database contract', () => {
+  assert.match(source, /readPlatformIdentity\(supabase\)/);
+  assert.match(source, /role: 'platform_admin'/);
+  assert.doesNotMatch(source, /switchRoleToSuperAdmin/);
+  assert.doesNotMatch(source, /svobonek@gmail\.com/i);
 });

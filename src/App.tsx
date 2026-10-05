@@ -259,7 +259,7 @@ function AppContent() {
     const transitionError = getLeadTransitionError(
       previousStatus,
       newStatus,
-      (dbUser?.role as 'owner' | 'employee' | 'super_admin') || 'owner',
+      dbUser?.role === 'employee' ? 'employee' : 'owner',
     );
     if (transitionError) {
       showToast(transitionError, 'error');
@@ -447,7 +447,7 @@ function AppContent() {
   }
 
   const roleLoginRoutes: Record<string, UserRole> = {
-    '/admin/login': 'super_admin',
+    '/admin/login': 'platform_admin',
     '/owner/login': 'owner',
     '/employee/login': 'employee',
   };
@@ -469,7 +469,7 @@ function AppContent() {
   // 2. Super Admin Routes (`/admin*`)
   if (pathname.startsWith('/admin')) {
     return (
-      <ProtectedRoute allowedRole="super_admin">
+      <ProtectedRoute allowedRole="platform_admin">
         <SuperAdminLayout>
           {pathname === '/admin' || pathname === '/admin/dashboard' ? (
             <AdminDashboardPage />
@@ -496,7 +496,7 @@ function AppContent() {
   // 3. Employee Field Routes (`/employee` and `/employee/*`)
   if (pathname === '/employee' || pathname.startsWith('/employee/')) {
     return (
-      <ProtectedRoute allowedRole={['employee', 'super_admin']}>
+      <ProtectedRoute allowedRole="employee">
         <EmployeeLayout leads={employeeLeads}>
           {pathname === '/employee' || pathname === '/employee/dashboard' ? (
             <EmployeeDashboardPage leads={employeeLeads} onSelectLead={setSelectedLead} onUpdateLead={handleUpdateLead} onUpdateLeadStatus={handleUpdateLeadStatus} />
@@ -510,7 +510,7 @@ function AppContent() {
 
   // 4. Owner Routes (Executive CRM)
   return (
-    <ProtectedRoute allowedRole={['owner', 'super_admin']}>
+    <ProtectedRoute allowedRole="owner">
       <OwnerLayout leads={leads} onSelectLead={setSelectedLead}>
         {pathname === '/dashboard' || pathname === '/' ? (
           <OwnerDashboardPage leads={leads} onSelectLead={setSelectedLead} />

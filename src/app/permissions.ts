@@ -1,4 +1,4 @@
-export type UserRole = 'super_admin' | 'owner' | 'employee';
+export type UserRole = 'platform_admin' | 'owner' | 'employee';
 
 export interface RolePermissions {
   canEditLeads: boolean;
@@ -19,22 +19,22 @@ export interface RolePermissions {
 }
 
 export const ROLE_PERMISSIONS: Record<UserRole, RolePermissions> = {
-  super_admin: {
-    canEditLeads: true,
-    canDeleteLeads: true,
-    canDeleteEmployees: true,
-    canManageEmployees: true,
-    canViewRevenue: true,
-    canManageCompany: true,
+  platform_admin: {
+    canEditLeads: false,
+    canDeleteLeads: false,
+    canDeleteEmployees: false,
+    canManageEmployees: false,
+    canViewRevenue: false,
+    canManageCompany: false,
     canAccessSuperAdmin: true,
-    canAccessFieldTools: true,
-    canViewTeamMembers: true,
-    canGenerateQuotes: true,
-    canAccessSettings: true,
-    canAccessAnalytics: true,
-    canManageDocuments: true,
-    canManageIntegrations: true,
-    canSwitchCompany: true,
+    canAccessFieldTools: false,
+    canViewTeamMembers: false,
+    canGenerateQuotes: false,
+    canAccessSettings: false,
+    canAccessAnalytics: false,
+    canManageDocuments: false,
+    canManageIntegrations: false,
+    canSwitchCompany: false,
   },
   owner: {
     canEditLeads: true,
@@ -103,7 +103,7 @@ export const canManageCompany = (role?: string | null): boolean => {
 };
 
 export const canAccessSuperAdmin = (role?: string | null): boolean => {
-  return role === 'super_admin' || role === 'superadmin';
+  return role === 'platform_admin';
 };
 
 export const canAccessAdmin = canAccessSuperAdmin;
@@ -144,7 +144,7 @@ export const canManageIntegrations = (role?: string | null): boolean => {
 };
 
 export const getDefaultRouteForRole = (role?: string | null): string => {
-  if (role === 'super_admin') return '/admin';
+  if (role === 'platform_admin') return '/admin';
   if (role === 'employee') return '/employee';
   return '/dashboard';
 };
