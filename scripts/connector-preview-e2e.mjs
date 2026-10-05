@@ -18,7 +18,11 @@ const companyId = 'a0000000-0000-4000-8000-000000000001';
 const page = await fetch(new URL('/integrations', previewUrl), { headers: process.env.STAGING_PREVIEW_BYPASS_TOKEN ? { 'x-vercel-protection-bypass': process.env.STAGING_PREVIEW_BYPASS_TOKEN } : {} });
 assert.equal(page.status, 200);
 assert.match(await page.text(), /<div id="root"><\/div>/);
-const status = await fetch(new URL(`/api/connector-status?companyId=${companyId}`, previewUrl), { headers });
+const status = await fetch(new URL('/api/connector/status', previewUrl), {
+  method: 'POST',
+  headers,
+  body: JSON.stringify({ companyId }),
+});
 const statusText = await status.text();
 assert.equal(status.status, 200, statusText);
 const body = JSON.parse(statusText);

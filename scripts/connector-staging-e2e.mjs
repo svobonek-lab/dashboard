@@ -29,8 +29,14 @@ async function tokenFor(credentials) {
 }
 
 async function connectorStatus(token, companyId) {
-  const response = await fetch(new URL(`/api/connector-status?companyId=${encodeURIComponent(companyId)}`, preview), {
-    headers: { authorization: `Bearer ${token}`, ...(process.env.STAGING_PREVIEW_BYPASS_TOKEN ? { 'x-vercel-protection-bypass': process.env.STAGING_PREVIEW_BYPASS_TOKEN } : {}) },
+  const response = await fetch(new URL('/api/connector/status', preview), {
+    method: 'POST',
+    headers: {
+      authorization: `Bearer ${token}`,
+      'content-type': 'application/json',
+      ...(process.env.STAGING_PREVIEW_BYPASS_TOKEN ? { 'x-vercel-protection-bypass': process.env.STAGING_PREVIEW_BYPASS_TOKEN } : {}),
+    },
+    body: JSON.stringify({ companyId }),
   });
   return { status: response.status, body: await response.json() };
 }
