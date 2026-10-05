@@ -13,6 +13,7 @@ export default async function connectorIngestHandler(request: any, response: any
       p_request_id: envelope.requestId,
       p_dry_run: envelope.dryRun,
       p_records: envelope.records,
+      p_summary: envelope.dryRunSummary ?? null,
     });
     if (error) throw new ConnectorHttpError('INGEST_REJECTED', 502);
     return data;

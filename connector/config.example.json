@@ -2,7 +2,7 @@
   "apiBaseUrl": "https://dashboard.example.cz",
   "stateRoot": "/var/lib/stavbaflow",
   "identityPath": "/var/lib/stavbaflow/identity.json",
-  "mappingPath": "/etc/stavbaflow/mapping.json",
+  "mappingPath": "/var/lib/stavbaflow/mapping.json",
   "syncIntervalSeconds": 60,
   "enrollmentCodeFile": "/run/secrets/enrollment_code",
   "database": {

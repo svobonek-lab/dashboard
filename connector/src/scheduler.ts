@@ -53,6 +53,14 @@ export class SyncScheduler {
     return this.store.read();
   }
 
+  async setPaused(paused: boolean): Promise<SchedulerState> {
+    return this.store.update(current => ({
+      ...current,
+      paused,
+      ...(paused ? {} : { consecutiveFailures: 0 }),
+    }));
+  }
+
   async recordRun(result: RunResult): Promise<SchedulerState> {
     return this.store.update(current => {
       const failed = result.status === 'failure';

@@ -31,3 +31,20 @@ test('registration is expiring and single-use; ingest derives tenant from connec
   assert.match(sql, /v_company_id[\s\S]+from public\.app_connectors[\s\S]+where id = p_connector_id/i);
   assert.doesNotMatch(sql, /app_ingest_connector_batch\s*\([^)]*p_company_id/i);
 });
+
+test('mapping requires a recorded dry run and explicit owner approval before writes', () => {
+  assert.match(sql, /dry_run_at timestamptz/i);
+  assert.match(sql, /dry_run_total integer/i);
+  assert.match(sql, /p_dry_run[\s\S]+update public\.app_connector_mappings/i);
+  assert.match(sql, /function public\.app_approve_connector_mapping/i);
+  assert.match(sql, /approved_by/i);
+  assert.match(sql, /'approve_mapping'/i);
+});
+
+test('connector commands can carry only the reviewed mapping definition', () => {
+  const sectionStart = sql.indexOf('function public.app_get_connector_commands');
+  const section = sql.slice(sectionStart, sql.indexOf('$$;', sectionStart) + 3);
+  assert.match(section, /mappingDefinition/i);
+  assert.match(section, /app_connector_mappings/i);
+  assert.doesNotMatch(section, /public_key|code_hash|payload/i);
+});

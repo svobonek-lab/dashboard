@@ -56,3 +56,5 @@ Before applying `20261004_connector_contract.sql` to isolated staging:
 4. Export metadata only from `pg_policies`, `information_schema.role_table_grants`, and `pg_proc` (`prosecdef`, identity arguments, `proconfig`).
 5. Confirm `anon` and `authenticated` have no direct connector-table grants or connector-RPC execution.
 6. Re-run Security Advisor. Do not promote or copy the SQL to production from automation.
+
+The connector acceptance path must also prove this order: registration, metadata-only heartbeat, owner mapping, connector dry run, owner approval, first import. Attempting a non-dry-run batch before approval must fail. A mapping change must clear the previous approval, require a new dry run, and keep old-version queued batches rejected. Capture only aggregate counts and issue codes; do not include source row values in evidence.

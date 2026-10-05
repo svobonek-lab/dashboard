@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto';
 
-import type { ConnectorCommandV1, IngestAckV1, IngestEnvelopeV1 } from '../../../shared/connectorProtocol.js';
+import type { ConnectorCommandV1, ConnectorSourceSchemaV1, IngestAckV1, IngestEnvelopeV1 } from '../../../shared/connectorProtocol.js';
 import { signRequest, type ConnectorIdentity } from '../security/identity.js';
 
 export class ConnectorApiError extends Error {
@@ -40,7 +40,7 @@ export class ConnectorApi {
     return this.request('/api/connector-register', { enrollmentCode, publicKey: this.options.identity.publicKey }, false);
   }
 
-  async heartbeat(status: { status: string; version: string }): Promise<{ accepted: boolean }> {
+  async heartbeat(status: { status: string; version: string; sourceSchema?: ConnectorSourceSchemaV1; metrics?: Record<string, unknown> }): Promise<{ accepted: boolean }> {
     return this.request('/api/connector-heartbeat', status, true);
   }
 
@@ -49,8 +49,19 @@ export class ConnectorApi {
   }
 
   async pollCommands(now = new Date()): Promise<ConnectorCommandV1[]> {
-    const result = await this.request<{ commands: ConnectorCommandV1[] }>('/api/connector-commands', { action: 'poll' }, true);
-    return (result.commands ?? []).filter(command => command.connectorId === this.options.connectorId && new Date(command.expiresAt) > now);
+    const result = await this.request<{ commands?: unknown }>('/api/connector-commands', { action: 'poll' }, true);
+    if (!Array.isArray(result.commands) || result.commands.length > 100) throw new Error('connector command response is invalid');
+    return result.commands.map(value => {
+      if (!value || typeof value !== 'object' || Array.isArray(value)) throw new Error('connector command response is invalid');
+      const command = value as Record<string, unknown>;
+      const type = String(command.type ?? '');
+      if (command.version !== 1 || !/^[A-Za-z0-9_-]{1,160}$/.test(String(command.id ?? '')) || command.connectorId !== this.options.connectorId
+        || !['sync_now', 'pause', 'resume', 'refresh_mapping', 'approve_mapping', 'rotate_identity'].includes(type)
+        || Number.isNaN(new Date(String(command.expiresAt ?? '')).valueOf())) throw new Error('connector command response is invalid');
+      if (['refresh_mapping', 'approve_mapping'].includes(type) && (!Number.isInteger(command.mappingVersion) || Number(command.mappingVersion) < 1)) throw new Error('connector command response is invalid');
+      if (type === 'refresh_mapping' && (!command.mappingDefinition || typeof command.mappingDefinition !== 'object' || Array.isArray(command.mappingDefinition))) throw new Error('connector command response is invalid');
+      return command as unknown as ConnectorCommandV1;
+    }).filter(command => new Date(command.expiresAt) > now);
   }
 
   async acknowledgeCommand(commandId: string): Promise<void> {

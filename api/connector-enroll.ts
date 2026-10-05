@@ -14,6 +14,6 @@ export default async function connectorEnrollHandler(request: any, response: any
     const codeHash = `\\x${createHash('sha256').update(enrollmentCode).digest('hex')}`;
     const { data, error } = await service.rpc('app_create_connector_enrollment', { p_company_id: companyId, p_user_id: userId, p_code_hash: codeHash, p_expires_at: expiresAt });
     if (error || !data) throw new ConnectorHttpError('ENROLLMENT_REJECTED', 502);
-    return { connectorId: String(data), enrollmentCode, expiresAt };
+    return { enrollmentId: String(data), enrollmentCode, expiresAt };
   });
 }

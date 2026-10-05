@@ -69,10 +69,27 @@ test('first run is dry only and import requires approval', async () => {
   await assert.rejects(engine.run(), /dry run approval/);
 });
 
+test('reported dry run sends only valid records and value-free issue metadata without advancing state', async () => {
+  const value = await fixture([
+    { id: 1, name: 'Firma A', updated_at: '2026-10-04T08:00:00Z', deleted_at: null },
+    { id: 2, name: '', updated_at: '2026-10-04T08:00:00Z', deleted_at: null },
+  ]);
+  const result = await value.create().reportDryRun();
+  assert.deepEqual({ total: result.total, valid: result.valid, failed: result.failed }, { total: 2, valid: 1, failed: 1 });
+  assert.equal(value.api.calls.length, 1);
+  assert.equal(value.api.calls[0]?.dryRun, true);
+  assert.equal(value.api.calls[0]?.records.length, 1);
+  assert.deepEqual(value.api.calls[0]?.dryRunSummary, { total: 2, valid: 1, failed: 1, issues: result.issues });
+  assert.equal(await value.checkpoints.load('public.customers'), null);
+  assert.deepEqual(await value.outbox.pending(), []);
+  assert.doesNotMatch(JSON.stringify(result.issues), /Firma A/);
+});
+
 test('approved run ingests then advances the compound cursor', async () => {
   const value = await fixture();
   const engine = value.create();
   await engine.approveDryRun(1);
+  assert.equal(await engine.mappingApproved(), true);
   const result = await engine.run();
   assert.equal(result.status, 'success');
   assert.equal(value.api.calls.length, 1);

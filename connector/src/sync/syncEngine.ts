@@ -61,12 +61,39 @@ export class SyncEngine {
   }
 
   async dryRun(): Promise<DryRunResult> {
+    const { mapped } = await this.inspectDryRunPage();
+    return this.summarizeDryRun(mapped);
+  }
+
+  async reportDryRun(): Promise<DryRunResult> {
+    const { mapped } = await this.inspectDryRunPage();
+    const summary = this.summarizeDryRun(mapped);
+    const envelope: IngestEnvelopeV1 = {
+      version: 1,
+      connectorId: this.options.connectorId,
+      companyId: this.options.companyId,
+      mappingVersion: this.options.mapping.definition.mappingVersion,
+      requestId: randomUUID(),
+      dryRun: true,
+      dryRunSummary: { total: summary.total, valid: summary.valid, failed: summary.failed, issues: summary.issues },
+      records: mapped.flatMap(result => result.record ? [result.record] : []),
+    };
+    const acknowledgement = await this.options.api.ingest(envelope);
+    if (!acknowledgement.accepted || acknowledgement.requestId !== envelope.requestId) throw new Error('dry run acknowledgement was rejected');
+    return summary;
+  }
+
+  private async inspectDryRunPage() {
     const page = await this.options.adapter.readPage(this.query(null));
     const mapped = page.rows.map(row => this.options.mapping.mapRow(row));
+    return { page, mapped };
+  }
+
+  private summarizeDryRun(mapped: Array<ReturnType<CompiledMapping['mapRow']>>): DryRunResult {
     const issues = mapped.flatMap(result => result.issues);
     return {
       mappingVersion: this.options.mapping.definition.mappingVersion,
-      total: page.rows.length,
+      total: mapped.length,
       valid: mapped.filter(result => result.record).length,
       failed: mapped.filter(result => !result.record).length,
       issues,
@@ -76,6 +103,10 @@ export class SyncEngine {
   async approveDryRun(mappingVersion: number): Promise<void> {
     if (mappingVersion !== this.options.mapping.definition.mappingVersion) throw new Error('mapping version does not match the dry run');
     await this.state.update(current => ({ ...current, approvedMappingVersion: mappingVersion }));
+  }
+
+  async mappingApproved(): Promise<boolean> {
+    return (await this.state.read()).approvedMappingVersion === this.options.mapping.definition.mappingVersion;
   }
 
   async run(): Promise<SyncRunResult> {
