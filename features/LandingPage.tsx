@@ -25,6 +25,7 @@ import {
 } from 'lucide-react';
 import { useRouter } from '../src/app/router';
 import { buildSalesContact, getSalesContactMode } from '../src/app/salesContact';
+import { resolveDemoUrl } from '../src/app/demoUrl';
 
 const PUBLIC_CONTACT_EMAIL = 'svobonek@gmail.com';
 const PUBLIC_CONTACT_ADDRESS = 'Vincence Makovského 4428/11';
@@ -41,6 +42,13 @@ const COMPANY_LEGAL_DETAILS_CONFIGURED = Boolean(COMPANY_ICO)
 const SALES_CONTACT = getSalesContactMode({
   ...((import.meta as any).env || {}),
   VITE_COMPANY_EMAIL: COMPANY_EMAIL,
+});
+const LANDING_ENV = ((import.meta as any).env || {}) as Record<string, unknown>;
+const DEMO_DESTINATION = resolveDemoUrl(LANDING_ENV, {
+  isDevelopment: Boolean(LANDING_ENV.DEV),
+  origin: typeof window === 'undefined' ? '' : window.location.origin,
+  allowRelative: String(LANDING_ENV.VITE_DEPLOYMENT_SURFACE || '').toLowerCase() !== 'landing'
+    && !(typeof window !== 'undefined' && window.location.hostname.toLowerCase().startsWith('jobflow-pro')),
 });
 
 export const LandingPage: React.FC = () => {
@@ -186,7 +194,9 @@ export const LandingPage: React.FC = () => {
             <ArrowRight className="w-4 h-4" />
           </button>
           <button
-            onClick={() => window.location.assign('/demo')}
+            onClick={() => DEMO_DESTINATION.url && window.location.assign(DEMO_DESTINATION.url)}
+            disabled={!DEMO_DESTINATION.url}
+            title={DEMO_DESTINATION.error || 'Otevřít skutečné demo StavbaFlow'}
             className="w-full sm:w-auto px-6 py-3.5 bg-white hover:bg-slate-50 text-slate-800 border border-slate-300 rounded-xl text-xs font-black shadow-2xs transition-all flex items-center justify-center gap-2"
           >
             <PlayCircle className="w-4 h-4 text-[#0A84FF]" />
@@ -342,7 +352,9 @@ export const LandingPage: React.FC = () => {
                 <p className="text-emerald-400 font-bold pt-1">Výsledek: skutečná uložená data bez demo fallbacku</p>
               </div>
               <button
-                onClick={() => window.location.assign('/demo')}
+                onClick={() => DEMO_DESTINATION.url && window.location.assign(DEMO_DESTINATION.url)}
+                disabled={!DEMO_DESTINATION.url}
+                title={DEMO_DESTINATION.error || 'Otevřít skutečné demo StavbaFlow'}
                 className="w-full mt-3 py-2 bg-[#0A84FF] text-white rounded-xl text-xs font-sans font-bold hover:bg-blue-600 transition-all"
               >
                 Vyzkoušet tento scénář v demu →
@@ -670,7 +682,7 @@ export const LandingPage: React.FC = () => {
             </div>
             <div className="flex flex-wrap gap-4 text-slate-400">
               <button onClick={() => navigate('/login')} className="hover:text-white transition-colors">Přihlášení</button>
-              <button onClick={() => window.location.assign('/demo')} className="hover:text-white transition-colors">Interaktivní demo</button>
+              <button onClick={() => DEMO_DESTINATION.url && window.location.assign(DEMO_DESTINATION.url)} disabled={!DEMO_DESTINATION.url} title={DEMO_DESTINATION.error || 'Otevřít skutečné demo StavbaFlow'} className="hover:text-white transition-colors disabled:cursor-not-allowed disabled:opacity-50">Interaktivní demo</button>
               <button onClick={() => setIsBookingOpen(true)} className="hover:text-white transition-colors">Osobní ukázka (20 min)</button>
               <button onClick={() => setActiveLegalModal('vop')} className="hover:text-white transition-colors">VOP</button>
               <button onClick={() => setActiveLegalModal('gdpr')} className="hover:text-white transition-colors">GDPR & Soukromí</button>

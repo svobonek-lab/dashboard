@@ -125,7 +125,7 @@ export function PublicDemoWorkspace() {
           {screen === 'documents' && <DocumentsPage leads={leads} onNavigate={navigate} />}
           {screen === 'analytics' && <AnalyticsPage leads={leads} totals={totals} />}
           {screen === 'settings' && <SettingsPage company={company} onSave={saveCompany} />}
-          <footer className="od-footer"><span>STAVBACORE · UKÁZKOVÝ DASHBOARD</span><span>Pro stavební firmy, které chtějí mít práci pod kontrolou.</span></footer>
+          <footer className="od-footer"><span>STAVBAFLOW · UKÁZKOVÝ DASHBOARD</span><span>Pro stavební firmy, které chtějí mít práci pod kontrolou.</span></footer>
         </div>
       </section>
     </div>
