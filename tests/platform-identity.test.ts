@@ -3,7 +3,7 @@ import test from 'node:test';
 import { readFileSync } from 'node:fs';
 
 import { readPlatformIdentity, resolveApplicationIdentity } from '../src/app/platformIdentity';
-import { canAccessAdmin, canManageCompany, canViewRevenue, getDefaultRouteForRole } from '../src/app/permissions';
+import { canAccessAdmin, canAccessFieldTools, canEditLeads, canManageCompany, canViewRevenue, getDefaultRouteForRole } from '../src/app/permissions';
 
 test('active platform identity is resolved before company membership', () => {
   const result = resolveApplicationIdentity(
@@ -29,6 +29,14 @@ test('platform administrator has control-plane access but no tenant owner privil
   assert.equal(canAccessAdmin('platform_admin'), true);
   assert.equal(canManageCompany('platform_admin'), false);
   assert.equal(canViewRevenue('platform_admin'), false);
+});
+
+test('unknown or missing roles fail closed for tenant capabilities', () => {
+  assert.equal(canEditLeads(undefined), false);
+  assert.equal(canEditLeads('administrator'), false);
+  assert.equal(canAccessFieldTools(undefined), false);
+  assert.equal(canAccessFieldTools('administrator'), false);
+  assert.equal(canManageCompany('administrator'), false);
 });
 
 test('platform identity reader accepts only the narrow active role result', async () => {
