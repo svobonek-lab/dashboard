@@ -1,6 +1,6 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 
-import { authorizePlatformRequest } from '../auth.js';
+import { authorizePlatformRequest, recordPlatformAudit } from '../auth.js';
 import { runPlatformHandler } from '../handler.js';
 import { PlatformHttpError, requireGet } from '../http.js';
 
@@ -34,7 +34,13 @@ export async function listPlatformCompanies(service: SupabaseClient): Promise<Pl
 export default async function platformCompaniesHandler(request: any, response: any): Promise<void> {
   await runPlatformHandler(response, async () => {
     requireGet(request);
-    const { service } = await authorizePlatformRequest(request);
-    return { companies: await listPlatformCompanies(service) };
+    const { userId, service } = await authorizePlatformRequest(request);
+    const companies = await listPlatformCompanies(service);
+    await recordPlatformAudit(service, {
+      actorUserId: userId,
+      action: 'company_directory.viewed',
+      reasonCode: 'platform_api_request',
+    });
+    return { companies };
   });
 }

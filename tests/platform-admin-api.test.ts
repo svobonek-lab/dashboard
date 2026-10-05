@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { authorizePlatformRequest } from '../api/_platform/auth.js';
+import { authorizePlatformRequest, recordPlatformAudit } from '../api/_platform/auth.js';
 import { platformErrorResponse, requireGet } from '../api/_platform/http.js';
 import { listPlatformCompanies } from '../api/_platform/routes/companies.js';
 import platformRouter, { resolvePlatformRoute } from '../api/platform/[route].js';
@@ -61,6 +61,41 @@ test('platform HTTP boundary accepts GET only and maps errors without details', 
     status: 500,
     body: { code: 'PLATFORM_REQUEST_FAILED' },
   });
+});
+
+test('platform operations write a minimal audit event and fail closed when auditing fails', async () => {
+  let inserted: Record<string, unknown> | undefined;
+  const service = {
+    from: (table: string) => {
+      assert.equal(table, 'app_platform_audit_events');
+      return {
+        insert: async (value: Record<string, unknown>) => { inserted = value; return { error: null }; },
+      };
+    },
+  } as any;
+
+  await recordPlatformAudit(service, {
+    actorUserId: 'admin-a',
+    action: 'company_directory.viewed',
+    reasonCode: 'platform_api_request',
+  });
+  assert.deepEqual(inserted, {
+    actor_user_id: 'admin-a',
+    action: 'company_directory.viewed',
+    outcome: 'allowed',
+    reason_code: 'platform_api_request',
+  });
+
+  await assert.rejects(
+    recordPlatformAudit({
+      from: () => ({ insert: async () => ({ error: new Error('unavailable') }) }),
+    } as any, {
+      actorUserId: 'admin-a',
+      action: 'platform_session.verified',
+      reasonCode: 'platform_api_request',
+    }),
+    /PLATFORM_AUDIT_UNAVAILABLE/,
+  );
 });
 
 test('company directory selects and returns only minimal operational fields', async () => {

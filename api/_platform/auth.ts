@@ -5,6 +5,25 @@ import { getPlatformAuthClient, getPlatformServiceClient } from './supabaseAdmin
 
 type PlatformClients = { auth: SupabaseClient; service: SupabaseClient };
 
+export interface PlatformAuditInput {
+  actorUserId: string;
+  action: 'platform_session.verified' | 'company_directory.viewed';
+  reasonCode: 'platform_api_request';
+}
+
+export async function recordPlatformAudit(
+  service: SupabaseClient,
+  input: PlatformAuditInput,
+): Promise<void> {
+  const { error } = await service.from('app_platform_audit_events').insert({
+    actor_user_id: input.actorUserId,
+    action: input.action,
+    outcome: 'allowed',
+    reason_code: input.reasonCode,
+  });
+  if (error) throw new PlatformHttpError('PLATFORM_AUDIT_UNAVAILABLE', 503);
+}
+
 function readBearer(headers: Record<string, string | string[] | undefined> = {}): string {
   const raw = headers.authorization ?? headers.Authorization;
   const value = Array.isArray(raw) ? raw[0] : raw;
