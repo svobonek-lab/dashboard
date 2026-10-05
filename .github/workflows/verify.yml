@@ -23,6 +23,8 @@ jobs:
           node-version: '24'
           cache: npm
       - run: npm ci
+      - run: npm ci
+        working-directory: connector
       - run: npm test
       - run: npm run lint
       - run: npm run build

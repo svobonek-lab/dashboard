@@ -1,0 +1,56 @@
+services:
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: fixture
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: synthetic_admin_password
+    ports:
+      - "55432:5432"
+    volumes:
+      - ./test/fixtures/postgres.sql:/docker-entrypoint-initdb.d/fixture.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d fixture"]
+      interval: 3s
+      timeout: 3s
+      retries: 30
+
+  mariadb:
+    image: mariadb:11.8
+    environment:
+      MARIADB_DATABASE: fixture
+      MARIADB_ROOT_PASSWORD: synthetic_admin_password
+    ports:
+      - "53306:3306"
+    volumes:
+      - ./test/fixtures/mysql.sql:/docker-entrypoint-initdb.d/fixture.sql:ro
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 3s
+      timeout: 3s
+      retries: 30
+
+  mssql:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_SA_PASSWORD: Synthetic_admin_password_1!
+      MSSQL_PID: Developer
+    ports:
+      - "51433:1433"
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P 'Synthetic_admin_password_1!' -C -Q 'SELECT 1' || exit 1"]
+      interval: 5s
+      timeout: 5s
+      retries: 40
+      start_period: 20s
+
+  mssql-init:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    depends_on:
+      mssql:
+        condition: service_healthy
+    volumes:
+      - ./test/fixtures/mssql.sql:/fixture.sql:ro
+    entrypoint: ["/bin/bash", "-c"]
+    command: ["/opt/mssql-tools18/bin/sqlcmd -b -S mssql -U sa -P 'Synthetic_admin_password_1!' -C -i /fixture.sql"]

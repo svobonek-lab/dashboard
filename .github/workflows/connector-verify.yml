@@ -1,0 +1,74 @@
+name: connector-verify
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - connector/**
+      - shared/connectorProtocol.ts
+      - .github/workflows/connector-verify.yml
+  push:
+    branches: [main]
+    paths:
+      - connector/**
+      - shared/connectorProtocol.ts
+      - .github/workflows/connector-verify.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: connector-verify-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  connector:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: connector/package-lock.json
+      - run: npm ci
+        working-directory: connector
+      - run: npm test
+        working-directory: connector
+      - run: npm run lint
+        working-directory: connector
+      - run: npm run build
+        working-directory: connector
+      - run: npm audit --omit=dev --audit-level=high
+        working-directory: connector
+
+  database-contracts:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: connector/package-lock.json
+      - run: npm ci
+        working-directory: connector
+      - name: Start synthetic databases
+        run: docker compose -f connector/compose.test.yaml up -d --wait postgres mariadb mssql
+      - name: Initialize SQL Server fixture
+        run: docker compose -f connector/compose.test.yaml run --rm mssql-init
+      - name: Verify adapters and source write denial twice
+        env:
+          RUN_DB_INTEGRATION: '1'
+        run: npm run test:integration && npm run test:integration
+        working-directory: connector
+      - name: Stop synthetic databases
+        if: always()
+        run: docker compose -f connector/compose.test.yaml down -v
