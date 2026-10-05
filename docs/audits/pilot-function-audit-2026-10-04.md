@@ -6,6 +6,12 @@ The repository now presents an honest, focused pilot for a small construction co
 
 This is ready for a **supervised first-company pilot** after the operator checklist below. It is not evidence that an arbitrary customer's legacy database can already be connected or that production writes have been enabled.
 
+## Read-only database connector update — 5 October 2026
+
+The repository now contains the Synology connector runtime, tenant-bound signed APIs, reviewed mapping and dry-run approval flow, owner integration UI, digest-based updater/rollback, multi-architecture verification and operator runbooks. PostgreSQL, MySQL/MariaDB and SQL Server adapter contracts include direct source write-denial tests. These additions materially close the earlier simulated-SQL gap.
+
+The connector is still **release-candidate code**, not a live customer integration. `supabase/staging/20261004_connector_contract.sql` has not been applied by this work, no image has been published from `main`, and the connector-specific staging/Preview scripts have not been run against an enrolled synthetic connector. Production Supabase, production Vercel and customer databases were not changed. Keep `VITE_CONNECTOR_ENABLED=false` until those gates pass and the resulting digest/evidence are recorded.
+
 ## Verified in this change
 
 - A single login routes users by their resolved role.
@@ -56,7 +62,7 @@ The current shell does not contain staging credentials, so this change did not r
 7. Submit one synthetic enquiry through the company's real public tenant URL and confirm it appears only for that company.
 8. Run one reviewed CSV dry-run and one idempotent commit retry before importing customer data.
 9. Complete the seller's legal name and IČO, then obtain legal review for privacy information, data-processing terms, retention policy, backup/restore ownership, and incident contact. The approved public email and address are already present.
-10. Agree in writing that the first offer includes form plus controlled import; direct SQL, Synology, Google Sheets, and two-way sync are excluded until separately verified.
+10. Agree in writing that the first offer includes form plus controlled CSV import. The Synology read-only connector may be added only after its separately reviewed staging acceptance; Google Sheets and two-way sync remain excluded.
 
 ## Remaining release risk
 

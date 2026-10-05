@@ -63,6 +63,15 @@ The recipient must open the real invitation link so receipt and the exact email-
 
 This evidence does not authorize a production database migration, production data write or production deploy.
 
+## Connector acceptance boundary — 5 October 2026
+
+Two new repeatable commands are present:
+
+- `npm run test:connector:staging` verifies that owners can inspect only their own connector state and employees cannot inspect integration diagnostics;
+- `npm run test:connector:preview` verifies the deployed integrations route and safe owner status response, and can require one exact synthetic connector ID.
+
+Both commands are hard-bound to staging project `oncmtmrhmjlerbwkrecv` and a Vercel Preview host. They do not read a service-role key and do not print customer rows. They have not been executed in this change because the proposed connector SQL contract remains unapplied. The prior application-level tenant evidence above remains valid, but it is not a substitute for connector-specific acceptance. After separate SQL review, record the commit, CI run, Preview URL, published image digest, three source-engine results, synthetic connector IDs, browser console result and Security Advisor result here.
+
 ## Assignment and signed-in public intake recheck — 2026-10-03
 
 The current PR #65 Preview was exercised with the retained synthetic company and the active real employee account:
