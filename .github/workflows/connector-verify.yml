@@ -108,12 +108,20 @@ jobs:
           context: .
           file: connector/Dockerfile
           platforms: linux/amd64,linux/arm64
-          outputs: type=oci,dest=/tmp/stavbaflow-connector.tar
+          outputs: type=cacheonly
+          tags: stavbaflow-connector:verify
+      - name: Load the scanned amd64 image from the verified build
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: connector/Dockerfile
+          platforms: linux/amd64
+          load: true
           tags: stavbaflow-connector:verify
       - name: Reject unresolved high and critical image vulnerabilities
         uses: aquasecurity/trivy-action@v0.36.0
         with:
-          input: /tmp/stavbaflow-connector.tar
+          image-ref: stavbaflow-connector:verify
           severity: HIGH,CRITICAL
           ignore-unfixed: true
           exit-code: '1'
