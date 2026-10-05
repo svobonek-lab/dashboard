@@ -26,6 +26,14 @@ Deliver the first controlled pilot for a small construction company: owner login
 5. Merge and deploy the honest pilot sales page, configure a real business contact path and add the public legal identity.
 6. Enable leaked-password protection when the selected Supabase plan supports it; the current staging Free plan reports it as unavailable.
 7. Record the customer-specific onboarding result using `docs/pilot-operator-runbook.md` before describing that customer as live.
+8. Review and apply the proposed connector contract to isolated staging, run `test:connector:staging` and `test:connector:preview`, and record the tested image digest before enabling `VITE_CONNECTOR_ENABLED`.
+
+## Read-only database connector
+
+- Implemented: local Synology runtime, PostgreSQL/MySQL/MariaDB/SQL Server read-only adapters, signed tenant-bound protocol, durable cursor/outbox, explicit mapping, dry-run approval, owner controls, multi-architecture CI and digest rollback scripts.
+- Reviewable only: `supabase/staging/20261004_connector_contract.sql`; it is not an applied migration and CI never applies it.
+- Release boundary: the image publishing workflow is manual and restricted to `main`. It publishes only after verification and records an immutable digest.
+- Unverified gate: the connector-specific two-company staging and exact Preview checks require the reviewed SQL contract plus synthetic credentials. Until those checks pass, the connector is not part of the sellable customer claim.
 
 The repository now contains a staging-only provisioning command with dry-run-by-default behavior. It remains unverified for a new synthetic tenant until the staging service-role key is rotated and the operator runs the full checklist.
 
@@ -33,7 +41,6 @@ The repository now contains a staging-only provisioning command with dry-run-by-
 
 - Google Sheets synchronization;
 - direct customer SQL credentials or browser-side database connections;
-- Synology synchronization;
 - bidirectional synchronization back to a customer's database;
 - automatic production migrations or deploys;
 - auto-merge.

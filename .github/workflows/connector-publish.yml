@@ -1,0 +1,68 @@
+name: connector-publish
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Semver already reviewed in connector/package.json
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: connector-publish
+  cancel-in-progress: false
+
+jobs:
+  verify:
+    if: github.ref == 'refs/heads/main' && github.repository == 'svobonek-lab/dashboard'
+    uses: ./.github/workflows/connector-verify.yml
+
+  publish:
+    needs: verify
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: write
+      packages: write
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - name: Validate reviewed version
+        env:
+          REQUESTED_VERSION: ${{ inputs.version }}
+        run: |
+          test "$REQUESTED_VERSION" = "$(node -p "require('./connector/package.json').version")"
+          echo "$REQUESTED_VERSION" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+$'
+      - uses: docker/setup-qemu-action@v3
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Publish version and source-commit tags
+        id: image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: connector/Dockerfile
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: |
+            ghcr.io/svobonek-lab/stavbaflow-connector:${{ inputs.version }}
+            ghcr.io/svobonek-lab/stavbaflow-connector:sha-${{ github.sha }}
+      - name: Create immutable release manifest
+        env:
+          VERSION: ${{ inputs.version }}
+          DIGEST: ${{ steps.image.outputs.digest }}
+          SOURCE_COMMIT: ${{ github.sha }}
+        run: |
+          node -e "const fs=require('fs'); const out={version:process.env.VERSION,image:'ghcr.io/svobonek-lab/stavbaflow-connector',digest:process.env.DIGEST,publishedAt:new Date().toISOString(),sourceCommit:process.env.SOURCE_COMMIT}; if(!/^sha256:[a-f0-9]{64}$/.test(out.digest)) process.exit(1); fs.writeFileSync('connector-manifest.json',JSON.stringify(out,null,2)+'\n')"
+      - name: Publish stable manifest only after verified image succeeds
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh release create "connector-v${{ inputs.version }}" connector-manifest.json --repo "$GITHUB_REPOSITORY" --title "StavbaFlow connector ${{ inputs.version }}" --notes "Immutable digest release from $GITHUB_SHA" --latest

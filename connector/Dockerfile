@@ -13,8 +13,11 @@ FROM node:24-bookworm-slim AS runtime
 ENV NODE_ENV=production \
     STAVBAFLOW_CONNECTOR_CONFIG=/etc/stavbaflow/config.json
 RUN apt-get update \
+    && apt-get upgrade -y \
     && apt-get install -y --no-install-recommends ca-certificates tini \
     && rm -rf /var/lib/apt/lists/* \
+    && rm -rf /usr/local/lib/node_modules/npm \
+    && rm -f /usr/local/bin/npm /usr/local/bin/npx \
     && groupadd --gid 10001 stavbaflow \
     && useradd --uid 10001 --gid 10001 --no-create-home --shell /usr/sbin/nologin stavbaflow \
     && mkdir -p /app/connector /var/lib/stavbaflow \
