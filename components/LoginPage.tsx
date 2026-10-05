@@ -11,7 +11,7 @@ interface LoginPageProps {
 }
 
 const ROLE_COPY: Record<UserRole, { title: string; description: string; route: string }> = {
-  super_admin: {
+  platform_admin: {
     title: 'Přihlášení administrátora',
     description: 'Správa firem, tarifů a nastavení platformy StavbaFlow.',
     route: '/admin/login',

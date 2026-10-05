@@ -55,9 +55,8 @@ export const OwnerLayout: React.FC<OwnerLayoutProps> = ({
     user, 
     dbUser, 
     logout, 
-    impersonatingOrgId, 
-    stopImpersonation,
-    switchRoleToSuperAdmin
+    impersonatingOrgId,
+    stopImpersonation
   } = useOrganization();
   const { pathname, navigate, isActive } = useRouter();
 

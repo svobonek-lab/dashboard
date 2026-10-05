@@ -37,7 +37,7 @@ export const CompanySwitcher: React.FC<CompanySwitcherProps> = ({ variant = 'dar
 
   // Load organizations
   useEffect(() => {
-    const isSuperAdmin = dbUser?.role === 'super_admin';
+    const isSuperAdmin = dbUser?.role === 'platform_admin';
     const localOrgs = LocalSupabaseMock.getOrganizations();
     if (isSuperAdmin) {
       if (localOrgs && localOrgs.length > 0) {
@@ -212,7 +212,7 @@ export const CompanySwitcher: React.FC<CompanySwitcherProps> = ({ variant = 'dar
           </div>
 
           {/* Action Footer: Create Company */}
-          {((dbUser?.email || '').trim().toLowerCase() === 'svobonek@gmail.com' || dbUser?.role === 'super_admin') && (
+          {dbUser?.role === 'platform_admin' && (
             <div className="p-2 border-t border-slate-200/80 bg-[#090D16]/80">
               <button
                 onClick={() => {
