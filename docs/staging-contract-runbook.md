@@ -45,3 +45,16 @@ api/import-leads requires APP_IMPORT_WORKER_ENABLED=true, a valid Supabase
 session, active owner membership and a server-side service key. The flag must
 remain disabled in production until the staging evidence above is attached to a
 reviewed release.
+
+## Connector contract review
+
+Before applying `20261004_connector_contract.sql` to isolated staging:
+
+1. Confirm the existing `app_companies` UUID key and current `app_role` helpers.
+2. Review all six new tables and every `SECURITY DEFINER` function in the diff.
+3. Apply inside the staging project only, then run `supabase/tests/connector_authorization.sql`; it rolls back its two synthetic companies and connectors.
+4. Export metadata only from `pg_policies`, `information_schema.role_table_grants`, and `pg_proc` (`prosecdef`, identity arguments, `proconfig`).
+5. Confirm `anon` and `authenticated` have no direct connector-table grants or connector-RPC execution.
+6. Re-run Security Advisor. Do not promote or copy the SQL to production from automation.
+
+The connector acceptance path must also prove this order: registration, metadata-only heartbeat, owner mapping, connector dry run, owner approval, first import. Attempting a non-dry-run batch before approval must fail. A mapping change must clear the previous approval, require a new dry run, and keep old-version queued batches rejected. Capture only aggregate counts and issue codes; do not include source row values in evidence.

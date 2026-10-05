@@ -1,10 +1,15 @@
-import React, { useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { CheckCircle2, Database, FileSpreadsheet, LockKeyhole, UploadCloud } from 'lucide-react';
 import { CSVImportModal } from '@/components/integrations/CSVImportModal';
 import { useOrganization } from '@/context/OrganizationContext';
 import { supabase } from '@/lib/supabase';
 import type { Employee, Lead } from '@/types';
 import type { FieldMappingConfig } from '@/types/integrations';
+import { ConnectorSetup } from '@/components/integrations/ConnectorSetup';
+import { ConnectorStatus } from '@/components/integrations/ConnectorStatus';
+import { ConnectorMapping } from '@/components/integrations/ConnectorMapping';
+import { connectorClient } from '@/src/app/connectorClient';
+import type { ConnectorSummary } from '@/src/app/connectorContract';
 
 interface IntegrationsProps {
   leads?: Lead[];
@@ -15,6 +20,16 @@ interface IntegrationsProps {
 export const Integrations: React.FC<IntegrationsProps> = () => {
   const { currentOrg, fetchLeads } = useOrganization();
   const [isCsvOpen, setIsCsvOpen] = useState(false);
+  const [connectors, setConnectors] = useState<ConnectorSummary[]>([]);
+  const [connectorError, setConnectorError] = useState('');
+  const connectorEnabled = import.meta.env.VITE_CONNECTOR_ENABLED === 'true';
+  const refreshConnectors = useCallback(async (signal?: AbortSignal) => {
+    if (!connectorEnabled || !currentOrg?.id) return;
+    try { setConnectorError(''); setConnectors((await connectorClient.status(currentOrg.id, signal)).connectors); }
+    catch (cause) { if (!(cause instanceof DOMException && cause.name === 'AbortError')) setConnectorError('Napojení databáze zatím není na tomto prostředí dostupné.'); }
+  }, [connectorEnabled, currentOrg?.id]);
+  useEffect(() => { const controller = new AbortController(); void refreshConnectors(controller.signal); return () => controller.abort(); }, [refreshConnectors]);
+  const activeConnector = connectors.find(item => item.status !== 'revoked');
 
   const importCsv = async (
     _rows: Record<string, unknown>[],
@@ -69,10 +84,21 @@ export const Integrations: React.FC<IntegrationsProps> = () => {
 
         <aside className="workspace-panel p-6 sm:p-7">
           <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-slate-100 text-slate-600"><LockKeyhole className="h-5 w-5" /></span>
-          <h2 className="mt-5 text-base font-semibold text-slate-950">Další konektory po pilotu</h2>
-          <p className="mt-2 text-sm leading-6 text-slate-500">Přímé SQL, Google Sheets a obousměrnou synchronizaci zapojujeme až po samostatném bezpečnostním ověření konkrétního zdroje.</p>
-          <div className="mt-5 flex items-center gap-3 rounded-xl bg-slate-50 p-3 text-sm text-slate-600"><Database className="h-4 w-4" /><span>Individuální návrh napojení</span></div>
+          <h2 className="mt-5 text-base font-semibold text-slate-950">Dvě bezpečné cesty</h2>
+          <p className="mt-2 text-sm leading-6 text-slate-500">CSV je vhodné pro jednorázový start. Ověřený Synology konektor níže drží vybraná data průběžně aktuální bez zápisu zpět do firemní databáze.</p>
+          <div className="mt-5 flex items-center gap-3 rounded-xl bg-slate-50 p-3 text-sm text-slate-600"><Database className="h-4 w-4" /><span>PostgreSQL · MariaDB · SQL Server</span></div>
         </aside>
+      </section>
+
+      <section className="mt-6 space-y-4">
+        <div><p className="workspace-kicker">Průběžné napojení</p><h2 className="mt-1 text-xl font-semibold tracking-tight text-slate-950">Synology Database Connector</h2></div>
+        {!connectorEnabled && <div className="workspace-panel p-5 text-sm leading-6 text-slate-600">Konektor není na tomto nasazení aktivovaný. CSV import zůstává dostupný a žádné ukázkové připojení se nezobrazuje jako živé.</div>}
+        {connectorEnabled && currentOrg?.id ? <>
+          {!activeConnector ? <ConnectorSetup companyId={currentOrg.id} onCreated={() => void refreshConnectors()} /> : null}
+          <ConnectorStatus companyId={currentOrg.id} items={connectors} onRefresh={() => void refreshConnectors()} />
+          {activeConnector && activeConnector.status !== 'awaiting_enrollment' ? <ConnectorMapping companyId={currentOrg.id} connector={activeConnector} onSaved={() => void refreshConnectors()} /> : null}
+        </> : null}
+        {connectorError && <p role="alert" className="text-sm text-amber-700">{connectorError}</p>}
       </section>
 
       <CSVImportModal isOpen={isCsvOpen} onClose={() => setIsCsvOpen(false)} onImportBatch={importCsv} />

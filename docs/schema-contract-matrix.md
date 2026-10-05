@@ -37,3 +37,13 @@ The adapter PR must satisfy all of the following in local or staging fixtures be
 ## Evidence still required
 
 The current table inventory is not enough to implement the adapter. The next metadata-only inspection should request verbose definitions for `app_companies`, `app_members`, `app_invites`, `app_leads`, `app_quotes`, `app_tasks`, `app_time_entries`, `app_costs`, `app_invoices`, and `app_job_budgets`, plus read-only RPC signatures for the public inquiry and tenant provisioning flows. Do not read customer rows and do not execute any RPC.
+
+## Synology connector staging proposal (2026-10-04)
+
+The connector contract is defined in `supabase/staging/20261004_connector_contract.sql` and is not applied automatically. It adds six RLS-enabled, browser-read-only tables: enrollments, identities, mappings, request nonces/responses, canonical external records, and commands. Connector requests are authenticated in the server function, while every SQL RPC derives `company_id` from the registered connector identity.
+
+All connector RPCs are `SECURITY DEFINER`, set `search_path = public, pg_temp`, revoke execution from `public`, `anon`, and `authenticated`, and grant only `service_role`. Enrollment codes are stored as SHA-256 hashes, expire, and are consumed under row lock. A connector may report bounded table/column metadata, never source values or credentials. `app_ingest_connector_batch` accepts an unapproved mapping only for a value-free dry-run summary; durable record writes require the exact mapping version to have a successful dry run and explicit owner approval. It persists idempotent request responses and never accepts a company argument.
+
+The owner status RPC returns only safe operational fields: heartbeat and next-sync times, connector and mapping versions, bounded source metadata, aggregate run counts, pause reason, and value-free mapping issues. `app_approve_connector_mapping` requires active same-company owner membership, refuses a missing or failed dry run, records the approving user, and queues an expiring command for the bound connector.
+
+Required pre-apply evidence remains: actual staging column compatibility, execution of `supabase/tests/connector_authorization.sql` in a rolled-back synthetic transaction, catalog output for RLS/grants/function configuration, and a new Security Advisor review. Production is unchanged.

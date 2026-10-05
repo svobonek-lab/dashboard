@@ -27,6 +27,8 @@ export interface ConnectorRuntimeOptions {
   version: string;
   health: ConnectorHealth;
   heartbeat: () => Promise<{ accepted: boolean }>;
+  pollCommands?: () => Promise<void>;
+  commandIntervalMs?: number;
   runSync: () => Promise<RunResult>;
   scheduler: RuntimeScheduler;
   adapter: ClosableAdapter;
@@ -50,6 +52,7 @@ export async function verifyStateDirectory(path: string): Promise<void> {
 
 export class ConnectorRuntime {
   private stopping: Promise<void> | null = null;
+  private commandTimer: NodeJS.Timeout | null = null;
   private resolveStopped!: () => void;
   readonly stopped = new Promise<void>(resolve => { this.resolveStopped = resolve; });
   private readonly signals: SignalSource;
@@ -67,6 +70,11 @@ export class ConnectorRuntime {
     if (!heartbeat.accepted) throw new Error('signed heartbeat was rejected');
     this.options.health.recordHeartbeat();
     this.options.health.setPaused((await this.options.scheduler.state()).paused);
+    if (this.options.pollCommands) {
+      await this.options.pollCommands();
+      this.commandTimer = setInterval(() => { void this.options.pollCommands?.().catch(() => undefined); }, this.options.commandIntervalMs ?? 60_000);
+      this.commandTimer.unref();
+    }
     this.signals.on('SIGINT', this.signalHandler);
     this.signals.on('SIGTERM', this.signalHandler);
     this.options.scheduler.startAutomatic(this.options.runSync);
@@ -76,6 +84,8 @@ export class ConnectorRuntime {
     if (this.stopping) return this.stopping;
     this.stopping = (async () => {
       this.options.scheduler.stop();
+      if (this.commandTimer) clearInterval(this.commandTimer);
+      this.commandTimer = null;
       this.signals.off?.('SIGINT', this.signalHandler);
       this.signals.off?.('SIGTERM', this.signalHandler);
       await this.options.adapter.close();

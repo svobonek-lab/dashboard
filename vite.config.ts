@@ -7,24 +7,41 @@ import testSqlHandler from './api/test-sql';
 import inviteEmployeeHandler from './api/invite-employee';
 import resetEmployeePasswordHandler from './api/reset-employee-password';
 import outboxSchedulerHandler from './api/outbox-scheduler';
+import connectorRegisterHandler from './api/_connector/routes/register';
+import connectorHeartbeatHandler from './api/_connector/routes/heartbeat';
+import connectorIngestHandler from './api/_connector/routes/ingest';
+import connectorCommandsHandler from './api/_connector/routes/commands';
+import connectorEnrollHandler from './api/_connector/routes/enroll';
+import connectorStatusHandler from './api/_connector/routes/status';
+import connectorMappingHandler from './api/_connector/routes/mapping';
+import connectorCommandHandler from './api/_connector/routes/command';
 
 function apiMiddlewarePlugin(): Plugin {
   return {
     name: 'api-middleware',
     configureServer(server) {
       server.middlewares.use(async (req, res, next) => {
-        const handleRoute = (handler: any) => {
+        const handleRoute = (handler: any, preserveRawBody = false) => {
           let body = '';
+          let tooLarge = false;
           req.on('data', (chunk: any) => {
+            if (tooLarge) return;
             body += chunk.toString();
+            if (Buffer.byteLength(body, 'utf8') > 512 * 1024) tooLarge = true;
           });
           req.on('end', async () => {
             try {
+              if (tooLarge) {
+                res.statusCode = 413;
+                res.setHeader('Content-Type', 'application/json');
+                res.end(JSON.stringify({ code: 'REQUEST_TOO_LARGE' }));
+                return;
+              }
               const parsedBody = body ? JSON.parse(body) : {};
               const customReq = {
                 method: req.method,
                 headers: req.headers,
-                body: parsedBody,
+                body: preserveRawBody ? body : parsedBody,
                 url: req.url
               };
               const customRes = {
@@ -70,6 +87,22 @@ function apiMiddlewarePlugin(): Plugin {
 
         if ((req.url === '/api/outbox-scheduler' || req.url?.startsWith('/api/outbox-scheduler')) && (req.method === 'POST' || req.method === 'GET')) {
           handleRoute(outboxSchedulerHandler);
+          return;
+        }
+
+        const connectorRoutes: Record<string, any> = {
+          '/api/connector/register': connectorRegisterHandler,
+          '/api/connector/heartbeat': connectorHeartbeatHandler,
+          '/api/connector/ingest': connectorIngestHandler,
+          '/api/connector/commands': connectorCommandsHandler,
+          '/api/connector/enroll': connectorEnrollHandler,
+          '/api/connector/status': connectorStatusHandler,
+          '/api/connector/mapping': connectorMappingHandler,
+          '/api/connector/command': connectorCommandHandler,
+        };
+        const connectorHandler = req.url ? connectorRoutes[req.url] : undefined;
+        if (connectorHandler && req.method === 'POST') {
+          handleRoute(connectorHandler, true);
           return;
         }
 

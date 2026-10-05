@@ -70,6 +70,16 @@ test('rejects oversized bodies and expired commands', async () => {
   assert.deepEqual(await api.pollCommands(new Date('2026-10-04T10:00:00Z')), []);
 });
 
+test('rejects malformed or cross-connector command responses before dispatch', async () => {
+  const directory = await mkdtemp(join(tmpdir(), 'stavbaflow-client-'));
+  const identity = await loadOrCreateIdentity(join(directory, 'identity.json'));
+  const api = new ConnectorApi({
+    baseUrl: 'https://app.example.test', connectorId: 'connector-1', identity,
+    fetcher: async () => new Response(JSON.stringify({ commands: [{ version: 1, id: 'cross', connectorId: 'connector-2', type: 'sync_now', expiresAt: '2026-10-05T12:00:00Z' }] }), { status: 200 }),
+  });
+  await assert.rejects(api.pollCommands(new Date('2026-10-05T10:00:00Z')), /command response is invalid/);
+});
+
 test('strict config reads password from a file and rejects unsafe paths and unknown keys', async () => {
   const root = await mkdtemp(join(tmpdir(), 'stavbaflow-config-'));
   const passwordPath = join(root, 'db-password');
@@ -83,4 +93,5 @@ test('strict config reads password from a file and rejects unsafe paths and unkn
   assert.throws(() => parseConnectorConfig({ apiBaseUrl: 'http://public.example.test', stateRoot: root, identityPath: join(root, 'identity'), mappingPath: join(root, 'mapping'), syncIntervalSeconds: 59, database: {}, extra: true }), /unknown config key: extra/);
   assert.throws(() => parseConnectorConfig({ apiBaseUrl: 'https://app.example.test', stateRoot: './relative', identityPath: join(root, 'identity'), mappingPath: join(root, 'mapping'), syncIntervalSeconds: 60, database: { driver: 'postgres', host: 'db', port: 5432, database: 'x', username: 'x', passwordFile: passwordPath } }), /stateRoot must be absolute/);
   assert.throws(() => parseConnectorConfig({ apiBaseUrl: 'https://app.example.test', stateRoot: root, identityPath: 'C:/outside/identity', mappingPath: join(root, 'mapping'), syncIntervalSeconds: 60, database: { driver: 'postgres', host: 'db', port: 5432, database: 'x', username: 'x', passwordFile: passwordPath } }), /inside stateRoot/);
+  assert.throws(() => parseConnectorConfig({ apiBaseUrl: 'https://app.example.test', stateRoot: root, identityPath: join(root, 'identity'), mappingPath: 'C:/outside/mapping.json', syncIntervalSeconds: 60, database: { driver: 'postgres', host: 'db', port: 5432, database: 'x', username: 'x', passwordFile: passwordPath } }), /mappingPath must be inside stateRoot/);
 });

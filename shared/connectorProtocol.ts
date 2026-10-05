@@ -31,7 +31,67 @@ export interface IngestEnvelopeV1 {
   mappingVersion: number;
   requestId: string;
   dryRun: boolean;
+  dryRunSummary?: ConnectorDryRunSummaryV1;
   records: CanonicalRecordV1[];
+}
+
+export interface ConnectorDryRunIssueV1 {
+  code: 'EXTERNAL_ID_MISSING' | 'REQUIRED_VALUE_MISSING' | 'CONVERSION_INVALID' | 'ENUM_VALUE_UNKNOWN';
+  sourceColumn: string;
+  targetField?: string;
+}
+
+export interface ConnectorDryRunSummaryV1 {
+  total: number;
+  valid: number;
+  failed: number;
+  issues: ConnectorDryRunIssueV1[];
+}
+
+export interface ConnectorSourceColumnV1 {
+  name: string;
+  dataType: string;
+  nullable: boolean;
+}
+
+export interface ConnectorSourceTableV1 {
+  schema: string;
+  name: string;
+  columns: ConnectorSourceColumnV1[];
+}
+
+export interface ConnectorSourceSchemaV1 {
+  tables: ConnectorSourceTableV1[];
+}
+
+export type ConnectorFieldConversionV1 =
+  | { kind: 'text' }
+  | { kind: 'number' }
+  | { kind: 'boolean'; invert?: boolean }
+  | { kind: 'datetime' }
+  | { kind: 'email' }
+  | { kind: 'phone' }
+  | { kind: 'currency'; decimalSeparator?: '.' | ',' }
+  | { kind: 'enum'; values: Record<string, string> };
+
+export interface ConnectorFieldMappingRuleV1 {
+  sourceColumn: string;
+  targetField: string;
+  conversion: ConnectorFieldConversionV1;
+  required?: boolean;
+}
+
+export interface ConnectorMappingDefinitionV1 {
+  version: 1;
+  mappingVersion: number;
+  entityType: CanonicalEntityType;
+  sourceSystem: string;
+  schema: string;
+  table: string;
+  externalIdColumn: string;
+  updatedAtColumn?: string;
+  deletedAtColumn?: string;
+  fields: ConnectorFieldMappingRuleV1[];
 }
 
 export interface IngestRecordResultV1 {
@@ -54,6 +114,7 @@ export type ConnectorCommandType =
   | 'pause'
   | 'resume'
   | 'refresh_mapping'
+  | 'approve_mapping'
   | 'rotate_identity';
 
 export interface ConnectorCommandV1 {
@@ -63,6 +124,7 @@ export interface ConnectorCommandV1 {
   type: ConnectorCommandType;
   expiresAt: string;
   mappingVersion?: number;
+  mappingDefinition?: ConnectorMappingDefinitionV1;
 }
 
 export type ConnectorRunStatus =

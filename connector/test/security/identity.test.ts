@@ -13,7 +13,7 @@ import {
 
 const requestFixture: SigningRequest = {
   method: 'POST',
-  pathname: '/api/connector-ingest',
+  pathname: '/api/connector/ingest',
   timestamp: '2026-10-04T10:00:00.000Z',
   requestId: 'request-1',
   body: '{"version":1}',
