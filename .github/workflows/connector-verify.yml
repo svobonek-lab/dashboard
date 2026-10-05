@@ -37,6 +37,8 @@ jobs:
           node-version: '24'
           cache: npm
       - run: npm ci
+      - run: npm ci
+        working-directory: connector
       - run: npm test
       - run: npm run lint
       - run: npm run build
@@ -109,7 +111,7 @@ jobs:
           outputs: type=oci,dest=/tmp/stavbaflow-connector.tar
           tags: stavbaflow-connector:verify
       - name: Reject unresolved high and critical image vulnerabilities
-        uses: aquasecurity/trivy-action@0.33.1
+        uses: aquasecurity/trivy-action@0.36.0
         with:
           input: /tmp/stavbaflow-connector.tar
           severity: HIGH,CRITICAL
