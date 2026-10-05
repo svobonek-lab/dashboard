@@ -15,7 +15,7 @@ The verified staging pilot supports:
 - CSV import with mapping, fingerprint-based idempotency and rollback of unchanged imports;
 - an append-only audit history for lead creation and status changes.
 
-Google Sheets, direct SQL connections, Synology synchronization and bidirectional database synchronization are not part of the first customer pilot. Their UI must not be presented as a working integration.
+Google Sheets and bidirectional database synchronization are not part of the first customer pilot. A read-only Synology connector for PostgreSQL, MySQL/MariaDB and Microsoft SQL Server is implemented behind `VITE_CONNECTOR_ENABLED`; it must remain disabled until the connector staging contract, two-company authorization check and exact image digest have been reviewed for that deployment.
 
 ## Environments
 
@@ -40,6 +40,16 @@ npm run build
 
 `npm run lint` performs TypeScript checking. The test suite includes authorization, invitation, import, public-intake, deployment-surface and outbox contracts.
 
+The connector has its own checks:
+
+```bash
+cd connector
+npm ci
+npm test
+npm run lint
+npm run build
+```
+
 ## Runtime configuration
 
 Copy `.env.example` to a local untracked environment file. Never commit credentials.
@@ -51,6 +61,7 @@ Client settings:
 - `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY`: browser-safe Supabase configuration.
 - `VITE_APP_SCHEMA_READS`: enables the reviewed `app_*` read path.
 - `VITE_PILOT_WRITES`: enables writes only for the explicitly allowlisted staging project.
+- `VITE_CONNECTOR_ENABLED`: reveals the owner connector workspace only after its server and staging contract are configured.
 
 Server-only settings:
 
@@ -71,6 +82,8 @@ npm run provision:staging -- --name "Synthetic Company" --slug "synthetic-compan
 The command is restricted to the documented staging project and requires a separate `--apply` flag before it sends an invitation or creates a company. Keep `STAGING_SUPABASE_SERVICE_ROLE_KEY` outside the repository and never expose it through a `VITE_` variable.
 
 Current staging evidence is recorded in [the pilot verification report](docs/staging-pilot-verification-20261001.md). The implementation ledger lists the remaining release actions in [docs/pilot-implementation-ledger.md](docs/pilot-implementation-ledger.md).
+
+The Synology connector is installed using [the connector installation guide](docs/synology-connector-install.md) and operated using [the incident and operations guide](docs/synology-connector-operations.md). It is outbound-only, uses a read-only source account, and never needs a browser-visible database credential.
 
 The current decision about what can be sold, what must be completed before the first customer, and which landing-page claims exceed the verified pilot is recorded in [the 2026-10-03 sales-readiness audit](docs/audits/sales-readiness-audit-2026-10-03.md).
 
