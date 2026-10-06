@@ -10,6 +10,8 @@ test('container runs non-root with a local-only health probe', async () => {
   const dockerfile = await readFile(join(connectorRoot, 'Dockerfile'), 'utf8');
   assert.match(dockerfile, /USER 10001:10001/);
   assert.match(dockerfile, /127\.0\.0\.1:8787\/health/);
+  assert.match(dockerfile, /apt-get upgrade -y/);
+  assert.match(dockerfile, /rm -rf \/usr\/local\/lib\/node_modules\/npm/);
   assert.doesNotMatch(dockerfile, /COPY\s+\.\s+\./);
 });
 

@@ -43,6 +43,9 @@ test('outbox does not send an email when another worker already claimed it', asy
     process.env.SUPABASE_SERVICE_ROLE_KEY='synthetic-service-role';
     globalThis.fetch = async (input: string | URL | Request, init?: RequestInit) => {
       const url = String(input instanceof Request ? input.url : input);
+      if (url.includes('/rest/v1/rpc/app_queue_stale_lead_alerts') && init?.method === 'POST') {
+        return new Response(JSON.stringify(0), { status: 200, headers: { 'content-type':'application/json' } });
+      }
       if (url === 'https://api.resend.com/emails') {
         providerCalls++;
         return new Response(JSON.stringify({ id: 'provider-message-id' }), { status: 200, headers: { 'content-type': 'application/json' } });
@@ -86,6 +89,9 @@ test('outbox sends to the provider with a stable idempotency key', async () => {
     process.env.SUPABASE_SERVICE_ROLE_KEY='synthetic-service-role';
     globalThis.fetch = async (input: string | URL | Request, init?: RequestInit) => {
       const url = String(input instanceof Request ? input.url : input);
+      if (url.includes('/rest/v1/rpc/app_queue_stale_lead_alerts') && init?.method === 'POST') {
+        return new Response(JSON.stringify(0), { status: 200, headers: { 'content-type':'application/json' } });
+      }
       if (url === 'https://api.resend.com/emails') {
         providerIdempotencyKey = new Headers(init?.headers).get('Idempotency-Key');
         return new Response(JSON.stringify({ id:'provider-message-id' }), { status:200, headers:{'content-type':'application/json'} });
@@ -124,6 +130,7 @@ test('outbox does not report delivered when persisting provider acceptance fails
     process.env.SUPABASE_SERVICE_ROLE_KEY='synthetic-service-role';
     globalThis.fetch=async(input:string|URL|Request,init?:RequestInit)=>{
       const url=String(input instanceof Request?input.url:input);
+      if(url.includes('/rest/v1/rpc/app_queue_stale_lead_alerts')&&init?.method==='POST') return new Response(JSON.stringify(0),{status:200,headers:{'content-type':'application/json'}});
       if(url==='https://api.resend.com/emails') return new Response(JSON.stringify({id:'provider-message-id'}),{status:200,headers:{'content-type':'application/json'}});
       if(url.includes('/rest/v1/app_email_outbox')&&(init?.method||'GET')==='GET') return new Response(JSON.stringify([{id:'email-1',recipient:'worker@example.invalid',subject:'Pilot',body:'Pilot',status:'pending',attempts:0,scheduled_for:'2026-01-01T00:00:00.000Z',created_at:'2026-01-01T00:00:00.000Z'}]),{status:200,headers:{'content-type':'application/json'}});
       if(url.includes('/rest/v1/app_email_outbox')&&init?.method==='PATCH'){

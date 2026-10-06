@@ -1,16 +1,17 @@
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 
-import type { EntityMappingV1 } from './mapping/types.js';
+import type { ConnectorMappingDefinitionV1, ConnectorSourceSchemaV1 } from '../../shared/connectorProtocol.js';
 import type { ConnectorConfig } from './config.js';
 import { ConnectorApi } from './api/client.js';
 import { createSourceAdapter } from './adapters/types.js';
+import { processConnectorCommands } from './commands/processCommands.js';
 import { ConnectorHealth, HealthServer } from './health.js';
 import { ConnectorRuntime, verifyStateDirectory } from './main.js';
 import { compileMapping } from './mapping/compileMapping.js';
 import { SyncScheduler, type RunResult } from './scheduler.js';
 import { loadOrCreateIdentity } from './security/identity.js';
-import { AtomicJsonStore } from './state/atomicStore.js';
+import { AtomicJsonStore, writeJsonAtomically } from './state/atomicStore.js';
 import { CheckpointStore } from './state/checkpoints.js';
 import { FileOutbox } from './state/outbox.js';
 import { SyncEngine } from './sync/syncEngine.js';
@@ -47,6 +48,15 @@ async function loadRegistration(config: ConnectorConfig, identity: Awaited<Retur
   return registration;
 }
 
+async function loadMapping(path: string): Promise<ConnectorMappingDefinitionV1 | null> {
+  try {
+    return JSON.parse(await readFile(path, 'utf8')) as ConnectorMappingDefinitionV1;
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === 'ENOENT') return null;
+    throw error;
+  }
+}
+
 export async function bootstrapConnector(config: ConnectorConfig): Promise<void> {
   await verifyStateDirectory(config.stateRoot);
   const health = new ConnectorHealth(VERSION);
@@ -62,35 +72,81 @@ export async function bootstrapConnector(config: ConnectorConfig): Promise<void>
 
     const identity = await loadOrCreateIdentity(config.identityPath);
     const registration = await loadRegistration(config, identity);
-    const api = new ConnectorApi({ baseUrl: config.apiBaseUrl, connectorId: registration.connectorId!, identity });
-    const mapping = compileMapping(JSON.parse(await readFile(config.mappingPath, 'utf8')) as EntityMappingV1, schema);
+    const connectorId = registration.connectorId!;
+    const companyId = registration.companyId!;
+    const api = new ConnectorApi({ baseUrl: config.apiBaseUrl, connectorId, identity });
     const scheduler = new SyncScheduler(join(config.stateRoot, 'scheduler.json'), { intervalMs: config.syncIntervalSeconds * 1000 });
-    const engine = new SyncEngine({
-      adapter,
-      api,
-      outbox: new FileOutbox(config.stateRoot),
-      checkpoints: new CheckpointStore(join(config.stateRoot, 'checkpoints.json')),
-      statePath: join(config.stateRoot, 'sync-state.json'),
-      mapping,
-      connectorId: registration.connectorId!,
-      companyId: registration.companyId!,
-      pageSize: 250,
+    const outbox = new FileOutbox(config.stateRoot);
+    const checkpoints = new CheckpointStore(join(config.stateRoot, 'checkpoints.json'));
+    const sourceSchema: ConnectorSourceSchemaV1 = { tables: schema.tables.map(table => ({
+      schema: table.schema,
+      name: table.name,
+      columns: table.columns.map(column => ({ name: column.name, dataType: column.dataType, nullable: column.nullable })),
+    })) };
+    const createEngine = (definition: ConnectorMappingDefinitionV1) => new SyncEngine({
+      adapter, api, outbox, checkpoints, statePath: join(config.stateRoot, 'sync-state.json'),
+      mapping: compileMapping(definition, schema), connectorId, companyId, pageSize: 250,
     });
+    const storedMapping = await loadMapping(config.mappingPath);
+    let engine: SyncEngine | null = storedMapping ? createEngine(storedMapping) : null;
+
+    const currentStatus = async () => !engine
+      ? 'mapping_required'
+      : await engine.mappingApproved() ? 'ready' : 'dry_run_required';
+
+    const heartbeat = async (status?: string, metrics?: { completedAt: string; processed: number; changed: number; failed: number }) => {
+      const resolvedStatus = status ?? await currentStatus();
+      const result = await api.heartbeat({ status: resolvedStatus, version: VERSION, sourceSchema, ...(metrics ? { metrics } : {}) });
+      if (result.accepted) health.recordHeartbeat();
+      return result;
+    };
 
     const runSync = async (): Promise<RunResult> => {
-      const heartbeat = await api.heartbeat({ status: 'ready', version: VERSION });
-      if (!heartbeat.accepted) return { status: 'failure', failureKind: 'authorization' };
-      health.recordHeartbeat();
       health.setPaused((await scheduler.state()).paused);
+      if (!engine) {
+        await heartbeat('mapping_required');
+        return { status: 'partial_failure' };
+      }
+      if (!await engine.mappingApproved()) {
+        await heartbeat('dry_run_required');
+        return { status: 'partial_failure' };
+      }
       try {
-        return await engine.run();
+        await heartbeat('running');
+        const result = await engine.run();
+        await heartbeat(result.status, { completedAt: new Date().toISOString(), processed: result.processed + result.failed, changed: result.processed, failed: result.failed });
+        return { status: result.status };
       } catch (error) {
         if (error instanceof Error && /dry run approval is required/.test(error.message)) {
-          await engine.dryRun();
+          await heartbeat('dry_run_required');
           return { status: 'partial_failure' };
         }
         throw error;
       }
+    };
+
+    const pollCommands = async () => {
+      await processConnectorCommands(await api.pollCommands(), {
+        refreshMapping: async definition => {
+          const nextEngine = createEngine(definition);
+          await writeJsonAtomically(config.mappingPath, definition);
+          engine = nextEngine;
+          const result = await engine.reportDryRun();
+          await heartbeat('dry_run_required', { completedAt: new Date().toISOString(), processed: result.total, changed: result.valid, failed: result.failed });
+        },
+        approveMapping: async mappingVersion => {
+          if (!engine) throw new Error('mapping is not installed');
+          await engine.approveDryRun(mappingVersion);
+          await heartbeat('ready');
+        },
+        syncNow: async () => { await scheduler.runManual(runSync); },
+        setPaused: async paused => {
+          await scheduler.setPaused(paused);
+          health.setPaused(paused);
+          await heartbeat(paused ? 'paused' : await currentStatus());
+        },
+        acknowledge: commandId => api.acknowledgeCommand(commandId),
+      });
     };
 
     runtime = new ConnectorRuntime({
@@ -98,13 +154,13 @@ export async function bootstrapConnector(config: ConnectorConfig): Promise<void>
       configured: true,
       version: VERSION,
       health,
-      heartbeat: () => api.heartbeat({ status: 'ready', version: VERSION }),
+      heartbeat,
+      pollCommands,
       runSync,
       scheduler,
       adapter,
     });
     await runtime.start();
-    await engine.dryRun();
     await runtime.stopped;
   } finally {
     if (runtime) await runtime.stop();

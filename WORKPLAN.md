@@ -26,14 +26,26 @@ Deliver the first controlled pilot for a small construction company: owner login
 5. Merge and deploy the honest pilot sales page, configure a real business contact path and add the public legal identity.
 6. Enable leaked-password protection when the selected Supabase plan supports it; the current staging Free plan reports it as unavailable.
 7. Record the customer-specific onboarding result using `docs/pilot-operator-runbook.md` before describing that customer as live.
+8. Review and apply the proposed connector contract to isolated staging, run `test:connector:staging` and `test:connector:preview`, and record the tested image digest before enabling `VITE_CONNECTOR_ENABLED`.
+9. Review and manually apply `supabase/staging/20261005_platform_admin_contract.sql` to isolated staging, then run the dry-run-first platform administrator provisioner for the existing operator Auth account.
+10. Verify the platform administrator login and minimal company directory in the exact Preview. Owner and employee sessions must receive `403`, and the administrator must remain unable to read tenant business rows.
+11. Configure `VITE_DEMO_URL` on the landing deployment to the verified dashboard `/demo` URL and repeat browser navigation checks.
+
+## Read-only database connector
+
+- Implemented: local Synology runtime, PostgreSQL/MySQL/MariaDB/SQL Server read-only adapters, signed tenant-bound protocol, durable cursor/outbox, explicit mapping, dry-run approval, owner controls, multi-architecture CI and digest rollback scripts.
+- Reviewable only: `supabase/staging/20261004_connector_contract.sql`; it is not an applied migration and CI never applies it.
+- Release boundary: the image publishing workflow is manual and restricted to `main`. It publishes only after verification and records an immutable digest.
+- Unverified gate: the connector-specific two-company staging and exact Preview checks require the reviewed SQL contract plus synthetic credentials. Until those checks pass, the connector is not part of the sellable customer claim.
 
 The repository now contains a staging-only provisioning command with dry-run-by-default behavior. It remains unverified for a new synthetic tenant until the staging service-role key is rotated and the operator runs the full checklist.
+
+The platform-control-plane implementation is also reviewable in code: it uses a separate UUID registry, server-side authorization, a minimal company directory, and no tenant RLS bypass. It is not active until its SQL contract is manually reviewed/applied and the operator is explicitly provisioned in staging. See `docs/platform-admin-runbook.md`.
 
 ## Explicitly outside the pilot
 
 - Google Sheets synchronization;
 - direct customer SQL credentials or browser-side database connections;
-- Synology synchronization;
 - bidirectional synchronization back to a customer's database;
 - automatic production migrations or deploys;
 - auto-merge.

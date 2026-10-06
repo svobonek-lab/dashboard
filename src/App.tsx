@@ -16,9 +16,6 @@ import { EmployeeLayout } from './layouts/EmployeeLayout';
 // Super Admin Pages
 import { AdminDashboardPage } from './pages/admin/Dashboard';
 import { AdminCompaniesPage } from './pages/admin/Companies';
-import { AdminBillingPage } from './pages/admin/Billing';
-import { AdminDomainsPage } from './pages/admin/Domains';
-import { AdminLogsPage } from './pages/admin/Logs';
 
 // Owner Pages
 import { OwnerDashboardPage } from './pages/owner/Dashboard';
@@ -47,8 +44,6 @@ import { readTenantCache, removeTenantCache, writeTenantCache, TENANT_CACHE_NAME
 import { canEditLeadDetails, hydrateLeadAssignments, persistBeforeApply } from './app/pilotWrites';
 
 const { surface: deploymentSurface, appUrl } = getDeploymentConfig((import.meta as any).env || {});
-const InstallStudio = React.lazy(() => import('@/features/InstallStudio').then(module => ({ default: module.InstallStudio })));
-const AdminPanel = React.lazy(() => import('@/features/AdminPanel').then(module => ({ default: module.AdminPanel })));
 const LandingPage = React.lazy(() => import('@/features/LandingPage').then(module => ({ default: module.LandingPage })));
 
 function ExternalRedirect({ url }: { url: string }) {
@@ -100,7 +95,7 @@ function AppContent() {
   const branding = currentOrg?.branding || {};
   
   
-  const { updateBrandingAdmin, isConfigured, 
+  const { isConfigured,
     user, 
     dbUser,
     isLoading: isAuthLoading, 
@@ -259,7 +254,7 @@ function AppContent() {
     const transitionError = getLeadTransitionError(
       previousStatus,
       newStatus,
-      (dbUser?.role as 'owner' | 'employee' | 'super_admin') || 'owner',
+      dbUser?.role === 'employee' ? 'employee' : 'owner',
     );
     if (transitionError) {
       showToast(transitionError, 'error');
@@ -376,14 +371,6 @@ function AppContent() {
     }
   };
 
-  const activeBranding = {
-    ...branding,
-    name: currentOrg?.name || branding.name,
-    logoUrl: currentOrg?.logo_url !== undefined ? currentOrg.logo_url : '',
-    primaryColor: currentOrg?.primary_color || branding.primaryColor,
-    city: currentOrg?.city || branding.city
-  };
-
   if (deploymentSurface === 'app' && !isConfigured) {
     return <AppSetupRequired />;
   }
@@ -447,7 +434,7 @@ function AppContent() {
   }
 
   const roleLoginRoutes: Record<string, UserRole> = {
-    '/admin/login': 'super_admin',
+    '/admin/login': 'platform_admin',
     '/owner/login': 'owner',
     '/employee/login': 'employee',
   };
@@ -469,22 +456,12 @@ function AppContent() {
   // 2. Super Admin Routes (`/admin*`)
   if (pathname.startsWith('/admin')) {
     return (
-      <ProtectedRoute allowedRole="super_admin">
+      <ProtectedRoute allowedRole="platform_admin">
         <SuperAdminLayout>
           {pathname === '/admin' || pathname === '/admin/dashboard' ? (
             <AdminDashboardPage />
           ) : pathname === '/admin/companies' ? (
             <AdminCompaniesPage />
-          ) : pathname === '/admin/install' ? (
-            <InstallStudio currentBranding={activeBranding} onDeploy={(b) => updateBrandingAdmin(currentOrg?.id || "", b.name, b.primaryColor, b.logoUrl)} />
-          ) : pathname === '/admin/demo-creator' ? (
-            <AdminPanel />
-          ) : pathname === '/admin/domains' ? (
-            <AdminDomainsPage />
-          ) : pathname === '/admin/billing' ? (
-            <AdminBillingPage />
-          ) : pathname === '/admin/logs' ? (
-            <AdminLogsPage />
           ) : (
             <AdminDashboardPage />
           )}
@@ -496,7 +473,7 @@ function AppContent() {
   // 3. Employee Field Routes (`/employee` and `/employee/*`)
   if (pathname === '/employee' || pathname.startsWith('/employee/')) {
     return (
-      <ProtectedRoute allowedRole={['employee', 'super_admin']}>
+      <ProtectedRoute allowedRole="employee">
         <EmployeeLayout leads={employeeLeads}>
           {pathname === '/employee' || pathname === '/employee/dashboard' ? (
             <EmployeeDashboardPage leads={employeeLeads} onSelectLead={setSelectedLead} onUpdateLead={handleUpdateLead} onUpdateLeadStatus={handleUpdateLeadStatus} />
@@ -510,7 +487,7 @@ function AppContent() {
 
   // 4. Owner Routes (Executive CRM)
   return (
-    <ProtectedRoute allowedRole={['owner', 'super_admin']}>
+    <ProtectedRoute allowedRole="owner">
       <OwnerLayout leads={leads} onSelectLead={setSelectedLead}>
         {pathname === '/dashboard' || pathname === '/' ? (
           <OwnerDashboardPage leads={leads} onSelectLead={setSelectedLead} />

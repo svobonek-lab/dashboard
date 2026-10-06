@@ -12,6 +12,12 @@ test('identity resolution requires active membership and matching active company
   assert.equal(resolveAppIdentity([member('company-a', 'auth-1', 'worker@a.cz')], [company('company-a', false)], 'auth-1'), null);
 });
 
+test('identity resolution rejects an unknown tenant role instead of elevating it', () => {
+  const invalid = member('company-a', 'auth-1', 'worker@a.cz') as any;
+  invalid.role = 'administrator';
+  assert.equal(resolveAppIdentity([invalid], [company('company-a')], 'auth-1', 'worker@a.cz'), null);
+});
+
 test('email fallback does not select a different company when auth id is absent', () => {
   const result = resolveAppIdentity([member('company-a', 'other-auth', 'worker@a.cz'), member('company-b', 'auth-2', 'worker@b.cz')], [company('company-a'), company('company-b')], 'missing', 'worker@a.cz');
   assert.equal(result?.organization.id, 'company-a');

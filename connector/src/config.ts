@@ -72,7 +72,7 @@ export function parseConnectorConfig(value: unknown): Omit<ConnectorConfig, 'dat
     apiBaseUrl: apiBaseUrl.origin,
     stateRoot,
     identityPath: assertInside(stateRoot, requiredString(input.identityPath, 'identityPath'), 'identityPath'),
-    mappingPath: absolutePath(input.mappingPath, 'mappingPath'),
+    mappingPath: assertInside(stateRoot, requiredString(input.mappingPath, 'mappingPath'), 'mappingPath'),
     syncIntervalSeconds,
     connectorId: typeof input.connectorId === 'string' && input.connectorId.trim() ? input.connectorId.trim() : undefined,
     enrollmentCodeFile: typeof input.enrollmentCodeFile === 'string' ? absolutePath(input.enrollmentCodeFile, 'enrollmentCodeFile') : undefined,

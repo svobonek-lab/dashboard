@@ -1,10 +1,15 @@
-import React, { useState } from 'react';
-import { CheckCircle2, Database, FileSpreadsheet, LockKeyhole, UploadCloud } from 'lucide-react';
+import React, { useCallback, useEffect, useState } from 'react';
+import { Bot, Check, CheckCircle2, Copy, Database, FileSpreadsheet, Globe2, LockKeyhole, UploadCloud } from 'lucide-react';
 import { CSVImportModal } from '@/components/integrations/CSVImportModal';
 import { useOrganization } from '@/context/OrganizationContext';
 import { supabase } from '@/lib/supabase';
 import type { Employee, Lead } from '@/types';
 import type { FieldMappingConfig } from '@/types/integrations';
+import { ConnectorSetup } from '@/components/integrations/ConnectorSetup';
+import { ConnectorStatus } from '@/components/integrations/ConnectorStatus';
+import { ConnectorMapping } from '@/components/integrations/ConnectorMapping';
+import { connectorClient } from '@/src/app/connectorClient';
+import type { ConnectorSummary } from '@/src/app/connectorContract';
 
 interface IntegrationsProps {
   leads?: Lead[];
@@ -15,6 +20,59 @@ interface IntegrationsProps {
 export const Integrations: React.FC<IntegrationsProps> = () => {
   const { currentOrg, fetchLeads } = useOrganization();
   const [isCsvOpen, setIsCsvOpen] = useState(false);
+  const [connectors, setConnectors] = useState<ConnectorSummary[]>([]);
+  const [connectorError, setConnectorError] = useState('');
+  const [copied, setCopied] = useState<'inbox' | 'widget' | null>(null);
+  const [securedIncomingLeadUrl, setSecuredIncomingLeadUrl] = useState('');
+  const [incomingLeadError, setIncomingLeadError] = useState('');
+  const connectorEnabled = import.meta.env.VITE_CONNECTOR_ENABLED === 'true';
+  const isEnterprise = String(currentOrg?.plan || '').toUpperCase() === 'ENTERPRISE';
+  const origin = typeof window === 'undefined' ? 'https://[DOMENA]' : window.location.origin;
+  const companyId = currentOrg?.id || '[ORG_ID]';
+  const publicTenantKey = currentOrg?.slug || '[PUBLIC_KEY]';
+  const fallbackIncomingLeadUrl = `${origin}/api/incoming-lead?org_id=${encodeURIComponent(companyId)}`;
+  const incomingLeadUrl = securedIncomingLeadUrl || fallbackIncomingLeadUrl;
+  const widgetSnippet = `<script src="${origin}/widget.js?org_id=${encodeURIComponent(publicTenantKey)}"></script>`;
+
+  const copyValue = async (kind: 'inbox' | 'widget', value: string) => {
+    try {
+      await navigator.clipboard.writeText(value);
+      setCopied(kind);
+      window.setTimeout(() => setCopied((current) => current === kind ? null : current), 1800);
+    } catch {
+      setCopied(null);
+    }
+  };
+  const refreshConnectors = useCallback(async (signal?: AbortSignal) => {
+    if (!connectorEnabled || !currentOrg?.id) return;
+    try { setConnectorError(''); setConnectors((await connectorClient.status(currentOrg.id, signal)).connectors); }
+    catch (cause) { if (!(cause instanceof DOMException && cause.name === 'AbortError')) setConnectorError('Napojení databáze zatím není na tomto prostředí dostupné.'); }
+  }, [connectorEnabled, currentOrg?.id]);
+  useEffect(() => { const controller = new AbortController(); void refreshConnectors(controller.signal); return () => controller.abort(); }, [refreshConnectors]);
+  useEffect(() => {
+    const controller = new AbortController();
+    const loadWebhook = async () => {
+      setSecuredIncomingLeadUrl('');
+      if (!currentOrg?.id || !supabase) return;
+      setIncomingLeadError('');
+      const { data } = await supabase.auth.getSession();
+      const accessToken = data.session?.access_token;
+      if (!accessToken) return;
+      try {
+        const response = await fetch(`/api/incoming-lead-config?companyId=${encodeURIComponent(currentOrg.id)}`, {
+          headers: { Authorization: `Bearer ${accessToken}` }, signal: controller.signal,
+        });
+        const body = await response.json();
+        if (!response.ok || typeof body?.webhookUrl !== 'string') throw new Error('AI inbox není aktivní.');
+        setSecuredIncomingLeadUrl(body.webhookUrl);
+      } catch (error) {
+        if (!(error instanceof DOMException && error.name === 'AbortError')) setIncomingLeadError('Webhook zatím není na tomto prostředí aktivovaný.');
+      }
+    };
+    void loadWebhook();
+    return () => controller.abort();
+  }, [currentOrg?.id]);
+  const activeConnector = connectors.find(item => item.status !== 'revoked');
 
   const importCsv = async (
     _rows: Record<string, unknown>[],
@@ -52,9 +110,44 @@ export const Integrations: React.FC<IntegrationsProps> = () => {
   return (
     <div className="workspace-page mx-auto max-w-5xl">
       <header className="workspace-page-header">
-        <div><p className="workspace-kicker">Data firmy</p><h1 className="workspace-title">Import a napojení</h1><p className="workspace-subtitle">Pro první pilot používáme kontrolovaný CSV import bez zápisu zpět do původního systému firmy.</p></div>
+        <div><p className="workspace-kicker">Chytrý dispečink</p><h1 className="workspace-title">Příjem poptávek a data</h1><p className="workspace-subtitle">Poptávky z e-mailu a webu míří rovnou do StavbaFlow. CSV zůstává bezpečnou cestou pro první import stávajících dat.</p></div>
         <button type="button" onClick={() => setIsCsvOpen(true)} className="workspace-primary-action inline-flex min-h-11 items-center justify-center gap-2 px-4 text-sm font-semibold"><UploadCloud className="h-4 w-4" /> Nahrát CSV</button>
       </header>
+
+      <section className="mb-6 grid gap-4 lg:grid-cols-2">
+        <article className="workspace-panel overflow-hidden p-6 sm:p-7">
+          <div className="flex items-start justify-between gap-4">
+            <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-violet-50 text-violet-700"><Bot className="h-5 w-5" /></span>
+            <span className="rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-[11px] font-bold uppercase tracking-wide text-emerald-700">AI příjem</span>
+          </div>
+          <h2 className="mt-5 text-lg font-semibold tracking-tight text-slate-950">AI Dispečer (e-mail)</h2>
+          <p className="mt-2 text-sm leading-6 text-slate-500">Nastavte si přesměrování kopií na tento Webhook pro automatické zpracování e-mailů:</p>
+          <div className="mt-5 flex items-center gap-2 rounded-2xl border border-slate-200 bg-slate-50 p-2">
+            <code className="min-w-0 flex-1 overflow-hidden text-ellipsis whitespace-nowrap px-2 text-xs text-slate-700">{incomingLeadUrl}</code>
+            <button type="button" disabled={!securedIncomingLeadUrl} onClick={() => void copyValue('inbox', securedIncomingLeadUrl)} className="inline-flex min-h-10 shrink-0 items-center gap-2 rounded-xl bg-slate-950 px-3 text-xs font-semibold text-white hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-40" aria-label="Kopírovat webhook AI dispečera">
+              {copied === 'inbox' ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}{copied === 'inbox' ? 'Zkopírováno' : 'Kopírovat'}
+            </button>
+          </div>
+          {incomingLeadError && <p role="alert" className="mt-2 text-xs text-amber-700">{incomingLeadError}</p>}
+          <p className="mt-3 text-xs leading-5 text-slate-400">AI rozpozná skutečnou poptávku, vytáhne kontakt, typ práce a místo. Ostatní zprávy ignoruje.</p>
+        </article>
+
+        <article className="workspace-panel overflow-hidden p-6 sm:p-7">
+          <div className="flex items-start justify-between gap-4">
+            <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-blue-50 text-blue-700"><Globe2 className="h-5 w-5" /></span>
+            <span className="rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-[11px] font-bold uppercase tracking-wide text-blue-700">Web firmy</span>
+          </div>
+          <h2 className="mt-5 text-lg font-semibold tracking-tight text-slate-950">Webový formulář</h2>
+          <p className="mt-2 text-sm leading-6 text-slate-500">Vložte jediný řádek před koncovou značku <code>&lt;/body&gt;</code> na webu firmy.</p>
+          <div className="mt-5 flex items-center gap-2 rounded-2xl border border-slate-200 bg-slate-50 p-2">
+            <code className="min-w-0 flex-1 overflow-hidden text-ellipsis whitespace-nowrap px-2 text-xs text-slate-700">{widgetSnippet}</code>
+            <button type="button" onClick={() => void copyValue('widget', widgetSnippet)} className="inline-flex min-h-10 shrink-0 items-center gap-2 rounded-xl bg-slate-950 px-3 text-xs font-semibold text-white hover:bg-slate-800" aria-label="Kopírovat kód webového formuláře">
+              {copied === 'widget' ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}{copied === 'widget' ? 'Zkopírováno' : 'Kopírovat'}
+            </button>
+          </div>
+          <p className="mt-3 text-xs leading-5 text-slate-400">Formulář se otevře nad existujícím webem a uloží poptávku do správné firmy.</p>
+        </article>
+      </section>
 
       <section className="grid gap-4 md:grid-cols-[1.25fr_.75fr]">
         <article className="workspace-panel p-6 sm:p-7">
@@ -69,11 +162,22 @@ export const Integrations: React.FC<IntegrationsProps> = () => {
 
         <aside className="workspace-panel p-6 sm:p-7">
           <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-slate-100 text-slate-600"><LockKeyhole className="h-5 w-5" /></span>
-          <h2 className="mt-5 text-base font-semibold text-slate-950">Další konektory po pilotu</h2>
-          <p className="mt-2 text-sm leading-6 text-slate-500">Přímé SQL, Google Sheets a obousměrnou synchronizaci zapojujeme až po samostatném bezpečnostním ověření konkrétního zdroje.</p>
-          <div className="mt-5 flex items-center gap-3 rounded-xl bg-slate-50 p-3 text-sm text-slate-600"><Database className="h-4 w-4" /><span>Individuální návrh napojení</span></div>
+          <h2 className="mt-5 text-base font-semibold text-slate-950">Dvě bezpečné cesty</h2>
+          <p className="mt-2 text-sm leading-6 text-slate-500">CSV je vhodné pro jednorázový start. Ověřený Synology konektor níže drží vybraná data průběžně aktuální bez zápisu zpět do firemní databáze.</p>
+          <div className="mt-5 flex items-center gap-3 rounded-xl bg-slate-50 p-3 text-sm text-slate-600"><Database className="h-4 w-4" /><span>PostgreSQL · MariaDB · SQL Server</span></div>
         </aside>
       </section>
+
+      {isEnterprise && <section className="mt-6 space-y-4">
+        <div><p className="workspace-kicker">Průběžné napojení</p><h2 className="mt-1 text-xl font-semibold tracking-tight text-slate-950">Synology Database Connector</h2></div>
+        {!connectorEnabled && <div className="workspace-panel p-5 text-sm leading-6 text-slate-600">Konektor není na tomto nasazení aktivovaný. CSV import zůstává dostupný a žádné ukázkové připojení se nezobrazuje jako živé.</div>}
+        {connectorEnabled && currentOrg?.id ? <>
+          {!activeConnector ? <ConnectorSetup companyId={currentOrg.id} onCreated={() => void refreshConnectors()} /> : null}
+          <ConnectorStatus companyId={currentOrg.id} items={connectors} onRefresh={() => void refreshConnectors()} />
+          {activeConnector && activeConnector.status !== 'awaiting_enrollment' ? <ConnectorMapping companyId={currentOrg.id} connector={activeConnector} onSaved={() => void refreshConnectors()} /> : null}
+        </> : null}
+        {connectorError && <p role="alert" className="text-sm text-amber-700">{connectorError}</p>}
+      </section>}
 
       <CSVImportModal isOpen={isCsvOpen} onClose={() => setIsCsvOpen(false)} onImportBatch={importCsv} />
     </div>

@@ -10,6 +10,7 @@ import { resolveOrAcceptAppIdentity } from '../src/app/appSchemaIdentity';
 import { toAuthenticatedWorkspaceUser } from '../src/app/authWorkspaceUser';
 import { buildInviteRequest, toPendingEmployee } from '../src/app/inviteContract';
 import { buildRecoveryRequest, parseRecoveryResponse } from '../src/app/authRecovery';
+import { readPlatformIdentity } from '../src/app/platformIdentity';
 
 const IS_PRODUCTION = !!(import.meta as any).env?.PROD;
 // Production always resolves identity/data through the verified app_* model.
@@ -28,8 +29,8 @@ function generateUUID(): string {
 
 // Role Enforcer:
 // Roles are resolved strictly from authenticated user profiles in the database.
-export const enforceRole = (_email?: string, _pass?: string, candidateRole?: string): 'super_admin' | 'owner' | 'employee' => {
-  if (candidateRole === 'super_admin' || candidateRole === 'owner' || candidateRole === 'employee') {
+export const enforceRole = (_email?: string, _pass?: string, candidateRole?: string): 'platform_admin' | 'owner' | 'employee' => {
+  if (candidateRole === 'platform_admin' || candidateRole === 'owner' || candidateRole === 'employee') {
     return candidateRole;
   }
   return 'owner';
@@ -51,6 +52,7 @@ export interface Organization {
   branding?: any;
   status?: string;
   created_at?: string;
+  plan?: string;
 }
 
 export interface DBUser {
@@ -111,7 +113,6 @@ interface OrganizationContextType {
   originalOrg: Organization | null;
   impersonateOrganization: (orgId: string) => Promise<void>;
   stopImpersonation: () => void;
-  switchRoleToSuperAdmin: () => void;
   fetchAllOrganizationsAdmin: () => Promise<any[]>;
   deleteOrganizationAdmin: (orgId: string) => Promise<void>;
   updateBrandingAdmin: (orgId: string, name: string, color: string, logo?: string, profile?: Pick<Organization, 'email' | 'phone' | 'address'>) => Promise<void>;
@@ -373,6 +374,21 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
       // The verified app_* contract is deliberately isolated from the legacy
       // organizations/users tables. No fallback or write is allowed here.
       if (APP_SCHEMA_READS) {
+        const platformIdentity = await readPlatformIdentity(supabase);
+        if (platformIdentity) {
+          const resolvedDbUser: DBUser = {
+            id: userId,
+            organization_id: '',
+            role: 'platform_admin',
+            email,
+            name: typeof userMetadata?.name === 'string' ? userMetadata.name : 'Správce platformy',
+          };
+          setOrganizations([]);
+          setCurrentOrg(null);
+          setDbUser(resolvedDbUser);
+          setSchemaError(null);
+          return resolvedDbUser;
+        }
         const identity = await resolveOrAcceptAppIdentity(supabase, { id: userId, email, user_metadata: userMetadata });
         if (!identity) {
           setSchemaError('Účet nemá aktivní členství v žádné firmě. Kontaktujte majitele workspace.');
@@ -1974,32 +1990,6 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
     setOriginalOrg(null);
   };
 
-  const switchRoleToSuperAdmin = () => {
-    if (APP_SCHEMA_READS) {
-      setSchemaError('Platform admin role čeká na serverově vynucený app_* admin kontrakt.');
-      return;
-    }
-    const currentEmail = (dbUser?.email || user?.email || '').trim().toLowerCase();
-    if (currentEmail !== 'svobonek@gmail.com') {
-      console.warn('Super Admin access is restricted solely to svobonek@gmail.com');
-      return;
-    }
-    if (dbUser) {
-      setDbUser({
-        ...dbUser,
-        role: 'super_admin'
-      });
-    } else {
-      setDbUser({
-        id: 'super-admin-svobonek',
-        organization_id: currentOrg?.id || DEFAULT_DEMO_ORG_ID,
-        role: 'super_admin',
-        email: 'svobonek@gmail.com'
-      });
-    }
-
-  };
-
   const fetchAllOrganizationsAdmin = async (): Promise<any[]> => {
     const localOrgs = LocalSupabaseMock.getOrganizations();
     const localEmps = LocalSupabaseMock.getEmployees();
@@ -2639,7 +2629,6 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
       originalOrg,
       impersonateOrganization,
       stopImpersonation,
-      switchRoleToSuperAdmin,
       fetchAllOrganizationsAdmin,
       deleteOrganizationAdmin,
       updateBrandingAdmin,

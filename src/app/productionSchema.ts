@@ -1,4 +1,4 @@
-import type { Employee, Lead, LeadStatus, Priority } from '@/types';
+import type { Employee, Lead, LeadSource, LeadStatus, Priority } from '@/types';
 
 export interface AppMemberRow {
   company_id: string;
@@ -24,7 +24,7 @@ export interface AppLeadRow {
   scheduled_at: string | null;
   duration_minutes: number;
   value: number;
-  source: string;
+  source: LeadSource;
   created_at: string;
   updated_at: string;
   revision: number;
@@ -98,6 +98,7 @@ export function toAppLead(row: AppLeadRow, assignedEmployeeName = ''): Lead {
   return {
     id: row.id,
     organization_id: row.company_id,
+    source: row.source,
     title: row.title,
     description: row.description,
     city: '',

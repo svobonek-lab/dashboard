@@ -1,4 +1,4 @@
-export type UserRole = 'super_admin' | 'owner' | 'employee';
+export type UserRole = 'platform_admin' | 'owner' | 'employee';
 
 export interface RolePermissions {
   canEditLeads: boolean;
@@ -19,22 +19,22 @@ export interface RolePermissions {
 }
 
 export const ROLE_PERMISSIONS: Record<UserRole, RolePermissions> = {
-  super_admin: {
-    canEditLeads: true,
-    canDeleteLeads: true,
-    canDeleteEmployees: true,
-    canManageEmployees: true,
-    canViewRevenue: true,
-    canManageCompany: true,
+  platform_admin: {
+    canEditLeads: false,
+    canDeleteLeads: false,
+    canDeleteEmployees: false,
+    canManageEmployees: false,
+    canViewRevenue: false,
+    canManageCompany: false,
     canAccessSuperAdmin: true,
-    canAccessFieldTools: true,
-    canViewTeamMembers: true,
-    canGenerateQuotes: true,
-    canAccessSettings: true,
-    canAccessAnalytics: true,
-    canManageDocuments: true,
-    canManageIntegrations: true,
-    canSwitchCompany: true,
+    canAccessFieldTools: false,
+    canViewTeamMembers: false,
+    canGenerateQuotes: false,
+    canAccessSettings: false,
+    canAccessAnalytics: false,
+    canManageDocuments: false,
+    canManageIntegrations: false,
+    canSwitchCompany: false,
   },
   owner: {
     canEditLeads: true,
@@ -72,79 +72,72 @@ export const ROLE_PERMISSIONS: Record<UserRole, RolePermissions> = {
   },
 };
 
+const permissionsFor = (role?: string | null): RolePermissions | null => (
+  role === 'platform_admin' || role === 'owner' || role === 'employee'
+    ? ROLE_PERMISSIONS[role]
+    : null
+);
+
 export const canEditLeads = (role?: string | null): boolean => {
-  const r = (role as UserRole) || 'owner';
-  return ROLE_PERMISSIONS[r]?.canEditLeads ?? true;
+  return permissionsFor(role)?.canEditLeads ?? false;
 };
 
 export const canDeleteLead = (role?: string | null): boolean => {
-  const r = (role as UserRole) || 'owner';
-  return ROLE_PERMISSIONS[r]?.canDeleteLeads ?? false;
+  return permissionsFor(role)?.canDeleteLeads ?? false;
 };
 
 export const canDeleteEmployees = (role?: string | null): boolean => {
-  const r = (role as UserRole) || 'owner';
-  return ROLE_PERMISSIONS[r]?.canDeleteEmployees ?? false;
+  return permissionsFor(role)?.canDeleteEmployees ?? false;
 };
 
 export const canManageEmployees = (role?: string | null): boolean => {
-  const r = (role as UserRole) || 'owner';
-  return ROLE_PERMISSIONS[r]?.canManageEmployees ?? false;
+  return permissionsFor(role)?.canManageEmployees ?? false;
 };
 
 export const canViewRevenue = (role?: string | null): boolean => {
-  const r = (role as UserRole) || 'owner';
-  return ROLE_PERMISSIONS[r]?.canViewRevenue ?? false;
+  return permissionsFor(role)?.canViewRevenue ?? false;
 };
 
 export const canManageCompany = (role?: string | null): boolean => {
-  const r = (role as UserRole) || 'owner';
-  return ROLE_PERMISSIONS[r]?.canManageCompany ?? false;
+  return permissionsFor(role)?.canManageCompany ?? false;
 };
 
 export const canAccessSuperAdmin = (role?: string | null): boolean => {
-  return role === 'super_admin' || role === 'superadmin';
+  return role === 'platform_admin';
 };
 
 export const canAccessAdmin = canAccessSuperAdmin;
 
 export const canSwitchCompany = (role?: string | null): boolean => {
-  const r = (role as UserRole) || 'owner';
-  return ROLE_PERMISSIONS[r]?.canSwitchCompany ?? false;
+  return permissionsFor(role)?.canSwitchCompany ?? false;
 };
 
 export const canAccessFieldTools = (role?: string | null): boolean => {
-  const r = (role as UserRole) || 'owner';
-  return ROLE_PERMISSIONS[r]?.canAccessFieldTools ?? true;
+  return permissionsFor(role)?.canAccessFieldTools ?? false;
 };
 
 export const canViewTeamMembers = (role?: string | null): boolean => {
-  const r = (role as UserRole) || 'owner';
-  return ROLE_PERMISSIONS[r]?.canViewTeamMembers ?? false;
+  return permissionsFor(role)?.canViewTeamMembers ?? false;
 };
 
 export const canGenerateQuotes = (role?: string | null): boolean => {
-  const r = (role as UserRole) || 'owner';
-  return ROLE_PERMISSIONS[r]?.canGenerateQuotes ?? false;
+  return permissionsFor(role)?.canGenerateQuotes ?? false;
 };
 
 export const canAccessSettings = (role?: string | null): boolean => {
-  const r = (role as UserRole) || 'owner';
-  return ROLE_PERMISSIONS[r]?.canAccessSettings ?? false;
+  return permissionsFor(role)?.canAccessSettings ?? false;
 };
 
 export const canAccessAnalytics = (role?: string | null): boolean => {
-  const r = (role as UserRole) || 'owner';
-  return ROLE_PERMISSIONS[r]?.canAccessAnalytics ?? false;
+  return permissionsFor(role)?.canAccessAnalytics ?? false;
 };
 
 export const canManageIntegrations = (role?: string | null): boolean => {
-  const r = (role as UserRole) || 'owner';
-  return ROLE_PERMISSIONS[r]?.canManageIntegrations ?? false;
+  return permissionsFor(role)?.canManageIntegrations ?? false;
 };
 
 export const getDefaultRouteForRole = (role?: string | null): string => {
-  if (role === 'super_admin') return '/admin';
+  if (role === 'platform_admin') return '/admin';
   if (role === 'employee') return '/employee';
   return '/dashboard';
 };

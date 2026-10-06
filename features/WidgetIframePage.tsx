@@ -99,6 +99,7 @@ export const WidgetIframePage: React.FC = () => {
           address: form.address.trim(),
           description,
           status: 'New',
+          source: 'widget',
           created_at: new Date().toISOString()
         } as any);
         LocalSupabaseMock.saveLeads(leads);

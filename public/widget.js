@@ -20,7 +20,8 @@
   }
 
   // 2. Parse multi-tenant arguments
-  var orgId = script.getAttribute('data-org');
+  var scriptUrl = new URL(script.src, window.location.href);
+  var orgId = script.getAttribute('data-org') || scriptUrl.searchParams.get('org_id');
   if (!orgId) {
     console.error('StavbaFlow Widget: Missing data-org attribute.');
     return;

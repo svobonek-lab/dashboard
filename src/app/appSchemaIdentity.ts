@@ -32,6 +32,7 @@ export function toAppOrganization(row: AppCompanyRow): Organization {
     primary_color: row.color || '#2563eb',
     logo_url: row.logo_url || '',
     status: row.active === false ? 'Suspended' : 'Active',
+    plan: row.plan || 'pilot',
   };
 }
 
@@ -40,6 +41,7 @@ export function resolveAppIdentity(members: AppMemberRow[], companies: AppCompan
   const member = members.find((item) => item.user_id === userId && item.active)
     || members.find((item) => normalizedEmail && item.email.trim().toLowerCase() === normalizedEmail && item.active);
   if (!member) return null;
+  if (member.role !== 'owner' && member.role !== 'employee') return null;
   const organization = companies.find((company) => company.id === member.company_id && company.active !== false);
   if (!organization) return null;
   const mapped = toAppOrganization(organization);

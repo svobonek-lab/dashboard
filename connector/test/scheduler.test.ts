@@ -40,6 +40,13 @@ test('manual sync may run while paused but cannot overlap', async () => {
   await running;
 });
 
+test('pause and resume can be changed by a verified server command', async () => {
+  const root = await mkdtemp(join(tmpdir(), 'stavbaflow-scheduler-command-'));
+  const scheduler = new SyncScheduler(join(root, 'scheduler.json'));
+  assert.equal((await scheduler.setPaused(true)).paused, true);
+  assert.equal((await scheduler.setPaused(false)).paused, false);
+});
+
 test('uses at least a one-minute automatic interval and bounded exponential backoff', async () => {
   const root = await mkdtemp(join(tmpdir(), 'stavbaflow-scheduler-'));
   assert.throws(() => new SyncScheduler(join(root, 'scheduler.json'), { intervalMs: 59_999 }), /60 seconds/);
