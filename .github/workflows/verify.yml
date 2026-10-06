@@ -28,3 +28,36 @@ jobs:
       - run: npm test
       - run: npm run lint
       - run: npm run build
+
+  ai-dispatcher-contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - name: Start disposable PostgreSQL
+        run: >-
+          docker run --detach --name ai-dispatcher-postgres
+          --env POSTGRES_PASSWORD=postgres
+          --health-cmd="pg_isready -U postgres"
+          --health-interval=2s --health-timeout=2s --health-retries=30
+          postgres:17-alpine
+      - name: Wait for PostgreSQL
+        run: |
+          for attempt in {1..30}; do
+            if [ "$(docker inspect --format='{{.State.Health.Status}}' ai-dispatcher-postgres)" = "healthy" ]; then
+              exit 0
+            fi
+            sleep 2
+          done
+          docker logs ai-dispatcher-postgres
+          exit 1
+      - name: Apply and verify the AI dispatcher contract
+        run: |
+          docker exec -i ai-dispatcher-postgres psql -v ON_ERROR_STOP=1 -U postgres < supabase/tests/ai_dispatcher_setup.sql
+          docker exec -i ai-dispatcher-postgres psql -v ON_ERROR_STOP=1 -U postgres < supabase/staging/20261006_ai_dispatcher_contract.sql
+          docker exec -i ai-dispatcher-postgres psql -v ON_ERROR_STOP=1 -U postgres < supabase/tests/ai_dispatcher_verify.sql
+      - name: Stop disposable PostgreSQL
+        if: always()
+        run: docker rm --force ai-dispatcher-postgres

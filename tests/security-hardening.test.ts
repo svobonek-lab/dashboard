@@ -36,6 +36,11 @@ test('deployment defines CSP and HSTS while keeping only intake pages embeddable
   assert.match(serialized, /inquiry/);
 });
 
+test('deployment schedules the protected stale-lead outbox worker', () => {
+  const config = JSON.parse(readFileSync(new URL('../vercel.json', import.meta.url), 'utf8'));
+  assert.deepEqual(config.crons, [{ path: '/api/outbox-scheduler', schedule: '0 7 * * *' }]);
+});
+
 test('metadata and package identity match the verified StavbaFlow pilot', () => {
   const html = readFileSync(new URL('../index.html', import.meta.url), 'utf8');
   const pkg = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8'));
