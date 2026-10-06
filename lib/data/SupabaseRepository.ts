@@ -70,6 +70,7 @@ export class SupabaseRepository implements ICRMRepository {
       const raw = LocalSupabaseMock.getLeads();
       return raw.map((r: any) => ({
         id: r.id,
+        source: r.source,
         title: `${r.project_type || 'Zakázka'} — ${r.customer_name || 'Neznámý'}`,
         description: r.description || `Poptávka na ${r.project_type || 'služby'}`,
         city: r.city || 'Praha',
@@ -145,6 +146,7 @@ export class SupabaseRepository implements ICRMRepository {
 
       return (data || []).map((r: any) => ({
         id: r.id,
+        source: r.source,
         title: r.title || `${r.project_type || 'Zakázka'} — ${r.customer_name || 'Klient'}`,
         description: r.description || '',
         city: r.city || 'Praha',

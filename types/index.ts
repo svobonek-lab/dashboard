@@ -12,6 +12,7 @@ export interface CompanyBranding {
 
 export type LeadStatus = 'New' | 'Contacted' | 'Quote' | 'In Progress' | 'Completed' | 'Lost';
 export type Priority = 'Low' | 'Medium' | 'High' | 'Urgent';
+export type LeadSource = 'manual' | 'csv' | 'public_form' | 'ai_inbox' | 'widget' | 'connector' | string;
 
 export interface LeadChecklistItem {
   id: string;
@@ -74,6 +75,7 @@ export interface WeatherInfo {
 
 export interface Lead {
   organization_id?: string;
+  source?: LeadSource;
   id: string;
   title: string;
   description: string;

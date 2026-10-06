@@ -52,6 +52,7 @@ export interface Organization {
   branding?: any;
   status?: string;
   created_at?: string;
+  plan?: string;
 }
 
 export interface DBUser {

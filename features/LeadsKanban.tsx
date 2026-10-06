@@ -5,6 +5,7 @@ import { canDeleteLead } from '../src/app/permissions';
 import { useOrganization } from '../context/OrganizationContext';
 import { supabase, isSupabaseConfigured, isValidUUID, LocalSupabaseMock, DEFAULT_DEMO_ORG_ID } from '../lib/supabase';
 import { createManualLeadDraft } from '../src/app/manualLeadDraft';
+import { getLeadSourceBadge } from '../src/app/leadSource';
 
 interface LeadsKanbanProps {
   leads: Lead[];
@@ -300,8 +301,9 @@ export const LeadsKanban: React.FC<LeadsKanbanProps> = ({
 
                 {/* Cards Container (Min-height 170-220px per card feel) */}
                 <div className="p-4 space-y-4 min-h-[600px] flex-1">
-                  {columnLeads.map(lead => (
-                    <div
+                  {columnLeads.map(lead => {
+                    const sourceBadge = getLeadSourceBadge(lead.source);
+                    return <div
                       key={lead.id}
                       draggable
                       onDragStart={() => setDraggedLead(lead.id)}
@@ -314,11 +316,18 @@ export const LeadsKanban: React.FC<LeadsKanbanProps> = ({
 
                       {/* Top: Priority & Budget */}
                       <div className="flex items-center justify-between">
-                        <span className={`text-[10px] font-black px-2.5 py-1 rounded-lg border uppercase tracking-wider ${
-                          lead.priority === 'High' ? 'bg-rose-50 border-rose-200 text-rose-700' : 'bg-slate-50 border-slate-200 text-slate-600'
-                        }`}>
-                          {lead.priority === 'High' ? '🔥 Vysoká priorita' : 'Normální'}
-                        </span>
+                        <div className="flex flex-wrap items-center gap-1.5">
+                          <span className={`text-[10px] font-black px-2.5 py-1 rounded-lg border uppercase tracking-wider ${
+                            lead.priority === 'High' ? 'bg-rose-50 border-rose-200 text-rose-700' : 'bg-slate-50 border-slate-200 text-slate-600'
+                          }`}>
+                            {lead.priority === 'High' ? '🔥 Vysoká priorita' : 'Normální'}
+                          </span>
+                          {sourceBadge && (
+                            <span className="rounded-lg border border-blue-100 bg-blue-50 px-2 py-1 text-[10px] font-bold text-blue-700">
+                              <span aria-hidden="true">{sourceBadge.icon}</span> {sourceBadge.label}
+                            </span>
+                          )}
+                        </div>
                         <span className="text-sm font-black font-mono text-slate-900 bg-slate-50 px-2 py-0.5 rounded-md border border-slate-100">
                           {lead.price ? `${lead.price.toLocaleString()} Kč` : 'Dohodou'}
                         </span>
@@ -374,8 +383,8 @@ export const LeadsKanban: React.FC<LeadsKanbanProps> = ({
                           <span>Otevřít</span>
                         </button>
                       </div>
-                    </div>
-                  ))}
+                    </div>;
+                  })}
 
                   {columnLeads.length === 0 && (
                     <div className="h-40 flex items-center justify-center text-xs text-slate-500 border border-dashed border-slate-300 rounded-2xl bg-white/50">

@@ -1,5 +1,20 @@
 import { CompanyBranding, WebsiteAudit, WebsiteAnalysisResult } from '../types';
 import { supabase } from './supabase';
+import { GoogleGenAI } from '@google/genai';
+
+export async function generateGeminiResponse(prompt: string, textBody: string): Promise<string> {
+  const apiKey = process.env.GEMINI_API_KEY;
+  if (!apiKey) throw new Error('GEMINI_API_KEY is not configured.');
+  const ai = new GoogleGenAI({ apiKey });
+  const response = await ai.models.generateContent({
+    model: process.env.GEMINI_MODEL || 'gemini-3.6-flash',
+    contents: `${prompt}\n\nVSTUPNÍ E-MAIL:\n${textBody}`,
+    config: { responseMimeType: 'application/json', temperature: 0 },
+  });
+  const text = response.text?.trim();
+  if (!text) throw new Error('Gemini returned an empty response.');
+  return text;
+}
 
 function getFallbackData(url: string): WebsiteAnalysisResult & { branding: CompanyBranding; audit: WebsiteAudit } {
   const confidence = {
