@@ -2,6 +2,13 @@
 -- AI inbox idempotency and the dead-lead outbox are server-only boundaries.
 begin;
 
+-- Older staging snapshots created this table before intake events stored the
+-- resulting lead. Keep this proposal repeatable across both staging shapes.
+alter table public.app_public_intake_events
+  add column if not exists lead_id uuid references public.app_leads(id) on delete cascade;
+create index if not exists app_public_intake_rate_idx
+  on public.app_public_intake_events(company_id, created_at desc);
+
 create table if not exists public.app_ai_inbox_events (
   id uuid primary key default gen_random_uuid(),
   company_id uuid not null references public.app_companies(id) on delete cascade,
