@@ -7,6 +7,8 @@ import testSqlHandler from './api/test-sql';
 import inviteEmployeeHandler from './api/invite-employee';
 import resetEmployeePasswordHandler from './api/reset-employee-password';
 import outboxSchedulerHandler from './api/outbox-scheduler';
+import incomingLeadHandler from './api/incoming-lead';
+import incomingLeadConfigHandler from './api/incoming-lead-config';
 import connectorRegisterHandler from './api/_connector/routes/register';
 import connectorHeartbeatHandler from './api/_connector/routes/heartbeat';
 import connectorIngestHandler from './api/_connector/routes/ingest';
@@ -87,6 +89,16 @@ function apiMiddlewarePlugin(): Plugin {
 
         if ((req.url === '/api/outbox-scheduler' || req.url?.startsWith('/api/outbox-scheduler')) && (req.method === 'POST' || req.method === 'GET')) {
           handleRoute(outboxSchedulerHandler);
+          return;
+        }
+
+        if (req.url?.startsWith('/api/incoming-lead') && req.method === 'POST') {
+          handleRoute(incomingLeadHandler);
+          return;
+        }
+
+        if (req.url?.startsWith('/api/incoming-lead-config') && req.method === 'GET') {
+          handleRoute(incomingLeadConfigHandler);
           return;
         }
 

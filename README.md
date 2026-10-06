@@ -15,6 +15,8 @@ The verified staging pilot supports:
 - CSV import with mapping, fingerprint-based idempotency and rollback of unchanged imports;
 - an append-only audit history for lead creation and status changes.
 
+The AI dispatcher change set adds a signed per-company e-mail webhook, strict Gemini extraction, visible lead-source badges and a scheduled 24-hour unanswered-lead alert. It remains fail-closed until the staging-only SQL contract and the server-only runtime variables are reviewed for the target deployment.
+
 Google Sheets and bidirectional database synchronization are not part of the first customer pilot. A read-only Synology connector for PostgreSQL, MySQL/MariaDB and Microsoft SQL Server is implemented behind `VITE_CONNECTOR_ENABLED`; it must remain disabled until the connector staging contract, two-company authorization check and exact image digest have been reviewed for that deployment.
 
 ## Environments
@@ -68,6 +70,11 @@ Server-only settings:
 - `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY`: Vercel Functions only; never expose the service key through a `VITE_` variable.
 - `APP_INVITE_WORKER_ENABLED`: explicitly enables the invitation endpoint for the reviewed staging deployment.
 - `RESEND_API_KEY`: optional outbox delivery provider. Without it the worker fails before database access and never reports a false delivery.
+- `GEMINI_API_KEY` and optional `GEMINI_MODEL`: server-side lead extraction. Never expose the key through a `VITE_` variable.
+- `AI_INBOX_SIGNING_SECRET`: at least 32 characters; derives a different webhook token for every company.
+- `CRON_SECRET` and `EMAIL_FROM`: protect the scheduler and identify verified alert delivery.
+
+The reviewed staging proposal for these features is `supabase/staging/20261006_ai_dispatcher_contract.sql`. It creates service-only idempotency and notification tables, stores AI e-mail leads with `source = 'ai_inbox'`, stores embedded-form leads with `source = 'widget'`, and enqueues each 24-hour alert once. It is a review artifact and is never applied by CI.
 
 ## Customer onboarding
 

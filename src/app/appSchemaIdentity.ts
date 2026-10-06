@@ -32,6 +32,7 @@ export function toAppOrganization(row: AppCompanyRow): Organization {
     primary_color: row.color || '#2563eb',
     logo_url: row.logo_url || '',
     status: row.active === false ? 'Suspended' : 'Active',
+    plan: row.plan || 'pilot',
   };
 }
 

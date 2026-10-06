@@ -22,6 +22,7 @@ test('maps app lead status and preserves unknown values as empty UI fields', () 
   assert.equal(lead.status, 'New');
   assert.equal(lead.priority, 'Medium');
   assert.equal(lead.assignedEmployeeId, 'user-a');
+  assert.equal(lead.source, 'manual');
   assert.equal(lead.price, 0);
   assert.equal(lead.thumbnail, '');
 });

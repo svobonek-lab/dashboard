@@ -11,6 +11,14 @@ function secretsMatch(provided: string, expected: string): boolean {
   return timingSafeEqual(actualBuffer, expectedBuffer);
 }
 
+export async function queueStaleLeadAlerts(service: { rpc: (name: string, args: Record<string, unknown>) => Promise<{ data: unknown; error: any }> }): Promise<number> {
+  const { data, error } = await service.rpc('app_queue_stale_lead_alerts', { p_older_than: '24 hours' });
+  if (error) throw new Error(error.message || 'Hlídač nezodpovězených poptávek selhal.');
+  const queued = Number(data || 0);
+  if (!Number.isInteger(queued) || queued < 0) throw new Error('Hlídač vrátil neplatný počet upozornění.');
+  return queued;
+}
+
 // Server-side email scheduler & outbox worker
 // Implements the audit recommendation: DB event -> app_email_outbox -> scheduler worker -> Resend.
 export default async function outboxSchedulerHandler(req: any, res: any) {
@@ -51,7 +59,11 @@ export default async function outboxSchedulerHandler(req: any, res: any) {
   });
 
   try {
-    // 1. Fetch pending emails in outbox
+    // 1. Transactionally enqueue one owner alert for every lead that has
+    // remained in the new state for more than 24 hours.
+    const staleLeadAlertsQueued = await queueStaleLeadAlerts(supabase as any);
+
+    // 2. Fetch pending emails in outbox
     const { data: pendingEmails, error: fetchErr } = await supabase
       .from('app_email_outbox')
       .select('*')
@@ -74,6 +86,7 @@ export default async function outboxSchedulerHandler(req: any, res: any) {
       return res.status(200).json({
         success: true,
         message: 'Žádné čekající e-maily k odeslání.',
+        staleLeadAlertsQueued,
         processedCount: 0,
         timestamp: new Date().toISOString()
       });
@@ -82,7 +95,7 @@ export default async function outboxSchedulerHandler(req: any, res: any) {
     let processedCount = 0;
     const results = [];
 
-    // 2. Process each email
+    // 3. Process each email
     for (const email of pendingEmails) {
       try {
         // Claim conditionally so concurrent workers cannot send the same row.
@@ -115,7 +128,7 @@ export default async function outboxSchedulerHandler(req: any, res: any) {
             from: emailFrom,
             to: email.recipient || email.to,
             subject: email.subject,
-            html: email.body_html || email.body
+            ...(email.body_html ? { html: email.body_html } : { text: email.body || '' })
           })
         });
         const resendData = await resendResponse.json();
@@ -165,6 +178,7 @@ export default async function outboxSchedulerHandler(req: any, res: any) {
     res.status(200).json({
       success: true,
       processedCount,
+      staleLeadAlertsQueued,
       results,
       timestamp: new Date().toISOString()
     });
