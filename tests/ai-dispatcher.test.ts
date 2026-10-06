@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import test from 'node:test';
 import {
   buildAiLeadPrompt,
@@ -44,6 +45,12 @@ test('AI prompt requests only the approved JSON fields', () => {
   assert.match(prompt, /"client_name"/);
   assert.match(prompt, /striktní JSON/i);
   assert.doesNotMatch(prompt, /markdown/i);
+});
+
+test('server-side Gemini module uses Node ESM compatible local imports', () => {
+  const source = readFileSync(new URL('../lib/gemini.ts', import.meta.url), 'utf8');
+  assert.match(source, /from '\.\/supabase\.js'/);
+  assert.match(source, /from '\.\.\/types\/index\.js'/);
 });
 
 test('incoming mail that is not a lead is ignored without a database write', async () => {

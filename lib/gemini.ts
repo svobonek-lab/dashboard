@@ -1,5 +1,5 @@
-import { CompanyBranding, WebsiteAudit, WebsiteAnalysisResult } from '../types';
-import { supabase } from './supabase';
+import type { CompanyBranding, WebsiteAudit, WebsiteAnalysisResult } from '../types/index.js';
+import { supabase } from './supabase.js';
 import { GoogleGenAI } from '@google/genai';
 
 export async function generateGeminiResponse(prompt: string, textBody: string): Promise<string> {
