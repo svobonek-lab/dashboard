@@ -16,7 +16,13 @@ export function createIncomingLeadConfigHandler(dependencies: IncomingLeadConfig
       return;
     }
     const parsedUrl = new URL(String(req.url || '/api/incoming-lead-config'), 'https://internal.invalid');
-    const companyId = String(req.query?.companyId || parsedUrl.searchParams.get('companyId') || '').trim();
+    const companyId = String(
+      req.query?.org_id
+      || req.query?.companyId
+      || parsedUrl.searchParams.get('org_id')
+      || parsedUrl.searchParams.get('companyId')
+      || '',
+    ).trim();
     const accessToken = String(req.headers?.authorization || req.headers?.Authorization || '').replace(/^Bearer\s+/i, '').trim();
     if (!UUID.test(companyId) || !accessToken) {
       res.status(400).json({ error: 'Chybí platná firma nebo přihlášení.' });
