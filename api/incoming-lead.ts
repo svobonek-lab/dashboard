@@ -28,6 +28,30 @@ interface IncomingLeadDependencies {
   persist: (lead: PersistedAiLead) => Promise<string>;
 }
 
+function firstNonEmptyString(...values: unknown[]): string {
+  for (const value of values) {
+    if (typeof value !== 'string') continue;
+    const normalized = value.trim();
+    if (normalized) return normalized;
+  }
+  return '';
+}
+
+export function extractIncomingEmailText(body: unknown): string {
+  if (!body || typeof body !== 'object') return '';
+  const payload = body as Record<string, unknown>;
+  const subject = firstNonEmptyString(payload.subject, payload.Subject);
+  const message = firstNonEmptyString(
+    payload.text,
+    payload.text_body,
+    payload['stripped-text'],
+    payload.stripped_text,
+  );
+  if (subject && message) return `Předmět: ${subject}\n\n${message}`;
+  if (subject) return `Předmět: ${subject}`;
+  return message;
+}
+
 function boundedString(value: unknown, max: number, nullable = false): string | null {
   if (value === null && nullable) return null;
   if (typeof value !== 'string') throw new Error('AI odpověď má neplatný formát.');
@@ -103,11 +127,11 @@ export function createIncomingLeadHandler(dependencies: IncomingLeadDependencies
       res.status(405).json({ error: 'Method Not Allowed. Use POST.' });
       return;
     }
-    const textBody = typeof req.body?.text_body === 'string' ? req.body.text_body.trim() : '';
+    const textBody = extractIncomingEmailText(req.body);
     const parsedUrl = new URL(String(req.url || '/api/incoming-lead'), 'https://internal.invalid');
     const companyId = String(req.body?.org_id || req.query?.org_id || parsedUrl.searchParams.get('org_id') || '').trim();
     if (!UUID.test(companyId) || !textBody) {
-      res.status(400).json({ error: 'Požadavek vyžaduje platné org_id a neprázdné text_body.' });
+      res.status(400).json({ error: 'Požadavek vyžaduje platné org_id a neprázdný předmět nebo text e-mailu.' });
       return;
     }
     if (textBody.length > MAX_MAIL_LENGTH) {
@@ -142,6 +166,10 @@ export function createIncomingLeadHandler(dependencies: IncomingLeadDependencies
 
 function authorizeIncomingLead(req: any, companyId: string): boolean {
   const secret = String(process.env.AI_INBOX_SIGNING_SECRET || '');
+  if (!secret && process.env.NODE_ENV === 'development' && !process.env.VERCEL_ENV) {
+    console.warn('AI_INBOX_SIGNING_SECRET není nastavený; nepodepsaný webhook je povolený pouze v lokálním vývoji.');
+    return true;
+  }
   const url = new URL(String(req.url || '/api/incoming-lead'), 'https://internal.invalid');
   const token = String(req.query?.token || req.body?.webhook_token || url.searchParams.get('token') || '').trim();
   return verifyAiInboxToken(companyId, token, secret);

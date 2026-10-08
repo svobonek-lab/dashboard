@@ -4,6 +4,7 @@ import test from 'node:test';
 import {
   buildAiLeadPrompt,
   createIncomingLeadHandler,
+  extractIncomingEmailText,
   parseAiLeadResponse,
 } from '../api/incoming-lead';
 
@@ -127,4 +128,92 @@ test('incoming lead accepts the company id from the configured webhook URL', asy
   }, res);
   assert.equal(res.code, 201);
   assert.equal(companyId, '11111111-1111-4111-8111-111111111111');
+});
+
+test('incoming lead combines Mailgun subject and stripped text', async () => {
+  let classifiedText = '';
+  const handler = createIncomingLeadHandler({
+    authorize: () => true,
+    classify: async (_prompt, text) => {
+      classifiedText = text;
+      return JSON.stringify({ is_lead: false, client_name: null, phone: null, job_type: '', description: '', location: null });
+    },
+    persist: async () => 'unexpected',
+  });
+  const res = responseRecorder();
+  await handler({
+    method: 'POST',
+    body: {
+      subject: 'Poptávka rekonstrukce střechy',
+      'stripped-text': 'Prosím o nabídku pro dům v Brně.',
+      org_id: '11111111-1111-4111-8111-111111111111',
+    },
+    headers: {},
+  }, res);
+  assert.equal(res.code, 200);
+  assert.equal(classifiedText, 'Předmět: Poptávka rekonstrukce střechy\n\nProsím o nabídku pro dům v Brně.');
+});
+
+test('incoming lead normalizes Make subject and text fields', () => {
+  assert.equal(
+    extractIncomingEmailText({ Subject: 'Nová koupelna', text: 'Termín prosím v listopadu.' }),
+    'Předmět: Nová koupelna\n\nTermín prosím v listopadu.',
+  );
+});
+
+test('unsigned webhook is allowed only in local development when the signing secret is absent', async () => {
+  const previousNodeEnv = process.env.NODE_ENV;
+  const previousVercelEnv = process.env.VERCEL_ENV;
+  const previousSigningSecret = process.env.AI_INBOX_SIGNING_SECRET;
+  const previousGeminiKey = process.env.GEMINI_API_KEY;
+  const originalWarn = console.warn;
+  const originalError = console.error;
+  const warnings: string[] = [];
+  process.env.NODE_ENV = 'development';
+  delete process.env.VERCEL_ENV;
+  delete process.env.AI_INBOX_SIGNING_SECRET;
+  delete process.env.GEMINI_API_KEY;
+  console.warn = (message?: unknown) => warnings.push(String(message));
+  console.error = () => undefined;
+  try {
+    const res = responseRecorder();
+    const defaultHandler = (await import('../api/incoming-lead')).default;
+    await defaultHandler({
+      method: 'POST',
+      body: { text_body: 'Prosím o nabídku.', org_id: '11111111-1111-4111-8111-111111111111' },
+      headers: {},
+    }, res);
+    assert.equal(res.code, 502);
+    assert.match(warnings.join('\n'), /AI_INBOX_SIGNING_SECRET/);
+  } finally {
+    console.warn = originalWarn;
+    console.error = originalError;
+    if (previousNodeEnv === undefined) delete process.env.NODE_ENV; else process.env.NODE_ENV = previousNodeEnv;
+    if (previousVercelEnv === undefined) delete process.env.VERCEL_ENV; else process.env.VERCEL_ENV = previousVercelEnv;
+    if (previousSigningSecret === undefined) delete process.env.AI_INBOX_SIGNING_SECRET; else process.env.AI_INBOX_SIGNING_SECRET = previousSigningSecret;
+    if (previousGeminiKey === undefined) delete process.env.GEMINI_API_KEY; else process.env.GEMINI_API_KEY = previousGeminiKey;
+  }
+});
+
+test('unsigned webhook remains unauthorized outside local development', async () => {
+  const previousNodeEnv = process.env.NODE_ENV;
+  const previousVercelEnv = process.env.VERCEL_ENV;
+  const previousSigningSecret = process.env.AI_INBOX_SIGNING_SECRET;
+  process.env.NODE_ENV = 'production';
+  process.env.VERCEL_ENV = 'preview';
+  delete process.env.AI_INBOX_SIGNING_SECRET;
+  try {
+    const res = responseRecorder();
+    const defaultHandler = (await import('../api/incoming-lead')).default;
+    await defaultHandler({
+      method: 'POST',
+      body: { text_body: 'Prosím o nabídku.', org_id: '11111111-1111-4111-8111-111111111111' },
+      headers: {},
+    }, res);
+    assert.equal(res.code, 401);
+  } finally {
+    if (previousNodeEnv === undefined) delete process.env.NODE_ENV; else process.env.NODE_ENV = previousNodeEnv;
+    if (previousVercelEnv === undefined) delete process.env.VERCEL_ENV; else process.env.VERCEL_ENV = previousVercelEnv;
+    if (previousSigningSecret === undefined) delete process.env.AI_INBOX_SIGNING_SECRET; else process.env.AI_INBOX_SIGNING_SECRET = previousSigningSecret;
+  }
 });

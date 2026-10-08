@@ -13,7 +13,7 @@ test('owner receives a signed company-bound AI inbox URL', async () => {
     appOrigin: 'https://dashboard.example.test',
   });
   const res = responseRecorder();
-  await handler({ method: 'GET', query: { companyId: '11111111-1111-4111-8111-111111111111' }, headers: { authorization: 'Bearer owner-session' } }, res);
+  await handler({ method: 'GET', query: { org_id: '11111111-1111-4111-8111-111111111111' }, headers: { authorization: 'Bearer owner-session' } }, res);
   assert.equal(res.code, 200);
   assert.equal(res.body.webhookUrl, `https://dashboard.example.test/api/incoming-lead?org_id=11111111-1111-4111-8111-111111111111&token=${'a'.repeat(64)}`);
   assert.equal(JSON.stringify(res.body).includes('owner-session'), false);
