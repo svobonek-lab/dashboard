@@ -16,6 +16,7 @@ import { EmployeeLayout } from './layouts/EmployeeLayout';
 // Super Admin Pages
 import { AdminDashboardPage } from './pages/admin/Dashboard';
 import { AdminCompaniesPage } from './pages/admin/Companies';
+import { AdminSupportSessionPage } from './pages/admin/SupportSession';
 
 // Owner Pages
 import { OwnerDashboardPage } from './pages/owner/Dashboard';
@@ -462,6 +463,8 @@ function AppContent() {
             <AdminDashboardPage />
           ) : pathname === '/admin/companies' ? (
             <AdminCompaniesPage />
+          ) : pathname.startsWith('/admin/support/') ? (
+            <AdminSupportSessionPage sessionId={pathname.slice('/admin/support/'.length)} />
           ) : (
             <AdminDashboardPage />
           )}

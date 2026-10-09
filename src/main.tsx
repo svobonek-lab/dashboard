@@ -2,8 +2,9 @@ import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import './index.css';
 import { PublicDemoWorkspace } from '@/features/publicDemo/PublicDemoWorkspace';
+import { isPublicDemoPath } from './app/demoUrl';
 
-const isPublicDemo = window.location.pathname === '/demo' || window.location.pathname === '/interaktivni-demo';
+const isPublicDemo = isPublicDemoPath(window.location.pathname);
 
 async function startApplication() {
   const root = createRoot(document.getElementById('root')!);

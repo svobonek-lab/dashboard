@@ -1,6 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
-import { useOrganization } from '@/context/OrganizationContext';
-import { getDefaultRouteForRole, UserRole } from './permissions';
+export { isPublicDemoPath } from './demoUrl';
 
 interface RouterContextType {
   pathname: string;

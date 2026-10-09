@@ -11,3 +11,9 @@ export function shouldBlockLegacyWrites(env: Record<string, unknown> = {}): bool
   // is fail-closed even when an old deployment omitted the flag.
   return Boolean(env.PROD) || isAppSchemaReadsEnabled(env);
 }
+
+export function shouldInitializeProductionData(pathname: string, env: Record<string, unknown> = {}): boolean {
+  const normalized = pathname.length > 1 ? pathname.replace(/\/+$/, '') : pathname;
+  if (normalized === '/demo' || normalized === '/interaktivni-demo') return false;
+  return Boolean(env.PROD) || isAppSchemaReadsEnabled(env);
+}

@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 
 const contractUrl = new URL('../supabase/staging/20261005_platform_admin_contract.sql', import.meta.url);
+const supportContractUrl = new URL('../supabase/staging/20261009_platform_admin_support_contract.sql', import.meta.url);
 
 test('platform contract isolates administrator identity from tenant membership', () => {
   const contract = fs.readFileSync(contractUrl, 'utf8');
@@ -11,6 +12,20 @@ test('platform contract isolates administrator identity from tenant membership',
   assert.match(contract, /alter table public\.app_platform_admins enable row level security/i);
   assert.match(contract, /revoke all on public\.app_platform_admins from public, anon, authenticated/i);
   assert.doesNotMatch(contract, /alter table public\.app_(?:companies|members|leads)[\s\S]*app_(?:is_)?platform_admin/i);
+});
+
+test('support contract keeps tenant RLS intact and exposes service-only actor-bound functions', () => {
+  const contract = fs.readFileSync(supportContractUrl, 'utf8');
+  assert.match(contract, /app_platform_list_companies\(p_actor_user_id uuid\)/i);
+  assert.match(contract, /app_platform_create_support_session\(p_actor_user_id uuid, p_company_id uuid, p_reason text\)/i);
+  assert.match(contract, /app_platform_get_support_session\(p_actor_user_id uuid, p_session_id uuid\)/i);
+  assert.match(contract, /app_platform_revoke_support_session\(p_actor_user_id uuid, p_session_id uuid\)/i);
+  assert.match(contract, /access_mode = 'read_only'/i);
+  assert.match(contract, /interval '30 minutes'/i);
+  assert.match(contract, /set search_path = ''/i);
+  assert.match(contract, /grant execute on function[\s\S]*to service_role/i);
+  assert.doesNotMatch(contract, /grant execute on function[\s\S]*to (?:anon|authenticated)/i);
+  assert.doesNotMatch(contract, /create policy[\s\S]*app_(?:companies|members|leads)/i);
 });
 
 test('self-role lookup exposes only the caller role through a fixed search path', () => {

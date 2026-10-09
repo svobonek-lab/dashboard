@@ -1,7 +1,15 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { resolveDemoUrl } from '../src/app/demoUrl';
+import { isPublicDemoPath, resolveDemoUrl } from '../src/app/demoUrl';
+
+test('only explicit public demo routes bypass the application login', () => {
+  assert.equal(isPublicDemoPath('/demo'), true);
+  assert.equal(isPublicDemoPath('/demo/'), true);
+  assert.equal(isPublicDemoPath('/interaktivni-demo'), true);
+  assert.equal(isPublicDemoPath('/login'), false);
+  assert.equal(isPublicDemoPath('/demo-company'), false);
+});
 
 test('explicit HTTPS demo URL wins and is normalized without query or fragment', () => {
   assert.deepEqual(resolveDemoUrl(
