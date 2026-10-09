@@ -11,14 +11,13 @@ export interface PlatformCompanySummary {
   active: boolean;
   onboarding_completed: boolean;
   created_at: string;
+  member_count: number;
+  subscription_status: 'not_configured' | 'trial' | 'active' | 'past_due' | 'cancelled';
   integration_status: 'not_verified';
 }
 
-export async function listPlatformCompanies(service: SupabaseClient): Promise<PlatformCompanySummary[]> {
-  const { data, error } = await service
-    .from('app_companies')
-    .select('id,name,slug,active,onboarding_completed,created_at')
-    .order('created_at', { ascending: false });
+export async function listPlatformCompanies(service: SupabaseClient, actorUserId: string): Promise<PlatformCompanySummary[]> {
+  const { data, error } = await service.rpc('app_platform_list_companies', { p_actor_user_id: actorUserId });
   if (error) throw new PlatformHttpError('COMPANY_DIRECTORY_UNAVAILABLE', 502);
   return (data || []).map((row: any) => ({
     id: String(row.id),
@@ -27,6 +26,8 @@ export async function listPlatformCompanies(service: SupabaseClient): Promise<Pl
     active: row.active !== false,
     onboarding_completed: row.onboarding_completed === true,
     created_at: String(row.created_at || ''),
+    member_count: Number.isFinite(Number(row.member_count)) ? Number(row.member_count) : 0,
+    subscription_status: ['trial', 'active', 'past_due', 'cancelled'].includes(row.subscription_status) ? row.subscription_status : 'not_configured',
     integration_status: 'not_verified' as const,
   }));
 }
@@ -35,7 +36,7 @@ export default async function platformCompaniesHandler(request: any, response: a
   await runPlatformHandler(response, async () => {
     requireGet(request);
     const { userId, service } = await authorizePlatformRequest(request);
-    const companies = await listPlatformCompanies(service);
+    const companies = await listPlatformCompanies(service, userId);
     await recordPlatformAudit(service, {
       actorUserId: userId,
       action: 'company_directory.viewed',

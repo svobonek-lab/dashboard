@@ -7,7 +7,7 @@ type PlatformClients = { auth: SupabaseClient; service: SupabaseClient };
 
 export interface PlatformAuditInput {
   actorUserId: string;
-  action: 'platform_session.verified' | 'company_directory.viewed';
+  action: 'platform_session.verified' | 'company_directory.viewed' | 'support_session.created' | 'support_session.viewed' | 'support_session.revoked';
   reasonCode: 'platform_api_request';
 }
 
