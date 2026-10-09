@@ -5,14 +5,31 @@ import { readFileSync } from 'node:fs';
 const workspace = readFileSync(new URL('../features/publicDemo/PublicDemoWorkspace.tsx', import.meta.url), 'utf8');
 const state = readFileSync(new URL('../features/publicDemo/demoState.ts', import.meta.url), 'utf8');
 const main = readFileSync(new URL('../src/main.tsx', import.meta.url), 'utf8');
+const ownerLayout = readFileSync(new URL('../src/layouts/OwnerLayout.tsx', import.meta.url), 'utf8');
+const ownerDashboard = readFileSync(new URL('../features/OwnerDashboard.tsx', import.meta.url), 'utf8');
+const kanban = readFileSync(new URL('../features/LeadsKanban.tsx', import.meta.url), 'utf8');
+const companySwitcher = readFileSync(new URL('../components/CompanySwitcher.tsx', import.meta.url), 'utf8');
 
 test('public demo is static, read-only and sourced from the shared demo fixture', () => {
   assert.match(state, /PUBLIC_DEMO_LEADS/);
   assert.match(workspace, /pouze pro čtení/i);
+  assert.match(workspace, /OwnerLayout/);
+  assert.match(workspace, /OwnerDashboard/);
+  assert.match(workspace, /LeadsKanban/);
+  assert.match(workspace, /readOnly/);
+  assert.match(ownerDashboard, /!readOnly &&/);
   assert.doesNotMatch(workspace, /localStorage|createDemoLead|moveDemoLead|setLeads|saveCompany/);
+  assert.doesNotMatch(workspace, /owner-demo|od-banner|od-board/);
 });
 
 test('demo dispatch happens before authenticated application modules are loaded', () => {
   assert.match(main, /isPublicDemoPath/);
   assert.ok(main.indexOf('if (isPublicDemo') < main.indexOf("import('./App.tsx')"));
+});
+
+test('production UI reused by public demo imports only the lightweight context boundary', () => {
+  for (const source of [workspace, ownerLayout, ownerDashboard, kanban, companySwitcher]) {
+    assert.match(source, /OrganizationContextBase/);
+    assert.doesNotMatch(source, /context\/OrganizationContext['"]/);
+  }
 });

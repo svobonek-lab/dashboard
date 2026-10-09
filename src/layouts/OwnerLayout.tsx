@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useOrganization } from '@/context/OrganizationContext';
+import { useOrganization } from '@/context/OrganizationContextBase';
 import { useRouter, Link } from '../app/router';
 import { 
   LayoutDashboard, 
@@ -42,12 +42,16 @@ interface OwnerLayoutProps {
   children: React.ReactNode;
   leads?: Lead[];
   onSelectLead?: (lead: Lead) => void;
+  readOnlyMode?: 'demo' | 'support';
+  onExitReadOnly?: () => void;
 }
 
 export const OwnerLayout: React.FC<OwnerLayoutProps> = ({ 
   children,
   leads = [],
-  onSelectLead
+  onSelectLead,
+  readOnlyMode,
+  onExitReadOnly,
 }) => {
   const { currentOrg } = useOrganization();
   const branding = currentOrg?.branding || {};
@@ -131,6 +135,7 @@ export const OwnerLayout: React.FC<OwnerLayoutProps> = ({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
+  const route = (path: string) => readOnlyMode === 'demo' ? (path === '/dashboard' ? '/demo' : `/demo${path}`) : path;
   const navItems = [
     { label: 'Přehled stavby (Executive)', path: '/dashboard', icon: LayoutDashboard, exact: true },
     { label: 'Prodejní cockpit', path: '/sales', icon: Kanban, badge: leads.filter(l => l.status === 'New').length ? `${leads.filter(l => l.status === 'New').length} nové` : undefined },
@@ -148,7 +153,8 @@ export const OwnerLayout: React.FC<OwnerLayoutProps> = ({
     { label: 'Synology NAS', path: '/integrations/synology', icon: HardDrive },
     { label: 'Klientský portál', path: '/portal', icon: Globe },
     { label: 'Nastavení & Export', path: '/settings', icon: Settings },
-  ].filter((item) => isDemoWorkspace || isPilotOwnerNavigationPath(item.path));
+  ].filter((item) => readOnlyMode === 'demo' ? ['/dashboard', '/leads'].includes(item.path) : (isDemoWorkspace || isPilotOwnerNavigationPath(item.path)))
+    .map((item) => ({ ...item, path: route(item.path) }));
 
   const isSuperAdminUser = dbUser?.role === 'super_admin' || Boolean(impersonatingOrgId);
 
@@ -156,17 +162,14 @@ export const OwnerLayout: React.FC<OwnerLayoutProps> = ({
     <div className="workspace-shell min-h-screen bg-slate-50 text-slate-800 flex flex-col font-sans selection:bg-brand-primary-soft">
       
       {/* Super Admin Company Workspace Top Bar */}
-      {isSuperAdminUser && (
+      {(isSuperAdminUser || readOnlyMode) && (
         <div className="bg-[#0C111D] border-b border-slate-800 px-6 h-14 flex items-center justify-between text-xs font-bold shadow-lg fixed top-0 w-full z-50">
           <div className="flex items-center gap-4">
             <button
-              onClick={() => {
-                stopImpersonation();
-                navigate('/admin');
-              }}
+              onClick={() => { if (onExitReadOnly) onExitReadOnly(); else { stopImpersonation(); navigate('/admin'); } }}
               className="bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 hover:border-cyan-500/50 px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2 shadow-sm shadow-cyan-500/10"
             >
-              ← Back to Platform
+              {readOnlyMode === 'demo' ? '← Ukončit demo' : '← Vrátit se do Adminu'}
             </button>
 
             <div className="h-5 w-px bg-slate-800"></div>
@@ -178,26 +181,26 @@ export const OwnerLayout: React.FC<OwnerLayoutProps> = ({
                 </div>
               ) : null}
               <span className="bg-cyan-500/20 border border-cyan-500/40 text-cyan-400 px-2.5 py-0.5 rounded-lg text-[10px] font-black uppercase tracking-wider">
-                Workspace
+                {readOnlyMode === 'demo' ? 'Veřejné demo' : 'Impersonating'}
               </span>
               <span className="text-white font-black text-sm tracking-tight">{activeCompanyName}</span>
               <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-slate-800 text-slate-300 border border-slate-700">
-                {(currentOrg as any)?.plan || 'Enterprise'} Plan
+                {readOnlyMode === 'demo' ? 'Pouze pro čtení' : `${(currentOrg as any)?.plan || 'Enterprise'} Plan`}
               </span>
               <span className="hidden lg:inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[10px] font-mono text-green-400 bg-green-500/10 border border-green-500/20">
                 <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse"></span>
-                Isolated Multi-Tenant
+                {readOnlyMode === 'demo' ? 'Syntetická data' : 'Auditovaná relace'}
               </span>
             </div>
           </div>
 
-          <div className="flex items-center gap-3">
+          {!readOnlyMode && <div className="flex items-center gap-3">
             <CompanySwitcher variant="workspace" />
-          </div>
+          </div>}
         </div>
       )}
 
-      <div className={`flex flex-1 ${isSuperAdminUser ? 'pt-14' : ''}`}>
+      <div className={`flex flex-1 ${(isSuperAdminUser || readOnlyMode) ? 'pt-14' : ''}`}>
         {/* Mobile Drawer Overlay */}
         {isMobileDrawerOpen && (
           <div 
@@ -218,7 +221,7 @@ export const OwnerLayout: React.FC<OwnerLayoutProps> = ({
           className={`workspace-rail w-64 max-w-[calc(100vw-36px)] lg:max-w-none lg:w-64 bg-surface border-r border-border flex flex-col justify-between shrink-0 fixed inset-y-0 left-0 z-50 shadow-app transition-transform duration-300 ease-out font-sans ${
             isMobileDrawerOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
           }`} 
-          style={{ top: isSuperAdminUser ? '56px' : '0' }}
+          style={{ top: (isSuperAdminUser || readOnlyMode) ? '56px' : '0' }}
         >
           {/* Top Brand & Identity Header */}
           <div>
@@ -246,13 +249,13 @@ export const OwnerLayout: React.FC<OwnerLayoutProps> = ({
               </div>
 
               {/* Close Button on Mobile Drawer */}
-              <button 
+              {!readOnlyMode && <button
                 onClick={() => setIsMobileDrawerOpen(false)}
                 className="lg:hidden p-2 rounded-lg text-muted hover:text-text hover:bg-surface-secondary min-h-[48px] min-w-[48px] flex items-center justify-center"
                 aria-label="Zavřít menu"
               >
                 <X className="w-5 h-5" />
-              </button>
+              </button>}
             </div>
 
             {/* Navigation Menu */}
@@ -318,7 +321,7 @@ export const OwnerLayout: React.FC<OwnerLayoutProps> = ({
 
             {/* Logout and Settings Bottom Buttons */}
             <div className="flex items-center justify-between border-t border-border/60 pt-2.5">
-              <button
+              {!readOnlyMode && <button
                 onClick={() => {
                   setIsMobileDrawerOpen(false);
                   navigate('/settings');
@@ -327,15 +330,21 @@ export const OwnerLayout: React.FC<OwnerLayoutProps> = ({
               >
                 <Settings className="w-3.5 h-3.5" />
                 <span>Nastavení</span>
-              </button>
+              </button>}
 
               <button
-                onClick={() => logout().then(() => navigate('/login'))}
+                onClick={() => {
+                  if (readOnlyMode) {
+                    onExitReadOnly?.();
+                    return;
+                  }
+                  void logout().then(() => navigate('/login'));
+                }}
                 title="Odhlásit se"
                 className="flex items-center gap-1.5 px-2.5 py-2 rounded-app text-xs font-semibold text-muted hover:text-red-600 hover:bg-red-50/50 transition-colors cursor-pointer"
               >
                 <LogOut className="w-3.5 h-3.5" />
-                <span>Odhlásit</span>
+                <span>{readOnlyMode === 'demo' ? 'Přihlásit' : 'Odhlásit'}</span>
               </button>
             </div>
           </div>
@@ -437,10 +446,10 @@ export const OwnerLayout: React.FC<OwnerLayoutProps> = ({
       </div>
 
       {/* Floating AI Assistant */}
-      {isDemoWorkspace && <FloatingAIAssistant branding={branding} leads={leads} />}
+      {isDemoWorkspace && !readOnlyMode && <FloatingAIAssistant branding={branding} leads={leads} />}
 
       {/* Modals & Command Palette */}
-      <CommandPalette
+      {!readOnlyMode && <CommandPalette
         isOpen={isCommandPaletteOpen}
         onClose={() => setIsCommandPaletteOpen(false)}
         onNavigateTab={(tab) => {
@@ -452,9 +461,8 @@ export const OwnerLayout: React.FC<OwnerLayoutProps> = ({
         }}
         leads={leads}
         branding={branding}
-      />
+      />}
 
     </div>
   );
 };
-

@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { ArrowRight, BriefcaseBusiness, CircleAlert, Plus, Search, UsersRound } from 'lucide-react';
 import { CompanyBranding, Lead } from '../types';
-import { useOrganization } from '@/context/OrganizationContext';
+import { useOrganization } from '@/context/OrganizationContextBase';
 import { getOwnerActiveJobs, getOwnerAttentionItems } from './ownerDashboard/dashboardMetrics';
 
 interface OwnerDashboardProps {
@@ -10,6 +10,7 @@ interface OwnerDashboardProps {
   onSelectLead: (lead: Lead) => void;
   onNavigateTab: (tab: string) => void;
   employees?: unknown[];
+  readOnly?: boolean;
 }
 
 const currency = new Intl.NumberFormat('cs-CZ', { style: 'currency', currency: 'CZK', maximumFractionDigits: 0 });
@@ -19,7 +20,7 @@ const statusLabel: Record<Lead['status'], string> = {
   'In Progress': 'V realizaci', Completed: 'Dokončeno', Lost: 'Nezískáno',
 };
 
-export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({ leads, onSelectLead, onNavigateTab }) => {
+export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({ leads, onSelectLead, onNavigateTab, readOnly = false }) => {
   const { currentOrg, dbUser, user } = useOrganization();
   const [searchQuery, setSearchQuery] = useState('');
   const userName = dbUser?.name?.split(' ')[0] || user?.email?.split('@')[0] || 'majiteli';
@@ -42,7 +43,7 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({ leads, onSelectL
           <h1 className="workspace-title">Dobrý den, {userName}</h1>
           <p className="workspace-subtitle">{attentionItems.length ? `${attentionItems.length} ${attentionItems.length === 1 ? 'položka potřebuje' : 'položky potřebují'} vaši pozornost.` : 'Poptávky i rozpracované zakázky jsou pod kontrolou.'}</p>
         </div>
-        <button type="button" onClick={() => onNavigateTab('leads')} className="workspace-primary-action inline-flex min-h-11 items-center justify-center gap-2 px-4 text-sm font-semibold"><Plus className="h-4 w-4" /> Nová poptávka</button>
+        {!readOnly && <button type="button" onClick={() => onNavigateTab('leads')} className="workspace-primary-action inline-flex min-h-11 items-center justify-center gap-2 px-4 text-sm font-semibold"><Plus className="h-4 w-4" /> Nová poptávka</button>}
       </header>
 
       <section className="grid gap-3 sm:grid-cols-3" aria-label="Souhrn firmy">

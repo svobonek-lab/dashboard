@@ -13,7 +13,7 @@ const PUBLIC_DEMO_PATHS = new Set(['/demo', '/interaktivni-demo']);
 
 export function isPublicDemoPath(pathname: string): boolean {
   const normalized = pathname.length > 1 ? pathname.replace(/\/+$/, '') : pathname;
-  return PUBLIC_DEMO_PATHS.has(normalized);
+  return PUBLIC_DEMO_PATHS.has(normalized) || normalized.startsWith('/demo/');
 }
 
 function safeAbsoluteUrl(raw: string, isDevelopment: boolean): URL | null {

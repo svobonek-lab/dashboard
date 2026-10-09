@@ -75,7 +75,7 @@ test('project overview never invents margin, staff, photos, or handover status',
 
 test('simulated AI copilot is excluded from the real company workspace', () => {
   const layout = readFileSync(new URL('../src/layouts/OwnerLayout.tsx', import.meta.url), 'utf8');
-  assert.match(layout, /isDemoWorkspace && <FloatingAIAssistant/);
+  assert.match(layout, /isDemoWorkspace && !readOnlyMode && <FloatingAIAssistant/);
   assert.doesNotMatch(layout, /DemoGeneratorModal|OnboardingWizardModal/);
 });
 
