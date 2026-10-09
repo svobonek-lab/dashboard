@@ -25,13 +25,11 @@ export const Integrations: React.FC<IntegrationsProps> = () => {
   const [copied, setCopied] = useState<'inbox' | 'widget' | null>(null);
   const [securedIncomingLeadUrl, setSecuredIncomingLeadUrl] = useState('');
   const [incomingLeadError, setIncomingLeadError] = useState('');
+  const [incomingLeadLoading, setIncomingLeadLoading] = useState(true);
   const connectorEnabled = import.meta.env.VITE_CONNECTOR_ENABLED === 'true';
   const isEnterprise = String(currentOrg?.plan || '').toUpperCase() === 'ENTERPRISE';
   const origin = typeof window === 'undefined' ? 'https://[DOMENA]' : window.location.origin;
-  const companyId = currentOrg?.id || '[ORG_ID]';
   const publicTenantKey = currentOrg?.slug || '[PUBLIC_KEY]';
-  const fallbackIncomingLeadUrl = `${origin}/api/incoming-lead?org_id=${encodeURIComponent(companyId)}`;
-  const incomingLeadUrl = securedIncomingLeadUrl || fallbackIncomingLeadUrl;
   const widgetSnippet = `<script src="${origin}/widget.js?org_id=${encodeURIComponent(publicTenantKey)}"></script>`;
 
   const copyValue = async (kind: 'inbox' | 'widget', value: string) => {
@@ -52,13 +50,14 @@ export const Integrations: React.FC<IntegrationsProps> = () => {
   useEffect(() => {
     const controller = new AbortController();
     const loadWebhook = async () => {
+      setIncomingLeadLoading(true);
       setSecuredIncomingLeadUrl('');
-      if (!currentOrg?.id || !supabase) return;
       setIncomingLeadError('');
-      const { data } = await supabase.auth.getSession();
-      const accessToken = data.session?.access_token;
-      if (!accessToken) return;
       try {
+        if (!currentOrg?.id || !supabase) throw new Error('AI inbox není nakonfigurovaný.');
+        const { data } = await supabase.auth.getSession();
+        const accessToken = data.session?.access_token;
+        if (!accessToken) throw new Error('Před zobrazením URL se znovu přihlaste.');
         const response = await fetch(`/api/incoming-lead-config?companyId=${encodeURIComponent(currentOrg.id)}`, {
           headers: { Authorization: `Bearer ${accessToken}` }, signal: controller.signal,
         });
@@ -67,6 +66,8 @@ export const Integrations: React.FC<IntegrationsProps> = () => {
         setSecuredIncomingLeadUrl(body.webhookUrl);
       } catch (error) {
         if (!(error instanceof DOMException && error.name === 'AbortError')) setIncomingLeadError('Webhook zatím není na tomto prostředí aktivovaný.');
+      } finally {
+        if (!controller.signal.aborted) setIncomingLeadLoading(false);
       }
     };
     void loadWebhook();
@@ -121,15 +122,17 @@ export const Integrations: React.FC<IntegrationsProps> = () => {
             <span className="rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-[11px] font-bold uppercase tracking-wide text-emerald-700">AI příjem</span>
           </div>
           <h2 className="mt-5 text-lg font-semibold tracking-tight text-slate-950">AI Dispečer (e-mail)</h2>
-          <p className="mt-2 text-sm leading-6 text-slate-500">Nastavte si přesměrování kopií na tento Webhook pro automatické zpracování e-mailů:</p>
+          <p className="mt-2 text-sm leading-6 text-slate-500">Unikátní webhook URL přijímá poptávky právě pro tuto firmu. Vložte ji do Make.com nebo do ověřené e-mailové automatizace.</p>
           <div className="mt-5 flex items-center gap-2 rounded-2xl border border-slate-200 bg-slate-50 p-2">
-            <code className="min-w-0 flex-1 overflow-hidden text-ellipsis whitespace-nowrap px-2 text-xs text-slate-700">{incomingLeadUrl}</code>
+            <code className="min-w-0 flex-1 overflow-hidden text-ellipsis whitespace-nowrap px-2 text-xs text-slate-700">
+              {incomingLeadLoading ? 'Načítám zabezpečenou URL…' : securedIncomingLeadUrl || 'Webhook není aktivní'}
+            </code>
             <button type="button" disabled={!securedIncomingLeadUrl} onClick={() => void copyValue('inbox', securedIncomingLeadUrl)} className="inline-flex min-h-10 shrink-0 items-center gap-2 rounded-xl bg-slate-950 px-3 text-xs font-semibold text-white hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-40" aria-label="Kopírovat webhook AI dispečera">
               {copied === 'inbox' ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}{copied === 'inbox' ? 'Zkopírováno' : 'Kopírovat'}
             </button>
           </div>
           {incomingLeadError && <p role="alert" className="mt-2 text-xs text-amber-700">{incomingLeadError}</p>}
-          <p className="mt-3 text-xs leading-5 text-slate-400">AI rozpozná skutečnou poptávku, vytáhne kontakt, typ práce a místo. Ostatní zprávy ignoruje.</p>
+          <p className="mt-3 text-xs leading-5 text-slate-400">URL obsahuje podepsaný token firmy. Sdílejte ji pouze s integrační službou; AI rozpozná poptávku a uloží ji do správného workspace.</p>
         </article>
 
         <article className="workspace-panel overflow-hidden p-6 sm:p-7">

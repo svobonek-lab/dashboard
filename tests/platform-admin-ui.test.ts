@@ -27,11 +27,16 @@ test('platform pages contain no fabricated revenue, telemetry or customer auth i
   assert.match(source, /not_verified|Neověřeno/i);
   assert.match(source, /read-only|pouze pro čtení/i);
   assert.match(companies, /Přihlásit jako/);
+  assert.match(companies, /Log in as client/);
   assert.match(companies, /Důvod podpory/);
   assert.match(companies, /member_count/);
   assert.match(companies, /subscription_status/);
   assert.match(support, /30 minut|expires_at/i);
   assert.doesNotMatch(support, /leads|customerEmail|customerPhone|poptávk/i);
+  assert.match(companies, /sessionStorage/);
+  assert.match(companies, /\/support\/\$\{session\.id\}\/dashboard/);
+  assert.match(support, /OwnerLayout/);
+  assert.match(support, /Vrátit se do Adminu/);
 });
 
 test('company directory never asks the browser for customer contacts or business rows', () => {
