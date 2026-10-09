@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useOrganization } from '@/context/OrganizationContext';
+import { useOrganization } from '@/context/OrganizationContextBase';
 import { useRouter } from '../src/app/router';
 import { 
   Building2, 

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Lead, LeadStatus } from '../types';
 import { MapPin, DollarSign, User, Plus, Phone, MessageSquare, ShieldCheck, Calendar, Clock, AlertTriangle } from 'lucide-react';
 import { canDeleteLead } from '../src/app/permissions';
-import { useOrganization } from '../context/OrganizationContext';
+import { useOrganization } from '../context/OrganizationContextBase';
 import { supabase, isSupabaseConfigured, isValidUUID, LocalSupabaseMock, DEFAULT_DEMO_ORG_ID } from '../lib/supabase';
 import { createManualLeadDraft } from '../src/app/manualLeadDraft';
 import { getLeadSourceBadge } from '../src/app/leadSource';
@@ -12,13 +12,15 @@ interface LeadsKanbanProps {
   onSelectLead: (lead: Lead) => void;
   onUpdateLeadStatus: (leadId: string, newStatus: LeadStatus) => void;
   onAddLead?: (lead: Lead) => Promise<Lead> | Lead | void;
+  readOnly?: boolean;
 }
 
 export const LeadsKanban: React.FC<LeadsKanbanProps> = ({
   leads: initialLeads,
   onSelectLead,
   onUpdateLeadStatus,
-  onAddLead
+  onAddLead,
+  readOnly = false,
 }) => {
   const columns: { status: LeadStatus; label: string; color: string; badgeColor: string }[] = [
     { status: 'New', label: 'Nová poptávka', color: 'border-border bg-surface-secondary text-brand-primary', badgeColor: 'bg-brand-primary-soft text-brand-primary border-brand-primary-soft' },
@@ -42,6 +44,7 @@ export const LeadsKanban: React.FC<LeadsKanbanProps> = ({
 
   // Optimistic update handler delegates to parent via onUpdateLeadStatus
   const handleDragDrop = (id: string, status: LeadStatus) => {
+    if (readOnly) return;
     const targetLead = leads.find(l => l.id === id);
     if (!targetLead || targetLead.status === status) return;
     
@@ -105,6 +108,8 @@ export const LeadsKanban: React.FC<LeadsKanbanProps> = ({
         </div>
 
         <div className="flex items-center gap-3 w-full md:w-auto">
+          {readOnly && <span className="inline-flex min-h-10 items-center gap-2 rounded-xl border border-blue-200 bg-blue-50 px-3 text-xs font-bold text-blue-700"><ShieldCheck className="h-4 w-4" /> Pouze pro čtení</span>}
+          {!readOnly && (
           <button
             onClick={() => setIsModalOpen(true)}
             className="w-full md:w-auto px-5 py-3 min-h-[48px] rounded-2xl font-black text-xs shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2"
@@ -113,11 +118,12 @@ export const LeadsKanban: React.FC<LeadsKanbanProps> = ({
             <Plus className="w-4 h-4" />
             <span>Nová zakázka / Poptávka</span>
           </button>
+          )}
         </div>
       </div>
 
       {/* New Lead Modal */}
-      {isModalOpen && (
+      {!readOnly && isModalOpen && (
         <div className="fixed inset-0 z-50 bg-white/60 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4">
           <div className="bg-white border border-slate-200 rounded-3xl sm:rounded-[32px] max-w-xl w-full p-4 sm:p-8 shadow-2xl animate-in fade-in zoom-in-95 max-h-[92vh] flex flex-col overflow-hidden">
             <div className="flex items-center justify-between pb-3.5 border-b border-slate-100 shrink-0">
@@ -276,7 +282,7 @@ export const LeadsKanban: React.FC<LeadsKanbanProps> = ({
                 onDrop={(e) => {
                   e.preventDefault();
                   setDragOverColumn(null);
-                  if (draggedLead) {
+                  if (!readOnly && draggedLead) {
                     handleDragDrop(draggedLead, col.status);
                     setDraggedLead(null);
                   }
@@ -305,11 +311,11 @@ export const LeadsKanban: React.FC<LeadsKanbanProps> = ({
                     const sourceBadge = getLeadSourceBadge(lead.source);
                     return <div
                       key={lead.id}
-                      draggable
-                      onDragStart={() => setDraggedLead(lead.id)}
+                      draggable={!readOnly}
+                      onDragStart={() => { if (!readOnly) setDraggedLead(lead.id); }}
                       onDragEnd={() => setDraggedLead(null)}
-                      onClick={() => onSelectLead(lead)}
-                      className={`bg-white p-5 rounded-2xl ${draggedLead === lead.id ? 'opacity-50 scale-95 shadow-none ring-2 ring-brand-primary' : 'opacity-100'} cursor-grab active:cursor-grabbing border border-slate-200 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 space-y-4 group min-h-[190px] flex flex-col justify-between relative overflow-hidden`}
+                      onClick={() => { if (!readOnly) onSelectLead(lead); }}
+                      className={`bg-white p-5 rounded-2xl ${draggedLead === lead.id ? 'opacity-50 scale-95 shadow-none ring-2 ring-brand-primary' : 'opacity-100'} ${readOnly ? 'cursor-default' : 'cursor-grab active:cursor-grabbing hover:shadow-xl hover:-translate-y-1'} border border-slate-200 shadow-sm transition-all duration-300 space-y-4 group min-h-[190px] flex flex-col justify-between relative overflow-hidden`}
                     >
                       {/* Subtle hover accent line */}
                       <div className="absolute left-0 top-0 bottom-0 w-1.5 opacity-0 group-hover:opacity-100 transition-opacity" style={{ backgroundColor: 'var(--brand-primary)' }}></div>
@@ -364,15 +370,14 @@ export const LeadsKanban: React.FC<LeadsKanbanProps> = ({
 
                       {/* Quick Actions (Call, Detail) */}
                       <div className="pt-3 border-t border-slate-100 flex items-center justify-between gap-3">
-                        <a
+                        {readOnly ? <span className="flex min-h-[48px] flex-1 items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-slate-50 text-xs font-bold text-slate-400"><ShieldCheck className="h-3.5 w-3.5" /> Bez akcí</span> : <><a
                           href={`tel:${lead.customerPhone}`}
                           onClick={(e) => e.stopPropagation()}
                           className="flex-1 py-2.5 min-h-[48px] rounded-xl bg-slate-50 hover:bg-slate-100 text-slate-700 text-xs font-bold flex items-center justify-center gap-1.5 border border-slate-200 transition-colors active:scale-[0.98]"
                         >
                           <Phone className="w-3.5 h-3.5 text-brand-primary shrink-0" />
                           <span>Zavolat</span>
-                        </a>
-                        <button
+                        </a><button
                           onClick={(e) => {
                             e.stopPropagation();
                             onSelectLead(lead);
@@ -381,7 +386,7 @@ export const LeadsKanban: React.FC<LeadsKanbanProps> = ({
                           style={{ backgroundColor: 'var(--brand-primary-soft)', color: 'var(--brand-primary)', borderColor: 'var(--border)' }}
                         >
                           <span>Otevřít</span>
-                        </button>
+                        </button></>}
                       </div>
                     </div>;
                   })}

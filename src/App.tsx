@@ -454,6 +454,15 @@ function AppContent() {
     }} expectedRole={expectedRole} />;
   }
 
+  if (pathname.startsWith('/support/')) {
+    const sessionId = pathname.slice('/support/'.length).split('/')[0];
+    return (
+      <ProtectedRoute allowedRole="platform_admin">
+        <AdminSupportSessionPage sessionId={sessionId} />
+      </ProtectedRoute>
+    );
+  }
+
   // 2. Super Admin Routes (`/admin*`)
   if (pathname.startsWith('/admin')) {
     return (
@@ -463,8 +472,6 @@ function AppContent() {
             <AdminDashboardPage />
           ) : pathname === '/admin/companies' ? (
             <AdminCompaniesPage />
-          ) : pathname.startsWith('/admin/support/') ? (
-            <AdminSupportSessionPage sessionId={pathname.slice('/admin/support/'.length)} />
           ) : (
             <AdminDashboardPage />
           )}
