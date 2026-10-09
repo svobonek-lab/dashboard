@@ -7,6 +7,7 @@ const dashboard = readFileSync(new URL('../src/pages/admin/Dashboard.tsx', impor
 const companies = readFileSync(new URL('../src/pages/admin/Companies.tsx', import.meta.url), 'utf8');
 const support = readFileSync(new URL('../src/pages/admin/SupportSession.tsx', import.meta.url), 'utf8');
 const app = readFileSync(new URL('../src/App.tsx', import.meta.url), 'utf8');
+const ownerLayout = readFileSync(new URL('../src/layouts/OwnerLayout.tsx', import.meta.url), 'utf8');
 
 test('reachable platform navigation contains only verified control-plane surfaces', () => {
   assert.match(layout, /StavbaFlow/);
@@ -37,6 +38,8 @@ test('platform pages contain no fabricated revenue, telemetry or customer auth i
   assert.match(companies, /\/support\/\$\{session\.id\}\/dashboard/);
   assert.match(support, /OwnerLayout/);
   assert.match(support, /Vrátit se do Adminu/);
+  assert.match(ownerLayout, /readOnlyMode === 'support'[^]*item\.path === '\/dashboard'/);
+  assert.match(ownerLayout, /readOnlyMode === 'support'[^]*return pathname/);
 });
 
 test('company directory never asks the browser for customer contacts or business rows', () => {

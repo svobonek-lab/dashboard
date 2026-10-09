@@ -135,7 +135,11 @@ export const OwnerLayout: React.FC<OwnerLayoutProps> = ({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
-  const route = (path: string) => readOnlyMode === 'demo' ? (path === '/dashboard' ? '/demo' : `/demo${path}`) : path;
+  const route = (path: string) => {
+    if (readOnlyMode === 'demo') return path === '/dashboard' ? '/demo' : `/demo${path}`;
+    if (readOnlyMode === 'support') return pathname;
+    return path;
+  };
   const navItems = [
     { label: 'Přehled stavby (Executive)', path: '/dashboard', icon: LayoutDashboard, exact: true },
     { label: 'Prodejní cockpit', path: '/sales', icon: Kanban, badge: leads.filter(l => l.status === 'New').length ? `${leads.filter(l => l.status === 'New').length} nové` : undefined },
@@ -153,7 +157,11 @@ export const OwnerLayout: React.FC<OwnerLayoutProps> = ({
     { label: 'Synology NAS', path: '/integrations/synology', icon: HardDrive },
     { label: 'Klientský portál', path: '/portal', icon: Globe },
     { label: 'Nastavení & Export', path: '/settings', icon: Settings },
-  ].filter((item) => readOnlyMode === 'demo' ? ['/dashboard', '/leads'].includes(item.path) : (isDemoWorkspace || isPilotOwnerNavigationPath(item.path)))
+  ].filter((item) => {
+    if (readOnlyMode === 'demo') return ['/dashboard', '/leads'].includes(item.path);
+    if (readOnlyMode === 'support') return item.path === '/dashboard';
+    return isDemoWorkspace || isPilotOwnerNavigationPath(item.path);
+  })
     .map((item) => ({ ...item, path: route(item.path) }));
 
   const isSuperAdminUser = dbUser?.role === 'super_admin' || Boolean(impersonatingOrgId);
@@ -387,14 +395,14 @@ export const OwnerLayout: React.FC<OwnerLayoutProps> = ({
           {/* Right: Search, Notifications, Profile/Switcher */}
           <div className="flex items-center gap-2 sm:gap-3 shrink-0">
             {/* Search Bar / Command Palette Trigger */}
-            <button
+            {!readOnlyMode && <button
               onClick={() => setIsCommandPaletteOpen(true)}
               className="hidden lg:flex items-center gap-3 w-72 bg-surface-secondary border border-border rounded-app px-3.5 py-1.5 text-xs text-muted hover:border-brand-primary transition-all text-left cursor-pointer"
             >
               <Search className="w-3.5 h-3.5 text-muted" />
               <span className="flex-1 truncate text-muted">Hledat zakázky, klienty...</span>
               <kbd className="px-1.5 py-0.5 bg-surface border border-border rounded-md text-[10px] font-mono text-muted shadow-app">⌘K</kbd>
-            </button>
+            </button>}
 
             {/* Notifications Bell */}
             <div className="relative">
