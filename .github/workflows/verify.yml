@@ -61,3 +61,38 @@ jobs:
       - name: Stop disposable PostgreSQL
         if: always()
         run: docker rm --force ai-dispatcher-postgres
+
+  platform-support-contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - name: Start disposable PostgreSQL
+        run: >-
+          docker run --detach --name platform-support-postgres
+          --env POSTGRES_PASSWORD=postgres
+          --health-cmd="pg_isready -U postgres"
+          --health-interval=2s --health-timeout=2s --health-retries=30
+          postgres:17-alpine
+      - name: Wait for PostgreSQL
+        run: |
+          for attempt in {1..30}; do
+            if [ "$(docker inspect --format='{{.State.Health.Status}}' platform-support-postgres)" = "healthy" ]; then
+              exit 0
+            fi
+            sleep 2
+          done
+          docker logs platform-support-postgres
+          exit 1
+      - name: Apply and verify the platform support contract
+        run: |
+          docker exec -i platform-support-postgres psql -v ON_ERROR_STOP=1 -U postgres < supabase/tests/platform_admin_setup.sql
+          docker exec -i platform-support-postgres psql -v ON_ERROR_STOP=1 -U postgres < supabase/staging/20261005_platform_admin_contract.sql
+          docker exec -i platform-support-postgres psql -v ON_ERROR_STOP=1 -U postgres < supabase/staging/20261009_platform_admin_support_contract.sql
+          docker exec -i platform-support-postgres psql -v ON_ERROR_STOP=1 -U postgres < supabase/staging/20261010_platform_admin_write_support_contract.sql
+          docker exec -i platform-support-postgres psql -v ON_ERROR_STOP=1 -U postgres < supabase/tests/platform_admin_verify.sql
+      - name: Stop disposable PostgreSQL
+        if: always()
+        run: docker rm --force platform-support-postgres

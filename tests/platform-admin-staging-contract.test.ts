@@ -42,6 +42,17 @@ test('write-capable support remains bounded, actor-bound, tenant-scoped and full
   assert.doesNotMatch(contract, /create policy[\s\S]*app_(?:companies|members|leads)/i);
 });
 
+test('CI executes the complete support contract in disposable PostgreSQL', () => {
+  const workflow = fs.readFileSync(new URL('../.github/workflows/verify.yml', import.meta.url), 'utf8');
+  const acceptance = fs.readFileSync(new URL('../supabase/tests/platform_admin_verify.sql', import.meta.url), 'utf8');
+  assert.match(workflow, /platform-support-contract:/i);
+  assert.match(workflow, /20261010_platform_admin_write_support_contract\.sql/i);
+  assert.match(workflow, /platform_admin_verify\.sql/i);
+  assert.match(acceptance, /another actor must not reuse the support session/i);
+  assert.match(acceptance, /support session must not mutate another company/i);
+  assert.match(acceptance, /create_is_idempotent/i);
+});
+
 test('self-role lookup exposes only the caller role through a fixed search path', () => {
   const contract = fs.readFileSync(contractUrl, 'utf8');
   assert.match(contract, /function public\.app_get_my_platform_role\(\)[\s\S]*returns jsonb/i);
