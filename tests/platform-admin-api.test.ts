@@ -5,6 +5,7 @@ import { authorizePlatformRequest, recordPlatformAudit } from '../api/_platform/
 import { platformErrorResponse, requireGet } from '../api/_platform/http.js';
 import { listPlatformCompanies } from '../api/_platform/routes/companies.js';
 import { createPlatformSupportSession, getPlatformSupportSession, revokePlatformSupportSession } from '../api/_platform/routes/supportSession.js';
+import { getSupportWorkspace, mutateSupportLead } from '../api/_platform/routes/supportWorkspace.js';
 import platformRouter, { resolvePlatformRoute } from '../api/platform/[route].js';
 
 function platformClients(options: { userId?: string; active?: boolean; authError?: boolean } = {}) {
@@ -120,18 +121,18 @@ test('company directory uses the admin-scoped RPC and returns only operational f
   assert.equal('email' in result[0], false);
 });
 
-test('support sessions are actor-bound, read-only and call service-only RPCs', async () => {
+test('support sessions are actor-bound, time-limited and call service-only RPCs', async () => {
   const calls: Array<{ name: string; args: unknown }> = [];
   const service = { rpc: async (name: string, args: unknown) => {
     calls.push({ name, args });
-    if (name.includes('create')) return { data: [{ id: '11111111-1111-4111-8111-111111111111', company_id: '22222222-2222-4222-8222-222222222222', access_mode: 'read_only', created_at: '2026-10-09T10:00:00Z', expires_at: '2026-10-09T10:30:00Z' }], error: null };
-    if (name.includes('get')) return { data: [{ id: '11111111-1111-4111-8111-111111111111', company_id: '22222222-2222-4222-8222-222222222222', company_name: 'Firma A', member_count: 3, subscription_status: 'not_configured', access_mode: 'read_only', created_at: '2026-10-09T10:00:00Z', expires_at: '2026-10-09T10:30:00Z' }], error: null };
+    if (name.includes('create')) return { data: [{ id: '11111111-1111-4111-8111-111111111111', company_id: '22222222-2222-4222-8222-222222222222', access_mode: 'full_support', created_at: '2026-10-09T10:00:00Z', expires_at: '2026-10-09T10:30:00Z' }], error: null };
+    if (name.includes('get')) return { data: [{ id: '11111111-1111-4111-8111-111111111111', company_id: '22222222-2222-4222-8222-222222222222', company_name: 'Firma A', member_count: 3, subscription_status: 'not_configured', access_mode: 'full_support', created_at: '2026-10-09T10:00:00Z', expires_at: '2026-10-09T10:30:00Z' }], error: null };
     return { data: true, error: null };
   } } as any;
   const companyId = '22222222-2222-4222-8222-222222222222';
   const sessionId = '11111111-1111-4111-8111-111111111111';
   const created = await createPlatformSupportSession(service, 'admin-a', companyId, 'Kontrola nastavení integrace');
-  assert.equal(created.access_mode, 'read_only');
+  assert.equal(created.access_mode, 'full_support');
   const loaded = await getPlatformSupportSession(service, 'admin-a', sessionId);
   assert.equal(loaded.company_name, 'Firma A');
   await revokePlatformSupportSession(service, 'admin-a', sessionId);
@@ -142,10 +143,29 @@ test('support sessions are actor-bound, read-only and call service-only RPCs', a
   ]);
 });
 
+test('support workspace reads and mutations are delegated to actor-bound transactional RPCs', async () => {
+  const calls: Array<{ name: string; args: any }> = [];
+  const service = { rpc: async (name: string, args: any) => {
+    calls.push({ name, args });
+    if (name === 'app_platform_support_workspace') return { data: { company: { id: 'company-a', name: 'Firma A' }, leads: [], members: [] }, error: null };
+    return { data: { id: 'lead-a', company_id: 'company-a', title: 'Střecha', status: 'new' }, error: null };
+  } } as any;
+  const sessionId = '11111111-1111-4111-8111-111111111111';
+  assert.equal((await getSupportWorkspace(service, 'admin-a', sessionId) as any).company.name, 'Firma A');
+  const lead = await mutateSupportLead(service, 'admin-a', sessionId, {
+    action: 'update_status', requestId: 'request-0001', leadId: '22222222-2222-4222-8222-222222222222', payload: { status: 'contacted' },
+  });
+  assert.equal((lead as any).status, 'new');
+  assert.deepEqual(calls.map((item) => item.name), ['app_platform_support_workspace', 'app_platform_support_mutate_lead']);
+  assert.equal(calls[1].args.p_actor_user_id, 'admin-a');
+  assert.equal(calls[1].args.p_session_id, sessionId);
+});
+
 test('platform router exposes only the verified control-plane routes', async () => {
   assert.equal(typeof resolvePlatformRoute('session'), 'function');
   assert.equal(typeof resolvePlatformRoute('companies'), 'function');
   assert.equal(typeof resolvePlatformRoute('support-session'), 'function');
+  assert.equal(typeof resolvePlatformRoute('support-workspace'), 'function');
   assert.equal(resolvePlatformRoute('billing'), undefined);
   assert.equal(resolvePlatformRoute('__proto__'), undefined);
 

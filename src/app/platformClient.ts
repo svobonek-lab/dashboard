@@ -1,4 +1,6 @@
 import { supabase } from '@/lib/supabase';
+import type { AppCompanyRow } from './appSchemaIdentity';
+import type { AppLeadRow, AppMemberRow } from './productionSchema';
 
 export interface PlatformCompany {
   id: string;
@@ -18,12 +20,18 @@ export interface PlatformSupportSession {
   company_name?: string;
   member_count?: number;
   subscription_status?: string;
-  access_mode: 'read_only';
+  access_mode: 'full_support';
   created_at: string;
   expires_at: string;
 }
 
-async function platformRequest<T>(route: 'session' | 'companies' | 'support-session', options: RequestInit = {}): Promise<T> {
+export interface PlatformSupportWorkspace {
+  company: AppCompanyRow;
+  leads: AppLeadRow[];
+  members: AppMemberRow[];
+}
+
+async function platformRequest<T>(route: 'session' | 'companies' | 'support-session' | 'support-workspace', options: RequestInit = {}): Promise<T> {
   if (!supabase) throw new Error('Správa platformy není v tomto prostředí dostupná.');
   const { data } = await supabase.auth.getSession();
   const token = data.session?.access_token;
@@ -59,4 +67,25 @@ export async function getPlatformSupportSession(sessionId: string): Promise<Plat
 
 export async function revokePlatformSupportSession(sessionId: string): Promise<void> {
   await platformRequest('support-session', { method: 'DELETE', headers: { 'X-Support-Session': sessionId } });
+}
+
+export async function getPlatformSupportWorkspace(sessionId: string): Promise<PlatformSupportWorkspace> {
+  const payload = await platformRequest<{ workspace: PlatformSupportWorkspace }>('support-workspace', { headers: { 'X-Support-Session': sessionId } });
+  return payload.workspace;
+}
+
+export async function mutatePlatformSupportLead(
+  sessionId: string,
+  action: 'create_lead' | 'update_lead' | 'update_status',
+  payload: Record<string, unknown>,
+  leadId?: string,
+): Promise<AppLeadRow> {
+  const requestId = typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
+    ? crypto.randomUUID()
+    : `request-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+  const result = await platformRequest<{ lead: AppLeadRow }>('support-workspace', {
+    method: 'POST', headers: { 'X-Support-Session': sessionId },
+    body: JSON.stringify({ action, requestId, leadId, payload }),
+  });
+  return result.lead;
 }

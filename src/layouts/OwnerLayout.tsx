@@ -135,9 +135,10 @@ export const OwnerLayout: React.FC<OwnerLayoutProps> = ({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
+  const supportBase = readOnlyMode === 'support' ? pathname.split('/').slice(0, 3).join('/') : '';
   const route = (path: string) => {
     if (readOnlyMode === 'demo') return path === '/dashboard' ? '/demo' : `/demo${path}`;
-    if (readOnlyMode === 'support') return pathname;
+    if (readOnlyMode === 'support') return `${supportBase}${path}`;
     return path;
   };
   const navItems = [
@@ -159,7 +160,7 @@ export const OwnerLayout: React.FC<OwnerLayoutProps> = ({
     { label: 'Nastavení & Export', path: '/settings', icon: Settings },
   ].filter((item) => {
     if (readOnlyMode === 'demo') return ['/dashboard', '/leads'].includes(item.path);
-    if (readOnlyMode === 'support') return item.path === '/dashboard';
+    if (readOnlyMode === 'support') return ['/dashboard', '/leads', '/projects'].includes(item.path);
     return isDemoWorkspace || isPilotOwnerNavigationPath(item.path);
   })
     .map((item) => ({ ...item, path: route(item.path) }));
@@ -193,7 +194,7 @@ export const OwnerLayout: React.FC<OwnerLayoutProps> = ({
               </span>
               <span className="text-white font-black text-sm tracking-tight">{activeCompanyName}</span>
               <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-slate-800 text-slate-300 border border-slate-700">
-                {readOnlyMode === 'demo' ? 'Pouze pro čtení' : `${(currentOrg as any)?.plan || 'Enterprise'} Plan`}
+                {readOnlyMode === 'demo' ? 'Pouze pro čtení' : 'Plná podpora'}
               </span>
               <span className="hidden lg:inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[10px] font-mono text-green-400 bg-green-500/10 border border-green-500/20">
                 <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse"></span>
