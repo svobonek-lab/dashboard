@@ -25,7 +25,9 @@ create or replace function public.app_platform_create_support_session(
 returns table (id uuid, company_id uuid, access_mode text, created_at timestamptz, expires_at timestamptz)
 language plpgsql security definer set search_path = ''
 as $$
-declare v_session public.app_platform_support_sessions%rowtype;
+declare
+  v_session public.app_platform_support_sessions%rowtype;
+  v_created_at timestamptz := clock_timestamp();
 begin
   if p_actor_user_id is null or not exists (
     select 1 from public.app_platform_admins a
@@ -37,8 +39,8 @@ begin
   if not exists (select 1 from public.app_companies c where c.id = p_company_id and c.active = true) then
     raise exception 'active company required' using errcode = '42501';
   end if;
-  insert into public.app_platform_support_sessions(platform_admin_id, company_id, reason, access_mode, expires_at)
-  values (p_actor_user_id, p_company_id, trim(p_reason), 'full_support', clock_timestamp() + interval '30 minutes')
+  insert into public.app_platform_support_sessions(platform_admin_id, company_id, reason, access_mode, created_at, expires_at)
+  values (p_actor_user_id, p_company_id, trim(p_reason), 'full_support', v_created_at, v_created_at + interval '30 minutes')
   returning * into v_session;
   insert into public.app_platform_audit_events(actor_user_id, action, company_id, support_session_id, outcome, reason_code)
   values (p_actor_user_id, 'support_session.created', p_company_id, v_session.id, 'allowed', 'operator_request');

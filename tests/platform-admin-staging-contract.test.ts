@@ -34,6 +34,7 @@ test('write-capable support remains bounded, actor-bound, tenant-scoped and full
   assert.match(contract, /app_platform_support_workspace\(p_actor_user_id uuid, p_session_id uuid\)/i);
   assert.match(contract, /app_platform_support_mutate_lead\([\s\S]*p_request_id text/i);
   assert.match(contract, /app_platform_get_support_session\([\s\S]*s\.access_mode = 'full_support'/i);
+  assert.match(contract, /created_at, expires_at\)[\s\S]*v_created_at, v_created_at \+ interval '30 minutes'/i);
   assert.match(contract, /s\.platform_admin_id = p_actor_user_id[\s\S]*s\.access_mode = 'full_support'/i);
   assert.match(contract, /insert into public\.app_platform_audit_events/i);
   assert.match(contract, /support_session_id, request_id/i);
