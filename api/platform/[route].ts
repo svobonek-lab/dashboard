@@ -1,10 +1,11 @@
 import companies from '../_platform/routes/companies.js';
 import session from '../_platform/routes/session.js';
 import supportSession from '../_platform/routes/supportSession.js';
+import supportWorkspace from '../_platform/routes/supportWorkspace.js';
 
 type Handler = (request: any, response: any) => Promise<void>;
 
-const routes: Readonly<Record<string, Handler>> = Object.freeze({ companies, session, 'support-session': supportSession });
+const routes: Readonly<Record<string, Handler>> = Object.freeze({ companies, session, 'support-session': supportSession, 'support-workspace': supportWorkspace });
 
 export function resolvePlatformRoute(value: unknown): Handler | undefined {
   if (typeof value !== 'string') return undefined;

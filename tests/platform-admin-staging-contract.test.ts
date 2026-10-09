@@ -28,6 +28,20 @@ test('support contract keeps tenant RLS intact and exposes service-only actor-bo
   assert.doesNotMatch(contract, /create policy[\s\S]*app_(?:companies|members|leads)/i);
 });
 
+test('write-capable support remains bounded, actor-bound, tenant-scoped and fully audited', () => {
+  const contract = fs.readFileSync(new URL('../supabase/staging/20261010_platform_admin_write_support_contract.sql', import.meta.url), 'utf8');
+  assert.match(contract, /access_mode in \('read_only', 'full_support'\)/i);
+  assert.match(contract, /app_platform_support_workspace\(p_actor_user_id uuid, p_session_id uuid\)/i);
+  assert.match(contract, /app_platform_support_mutate_lead\([\s\S]*p_request_id text/i);
+  assert.match(contract, /app_platform_get_support_session\([\s\S]*s\.access_mode = 'full_support'/i);
+  assert.match(contract, /s\.platform_admin_id = p_actor_user_id[\s\S]*s\.access_mode = 'full_support'/i);
+  assert.match(contract, /insert into public\.app_platform_audit_events/i);
+  assert.match(contract, /support_session_id, request_id/i);
+  assert.match(contract, /grant execute on function[\s\S]*to service_role/i);
+  assert.doesNotMatch(contract, /grant execute on function[\s\S]*to (?:anon|authenticated)/i);
+  assert.doesNotMatch(contract, /create policy[\s\S]*app_(?:companies|members|leads)/i);
+});
+
 test('self-role lookup exposes only the caller role through a fixed search path', () => {
   const contract = fs.readFileSync(contractUrl, 'utf8');
   assert.match(contract, /function public\.app_get_my_platform_role\(\)[\s\S]*returns jsonb/i);

@@ -12,7 +12,7 @@ export interface PlatformSupportSession {
   company_name?: string;
   member_count?: number;
   subscription_status?: string;
-  access_mode: 'read_only';
+  access_mode: 'full_support';
   created_at: string;
   expires_at: string;
 }
