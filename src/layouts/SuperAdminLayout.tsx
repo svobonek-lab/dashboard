@@ -28,7 +28,7 @@ export const SuperAdminLayout: React.FC<{ children: React.ReactNode }> = ({ chil
       </div>
       <nav className="flex-1 space-y-1 p-4">
         {navItems.map(({ label, path, icon: Icon, exact }) => <Link key={path} to={path} exact={exact} onClick={() => setMenuOpen(false)} className={`flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-semibold ${isActive(path, exact) ? 'border border-blue-500/30 bg-blue-500/15 text-blue-200' : 'text-slate-400 hover:bg-slate-800/60 hover:text-white'}`}><Icon className="h-4 w-4" />{label}</Link>)}
-        <div className="mt-6 rounded-2xl border border-amber-400/20 bg-amber-400/5 p-4 text-xs leading-5 text-amber-100">Přístup k zákaznickým datům není automatický. Podpora je v této verzi pouze pro čtení a vyžaduje auditovanou relaci.</div>
+        <div className="mt-6 rounded-2xl border border-amber-400/20 bg-amber-400/5 p-4 text-xs leading-5 text-amber-100">Přístup k zákaznickým datům není automatický. Auditovaná podpora je vázaná na váš účet, konkrétní firmu a vyprší nejpozději za 30 minut.</div>
       </nav>
       <div className="border-t border-slate-800 p-4"><p className="truncate text-xs font-semibold text-white">{dbUser?.email || user?.email || 'Správce platformy'}</p><p className="mt-1 text-[10px] text-slate-500">Ověřeno serverovým registrem</p><button onClick={() => logout().then(() => navigate('/login'))} className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl border border-slate-700 px-3 py-2 text-xs font-bold text-slate-300 hover:border-rose-400/40 hover:text-rose-300"><LogOut className="h-4 w-4" />Odhlásit se</button></div>
     </aside>
