@@ -320,7 +320,7 @@ function AppContent() {
     }
   };
 
-  const handleUpdateLead = async (updatedLead: Lead): Promise<void> => {
+  const handleUpdateLead = async (updatedLead: Partial<Lead> & Pick<Lead, 'id'>): Promise<void> => {
     if (!canEditLeadDetails(dbUser?.role)) {
       showToast('Zaměstnanec může měnit pouze stav přiřazené zakázky.', 'error');
       throw new Error('Zaměstnanec nemůže měnit detail zakázky.');

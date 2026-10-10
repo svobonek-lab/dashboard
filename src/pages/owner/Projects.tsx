@@ -3,10 +3,15 @@ import { ArrowRight, BriefcaseBusiness, CheckCircle2, MapPin, UserRound } from '
 import type { Lead } from '@/types';
 import { useRouter } from '../../app/router';
 
-interface OwnerProjectsPageProps { leads: Lead[]; onSelectLead: (lead: Lead) => void; }
+interface OwnerProjectsPageProps { leads: Lead[]; onSelectLead: (lead: Lead) => void; leadDestination?: string; }
 const currency = new Intl.NumberFormat('cs-CZ', { style: 'currency', currency: 'CZK', maximumFractionDigits: 0 });
 
-export const OwnerProjectsPage: React.FC<OwnerProjectsPageProps> = ({ leads, onSelectLead }) => {
+export function openOwnerProjectLead(lead: Lead, onSelectLead: (lead: Lead) => void, navigate: (path: string) => void, destination = '/leads'): void {
+  onSelectLead(lead);
+  navigate(destination);
+}
+
+export const OwnerProjectsPage: React.FC<OwnerProjectsPageProps> = ({ leads, onSelectLead, leadDestination = '/leads' }) => {
   const { navigate } = useRouter();
   const [filter, setFilter] = useState<'active' | 'completed'>('active');
   const active = leads.filter((lead) => lead.status === 'In Progress');
@@ -14,7 +19,7 @@ export const OwnerProjectsPage: React.FC<OwnerProjectsPageProps> = ({ leads, onS
   const projects = filter === 'active' ? active : completed;
   const activeValue = active.reduce((sum, lead) => sum + (lead.price || 0), 0);
 
-  const open = (lead: Lead) => { onSelectLead(lead); navigate('/leads'); };
+  const open = (lead: Lead) => openOwnerProjectLead(lead, onSelectLead, navigate, leadDestination);
 
   return (
     <div className="workspace-page">

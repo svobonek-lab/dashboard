@@ -1,6 +1,9 @@
 import React, { useMemo, useState } from 'react';
 import { ArrowLeft, CheckCircle2, Clock3, Mail, MapPin, Phone, Save, UserRound } from 'lucide-react';
 import type { Employee, Lead } from '../types';
+import { buildLeadAssignmentPatch } from '../src/app/pilotWrites';
+
+type LeadUpdate = Partial<Lead> & Pick<Lead, 'id'>;
 
 interface LeadDetailProps {
   lead: Lead;
@@ -8,7 +11,7 @@ interface LeadDetailProps {
   onBack: () => void;
   onOpenPhoto: (url: string, title: string, category: string) => void;
   onOpenVoiceNotes: () => void;
-  onUpdateLead: (updated: Lead) => Promise<unknown> | void;
+  onUpdateLead: (updated: LeadUpdate) => Promise<unknown> | void;
 }
 
 const statusLabel: Record<Lead['status'], string> = {
@@ -26,7 +29,7 @@ export const LeadDetail: React.FC<LeadDetailProps> = ({ lead, employees, onBack,
     const employee = activeEmployees.find((item) => item.id === employeeId);
     setSaveState({ kind: 'saving' });
     try {
-      await onUpdateLead({ ...lead, assignedEmployeeId: employee?.id || '', assignedEmployeeName: employee?.name || '' });
+      await onUpdateLead(buildLeadAssignmentPatch(lead.id, employee));
       setSaveState({ kind: 'success', text: employee ? `Zakázka je přiřazena: ${employee.name}.` : 'Přiřazení bylo odebráno.' });
     } catch (error) {
       setSaveState({ kind: 'error', text: error instanceof Error ? error.message : 'Přiřazení se nepodařilo uložit.' });

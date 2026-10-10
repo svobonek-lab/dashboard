@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { buildLeadAssignment, canEditLeadDetails, canWritePilot, getAssignableEmployees, hydrateLeadAssignments, persistBeforeApply, toLeadPatch } from '../src/app/pilotWrites';
+import { buildLeadAssignment, buildLeadAssignmentPatch, canEditLeadDetails, canWritePilot, getAssignableEmployees, hydrateLeadAssignments, persistBeforeApply, toLeadPatch } from '../src/app/pilotWrites';
 
 const lead = { id: 'lead-a', organization_id: 'company-a', assignedEmployeeId: '', assignedEmployeeName: '' } as any;
 const worker = (overrides: Record<string, unknown> = {}) => ({
@@ -60,6 +60,19 @@ test('lead assignment persists a real same-company employee identity', () => {
     buildLeadAssignment({ ...lead, assignedEmployeeId: eligible.id, assignedEmployeeName: eligible.name }, '', [eligible], 'company-a'),
     lead,
   );
+});
+
+test('assignment updates contain no stale business fields', () => {
+  assert.deepEqual(buildLeadAssignmentPatch('lead-1', { id: 'employee-1', name: 'Petr' } as any), {
+    id: 'lead-1',
+    assignedEmployeeId: 'employee-1',
+    assignedEmployeeName: 'Petr',
+  });
+  assert.deepEqual(buildLeadAssignmentPatch('lead-1'), {
+    id: 'lead-1',
+    assignedEmployeeId: '',
+    assignedEmployeeName: '',
+  });
 });
 
 test('freshly loaded leads recover the assigned employee name from the verified team list', () => {
