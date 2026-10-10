@@ -97,7 +97,7 @@ export const AdminSupportSessionPage: React.FC<{ sessionId: string }> = ({ sessi
         <span className="inline-flex items-center gap-2 text-sm font-bold text-amber-900"><Clock3 className="h-4 w-4" />{remaining} min</span>
       </div>
       {suffix === '/leads' ? <OwnerLeadsPage leads={leads} employees={employees} selectedLead={selectedLead} onSelectLead={setSelectedLead} onUpdateLeadStatus={(id, status) => void updateStatus(id, status)} onUpdateLead={persistLead} onAddLead={persistLead as any} />
-        : suffix === '/projects' ? <OwnerProjectsPage leads={leads} onSelectLead={(lead) => { setSelectedLead(lead); navigate(`${supportBase}/leads`); }} />
+        : suffix === '/projects' ? <OwnerProjectsPage leads={leads} onSelectLead={setSelectedLead} leadDestination={`${supportBase}/leads`} />
         : <OwnerDashboard branding={organization as any} leads={leads} employees={employees} onSelectLead={(lead) => { setSelectedLead(lead); navigate(`${supportBase}/leads`); }} onNavigateTab={(tab) => navigate(`${supportBase}/${tab === 'dashboard' ? 'dashboard' : tab}`)} />}
     </OwnerLayout>
   </OrganizationContext.Provider>;

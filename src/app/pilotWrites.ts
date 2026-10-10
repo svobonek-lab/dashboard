@@ -35,6 +35,14 @@ export function buildLeadAssignment(
   return { ...lead, assignedEmployeeId: employee.id, assignedEmployeeName: employee.name };
 }
 
+export function buildLeadAssignmentPatch(leadId: string, employee?: Pick<Employee, 'id' | 'name'>): Pick<Lead, 'id' | 'assignedEmployeeId' | 'assignedEmployeeName'> {
+  return {
+    id: leadId,
+    assignedEmployeeId: employee?.id || '',
+    assignedEmployeeName: employee?.name || '',
+  };
+}
+
 export function hydrateLeadAssignments(leads: Lead[], employees: Employee[]): Lead[] {
   const employeesById = new Map(employees.map((employee) => [employee.id, employee]));
   return leads.map((lead) => {

@@ -1,6 +1,7 @@
 import { supabase } from '@/lib/supabase';
 import type { AppCompanyRow } from './appSchemaIdentity';
 import type { AppLeadRow, AppMemberRow } from './productionSchema';
+import { createSupportLeadMutator } from './supportMutationRetry';
 
 export interface PlatformCompany {
   id: string;
@@ -74,18 +75,10 @@ export async function getPlatformSupportWorkspace(sessionId: string): Promise<Pl
   return payload.workspace;
 }
 
-export async function mutatePlatformSupportLead(
-  sessionId: string,
-  action: 'create_lead' | 'update_lead' | 'update_status',
-  payload: Record<string, unknown>,
-  leadId?: string,
-): Promise<AppLeadRow> {
-  const requestId = typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
-    ? crypto.randomUUID()
-    : `request-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+export const mutatePlatformSupportLead = createSupportLeadMutator<AppLeadRow>(async ({ sessionId, action, payload, leadId, requestId }) => {
   const result = await platformRequest<{ lead: AppLeadRow }>('support-workspace', {
     method: 'POST', headers: { 'X-Support-Session': sessionId },
     body: JSON.stringify({ action, requestId, leadId, payload }),
   });
   return result.lead;
-}
+});
