@@ -9,7 +9,7 @@ interface OwnerLeadsPageProps {
   selectedLead: Lead | null;
   onSelectLead: (lead: Lead | null) => void;
   onUpdateLeadStatus: (leadId: string, newStatus: LeadStatus) => void;
-  onUpdateLead: (updatedLead: Lead) => Promise<unknown> | void;
+  onUpdateLead: (updatedLead: Partial<Lead> & Pick<Lead, 'id'>) => Promise<unknown> | void;
   onAddLead: (newLead: Lead) => Promise<Lead> | Lead | void;
 }
 
