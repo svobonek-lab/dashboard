@@ -117,6 +117,7 @@ test('company directory uses the admin-scoped RPC and returns only operational f
     id: 'company-a', name: 'Firma A', slug: 'firma-a', active: true,
     onboarding_completed: false, created_at: '2026-10-05T00:00:00Z',
     member_count: 3, subscription_status: 'not_configured', integration_status: 'not_verified',
+    invitation_status: 'not_sent', first_lead_at: null,
   }]);
   assert.equal('email' in result[0], false);
 });

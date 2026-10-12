@@ -1,7 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
 
-const STAGING_URL = 'https://oncmtmrhmjlerbwkrecv.supabase.co';
-
 function argsToObject(argv) {
   const result = { apply: false };
   for (let index = 0; index < argv.length; index += 1) {
@@ -35,7 +33,12 @@ if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug)) throw new Error('Slug must contain
 if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(ownerEmail)) throw new Error('Owner email is invalid.');
 
 const supabaseUrl = String(process.env.STAGING_SUPABASE_URL || '').trim();
-if (supabaseUrl !== STAGING_URL) throw new Error('Provisioning is restricted to the isolated StavbaFlow staging project.');
+const stagingProjectRef = String(process.env.STAGING_SUPABASE_PROJECT_REF || '').trim();
+const parsedSupabaseUrl = new URL(supabaseUrl);
+if (!/^[a-z0-9]{20}$/.test(stagingProjectRef)
+  || parsedSupabaseUrl.protocol !== 'https:'
+  || parsedSupabaseUrl.hostname !== `${stagingProjectRef}.supabase.co`)
+  throw new Error('Provisioning requires matching STAGING_SUPABASE_URL and STAGING_SUPABASE_PROJECT_REF values.');
 
 const appUrl = new URL(String(process.env.STAGING_APP_URL || ''));
 if (appUrl.protocol !== 'https:') throw new Error('STAGING_APP_URL must use HTTPS.');
@@ -60,58 +63,38 @@ if (!input.apply) {
 
 const serviceRole = String(process.env.STAGING_SUPABASE_SERVICE_ROLE_KEY || '').trim();
 if (!serviceRole) throw new Error('Missing STAGING_SUPABASE_SERVICE_ROLE_KEY.');
+const actorUserId = String(process.env.STAGING_PLATFORM_ADMIN_USER_ID || '').trim();
+if (!/^[0-9a-f]{8}-[0-9a-f-]{27}$/i.test(actorUserId)) throw new Error('Missing valid STAGING_PLATFORM_ADMIN_USER_ID.');
 
 const supabase = createClient(supabaseUrl, serviceRole, {
   auth: { persistSession: false, autoRefreshToken: false },
 });
 
-let authUserId = '';
 let companyId = '';
+let inviteId = '';
 
 async function rollback() {
-  if (companyId) {
-    await supabase.from('app_companies').delete().eq('id', companyId);
-  }
-  if (authUserId) {
-    await supabase.auth.admin.deleteUser(authUserId);
-  }
+  if (!companyId || !inviteId) return;
+  await supabase.rpc('app_platform_cancel_company_onboarding', {
+    p_actor_user_id: actorUserId, p_company_id: companyId, p_invite_id: inviteId,
+  });
 }
 
 try {
-  const existing = await supabase.from('app_companies').select('id').eq('slug', slug).maybeSingle();
-  if (existing.error) throw existing.error;
-  if (existing.data) throw new Error(`Company slug already exists: ${slug}`);
+  const provisioned = await supabase.rpc('app_platform_create_company_onboarding', {
+    p_actor_user_id: actorUserId,
+    p_name: name, p_slug: slug, p_owner_name: ownerName, p_owner_email: ownerEmail, p_plan: 'pilot',
+  });
+  const row = Array.isArray(provisioned.data) ? provisioned.data[0] : provisioned.data;
+  if (provisioned.error || !row?.company_id || !row?.invite_id) throw provisioned.error || new Error('Company onboarding did not return ids.');
+  companyId = row.company_id;
+  inviteId = row.invite_id;
 
   const invited = await supabase.auth.admin.inviteUserByEmail(ownerEmail, {
     redirectTo,
-    data: { role: 'owner', name: ownerName, onboarding_slug: slug },
+    data: { role: 'owner', name: ownerName, company_id: companyId, invite_id: inviteId },
   });
   if (invited.error || !invited.data.user?.id) throw invited.error || new Error('Supabase Auth did not return the invited owner.');
-  authUserId = invited.data.user.id;
-
-  const provisioned = await supabase.rpc('app_provision_company', {
-    p_name: name,
-    p_slug: slug,
-    p_owner_user_id: authUserId,
-    p_owner_email: ownerEmail,
-    p_owner_name: ownerName,
-  });
-  if (provisioned.error || !provisioned.data) throw provisioned.error || new Error('Company provisioning did not return an id.');
-  companyId = provisioned.data;
-
-  const configured = await supabase.from('app_companies').update({
-    email: ownerEmail,
-    phone: plan.phone,
-    color: plan.color,
-    public_form: true,
-    onboarding_completed: false,
-  }).eq('id', companyId).select('id,slug,public_form').single();
-  if (configured.error) throw configured.error;
-
-  const metadata = await supabase.auth.admin.updateUserById(authUserId, {
-    user_metadata: { role: 'owner', name: ownerName, company_id: companyId },
-  });
-  if (metadata.error) throw metadata.error;
 
   console.log(JSON.stringify({
     applied: true,

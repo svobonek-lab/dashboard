@@ -5,7 +5,7 @@ create role authenticated nologin;
 create role service_role nologin bypassrls;
 
 create schema auth;
-create table auth.users (id uuid primary key, email text not null unique);
+create table auth.users (id uuid primary key, email text not null unique, email_confirmed_at timestamptz default now());
 create function auth.uid() returns uuid language sql stable as $$
   select nullif(current_setting('request.jwt.claim.sub', true), '')::uuid
 $$;
@@ -19,9 +19,23 @@ create table public.app_companies (
   address text not null default '',
   color text not null default '#2563eb',
   logo_url text not null default '',
+  public_form boolean not null default false,
   active boolean not null default true,
   onboarding_completed boolean not null default false,
   plan text not null default 'pilot',
+  created_at timestamptz not null default now()
+);
+
+create table public.app_invites (
+  id uuid primary key default gen_random_uuid(),
+  company_id uuid not null references public.app_companies(id) on delete cascade,
+  email text not null,
+  name text not null,
+  role text not null check (role in ('owner', 'employee')),
+  expires_at timestamptz not null,
+  accepted_at timestamptz,
+  accepted_by uuid references auth.users(id) on delete set null,
+  revoked_at timestamptz,
   created_at timestamptz not null default now()
 );
 
@@ -59,7 +73,8 @@ create table public.app_leads (
 alter table public.app_companies enable row level security;
 alter table public.app_members enable row level security;
 alter table public.app_leads enable row level security;
-revoke all on public.app_companies, public.app_members, public.app_leads from public, anon, authenticated;
+alter table public.app_invites enable row level security;
+revoke all on public.app_companies, public.app_members, public.app_leads, public.app_invites from public, anon, authenticated;
 
 insert into auth.users(id, email) values
   ('90000000-0000-4000-8000-000000000009', 'admin@example.invalid'),

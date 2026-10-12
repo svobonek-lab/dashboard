@@ -93,6 +93,8 @@ jobs:
           docker exec -i platform-support-postgres psql -v ON_ERROR_STOP=1 -U postgres < supabase/staging/20261009_platform_admin_support_contract.sql
           docker exec -i platform-support-postgres psql -v ON_ERROR_STOP=1 -U postgres < supabase/staging/20261010_platform_admin_write_support_contract.sql
           docker exec -i platform-support-postgres psql -v ON_ERROR_STOP=1 -U postgres < supabase/tests/platform_admin_verify.sql
+          docker exec -i platform-support-postgres psql -v ON_ERROR_STOP=1 -U postgres < supabase/staging/20261012_platform_company_onboarding.sql
+          docker exec -i platform-support-postgres psql -v ON_ERROR_STOP=1 -U postgres < supabase/tests/platform_admin_company_onboarding.sql
       - name: Stop disposable PostgreSQL
         if: always()
         run: docker rm --force platform-support-postgres
