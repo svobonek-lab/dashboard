@@ -11,8 +11,18 @@ export interface PlatformCompany {
   onboarding_completed: boolean;
   created_at: string;
   member_count: number;
-  subscription_status: 'not_configured' | 'trial' | 'active' | 'past_due' | 'cancelled';
+  subscription_status: 'not_configured' | 'pilot' | 'trial' | 'active' | 'past_due' | 'cancelled';
   integration_status: 'not_verified';
+  invitation_status: 'not_sent' | 'sent' | 'accepted';
+  first_lead_at: string | null;
+}
+
+export interface NewPlatformCompany {
+  name: string;
+  slug: string;
+  ownerName: string;
+  ownerEmail: string;
+  plan: 'pilot';
 }
 
 export interface PlatformSupportSession {
@@ -43,7 +53,16 @@ async function platformRequest<T>(route: 'session' | 'companies' | 'support-sess
     headers: { 'Content-Type': 'application/json', ...options.headers, Authorization: `Bearer ${token}` },
   });
   const payload = await response.json().catch(() => ({}));
-  if (!response.ok) throw new Error(payload?.code || 'Správa platformy není dostupná.');
+  if (!response.ok) {
+    const messages: Record<string, string> = {
+      COMPANY_SLUG_EXISTS: 'Tento identifikátor firmy už používá jiná firma.',
+      COMPANY_SLUG_INVALID: 'Identifikátor může obsahovat jen malá písmena, čísla a spojovníky.',
+      COMPANY_OWNER_ALREADY_REGISTERED: 'Tento e-mail už má účet. Pro nového vlastníka použijte dosud neregistrovaný e-mail.',
+      COMPANY_INVITE_SEND_FAILED: 'Firmu se nepodařilo vytvořit, protože pozvánka nebyla doručena. Změny byly vráceny zpět.',
+      PLATFORM_ACCESS_DENIED: 'Tuto akci může provést pouze správce platformy.',
+    };
+    throw new Error(messages[payload?.code] || 'Správa platformy není dostupná. Zkuste akci zopakovat.');
+  }
   return payload as T;
 }
 
@@ -54,6 +73,21 @@ export async function getPlatformSession(): Promise<{ role: 'platform_admin'; ac
 export async function listPlatformCompanies(): Promise<PlatformCompany[]> {
   const payload = await platformRequest<{ companies?: PlatformCompany[] }>('companies');
   return Array.isArray(payload.companies) ? payload.companies : [];
+}
+
+export async function createPlatformCompany(input: NewPlatformCompany): Promise<void> {
+  await platformRequest('companies', { method: 'POST', body: JSON.stringify(input) });
+}
+
+export async function resendPlatformOwnerInvite(companyId: string): Promise<void> {
+  await platformRequest('companies', { method: 'POST', body: JSON.stringify({ action: 'resend_owner_invite', companyId }) });
+}
+
+export async function getPlatformPublicFormLink(companyId: string): Promise<string> {
+  const result = await platformRequest<{ publicFormPath: string }>('companies', {
+    method: 'POST', body: JSON.stringify({ action: 'public_form_link', companyId }),
+  });
+  return new URL(result.publicFormPath, window.location.origin).toString();
 }
 
 export async function createPlatformSupportSession(companyId: string, reason: string): Promise<PlatformSupportSession> {

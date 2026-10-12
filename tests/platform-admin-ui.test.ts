@@ -28,7 +28,7 @@ test('platform pages contain no fabricated revenue, telemetry or customer auth i
   assert.match(source, /not_verified|Neověřeno/i);
   assert.match(source, /auditovan/i);
   assert.match(companies, /Přihlásit jako/);
-  assert.match(companies, /Log in as client/);
+  assert.match(companies, /Přihlásit jako podpora/);
   assert.match(companies, /Důvod podpory/);
   assert.match(companies, /member_count/);
   assert.match(companies, /subscription_status/);
