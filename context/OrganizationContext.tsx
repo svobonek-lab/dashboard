@@ -11,6 +11,7 @@ import { toAuthenticatedWorkspaceUser } from '../src/app/authWorkspaceUser';
 import { buildInviteRequest, toPendingEmployee } from '../src/app/inviteContract';
 import { buildRecoveryRequest, parseRecoveryResponse } from '../src/app/authRecovery';
 import { readPlatformIdentity } from '../src/app/platformIdentity';
+import { buildCompletedInviteMetadata, requiresInvitePasswordSetup } from '../src/app/invitePassword';
 import { OrganizationContext, type DBProject, type DBUser, type Organization, type OrganizationContextType } from './OrganizationContextBase';
 export { OrganizationContext, useOrganization, type DBProject, type DBUser, type Organization, type OrganizationContextType } from './OrganizationContextBase';
 
@@ -45,6 +46,7 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
   const [currentOrg, setCurrentOrg] = useState<Organization | null>(null);
   const [organizations, setOrganizations] = useState<Organization[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [invitePasswordRequired, setInvitePasswordRequired] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [schemaError, setSchemaError] = useState<string | null>(null);
   const [impersonatingOrgId, setImpersonatingOrgId] = useState<string | null>(null);
@@ -98,7 +100,14 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
           const { data: { session }, error: sessionError } = await supabase.auth.getSession();
           if (sessionError) throw sessionError;
 
-          if (session?.user) {
+          if (session?.user && requiresInvitePasswordSetup(session.user, window.location.href)) {
+            setUser(session.user);
+            setDbUser(null);
+            setCurrentOrg(null);
+            setOrganizations([]);
+            setInvitePasswordRequired(true);
+          } else if (session?.user) {
+            setInvitePasswordRequired(false);
             setUser(session.user);
             await loadUserData(session.user.id, session.user.email, session.user.user_metadata);
           } else {
@@ -143,6 +152,7 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
             setUser(null);
             setDbUser(null);
             setCurrentOrg(null);
+            setInvitePasswordRequired(false);
           }
         } finally {
           setIsLoading(false);
@@ -150,7 +160,14 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
 
         // Listen for Auth status changes
         const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-          if (session?.user) {
+          if (session?.user && requiresInvitePasswordSetup(session.user, window.location.href)) {
+            setUser(session.user);
+            setDbUser(null);
+            setCurrentOrg(null);
+            setOrganizations([]);
+            setInvitePasswordRequired(true);
+          } else if (session?.user) {
+            setInvitePasswordRequired(false);
             setUser(session.user);
             await loadUserData(session.user.id, session.user.email, session.user.user_metadata);
           } else if (event === 'SIGNED_OUT') {
@@ -158,6 +175,7 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
             setUser(null);
             setDbUser(null);
             setCurrentOrg(null);
+            setInvitePasswordRequired(false);
           }
         });
 
@@ -614,6 +632,30 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
       setError(err.message || 'Přihlášení selhalo');
       throw err;
     }
+  };
+
+  const completeInvitePasswordSetup = async (password: string) => {
+    if (!supabase) throw new Error('Nastavení hesla není na tomto prostředí dostupné.');
+    const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+    if (sessionError || !sessionData.session?.user) {
+      throw new Error('Pozvánková relace vypršela. Požádejte o novou pozvánku.');
+    }
+    const invitedUser = sessionData.session.user;
+    if (!requiresInvitePasswordSetup(invitedUser, window.location.href)) {
+      throw new Error('Tento účet nečeká na nastavení hesla z pozvánky.');
+    }
+    const metadata = buildCompletedInviteMetadata(invitedUser.user_metadata, new Date().toISOString());
+    const { data, error: updateError } = await supabase.auth.updateUser({ password, data: metadata });
+    if (updateError || !data.user) throw updateError || new Error('Heslo se nepodařilo uložit.');
+
+    setUser(data.user);
+    setInvitePasswordRequired(false);
+    const resolvedDbUser = await loadUserData(data.user.id, data.user.email, data.user.user_metadata);
+    if (!resolvedDbUser) {
+      setInvitePasswordRequired(true);
+      throw new Error('Pozvánku se nepodařilo aktivovat pro žádnou firmu.');
+    }
+    return toAuthenticatedWorkspaceUser(data.user, resolvedDbUser);
   };
 
   // Auth Action: Sign Up
@@ -2489,10 +2531,12 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
       currentOrg,
       organizations,
       isLoading,
+      invitePasswordRequired,
       error,
       schemaError,
       clearSchemaError,
       login,
+      completeInvitePasswordSetup,
       signUp,
       logout,
       createOrganization,

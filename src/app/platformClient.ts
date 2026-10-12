@@ -59,6 +59,7 @@ async function platformRequest<T>(route: 'session' | 'companies' | 'support-sess
       COMPANY_SLUG_INVALID: 'Identifikátor může obsahovat jen malá písmena, čísla a spojovníky.',
       COMPANY_OWNER_ALREADY_REGISTERED: 'Tento e-mail už má účet. Pro nového vlastníka použijte dosud neregistrovaný e-mail.',
       COMPANY_INVITE_SEND_FAILED: 'Firmu se nepodařilo vytvořit, protože pozvánka nebyla doručena. Změny byly vráceny zpět.',
+      COMPANY_INVITE_DELIVERY_UNAVAILABLE: 'E-mailovou pozvánku nelze odeslat. Ověřte vlastní SMTP v Supabase; firma nebyla aktivována.',
       PLATFORM_ACCESS_DENIED: 'Tuto akci může provést pouze správce platformy.',
     };
     throw new Error(messages[payload?.code] || 'Správa platformy není dostupná. Zkuste akci zopakovat.');
