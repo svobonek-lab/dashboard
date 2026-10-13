@@ -1,9 +1,10 @@
-import { ICRMRepository, RepositoryHealthStatus } from './types';
+import { ICRMRepository, LeadNote, LeadStoredFile, RepositoryHealthStatus } from './types';
 import { Lead, Employee, CompanyBranding } from '../../types';
 import { supabase, isSupabaseConfigured, isValidUUID, LocalSupabaseMock } from '../supabase';
 import { AppInviteRow, AppLeadRow, AppMemberRow, toAppLead, toAppMember, toPendingInvite } from '../../src/app/productionSchema';
 import { APP_SCHEMA_WRITES_BLOCKED_MESSAGE } from '../../src/app/productionDataPolicy';
 import { canWritePilot, toLeadPatch } from '../../src/app/pilotWrites';
+import { buildLeadFilePath, normalizeLeadNote, validateLeadUpload } from '../../src/app/leadAttachments';
 
 const appSchemaReadsEnabled = Boolean((import.meta as any).env?.PROD) || (import.meta as any).env?.VITE_APP_SCHEMA_READS === 'true';
 
@@ -278,6 +279,147 @@ export class SupabaseRepository implements ICRMRepository {
     if (!isSupabaseConfigured || !supabase || !isValidUUID(leadId)) return;
     if (appSchemaReadsEnabled) throw new Error(APP_SCHEMA_WRITES_BLOCKED_MESSAGE);
     await supabase.from(appSchemaReadsEnabled ? 'app_leads' : 'leads').delete().eq('id', leadId).eq(appSchemaReadsEnabled ? 'company_id' : 'organization_id', orgId);
+  }
+
+  private requireLeadAttachmentContext(orgId: string, leadId?: string) {
+    if (!isSupabaseConfigured || !supabase || !appSchemaReadsEnabled) {
+      throw new Error('Poznámky a soubory vyžadují aktivní cloudové připojení.');
+    }
+    if (!isValidUUID(orgId) || (leadId !== undefined && !isValidUUID(leadId))) {
+      throw new Error('Neplatná firma nebo zakázka.');
+    }
+    return supabase;
+  }
+
+  private toLeadNote(row: any): LeadNote {
+    return {
+      id: row.id,
+      companyId: row.company_id,
+      leadId: row.lead_id,
+      authorId: row.author_id,
+      body: row.body,
+      createdAt: row.created_at,
+    };
+  }
+
+  private async requireAuthenticatedUserId(): Promise<string> {
+    if (!supabase) throw new Error('Cloudové připojení není dostupné.');
+    const { data, error } = await supabase.auth.getUser();
+    if (error || !data.user?.id) throw new Error('Pro tuto akci se znovu přihlaste.');
+    return data.user.id;
+  }
+
+  async getLeadNotes(orgId: string, leadId: string): Promise<LeadNote[]> {
+    const client = this.requireLeadAttachmentContext(orgId, leadId);
+    const { data, error } = await client.from('app_lead_notes')
+      .select('id,company_id,lead_id,author_id,body,created_at')
+      .eq('company_id', orgId)
+      .eq('lead_id', leadId)
+      .order('created_at', { ascending: false });
+    if (error) throw new Error('Poznámky se nepodařilo načíst.');
+    return (data || []).map((row) => this.toLeadNote(row));
+  }
+
+  async addLeadNote(orgId: string, leadId: string, body: string): Promise<LeadNote> {
+    const client = this.requireLeadAttachmentContext(orgId, leadId);
+    const authorId = await this.requireAuthenticatedUserId();
+    const { data, error } = await client.from('app_lead_notes')
+      .insert({ company_id: orgId, lead_id: leadId, author_id: authorId, body: normalizeLeadNote(body) })
+      .select('id,company_id,lead_id,author_id,body,created_at')
+      .single();
+    if (error || !data) throw new Error('Poznámku se nepodařilo uložit.');
+    return this.toLeadNote(data);
+  }
+
+  async deleteLeadNote(orgId: string, noteId: string): Promise<void> {
+    const client = this.requireLeadAttachmentContext(orgId);
+    if (!isValidUUID(noteId)) throw new Error('Neplatná poznámka.');
+    const { error } = await client.from('app_lead_notes').delete().eq('company_id', orgId).eq('id', noteId);
+    if (error) throw new Error('Poznámku nelze smazat. Majitel ji může smazat kdykoliv, autor do 15 minut.');
+  }
+
+  async getLeadFiles(orgId: string, leadId: string): Promise<LeadStoredFile[]> {
+    const client = this.requireLeadAttachmentContext(orgId, leadId);
+    const { data, error } = await client.from('app_lead_files')
+      .select('id,company_id,lead_id,author_id,storage_path,file_name,mime_type,size_bytes,created_at')
+      .eq('company_id', orgId)
+      .eq('lead_id', leadId)
+      .order('created_at', { ascending: false });
+    if (error) throw new Error('Soubory se nepodařilo načíst.');
+
+    return Promise.all((data || []).map(async (row: any) => {
+      const signed = await client.storage.from('lead-files').createSignedUrl(row.storage_path, 600);
+      if (signed.error || !signed.data?.signedUrl) throw new Error('Soukromý náhled souboru se nepodařilo vytvořit.');
+      return {
+        id: row.id,
+        companyId: row.company_id,
+        leadId: row.lead_id,
+        authorId: row.author_id,
+        storagePath: row.storage_path,
+        fileName: row.file_name,
+        mimeType: row.mime_type,
+        sizeBytes: Number(row.size_bytes),
+        createdAt: row.created_at,
+        previewUrl: signed.data.signedUrl,
+      } satisfies LeadStoredFile;
+    }));
+  }
+
+  async uploadLeadFile(orgId: string, leadId: string, file: File): Promise<LeadStoredFile> {
+    const client = this.requireLeadAttachmentContext(orgId, leadId);
+    validateLeadUpload(file);
+    const authorId = await this.requireAuthenticatedUserId();
+    const fileId = crypto.randomUUID();
+    const storagePath = buildLeadFilePath(orgId, leadId, fileId, file.name);
+    const signedUpload = await client.storage.from('lead-files').createSignedUploadUrl(storagePath);
+    if (signedUpload.error || !signedUpload.data?.token) throw new Error('Podepsaný odkaz pro nahrání se nepodařilo vytvořit.');
+
+    const uploaded = await client.storage.from('lead-files').uploadToSignedUrl(
+      storagePath,
+      signedUpload.data.token,
+      file,
+      { contentType: file.type, upsert: false },
+    );
+    if (uploaded.error) throw new Error('Soubor se nepodařilo nahrát do soukromého úložiště.');
+
+    const inserted = await client.from('app_lead_files').insert({
+      id: fileId,
+      company_id: orgId,
+      lead_id: leadId,
+      author_id: authorId,
+      storage_path: storagePath,
+      file_name: file.name,
+      mime_type: file.type,
+      size_bytes: file.size,
+    }).select('id,company_id,lead_id,author_id,storage_path,file_name,mime_type,size_bytes,created_at').single();
+
+    if (inserted.error || !inserted.data) {
+      await client.storage.from('lead-files').remove([storagePath]);
+      throw new Error('Soubor byl odmítnut databází a nebyl uložen.');
+    }
+    const preview = await client.storage.from('lead-files').createSignedUrl(storagePath, 600);
+    if (preview.error || !preview.data?.signedUrl) throw new Error('Soubor je uložen, ale náhled zatím není dostupný.');
+    return {
+      id: inserted.data.id,
+      companyId: inserted.data.company_id,
+      leadId: inserted.data.lead_id,
+      authorId: inserted.data.author_id,
+      storagePath: inserted.data.storage_path,
+      fileName: inserted.data.file_name,
+      mimeType: inserted.data.mime_type,
+      sizeBytes: Number(inserted.data.size_bytes),
+      createdAt: inserted.data.created_at,
+      previewUrl: preview.data.signedUrl,
+    };
+  }
+
+  async deleteLeadFile(orgId: string, file: LeadStoredFile): Promise<void> {
+    const client = this.requireLeadAttachmentContext(orgId, file.leadId);
+    if (file.companyId !== orgId || !isValidUUID(file.id)) throw new Error('Neplatný soubor.');
+    const deleted = await client.from('app_lead_files').delete().eq('company_id', orgId).eq('id', file.id);
+    if (deleted.error) throw new Error('Soubor nelze smazat. Majitel jej může smazat kdykoliv, autor do 15 minut.');
+    const removed = await client.storage.from('lead-files').remove([file.storagePath]);
+    if (removed.error) throw new Error('Záznam byl odstraněn, úklid souboru je nutné zopakovat.');
   }
 
   async getEmployees(orgId: string): Promise<Employee[]> {

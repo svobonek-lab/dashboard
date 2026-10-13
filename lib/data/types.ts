@@ -11,6 +11,28 @@ export interface RepositoryHealthStatus {
   lastChecked: string;
 }
 
+export interface LeadNote {
+  id: string;
+  companyId: string;
+  leadId: string;
+  authorId: string;
+  body: string;
+  createdAt: string;
+}
+
+export interface LeadStoredFile {
+  id: string;
+  companyId: string;
+  leadId: string;
+  authorId: string;
+  storagePath: string;
+  fileName: string;
+  mimeType: string;
+  sizeBytes: number;
+  createdAt: string;
+  previewUrl: string;
+}
+
 export interface ICRMRepository {
   readonly mode: StorageMode;
   
@@ -22,6 +44,15 @@ export interface ICRMRepository {
   saveLead(orgId: string, lead: Partial<Lead>): Promise<Lead>;
   updateLeadStatus(orgId: string, leadId: string, status: string): Promise<void>;
   deleteLead(orgId: string, leadId: string): Promise<void>;
+
+  // Notes and private files. Implementations without the reviewed cloud
+  // contract must fail closed instead of inventing local attachment data.
+  getLeadNotes(orgId: string, leadId: string): Promise<LeadNote[]>;
+  addLeadNote(orgId: string, leadId: string, body: string): Promise<LeadNote>;
+  deleteLeadNote(orgId: string, noteId: string): Promise<void>;
+  getLeadFiles(orgId: string, leadId: string): Promise<LeadStoredFile[]>;
+  uploadLeadFile(orgId: string, leadId: string, file: File): Promise<LeadStoredFile>;
+  deleteLeadFile(orgId: string, file: LeadStoredFile): Promise<void>;
   
   // Employees management
   getEmployees(orgId: string): Promise<Employee[]>;

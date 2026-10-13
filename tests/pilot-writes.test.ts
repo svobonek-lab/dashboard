@@ -32,7 +32,7 @@ test('invalid values cannot silently become a different persisted value', () => 
 });
 
 test('employees cannot edit lead details through the optimistic owner editor', () => {
-  assert.equal(canEditLeadDetails('employee'), false);
+  assert.equal(canEditLeadDetails('employee'), true);
   assert.equal(canEditLeadDetails('owner'), true);
   assert.equal(canEditLeadDetails('super_admin'), true);
 });

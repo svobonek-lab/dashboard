@@ -1,4 +1,4 @@
-import { ICRMRepository, RepositoryHealthStatus } from './types';
+import { ICRMRepository, LeadNote, LeadStoredFile, RepositoryHealthStatus } from './types';
 import { Lead, Employee, CompanyBranding } from '../../types';
 import { LocalSupabaseMock } from '../supabase';
 import { getConfiguredSynologyToken } from './synologyToken';
@@ -126,6 +126,17 @@ export class SynologyLocalRepository implements ICRMRepository {
       method: 'DELETE',
     });
   }
+
+  private attachmentContractUnavailable(): never {
+    throw new Error('Poznámky a soukromé soubory jsou dostupné pouze přes ověřené cloudové úložiště.');
+  }
+
+  async getLeadNotes(_orgId: string, _leadId: string): Promise<LeadNote[]> { return this.attachmentContractUnavailable(); }
+  async addLeadNote(_orgId: string, _leadId: string, _body: string): Promise<LeadNote> { return this.attachmentContractUnavailable(); }
+  async deleteLeadNote(_orgId: string, _noteId: string): Promise<void> { return this.attachmentContractUnavailable(); }
+  async getLeadFiles(_orgId: string, _leadId: string): Promise<LeadStoredFile[]> { return this.attachmentContractUnavailable(); }
+  async uploadLeadFile(_orgId: string, _leadId: string, _file: File): Promise<LeadStoredFile> { return this.attachmentContractUnavailable(); }
+  async deleteLeadFile(_orgId: string, _file: LeadStoredFile): Promise<void> { return this.attachmentContractUnavailable(); }
 
   async getEmployees(orgId: string): Promise<Employee[]> {
     try {

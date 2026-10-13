@@ -31,6 +31,9 @@ import { Integrations } from './pages/owner/Integrations';
 
 // Employee Pages
 import { EmployeeDashboardPage } from './pages/employee/Dashboard';
+import { EmployeeJobsPage } from './pages/employee/Jobs';
+import { EmployeePhotosPage } from './pages/employee/Photos';
+import { LeadDetail } from '@/features/LeadDetail';
 
 // Public & Embed Views
 import { LoginPage } from '@/components/LoginPage';
@@ -485,7 +488,13 @@ function AppContent() {
     return (
       <ProtectedRoute allowedRole="employee">
         <EmployeeLayout leads={employeeLeads}>
-          {pathname === '/employee' || pathname === '/employee/dashboard' ? (
+          {selectedLead && (pathname === '/employee' || pathname === '/employee/dashboard') ? (
+            <LeadDetail lead={selectedLead} employees={[]} onBack={() => setSelectedLead(null)} onOpenPhoto={() => {}} onOpenVoiceNotes={() => {}} onUpdateLead={handleUpdateLead} canManageAssignment={false} canEditOperationalFields />
+          ) : pathname === '/employee/jobs' ? (
+            <EmployeeJobsPage leads={employeeLeads} onSelectLead={setSelectedLead} />
+          ) : pathname === '/employee/photos' ? (
+            <EmployeePhotosPage leads={selectedLead ? [selectedLead, ...employeeLeads.filter((lead) => lead.id !== selectedLead.id)] : employeeLeads} />
+          ) : pathname === '/employee' || pathname === '/employee/dashboard' ? (
             <EmployeeDashboardPage leads={employeeLeads} onSelectLead={setSelectedLead} onUpdateLead={handleUpdateLead} onUpdateLeadStatus={handleUpdateLeadStatus} />
           ) : (
             <EmployeeDashboardPage leads={employeeLeads} onSelectLead={setSelectedLead} onUpdateLead={handleUpdateLead} onUpdateLeadStatus={handleUpdateLeadStatus} />

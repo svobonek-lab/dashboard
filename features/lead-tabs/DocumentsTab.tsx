@@ -1,208 +1,96 @@
-import React, { useState } from 'react';
-import { 
-  FolderOpen, 
-  FileText, 
-  Download, 
-  Upload, 
-  CheckCircle2, 
-  ShieldCheck, 
-  Plus, 
-  Eye,
-  Trash2
-} from 'lucide-react';
-import { Lead } from '../../types';
+import React, { useCallback, useEffect, useState } from 'react';
+import { Camera, FileText, LoaderCircle, MessageSquareText, Paperclip, Trash2, Upload } from 'lucide-react';
+import type { Lead } from '../../types';
+import type { LeadNote, LeadStoredFile } from '../../lib/data/types';
+import { crmRepo } from '../../lib/data/repositoryFactory';
+import { resizeImageForUpload } from '../../src/app/leadAttachments';
 
-interface DocumentsTabProps {
-  lead: Lead;
-  onNotice: (msg: string) => void;
-}
+interface DocumentsTabProps { lead: Lead; onNotice?: (message: string) => void; }
 
-interface DocFile {
-  id: string;
-  name: string;
-  category: 'Smlouva o dílo' | 'Projektová dokumentace' | 'Technický list' | 'Povolení & BOZP';
-  fileSize: string;
-  date: string;
-  status: 'Podepsáno' | 'Schváleno' | 'Platné';
-}
+const formatDate = (value: string) => new Intl.DateTimeFormat('cs-CZ', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(value));
+const formatSize = (bytes: number) => bytes < 1024 * 1024 ? `${Math.ceil(bytes / 1024)} kB` : `${(bytes / 1024 / 1024).toFixed(1)} MB`;
 
-export const DocumentsTab: React.FC<DocumentsTabProps> = ({ lead, onNotice }) => {
-  const [docs, setDocs] = useState<DocFile[]>([
-    {
-      id: 'd-1',
-      name: 'Smlouva_o_dilo_SOD-2026-089.pdf',
-      category: 'Smlouva o dílo',
-      fileSize: '2.4 MB',
-      date: '02. 10. 2026',
-      status: 'Podepsáno'
-    },
-    {
-      id: 'd-2',
-      name: 'Polozkovy_rozpocet_v1.3_schvaleny.pdf',
-      category: 'Projektová dokumentace',
-      fileSize: '840 KB',
-      date: '03. 10. 2026',
-      status: 'Schváleno'
-    },
-    {
-      id: 'd-3',
-      name: 'Vykres_pudorysu_a_kotveni_A3.pdf',
-      category: 'Projektová dokumentace',
-      fileSize: '4.8 MB',
-      date: '28. 09. 2026',
-      status: 'Schváleno'
-    },
-    {
-      id: 'd-4',
-      name: 'Certifikat_shody_KVH_hranoly_Si.pdf',
-      category: 'Technický list',
-      fileSize: '1.1 MB',
-      date: '05. 10. 2026',
-      status: 'Platné'
-    },
-    {
-      id: 'd-5',
-      name: 'Ohlaseni_stavby_a_vyjadreni_MU.pdf',
-      category: 'Povolení & BOZP',
-      fileSize: '1.7 MB',
-      date: '01. 10. 2026',
-      status: 'Platné'
-    }
-  ]);
+export const DocumentsTab: React.FC<DocumentsTabProps> = ({ lead, onNotice = () => {} }) => {
+  const companyId = lead.organization_id || '';
+  const [notes, setNotes] = useState<LeadNote[]>([]);
+  const [files, setFiles] = useState<LeadStoredFile[]>([]);
+  const [noteBody, setNoteBody] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
-  const [newDocName, setNewDocName] = useState('');
-  const [newCategory, setNewCategory] = useState<DocFile['category']>('Projektová dokumentace');
+  const loadAttachments = useCallback(async () => {
+    setLoading(true); setError('');
+    try {
+      const [loadedNotes, loadedFiles] = await Promise.all([
+        crmRepo.getLeadNotes(companyId, lead.id),
+        crmRepo.getLeadFiles(companyId, lead.id),
+      ]);
+      setNotes(loadedNotes); setFiles(loadedFiles);
+    } catch (loadError) {
+      setError(loadError instanceof Error ? loadError.message : 'Poznámky a soubory se nepodařilo načíst.');
+      setNotes([]); setFiles([]);
+    } finally { setLoading(false); }
+  }, [companyId, lead.id]);
 
-  const handleUploadDoc = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newDocName.trim()) return;
+  useEffect(() => { void loadAttachments(); }, [loadAttachments]);
 
-    const newDoc: DocFile = {
-      id: 'd-' + Date.now(),
-      name: newDocName.endsWith('.pdf') ? newDocName : `${newDocName}.pdf`,
-      category: newCategory,
-      fileSize: '1.5 MB',
-      date: 'Dnes',
-      status: 'Schváleno'
-    };
-
-    setDocs(prev => [...prev, newDoc]);
-    setNewDocName('');
-    onNotice(`Dokument "${newDoc.name}" byl nahrán do spisu zakázky.`);
+  const addNote = async (event: React.FormEvent) => {
+    event.preventDefault(); setBusy(true); setError('');
+    try {
+      await crmRepo.addLeadNote(companyId, lead.id, noteBody);
+      setNoteBody(''); await loadAttachments(); onNotice('Poznámka byla uložena.');
+    } catch (saveError) { setError(saveError instanceof Error ? saveError.message : 'Poznámku se nepodařilo uložit.'); }
+    finally { setBusy(false); }
   };
 
-  const handleDownload = (docName: string) => {
-    onNotice(`Stahování dokumentu "${docName}" bylo zahájeno.`);
+  const uploadFile = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const selected = event.target.files?.[0]; event.target.value = '';
+    if (!selected) return;
+    setBusy(true); setError('');
+    try {
+      const prepared = selected.type.startsWith('image/') ? await resizeImageForUpload(selected) : selected;
+      await crmRepo.uploadLeadFile(companyId, lead.id, prepared);
+      await loadAttachments(); onNotice('Soubor byl bezpečně uložen.');
+    } catch (uploadError) { setError(uploadError instanceof Error ? uploadError.message : 'Soubor se nepodařilo uložit.'); }
+    finally { setBusy(false); }
   };
 
-  const handleRemoveDoc = (id: string, name: string) => {
-    setDocs(prev => prev.filter(d => d.id !== id));
-    onNotice(`Dokument "${name}" byl smazán.`);
+  const removeNote = async (note: LeadNote) => {
+    setBusy(true);
+    try { await crmRepo.deleteLeadNote(companyId, note.id); await loadAttachments(); }
+    catch (removeError) { setError(removeError instanceof Error ? removeError.message : 'Poznámku se nepodařilo smazat.'); }
+    finally { setBusy(false); }
   };
 
-  return (
-    <div className="space-y-6 font-sans">
-      {/* Header */}
-      <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h2 className="text-sm font-black text-slate-900">Spis a dokumentace zakázky</h2>
-          <p className="text-xs text-slate-500 mt-0.5">Smlouvy o dílo, technické výkresy, certifikáty a povolení</p>
-        </div>
+  const removeFile = async (file: LeadStoredFile) => {
+    setBusy(true);
+    try { await crmRepo.deleteLeadFile(companyId, file); await loadAttachments(); }
+    catch (removeError) { setError(removeError instanceof Error ? removeError.message : 'Soubor se nepodařilo smazat.'); }
+    finally { setBusy(false); }
+  };
 
-        <div className="flex items-center gap-2">
-          <span className="px-3 py-1 rounded-full text-xs font-bold bg-slate-100 text-slate-700 border border-slate-200">
-            {docs.length} souborů v cloudu
-          </span>
-        </div>
-      </div>
-
-      {/* Documents table */}
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs border-collapse">
-            <thead>
-              <tr className="bg-slate-50/80 border-b border-slate-200/80 text-slate-600 font-bold uppercase tracking-wider text-[10px]">
-                <th className="py-3 px-4">Typ dokumentu</th>
-                <th className="py-3 px-4">Název souboru</th>
-                <th className="py-3 px-4 text-center">Velikost</th>
-                <th className="py-3 px-4 text-center">Datum nahrání</th>
-                <th className="py-3 px-4 text-center">Status</th>
-                <th className="py-3 px-4 text-center">Akce</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100">
-              {docs.map(doc => (
-                <tr key={doc.id} className="hover:bg-slate-50/50 transition-colors">
-                  <td className="py-3 px-4">
-                    <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-blue-50 text-[#0A84FF] border border-blue-200">
-                      {doc.category}
-                    </span>
-                  </td>
-                  <td className="py-3 px-4 font-bold text-slate-900 flex items-center gap-2">
-                    <FileText className="w-4 h-4 text-slate-400" />
-                    <span>{doc.name}</span>
-                  </td>
-                  <td className="py-3 px-4 text-center text-slate-500">{doc.fileSize}</td>
-                  <td className="py-3 px-4 text-center text-slate-500">{doc.date}</td>
-                  <td className="py-3 px-4 text-center">
-                    <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                      {doc.status}
-                    </span>
-                  </td>
-                  <td className="py-3 px-4 text-center">
-                    <div className="flex items-center justify-center gap-1.5">
-                      <button
-                        onClick={() => handleDownload(doc.name)}
-                        className="p-1.5 rounded-lg border border-slate-200 hover:bg-slate-50 text-slate-600 transition-colors"
-                        title="Stáhnout"
-                      >
-                        <Download className="w-3.5 h-3.5" />
-                      </button>
-                      <button
-                        onClick={() => handleRemoveDoc(doc.id, doc.name)}
-                        className="p-1.5 rounded-lg border border-slate-200 hover:bg-rose-50 hover:text-rose-600 text-slate-400 transition-colors"
-                        title="Smazat"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-
-        {/* Upload new document form */}
-        <form onSubmit={handleUploadDoc} className="p-4 bg-slate-50/80 border-t border-slate-200 flex flex-wrap gap-2 items-center text-xs">
-          <input
-            type="text"
-            placeholder="Název souboru (např. Revizni_zprava.pdf)..."
-            value={newDocName}
-            onChange={e => setNewDocName(e.target.value)}
-            className="flex-1 min-w-[200px] p-2 rounded-xl border border-slate-200 bg-white focus:outline-none focus:border-[#0A84FF]"
-          />
-
-          <select
-            value={newCategory}
-            onChange={e => setNewCategory(e.target.value as any)}
-            className="p-2 rounded-xl border border-slate-200 bg-white font-medium text-slate-700"
-          >
-            <option value="Smlouva o dílo">Smlouva o dílo</option>
-            <option value="Projektová dokumentace">Projektová dokumentace</option>
-            <option value="Technický list">Technický list</option>
-            <option value="Povolení & BOZP">Povolení & BOZP</option>
-          </select>
-
-          <button
-            type="submit"
-            className="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-xl font-bold flex items-center gap-1.5 transition-colors"
-          >
-            <Upload className="w-3.5 h-3.5" />
-            Nahrát do spisu
-          </button>
-        </form>
-      </div>
+  return <section className="workspace-panel p-5 sm:p-7" aria-labelledby="lead-attachments-title">
+    <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+      <div><p className="workspace-kicker">Sdílený stavební deník</p><h2 id="lead-attachments-title" className="text-base font-semibold text-slate-950">Poznámky a soubory</h2><p className="mt-1 text-sm text-slate-500">Záznamy uložené u této zakázky vidí majitel i přiřazený zaměstnanec.</p></div>
+      <label className="workspace-primary-action inline-flex min-h-10 cursor-pointer items-center justify-center gap-2 px-4 text-sm font-semibold aria-disabled:cursor-wait aria-disabled:opacity-60" aria-disabled={busy}><Upload className="h-4 w-4" />Nahrát soubor<input type="file" className="sr-only" accept="image/jpeg,image/png,image/webp,image/heic,application/pdf" disabled={busy} onChange={uploadFile} /></label>
     </div>
-  );
+    {error && <div role="alert" className="mt-4 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-700">{error}</div>}
+    {loading && <div className="mt-5 flex items-center gap-2 text-sm text-slate-500"><LoaderCircle className="h-4 w-4 animate-spin" />Načítám uložené záznamy…</div>}
+    <form onSubmit={addNote} className="mt-6 rounded-2xl border border-slate-200 bg-slate-50 p-4">
+      <label className="text-xs font-semibold text-slate-700" htmlFor="lead-note">Nová poznámka</label>
+      <textarea id="lead-note" value={noteBody} onChange={(event) => setNoteBody(event.target.value)} maxLength={4000} rows={3} placeholder="Co se na zakázce změnilo nebo co má tým vědět?" className="mt-2 w-full resize-y rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm outline-none focus:border-blue-500" />
+      <div className="mt-2 flex items-center justify-between gap-3"><span className="text-xs text-slate-400">{noteBody.length}/4000</span><button type="submit" disabled={busy || !noteBody.trim()} className="inline-flex min-h-9 items-center gap-2 rounded-xl bg-slate-950 px-4 text-sm font-semibold text-white disabled:opacity-50"><MessageSquareText className="h-4 w-4" />Uložit poznámku</button></div>
+    </form>
+    {!loading && <div className="mt-6 grid gap-6 lg:grid-cols-2">
+      <div><h3 className="flex items-center gap-2 text-sm font-semibold text-slate-900"><MessageSquareText className="h-4 w-4 text-blue-600" />Poznámky ({notes.length})</h3><div className="mt-3 space-y-2">
+        {notes.map((note) => <article key={note.id} className="rounded-xl border border-slate-200 bg-white p-4"><p className="whitespace-pre-wrap text-sm leading-6 text-slate-700">{note.body}</p><div className="mt-3 flex items-center justify-between gap-2"><time className="text-xs text-slate-400">{formatDate(note.createdAt)}</time><button type="button" disabled={busy} onClick={() => removeNote(note)} className="rounded-lg p-2 text-slate-400 hover:bg-rose-50 hover:text-rose-600" aria-label="Smazat poznámku"><Trash2 className="h-4 w-4" /></button></div></article>)}
+        {!notes.length && <p className="rounded-xl bg-slate-50 p-5 text-center text-sm text-slate-500">Zatím bez poznámek.</p>}
+      </div></div>
+      <div><h3 className="flex items-center gap-2 text-sm font-semibold text-slate-900"><Paperclip className="h-4 w-4 text-blue-600" />Soubory ({files.length})</h3><div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
+        {files.map((file) => <article key={file.id} className="overflow-hidden rounded-xl border border-slate-200 bg-white">{file.mimeType.startsWith('image/') ? <a href={file.previewUrl} target="_blank" rel="noreferrer"><img src={file.previewUrl} alt={file.fileName} className="h-36 w-full bg-slate-100 object-cover" /></a> : <a href={file.previewUrl} target="_blank" rel="noreferrer" className="flex h-36 items-center justify-center bg-slate-50"><FileText className="h-10 w-10 text-slate-300" /></a>}<div className="flex items-start justify-between gap-2 p-3"><span className="min-w-0"><strong className="block truncate text-xs font-semibold text-slate-800">{file.fileName}</strong><small className="text-[11px] text-slate-400">{formatSize(file.sizeBytes)} · {formatDate(file.createdAt)}</small></span><button type="button" disabled={busy} onClick={() => removeFile(file)} className="rounded-lg p-2 text-slate-400 hover:bg-rose-50 hover:text-rose-600" aria-label="Smazat soubor"><Trash2 className="h-4 w-4" /></button></div></article>)}
+        {!files.length && <div className="rounded-xl bg-slate-50 p-5 text-center text-sm text-slate-500 sm:col-span-2 lg:col-span-1 xl:col-span-2"><Camera className="mx-auto mb-2 h-6 w-6 text-slate-300" />Zatím bez fotografií a dokumentů.</div>}
+      </div></div>
+    </div>}
+  </section>;
 };

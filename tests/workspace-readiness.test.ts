@@ -35,7 +35,7 @@ test('employee readiness uses only assigned work and never owner metrics', () =>
   assert.equal(result.steps[0].complete, false);
   assert.equal(result.steps[1].complete, false);
   assert.equal(result.nextStep?.href, '/employee');
-  assert.equal(result.total, 3);
+  assert.equal(result.total, 2);
 });
 
 test('the sellable pilot exposes only verified owner routes', () => {

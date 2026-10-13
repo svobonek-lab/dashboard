@@ -1,7 +1,9 @@
 import type { Employee, Lead } from '../../types';
 
 export function canEditLeadDetails(role: string | undefined): boolean {
-  return role === 'owner' || role === 'super_admin';
+  // The database mutation guard remains authoritative. Assigned employees can
+  // reach the editor, while RLS limits them to the reviewed operational fields.
+  return role === 'owner' || role === 'super_admin' || role === 'employee';
 }
 
 export async function persistBeforeApply<T>(persist: () => Promise<T>, apply: (value: T) => void): Promise<T> {

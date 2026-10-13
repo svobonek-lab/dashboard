@@ -5,14 +5,11 @@ import {
   MapPin, 
   Phone, 
   Navigation, 
-  CheckCircle2, 
   Camera, 
-  Clock, 
-  CheckSquare, 
-  ChevronRight,
-  AlertCircle
+  CalendarClock,
 } from 'lucide-react';
 import { useRouter } from '../../app/router';
+import { filterEmployeeJobs } from '../../app/leadAttachments';
 
 interface EmployeeJobsPageProps {
   leads: Lead[];
@@ -25,6 +22,10 @@ export const EmployeeJobsPage: React.FC<EmployeeJobsPageProps> = ({ leads, onSel
 
   // App supplies only jobs assigned to the authenticated employee.
   const myJobs = leads;
+  const displayedJobs = filterEmployeeJobs(myJobs, filter);
+  const dateLabel = (job: Lead) => job.preferredDate
+    ? new Intl.DateTimeFormat('cs-CZ', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(job.preferredDate))
+    : 'Termín není naplánovaný';
 
   return (
     <div className="space-y-6 text-slate-900 font-sans pb-12">
@@ -54,7 +55,7 @@ export const EmployeeJobsPage: React.FC<EmployeeJobsPageProps> = ({ leads, onSel
             filter === 'today' ? 'bg-white text-brand-primary shadow-xs border border-slate-200/80' : 'text-slate-600 hover:text-slate-900'
           }`}
         >
-          Dnešní výjezdy ({myJobs.filter((job) => job.status === 'In Progress').length})
+          Dnešní výjezdy ({filterEmployeeJobs(myJobs, 'today').length})
         </button>
         <button
           onClick={() => setFilter('upcoming')}
@@ -62,7 +63,7 @@ export const EmployeeJobsPage: React.FC<EmployeeJobsPageProps> = ({ leads, onSel
             filter === 'upcoming' ? 'bg-white text-brand-primary shadow-xs border border-slate-200/80' : 'text-slate-600 hover:text-slate-900'
           }`}
         >
-          Plánované ({myJobs.filter((job) => job.status !== 'In Progress').length})
+          Plánované ({filterEmployeeJobs(myJobs, 'upcoming').length})
         </button>
         <button
           onClick={() => setFilter('completed')}
@@ -70,13 +71,13 @@ export const EmployeeJobsPage: React.FC<EmployeeJobsPageProps> = ({ leads, onSel
             filter === 'completed' ? 'bg-white text-brand-primary shadow-xs border border-slate-200/80' : 'text-slate-600 hover:text-slate-900'
           }`}
         >
-          Předané
+          Předané ({filterEmployeeJobs(myJobs, 'completed').length})
         </button>
       </div>
 
       {/* Jobs Cards */}
       <div className="space-y-4">
-        {myJobs.map((job, idx) => (
+        {displayedJobs.map((job, idx) => (
           <div
             key={job.id}
             className="bg-white border border-slate-200/80 rounded-3xl p-5 shadow-xs space-y-4 hover:border-brand-primary-soft transition-colors"
@@ -85,7 +86,7 @@ export const EmployeeJobsPage: React.FC<EmployeeJobsPageProps> = ({ leads, onSel
             <div className="flex items-start justify-between gap-3">
               <div>
                 <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-brand-primary-soft text-brand-primary border border-brand-primary-soft">
-                  {idx === 0 ? 'Dnes 13:30 (Aktivní)' : 'Zítra 08:00'}
+                  <CalendarClock className="mr-1 inline h-3 w-3" />{dateLabel(job)}
                 </span>
                 <h3 className="text-base font-bold text-slate-900 mt-1.5">{job.title}</h3>
                 <p className="text-xs text-slate-500 flex items-center gap-1.5 mt-0.5">
@@ -115,7 +116,7 @@ export const EmployeeJobsPage: React.FC<EmployeeJobsPageProps> = ({ leads, onSel
             </div>
 
             {/* Quick Action Touch Buttons */}
-            <div className="grid grid-cols-3 gap-2 pt-1">
+            <div className="grid grid-cols-2 gap-2 pt-1">
               <a
                 href={`https://maps.google.com/?q=${encodeURIComponent(job.address + ', ' + job.city)}`}
                 target="_blank"
@@ -127,23 +128,17 @@ export const EmployeeJobsPage: React.FC<EmployeeJobsPageProps> = ({ leads, onSel
               </a>
 
               <button
-                onClick={() => navigate('/employee/photos')}
+                onClick={() => { onSelectLead(job); navigate('/employee/photos'); }}
                 className="min-h-[44px] py-2.5 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer border border-slate-200/80"
               >
                 <Camera className="w-4 h-4 text-brand-primary" />
                 <span>Vyfotit</span>
               </button>
 
-              <button
-                onClick={() => navigate('/employee/checklist')}
-                className="min-h-[44px] py-2.5 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer border border-slate-200/80"
-              >
-                <CheckSquare className="w-4 h-4 text-brand-primary" />
-                <span>Checklist</span>
-              </button>
             </div>
           </div>
         ))}
+        {!displayedJobs.length && <div className="workspace-empty-state px-6 py-12 text-center text-sm text-slate-500">V této záložce nejsou žádné přiřazené zakázky.</div>}
       </div>
 
     </div>
