@@ -33,7 +33,7 @@ Pokud vlastní SMTP není nastavené nebo Supabase odeslání odmítne, StavbaFl
 
 Databázová pozvánka StavbaFlow expiruje za 7 dní. Před zveřejněním stejného tvrzení zákazníkům ověřte ve stagingu také skutečnou životnost jednorázového odkazu Supabase Auth; bezpečnostní nastavení Auth může odkaz ukončit dříve. Pokud ji nelze sladit na 7 dní, upravte text e-mailu na kratší ověřenou dobu a nabídněte opětovné odeslání pozvánky.
 
-Po ruční kontrole aplikujte ve stagingu `supabase/staging/20261013_invite_password_gate.sql`. Funkce při přijetí pozvánky kontroluje pouze existenci hashovaného hesla v `auth.users`; heslo ani hash nevrací. Bez uloženého hesla nevytvoří členství ve firmě, i kdyby někdo obešel obrazovku aplikace.
+Po ruční kontrole aplikujte ve stagingu `supabase/staging/20261013_invite_password_gate.sql` a následný opravný kontrakt `supabase/staging/20261013_invite_password_proof.sql`. Supabase vytváří interní hash už při odeslání pozvánky, takže samotná existence hashe není důkaz nastavení hesla. Opravný kontrakt zapíše serverový příznak do `raw_app_meta_data` teprve při skutečné změně hashe a přijetí pozvánky vyžaduje právě tento příznak. Heslo ani hash se nevrací. Bez nastavení hesla se členství ve firmě nevytvoří ani při obejití obrazovky aplikace.
 
 ## 5. Ruční scénář s reálnou schránkou
 

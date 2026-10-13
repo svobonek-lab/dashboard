@@ -74,13 +74,14 @@ test('repository contains the Czech invite template and SMTP operator runbook', 
   assert.match(runbook, /SMTP není/i);
 });
 
-test('database invitation acceptance requires a real password before membership activation', () => {
+test('database invitation acceptance requires a server-owned password-change marker', () => {
   const contract = readFileSync(
-    new URL('../supabase/staging/20261013_invite_password_gate.sql', import.meta.url),
+    new URL('../supabase/staging/20261013_invite_password_proof.sql', import.meta.url),
     'utf8',
   );
-  assert.match(contract, /encrypted_password/i);
-  assert.match(contract, /from auth\.users/i);
+  assert.match(contract, /old\.encrypted_password is distinct from new\.encrypted_password/i);
+  assert.match(contract, /raw_app_meta_data[\s\S]*invite_password_set/i);
+  assert.match(contract, /create trigger app_mark_invite_password_set/i);
   assert.match(contract, /password setup required/i);
   assert.match(contract, /security definer\s+set search_path = ''/i);
   assert.match(contract, /revoke all on function app_private\.accept_invite\(uuid\)/i);
