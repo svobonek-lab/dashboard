@@ -42,10 +42,12 @@ export interface OrganizationContextType {
   currentOrg: Organization | null;
   organizations: Organization[];
   isLoading: boolean;
+  invitePasswordRequired: boolean;
   error: string | null;
   schemaError: string | null;
   clearSchemaError: () => void;
   login: (email: string, pass: string) => Promise<any>;
+  completeInvitePasswordSetup: (password: string) => Promise<any>;
   signUp: (email: string, pass: string, orgName: string) => Promise<any>;
   logout: () => Promise<void>;
   createOrganization: (name: string, primaryColor?: string) => Promise<Organization>;

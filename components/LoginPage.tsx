@@ -29,7 +29,16 @@ const ROLE_COPY: Record<UserRole, { title: string; description: string; route: s
 };
 
 export const LoginPage: React.FC<LoginPageProps> = ({ onSuccess, expectedRole }) => {
-  const { currentOrg, isConfigured, login, logout, signUp, error: contextError } = useOrganization();
+  const {
+    currentOrg,
+    isConfigured,
+    login,
+    logout,
+    signUp,
+    invitePasswordRequired,
+    completeInvitePasswordSetup,
+    error: contextError,
+  } = useOrganization();
   const branding = currentOrg?.branding || {};
   
   const [mode, setMode] = useState<'login' | 'signup' | 'recover' | 'new_password'>('login');
@@ -58,6 +67,14 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onSuccess, expectedRole })
     return () => data?.subscription.unsubscribe();
   }, []);
 
+  React.useEffect(() => {
+    if (invitePasswordRequired) {
+      setMode('new_password');
+      setError(null);
+      setSuccessMessage('Pozvánka je ověřená. Nejdříve si nastavte vlastní heslo.');
+    }
+  }, [invitePasswordRequired]);
+
   const activeCompanyName = currentOrg?.name || branding.name || 'Vaše Stavební Firma';
   const displayBrandColor = mode === 'signup' && primaryColor !== 'var(--brand-primary)' ? primaryColor : 'var(--brand-primary)';
   const displayOrgName = mode === 'signup' && orgName ? orgName : activeCompanyName;
@@ -80,12 +97,19 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onSuccess, expectedRole })
         if (!response.ok) throw new Error(result?.error || 'Odkaz pro obnovu se nepodařilo odeslat.');
         setSuccessMessage(parseRecoveryResponse(result));
       } else if (mode === 'new_password') {
-        if (!supabase) throw new Error('Obnova hesla není na tomto prostředí dostupná.');
-        const { error: updateError } = await supabase.auth.updateUser({ password: validateNewPassword(password) });
-        if (updateError) throw updateError;
-        setSuccessMessage('Heslo bylo změněno. Nyní se můžete přihlásit.');
-        setPassword('');
-        setMode('login');
+        const validatedPassword = validateNewPassword(password);
+        if (invitePasswordRequired) {
+          const activatedUser = await completeInvitePasswordSetup(validatedPassword);
+          setPassword('');
+          onSuccess(activatedUser);
+        } else {
+          if (!supabase) throw new Error('Obnova hesla není na tomto prostředí dostupná.');
+          const { error: updateError } = await supabase.auth.updateUser({ password: validatedPassword });
+          if (updateError) throw updateError;
+          setSuccessMessage('Heslo bylo změněno. Nyní se můžete přihlásit.');
+          setPassword('');
+          setMode('login');
+        }
       } else if (mode === 'login') {
         const user = await login(email, password);
         if (expectedRole && user?.role !== expectedRole) {
@@ -144,7 +168,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onSuccess, expectedRole })
                     ? 'Vytvořit firemní workspace'
                     : mode === 'recover'
                       ? 'Obnovit heslo'
-                      : 'Nastavit nové heslo'}
+                      : invitePasswordRequired ? 'Nastavte si heslo' : 'Nastavit nové heslo'}
               </h2>
               <p className="text-sm text-muted font-medium mt-2">
                 {mode === 'login' 
@@ -153,18 +177,20 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onSuccess, expectedRole })
                     ? 'Vytvořte si vlastní oddělený prostor (tenant) na platformě.'
                     : mode === 'recover'
                       ? 'Pošleme vám jednorázový odkaz na ověřený e-mail účtu.'
-                      : 'Nové heslo se uloží pouze do vašeho ověřeného účtu.'}
+                      : invitePasswordRequired
+                        ? 'Bez vlastního hesla se pozvánka neaktivuje a dashboard zůstane uzamčený.'
+                        : 'Nové heslo se uloží pouze do vašeho ověřeného účtu.'}
               </p>
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-5">
-              {inviteToken && (
+              {(inviteToken || invitePasswordRequired) && (
                 <div className="p-4 bg-amber-50 border border-amber-200 text-amber-800 rounded-app text-xs font-semibold leading-relaxed space-y-1">
                   <p className="flex items-center gap-1.5 font-bold text-amber-900">
-                    <CheckCircle2 className="w-4 h-4 text-amber-600" /> Pozvánka pro zaměstnance
+                    <CheckCircle2 className="w-4 h-4 text-amber-600" /> Pozvánka do StavbaFlow
                   </p>
                   <p className="text-amber-700">
-                    Byli jste pozváni do týmu <strong>{displayOrgName}</strong>. Přihlaste se svými údaji pro dokončení aktivace účtu.
+                    Byli jste pozváni do týmu <strong>{displayOrgName}</strong>. Nastavte si vlastní heslo pro dokončení aktivace účtu.
                   </p>
                 </div>
               )}
@@ -176,7 +202,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onSuccess, expectedRole })
               )}
               {successMessage && (
                 <div className="p-4 bg-green-50 border border-green-200 text-green-700 rounded-app text-xs font-bold leading-relaxed space-y-1">
-                  <p className="flex items-center gap-1.5"><CheckCircle2 className="w-4 h-4" /> Registrace úspěšná</p>
+                  <p className="flex items-center gap-1.5"><CheckCircle2 className="w-4 h-4" /> Ověřený krok</p>
                   <p className="text-green-600 font-medium">{successMessage}</p>
                 </div>
               )}
@@ -279,7 +305,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onSuccess, expectedRole })
                   <span className="inline-block w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
                 ) : (
                   <>
-                    <span>{mode === 'login' ? 'Pokračovat do workspace' : mode === 'signup' ? 'Vytvořit firmu & Spustit' : mode === 'recover' ? 'Odeslat bezpečný odkaz' : 'Uložit nové heslo'}</span>
+                    <span>{mode === 'login' ? 'Pokračovat do workspace' : mode === 'signup' ? 'Vytvořit firmu & Spustit' : mode === 'recover' ? 'Odeslat bezpečný odkaz' : invitePasswordRequired ? 'Nastavit heslo a pokračovat' : 'Uložit nové heslo'}</span>
                     <ArrowRight className="w-4 h-4" />
                   </>
                 )}
@@ -311,6 +337,8 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onSuccess, expectedRole })
                     Přihlásit se
                   </button>
                 </>
+              ) : mode === 'new_password' && invitePasswordRequired ? (
+                <span className="text-xs leading-5">Po nastavení hesla vás automaticky otevřeme ve správném dashboardu.</span>
               ) : (
                 <button
                   type="button"

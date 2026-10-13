@@ -62,6 +62,16 @@ export default async function inviteEmployeeHandler(req: any, res: any) {
     res.status(403).json({ error: 'Pozvánku může odeslat pouze aktivní majitel firmy.' });
     return;
   }
+  const { data: company, error: companyError } = await serviceClient
+    .from('app_companies')
+    .select('name')
+    .eq('id', companyId)
+    .eq('active', true)
+    .maybeSingle();
+  if (companyError || !company?.name) {
+    res.status(404).json({ error: 'Aktivní firma pro pozvánku nebyla nalezena.' });
+    return;
+  }
   const { data: inviteId, error: inviteError } = await authClient.rpc('app_create_invite', {
     p_company_id: companyId,
     p_email: email,
@@ -72,12 +82,15 @@ export default async function inviteEmployeeHandler(req: any, res: any) {
     return;
   }
   const { error: authInviteError } = await serviceClient.auth.admin.inviteUserByEmail(email, {
-    data: { company_id: companyId, invite_id: inviteId },
+    data: { company_id: companyId, invite_id: inviteId, role: 'employee', name: name || email, company_name: company.name },
     redirectTo,
   });
   if (authInviteError) {
     await serviceClient.from('app_invites').delete().eq('id', inviteId).eq('company_id', companyId).is('accepted_at', null);
-    res.status(502).json({ error: 'Pozvánku se nepodařilo odeslat.', code: 'APP_INVITE_SEND_FAILED' });
+    res.status(502).json({
+      error: 'E-mailovou pozvánku nelze odeslat. Ověřte vlastní SMTP v Supabase a zkuste to znovu.',
+      code: 'APP_INVITE_DELIVERY_UNAVAILABLE',
+    });
     return;
   }
   res.status(200).json({ invited: true, inviteId, expiresInDays: 7 });

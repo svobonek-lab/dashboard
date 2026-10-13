@@ -130,7 +130,13 @@ export async function createPlatformCompanyOnboarding(
 
   const invitation = await service.auth.admin.inviteUserByEmail(value.ownerEmail, {
     redirectTo: inviteRedirect(appUrl),
-    data: { company_id: companyId, invite_id: inviteId, role: 'owner', name: value.ownerName },
+    data: {
+      company_id: companyId,
+      invite_id: inviteId,
+      role: 'owner',
+      name: value.ownerName,
+      company_name: value.name,
+    },
   });
   if (invitation.error || !invitation.data.user?.id) {
     const orphanUserId = invitation.data.user?.id || (await findAuthUser(service, value.ownerEmail).catch(() => null))?.id;
@@ -141,7 +147,7 @@ export async function createPlatformCompanyOnboarding(
     }
     await compensateFailedOnboarding(service, actorUserId, companyId, inviteId);
     if (authCleanupFailed) throw new PlatformHttpError('COMPANY_INVITE_CLEANUP_FAILED', 503);
-    throw new PlatformHttpError('COMPANY_INVITE_SEND_FAILED', 502);
+    throw new PlatformHttpError('COMPANY_INVITE_DELIVERY_UNAVAILABLE', 502);
   }
   return { companyId, inviteId, slug: String(row?.slug || value.slug), invitationStatus: 'sent' };
 }
@@ -179,6 +185,12 @@ export async function resendPlatformOwnerInvite(
   const ownerEmail = String(row?.owner_email || '').toLowerCase();
   const ownerName = String(row?.owner_name || '');
   if (!inviteId || !EMAIL_PATTERN.test(ownerEmail)) throw new PlatformHttpError('COMPANY_INVITE_RESEND_FAILED', 502);
+  const { data: company, error: companyError } = await service
+    .from('app_companies')
+    .select('name')
+    .eq('id', companyId)
+    .maybeSingle();
+  if (companyError || !company?.name) throw new PlatformHttpError('COMPANY_INVITE_RESEND_FAILED', 502);
   const previousAuthUser = await findAuthUser(service, ownerEmail);
   if (previousAuthUser) {
     const metadata = previousAuthUser.user_metadata || {};
@@ -200,7 +212,7 @@ export async function resendPlatformOwnerInvite(
   }
   const invitation = await service.auth.admin.inviteUserByEmail(ownerEmail, {
     redirectTo: inviteRedirect(appUrl),
-    data: { company_id: companyId, invite_id: inviteId, role: 'owner', name: ownerName },
+    data: { company_id: companyId, invite_id: inviteId, role: 'owner', name: ownerName, company_name: String(company.name) },
   });
   if (invitation.error || !invitation.data.user?.id) {
     let authCleanupFailed = false;
@@ -212,7 +224,7 @@ export async function resendPlatformOwnerInvite(
       p_actor_user_id: actorUserId, p_company_id: companyId, p_invite_id: inviteId,
     });
     if (authCleanupFailed) throw new PlatformHttpError('COMPANY_INVITE_CLEANUP_FAILED', 503);
-    throw new PlatformHttpError('COMPANY_INVITE_SEND_FAILED', 502);
+    throw new PlatformHttpError('COMPANY_INVITE_DELIVERY_UNAVAILABLE', 502);
   }
   return { invitationStatus: 'sent' };
 }

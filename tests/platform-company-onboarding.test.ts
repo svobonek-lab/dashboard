@@ -81,7 +81,7 @@ test('failed Auth delivery compensates company and invite state', async () => {
   } as any;
   await assert.rejects(
     createPlatformCompanyOnboarding(service, 'admin-a', validInput, 'https://app.example.cz'),
-    /COMPANY_INVITE_SEND_FAILED/,
+    /COMPANY_INVITE_DELIVERY_UNAVAILABLE/,
   );
   assert.equal(calls[1].name, 'app_platform_cancel_company_onboarding');
   assert.equal(calls[1].args.p_company_id, 'company-a');
