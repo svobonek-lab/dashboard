@@ -19,6 +19,9 @@ test('lead notes and files are append-only, tenant-scoped and bounded', () => {
   assert.match(contract, /grant select, insert, delete on public\.app_lead_notes, public\.app_lead_files to authenticated/i);
   assert.doesNotMatch(contract, /grant[^;]*update[^;]*app_lead_(?:notes|files)/i);
   assert.match(contract, /author_id = auth\.uid\(\)/i);
+  assert.match(contract, /create or replace function app_private\.stamp_lead_attachment\(\)/i);
+  assert.match(contract, /new\.author_id := auth\.uid\(\)/i);
+  assert.match(contract, /new\.created_at := clock_timestamp\(\)/i);
   assert.match(contract, /created_at >= clock_timestamp\(\) - interval '15 minutes'/i);
   assert.match(contract, /app_private\.app_role\(company_id\) = 'owner'/i);
   assert.match(contract, /app_private\.app_can_lead\(company_id, lead_id\)/i);

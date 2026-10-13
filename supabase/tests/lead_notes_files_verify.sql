@@ -5,25 +5,27 @@ begin;
 set local role authenticated;
 select set_config('request.jwt.claim.sub', '12000000-0000-4000-8000-000000000001', true);
 
-insert into public.app_lead_notes (id, company_id, lead_id, author_id, body) values (
+insert into public.app_lead_notes (id, company_id, lead_id, author_id, body, created_at) values (
   'a1000000-0000-4000-8000-000000000001',
   '10000000-0000-4000-8000-000000000001',
   'a0000000-0000-4000-8000-000000000001',
-  '12000000-0000-4000-8000-000000000001',
-  'Poznámka ze stavby'
+  '11000000-0000-4000-8000-000000000001',
+  'Poznámka ze stavby',
+  clock_timestamp() - interval '1 day'
 );
 
 insert into public.app_lead_files (
-  id, company_id, lead_id, author_id, storage_path, file_name, mime_type, size_bytes
+  id, company_id, lead_id, author_id, storage_path, file_name, mime_type, size_bytes, created_at
 ) values (
   'a2000000-0000-4000-8000-000000000001',
   '10000000-0000-4000-8000-000000000001',
   'a0000000-0000-4000-8000-000000000001',
-  '12000000-0000-4000-8000-000000000001',
+  '11000000-0000-4000-8000-000000000001',
   '10000000-0000-4000-8000-000000000001/a0000000-0000-4000-8000-000000000001/a3000000-0000-4000-8000-000000000001-photo.jpg',
   'photo.jpg',
   'image/jpeg',
-  1024
+  1024,
+  clock_timestamp() - interval '1 day'
 );
 
 insert into storage.objects (id, bucket_id, name, owner_id, metadata) values (
@@ -42,6 +44,14 @@ begin
   if v_count <> 1 then raise exception 'FAIL: employee A cannot read own assigned note'; end if;
   select count(*) into v_count from public.app_lead_files;
   if v_count <> 1 then raise exception 'FAIL: employee A cannot read own assigned file'; end if;
+  select count(*) into v_count
+  from public.app_lead_notes
+  where author_id = auth.uid() and created_at >= clock_timestamp() - interval '1 minute';
+  if v_count <> 1 then raise exception 'FAIL: note author/time was not server stamped'; end if;
+  select count(*) into v_count
+  from public.app_lead_files
+  where author_id = auth.uid() and created_at >= clock_timestamp() - interval '1 minute';
+  if v_count <> 1 then raise exception 'FAIL: file author/time was not server stamped'; end if;
   select count(*) into v_count from storage.objects where bucket_id = 'lead-files';
   if v_count <> 1 then raise exception 'FAIL: employee A cannot read own assigned object'; end if;
   select count(*) into v_count

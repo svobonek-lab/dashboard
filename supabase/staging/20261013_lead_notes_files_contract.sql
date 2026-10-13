@@ -127,6 +127,38 @@ using (
   )
 );
 
+-- Browser callers cannot choose an author or backdate a record to influence
+-- the employee deletion window. Privileged server-side maintenance keeps the
+-- ability to restore an explicit historical timestamp.
+create or replace function app_private.stamp_lead_attachment()
+returns trigger
+language plpgsql
+security invoker
+set search_path = ''
+as $$
+begin
+  if current_user = 'authenticated' then
+    if auth.uid() is null then
+      raise exception 'authenticated user required' using errcode = '42501';
+    end if;
+    new.author_id := auth.uid();
+    new.created_at := clock_timestamp();
+  end if;
+  return new;
+end;
+$$;
+revoke all on function app_private.stamp_lead_attachment() from public, anon, authenticated;
+
+drop trigger if exists app_lead_notes_stamp_author on public.app_lead_notes;
+create trigger app_lead_notes_stamp_author
+before insert on public.app_lead_notes
+for each row execute function app_private.stamp_lead_attachment();
+
+drop trigger if exists app_lead_files_stamp_author on public.app_lead_files;
+create trigger app_lead_files_stamp_author
+before insert on public.app_lead_files
+for each row execute function app_private.stamp_lead_attachment();
+
 -- One reviewed source of truth for fields an assigned employee may edit.
 -- `description` stores site/contact notes until a dedicated domain field is
 -- introduced; identity, assignment, commercial and server fields stay locked.
