@@ -98,3 +98,36 @@ jobs:
       - name: Stop disposable PostgreSQL
         if: always()
         run: docker rm --force platform-support-postgres
+
+  lead-notes-files-contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - name: Start disposable PostgreSQL
+        run: >-
+          docker run --detach --name lead-notes-files-postgres
+          --env POSTGRES_PASSWORD=postgres
+          --health-cmd="pg_isready -U postgres"
+          --health-interval=2s --health-timeout=2s --health-retries=30
+          postgres:17-alpine
+      - name: Wait for PostgreSQL
+        run: |
+          for attempt in {1..30}; do
+            if [ "$(docker inspect --format='{{.State.Health.Status}}' lead-notes-files-postgres)" = "healthy" ]; then
+              exit 0
+            fi
+            sleep 2
+          done
+          docker logs lead-notes-files-postgres
+          exit 1
+      - name: Apply and verify the lead notes and files contract
+        run: |
+          docker exec -i lead-notes-files-postgres psql -v ON_ERROR_STOP=1 -U postgres < supabase/tests/lead_notes_files_setup.sql
+          docker exec -i lead-notes-files-postgres psql -v ON_ERROR_STOP=1 -U postgres < supabase/staging/20261013_lead_notes_files_contract.sql
+          docker exec -i lead-notes-files-postgres psql -v ON_ERROR_STOP=1 -U postgres < supabase/tests/lead_notes_files_verify.sql
+      - name: Stop disposable PostgreSQL
+        if: always()
+        run: docker rm --force lead-notes-files-postgres
