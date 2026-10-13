@@ -90,6 +90,8 @@ create table storage.objects (
   unique (bucket_id, name)
 );
 
+grant usage on schema storage to authenticated;
+
 create or replace function app_private.app_role(p_company_id uuid)
 returns text
 language sql
