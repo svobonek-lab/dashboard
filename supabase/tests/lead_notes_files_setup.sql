@@ -145,9 +145,14 @@ alter table storage.objects enable row level security;
 
 revoke all on public.app_companies, public.app_members, public.app_leads, public.app_lead_events from public, anon, authenticated;
 revoke all on storage.objects from public, anon, authenticated;
+grant select on public.app_companies to authenticated;
 grant select, update on public.app_leads to authenticated;
 grant select on public.app_lead_events to authenticated;
 grant select, insert, delete on storage.objects to authenticated;
+
+create policy app_companies_select_member on public.app_companies
+for select to authenticated
+using (app_private.app_role(id) is not null);
 
 create policy app_leads_select_scoped on public.app_leads
 for select to authenticated
