@@ -1,176 +1,65 @@
-import React, { useState } from 'react';
-import { Camera, UploadCloud, CheckCircle2, Trash2, Building } from 'lucide-react';
-import { Lead, LeadFile } from '@/types';
+import React, { useCallback, useEffect, useState } from 'react';
+import { Building, Camera, CheckCircle2, LoaderCircle, Trash2, UploadCloud } from 'lucide-react';
+import type { Lead } from '@/types';
+import type { LeadStoredFile } from '@/lib/data/types';
+import { crmRepo } from '@/lib/data/repositoryFactory';
+import { resizeImageForUpload } from '@/src/app/leadAttachments';
 
-interface EmployeePhotosPageProps {
-  leads: Lead[];
-  onUpdateLead: (lead: Lead) => void;
-}
+interface EmployeePhotosPageProps { leads: Lead[]; }
 
-export const EmployeePhotosPage: React.FC<EmployeePhotosPageProps> = ({
-  leads = [],
-  onUpdateLead
-}) => {
-  const [category, setCategory] = useState<'All' | 'Before' | 'During' | 'After'>('All');
-  const [uploadSuccess, setUploadSuccess] = useState(false);
-  const [activeLeadId, setActiveLeadId] = useState<string>(leads[0]?.id || '');
+export const EmployeePhotosPage: React.FC<EmployeePhotosPageProps> = ({ leads = [] }) => {
+  const [files, setFiles] = useState<LeadStoredFile[]>([]);
+  const [activeLeadId, setActiveLeadId] = useState(leads[0]?.id || '');
+  const [loading, setLoading] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [success, setSuccess] = useState('');
+  const [error, setError] = useState('');
+  const activeLead = leads.find((lead) => lead.id === activeLeadId) || leads[0];
 
-  const activeLead = leads.find(l => l.id === activeLeadId) || leads[0];
+  useEffect(() => {
+    if (!activeLeadId && leads[0]?.id) setActiveLeadId(leads[0].id);
+  }, [activeLeadId, leads]);
 
-  const photosToDisplay = activeLead?.photos || [];
+  const loadFiles = useCallback(async () => {
+    if (!activeLead?.organization_id) { setFiles([]); return; }
+    setLoading(true); setError('');
+    try { setFiles(await crmRepo.getLeadFiles(activeLead.organization_id, activeLead.id)); }
+    catch (loadError) { setFiles([]); setError(loadError instanceof Error ? loadError.message : 'Fotky se nepodařilo načíst.'); }
+    finally { setLoading(false); }
+  }, [activeLead?.id, activeLead?.organization_id]);
 
-  const filteredPhotos = photosToDisplay.filter(p => {
-    if (category === 'All') return true;
-    return p.category === category;
-  });
+  useEffect(() => { void loadFiles(); }, [loadFiles]);
 
-  const handleUploadPhoto = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files.length > 0 && activeLead) {
-      const file = e.target.files[0];
-      const reader = new FileReader();
-      reader.onload = (evt) => {
-        if (evt.target?.result && onUpdateLead) {
-          const base64Url = evt.target.result as string;
-          const newPhoto: LeadFile = {
-            id: 'photo-' + Date.now(),
-            name: file.name.split('.')[0] || 'Fotka ze stavby',
-            type: 'photo',
-            url: base64Url,
-            uploadedAt: new Date().toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit' }),
-            category: category === 'All' ? 'During' : category
-          };
-          
-          const currentPhotos = activeLead.photos || [];
-          const updatedLead = {
-            ...activeLead,
-            photos: [newPhoto, ...currentPhotos]
-          };
-          onUpdateLead(updatedLead);
-          setUploadSuccess(true);
-          setTimeout(() => setUploadSuccess(false), 3000);
-        }
-      };
-      reader.readAsDataURL(file);
-    }
+  const handleUploadPhoto = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const selected = event.target.files?.[0]; event.target.value = '';
+    if (!selected || !activeLead?.organization_id) return;
+    setUploading(true); setError(''); setSuccess('');
+    try {
+      const resized = await resizeImageForUpload(selected, 1600);
+      await crmRepo.uploadLeadFile(activeLead.organization_id, activeLead.id, resized);
+      await loadFiles();
+      setSuccess('Fotografie byla zmenšena a uložena u zakázky.');
+    } catch (uploadError) { setError(uploadError instanceof Error ? uploadError.message : 'Fotografii se nepodařilo uložit.'); }
+    finally { setUploading(false); }
   };
 
-  const handleDeletePhoto = (photoId: string) => {
-    if (activeLead && onUpdateLead) {
-      const currentPhotos = activeLead.photos || [];
-      const updatedLead = {
-        ...activeLead,
-        photos: currentPhotos.filter(p => p.id !== photoId)
-      };
-      onUpdateLead(updatedLead);
-    }
+  const deletePhoto = async (file: LeadStoredFile) => {
+    if (!activeLead?.organization_id) return;
+    setUploading(true); setError(''); setSuccess('');
+    try { await crmRepo.deleteLeadFile(activeLead.organization_id, file); await loadFiles(); }
+    catch (deleteError) { setError(deleteError instanceof Error ? deleteError.message : 'Fotografii se nepodařilo smazat.'); }
+    finally { setUploading(false); }
   };
 
-  return (
-    <div className="space-y-6 text-slate-900 font-sans pb-12">
-      
-      {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-xl font-bold text-slate-900 tracking-tight flex items-center gap-2">
-            <Camera className="w-5 h-5 text-brand-primary" />
-            Fotodokumentace ze stavby
-          </h1>
-          <p className="text-xs text-slate-500 mt-0.5">
-            Okamžitá synchronizace fotografií na dispečink pro investora a předávací protokol.
-          </p>
-        </div>
-
-        {/* Lead Selector for Technicians */}
-        {leads.length > 0 && (
-          <div className="flex items-center gap-2 bg-slate-100 p-1.5 rounded-2xl border border-slate-200">
-            <Building className="w-4 h-4 text-slate-500 ml-1.5" />
-            <select
-              value={activeLeadId}
-              onChange={(e) => setActiveLeadId(e.target.value)}
-              className="bg-transparent text-xs font-bold text-slate-700 outline-none pr-2 cursor-pointer"
-            >
-              {leads.map(l => (
-                <option key={l.id} value={l.id}>
-                  {l.customerName || l.title} ({l.city})
-                </option>
-              ))}
-            </select>
-          </div>
-        )}
-
-        <label className="cursor-pointer min-h-[44px] px-4 py-2.5 rounded-2xl bg-brand-primary hover:bg-brand-primary text-white font-bold text-xs transition-all shadow-xs flex items-center justify-center gap-2">
-          <UploadCloud className="w-4 h-4" />
-          <span>Vyfotit / Nahrát fotku</span>
-          <input type="file" accept="image/*" capture="environment" className="hidden" onChange={handleUploadPhoto} />
-        </label>
-      </div>
-
-      {/* Success Banner */}
-      {uploadSuccess && (
-        <div className="p-3.5 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-900 text-xs font-bold flex items-center gap-2">
-          <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-          <span>Fotografie byla úspěšně nahrána a uložena v systému!</span>
-        </div>
-      )}
-
-      {/* Filter Tabs */}
-      <div className="flex items-center gap-2 bg-slate-100 p-1.5 rounded-2xl border border-slate-200/60 overflow-x-auto">
-        {(['All', 'Before', 'During', 'After'] as const).map((cat) => (
-          <button
-            key={cat}
-            onClick={() => setCategory(cat)}
-            className={`flex-1 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${
-              category === cat ? 'bg-white text-brand-primary shadow-xs border border-slate-200/80' : 'text-slate-600 hover:text-slate-900'
-            }`}
-          >
-            {cat === 'All' ? 'Všechny fotky' : cat === 'Before' ? 'Před zahájením' : cat === 'During' ? 'Průběh montáže' : 'Hotové dílo'}
-          </button>
-        ))}
-      </div>
-
-      {/* Photo Gallery Grid */}
-      {filteredPhotos.length > 0 ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          {filteredPhotos.map((photo) => (
-            <div
-              key={photo.id}
-              className="bg-white border border-slate-200/80 rounded-3xl overflow-hidden shadow-xs group space-y-3 p-3 relative"
-            >
-              <div className="relative h-48 rounded-2xl overflow-hidden bg-slate-100">
-                <img src={photo.url} alt={photo.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
-                <span className={`absolute top-2.5 left-2.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold border shadow-xs ${
-                  photo.category === 'Before' ? 'bg-brand-primary-soft border-brand-primary-soft text-brand-primary' :
-                  photo.category === 'During' ? 'bg-amber-50 border-amber-200 text-amber-700' : 'bg-emerald-50 border-emerald-200 text-emerald-700'
-                }`}>
-                  {photo.category === 'Before' ? 'Před montáží' : photo.category === 'During' ? 'V průběhu' : 'Hotové dílo'}
-                </span>
-                
-                {/* Delete Button */}
-                <button
-                  onClick={() => handleDeletePhoto(photo.id)}
-                  title="Odstranit fotku"
-                  className="absolute top-2.5 right-2.5 p-1.5 rounded-xl bg-white/95 text-rose-600 hover:bg-rose-50 hover:text-rose-700 border border-slate-200/50 shadow-md cursor-pointer transition-transform hover:scale-110"
-                >
-                  <Trash2 className="w-3.5 h-3.5" />
-                </button>
-              </div>
-
-              <div className="px-2 flex justify-between items-start gap-2">
-                <div className="flex-1 min-w-0">
-                  <h4 className="text-xs font-bold text-slate-900 truncate">{photo.name}</h4>
-                  <p className="text-[10px] text-slate-500 mt-0.5">Nahráno: {photo.uploadedAt}</p>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      ) : (
-        <div className="p-12 text-center bg-slate-50 border border-dashed border-slate-200 rounded-3xl">
-          <Camera className="w-8 h-8 text-slate-300 mx-auto mb-2" />
-          <p className="text-xs font-bold text-slate-400">Žádné fotky v této kategorii</p>
-        </div>
-      )}
-
-    </div>
-  );
+  const photos = files.filter((file) => file.mimeType.startsWith('image/'));
+  return <div className="workspace-page pb-12">
+    <header className="workspace-page-header">
+      <div><p className="workspace-kicker">Terénní dokumentace</p><h1 className="workspace-title">Fotky ze stavby</h1><p className="workspace-subtitle">Fotky se ukládají do soukromého prostoru firmy a majitel je ihned uvidí u zakázky.</p></div>
+      <label className="workspace-primary-action inline-flex min-h-11 cursor-pointer items-center justify-center gap-2 px-4 text-sm font-semibold"><UploadCloud className="h-4 w-4" />{uploading ? 'Nahrávám…' : 'Vyfotit / nahrát'}<input type="file" accept="image/jpeg,image/png,image/webp,image/heic" capture="environment" className="sr-only" disabled={uploading || !activeLead} onChange={handleUploadPhoto} /></label>
+    </header>
+    {leads.length > 0 && <label className="workspace-panel flex items-center gap-3 p-4 text-sm font-semibold text-slate-700"><Building className="h-4 w-4 text-blue-600" /><span className="sr-only">Zakázka</span><select value={activeLead?.id || ''} onChange={(event) => setActiveLeadId(event.target.value)} className="min-w-0 flex-1 bg-transparent outline-none">{leads.map((lead) => <option key={lead.id} value={lead.id}>{lead.title || lead.customerName}</option>)}</select></label>}
+    {success && <div role="status" className="flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-800"><CheckCircle2 className="h-4 w-4" />{success}</div>}
+    {error && <div role="alert" className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-700">{error}</div>}
+    {loading ? <div className="flex items-center justify-center gap-2 py-12 text-sm text-slate-500"><LoaderCircle className="h-5 w-5 animate-spin" />Načítám fotky…</div> : photos.length ? <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3" aria-label="Uložené fotografie">{photos.map((photo) => <article key={photo.id} className="workspace-panel overflow-hidden"><a href={photo.previewUrl} target="_blank" rel="noreferrer"><img src={photo.previewUrl} alt={photo.fileName} className="h-52 w-full bg-slate-100 object-cover" /></a><div className="flex items-center justify-between gap-3 p-4"><span className="min-w-0"><strong className="block truncate text-sm text-slate-900">{photo.fileName}</strong><small className="text-xs text-slate-400">{new Intl.DateTimeFormat('cs-CZ', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(photo.createdAt))}</small></span><button type="button" disabled={uploading} onClick={() => deletePhoto(photo)} aria-label="Smazat fotografii" className="rounded-xl p-2 text-slate-400 hover:bg-rose-50 hover:text-rose-600"><Trash2 className="h-4 w-4" /></button></div></article>)}</section> : <div className="workspace-empty-state px-6 py-14 text-center"><Camera className="mx-auto h-8 w-8 text-slate-300" /><h2 className="mt-3 text-base font-semibold text-slate-950">U této zakázky zatím nejsou fotky</h2><p className="mt-1 text-sm text-slate-500">První nahraná fotografie se zde zobrazí až po potvrzeném uložení.</p></div>}
+  </div>;
 };

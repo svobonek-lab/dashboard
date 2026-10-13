@@ -92,14 +92,6 @@ export function buildWorkspaceReadiness(input: ReadinessInput): WorkspaceReadine
       complete: employeeHasWork,
       requiredFor: ['employee'],
     },
-    {
-      id: 'checklist',
-      label: 'Stavební checklist',
-      description: 'Dokumentujte postup, fotografie a materiál přímo z terénu.',
-      href: '/employee/checklist',
-      complete: false,
-      requiredFor: ['employee'],
-    },
   ];
 
   const steps = role === 'employee' ? employeeSteps : ownerSteps;
