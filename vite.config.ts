@@ -3,7 +3,6 @@ import react from '@vitejs/plugin-react';
 import path from 'path';
 import { defineConfig, Plugin } from 'vite';
 import analyzeWebsiteHandler from './api/analyze-website';
-import testSqlHandler from './api/test-sql';
 import inviteEmployeeHandler from './api/invite-employee';
 import resetEmployeePasswordHandler from './api/reset-employee-password';
 import outboxSchedulerHandler from './api/outbox-scheduler';
@@ -68,11 +67,6 @@ function apiMiddlewarePlugin(): Plugin {
             }
           });
         };
-
-        if (req.url === '/api/test-sql' && req.method === 'POST') {
-          handleRoute(testSqlHandler);
-          return;
-        }
 
         if (req.url === '/api/analyze-website' && req.method === 'POST') {
           handleRoute(analyzeWebsiteHandler);

@@ -65,13 +65,11 @@ The repository upserts `app_leads` (`lib/data/SupabaseRepository.ts:167-201`), a
 
 **Required fix:** create a public, rate-limited intake endpoint/RPC that accepts a non-secret tenant key, resolves the company server-side, validates and normalizes fields, records consent/source/provenance, writes to `app_leads` through a reviewed policy, and emits an outbox/notification event. Test a real submission end to end.
 
-### 6. The “SQL connection” is a simulation
+### 6. The former simulated SQL endpoint was removed
 
-`api/test-sql.ts` accepts connection-shaped fields but returns hard-coded table and sample-row data (`api/test-sql.ts:13-67,104-196`). The `passwordEncrypted` value is accepted but not used. `lib/integrations/sqlConnector.ts` describes a simulated handshake.
+The hard-coded `api/test-sql.ts` endpoint and the duplicate browser-side Synology repository were removed on 2026-10-14. SQL connectivity is now represented only by the server-side `connector/` package and fail-closed pilot import contracts.
 
-**Impact:** this is a sales and trust risk. A firm may believe its current database is connected when no connection was made.
-
-**Required fix:** either remove the feature from the sales build or implement a server-side, read-only connector with explicit customer consent, encrypted secret storage, network allow-listing, query timeouts, schema/table mapping, tenant isolation, redacted previews, audit trails, and deletion/rotation. The UI must label dry-run, sample, and live states distinctly.
+**Remaining gate:** do not sell a connector as live until its server-side read-only deployment, secret handling, network access, mapping, audit trail, and tenant isolation pass connector acceptance tests.
 
 ### 7. Role boundaries are incomplete beyond the login screen
 

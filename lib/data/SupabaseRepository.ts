@@ -1,6 +1,6 @@
 import { ICRMRepository, LeadNote, LeadStoredFile, RepositoryHealthStatus } from './types';
 import { Lead, Employee, CompanyBranding } from '../../types';
-import { supabase, isSupabaseConfigured, isValidUUID, LocalSupabaseMock } from '../supabase';
+import { supabase, isSupabaseConfigured, isValidUUID } from '../supabase';
 import { AppInviteRow, AppLeadRow, AppMemberRow, toAppLead, toAppMember, toPendingInvite } from '../../src/app/productionSchema';
 import { APP_SCHEMA_WRITES_BLOCKED_MESSAGE } from '../../src/app/productionDataPolicy';
 import { canWritePilot, toLeadPatch } from '../../src/app/pilotWrites';
@@ -19,11 +19,11 @@ export class SupabaseRepository implements ICRMRepository {
   async getHealthStatus(): Promise<RepositoryHealthStatus> {
     if (!isSupabaseConfigured || !supabase) {
       return {
-        ok: true,
+        ok: false,
         latencyMs: 0,
-        mode: 'local',
-        endpoint: 'Client-side Local Mock Engine',
-        message: 'Běží v offline / lokálním režimu (Supabase klíč nenastaven)',
+        mode: 'cloud',
+        endpoint: 'Supabase Cloud',
+        message: 'Supabase připojení není nakonfigurované.',
         lastChecked: new Date().toLocaleTimeString('cs-CZ'),
       };
     }
@@ -68,39 +68,7 @@ export class SupabaseRepository implements ICRMRepository {
 
   async getLeads(orgId: string): Promise<Lead[]> {
     if (!isSupabaseConfigured || !supabase || !isValidUUID(orgId)) {
-      const raw = LocalSupabaseMock.getLeads();
-      return raw.map((r: any) => ({
-        id: r.id,
-        source: r.source,
-        title: `${r.project_type || 'Zakázka'} — ${r.customer_name || 'Neznámý'}`,
-        description: r.description || `Poptávka na ${r.project_type || 'služby'}`,
-        city: r.city || 'Praha',
-        address: r.address || 'Praha a okolí',
-        customerName: r.customer_name || '',
-        customerPhone: r.phone || '',
-        customerEmail: r.email || '',
-        preferredDate: 'Dle dohody',
-        price: r.budget || r.price || 0,
-        status: (r.status as any) || 'New',
-        priority: 'Medium',
-        assignedEmployeeId: 'emp-1',
-        assignedEmployeeName: 'Petr Novotný',
-        thumbnail: 'https://images.unsplash.com/photo-1513694203232-719a280e022f?auto=format&fit=crop&w=400&q=80',
-        photos: [],
-        files: [],
-        checklist: [],
-        aiSummary: {
-          jobType: r.project_type || 'Realizace',
-          complexity: 'Medium',
-          estimatedRange: (r.budget || r.price) ? `${((r.budget || r.price) * 0.9 / 1000).toFixed(0)}k - ${((r.budget || r.price) * 1.15 / 1000).toFixed(0)}k CZK` : 'Cena není uvedena',
-          assignedEmployee: 'Petr Novotný',
-          risks: [],
-          recommendedNextStep: 'Zkontaktovat klienta a upřesnit zaměření.'
-        },
-        timeline: [],
-        aiChat: [],
-        history: []
-      }));
+      throw new Error('Supabase připojení nebo identifikátor firmy není platný.');
     }
 
     try {
@@ -150,29 +118,22 @@ export class SupabaseRepository implements ICRMRepository {
         source: r.source,
         title: r.title || `${r.project_type || 'Zakázka'} — ${r.customer_name || 'Klient'}`,
         description: r.description || '',
-        city: r.city || 'Praha',
+        city: r.city || '',
         address: r.address || '',
         customerName: r.customer_name || '',
         customerPhone: r.phone || '',
         customerEmail: r.email || '',
-        preferredDate: r.preferred_date || 'Dle dohody',
+        preferredDate: r.preferred_date || '',
         price: r.budget || r.price || 0,
         status: r.status || 'New',
         priority: r.priority || 'Medium',
-        assignedEmployeeId: r.assigned_employee_id || 'emp-1',
-        assignedEmployeeName: r.assigned_employee_name || 'Petr Novotný',
-        thumbnail: r.thumbnail || 'https://images.unsplash.com/photo-1513694203232-719a280e022f?auto=format&fit=crop&w=400&q=80',
+        assignedEmployeeId: r.assigned_employee_id || '',
+        assignedEmployeeName: r.assigned_employee_name || '',
+        thumbnail: r.thumbnail || '',
         photos: r.photos || [],
         files: r.files || [],
         checklist: r.checklist || [],
-        aiSummary: r.ai_summary || {
-          jobType: r.project_type || 'Projekt',
-          complexity: 'Medium',
-          estimatedRange: 'Dle kalkulace',
-          assignedEmployee: 'Petr Novotný',
-          risks: [],
-          recommendedNextStep: 'Telefonický kontakt.'
-        },
+        aiSummary: r.ai_summary,
         timeline: r.timeline || [],
         aiChat: r.ai_chat || [],
         history: r.history || []
@@ -196,7 +157,7 @@ export class SupabaseRepository implements ICRMRepository {
       return toAppLead(data as AppLeadRow);
     }
     if (!isSupabaseConfigured || !supabase || !isValidUUID(orgId)) {
-      return lead as Lead;
+      throw new Error('Supabase připojení nebo identifikátor firmy není platný.');
     }
 
     try {
@@ -242,8 +203,7 @@ export class SupabaseRepository implements ICRMRepository {
         .single();
 
       if (error) {
-        console.warn('Supabase saveLead upsert warning:', error.message);
-        return lead as Lead;
+        throw error;
       }
 
       return {
@@ -252,8 +212,8 @@ export class SupabaseRepository implements ICRMRepository {
       } as Lead;
     } catch (err) {
       if (appSchemaReadsEnabled) throw err;
-      console.warn('saveLead exception, using local:', err);
-      return lead as Lead;
+      console.warn('saveLead failed:', err);
+      throw err;
     }
   }
 
@@ -264,7 +224,7 @@ export class SupabaseRepository implements ICRMRepository {
       return;
     }
     if (!isSupabaseConfigured || !supabase || !isValidUUID(orgId) || !isValidUUID(leadId)) {
-      return;
+      throw new Error('Supabase připojení nebo identifikátor zakázky není platný.');
     }
 
     if (appSchemaReadsEnabled) throw new Error(APP_SCHEMA_WRITES_BLOCKED_MESSAGE);
@@ -276,7 +236,7 @@ export class SupabaseRepository implements ICRMRepository {
   }
 
   async deleteLead(orgId: string, leadId: string): Promise<void> {
-    if (!isSupabaseConfigured || !supabase || !isValidUUID(leadId)) return;
+    if (!isSupabaseConfigured || !supabase || !isValidUUID(orgId) || !isValidUUID(leadId)) throw new Error('Supabase připojení nebo identifikátor zakázky není platný.');
     if (appSchemaReadsEnabled) throw new Error(APP_SCHEMA_WRITES_BLOCKED_MESSAGE);
     await supabase.from(appSchemaReadsEnabled ? 'app_leads' : 'leads').delete().eq('id', leadId).eq(appSchemaReadsEnabled ? 'company_id' : 'organization_id', orgId);
   }
@@ -424,7 +384,7 @@ export class SupabaseRepository implements ICRMRepository {
 
   async getEmployees(orgId: string): Promise<Employee[]> {
     if (!isSupabaseConfigured || !supabase || !isValidUUID(orgId)) {
-      return LocalSupabaseMock.getEmployees() as any;
+      throw new Error('Supabase připojení nebo identifikátor firmy není platný.');
     }
 
     if (appSchemaReadsEnabled) {
@@ -460,26 +420,26 @@ export class SupabaseRepository implements ICRMRepository {
       .eq('organization_id', orgId);
 
     if (error || !data) {
-      return LocalSupabaseMock.getEmployees() as any;
+      throw error || new Error('Zaměstnance se nepodařilo načíst.');
     }
 
     return data.map((e: any) => ({
       id: e.id,
-      name: e.name || 'Pracovník',
+      name: e.name || '',
       avatar: e.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(e.name || 'tech')}`,
-      specialization: e.specialization || 'Tesařské práce',
-      capacity: e.capacity ?? 80,
-      maxCapacity: 100,
-      todaysJobsCount: 2,
+      specialization: e.specialization || '',
+      capacity: e.capacity ?? 0,
+      maxCapacity: e.max_capacity ?? 0,
+      todaysJobsCount: e.todays_jobs_count ?? 0,
       status: e.capacity > 90 ? 'Red' : e.capacity > 70 ? 'Orange' : 'Green',
-      phone: e.phone || '+420 600 000 000',
-      email: e.email || 'zamestnanec@firma.cz'
+      phone: e.phone || '',
+      email: e.email || ''
     }));
   }
 
   async saveEmployee(orgId: string, employee: Partial<Employee>): Promise<Employee> {
     if (!isSupabaseConfigured || !supabase || !isValidUUID(orgId)) {
-      return employee as Employee;
+      throw new Error('Supabase připojení nebo identifikátor firmy není platný.');
     }
 
     if (appSchemaReadsEnabled) {
@@ -500,7 +460,7 @@ export class SupabaseRepository implements ICRMRepository {
 
   async getProjects(orgId: string): Promise<any[]> {
     if (!isSupabaseConfigured || !supabase || !isValidUUID(orgId)) {
-      return LocalSupabaseMock.getProjects();
+      throw new Error('Supabase připojení nebo identifikátor firmy není platný.');
     }
     // Projects are not part of the verified app_* contract. Do not query the
     // removed legacy table from a configured deployment.
@@ -510,7 +470,7 @@ export class SupabaseRepository implements ICRMRepository {
   }
 
   async saveProject(orgId: string, project: any): Promise<any> {
-    if (!isSupabaseConfigured || !supabase || !isValidUUID(orgId)) return project;
+    if (!isSupabaseConfigured || !supabase || !isValidUUID(orgId)) throw new Error('Supabase připojení nebo identifikátor firmy není platný.');
     if (appSchemaReadsEnabled) throw new Error(APP_SCHEMA_WRITES_BLOCKED_MESSAGE);
     const { data } = await supabase.from('projects').upsert({ ...project, organization_id: orgId }).select().single();
     return data || project;
@@ -518,18 +478,7 @@ export class SupabaseRepository implements ICRMRepository {
 
   async getBranding(orgId: string): Promise<CompanyBranding> {
     if (!isSupabaseConfigured || !supabase || !isValidUUID(orgId)) {
-      const orgs = LocalSupabaseMock.getOrganizations();
-      const match = orgs.find((o: any) => o.id === orgId) || orgs[0];
-      return {
-        name: match?.name || 'Pergoly & Terasy Praha',
-        primaryColor: match?.primary_color || '#2563eb',
-        logoUrl: match?.logo_url,
-        phone: '+420 603 456 789',
-        email: 'info@pergoly-praha.cz',
-        city: 'Praha',
-        address: 'Vídeňská 120, Praha 4',
-        services: ['Pergoly', 'Střechy', 'Terasy']
-      };
+      throw new Error('Supabase připojení nebo identifikátor firmy není platný.');
     }
 
     const { data, error } = await supabase.from('app_companies').select('id,name,slug,email,phone,address,color,logo_url,active').eq('id', orgId).single();
@@ -537,19 +486,19 @@ export class SupabaseRepository implements ICRMRepository {
       throw error || new Error('Firemní nastavení nebylo nalezeno v app_companies.');
     }
     return {
-      name: data?.name || 'Pergoly & Terasy Praha',
+      name: data?.name || '',
       primaryColor: data?.color || '#2563eb',
       logoUrl: data?.logo_url,
-      phone: '+420 603 456 789',
-      email: 'info@pergoly-praha.cz',
-      city: 'Praha',
-      address: 'Vídeňská 120, Praha 4',
-      services: ['Pergoly', 'Střechy', 'Terasy']
+      phone: data?.phone || '',
+      email: data?.email || '',
+      city: '',
+      address: data?.address || '',
+      services: []
     };
   }
 
   async saveBranding(orgId: string, branding: CompanyBranding): Promise<void> {
-    if (!isSupabaseConfigured || !supabase || !isValidUUID(orgId)) return;
+    if (!isSupabaseConfigured || !supabase || !isValidUUID(orgId)) throw new Error('Supabase připojení nebo identifikátor firmy není platný.');
     if (appSchemaReadsEnabled) throw new Error(APP_SCHEMA_WRITES_BLOCKED_MESSAGE);
     await supabase.from('organizations').update({
       name: branding.name,
