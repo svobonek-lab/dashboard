@@ -61,7 +61,8 @@ export default async function outboxSchedulerHandler(req: any, res: any) {
   try {
     // 1. Transactionally enqueue one owner alert for every lead that has
     // remained in the new state for more than 24 hours.
-    const staleLeadAlertsQueued = await queueStaleLeadAlerts(supabase as any);
+    const immediateDispatch = String(req.headers?.['x-stavbaflow-immediate'] || '') === '1';
+    const staleLeadAlertsQueued = immediateDispatch ? 0 : await queueStaleLeadAlerts(supabase as any);
 
     // 2. Fetch pending emails in outbox
     const { data: pendingEmails, error: fetchErr } = await supabase

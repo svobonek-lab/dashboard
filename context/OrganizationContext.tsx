@@ -2046,7 +2046,7 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
     }
   };
 
-  const updateBrandingAdmin = async (orgId: string, name: string, color: string, logo?: string, profile?: Pick<Organization, 'email' | 'phone' | 'address'>): Promise<void> => {
+  const updateBrandingAdmin = async (orgId: string, name: string, color: string, logo?: string, profile?: Pick<Organization, 'email' | 'phone' | 'address' | 'email_notifications'>): Promise<void> => {
     if (IS_PRODUCTION && (!isSupabaseConfigured || !supabase)) {
       throw new Error(RUNTIME_POLICY.failClosedMessage);
     }
@@ -2071,7 +2071,11 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
         logo_url: finalLogo,
         ...(profile ? { email: profile.email || '', phone: profile.phone || '', address: profile.address || '' } : {}),
       };
-      const { data, error: updateError } = await supabase.from('app_companies').update(appRecord).eq('id', targetOrgId).select('id,name,slug,email,phone,address,color,logo_url,active').single();
+      if (typeof profile?.email_notifications === 'boolean') {
+        const notificationResult = await supabase.rpc('app_set_email_notifications', { p_company_id: targetOrgId, p_enabled: profile.email_notifications });
+        if (notificationResult.error) throw new Error(notificationResult.error.message || 'Nastavení e-mailových upozornění se nepodařilo uložit.');
+      }
+      const { data, error: updateError } = await supabase.from('app_companies').update(appRecord).eq('id', targetOrgId).select('id,name,slug,email,phone,address,color,logo_url,active,email_notifications').single();
       if (updateError || !data) throw updateError || new Error('Databáze nepotvrdila uložení firemního profilu.');
       setCurrentOrg((previous) => previous ? {
         ...previous,
@@ -2081,6 +2085,7 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
         address: data.address || '',
         primary_color: data.color || color,
         logo_url: data.logo_url || '',
+        email_notifications: data.email_notifications !== false,
         branding: { ...previous.branding, name: data.name, primaryColor: data.color || color, logoUrl: data.logo_url || '' },
       } : previous);
       return;

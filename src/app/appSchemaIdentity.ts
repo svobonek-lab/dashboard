@@ -13,6 +13,7 @@ export interface AppCompanyRow {
   active?: boolean;
   onboarding_completed?: boolean;
   plan?: string;
+  email_notifications?: boolean;
 }
 
 export interface AppSchemaIdentity {
@@ -33,6 +34,7 @@ export function toAppOrganization(row: AppCompanyRow): Organization {
     logo_url: row.logo_url || '',
     status: row.active === false ? 'Suspended' : 'Active',
     plan: row.plan || 'pilot',
+    email_notifications: row.email_notifications !== false,
   };
 }
 
@@ -71,7 +73,7 @@ export async function readAppSchemaIdentity(client: any, userId: string, email?:
   const companyIds = [...new Set(matchingMembers.map((item) => item.company_id))];
   const { data: companies, error: companyError } = await client
     .from('app_companies')
-    .select('id,name,slug,email,phone,address,color,logo_url,active,onboarding_completed,plan')
+    .select('id,name,slug,email,phone,address,color,logo_url,active,onboarding_completed,plan,email_notifications')
     .in('id', companyIds);
   if (companyError) throw companyError;
   return resolveAppIdentity(matchingMembers, (companies || []) as AppCompanyRow[], userId, email);

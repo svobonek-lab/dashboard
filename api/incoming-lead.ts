@@ -2,6 +2,7 @@ import { createHash } from 'node:crypto';
 import { createClient } from '@supabase/supabase-js';
 import { generateGeminiResponse } from '../lib/gemini.js';
 import { verifyAiInboxToken } from './_shared/aiInboxToken.js';
+import { runImmediateOutboxDispatch } from './outbox-dispatch.js';
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const MAX_MAIL_LENGTH = 50_000;
@@ -26,6 +27,7 @@ interface IncomingLeadDependencies {
   authorize?: (req: any, companyId: string) => boolean;
   classify: (prompt: string, textBody: string) => Promise<string>;
   persist: (lead: PersistedAiLead) => Promise<string>;
+  dispatch?: () => Promise<{ statusCode: number; body: Record<string, unknown> }>;
 }
 
 function firstNonEmptyString(...values: unknown[]): string {
@@ -156,7 +158,20 @@ export function createIncomingLeadHandler(dependencies: IncomingLeadDependencies
         source: 'ai_inbox',
         status: 'new',
       });
-      res.status(201).json({ status: 'created', lead_id: leadId });
+      let notification: 'delivered' | 'queued' = 'queued';
+      if (dependencies.dispatch) {
+        try {
+          const dispatchResult = await dependencies.dispatch();
+          notification = dispatchResult.statusCode >= 200
+            && dispatchResult.statusCode < 300
+            && Number(dispatchResult.body.processedCount || 0) > 0
+            ? 'delivered'
+            : 'queued';
+        } catch (dispatchError) {
+          console.error('Immediate outbox dispatch failed:', dispatchError instanceof Error ? dispatchError.message : 'unknown error');
+        }
+      }
+      res.status(201).json({ status: 'created', lead_id: leadId, notification });
     } catch (error) {
       console.error('Incoming lead processing failed:', error instanceof Error ? error.message : 'unknown error');
       res.status(502).json({ error: 'E-mail se nepodařilo bezpečně zpracovat.' });
@@ -175,4 +190,9 @@ function authorizeIncomingLead(req: any, companyId: string): boolean {
   return verifyAiInboxToken(companyId, token, secret);
 }
 
-export default createIncomingLeadHandler({ authorize: authorizeIncomingLead, classify: generateGeminiResponse, persist: persistAiLead });
+export default createIncomingLeadHandler({
+  authorize: authorizeIncomingLead,
+  classify: generateGeminiResponse,
+  persist: persistAiLead,
+  dispatch: runImmediateOutboxDispatch,
+});

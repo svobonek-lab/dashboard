@@ -7,6 +7,7 @@ import { ProtectedRoute } from './app/ProtectedRoute';
 import { RoleGuard } from './app/RoleGuard';
 import { getDefaultRouteForRole, UserRole } from './app/permissions';
 import { canEmployeeAccessLead, getEmployeeLeads } from './app/employeeScope';
+import { requestImmediateOutboxDispatch } from './app/emailNotifications';
 
 // Layouts
 import { SuperAdminLayout } from './layouts/SuperAdminLayout';
@@ -329,6 +330,7 @@ function AppContent() {
       throw new Error('Zaměstnanec nemůže měnit detail zakázky.');
     }
     try {
+      const previousLead = leads.find((lead) => lead.id === updatedLead.id);
       const savedLead = await saveLead(updatedLead);
       const assignedEmployee = employees.find((employee) => employee.id === savedLead.assignedEmployeeId);
       const hydratedLead = {
@@ -337,6 +339,9 @@ function AppContent() {
       };
       setLeads(prev => prev.map(l => l.id === hydratedLead.id ? hydratedLead : l));
       setSelectedLead(hydratedLead);
+      if (savedLead.assignedEmployeeId && previousLead?.assignedEmployeeId !== savedLead.assignedEmployeeId) {
+        await requestImmediateOutboxDispatch();
+      }
     } catch (error) {
       console.error('Failed to save lead', error);
       showToast('Změnu se nepodařilo uložit. Data zůstala beze změny.', 'error');
