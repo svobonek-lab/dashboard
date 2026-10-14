@@ -1,27 +1,35 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Building2, Check, Image as ImageIcon, Mail, MapPin, Phone, Save, Upload } from 'lucide-react';
+import { Bell, Building2, Check, Image as ImageIcon, Mail, MapPin, Phone, Save, Upload } from 'lucide-react';
 import { useOrganization } from '@/context/OrganizationContext';
 import { canManageCompany } from '@/src/app/permissions';
 
 export const OwnerSettingsPage: React.FC = () => {
   const { dbUser, currentOrg, updateBrandingAdmin } = useOrganization();
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [form, setForm] = useState({ name: '', color: '#2563eb', logo: '', email: '', phone: '', address: '' });
+  const [form, setForm] = useState({ name: '', color: '#2563eb', logo: '', email: '', phone: '', address: '', emailNotifications: true });
+  const [providerConfigured, setProviderConfigured] = useState<boolean | null>(null);
   const [state, setState] = useState<{ kind: 'idle' | 'saving' | 'success' | 'error'; message?: string }>({ kind: 'idle' });
 
   useEffect(() => {
     setForm({
       name: currentOrg?.name || '', color: currentOrg?.primary_color || '#2563eb', logo: currentOrg?.logo_url || '',
-      email: currentOrg?.email || '', phone: currentOrg?.phone || '', address: currentOrg?.address || '',
+      email: currentOrg?.email || '', phone: currentOrg?.phone || '', address: currentOrg?.address || '', emailNotifications: currentOrg?.email_notifications !== false,
     });
-  }, [currentOrg?.id, currentOrg?.name, currentOrg?.primary_color, currentOrg?.logo_url, currentOrg?.email, currentOrg?.phone, currentOrg?.address]);
+  }, [currentOrg?.id, currentOrg?.name, currentOrg?.primary_color, currentOrg?.logo_url, currentOrg?.email, currentOrg?.phone, currentOrg?.address, currentOrg?.email_notifications]);
+
+  useEffect(() => {
+    fetch('/api/email-notification-status')
+      .then((response) => response.ok ? response.json() : Promise.reject(new Error('status unavailable')))
+      .then((payload) => setProviderConfigured(payload.providerConfigured === true))
+      .catch(() => setProviderConfigured(false));
+  }, []);
 
   const save = async (event: React.FormEvent) => {
     event.preventDefault();
     if (!canManageCompany(dbUser?.role) || !currentOrg?.id) { setState({ kind: 'error', message: 'Firemní profil může upravit pouze majitel firmy.' }); return; }
     setState({ kind: 'saving' });
     try {
-      await updateBrandingAdmin(currentOrg.id, form.name.trim(), form.color, form.logo, { email: form.email.trim(), phone: form.phone.trim(), address: form.address.trim() });
+      await updateBrandingAdmin(currentOrg.id, form.name.trim(), form.color, form.logo, { email: form.email.trim(), phone: form.phone.trim(), address: form.address.trim(), email_notifications: form.emailNotifications });
       setState({ kind: 'success', message: 'Firemní profil byl uložen.' });
     } catch (error) {
       setState({ kind: 'error', message: error instanceof Error ? error.message : 'Firemní profil se nepodařilo uložit.' });
@@ -54,6 +62,17 @@ export const OwnerSettingsPage: React.FC = () => {
             <span className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-white text-slate-400 shadow-sm">{form.logo ? <img src={form.logo} alt="Náhled loga" className="h-full w-full object-cover" /> : <ImageIcon className="h-5 w-5" />}</span>
             <div><strong className="block text-sm font-semibold text-slate-950">Logo firmy</strong><p className="mt-1 text-xs text-slate-500">PNG, JPG nebo SVG do 1 MB.</p><input ref={fileInputRef} type="file" accept="image/png,image/jpeg,image/svg+xml" onChange={(e) => readLogo(e.target.files?.[0])} className="hidden" /><button type="button" onClick={() => fileInputRef.current?.click()} className="mt-2 inline-flex items-center gap-1.5 text-xs font-semibold text-blue-600"><Upload className="h-3.5 w-3.5" />Vybrat logo</button></div>
           </div>
+        </section>
+        <section className="border-t border-slate-100 pt-6">
+          <div className="flex items-center gap-2"><Bell className="h-4 w-4 text-blue-600" /><h2 className="text-sm font-semibold text-slate-950">E-mailová upozornění</h2></div>
+          <label className="mt-4 flex cursor-pointer items-start justify-between gap-4 rounded-2xl border border-slate-200 bg-slate-50 p-4">
+            <span><strong className="block text-sm font-semibold text-slate-950">Posílat e-mailová upozornění</strong><span className="mt-1 block text-xs leading-5 text-slate-500">Majitel dostane zprávu po nové poptávce a zaměstnanec po přiřazení zakázky.</span></span>
+            <input aria-label="Posílat e-mailová upozornění" type="checkbox" checked={form.emailNotifications} onChange={(event) => setForm({ ...form, emailNotifications: event.target.checked })} className="mt-1 h-5 w-5 rounded border-slate-300 text-blue-600" />
+          </label>
+          {providerConfigured === false && form.emailNotifications && (
+            <div role="status" className="mt-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs leading-5 text-amber-800">Poskytovatel e-mailů není nakonfigurovaný. Upozornění zůstanou ve frontě jako neodeslané a systém nebude tvrdit, že byla doručena.</div>
+          )}
+          {providerConfigured === true && <p className="mt-3 text-xs font-medium text-emerald-700">Odesílání e-mailů je připravené.</p>}
         </section>
         <section className="border-t border-slate-100 pt-6">
           <h2 className="text-sm font-semibold text-slate-950">Kontaktní údaje</h2>

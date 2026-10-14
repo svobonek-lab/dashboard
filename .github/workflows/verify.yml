@@ -58,6 +58,9 @@ jobs:
           docker exec -i ai-dispatcher-postgres psql -v ON_ERROR_STOP=1 -U postgres < supabase/tests/ai_dispatcher_setup.sql
           docker exec -i ai-dispatcher-postgres psql -v ON_ERROR_STOP=1 -U postgres < supabase/staging/20261006_ai_dispatcher_contract.sql
           docker exec -i ai-dispatcher-postgres psql -v ON_ERROR_STOP=1 -U postgres < supabase/tests/ai_dispatcher_verify.sql
+          docker exec -i ai-dispatcher-postgres psql -v ON_ERROR_STOP=1 -U postgres < supabase/tests/immediate_email_notifications_setup.sql
+          docker exec -i ai-dispatcher-postgres psql -v ON_ERROR_STOP=1 -U postgres < supabase/staging/20261014_immediate_email_notifications_contract.sql
+          docker exec -i ai-dispatcher-postgres psql -v ON_ERROR_STOP=1 -U postgres < supabase/tests/immediate_email_notifications_verify.sql
       - name: Stop disposable PostgreSQL
         if: always()
         run: docker rm --force ai-dispatcher-postgres

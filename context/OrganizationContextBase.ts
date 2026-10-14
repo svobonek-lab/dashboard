@@ -17,6 +17,7 @@ export interface Organization {
   status?: string;
   created_at?: string;
   plan?: string;
+  email_notifications?: boolean;
 }
 
 export interface DBUser {
@@ -71,7 +72,7 @@ export interface OrganizationContextType {
   stopImpersonation: () => void;
   fetchAllOrganizationsAdmin: () => Promise<any[]>;
   deleteOrganizationAdmin: (orgId: string) => Promise<void>;
-  updateBrandingAdmin: (orgId: string, name: string, color: string, logo?: string, profile?: Pick<Organization, 'email' | 'phone' | 'address'>) => Promise<void>;
+  updateBrandingAdmin: (orgId: string, name: string, color: string, logo?: string, profile?: Pick<Organization, 'email' | 'phone' | 'address' | 'email_notifications'>) => Promise<void>;
   suspendOrganizationAdmin: (orgId: string, suspend: boolean) => Promise<void>;
   createCustomerAdmin: (data: {
     name: string;

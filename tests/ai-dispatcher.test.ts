@@ -90,6 +90,54 @@ test('incoming lead is persisted once as ai_inbox in the requested company', asy
   assert.equal(saved.requestKey, 'mail-provider-message-1');
 });
 
+test('incoming lead reports notification as queued when the email provider is unavailable', async () => {
+  let dispatches = 0;
+  const handler = createIncomingLeadHandler({
+    classify: async () => JSON.stringify({
+      is_lead: true, client_name: 'Eva Malá', phone: null,
+      job_type: 'Nová koupelna', description: 'Kompletní rekonstrukce.', location: null,
+    }),
+    persist: async () => '22222222-2222-4222-8222-222222222222',
+    dispatch: async () => {
+      dispatches += 1;
+      return {
+        statusCode: 503,
+        body: { code: 'EMAIL_PROVIDER_NOT_CONFIGURED', processedCount: 0 },
+      };
+    },
+  });
+  const res = responseRecorder();
+  await handler({
+    method: 'POST',
+    body: { text_body: 'Prosím o nabídku nové koupelny.', org_id: '11111111-1111-4111-8111-111111111111' },
+    headers: { 'x-idempotency-key': 'mail-provider-message-2' },
+  }, res);
+
+  assert.equal(res.code, 201);
+  assert.equal(res.body.notification, 'queued');
+  assert.equal(dispatches, 1);
+});
+
+test('incoming lead reports notification as delivered only after a worker processes it', async () => {
+  const handler = createIncomingLeadHandler({
+    classify: async () => JSON.stringify({
+      is_lead: true, client_name: 'Eva Malá', phone: null,
+      job_type: 'Nová koupelna', description: 'Kompletní rekonstrukce.', location: null,
+    }),
+    persist: async () => '22222222-2222-4222-8222-222222222222',
+    dispatch: async () => ({ statusCode: 200, body: { processedCount: 1 } }),
+  });
+  const res = responseRecorder();
+  await handler({
+    method: 'POST',
+    body: { text_body: 'Prosím o nabídku nové koupelny.', org_id: '11111111-1111-4111-8111-111111111111' },
+    headers: { 'x-idempotency-key': 'mail-provider-message-3' },
+  }, res);
+
+  assert.equal(res.code, 201);
+  assert.equal(res.body.notification, 'delivered');
+});
+
 test('incoming lead fails closed for invalid company or oversized mail', async () => {
   const handler = createIncomingLeadHandler({ classify: async () => '{}', persist: async () => 'x' });
   const badOrg = responseRecorder();

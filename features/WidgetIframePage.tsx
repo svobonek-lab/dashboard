@@ -2,6 +2,7 @@ import React, { FormEvent, useEffect, useState } from 'react';
 import { AlertCircle, ArrowRight, CheckCircle2, Mail, MapPin, Phone, User } from 'lucide-react';
 import { LocalSupabaseMock, isSupabaseConfigured, publicSupabase } from '../lib/supabase';
 import { resolvePublicTenantKey } from '../src/app/publicIntakeRoute';
+import { requestImmediateOutboxDispatch } from '../src/app/emailNotifications';
 
 const PROJECT_TYPES = ['Rekonstrukce', 'Střecha a krov', 'Novostavba', 'Pergola nebo terasa', 'Jiná stavební práce'];
 
@@ -80,6 +81,7 @@ export const WidgetIframePage: React.FC = () => {
           p_value: Number(form.budget) || 0
         });
         if (submitError) throw submitError;
+        await requestImmediateOutboxDispatch();
       } else {
         if ((import.meta as any).env?.PROD) throw new Error('Public intake is not configured');
         const leads = LocalSupabaseMock.getLeads();
