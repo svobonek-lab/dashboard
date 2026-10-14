@@ -107,7 +107,9 @@ begin
   if not exists (
     select 1 from public.app_members m
     where m.company_id = p_company_id and m.user_id = auth.uid() and m.role = 'owner' and m.active
-  ) then raise exception 'owner membership required'; end if;
+  ) then
+    raise exception using errcode = '42501', message = 'owner membership required';
+  end if;
   update public.app_companies set email_notifications = p_enabled where id = p_company_id;
   if not found then raise exception 'company not found'; end if;
   return p_enabled;
