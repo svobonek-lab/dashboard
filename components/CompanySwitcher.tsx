@@ -12,7 +12,6 @@ import {
   ShieldCheck,
   Zap
 } from 'lucide-react';
-import { LocalSupabaseMock } from '../lib/supabase';
 
 interface CompanySwitcherProps {
   variant?: 'dark' | 'light' | 'workspace';
@@ -38,11 +37,8 @@ export const CompanySwitcher: React.FC<CompanySwitcherProps> = ({ variant = 'dar
   // Load organizations
   useEffect(() => {
     const isSuperAdmin = dbUser?.role === 'platform_admin';
-    const localOrgs = LocalSupabaseMock.getOrganizations();
     if (isSuperAdmin) {
-      if (localOrgs && localOrgs.length > 0) {
-        setAllOrgs(localOrgs);
-      } else if (organizations && organizations.length > 0) {
+      if (organizations && organizations.length > 0) {
         setAllOrgs(organizations);
       }
 
@@ -52,8 +48,7 @@ export const CompanySwitcher: React.FC<CompanySwitcherProps> = ({ variant = 'dar
         }).catch(() => {});
       }
     } else {
-      const available = organizations && organizations.length > 1 ? organizations : localOrgs;
-      setAllOrgs(available && available.length > 0 ? available : (currentOrg ? [currentOrg] : []));
+      setAllOrgs(organizations && organizations.length > 0 ? organizations : (currentOrg ? [currentOrg] : []));
     }
   }, [organizations, dbUser, currentOrg, fetchAllOrganizationsAdmin]);
 
@@ -79,7 +74,7 @@ export const CompanySwitcher: React.FC<CompanySwitcherProps> = ({ variant = 'dar
     (org.city && org.city.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
-  const activeOrgName = currentOrg?.name || 'Pergoly & Terasy Praha s.r.o.';
+  const activeOrgName = currentOrg?.name || 'Firma není vybraná';
   const activeOrgLogo = currentOrg?.logo_url;
   const activeOrgColor = currentOrg?.primary_color || '#2563eb';
 
@@ -115,7 +110,7 @@ export const CompanySwitcher: React.FC<CompanySwitcherProps> = ({ variant = 'dar
         <span className={`px-1.5 py-0.2 rounded text-[9px] font-mono uppercase font-bold tracking-wider ${
           isDark ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/30' : 'bg-slate-100 text-slate-700'
         }`}>
-          {(currentOrg as any)?.plan || 'Enterprise'}
+          {(currentOrg as any)?.plan || 'Bez plánu'}
         </span>
 
         <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${isOpen ? 'rotate-180 text-cyan-400' : 'text-slate-500'}`} />
@@ -217,12 +212,12 @@ export const CompanySwitcher: React.FC<CompanySwitcherProps> = ({ variant = 'dar
               <button
                 onClick={() => {
                   setIsOpen(false);
-                  navigate('/admin/install');
+                  navigate('/admin/companies');
                 }}
                 className="w-full py-2 px-3 rounded-xl bg-gradient-to-r from-cyan-500/20 to-blue-600/20 hover:from-cyan-500/30 hover:to-blue-600/30 border border-cyan-500/30 text-cyan-300 text-xs font-bold transition-all flex items-center justify-center gap-1.5"
               >
                 <Plus className="w-3.5 h-3.5" />
-                <span>Nová instalace klienta (+ Create Company)</span>
+                <span>Založit novou firmu</span>
               </button>
             </div>
           )}

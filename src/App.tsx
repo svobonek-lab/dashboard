@@ -1,6 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { generateRealisticLeads, generateRealisticEmployees } from '@/lib/demoData';
-import { DEFAULT_DEMO_ORG_ID } from '@/lib/supabase';
 import { useOrganization } from '@/context/OrganizationContext';
 import { RouterProvider, useRouter } from './app/router';
 import { ProtectedRoute } from './app/ProtectedRoute';
@@ -97,9 +95,6 @@ function AppSetupRequired() {
 
 function AppContent() {
   const { currentOrg } = useOrganization();
-  const branding = currentOrg?.branding || {};
-  
-  
   const { isConfigured,
     user, 
     dbUser,
@@ -112,21 +107,12 @@ function AppContent() {
   } = useOrganization();
   const { pathname, navigate } = useRouter();
 
-  const isDemoOrg = currentOrg?.id === DEFAULT_DEMO_ORG_ID || currentOrg?.slug === 'pergoly-praha';
   const [leads, setLeads] = useState<Lead[]>(() => {
-    if (!isDemoOrg) {
-      if (!currentOrg?.id) return [];
-      const cached = readTenantCache<Lead[]>(TENANT_CACHE_NAMES.leads, currentOrg.id);
-      if (Array.isArray(cached)) return cached;
-      return [];
-    }
-    try {
-      const cached = readTenantCache<Lead[]>(TENANT_CACHE_NAMES.leads, DEFAULT_DEMO_ORG_ID);
-      if (Array.isArray(cached) && cached.length > 0) return cached;
-    } catch {}
-    return generateRealisticLeads(branding);
+    if (!currentOrg?.id) return [];
+    const cached = readTenantCache<Lead[]>(TENANT_CACHE_NAMES.leads, currentOrg.id);
+    return Array.isArray(cached) ? cached : [];
   });
-  const [employees, setEmployees] = useState(() => isDemoOrg ? generateRealisticEmployees() : []);
+  const [employees, setEmployees] = useState([]);
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
   const employeeLeads = dbUser?.role === 'employee'
     ? getEmployeeLeads(leads, employees, dbUser.id, dbUser.email, currentOrg?.id)
@@ -135,33 +121,14 @@ function AppContent() {
   // Synchronize leads & employees from active organization
   useEffect(() => {
     if (currentOrg) {
-      const isDemo = currentOrg.id === DEFAULT_DEMO_ORG_ID || currentOrg.slug === 'pergoly-praha';
       Promise.all([fetchLeads(), fetchEmployees()])
         .then(([dbLeads, dbEmployees]) => {
           const hydratedLeads = hydrateLeadAssignments(dbLeads, dbEmployees);
           if (dbLeads.length > 0) {
             setLeads(hydratedLeads);
             try {
-              if (isDemo) {
-                writeTenantCache(TENANT_CACHE_NAMES.leads, hydratedLeads, DEFAULT_DEMO_ORG_ID);
-              } else {
-                writeTenantCache(TENANT_CACHE_NAMES.leads, hydratedLeads, currentOrg.id);
-              }
+              writeTenantCache(TENANT_CACHE_NAMES.leads, hydratedLeads, currentOrg.id);
             } catch {}
-          } else if (isDemo) {
-            const initialLeads = generateRealisticLeads({
-              ...branding,
-              name: currentOrg.name,
-              primaryColor: currentOrg.primary_color
-            });
-            Promise.all(initialLeads.map(l => saveLead(l)))
-              .then(saved => {
-                setLeads(saved);
-                try {
-                writeTenantCache(TENANT_CACHE_NAMES.leads, saved, DEFAULT_DEMO_ORG_ID);
-                } catch {}
-              })
-              .catch(() => setLeads(initialLeads));
           } else {
             setLeads([]);
             try {
@@ -171,18 +138,14 @@ function AppContent() {
 
           if (dbEmployees.length > 0) {
             setEmployees(dbEmployees);
-          } else if (isDemo) {
-            setEmployees(generateRealisticEmployees());
           } else {
             setEmployees([]);
           }
         })
         .catch(err => {
           console.error('Error synchronizing organization data:', err);
-          if (!isDemo) {
-            setLeads([]);
-            setEmployees([]);
-          }
+          setLeads([]);
+          setEmployees([]);
         });
     }
   // The organization can be restored before Supabase restores the authenticated

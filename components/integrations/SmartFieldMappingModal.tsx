@@ -15,16 +15,16 @@ interface SmartFieldMappingModalProps {
 }
 
 const TARGET_FIELDS: { value: TargetFieldType; label: string; desc: string }[] = [
-  { value: 'customerName', label: 'Customer (Jméno zákazníka / customer_name)', desc: 'Např. Ing. Jan Novák, Logis s.r.o.' },
-  { value: 'title', label: 'Project (Název projektu / project_title)', desc: 'Např. Bioklimatická pergola 6x4m' },
-  { value: 'assignedEmployeeName', label: 'Employee (Přiřazený pracovník / worker)', desc: 'Např. Petr Novotný' },
-  { value: 'status', label: 'Status (Stav zakázky / status)', desc: 'Např. Nová, V jednání, Realizace, Hotovo' },
-  { value: 'price', label: 'Price / Budget (Cena / Rozpočet)', desc: 'Např. 250 000 Kč' },
-  { value: 'customerPhone', label: 'Phone (Telefon klienta)', desc: 'Např. +420 774 123 456' },
-  { value: 'customerEmail', label: 'Email (E-mail klienta)', desc: 'Např. zakaznik@email.cz' },
-  { value: 'city', label: 'City (Město / Obec)', desc: 'Např. Praha, Brno, Beroun' },
-  { value: 'address', label: 'Address (Adresa stavby)', desc: 'Např. K Lesu 14, Beroun' },
-  { value: 'preferredDate', label: 'Date (Termín realizace)', desc: 'Např. 2026-09-25 nebo 25.09.2026' },
+  { value: 'customerName', label: 'Customer (Jméno zákazníka / customer_name)', desc: 'Jméno nebo název zákazníka' },
+  { value: 'title', label: 'Project (Název projektu / project_title)', desc: 'Název zakázky' },
+  { value: 'assignedEmployeeName', label: 'Employee (Přiřazený pracovník / worker)', desc: 'Jméno přiřazeného pracovníka' },
+  { value: 'status', label: 'Status (Stav zakázky / status)', desc: 'Stav zakázky ve zdrojových datech' },
+  { value: 'price', label: 'Price / Budget (Cena / Rozpočet)', desc: 'Číselná hodnota rozpočtu' },
+  { value: 'customerPhone', label: 'Phone (Telefon klienta)', desc: 'Telefon ze zdrojových dat' },
+  { value: 'customerEmail', label: 'Email (E-mail klienta)', desc: 'E-mail ze zdrojových dat' },
+  { value: 'city', label: 'City (Město / Obec)', desc: 'Město ze zdrojových dat' },
+  { value: 'address', label: 'Address (Adresa stavby)', desc: 'Adresa ze zdrojových dat' },
+  { value: 'preferredDate', label: 'Date (Termín realizace)', desc: 'Datum ve zdrojovém formátu' },
   { value: 'description', label: 'Description (Popis / Poznámka)', desc: 'Detaily stavby, rozměry, barva' },
   { value: 'priority', label: 'Priority (Priorita zakázky)', desc: 'Urgentní, Vysoká, Střední' },
   { value: 'ignore', label: '— Ignorovat sloupec —', desc: 'Tento sloupec se nebude importovat' }
@@ -122,7 +122,7 @@ export const SmartFieldMappingModal: React.FC<SmartFieldMappingModalProps> = ({
             <span>AI automaticky spárovala <strong>{mappedCount} z {rules.length}</strong> sloupců. Můžete libovolné pole ručně upravit.</span>
           </div>
           <span className="px-2.5 py-0.5 rounded-full bg-cyan-600 text-white font-black text-[10px] tracking-wide uppercase">
-            Smart Parser v7.0
+            Automatické mapování
           </span>
         </div>
 
@@ -130,9 +130,9 @@ export const SmartFieldMappingModal: React.FC<SmartFieldMappingModalProps> = ({
         <div className="flex-1 overflow-y-auto p-6 space-y-3">
           <div className="grid grid-cols-12 gap-3 text-[11px] font-black uppercase tracking-wider text-slate-600 px-4 py-1.5">
             <div className="col-span-4">Sloupec v externím souboru / DB</div>
-            <div className="col-span-3">Ukázková hodnota (Řádek 1)</div>
+            <div className="col-span-3">Hodnota ze zdroje (řádek 1)</div>
             <div className="col-span-1 text-center">Směr</div>
-            <div className="col-span-4">Cílové pole v BuildFlow CRM</div>
+            <div className="col-span-4">Cílové pole ve StavbaFlow</div>
           </div>
 
           <div className="space-y-2">

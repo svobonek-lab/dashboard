@@ -1,6 +1,6 @@
 import { Lead, Employee, CompanyBranding } from '../../types';
 
-export type StorageMode = 'cloud' | 'synology' | 'local';
+export type StorageMode = 'cloud';
 
 export interface RepositoryHealthStatus {
   ok: boolean;

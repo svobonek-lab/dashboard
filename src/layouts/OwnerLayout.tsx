@@ -15,7 +15,6 @@ import {
   Globe, 
   Settings, 
   Sparkles, 
-  Bell, 
   Search, 
   Plus, 
   LogOut, 
@@ -30,12 +29,9 @@ import {
   Zap,
   HardDrive
 } from 'lucide-react';
-import { CRMNotification, CompanyBranding, Lead } from '@/types';
-import { NotificationCenter } from '@/components/NotificationCenter';
+import { CompanyBranding, Lead } from '@/types';
 import { CommandPalette } from '@/components/CommandPalette';
-import { FloatingAIAssistant } from '@/components/FloatingAIAssistant';
 import { CompanySwitcher } from '@/components/CompanySwitcher';
-import { DEFAULT_DEMO_ORG_ID } from '@/lib/supabase';
 import { isPilotOwnerNavigationPath } from '@/src/app/pilotScope';
 
 interface OwnerLayoutProps {
@@ -66,7 +62,6 @@ export const OwnerLayout: React.FC<OwnerLayoutProps> = ({
 
   // Modals & popovers
   const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
-  const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const [isMobileDrawerOpen, setIsMobileDrawerOpen] = useState(false);
 
   // Touch handlers for mobile swipe-to-close drawer
@@ -104,24 +99,8 @@ export const OwnerLayout: React.FC<OwnerLayoutProps> = ({
   };
 
   // Effective company branding info
-  const activeCompanyName = currentOrg?.name || 'Vaše Stavební Firma';
+  const activeCompanyName = currentOrg?.name || 'Firma není vybraná';
   const activeLogo = currentOrg?.logo_url;
-  const activeCity = currentOrg?.city || 'Česká republika';
-
-  // Notifications State
-  const isDemoWorkspace = currentOrg?.id === DEFAULT_DEMO_ORG_ID || currentOrg?.slug === 'pergoly-praha';
-  const demoNotifications: CRMNotification[] = [
-    { id: 'n-1', title: 'Nová poptávka na realizaci', message: `Zákazník odeslal formulář z webu ${activeCompanyName}.`, timestamp: '10 min', read: false, type: 'lead' },
-    { id: 'n-2', title: 'Záloha připsána', message: 'Přijata platba zálohy 220 000 Kč k zakázce POL-2026-0492.', timestamp: '1 hod', read: false, type: 'quote' },
-    { id: 'n-3', title: 'Fotografie ze stavby', message: 'Montážní tým nahrál 3 fotky z postupu výstavby.', timestamp: '3 hod', read: true, type: 'employee' }
-  ];
-  const [notifications, setNotifications] = useState<CRMNotification[]>(() => isDemoWorkspace ? demoNotifications : []);
-
-  useEffect(() => {
-    if (!isDemoWorkspace) setNotifications([]);
-  }, [isDemoWorkspace]);
-
-  const unreadCount = notifications.filter(n => !n.read).length;
 
   // Keyboard shortcut listener for Command Palette (Cmd+K / Ctrl+K)
   useEffect(() => {
@@ -161,7 +140,7 @@ export const OwnerLayout: React.FC<OwnerLayoutProps> = ({
   ].filter((item) => {
     if (readOnlyMode === 'demo') return ['/dashboard', '/leads'].includes(item.path);
     if (readOnlyMode === 'support') return ['/dashboard', '/leads', '/projects'].includes(item.path);
-    return isDemoWorkspace || isPilotOwnerNavigationPath(item.path);
+    return isPilotOwnerNavigationPath(item.path);
   })
     .map((item) => ({ ...item, path: route(item.path) }));
 
@@ -388,12 +367,12 @@ export const OwnerLayout: React.FC<OwnerLayoutProps> = ({
                 {activeCompanyName}
               </h2>
               <span className="hidden sm:inline-block text-[11px] text-muted font-medium bg-surface-secondary px-2.5 py-1 rounded-full border border-border shrink-0">
-                Dispečink aktivní
+                Firemní přehled
               </span>
             </div>
           </div>
 
-          {/* Right: Search, Notifications, Profile/Switcher */}
+          {/* Right: Search */}
           <div className="flex items-center gap-2 sm:gap-3 shrink-0">
             {/* Search Bar / Command Palette Trigger */}
             {!readOnlyMode && <button
@@ -405,45 +384,6 @@ export const OwnerLayout: React.FC<OwnerLayoutProps> = ({
               <kbd className="px-1.5 py-0.5 bg-surface border border-border rounded-md text-[10px] font-mono text-muted shadow-app">⌘K</kbd>
             </button>}
 
-            {/* Notifications Bell */}
-            <div className="relative">
-              <button
-                onClick={() => setIsNotificationsOpen(prev => !prev)}
-                className="w-10 h-10 sm:w-10 sm:h-10 rounded-app bg-surface-secondary border border-border flex items-center justify-center text-muted hover:text-text hover:bg-surface-tertiary transition-all relative cursor-pointer"
-              >
-                <Bell className="w-4 h-4 sm:w-5 sm:h-5" />
-                {unreadCount > 0 && (
-                  <span className="absolute top-2.5 right-2.5 sm:top-2 sm:right-2 w-2 h-2 rounded-full bg-red-500 animate-pulse"></span>
-                )}
-              </button>
-
-              {isNotificationsOpen && (
-                <div className="absolute right-0 mt-2 w-[calc(100vw-24px)] max-w-xs sm:w-80 bg-surface border border-border rounded-app shadow-app p-4 z-50 space-y-3 animate-in fade-in zoom-in-95 duration-100">
-                  <div className="flex items-center justify-between border-b border-border pb-2">
-                    <span className="text-xs font-bold text-text">Upozornění & Zprávy</span>
-                    <button
-                      onClick={() => setNotifications(notifications.map(n => ({ ...n, read: true })))}
-                      className="text-[10px] font-bold text-brand-primary hover:underline cursor-pointer"
-                    >
-                      Označit vše
-                    </button>
-                  </div>
-                  <div className="space-y-2 max-h-64 overflow-y-auto">
-                    {notifications.map((n) => (
-                      <div key={n.id} className={`p-2.5 rounded-app text-xs space-y-1 ${n.read ? 'text-muted' : 'bg-surface-secondary text-text border border-border'}`}>
-                        <div className="flex items-center justify-between font-bold">
-                          <span className={n.read ? 'text-muted' : 'text-brand-primary font-bold'}>
-                            {n.title}
-                          </span>
-                          <span className="text-[10px] text-muted">{n.timestamp}</span>
-                        </div>
-                        <p className="text-[11px] leading-relaxed text-muted">{n.message}</p>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
           </div>
         </header>
 
@@ -453,9 +393,6 @@ export const OwnerLayout: React.FC<OwnerLayoutProps> = ({
         </main>
       </div>
       </div>
-
-      {/* Floating AI Assistant */}
-      {isDemoWorkspace && !readOnlyMode && <FloatingAIAssistant branding={branding} leads={leads} />}
 
       {/* Modals & Command Palette */}
       {!readOnlyMode && <CommandPalette

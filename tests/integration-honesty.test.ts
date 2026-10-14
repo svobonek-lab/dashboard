@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { existsSync, readFileSync } from 'node:fs';
 import { testGoogleSheetsConnection, executeGoogleSheetsSync } from '../lib/integrations/sheetsConnector';
 import outbox from '../api/outbox-scheduler';
 
@@ -150,4 +151,40 @@ test('outbox does not report delivered when persisting provider acceptance fails
     globalThis.fetch=originalFetch;
     for(const name of names){if(saved[name]===undefined) delete process.env[name]; else process.env[name]=saved[name];}
   }
+});
+
+test('removed admin and legacy connector surfaces cannot return fabricated data', () => {
+  const removed = [
+    '../src/pages/admin/Billing.tsx',
+    '../src/pages/admin/Logs.tsx',
+    '../src/pages/admin/Domains.tsx',
+    '../api/test-sql.ts',
+    '../lib/data/SynologyLocalRepository.ts',
+    '../lib/branding.ts',
+    '../lib/integrations/storage.ts',
+    '../lib/integrations/syncEngine.ts',
+    '../lib/synology/syncEngine.ts',
+    '../lib/synology/fileWatcher.ts',
+  ];
+  for (const relativePath of removed) {
+    assert.equal(existsSync(new URL(relativePath, import.meta.url)), false, `${relativePath} must stay removed`);
+  }
+});
+
+test('authenticated admin and employee shells do not expose simulated records or actions', () => {
+  const adminDashboard = readFileSync(new URL('../src/pages/admin/Dashboard.tsx', import.meta.url), 'utf8');
+  const adminCompanies = readFileSync(new URL('../src/pages/admin/Companies.tsx', import.meta.url), 'utf8');
+  const employeeDashboard = readFileSync(new URL('../src/pages/employee/Dashboard.tsx', import.meta.url), 'utf8');
+  const employeeJobs = readFileSync(new URL('../src/pages/employee/Jobs.tsx', import.meta.url), 'utf8');
+  const employeePhotos = readFileSync(new URL('../src/pages/employee/Photos.tsx', import.meta.url), 'utf8');
+  const app = readFileSync(new URL('../src/App.tsx', import.meta.url), 'utf8');
+  const repositoryFactory = readFileSync(new URL('../lib/data/repositoryFactory.ts', import.meta.url), 'utf8');
+  const sources = [adminDashboard, adminCompanies, employeeDashboard, employeeJobs, employeePhotos, app, repositoryFactory].join('\n');
+
+  assert.doesNotMatch(sources, /Pergoly Praha|Střechy Kovář|Dřevostavby Morava|Fasády Liberec/);
+  assert.doesNotMatch(sources, /LocalSupabaseMock|SynologyLocalRepository|getMockSynologyDatabaseRows/);
+  assert.doesNotMatch(sources, /generateRealisticLeads|generateRealisticEmployees/);
+  assert.doesNotMatch(sources, /Dnes 13:30|Zítra 08:00|simulaci podpisu/i);
+  assert.match(adminDashboard, /listPlatformCompanies/);
+  assert.match(adminCompanies, /member_count/);
 });

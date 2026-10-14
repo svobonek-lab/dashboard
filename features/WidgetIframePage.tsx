@@ -1,6 +1,6 @@
 import React, { FormEvent, useEffect, useState } from 'react';
 import { AlertCircle, ArrowRight, CheckCircle2, Mail, MapPin, Phone, User } from 'lucide-react';
-import { LocalSupabaseMock, isSupabaseConfigured, publicSupabase } from '../lib/supabase';
+import { isSupabaseConfigured, publicSupabase } from '../lib/supabase';
 import { resolvePublicTenantKey } from '../src/app/publicIntakeRoute';
 import { requestImmediateOutboxDispatch } from '../src/app/emailNotifications';
 
@@ -31,11 +31,6 @@ export const WidgetIframePage: React.FC = () => {
           const { data, error: loadError } = await publicSupabase.rpc('app_get_public_company', { p_public_key: tenantKey });
           if (!loadError && data?.public_key && data.active !== false) {
             setCompany({ id: data.public_key, name: data.name || 'Stavební firma', primary_color: data.color || '#0A84FF', logo_url: data.logo_url || '' });
-          }
-        } else if (!(import.meta as any).env?.PROD) {
-          const mock = LocalSupabaseMock.getOrganizations().find((item: any) => item.id === tenantKey || item.slug === tenantKey);
-          if (mock && (mock.status === null || mock.status === 'Active')) {
-            setCompany({ id: mock.slug || mock.id, name: mock.name || 'Stavební firma', primary_color: mock.primary_color || '#0A84FF', logo_url: mock.logo_url || '' });
           }
         }
       } catch (loadError) {
@@ -83,28 +78,7 @@ export const WidgetIframePage: React.FC = () => {
         if (submitError) throw submitError;
         await requestImmediateOutboxDispatch();
       } else {
-        if ((import.meta as any).env?.PROD) throw new Error('Public intake is not configured');
-        const leads = LocalSupabaseMock.getLeads();
-        leads.unshift({
-          id: `mock-lead-${Date.now()}`,
-          organization_id: company.id,
-          customer_name: form.name.trim(),
-          customerName: form.name.trim(),
-          phone: form.phone.trim(),
-          customerPhone: form.phone.trim(),
-          email: form.email.trim(),
-          customerEmail: form.email.trim(),
-          title: form.projectType,
-          project_type: form.projectType,
-          budget: Number(form.budget) || 0,
-          price: Number(form.budget) || 0,
-          address: form.address.trim(),
-          description,
-          status: 'New',
-          source: 'widget',
-          created_at: new Date().toISOString()
-        } as any);
-        LocalSupabaseMock.saveLeads(leads);
+        throw new Error('Public intake is not configured');
       }
       setSubmitted(true);
     } catch (submitError) {

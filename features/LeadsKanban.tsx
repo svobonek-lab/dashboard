@@ -3,7 +3,6 @@ import { Lead, LeadStatus } from '../types';
 import { MapPin, DollarSign, User, Plus, Phone, MessageSquare, ShieldCheck, Calendar, Clock, AlertTriangle } from 'lucide-react';
 import { canDeleteLead } from '../src/app/permissions';
 import { useOrganization } from '../context/OrganizationContextBase';
-import { supabase, isSupabaseConfigured, isValidUUID, LocalSupabaseMock, DEFAULT_DEMO_ORG_ID } from '../lib/supabase';
 import { createManualLeadDraft } from '../src/app/manualLeadDraft';
 import { getLeadSourceBadge } from '../src/app/leadSource';
 
