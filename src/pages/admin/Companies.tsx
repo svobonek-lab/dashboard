@@ -3,7 +3,7 @@ import { Building2, CheckCircle2, Circle, Copy, LogIn, Mail, Plus, RefreshCw, Se
 import { createPlatformCompany, createPlatformSupportSession, getPlatformPublicFormLink, listPlatformCompanies, resendPlatformOwnerInvite, revokePlatformSupportSession, type NewPlatformCompany, type PlatformCompany } from '../../app/platformClient';
 import { useRouter } from '../../app/router';
 
-const SUBSCRIPTIONS: Record<PlatformCompany['subscription_status'], string> = { not_configured: 'Nenastaveno', pilot: 'Pilot', trial: 'Zkušební', active: 'Aktivní', past_due: 'Po splatnosti', cancelled: 'Ukončeno' };
+const SUBSCRIPTIONS: Record<PlatformCompany['subscription_status'], string> = { not_configured: 'Nenastaveno', pilot: 'Pilot', trial: 'Zkušební', active: 'Aktivní', past_due: 'Po splatnosti', canceled: 'Ukončeno' };
 const EMPTY_COMPANY: NewPlatformCompany = { name: '', slug: '', ownerName: '', ownerEmail: '', plan: 'pilot' };
 
 function OnboardingState({ company }: { company: PlatformCompany }) {

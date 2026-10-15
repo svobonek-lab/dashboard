@@ -134,3 +134,36 @@ jobs:
       - name: Stop disposable PostgreSQL
         if: always()
         run: docker rm --force lead-notes-files-postgres
+
+  stripe-billing-contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - name: Start disposable PostgreSQL
+        run: >-
+          docker run --detach --name stripe-billing-postgres
+          --env POSTGRES_PASSWORD=postgres
+          --health-cmd="pg_isready -U postgres"
+          --health-interval=2s --health-timeout=2s --health-retries=30
+          postgres:17-alpine
+      - name: Wait for PostgreSQL
+        run: |
+          for attempt in {1..30}; do
+            if [ "$(docker inspect --format='{{.State.Health.Status}}' stripe-billing-postgres)" = "healthy" ]; then
+              exit 0
+            fi
+            sleep 2
+          done
+          docker logs stripe-billing-postgres
+          exit 1
+      - name: Apply and verify the Stripe billing contract
+        run: |
+          docker exec -i stripe-billing-postgres psql -v ON_ERROR_STOP=1 -U postgres < supabase/tests/stripe_billing_setup.sql
+          docker exec -i stripe-billing-postgres psql -v ON_ERROR_STOP=1 -U postgres < supabase/staging/20261015_stripe_billing_contract.sql
+          docker exec -i stripe-billing-postgres psql -v ON_ERROR_STOP=1 -U postgres < supabase/tests/stripe_billing_verify.sql
+      - name: Stop disposable PostgreSQL
+        if: always()
+        run: docker rm --force stripe-billing-postgres

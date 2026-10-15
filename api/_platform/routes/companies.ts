@@ -30,7 +30,7 @@ export interface PlatformCompanySummary {
   onboarding_completed: boolean;
   created_at: string;
   member_count: number;
-  subscription_status: 'not_configured' | 'pilot' | 'trial' | 'active' | 'past_due' | 'cancelled';
+  subscription_status: 'not_configured' | 'pilot' | 'trial' | 'active' | 'past_due' | 'canceled';
   integration_status: 'not_verified';
   invitation_status: 'not_sent' | 'sent' | 'accepted';
   first_lead_at: string | null;
@@ -47,7 +47,7 @@ export async function listPlatformCompanies(service: SupabaseClient, actorUserId
     onboarding_completed: row.onboarding_completed === true,
     created_at: String(row.created_at || ''),
     member_count: Number.isFinite(Number(row.member_count)) ? Number(row.member_count) : 0,
-    subscription_status: ['pilot', 'trial', 'active', 'past_due', 'cancelled'].includes(row.subscription_status) ? row.subscription_status : 'not_configured',
+    subscription_status: ['pilot', 'trial', 'active', 'past_due', 'canceled'].includes(row.subscription_status) ? row.subscription_status : 'not_configured',
     integration_status: 'not_verified' as const,
     invitation_status: ['sent', 'accepted'].includes(row.invitation_status) ? row.invitation_status : 'not_sent',
     first_lead_at: row.first_lead_at ? String(row.first_lead_at) : null,
