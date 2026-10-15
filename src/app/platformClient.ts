@@ -11,7 +11,7 @@ export interface PlatformCompany {
   onboarding_completed: boolean;
   created_at: string;
   member_count: number;
-  subscription_status: 'not_configured' | 'pilot' | 'trial' | 'active' | 'past_due' | 'cancelled';
+  subscription_status: 'not_configured' | 'pilot' | 'trial' | 'active' | 'past_due' | 'canceled';
   integration_status: 'not_verified';
   invitation_status: 'not_sent' | 'sent' | 'accepted';
   first_lead_at: string | null;
