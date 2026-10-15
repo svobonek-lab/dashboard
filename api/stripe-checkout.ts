@@ -92,7 +92,7 @@ function readConfig(): BillingConfig {
 }
 
 function validConfig(config: BillingConfig): boolean {
-  if (!/^sk_(test|live)_[A-Za-z0-9]+$/.test(config.secretKey)) return false;
+  if (!/^(?:sk|rk)_(test|live)_[A-Za-z0-9]+$/.test(config.secretKey)) return false;
   if (!/^price_[A-Za-z0-9]+$/.test(config.priceId)) return false;
   try {
     return new URL(config.returnUrl).protocol === 'https:';

@@ -22,7 +22,7 @@ function dependencies(overrides: Partial<CheckoutDependencies> = {}): CheckoutDe
   return {
     authorizeOwner: async () => ({ userId: '20000000-0000-4000-8000-000000000002', companyId: tenantId, customerId: null }),
     createSession: async (input) => ({ url: 'https://checkout.stripe.com/c/pay_test', input }),
-    config: () => ({ secretKey: 'sk_test_unitonly', priceId: 'price_testunitonly', returnUrl: 'https://preview.example.com' }),
+    config: () => ({ secretKey: 'rk_test_unitonly', priceId: 'price_testunitonly', returnUrl: 'https://preview.example.com' }),
     ...overrides,
   };
 }
