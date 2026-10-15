@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import test from 'node:test';
 
-import { createStripeCheckoutHandler, type CheckoutDependencies } from '../api/stripe-checkout.ts';
+import { createStripeCheckoutHandler, type CheckoutDependencies } from '../api/_billing/stripe-checkout.ts';
 
 function responseRecorder() {
   return {
@@ -75,7 +75,7 @@ test('checkout fails closed when server billing configuration is absent', async 
 });
 
 test('the live authorizer derives tenant scope from one active owner membership', () => {
-  const source = readFileSync(new URL('../api/stripe-checkout.ts', import.meta.url), 'utf8');
+  const source = readFileSync(new URL('../api/_billing/stripe-checkout.ts', import.meta.url), 'utf8');
   assert.match(source, /auth\.getUser\(token\)/);
   assert.match(source, /from\('app_members'\)[\s\S]+eq\('user_id', authData\.user\.id\)[\s\S]+eq\('active', true\)[\s\S]+eq\('role', 'owner'\)/);
   assert.match(source, /memberships\.length !== 1/);
