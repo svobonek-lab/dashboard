@@ -3,6 +3,7 @@ import { useOrganization } from '@/context/OrganizationContext';
 import { RouterProvider, useRouter } from './app/router';
 import { ProtectedRoute } from './app/ProtectedRoute';
 import { RoleGuard } from './app/RoleGuard';
+import { SubscriptionGuard } from './app/SubscriptionGuard';
 import { getDefaultRouteForRole, UserRole } from './app/permissions';
 import { canEmployeeAccessLead, getEmployeeLeads } from './app/employeeScope';
 import { requestImmediateOutboxDispatch } from './app/emailNotifications';
@@ -455,6 +456,7 @@ function AppContent() {
   if (pathname === '/employee' || pathname.startsWith('/employee/')) {
     return (
       <ProtectedRoute allowedRole="employee">
+        <SubscriptionGuard>
         <EmployeeLayout leads={employeeLeads}>
           {selectedLead && (pathname === '/employee' || pathname === '/employee/dashboard') ? (
             <LeadDetail lead={selectedLead} employees={[]} onBack={() => setSelectedLead(null)} onOpenPhoto={() => {}} onOpenVoiceNotes={() => {}} onUpdateLead={handleUpdateLead} canManageAssignment={false} canEditOperationalFields />
@@ -468,6 +470,7 @@ function AppContent() {
             <EmployeeDashboardPage leads={employeeLeads} onSelectLead={setSelectedLead} onUpdateLead={handleUpdateLead} onUpdateLeadStatus={handleUpdateLeadStatus} />
           )}
         </EmployeeLayout>
+        </SubscriptionGuard>
       </ProtectedRoute>
     );
   }
@@ -475,6 +478,7 @@ function AppContent() {
   // 4. Owner Routes (Executive CRM)
   return (
     <ProtectedRoute allowedRole="owner">
+      <SubscriptionGuard>
       <OwnerLayout leads={leads} onSelectLead={setSelectedLead}>
         {pathname === '/dashboard' || pathname === '/' ? (
           <OwnerDashboardPage leads={leads} onSelectLead={setSelectedLead} />
@@ -533,6 +537,7 @@ function AppContent() {
           </div>
         </div>
       )}
+      </SubscriptionGuard>
     </ProtectedRoute>
   );
 }
