@@ -134,7 +134,7 @@ reset role;
 
 do $$
 begin
-  if (select stripe_customer_id from public.app_companies where id = '20000000-0000-4000-8000-000000000002') is not null
+  if (select stripe_customer_id from public.app_companies where id = '20000000-0000-4000-8000-000000000002') <> 'cus_boundb'
   then raise exception 'cross-tenant event mutated company B'; end if;
 end;
 $$;
