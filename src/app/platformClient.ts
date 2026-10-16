@@ -1,4 +1,5 @@
 import { supabase } from '@/lib/supabase';
+import type { OwnerLegalConsent } from './legalConsent';
 import type { AppCompanyRow } from './appSchemaIdentity';
 import type { AppLeadRow, AppMemberRow } from './productionSchema';
 import { createSupportLeadMutator } from './supportMutationRetry';
@@ -24,6 +25,7 @@ export interface NewPlatformCompany {
   ownerName: string;
   ownerEmail: string;
   plan: 'pilot';
+  legalConsent: OwnerLegalConsent;
 }
 
 export interface PlatformSupportSession {

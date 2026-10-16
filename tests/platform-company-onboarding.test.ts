@@ -14,6 +14,7 @@ const validInput: PlatformCompanyOnboardingInput = {
   ownerName: 'Jan Novák',
   ownerEmail: 'jan@example.cz',
   plan: 'pilot',
+  legalConsent: { termsAccepted: true, dpaAccepted: true, acceptedAt: new Date().toISOString() },
 };
 
 test('company onboarding validates input before touching Supabase', async () => {
@@ -43,6 +44,8 @@ test('company onboarding creates one pending owner invite through the actor-boun
   assert.deepEqual(calls[0].args, {
     p_actor_user_id: 'admin-a', p_name: 'Střechy Novák', p_slug: 'strechy-novak',
     p_owner_name: 'Jan Novák', p_owner_email: 'jan@example.cz', p_plan: 'pilot',
+    p_terms_accepted_at: validInput.legalConsent.acceptedAt,
+    p_dpa_accepted_at: validInput.legalConsent.acceptedAt,
   });
 });
 
