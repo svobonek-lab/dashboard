@@ -17,6 +17,10 @@
       "destination": "/api/billing?route=webhook"
     },
     {
+      "source": "/api/stripe-portal",
+      "destination": "/api/billing?route=portal"
+    },
+    {
       "source": "/api/(.*)",
       "destination": "/api/$1"
     },

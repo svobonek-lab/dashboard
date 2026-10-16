@@ -3,7 +3,7 @@ import test from 'node:test';
 
 import { authorizePlatformRequest, recordPlatformAudit } from '../api/_platform/auth.js';
 import { platformErrorResponse, requireGet } from '../api/_platform/http.js';
-import { listPlatformCompanies } from '../api/_platform/routes/companies.js';
+import { listPlatformCompanies, setPlatformBillingPlan } from '../api/_platform/routes/companies.js';
 import { createPlatformSupportSession, getPlatformSupportSession, revokePlatformSupportSession } from '../api/_platform/routes/supportSession.js';
 import { getSupportWorkspace, mutateSupportLead } from '../api/_platform/routes/supportWorkspace.js';
 import platformRouter, { resolvePlatformRoute } from '../api/platform/[route].js';
@@ -110,16 +110,35 @@ test('company directory uses the admin-scoped RPC and returns only operational f
         member_count: 3, subscription_status: 'not_configured',
         email: 'customer@example.invalid', address: 'private',
       }], error: null };
+  }, from: (table: string) => {
+    assert.equal(table, 'app_companies');
+    return { select: () => ({ in: async () => ({ data: [{ id: 'company-a', plan: 'starter' }], error: null }) }) };
   } } as any;
   const result = await listPlatformCompanies(service, 'admin-a');
   assert.deepEqual(call, { name: 'app_platform_list_companies', args: { p_actor_user_id: 'admin-a' } });
   assert.deepEqual(result, [{
     id: 'company-a', name: 'Firma A', slug: 'firma-a', active: true,
     onboarding_completed: false, created_at: '2026-10-05T00:00:00Z',
-    member_count: 3, subscription_status: 'not_configured', integration_status: 'not_verified',
+    member_count: 3, plan: 'starter', subscription_status: 'not_configured', integration_status: 'not_verified',
     invitation_status: 'not_sent', first_lead_at: null,
   }]);
   assert.equal('email' in result[0], false);
+});
+
+test('platform billing plan uses an actor-bound service RPC and cannot activate a subscription', async () => {
+  let call: { name: string; args: unknown } | undefined;
+  const service = { rpc: async (name: string, args: unknown) => {
+    call = { name, args };
+    return { data: [{ company_id: 'company-a', plan: 'growth' }], error: null };
+  } } as any;
+  assert.deepEqual(await setPlatformBillingPlan(service, 'admin-a', 'company-a', 'growth'), {
+    companyId: 'company-a', plan: 'growth',
+  });
+  assert.deepEqual(call, {
+    name: 'app_platform_set_billing_plan',
+    args: { p_actor_user_id: 'admin-a', p_company_id: 'company-a', p_plan: 'growth' },
+  });
+  await assert.rejects(setPlatformBillingPlan(service, 'admin-a', 'company-a', 'enterprise'), /BILLING_PLAN_INVALID/);
 });
 
 test('support sessions are actor-bound, time-limited and call service-only RPCs', async () => {

@@ -30,6 +30,7 @@ export interface PlatformCompanySummary {
   onboarding_completed: boolean;
   created_at: string;
   member_count: number;
+  plan: 'pilot' | 'starter' | 'growth' | 'not_configured';
   subscription_status: 'not_configured' | 'pilot' | 'trial' | 'active' | 'past_due' | 'canceled';
   integration_status: 'not_verified';
   invitation_status: 'not_sent' | 'sent' | 'accepted';
@@ -39,7 +40,14 @@ export interface PlatformCompanySummary {
 export async function listPlatformCompanies(service: SupabaseClient, actorUserId: string): Promise<PlatformCompanySummary[]> {
   const { data, error } = await service.rpc('app_platform_list_companies', { p_actor_user_id: actorUserId });
   if (error) throw new PlatformHttpError('COMPANY_DIRECTORY_UNAVAILABLE', 502);
-  return (data || []).map((row: any) => ({
+  const rows = data || [];
+  const ids = rows.map((row: any) => String(row.id || '')).filter(Boolean);
+  const { data: planRows, error: planError } = ids.length
+    ? await service.from('app_companies').select('id,plan').in('id', ids)
+    : { data: [], error: null };
+  if (planError) throw new PlatformHttpError('COMPANY_DIRECTORY_UNAVAILABLE', 502);
+  const plans = new Map((planRows || []).map((row: any) => [String(row.id), String(row.plan || '')]));
+  return rows.map((row: any) => ({
     id: String(row.id),
     name: String(row.name || ''),
     slug: String(row.slug || ''),
@@ -47,11 +55,35 @@ export async function listPlatformCompanies(service: SupabaseClient, actorUserId
     onboarding_completed: row.onboarding_completed === true,
     created_at: String(row.created_at || ''),
     member_count: Number.isFinite(Number(row.member_count)) ? Number(row.member_count) : 0,
+    plan: ['pilot', 'starter', 'growth'].includes(plans.get(String(row.id)) || '')
+      ? plans.get(String(row.id)) as 'pilot' | 'starter' | 'growth'
+      : 'not_configured',
     subscription_status: ['pilot', 'trial', 'active', 'past_due', 'canceled'].includes(row.subscription_status) ? row.subscription_status : 'not_configured',
     integration_status: 'not_verified' as const,
     invitation_status: ['sent', 'accepted'].includes(row.invitation_status) ? row.invitation_status : 'not_sent',
     first_lead_at: row.first_lead_at ? String(row.first_lead_at) : null,
   }));
+}
+
+export async function setPlatformBillingPlan(
+  service: SupabaseClient,
+  actorUserId: string,
+  companyId: string,
+  plan: string,
+): Promise<{ companyId: string; plan: 'pilot' | 'starter' | 'growth' }> {
+  if (!companyId) throw new PlatformHttpError('COMPANY_ID_REQUIRED', 400);
+  if (!['pilot', 'starter', 'growth'].includes(plan)) throw new PlatformHttpError('BILLING_PLAN_INVALID', 400);
+  const { data, error } = await service.rpc('app_platform_set_billing_plan', {
+    p_actor_user_id: actorUserId,
+    p_company_id: companyId,
+    p_plan: plan,
+  });
+  if (error) throw new PlatformHttpError('BILLING_PLAN_UPDATE_FAILED', 502);
+  const row = readRpcRow(data);
+  if (String(row?.company_id || '') !== companyId || String(row?.plan || '') !== plan) {
+    throw new PlatformHttpError('BILLING_PLAN_UPDATE_FAILED', 502);
+  }
+  return { companyId, plan: plan as 'pilot' | 'starter' | 'growth' };
 }
 
 function readRpcRow(data: unknown): any {
@@ -238,6 +270,9 @@ export default async function platformCompaniesHandler(request: any, response: a
       }
       if (request.body?.action === 'resend_owner_invite') {
         return resendPlatformOwnerInvite(service, userId, String(request.body?.companyId || ''), String(process.env.APP_URL || ''));
+      }
+      if (request.body?.action === 'set_billing_plan') {
+        return setPlatformBillingPlan(service, userId, String(request.body?.companyId || ''), String(request.body?.plan || ''));
       }
       if (request.body?.action) throw new PlatformHttpError('COMPANY_ACTION_INVALID', 400);
       return { company: await createPlatformCompanyOnboarding(service, userId, request.body, String(process.env.APP_URL || '')) };

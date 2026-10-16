@@ -11,6 +11,7 @@ export interface PlatformCompany {
   onboarding_completed: boolean;
   created_at: string;
   member_count: number;
+  plan: 'pilot' | 'starter' | 'growth' | 'not_configured';
   subscription_status: 'not_configured' | 'pilot' | 'trial' | 'active' | 'past_due' | 'canceled';
   integration_status: 'not_verified';
   invitation_status: 'not_sent' | 'sent' | 'accepted';
@@ -89,6 +90,12 @@ export async function getPlatformPublicFormLink(companyId: string): Promise<stri
     method: 'POST', body: JSON.stringify({ action: 'public_form_link', companyId }),
   });
   return new URL(result.publicFormPath, window.location.origin).toString();
+}
+
+export async function setPlatformCompanyBillingPlan(companyId: string, plan: 'pilot' | 'starter' | 'growth'): Promise<void> {
+  await platformRequest('companies', {
+    method: 'POST', body: JSON.stringify({ action: 'set_billing_plan', companyId, plan }),
+  });
 }
 
 export async function createPlatformSupportSession(companyId: string, reason: string): Promise<PlatformSupportSession> {

@@ -1,6 +1,56 @@
 \set ON_ERROR_STOP on
 
 set role service_role;
+select public.app_bind_stripe_customer(
+  '20000000-0000-4000-8000-000000000002', 'cus_boundb'
+);
+select public.app_bind_stripe_customer(
+  '20000000-0000-4000-8000-000000000002', 'cus_boundb'
+);
+select public.app_platform_set_billing_plan(
+  '30000000-0000-4000-8000-000000000003',
+  '20000000-0000-4000-8000-000000000002',
+  'starter'
+);
+reset role;
+
+do $$
+begin
+  if not exists (
+    select 1 from public.app_companies
+    where id = '20000000-0000-4000-8000-000000000002'
+      and stripe_customer_id = 'cus_boundb'
+      and plan = 'starter'
+      and subscription_status = 'not_configured'
+  ) then raise exception 'plan/customer setup incorrectly activated or failed to persist'; end if;
+  if (select count(*) from public.app_platform_audit_events where action = 'billing_plan.updated') <> 1
+  then raise exception 'billing plan update was not audited'; end if;
+end;
+$$;
+
+set role authenticated;
+do $$
+begin
+  begin
+    perform public.app_bind_stripe_customer(
+      '10000000-0000-4000-8000-000000000001', 'cus_browser'
+    );
+    raise exception 'authenticated browser unexpectedly bound a Stripe customer';
+  exception when insufficient_privilege then null;
+  end;
+  begin
+    perform public.app_platform_set_billing_plan(
+      '30000000-0000-4000-8000-000000000003',
+      '10000000-0000-4000-8000-000000000001', 'growth'
+    );
+    raise exception 'authenticated browser unexpectedly changed a plan';
+  exception when insufficient_privilege then null;
+  end;
+end;
+$$;
+reset role;
+
+set role service_role;
 select public.app_apply_stripe_subscription_event(
   'evt_checkout_a', 'checkout.session.completed', '2026-10-15T10:00:00Z',
   '10000000-0000-4000-8000-000000000001', 'cus_a', 'sub_a', 'active', null
@@ -84,7 +134,7 @@ reset role;
 
 do $$
 begin
-  if (select stripe_customer_id from public.app_companies where id = '20000000-0000-4000-8000-000000000002') is not null
+  if (select stripe_customer_id from public.app_companies where id = '20000000-0000-4000-8000-000000000002') <> 'cus_boundb'
   then raise exception 'cross-tenant event mutated company B'; end if;
 end;
 $$;
