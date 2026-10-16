@@ -1,4 +1,5 @@
 import stripeCheckoutHandler from './_billing/stripe-checkout.js';
+import stripePortalHandler from './_billing/stripe-portal.js';
 import stripeWebhookHandler from './_billing/stripe-webhook.js';
 
 export const config = {
@@ -33,6 +34,10 @@ export default async function billingHandler(request: BillingRequest, response: 
   }
   if (route === 'webhook') {
     await stripeWebhookHandler(request as never, response as never);
+    return;
+  }
+  if (route === 'portal') {
+    await stripePortalHandler(request as never, response as never);
     return;
   }
   response.status(404).json({ code: 'BILLING_ROUTE_NOT_FOUND' });

@@ -1,31 +1,39 @@
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import Stripe from 'stripe';
 
-type CheckoutRequest = {
+export type CheckoutRequest = {
   method?: string;
   headers?: Record<string, string | string[] | undefined>;
   body?: unknown;
 };
 
-type CheckoutResponse = {
+export type CheckoutResponse = {
   setHeader(name: string, value: string): void;
   status(code: number): { json(value: unknown): void };
 };
 
-type OwnerBillingIdentity = {
+export type OwnerBillingIdentity = {
   userId: string;
   companyId: string;
   customerId: string | null;
+  plan: string;
   email?: string;
 };
 
-type BillingConfig = { secretKey: string; priceId: string; returnUrl: string };
+export type BillingConfig = {
+  secretKey: string;
+  returnUrl: string;
+  mode: 'test' | 'live';
+  prices: Record<'pilot' | 'starter' | 'growth', string>;
+};
 
 type StripeCheckoutInput = Stripe.Checkout.SessionCreateParams;
 
 export interface CheckoutDependencies {
   authorizeOwner(request: CheckoutRequest): Promise<OwnerBillingIdentity>;
-  createSession(input: StripeCheckoutInput, secretKey: string): Promise<{ url: string | null; input?: unknown }>;
+  createCustomer(input: Stripe.CustomerCreateParams, secretKey: string, idempotencyKey: string): Promise<{ id: string }>;
+  bindCustomer(companyId: string, customerId: string): Promise<void>;
+  createSession(input: StripeCheckoutInput, secretKey: string, idempotencyKey: string): Promise<{ url: string | null; input?: unknown }>;
   config(): BillingConfig;
 }
 
@@ -50,7 +58,7 @@ function supabaseClients(): { auth: SupabaseClient; service: SupabaseClient } {
   return { auth: createClient(url, anonKey, options), service: createClient(url, serviceKey, options) };
 }
 
-async function authorizeOwner(request: CheckoutRequest): Promise<OwnerBillingIdentity> {
+export async function authorizeOwner(request: CheckoutRequest): Promise<OwnerBillingIdentity> {
   const token = readBearer(request.headers);
   if (!token) throw new BillingHttpError('BILLING_AUTH_REQUIRED', 401);
   const { auth, service } = supabaseClients();
@@ -70,7 +78,7 @@ async function authorizeOwner(request: CheckoutRequest): Promise<OwnerBillingIde
   const companyId = String(memberships[0].company_id || '');
   const { data: company, error: companyError } = await service
     .from('app_companies')
-    .select('id,active,stripe_customer_id')
+    .select('id,active,stripe_customer_id,plan')
     .eq('id', companyId)
     .eq('active', true)
     .maybeSingle();
@@ -79,21 +87,26 @@ async function authorizeOwner(request: CheckoutRequest): Promise<OwnerBillingIde
     userId: authData.user.id,
     companyId,
     customerId: typeof company.stripe_customer_id === 'string' ? company.stripe_customer_id : null,
+    plan: String(company.plan || 'pilot'),
     email: authData.user.email,
   };
 }
 
-function readConfig(): BillingConfig {
+export function readBillingConfig(): BillingConfig {
   return {
     secretKey: String(process.env.STRIPE_SECRET_KEY || '').trim(),
-    priceId: String(process.env.STRIPE_PRICE_ID || '').trim(),
     returnUrl: String(process.env.BILLING_RETURN_URL || '').trim(),
+    mode: process.env.STRIPE_BILLING_MODE === 'live' ? 'live' : 'test',
+    prices: {
+      pilot: String(process.env.STRIPE_PRICE_PILOT_ID || process.env.STRIPE_PRICE_ID || '').trim(),
+      starter: String(process.env.STRIPE_PRICE_STARTER_ID || '').trim(),
+      growth: String(process.env.STRIPE_PRICE_GROWTH_ID || '').trim(),
+    },
   };
 }
 
 function validConfig(config: BillingConfig): boolean {
-  if (!/^(?:sk|rk)_(test|live)_[A-Za-z0-9]+$/.test(config.secretKey)) return false;
-  if (!/^price_[A-Za-z0-9]+$/.test(config.priceId)) return false;
+  if (!new RegExp(`^(?:sk|rk)_${config.mode}_[A-Za-z0-9]+$`).test(config.secretKey)) return false;
   try {
     return new URL(config.returnUrl).protocol === 'https:';
   } catch {
@@ -101,10 +114,40 @@ function validConfig(config: BillingConfig): boolean {
   }
 }
 
-async function createSession(input: StripeCheckoutInput, secretKey: string): Promise<{ url: string | null }> {
+async function createCustomer(input: Stripe.CustomerCreateParams, secretKey: string, idempotencyKey: string): Promise<{ id: string }> {
   const stripe = new Stripe(secretKey);
-  const session = await stripe.checkout.sessions.create(input);
+  return stripe.customers.create(input, { idempotencyKey });
+}
+
+async function bindCustomer(companyId: string, customerId: string): Promise<void> {
+  const { service } = supabaseClients();
+  const { error } = await service.rpc('app_bind_stripe_customer', {
+    p_company_id: companyId,
+    p_stripe_customer_id: customerId,
+  });
+  if (error) throw new BillingHttpError('BILLING_CUSTOMER_BIND_FAILED', 502);
+}
+
+async function createSession(input: StripeCheckoutInput, secretKey: string, idempotencyKey: string): Promise<{ url: string | null }> {
+  const stripe = new Stripe(secretKey);
+  const session = await stripe.checkout.sessions.create(input, { idempotencyKey });
   return { url: session.url };
+}
+
+function requestId(headers: CheckoutRequest['headers'] = {}): string {
+  const raw = headers['x-stavbaflow-idempotency-key'];
+  const value = String(Array.isArray(raw) ? raw[0] : raw || '').trim();
+  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value)) {
+    throw new BillingHttpError('BILLING_REQUEST_ID_INVALID', 400);
+  }
+  return value;
+}
+
+function priceFor(config: BillingConfig, plan: string): string {
+  if (!['pilot', 'starter', 'growth'].includes(plan)) throw new BillingHttpError('BILLING_PLAN_UNAVAILABLE', 409);
+  const priceId = config.prices[plan as keyof BillingConfig['prices']];
+  if (!/^price_[A-Za-z0-9]+$/.test(priceId)) throw new BillingHttpError('BILLING_PLAN_UNAVAILABLE', 409);
+  return priceId;
 }
 
 export function createStripeCheckoutHandler(dependencies: CheckoutDependencies) {
@@ -120,20 +163,30 @@ export function createStripeCheckoutHandler(dependencies: CheckoutDependencies) 
       const config = dependencies.config();
       if (!validConfig(config)) throw new BillingHttpError('BILLING_NOT_CONFIGURED', 503);
       const owner = await dependencies.authorizeOwner(request);
+      const operationId = requestId(request.headers);
+      const priceId = priceFor(config, owner.plan);
       const baseUrl = new URL(config.returnUrl).origin;
+      let customerId = owner.customerId;
+      if (!customerId) {
+        const customer = await dependencies.createCustomer({
+          email: owner.email,
+          metadata: { tenant_id: owner.companyId },
+        }, config.secretKey, `customer:${owner.companyId}`);
+        customerId = customer.id;
+        await dependencies.bindCustomer(owner.companyId, customerId);
+      }
       const sessionInput: StripeCheckoutInput = {
         mode: 'subscription',
-        line_items: [{ price: config.priceId, quantity: 1 }],
+        customer: customerId,
+        line_items: [{ price: priceId, quantity: 1 }],
         client_reference_id: owner.companyId,
-        metadata: { tenant_id: owner.companyId },
-        subscription_data: { metadata: { tenant_id: owner.companyId } },
-        success_url: `${baseUrl}/settings?billing=success`,
-        cancel_url: `${baseUrl}/settings?billing=canceled`,
+        metadata: { tenant_id: owner.companyId, plan: owner.plan },
+        subscription_data: { metadata: { tenant_id: owner.companyId, plan: owner.plan } },
+        success_url: `${baseUrl}/billing/return?status=success`,
+        cancel_url: `${baseUrl}/billing/return?status=canceled`,
       };
-      if (owner.customerId) sessionInput.customer = owner.customerId;
-      else if (owner.email) sessionInput.customer_email = owner.email;
 
-      const session = await dependencies.createSession(sessionInput, config.secretKey);
+      const session = await dependencies.createSession(sessionInput, config.secretKey, `checkout:${owner.companyId}:${operationId}`);
       if (!session.url || new URL(session.url).hostname !== 'checkout.stripe.com') {
         throw new BillingHttpError('BILLING_SESSION_FAILED', 502);
       }
@@ -154,4 +207,4 @@ export function createStripeCheckoutHandler(dependencies: CheckoutDependencies) 
   };
 }
 
-export default createStripeCheckoutHandler({ authorizeOwner, createSession, config: readConfig });
+export default createStripeCheckoutHandler({ authorizeOwner, createCustomer, bindCustomer, createSession, config: readBillingConfig });

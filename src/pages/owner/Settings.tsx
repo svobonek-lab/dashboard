@@ -1,7 +1,8 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Bell, Building2, Check, Image as ImageIcon, Mail, MapPin, Phone, Save, Upload } from 'lucide-react';
+import { Bell, Building2, Check, CreditCard, Image as ImageIcon, Mail, MapPin, Phone, Save, Upload } from 'lucide-react';
 import { useOrganization } from '@/context/OrganizationContext';
 import { canManageCompany } from '@/src/app/permissions';
+import { startBillingPortal } from '@/src/app/billingClient';
 
 export const OwnerSettingsPage: React.FC = () => {
   const { dbUser, currentOrg, updateBrandingAdmin } = useOrganization();
@@ -9,6 +10,9 @@ export const OwnerSettingsPage: React.FC = () => {
   const [form, setForm] = useState({ name: '', color: '#2563eb', logo: '', email: '', phone: '', address: '', emailNotifications: true });
   const [providerConfigured, setProviderConfigured] = useState<boolean | null>(null);
   const [state, setState] = useState<{ kind: 'idle' | 'saving' | 'success' | 'error'; message?: string }>({ kind: 'idle' });
+  const [billingBusy, setBillingBusy] = useState(false);
+  const [billingError, setBillingError] = useState('');
+  const billingReturn = new URLSearchParams(window.location.search).get('billing');
 
   useEffect(() => {
     setForm({
@@ -46,11 +50,24 @@ export const OwnerSettingsPage: React.FC = () => {
 
   const fieldClass = 'mt-1.5 w-full rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-3 text-sm text-slate-950 outline-none transition focus:border-blue-400 focus:bg-white focus:ring-4 focus:ring-blue-50';
 
+  const openBillingPortal = async () => {
+    setBillingBusy(true); setBillingError('');
+    try { await startBillingPortal(); }
+    catch (error) { setBillingError(error instanceof Error ? error.message : 'Správu plateb se nepodařilo otevřít.'); setBillingBusy(false); }
+  };
+
   return (
     <div className="workspace-page mx-auto max-w-4xl">
       <header className="workspace-page-header"><div><p className="workspace-kicker">Nastavení firmy</p><h1 className="workspace-title">Firemní profil</h1><p className="workspace-subtitle">Údaje používané v pracovním prostoru a při komunikaci se zákazníkem.</p></div></header>
       {state.kind === 'success' && <div className="flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-800"><Check className="h-4 w-4" />{state.message}</div>}
       {state.kind === 'error' && <div role="alert" className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-700">{state.message}</div>}
+      {billingReturn === 'success' && <div role="status" className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-800">Platba byla přijata. Aktivace předplatného se ověřuje přes Stripe.</div>}
+      {billingReturn === 'canceled' && <div role="status" className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-medium text-amber-800">Platba byla zrušena a tarif se nezměnil.</div>}
+      {billingReturn === 'portal_return' && <div role="status" className="rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm font-medium text-blue-800">Vrátili jste se ze zabezpečené správy plateb.</div>}
+      <section className="workspace-panel flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between sm:p-7">
+        <div className="flex items-start gap-3"><span className="rounded-xl bg-blue-50 p-2 text-blue-700"><CreditCard className="h-5 w-5" /></span><div><h2 className="text-sm font-semibold text-slate-950">Předplatné a fakturace</h2><p className="mt-1 text-xs leading-5 text-slate-500">Stav: {currentOrg?.subscription_status || 'nenastaveno'} · Tarif: {currentOrg?.plan || 'nenastaveno'}</p>{billingError && <p role="alert" className="mt-2 text-xs font-semibold text-rose-700">{billingError}</p>}</div></div>
+        <button type="button" disabled={billingBusy} onClick={openBillingPortal} className="workspace-secondary-action min-h-11 px-4 text-sm font-semibold disabled:opacity-60">{billingBusy ? 'Otevírám…' : 'Spravovat platbu'}</button>
+      </section>
       <form onSubmit={save} className="workspace-panel space-y-7 p-5 sm:p-7">
         <section>
           <div className="flex items-center gap-2"><Building2 className="h-4 w-4 text-blue-600" /><h2 className="text-sm font-semibold text-slate-950">Identita</h2></div>

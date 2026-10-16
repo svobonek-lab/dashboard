@@ -1,59 +1,63 @@
-# Stripe billing webhook runbook
+# Stripe billing runbook
 
-Tento dokument popisuje bezpečnou aktivaci endpointu `POST /api/stripe-webhook`. SQL v repozitáři je reviewovatelný stagingový návrh a nesmí se automaticky aplikovat do produkce.
+Tento dokument popisuje bezpečnou aktivaci Checkout, Billing Portal a endpointu `POST /api/stripe-webhook`. SQL v repozitáři je reviewovatelný stagingový návrh a nesmí se automaticky aplikovat do produkce.
 
 ## Datový kontrakt
 
-`supabase/staging/20261015_stripe_billing_contract.sql` přidává do `app_companies`:
+`supabase/staging/20261015_stripe_billing_contract.sql` přidává do `app_companies` stav předplatného, unikátní Stripe Customer a Subscription ID, konec období a čas poslední události. `app_stripe_webhook_events` uchovává provozní metadata pro idempotenci. Browser role k tabulce ani zapisovacímu RPC nemají přístup.
 
-- `subscription_status`: `not_configured`, `pilot`, `trial`, `active`, `past_due` nebo `canceled`;
-- `stripe_customer_id` a `stripe_subscription_id` s unikátní vazbou na firmu;
-- `current_period_end`;
-- `stripe_event_created_at`, který brání starší události přepsat novější stav.
+`supabase/staging/20261016_stripe_billing_completion.sql` přidává dvě service-only operace. `app_platform_set_billing_plan` dovolí ověřenému platform adminovi zvolit pouze `pilot`, `starter` nebo `growth`, ale nikdy nemění `subscription_status`. `app_bind_stripe_customer` atomicky sváže Stripe Customer s jedinou firmou. Obě funkce mají pevný `search_path` a odebraná browserová oprávnění.
 
-Tabulka `app_stripe_webhook_events` uchovává pouze Stripe event ID a provozní metadata potřebná pro idempotenci. Browser role k ní ani k zapisovacímu RPC nemají přístup. RPC je dostupné pouze `service_role` a každá jeho operace je atomická.
+## Checkout a Portal
 
-## Stripe Checkout
-
-Při serverovém vytváření subscription Checkout Session nastavte oba údaje:
+Checkout endpoint odvodí `tenant_id` z jediné aktivní owner membership. Price ID vybere pouze ze serverového allowlistu podle `app_companies.plan`; browser cenu ani tenant neposílá. Checkout Session obsahuje:
 
 ```ts
 client_reference_id: tenantId,
+metadata: { tenant_id: tenantId, plan },
 subscription_data: {
-  metadata: { tenant_id: tenantId },
+  metadata: { tenant_id: tenantId, plan },
 },
 ```
 
-`client_reference_id` sváže první `checkout.session.completed` s firmou. Metadata subscription umožní stejnou kontrolu u pozdějších událostí. Hodnota musí být interní UUID `app_companies.id`; neposílejte ji z libovolného browserového formuláře bez serverového ověření členství.
+Browser posílá náhodný UUID idempotency klíč v hlavičce. Existující Customer se znovu použije a nový se vytváří se stabilním serverovým idempotency klíčem. Návrat vede na `/billing/return`, který neobchází přihlášení ani placený workspace. Přístup se aktivuje až po platném webhooku.
 
-## Vercel prostředí
+`POST /api/stripe-portal` vytvoří krátkodobou session na přesném hostu `billing.stripe.com` pouze pro ověřeného ownera se svázaným Customerem.
 
-Nastavte jako server-only proměnné na dashboard projektu:
+## Vercel Preview prostředí
 
-- `STRIPE_WEBHOOK_SECRET`: signing secret konkrétního endpointu z Stripe Workbench, začíná `whsec_`;
-- `SUPABASE_URL`;
-- `SUPABASE_SERVICE_ROLE_KEY`.
+Nastavte pouze jako serverové proměnné:
 
-Žádná z těchto hodnot nesmí mít prefix `VITE_` ani být dostupná browseru. Stripe API secret key endpoint nepotřebuje, protože nevolá Stripe API; podpis ověřuje endpoint signing secret.
+- `STRIPE_WEBHOOK_SECRET`: signing secret konkrétního testovacího webhook endpointu;
+- `STRIPE_SECRET_KEY`: testovací restricted nebo secret key pro Customer, Checkout a Portal;
+- `STRIPE_BILLING_MODE=test`;
+- `STRIPE_PRICE_PILOT_ID`, `STRIPE_PRICE_STARTER_ID`, `STRIPE_PRICE_GROWTH_ID`: povolené opakované testovací Stripe Price ID;
+- `BILLING_RETURN_URL`: přesný HTTPS origin Preview dashboardu;
+- `SUPABASE_URL` a `SUPABASE_SERVICE_ROLE_KEY` pro oddělený staging.
+
+Žádná z těchto hodnot nesmí mít prefix `VITE_` ani být dostupná browseru. Testovací režim odmítne live key a live režim odmítne testovací key. Webhook používá vlastní endpoint signing secret; Checkout klíč ho nenahrazuje.
 
 ## Stripe Workbench
 
-Vytvořte HTTPS webhook na `https://<dashboard-host>/api/stripe-webhook` a povolte jen:
+Vytvořte HTTPS webhook na `https://<preview-host>/api/stripe-webhook` a povolte jen:
 
 - `checkout.session.completed`;
 - `customer.subscription.updated`;
 - `customer.subscription.deleted`.
 
-Signing secret testovacího a produkčního endpointu je odlišný. Nezaměňujte je. Po změně secretu aktualizujte Vercel proměnnou a vytvořte nový deployment.
+Signing secret testovacího a produkčního endpointu je odlišný. Po změně secretu aktualizujte Vercel proměnnou a vytvořte nový Preview deployment.
 
-## Bezpečné uvedení do provozu
+## Bezpečná přejímka
 
-1. Review SQL a spusťte jej pouze v izolovaném stagingu.
+1. Review oba SQL návrhy a spusťte je pouze v izolovaném stagingu.
 2. Spusťte disposable SQL kontrakt z CI a všechny aplikační kontroly.
-3. Nastavte stagingový Stripe webhook a stagingový signing secret.
-4. Odešlete testovací checkout, update a delete; zkontrolujte stav firmy a právě jeden řádek pro každé event ID.
-5. Zopakujte stejnou událost a ověřte odpověď `duplicate` bez druhé změny.
-6. Odešlete starší podepsanou událost a ověřte odpověď `stale` bez návratu stavu zpět.
-7. Produkční SQL, secret a webhook aktivujte až po samostatném schválení. Nikdy nekopírujte stagingový secret.
+3. Nastavte testovací webhook, serverové Stripe proměnné a stagingové Supabase proměnné pouze pro Preview.
+4. Platform admin nastaví stagingové firmě tarif. Ověřte, že stav zůstane `not_configured`.
+5. Owner otevře testovací Checkout, dokončí platbu a po aktivaci otevře Billing Portal.
+6. Zkontrolujte stav firmy a právě jeden řádek pro každé event ID.
+7. Zopakujte stejnou událost a ověřte `duplicate` bez druhé změny.
+8. Odešlete starší podepsanou událost a ověřte `stale` bez návratu stavu zpět.
+9. Ověřte zrušení/past due a rozdílnou obrazovku ownera a zaměstnance.
+10. Produkční SQL, klíče a webhook aktivujte až po samostatném schválení. Nikdy nekopírujte stagingové secrets.
 
 Neplatný podpis vrací `400`. Databázová chyba nebo neplatná tenant vazba vrací `500`, takže Stripe doručení zopakuje. Odpovědi a logy neobsahují podpis, secret ani zákaznický payload.

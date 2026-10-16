@@ -20,7 +20,7 @@ test('an employee with an unpaid tenant never receives the payment action', () =
 });
 
 test('the guarded UI keeps employee copy separate and exposes checkout only to the owner branch', () => {
-  const source = readFileSync(new URL('../src/app/SubscriptionGuard.tsx', import.meta.url), 'utf8');
+  const source = readFileSync(new URL('../src/app/SubscriptionGuard.tsx', import.meta.url), 'utf8').replace(/\r\n/g, '\n');
   const employeeStart = source.indexOf("if (access === 'employee_blocked')");
   const employeeEnd = source.indexOf('\n  }\n\n  return (', employeeStart);
   const employeeBranch = source.slice(employeeStart, employeeEnd);

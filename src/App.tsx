@@ -27,6 +27,7 @@ import { OwnerWidgetPage } from './pages/owner/Widget';
 import { PilotUnavailablePage } from './pages/owner/PilotUnavailable';
 import { isPilotUnavailablePath } from './app/pilotScope';
 import { OwnerSettingsPage } from './pages/owner/Settings';
+import { BillingReturnPage } from './pages/owner/BillingReturn';
 import { Integrations } from './pages/owner/Integrations';
 
 // Employee Pages
@@ -473,6 +474,10 @@ function AppContent() {
         </SubscriptionGuard>
       </ProtectedRoute>
     );
+  }
+
+  if (pathname === '/billing/return') {
+    return <ProtectedRoute allowedRole="owner"><BillingReturnPage /></ProtectedRoute>;
   }
 
   // 4. Owner Routes (Executive CRM)
