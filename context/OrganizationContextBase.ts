@@ -1,5 +1,6 @@
 import { createContext, useContext } from 'react';
 import type { Employee, Lead } from '../types';
+import type { OwnerLegalConsent } from '../src/app/legalConsent';
 
 export interface Organization {
   id: string;
@@ -49,8 +50,8 @@ export interface OrganizationContextType {
   schemaError: string | null;
   clearSchemaError: () => void;
   login: (email: string, pass: string) => Promise<any>;
-  completeInvitePasswordSetup: (password: string) => Promise<any>;
-  signUp: (email: string, pass: string, orgName: string) => Promise<any>;
+  completeInvitePasswordSetup: (password: string, legalConsent?: OwnerLegalConsent) => Promise<any>;
+  signUp: (email: string, pass: string, orgName: string, legalConsent: OwnerLegalConsent) => Promise<any>;
   logout: () => Promise<void>;
   createOrganization: (name: string, primaryColor?: string) => Promise<Organization>;
   switchOrganization: (orgId: string) => Promise<void>;

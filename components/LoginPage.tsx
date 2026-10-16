@@ -4,6 +4,8 @@ import { Building, Lock, Mail, ArrowRight, CheckCircle2, ShieldAlert, Building2,
 import type { UserRole } from '@/src/app/permissions';
 import { supabase } from '@/lib/supabase';
 import { buildRecoveryRequest, parseRecoveryResponse, validateNewPassword } from '@/src/app/authRecovery';
+import { createOwnerLegalConsent } from '@/src/app/legalConsent';
+import { LegalConsentFields } from './LegalConsentFields';
 
 interface LoginPageProps {
   onSuccess: (user?: any) => void;
@@ -31,6 +33,7 @@ const ROLE_COPY: Record<UserRole, { title: string; description: string; route: s
 export const LoginPage: React.FC<LoginPageProps> = ({ onSuccess, expectedRole }) => {
   const {
     currentOrg,
+    user,
     isConfigured,
     login,
     logout,
@@ -47,6 +50,8 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onSuccess, expectedRole })
   const [orgName, setOrgName] = useState('');
   const [primaryColor, setPrimaryColor] = useState('var(--brand-primary)');
   const [inviteToken, setInviteToken] = useState<string | null>(null);
+  const [termsAccepted, setTermsAccepted] = useState(false);
+  const [dpaAccepted, setDpaAccepted] = useState(false);
   
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
@@ -79,6 +84,13 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onSuccess, expectedRole })
   const displayBrandColor = mode === 'signup' && primaryColor !== 'var(--brand-primary)' ? primaryColor : 'var(--brand-primary)';
   const displayOrgName = mode === 'signup' && orgName ? orgName : activeCompanyName;
   const roleCopy = expectedRole ? ROLE_COPY[expectedRole] : null;
+  const ownerInviteActivation = mode === 'new_password' && invitePasswordRequired && user?.user_metadata?.role === 'owner';
+  const legalConsentRequired = mode === 'signup' || ownerInviteActivation;
+  const canSubmitLegalConsent = !legalConsentRequired || (termsAccepted && dpaAccepted);
+  const collectOwnerLegalConsent = () => {
+    if (!termsAccepted || !dpaAccepted) throw new Error('Potvr�te pros�m Obchodn� podm�nky i Zpracovatelskou smlouvu.');
+    return createOwnerLegalConsent();
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -99,7 +111,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onSuccess, expectedRole })
       } else if (mode === 'new_password') {
         const validatedPassword = validateNewPassword(password);
         if (invitePasswordRequired) {
-          const activatedUser = await completeInvitePasswordSetup(validatedPassword);
+          const activatedUser = await completeInvitePasswordSetup(validatedPassword, ownerInviteActivation ? collectOwnerLegalConsent() : undefined);
           setPassword('');
           onSuccess(activatedUser);
         } else {
@@ -118,7 +130,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onSuccess, expectedRole })
         }
         onSuccess(user);
       } else {
-        await signUp(email, password, orgName);
+        await signUp(email, password, orgName, collectOwnerLegalConsent());
         if (isConfigured) {
           setSuccessMessage("Zkontrolujte svůj e-mail a potvrďte registraci, poté se budete moci přihlásit.");
         } else {
@@ -243,6 +255,8 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onSuccess, expectedRole })
                 </div>
               )}
 
+              {legalConsentRequired && <LegalConsentFields termsAccepted={termsAccepted} dpaAccepted={dpaAccepted} onTermsAcceptedChange={setTermsAccepted} onDpaAcceptedChange={setDpaAccepted} />}
+
               <div className="space-y-4">
                 {mode !== 'new_password' && (
                 <div>
@@ -294,7 +308,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onSuccess, expectedRole })
 
               <button
                 type="submit"
-                disabled={isLoading}
+                disabled={isLoading || !canSubmitLegalConsent}
                 className="w-full py-3.5 rounded-app text-sm font-bold shadow-app transition-all flex items-center justify-center gap-2 hover:opacity-90 active:scale-[0.98] mt-4 cursor-pointer"
                 style={{
                   backgroundColor: displayBrandColor,
@@ -317,7 +331,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onSuccess, expectedRole })
                 <>
                   Nemáte firemní prostor?{' '}
                   <button 
-                    onClick={() => setMode('signup')} 
+                    onClick={() => { setMode('signup'); setTermsAccepted(false); setDpaAccepted(false); }}
                     className="font-bold hover:underline transition-colors"
                     style={{ color: displayBrandColor }}
                   >
@@ -330,7 +344,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onSuccess, expectedRole })
                 <>
                   Již máte u nás účet?{' '}
                   <button 
-                    onClick={() => setMode('login')} 
+                    onClick={() => { setMode('login'); setTermsAccepted(false); setDpaAccepted(false); }}
                     className="font-bold hover:underline transition-colors"
                     style={{ color: displayBrandColor }}
                   >

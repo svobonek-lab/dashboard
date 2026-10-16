@@ -12,6 +12,7 @@ import { buildInviteRequest, toPendingEmployee } from '../src/app/inviteContract
 import { buildRecoveryRequest, parseRecoveryResponse } from '../src/app/authRecovery';
 import { readPlatformIdentity } from '../src/app/platformIdentity';
 import { buildCompletedInviteMetadata, requiresInvitePasswordSetup } from '../src/app/invitePassword';
+import { hasOwnerLegalConsent, type OwnerLegalConsent } from '../src/app/legalConsent';
 import { OrganizationContext, type DBProject, type DBUser, type Organization, type OrganizationContextType } from './OrganizationContextBase';
 export { OrganizationContext, useOrganization, type DBProject, type DBUser, type Organization, type OrganizationContextType } from './OrganizationContextBase';
 
@@ -634,32 +635,48 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
     }
   };
 
-  const completeInvitePasswordSetup = async (password: string) => {
-    if (!supabase) throw new Error('NastavenÃ­ hesla nenÃ­ na tomto prostÅ™edÃ­ dostupnÃ©.');
+  const completeInvitePasswordSetup = async (password: string, legalConsent?: OwnerLegalConsent) => {
+    if (!supabase) throw new Error('Nastavení hesla není na tomto prostøedí dostupné.');
     const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
     if (sessionError || !sessionData.session?.user) {
-      throw new Error('PozvÃ¡nkovÃ¡ relace vyprÅ¡ela. PoÅ¾Ã¡dejte o novou pozvÃ¡nku.');
+      throw new Error('Pozvánková relace vypršela. Požádejte o novou pozvánku.');
     }
     const invitedUser = sessionData.session.user;
     if (!requiresInvitePasswordSetup(invitedUser, window.location.href)) {
-      throw new Error('Tento ÃºÄet neÄekÃ¡ na nastavenÃ­ hesla z pozvÃ¡nky.');
+      throw new Error('Tento úèet neèeká na nastavení hesla z pozvánky.');
+    }
+
+    const inviteRole = String(invitedUser.user_metadata?.role || '');
+    if (inviteRole === 'owner' && !hasOwnerLegalConsent(legalConsent)) {
+      throw new Error('Pøed aktivací workspace potvrïte Obchodní podmínky i Zpracovatelskou smlouvu.');
     }
     const metadata = buildCompletedInviteMetadata(invitedUser.user_metadata, new Date().toISOString());
     const { data, error: updateError } = await supabase.auth.updateUser({ password, data: metadata });
-    if (updateError || !data.user) throw updateError || new Error('Heslo se nepodaÅ™ilo uloÅ¾it.');
+    if (updateError || !data.user) throw updateError || new Error('Heslo se nepodaøilo uložit.');
+
+    if (inviteRole === 'owner') {
+      const inviteId = String(invitedUser.user_metadata?.invite_id || '');
+      if (!inviteId) throw new Error('Pozvánce chybí ovìøitelný identifikátor. Požádejte o novou pozvánku.');
+      const { error: consentError } = await supabase.rpc('app_record_owner_legal_consent', {
+        p_invite_id: inviteId,
+        p_client_accepted_at: legalConsent!.acceptedAt,
+      });
+      if (consentError) throw new Error('Právní potvrzení se nepodaøilo bezpeènì uložit. Pozvánka nebyla aktivována.');
+    }
 
     setUser(data.user);
     setInvitePasswordRequired(false);
     const resolvedDbUser = await loadUserData(data.user.id, data.user.email, data.user.user_metadata);
     if (!resolvedDbUser) {
       setInvitePasswordRequired(true);
-      throw new Error('PozvÃ¡nku se nepodaÅ™ilo aktivovat pro Å¾Ã¡dnou firmu.');
+      throw new Error('Pozvánku se nepodaøilo aktivovat pro žádnou firmu.');
     }
     return toAuthenticatedWorkspaceUser(data.user, resolvedDbUser);
   };
 
   // Auth Action: Sign Up
-  const signUp = async (email: string, pass: string, orgName: string) => {
+  const signUp = async (email: string, pass: string, orgName: string, legalConsent: OwnerLegalConsent) => {
+    if (!hasOwnerLegalConsent(legalConsent)) throw new Error('Pøed registrací potvrïte Obchodní podmínky i Zpracovatelskou smlouvu.');
     setError(null);
     if (!isSupabaseConfigured || !supabase) {
       if (!(import.meta as any).env?.DEV) {
@@ -727,7 +744,7 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
         email,
         password: pass,
         options: {
-          data: { orgName }
+          data: { orgName, legal_consent_capture: { terms_accepted_at: legalConsent.acceptedAt, dpa_accepted_at: legalConsent.acceptedAt } }
         }
       });
       if (signUpErr) throw signUpErr;

@@ -3,6 +3,7 @@ import type { SupabaseClient, User } from '@supabase/supabase-js';
 import { authorizePlatformRequest, recordPlatformAudit } from '../auth.js';
 import { runPlatformHandler } from '../handler.js';
 import { PlatformHttpError } from '../http.js';
+import { hasOwnerLegalConsent, type OwnerLegalConsent } from '../../../src/app/legalConsent.js';
 
 const SLUG_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -13,6 +14,7 @@ export interface PlatformCompanyOnboardingInput {
   ownerName: string;
   ownerEmail: string;
   plan?: 'pilot';
+  legalConsent: OwnerLegalConsent;
 }
 
 export interface PlatformCompanyOnboardingResult {
@@ -97,7 +99,9 @@ function normalizeInput(input: PlatformCompanyOnboardingInput): Required<Platfor
     ownerName: String(input?.ownerName || '').trim().slice(0, 160),
     ownerEmail: String(input?.ownerEmail || '').trim().toLowerCase(),
     plan: 'pilot' as const,
+    legalConsent: input?.legalConsent,
   };
+  if (!hasOwnerLegalConsent(normalized.legalConsent)) throw new PlatformHttpError('LEGAL_CONSENT_REQUIRED', 400);
   if (normalized.name.length < 2) throw new PlatformHttpError('COMPANY_NAME_INVALID', 400);
   if (!SLUG_PATTERN.test(normalized.slug) || normalized.slug.length > 80) throw new PlatformHttpError('COMPANY_SLUG_INVALID', 400);
   if (normalized.ownerName.length < 2) throw new PlatformHttpError('COMPANY_OWNER_NAME_INVALID', 400);
@@ -152,6 +156,8 @@ export async function createPlatformCompanyOnboarding(
     p_owner_name: value.ownerName,
     p_owner_email: value.ownerEmail,
     p_plan: value.plan,
+    p_terms_accepted_at: value.legalConsent.acceptedAt,
+    p_dpa_accepted_at: value.legalConsent.acceptedAt,
   });
   if (error?.code === '23505') throw new PlatformHttpError('COMPANY_SLUG_EXISTS', 409);
   if (error) throw new PlatformHttpError('COMPANY_ONBOARDING_CREATE_FAILED', 502);

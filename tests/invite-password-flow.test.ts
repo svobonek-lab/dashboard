@@ -51,7 +51,7 @@ test('application keeps an invited session out of protected dashboards until pas
   assert.match(context, /requiresInvitePasswordSetup\(session\.user,[\s\S]{0,350}setDbUser\(null\)/);
   assert.match(guard, /isConfigured && \(!user \|\| !dbUser\)[\s\S]{0,120}Navigate to="\/login"/);
   assert.match(login, /invitePasswordRequired[\s\S]*Nastavte si heslo/);
-  assert.match(login, /completeInvitePasswordSetup\(validatedPassword\)/);
+  assert.match(login, /completeInvitePasswordSetup\(validatedPassword,/);
 });
 
 test('owner and employee invitations include company name for the Czech email template', () => {
