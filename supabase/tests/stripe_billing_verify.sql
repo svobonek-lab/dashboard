@@ -2,10 +2,10 @@
 
 set role service_role;
 select public.app_bind_stripe_customer(
-  '20000000-0000-4000-8000-000000000002', 'cus_bound_b'
+  '20000000-0000-4000-8000-000000000002', 'cus_boundb'
 );
 select public.app_bind_stripe_customer(
-  '20000000-0000-4000-8000-000000000002', 'cus_bound_b'
+  '20000000-0000-4000-8000-000000000002', 'cus_boundb'
 );
 select public.app_platform_set_billing_plan(
   '30000000-0000-4000-8000-000000000003',
@@ -19,7 +19,7 @@ begin
   if not exists (
     select 1 from public.app_companies
     where id = '20000000-0000-4000-8000-000000000002'
-      and stripe_customer_id = 'cus_bound_b'
+      and stripe_customer_id = 'cus_boundb'
       and plan = 'starter'
       and subscription_status = 'not_configured'
   ) then raise exception 'plan/customer setup incorrectly activated or failed to persist'; end if;
