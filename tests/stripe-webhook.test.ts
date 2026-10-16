@@ -6,7 +6,7 @@ import {
   createStripeWebhookHandler,
   verifyStripeEvent,
   type StripeSubscriptionUpdate,
-} from '../api/stripe-webhook.ts';
+} from '../api/_billing/stripe-webhook.ts';
 
 process.env.STRIPE_WEBHOOK_SECRET = 'whsec_unit_test_only';
 

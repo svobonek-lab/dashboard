@@ -10,7 +10,8 @@ import outboxDispatchHandler from './api/outbox-dispatch';
 import emailNotificationStatusHandler from './api/email-notification-status';
 import incomingLeadHandler from './api/incoming-lead';
 import incomingLeadConfigHandler from './api/incoming-lead-config';
-import stripeWebhookHandler from './api/stripe-webhook';
+import stripeWebhookHandler from './api/_billing/stripe-webhook';
+import stripeCheckoutHandler from './api/_billing/stripe-checkout';
 import connectorRegisterHandler from './api/_connector/routes/register';
 import connectorHeartbeatHandler from './api/_connector/routes/heartbeat';
 import connectorIngestHandler from './api/_connector/routes/ingest';
@@ -111,6 +112,11 @@ function apiMiddlewarePlugin(): Plugin {
 
         if (req.url === '/api/stripe-webhook' && req.method === 'POST') {
           handleRoute(stripeWebhookHandler, true);
+          return;
+        }
+
+        if (req.url === '/api/stripe-checkout' && req.method === 'POST') {
+          handleRoute(stripeCheckoutHandler);
           return;
         }
 

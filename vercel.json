@@ -9,6 +9,14 @@
   ],
   "rewrites": [
     {
+      "source": "/api/stripe-checkout",
+      "destination": "/api/billing?route=checkout"
+    },
+    {
+      "source": "/api/stripe-webhook",
+      "destination": "/api/billing?route=webhook"
+    },
+    {
       "source": "/api/(.*)",
       "destination": "/api/$1"
     },

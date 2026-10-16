@@ -18,6 +18,7 @@ export interface Organization {
   created_at?: string;
   plan?: string;
   email_notifications?: boolean;
+  subscription_status?: 'not_configured' | 'pilot' | 'trial' | 'trialing' | 'active' | 'past_due' | 'canceled';
 }
 
 export interface DBUser {
