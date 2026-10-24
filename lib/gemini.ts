@@ -5,6 +5,10 @@ import { GoogleGenAI } from '@google/genai';
 export const GEMINI_MODEL = 'gemini-3.8-flash';
 export const GEMINI_BUSY_MESSAGE = 'AI asistent je momentálně přetížen, zkuste to prosím za chvíli.';
 
+export class GeminiBusyError extends Error {
+  constructor() { super(GEMINI_BUSY_MESSAGE); this.name = 'GeminiBusyError'; }
+}
+
 type RetryDelay = (milliseconds: number) => Promise<void>;
 
 /** Four attempts total; only quota throttling is retried. */
@@ -17,11 +21,11 @@ export async function withGeminiBackoff<T>(
     catch (error) {
       const status = typeof error === 'object' && error !== null && 'status' in error
         ? Number((error as { status?: unknown }).status) : 0;
-      if (status !== 429 || attempt === 3) throw new Error(GEMINI_BUSY_MESSAGE);
+      if (status !== 429 || attempt === 3) throw new GeminiBusyError();
       await delay(2000 * (2 ** attempt));
     }
   }
-  throw new Error(GEMINI_BUSY_MESSAGE);
+  throw new GeminiBusyError();
 }
 
 export async function generateGeminiResponse(prompt: string, textBody: string): Promise<string> {

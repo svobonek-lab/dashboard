@@ -59,3 +59,22 @@ test('server generation uses the fixed model even when an environment override e
     if (oldModel === undefined) delete process.env.GEMINI_MODEL; else process.env.GEMINI_MODEL = oldModel;
   }
 });
+test('incoming API exposes safe AI overload text without persisting a lead', async () => {
+  const { createIncomingLeadHandler } = await import('../api/incoming-lead');
+  let persisted = false;
+  const handler = createIncomingLeadHandler({
+    classify: () => withGeminiBackoff(async () => { throw { status: 401 }; }),
+    persist: async () => { persisted = true; return 'unused'; },
+  });
+  const response = {
+    code: 0, body: {} as any,
+    status(code: number) { this.code = code; return this; },
+    json(body: unknown) { this.body = body; return this; },
+  };
+  await handler({ method: 'POST', headers: {}, body: {
+    org_id: '11111111-1111-4111-8111-111111111111', text_body: 'synthetic inquiry',
+  } }, response);
+  assert.equal(response.code, 503);
+  assert.equal(response.body.error, GEMINI_BUSY_MESSAGE);
+  assert.equal(persisted, false);
+});
