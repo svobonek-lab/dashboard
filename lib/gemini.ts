@@ -2,40 +2,42 @@ import type { CompanyBranding, WebsiteAudit, WebsiteAnalysisResult } from '../ty
 import { supabase } from './supabase.js';
 import { GoogleGenAI } from '@google/genai';
 
-const DEFAULT_GEMINI_MODEL = 'gemini-3.5-flash-lite';
-const GEMINI_ATTEMPTS = 3;
+export const GEMINI_MODEL = 'gemini-3.8-flash';
+export const GEMINI_BUSY_MESSAGE = 'AI asistent je momentálně přetížen, zkuste to prosím za chvíli.';
 
-function isTransientGeminiError(error: unknown): boolean {
-  const status = typeof error === 'object' && error !== null && 'status' in error
-    ? Number((error as { status?: unknown }).status)
-    : 0;
-  return status === 429 || status === 503;
-}
+type RetryDelay = (milliseconds: number) => Promise<void>;
 
-function waitBeforeRetry(attempt: number): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, 250 * (2 ** attempt)));
+/** Four attempts total; only quota throttling is retried. */
+export async function withGeminiBackoff<T>(
+  operation: () => Promise<T>,
+  delay: RetryDelay = ms => new Promise(resolve => setTimeout(resolve, ms)),
+): Promise<T> {
+  for (let attempt = 0; attempt < 4; attempt++) {
+    try { return await operation(); }
+    catch (error) {
+      const status = typeof error === 'object' && error !== null && 'status' in error
+        ? Number((error as { status?: unknown }).status) : 0;
+      if (status !== 429 || attempt === 3) throw new Error(GEMINI_BUSY_MESSAGE);
+      await delay(2000 * (2 ** attempt));
+    }
+  }
+  throw new Error(GEMINI_BUSY_MESSAGE);
 }
 
 export async function generateGeminiResponse(prompt: string, textBody: string): Promise<string> {
-  const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey) throw new Error('GEMINI_API_KEY is not configured.');
-  const ai = new GoogleGenAI({ apiKey });
-  for (let attempt = 0; attempt < GEMINI_ATTEMPTS; attempt += 1) {
-    try {
-      const response = await ai.models.generateContent({
-        model: process.env.GEMINI_MODEL || DEFAULT_GEMINI_MODEL,
-        contents: `${prompt}\n\nVSTUPNÍ E-MAIL:\n${textBody}`,
-        config: { responseMimeType: 'application/json', temperature: 0 },
-      });
-      const text = response.text?.trim();
-      if (!text) throw new Error('Gemini returned an empty response.');
-      return text;
-    } catch (error) {
-      if (attempt === GEMINI_ATTEMPTS - 1 || !isTransientGeminiError(error)) throw error;
-      await waitBeforeRetry(attempt);
-    }
-  }
-  throw new Error('Gemini request exhausted all attempts.');
+  return withGeminiBackoff(async () => {
+    const apiKey = process.env.GEMINI_API_KEY;
+    if (!apiKey) throw new Error('Gemini is not configured.');
+    const ai = new GoogleGenAI({ apiKey });
+    const response = await ai.models.generateContent({
+      model: GEMINI_MODEL,
+      contents: prompt + '\n\nVSTUPNÍ E-MAIL:\n' + textBody,
+      config: { responseMimeType: 'application/json', temperature: 0 },
+    });
+    const text = response.text?.trim();
+    if (!text) throw new Error('Empty Gemini response.');
+    return text;
+  });
 }
 
 function getFallbackData(url: string): WebsiteAnalysisResult & { branding: CompanyBranding; audit: WebsiteAudit } {
