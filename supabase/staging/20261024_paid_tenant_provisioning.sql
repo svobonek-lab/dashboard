@@ -90,3 +90,64 @@ from public,anon,authenticated;
 grant execute on function public.app_provision_paid_checkout(text,timestamptz,uuid,text,text,text,text)
 to service_role;
 commit;
+
+begin;
+alter table public.app_paid_registration_intents
+ alter column stripe_customer_id drop not null,
+ alter column checkout_session_id drop not null,
+ add column if not exists request_id uuid;
+create unique index if not exists app_paid_registration_request_unique on public.app_paid_registration_intents(owner_user_id,request_id);
+create unique index if not exists app_paid_registration_owner_unique on public.app_paid_registration_intents(owner_user_id);
+
+create or replace function public.app_prepare_paid_registration(
+ p_user_id uuid,p_request_id uuid,p_name text,p_slug text,p_owner_name text,p_client_accepted_at timestamptz
+) returns jsonb language plpgsql security definer set search_path=''
+as $$
+declare v public.app_paid_registration_intents; v_email text; v_confirmed timestamptz;
+begin
+ if p_user_id is null or p_request_id is null or p_name is null or length(trim(p_name)) not between 1 and 160
+ or p_owner_name is null or length(trim(p_owner_name)) not between 1 and 160
+ or p_slug is null or p_slug !~ '^[a-z0-9][a-z0-9-]{2,79}$' then raise exception 'invalid registration' using errcode='22023'; end if;
+ -- Serialize all requests from one verified identity, including different request IDs.
+ select lower(email),email_confirmed_at into v_email,v_confirmed from auth.users where id=p_user_id for update;
+ if v_confirmed is null then raise exception 'verified identity required' using errcode='42501'; end if;
+ select * into v from public.app_paid_registration_intents where owner_user_id=p_user_id;
+ if found then
+  if v.request_id is distinct from p_request_id or v.company_name is distinct from trim(p_name)
+    or v.owner_name is distinct from trim(p_owner_name) or v.slug is distinct from p_slug
+    or v.client_accepted_at is distinct from p_client_accepted_at or v.expires_at<=clock_timestamp() then
+   raise exception 'registration retry mismatch or expired' using errcode='23505';
+  end if;
+  return to_jsonb(v);
+ end if;
+ if p_client_accepted_at is null or p_client_accepted_at<clock_timestamp()-interval '15 minutes'
+    or p_client_accepted_at>clock_timestamp()+interval '2 minutes' then raise exception 'current legal agreements required' using errcode='22023'; end if;
+ if exists(select 1 from public.app_members where user_id=p_user_id and active) then raise exception 'existing member' using errcode='42501'; end if;
+ if exists(select 1 from public.app_companies where slug=p_slug) then raise exception 'company slug unavailable' using errcode='23505'; end if;
+ insert into public.app_paid_registration_intents(owner_user_id,owner_email,owner_name,company_name,slug,plan,request_id,client_accepted_at)
+ values(p_user_id,v_email,trim(p_owner_name),trim(p_name),p_slug,'pilot',p_request_id,p_client_accepted_at)
+ returning * into v;
+ return to_jsonb(v);
+end;
+$$;
+create or replace function public.app_bind_registration_checkout(p_intent_id uuid,p_customer_id text,p_session_id text)
+returns void language plpgsql security definer set search_path=''
+as $$
+declare v public.app_paid_registration_intents;
+begin
+ if p_customer_id is null or p_customer_id !~ '^cus_[A-Za-z0-9]+$'
+    or p_session_id is null or p_session_id !~ '^cs_[A-Za-z0-9_]+$' then raise exception 'invalid checkout binding' using errcode='22023'; end if;
+ select * into v from public.app_paid_registration_intents where id=p_intent_id for update;
+ if not found or v.expires_at<=clock_timestamp() or v.provisioned_at is not null then raise exception 'pending registration required' using errcode='42501'; end if;
+ if (v.stripe_customer_id is not null and v.stripe_customer_id<>p_customer_id)
+ or (v.checkout_session_id is not null and v.checkout_session_id<>p_session_id) then
+  raise exception 'registration already bound' using errcode='23505';
+ end if;
+ update public.app_paid_registration_intents set stripe_customer_id=p_customer_id,checkout_session_id=p_session_id where id=v.id;
+end;
+$$;
+revoke all on function public.app_prepare_paid_registration(uuid,uuid,text,text,text,timestamptz) from public,anon,authenticated;
+revoke all on function public.app_bind_registration_checkout(uuid,text,text) from public,anon,authenticated;
+grant execute on function public.app_prepare_paid_registration(uuid,uuid,text,text,text,timestamptz) to service_role;
+grant execute on function public.app_bind_registration_checkout(uuid,text,text) to service_role;
+commit;

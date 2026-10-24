@@ -44,3 +44,24 @@ begin
  if has_function_privilege('authenticated','public.app_provision_paid_checkout(text,timestamptz,uuid,text,text,text,text)','execute') then raise exception 'browser provisioning privilege'; end if;
 end $$;
 rollback;
+
+begin;
+insert into auth.users values('60000000-0000-4000-8000-000000000006','new-owner@example.invalid',clock_timestamp());
+do $$
+declare v jsonb; v_retry jsonb; stamp timestamptz:=clock_timestamp();
+begin
+ v:=public.app_prepare_paid_registration('60000000-0000-4000-8000-000000000006','70000000-0000-4000-8000-000000000007','New C','new-c','Owner C',stamp);
+ v_retry:=public.app_prepare_paid_registration('60000000-0000-4000-8000-000000000006','70000000-0000-4000-8000-000000000007','New C','new-c','Owner C',stamp);
+ if v->>'id' is distinct from v_retry->>'id' then raise exception 'registration retry created new intent'; end if;
+ if v->>'owner_email'<>'new-owner@example.invalid' or v->>'plan'<>'pilot' then raise exception 'server identity or plan mismatch'; end if;
+ perform public.app_bind_registration_checkout((v->>'id')::uuid,'cus_newc','cs_newc');
+ perform public.app_bind_registration_checkout((v->>'id')::uuid,'cus_newc','cs_newc');
+ begin
+  perform public.app_bind_registration_checkout((v->>'id')::uuid,'cus_foreign','cs_foreign');
+  raise exception 'intent rebound';
+ exception when unique_violation then null; end;
+ if exists(select 1 from public.app_companies where slug='new-c') then raise exception 'workspace created before paid webhook'; end if;
+ if public.app_provision_paid_checkout('evt_paid_c',now(),(v->>'company_id')::uuid,'cus_newc','sub_newc','cs_newc','paid')<>'applied' then raise exception 'full registration provisioning failed'; end if;
+ if not exists(select 1 from public.app_members where company_id=(v->>'company_id')::uuid and user_id='60000000-0000-4000-8000-000000000006' and role='owner') then raise exception 'full registration owner missing'; end if;
+end $$;
+rollback;
