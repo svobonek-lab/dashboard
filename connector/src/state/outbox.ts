@@ -1,8 +1,10 @@
 import { mkdir, readFile, readdir, rename, stat, unlink } from 'node:fs/promises';
 import { join } from 'node:path';
 
-import type { IngestEnvelopeV1 } from '../../../shared/connectorProtocol.js';
+import type { JsonValue, IngestEnvelopeV1 } from '../../../shared/connectorProtocol.js';
 import { writeJsonAtomically } from './atomicStore.js';
+
+export interface DurableCheckpoint { source: string; cursor: JsonValue }
 
 const SAFE_REQUEST_ID = /^[A-Za-z0-9_-]{1,160}$/;
 
@@ -20,23 +22,31 @@ export class FileOutbox {
     return join(directory, `${requestId}.json`);
   }
 
-  async enqueue(event: IngestEnvelopeV1): Promise<void> {
+  async enqueue(event: IngestEnvelopeV1, checkpoint?: DurableCheckpoint): Promise<void> {
     await mkdir(this.pendingDirectory, { recursive: true, mode: 0o700 });
     const path = this.path(this.pendingDirectory, event.requestId);
     try {
       const existing = JSON.parse(await readFile(path, 'utf8')) as IngestEnvelopeV1;
-      if (JSON.stringify(existing) !== JSON.stringify(event)) throw new Error('requestId already contains a different event');
+      if (JSON.stringify(existing) !== JSON.stringify({ ...event, ...(checkpoint ? { _checkpoint: checkpoint } : {}) })) throw new Error('requestId already contains a different event');
       return;
     } catch (error) {
       if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error;
     }
-    await writeJsonAtomically(path, event);
+    await writeJsonAtomically(path, { ...event, ...(checkpoint ? { _checkpoint: checkpoint } : {}) });
   }
 
   async pending(): Promise<IngestEnvelopeV1[]> {
     await mkdir(this.pendingDirectory, { recursive: true, mode: 0o700 });
     const files = (await readdir(this.pendingDirectory)).filter(file => file.endsWith('.json')).sort();
-    return Promise.all(files.map(async file => JSON.parse(await readFile(join(this.pendingDirectory, file), 'utf8')) as IngestEnvelopeV1));
+    return Promise.all(files.map(async file => {
+      const { _checkpoint, ...envelope } = JSON.parse(await readFile(join(this.pendingDirectory, file), 'utf8'));
+      return envelope as IngestEnvelopeV1;
+    }));
+  }
+
+  async checkpoint(requestId: string): Promise<DurableCheckpoint | null> {
+    const value = JSON.parse(await readFile(this.path(this.pendingDirectory, requestId), 'utf8'));
+    return value._checkpoint ?? null;
   }
 
   async acknowledge(requestIds: string[]): Promise<void> {

@@ -131,10 +131,9 @@ export class SyncEngine {
         dryRun: false,
         records,
       };
-      await this.options.outbox.enqueue(envelope);
-      const acknowledgement = await this.options.api.ingest(envelope);
-      if (!acknowledgement.accepted || acknowledgement.requestId !== envelope.requestId) throw new Error('ingestion acknowledgement was rejected');
-      await this.options.outbox.acknowledge([envelope.requestId]);
+      await this.options.outbox.enqueue(envelope, !issues.length && page.nextCursor
+        ? { source: this.sourceKey, cursor: page.nextCursor as never } : undefined);
+      await this.flushPending();
     }
 
     if (!issues.length && page.nextCursor) await this.options.checkpoints.commit(this.sourceKey, page.nextCursor as never);
@@ -150,6 +149,10 @@ export class SyncEngine {
     for (const envelope of await this.options.outbox.pending()) {
       const acknowledgement = await this.options.api.ingest(envelope);
       if (!acknowledgement.accepted || acknowledgement.requestId !== envelope.requestId) throw new Error('pending ingestion acknowledgement was rejected');
+      // Persist the acknowledged cursor before removing its durable batch.
+      // A crash in between replays the same idempotency key safely.
+      const checkpoint = await this.options.outbox.checkpoint(envelope.requestId);
+      if (checkpoint) await this.options.checkpoints.commit(checkpoint.source, checkpoint.cursor);
       await this.options.outbox.acknowledge([envelope.requestId]);
     }
   }

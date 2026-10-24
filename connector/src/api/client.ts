@@ -87,7 +87,7 @@ export class ConnectorApi {
         headers.set('x-sf-signature', signature.signature);
       }
       try {
-        const response = await this.fetcher(new URL(pathname, this.baseUrl), { method: 'POST', headers, body, redirect: 'error' });
+        const response = await this.fetcher(new URL(pathname, this.baseUrl), { method: 'POST', headers, body, redirect: 'error', signal: AbortSignal.timeout(30_000) });
         const parsed = await response.json().catch(() => ({})) as { code?: unknown };
         if (response.ok) return parsed as T;
         const code = typeof parsed.code === 'string' && /^[A-Z0-9_]{1,80}$/.test(parsed.code) ? parsed.code : 'CONNECTOR_REQUEST_FAILED';
@@ -108,3 +108,4 @@ export class ConnectorApi {
     throw new ConnectorApiError('CONNECTOR_NETWORK_UNAVAILABLE', 0);
   }
 }
+

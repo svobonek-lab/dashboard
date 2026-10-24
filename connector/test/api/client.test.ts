@@ -95,3 +95,29 @@ test('strict config reads password from a file and rejects unsafe paths and unkn
   assert.throws(() => parseConnectorConfig({ apiBaseUrl: 'https://app.example.test', stateRoot: root, identityPath: 'C:/outside/identity', mappingPath: join(root, 'mapping'), syncIntervalSeconds: 60, database: { driver: 'postgres', host: 'db', port: 5432, database: 'x', username: 'x', passwordFile: passwordPath } }), /inside stateRoot/);
   assert.throws(() => parseConnectorConfig({ apiBaseUrl: 'https://app.example.test', stateRoot: root, identityPath: join(root, 'identity'), mappingPath: 'C:/outside/mapping.json', syncIntervalSeconds: 60, database: { driver: 'postgres', host: 'db', port: 5432, database: 'x', username: 'x', passwordFile: passwordPath } }), /mappingPath must be inside stateRoot/);
 });
+test('every network attempt has an abort deadline and retries preserve the batch request id', async () => {
+  const root = await mkdtemp(join(tmpdir(), 'sf-timeout-'));
+  const identity = await loadOrCreateIdentity(join(root, 'identity.json'));
+  let attempts = 0;
+  const delays: number[] = [];
+  const signals: unknown[] = [];
+  const requestIds: (string | null)[] = [];
+  const api = new ConnectorApi({
+    baseUrl: 'https://app.example.test', connectorId: 'connector-1', identity,
+    sleep: async ms => { delays.push(ms); },
+    fetcher: async (_input, init) => {
+      attempts++;
+      signals.push(init?.signal);
+      requestIds.push(new Headers(init?.headers).get('x-sf-request-id'));
+      throw new Error('connection lost');
+    },
+  });
+  await assert.rejects(api.ingest({
+    version: 1, connectorId: 'connector-1', companyId: 'company-1',
+    mappingVersion: 1, requestId: 'durable-request', dryRun: false, records: [],
+  }), /CONNECTOR_NETWORK_UNAVAILABLE/);
+  assert.equal(attempts, 3);
+  assert.deepEqual(delays, [250, 500]);
+  assert.ok(signals.every(signal => signal instanceof AbortSignal), 'every attempt needs an abort deadline');
+  assert.deepEqual(requestIds, ['durable-request', 'durable-request', 'durable-request']);
+});
