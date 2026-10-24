@@ -127,7 +127,8 @@ export default createRegistrationCheckoutHandler({
  session:async(intent,customer)=>{
   const {client,config}=stripe();
   return client.checkout.sessions.create(registrationSessionInput(intent,customer,config),
-   {idempotencyKey:'registration-checkout:'+intent.id});
+   // Version the changed request shape; retries within this version stay stable.
+   {idempotencyKey:'registration-checkout:billing-v1:'+intent.id});
  },
  bind:async(intent,customer,session)=>{
   const {error}=await clients().service.rpc('app_bind_registration_checkout',{
