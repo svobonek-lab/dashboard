@@ -1,6 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 import Stripe from 'stripe';
-import { hasOwnerLegalConsent, type OwnerLegalConsent } from '../../src/app/legalConsent.js';
+import { type OwnerLegalConsent } from '../../src/app/legalConsent.js';
 import { readBillingConfig } from './stripe-checkout.js';
 
 type Request = {
@@ -58,7 +58,8 @@ export function createRegistrationCheckoutHandler(deps:Dependencies){
    const raw=await body(req) as Partial<RegistrationInput>;
    const id=req.headers?.['x-stavbaflow-idempotency-key'];
    if(typeof id!=='string'||!/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(id)
-    ||!hasOwnerLegalConsent(raw.legalConsent)||typeof raw.companyName!=='string'||!raw.companyName.trim()
+    ||raw.legalConsent?.termsAccepted!==true||raw.legalConsent?.dpaAccepted!==true
+    ||!Number.isFinite(Date.parse(raw.legalConsent?.acceptedAt||''))||typeof raw.companyName!=='string'||!raw.companyName.trim()
     ||raw.companyName.length>160||typeof raw.ownerName!=='string'||!raw.ownerName.trim()||raw.ownerName.length>160
     ||typeof raw.slug!=='string'||!/^[a-z0-9][a-z0-9-]{2,79}$/.test(raw.slug))throw new Error('invalid');
    input={companyName:raw.companyName.trim(),ownerName:raw.ownerName.trim(),slug:raw.slug,
@@ -105,7 +106,7 @@ export default createRegistrationCheckoutHandler({
    line_items:[{price:config.prices.pilot,quantity:1}],client_reference_id:intent.company_id,
    metadata:{tenant_id:intent.company_id,onboarding:'paid_registration'},
    subscription_data:{metadata:{tenant_id:intent.company_id}},
-   success_url:origin+'/billing/return?status=success',cancel_url:origin+'/login?registration=canceled',
+   success_url:origin+'/register-paid?paid=return',cancel_url:origin+'/register-paid?paid=canceled',
   },{idempotencyKey:'registration-checkout:'+intent.id});
  },
  bind:async(intent,customer,session)=>{

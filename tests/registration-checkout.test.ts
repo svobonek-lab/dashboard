@@ -36,3 +36,17 @@ test('failed durable binding never exposes the payable URL',async()=>{
  const res=response();await createRegistrationCheckoutHandler(deps)(req(),res);
  assert.equal(res.code,502);assert.equal(res.body.url,undefined);assert.doesNotMatch(JSON.stringify(res.body),/private/);
 });
+test('unverified auth cannot reach registration or Stripe',async()=>{
+ const {deps,calls}=fixture();deps.authorize=async()=>{throw new Error('bad token');};
+ const res=response();await createRegistrationCheckoutHandler(deps)(req(),res);
+ assert.equal(res.code,401);assert.deepEqual(calls,[]);
+});
+test('browser price, plan, owner and tenant overrides are never forwarded',async()=>{
+ const {deps}=fixture();let owner='';let forwarded:any;
+ deps.prepare=async(id,input)=>{owner=id;forwarded=input;return {id:'intent-1',company_id:'tenant-server',owner_email:'verified@example.invalid'};};
+ const request=req() as any;
+ Object.assign(request.body,{price:'price_attacker',plan:'growth',owner_user_id:'foreign',company_id:'foreign'});
+ const res=response();await createRegistrationCheckoutHandler(deps)(request,res);
+ assert.equal(res.code,200);assert.equal(owner,'owner-verified');assert.equal(forwarded.plan,'pilot');
+ assert.equal(forwarded.price,undefined);assert.equal(forwarded.owner_user_id,undefined);assert.equal(forwarded.company_id,undefined);
+});

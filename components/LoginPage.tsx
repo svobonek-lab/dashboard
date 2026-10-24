@@ -88,7 +88,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onSuccess, expectedRole })
   const legalConsentRequired = mode === 'signup' || ownerInviteActivation;
   const canSubmitLegalConsent = !legalConsentRequired || (termsAccepted && dpaAccepted);
   const collectOwnerLegalConsent = () => {
-    if (!termsAccepted || !dpaAccepted) throw new Error('Potvr�te pros�m Obchodn� podm�nky i Zpracovatelskou smlouvu.');
+    if (!termsAccepted || !dpaAccepted) throw new Error('Potvr�te pros�m Obchodn� podm�nky i Zpracovatelskou smlouvu.');
     return createOwnerLegalConsent();
   };
 
@@ -339,7 +339,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onSuccess, expectedRole })
                   </button>
                 </>
               ) : mode === 'login' ? (
-                <span className="text-xs leading-5">Firemní prostor připravujeme při onboardingu. Přístup obdržíte od správce StavbaFlow.</span>
+                <span className="text-xs leading-5">{import.meta.env.VITE_PAID_REGISTRATION_ENABLED === 'true' ? <a href="/register-paid" className="font-semibold underline">Založit firemní workspace</a> : 'Firemní prostor připravujeme při onboardingu. Přístup obdržíte od správce StavbaFlow.'}</span>
               ) : mode === 'signup' ? (
                 <>
                   Již máte u nás účet?{' '}
