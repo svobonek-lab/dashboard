@@ -47,7 +47,7 @@ test('pilot integration surface exposes CSV worker without fake live connectors'
 });
 
 test('owner settings persist only reviewed company fields through app schema', () => {
-  const context = readFileSync(new URL('../context/OrganizationContext.tsx', import.meta.url), 'utf8');
+  const context = readFileSync(new URL('../src/app/providers/OrganizationProvider.tsx', import.meta.url), 'utf8');
   const settings = readFileSync(new URL('../src/pages/owner/Settings.tsx', import.meta.url), 'utf8');
   assert.match(context, /from\(['"]app_companies['"]\)\.update\(appRecord\)/);
   assert.match(settings, /Kontaktní údaje/);
@@ -115,7 +115,7 @@ test('public form and embed page use the real tenant-safe intake without simulat
 });
 
 test('local signup preserves its tenant identity across a page reload', () => {
-  const context = readFileSync(new URL('../context/OrganizationContext.tsx', import.meta.url), 'utf8');
+  const context = readFileSync(new URL('../src/app/providers/OrganizationProvider.tsx', import.meta.url), 'utf8');
   const signupStart = context.indexOf('const signUp = async');
   const signupEnd = context.indexOf('// Auth Action: Log Out');
   const signup = context.slice(signupStart, signupEnd);

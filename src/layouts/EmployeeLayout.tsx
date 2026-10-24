@@ -3,6 +3,7 @@ import { BriefcaseBusiness, Camera, LayoutDashboard, LogOut } from 'lucide-react
 import { useOrganization } from '@/context/OrganizationContext';
 import { useRouter } from '../app/router';
 import { Lead } from '@/types';
+import { CompanyIdentity } from '../entities/company';
 
 interface EmployeeLayoutProps {
   children: React.ReactNode;
@@ -22,14 +23,7 @@ export const EmployeeLayout: React.FC<EmployeeLayoutProps> = ({ children, leads 
     <div className="workspace-shell min-h-screen bg-[#f5f5f7] text-slate-950">
       <header className="sticky top-0 z-30 border-b border-slate-200/80 bg-white/90 backdrop-blur-xl">
         <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3 sm:px-6">
-          <div className="flex min-w-0 items-center gap-3">
-            {currentOrg?.logo_url ? (
-              <img src={currentOrg.logo_url} alt="" className="h-10 w-10 shrink-0 rounded-2xl border border-slate-200 bg-white object-contain p-1" />
-            ) : (
-              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-blue-600 text-sm font-semibold text-white">{(currentOrg?.name || 'SF').slice(0, 2).toUpperCase()}</span>
-            )}
-            <span className="min-w-0"><strong className="block truncate text-sm font-semibold">{currentOrg?.name || 'StavbaFlow'}</strong><small className="block truncate text-xs text-slate-500">{dbUser?.email || 'Pracovní účet'}</small></span>
-          </div>
+          <div className="flex min-w-0 items-center gap-3"><CompanyIdentity name={currentOrg?.name || 'StavbaFlow'} logoUrl={currentOrg?.logo_url} primaryColor="#2563eb" subtitle={dbUser?.email || 'Pracovní účet'} /></div>
           <button type="button" onClick={() => logout().then(() => navigate('/login'))} className="inline-flex min-h-10 items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-600 hover:bg-slate-50 hover:text-slate-950"><LogOut className="h-4 w-4" /><span className="hidden sm:inline">Odhlásit</span></button>
         </div>
       </header>

@@ -48,13 +48,13 @@
 - Consumes: Current Lead, Employee, CompanyBranding, ICRMRepository, SupabaseRepository, SynologyLocalRepository, OrganizationContext, and existing domain helpers.
 - Produces: lead index.ts exports Lead, LeadStatus, Priority, getLeads(orgId), saveLead(orgId, lead), updateLeadStatus(orgId, leadId, status), deleteLead(orgId, leadId), note/file APIs, and LeadStatusBadge({ status }). Employee index.ts exports Employee, getEmployees(orgId), saveEmployee(orgId, employee), and EmployeeIdentity({ employee }). Company index.ts exports CompanyBranding, getBranding(orgId), saveBranding(orgId, branding), and CompanyIdentity({ name, logoUrl, primaryColor }). The session index exports OrganizationProvider, useOrganization, and current user/organization types.
 
-- [ ] Step 1: Add fsd-entity-slices.test.ts asserting that lead, employee, and company each have ui, model, api, and index.ts. Include a failure message naming the missing slice path.
-- [ ] Step 2: Run npx tsx --test tests/fsd-entity-slices.test.ts and confirm it fails because the entity slices do not exist.
-- [ ] Step 3: Move Lead/Employee/Company contracts into their model segments; add entity API facades over the existing repository adapter and keep Supabase calls unchanged.
-- [ ] Step 4: Extract only existing Lead status, Employee identity, and Company identity markup into entity ui components; pass typed props and preserve the current markup and behavior.
-- [ ] Step 5: Move the authenticated-workspace context contract and provider into the session entity slice; update consumers to use public entity APIs.
-- [ ] Step 6: Run npx tsx --test tests/fsd-entity-slices.test.ts, npm test, npm run lint, and npm run build. Confirm the structure test passes and existing domain tests remain green.
-- [ ] Step 7: Commit as refactor: add FSD entity public APIs.
+- [x] Step 1: Add fsd-entity-slices.test.ts asserting that lead, employee, and company each have ui, model, api, and index.ts. Include a failure message naming the missing slice path.
+- [x] Step 2: Run npx tsx --test tests/fsd-entity-slices.test.ts and confirm it fails because the entity slices do not exist.
+- [x] Step 3: Move Lead/Employee/Company contracts into their model segments; add entity API facades over the existing repository adapter and keep Supabase calls unchanged.
+- [x] Step 4: Extract only existing Lead status, Employee identity, and Company identity markup into entity ui components; pass typed props and preserve the current markup and behavior.
+- [x] Step 5: Move the authenticated-workspace context contract and provider into the session entity slice; update consumers to use public entity APIs.
+- [x] Step 6: Run npx tsx --test tests/fsd-entity-slices.test.ts, npm test, npm run lint, and npm run build. Confirm the structure test passes and existing domain tests remain green.
+- [x] Step 7: Commit as refactor: add FSD entity public APIs.
 
 ### Task 2: Move user scenarios into feature slices
 

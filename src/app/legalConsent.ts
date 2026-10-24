@@ -1,8 +1,5 @@
-export interface OwnerLegalConsent {
-  termsAccepted: boolean;
-  dpaAccepted: boolean;
-  acceptedAt: string;
-}
+import type { OwnerLegalConsent } from '../shared/model/legalConsent';
+export type { OwnerLegalConsent } from '../shared/model/legalConsent';
 
 const MAX_CAPTURE_AGE_MS = 15 * 60 * 1000;
 const MAX_CLOCK_SKEW_MS = 2 * 60 * 1000;

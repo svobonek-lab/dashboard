@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { CheckCircle2, KeyRound, Mail, Phone, Send, ShieldCheck, UserPlus, UsersRound } from 'lucide-react';
 import type { Employee, Lead } from '../types';
+import { EmployeeIdentity } from '../src/entities/employee';
 import { useOrganization } from '../context/OrganizationContext';
 import { AppButton, AppInput, AppModal } from '../src/components/ui/common';
 
@@ -65,7 +66,7 @@ export const EmployeesPage: React.FC<EmployeesPageProps> = ({ employees, leads, 
           {employees.map((employee) => {
             const invitationStatus = employee.invitationStatus || (employee.active === false ? 'Disabled' : 'Active');
             return <article key={employee.id} className="flex flex-col gap-4 px-5 py-5 sm:flex-row sm:items-center sm:justify-between">
-              <div className="flex min-w-0 items-center gap-3"><span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-slate-100 text-sm font-semibold text-slate-700">{employee.name?.split(' ').map((part) => part[0]).join('').slice(0, 2).toUpperCase() || 'ČT'}</span><span className="min-w-0"><strong className="block truncate text-sm font-semibold text-slate-950">{employee.name || 'Člen týmu'}</strong><small className="mt-1 block truncate text-xs text-slate-500">{employee.email} · {employee.specialization || employee.role || 'zaměstnanec'}</small></span></div>
+              <EmployeeIdentity employee={employee} />
               <div className="flex flex-wrap items-center gap-2 sm:justify-end">
                 <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${invitationStatus === 'Pending' ? 'bg-amber-50 text-amber-700' : invitationStatus === 'Disabled' ? 'bg-rose-50 text-rose-700' : 'bg-emerald-50 text-emerald-700'}`}>{invitationStatus === 'Pending' ? 'Čeká na aktivaci' : invitationStatus === 'Disabled' ? 'Deaktivován' : 'Aktivní'}</span>
                 <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-600">{assignedCounts.get(employee.id) || 0} zakázek</span>

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { ArrowRight, BriefcaseBusiness, CheckCircle2, Clock3, MapPin, Phone } from 'lucide-react';
 import { CompanyBranding, Lead, LeadStatus } from '../types';
+import { LeadStatusBadge } from '../src/entities/lead';
 import { getEmployeeNextStatus } from '../src/app/leadLifecycle';
 
 interface EmployeeDashboardProps {
@@ -11,11 +12,6 @@ interface EmployeeDashboardProps {
   onUpdateLead?: (lead: Lead) => void;
   onUpdateLeadStatus?: (leadId: string, status: LeadStatus) => Promise<void> | void;
 }
-
-const statusLabel: Record<LeadStatus, string> = {
-  New: 'Nová', Contacted: 'Kontaktováno', Quote: 'Nabídka',
-  'In Progress': 'V realizaci', Completed: 'Dokončeno', Lost: 'Nezískáno',
-};
 
 const nextStatusLabel: Partial<Record<LeadStatus, string>> = {
   Contacted: 'Potvrdit kontakt', Quote: 'Předat do nabídky',
@@ -57,7 +53,7 @@ export const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({ leads, onS
             <article key={lead.id} className="workspace-panel p-5 sm:p-6">
               <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
                 <div className="min-w-0">
-                  <div className="flex flex-wrap items-center gap-2"><span className="rounded-full bg-blue-50 px-2.5 py-1 text-xs font-semibold text-blue-700">{statusLabel[lead.status]}</span>{lead.priority === 'Urgent' || lead.priority === 'High' ? <span className="rounded-full bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-700">Prioritní</span> : null}</div>
+                  <div className="flex flex-wrap items-center gap-2"><LeadStatusBadge status={lead.status} />{lead.priority === 'Urgent' || lead.priority === 'High' ? <span className="rounded-full bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-700">Prioritní</span> : null}</div>
                   <h2 className="mt-3 text-lg font-semibold tracking-tight text-slate-950">{lead.title || 'Zakázka bez názvu'}</h2><p className="mt-1 text-sm text-slate-500">{lead.customerName || 'Zákazník neuveden'}</p>
                   <div className="mt-4 flex flex-wrap gap-x-5 gap-y-2 text-sm text-slate-600">{location && <span className="inline-flex items-center gap-1.5"><MapPin className="h-4 w-4 text-slate-400" />{location}</span>}{lead.preferredDate && <span className="inline-flex items-center gap-1.5"><Clock3 className="h-4 w-4 text-slate-400" />{lead.preferredDate}</span>}{(lead.customerPhone || lead.phone) && <a href={`tel:${lead.customerPhone || lead.phone}`} className="inline-flex items-center gap-1.5 font-medium text-blue-600 hover:text-blue-700"><Phone className="h-4 w-4" />Zavolat</a>}</div>
                 </div>
