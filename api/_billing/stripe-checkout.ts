@@ -177,6 +177,7 @@ export function createStripeCheckoutHandler(dependencies: CheckoutDependencies) 
       }
       const sessionInput: StripeCheckoutInput = {
         mode: 'subscription',
+        managed_payments: { enabled: false },
         customer: customerId,
         line_items: [{ price: priceId, quantity: 1 }],
         client_reference_id: owner.companyId,
@@ -186,7 +187,7 @@ export function createStripeCheckoutHandler(dependencies: CheckoutDependencies) 
         cancel_url: `${baseUrl}/billing/return?status=canceled`,
       };
 
-      const session = await dependencies.createSession(sessionInput, config.secretKey, `checkout:${owner.companyId}:${operationId}`);
+      const session = await dependencies.createSession(sessionInput, config.secretKey, `checkout:billing-v1:${owner.companyId}:${operationId}`);
       if (!session.url || new URL(session.url).hostname !== 'checkout.stripe.com') {
         throw new BillingHttpError('BILLING_SESSION_FAILED', 502);
       }

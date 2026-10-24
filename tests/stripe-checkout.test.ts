@@ -77,11 +77,12 @@ test('checkout creates and binds a customer, then binds the server-approved plan
   });
   assert.deepEqual(bound, [tenantId, 'cus_testunitonly']);
   assert.equal(captured?.customer, 'cus_testunitonly');
+  assert.deepEqual(captured?.managed_payments, { enabled: false });
   assert.equal(captured?.client_reference_id, tenantId);
   assert.deepEqual(captured?.metadata, { tenant_id: tenantId, plan: 'pilot' });
   assert.deepEqual(captured?.line_items, [{ price: 'price_testunitonly', quantity: 1 }]);
   assert.deepEqual(captured?.subscription_data, { metadata: { tenant_id: tenantId, plan: 'pilot' } });
-  assert.equal(sessionIdempotency, `checkout:${tenantId}:30000000-0000-4000-8000-000000000003`);
+  assert.equal(sessionIdempotency, `checkout:billing-v1:${tenantId}:30000000-0000-4000-8000-000000000003`);
 });
 
 test('checkout reuses an existing Stripe customer without creating or rebinding it', async () => {
