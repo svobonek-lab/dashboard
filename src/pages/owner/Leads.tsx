@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Employee, Lead, LeadStatus } from '@/types';
-import { LeadsKanban } from '@/features/LeadsKanban';
-import { LeadDetail } from '@/features/LeadDetail';
+import { LeadsKanban, LeadDetail } from '../../features/manage-leads';
+import { useOrganization } from '@/context/OrganizationContext';
 
 interface OwnerLeadsPageProps {
   leads: Lead[];
@@ -22,6 +22,7 @@ export const OwnerLeadsPage: React.FC<OwnerLeadsPageProps> = ({
   onUpdateLead,
   onAddLead
 }) => {
+  const { dbUser } = useOrganization();
   const [photoViewer, setPhotoViewer] = useState<{ url: string; title: string; category: string } | null>(null);
 
   if (selectedLead) {
@@ -43,6 +44,7 @@ export const OwnerLeadsPage: React.FC<OwnerLeadsPageProps> = ({
       onSelectLead={onSelectLead}
       onUpdateLeadStatus={onUpdateLeadStatus}
       onAddLead={onAddLead}
+      author={dbUser?.email || 'owner'}
     />
   );
 };

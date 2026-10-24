@@ -1,6 +1,6 @@
 import { useOrganization } from '@/context/OrganizationContext';
 import React from 'react';
-import { EmployeesPage } from '@/features/EmployeesPage';
+import { EmployeesPage } from '../../features/manage-employees';
 import { Employee, Lead } from '@/types';
 
 interface OwnerEmployeesPageProps {
@@ -10,7 +10,7 @@ interface OwnerEmployeesPageProps {
 }
 
 export const OwnerEmployeesPage: React.FC<OwnerEmployeesPageProps> = ({ employees, leads, onEmployeeAdded }) => {
-  const { currentOrg } = useOrganization();
+  const { currentOrg, fetchEmployees, inviteEmployee, resendEmployeeInvite, resetEmployeePassword } = useOrganization();
   const branding = currentOrg?.branding || {};
-  return <EmployeesPage employees={employees} leads={leads} branding={branding} onEmployeeAdded={onEmployeeAdded} />;
+  return <EmployeesPage employees={employees} leads={leads} branding={branding} onEmployeeAdded={onEmployeeAdded} fetchEmployees={fetchEmployees} inviteEmployee={inviteEmployee} resendEmployeeInvite={resendEmployeeInvite} resetEmployeePassword={resetEmployeePassword} />;
 };

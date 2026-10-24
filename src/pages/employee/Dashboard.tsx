@@ -1,6 +1,6 @@
 import { useOrganization } from '@/context/OrganizationContext';
 import React from 'react';
-import { EmployeeDashboard } from '@/features/EmployeeDashboard';
+import { EmployeeDashboard } from '../../features/employee-workflow';
 import { Lead, LeadStatus } from '@/types';
 import { WorkspaceReadinessPanel } from '@/features/WorkspaceReadinessPanel';
 import { buildWorkspaceReadiness } from '@/src/app/workspaceReadiness';

@@ -6,7 +6,7 @@ import {
   buildCompletedInviteMetadata,
   isInviteCallbackUrl,
   shouldLoadWorkspaceIdentity,
-} from '../src/app/invitePassword.js';
+} from '../src/features/employee-invitations';
 
 const invitedOwner = {
   id: 'owner-auth-id',

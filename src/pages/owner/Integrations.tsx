@@ -1,13 +1,11 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { Bot, Check, CheckCircle2, Copy, Database, FileSpreadsheet, Globe2, LockKeyhole, UploadCloud } from 'lucide-react';
-import { CSVImportModal } from '@/components/integrations/CSVImportModal';
+import { CSVImportModal } from '../../features/import-leads';
 import { useOrganization } from '@/context/OrganizationContext';
 import { supabase } from '@/lib/supabase';
 import type { Employee, Lead } from '@/types';
-import type { FieldMappingConfig } from '@/types/integrations';
-import { ConnectorSetup } from '@/components/integrations/ConnectorSetup';
-import { ConnectorStatus } from '@/components/integrations/ConnectorStatus';
-import { ConnectorMapping } from '@/components/integrations/ConnectorMapping';
+import type { FieldMappingConfig } from '../../features/import-leads';
+import { ConnectorSetup, ConnectorStatus, ConnectorMapping } from '../../features/manage-integrations';
 import { connectorClient } from '@/src/app/connectorClient';
 import type { ConnectorSummary } from '@/src/app/connectorContract';
 

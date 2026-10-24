@@ -1,13 +1,13 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import test from 'node:test';
-import { requestImmediateOutboxDispatch } from '../src/app/emailNotifications';
+import { requestImmediateOutboxDispatch } from '../src/shared/api/emailNotifications';
 import emailNotificationStatusHandler from '../api/email-notification-status';
 
 const sql = readFileSync(new URL('../supabase/staging/20261014_immediate_email_notifications_contract.sql', import.meta.url), 'utf8');
 const verifySql = readFileSync(new URL('../supabase/tests/immediate_email_notifications_verify.sql', import.meta.url), 'utf8');
 const settings = readFileSync(new URL('../src/pages/owner/Settings.tsx', import.meta.url), 'utf8');
-const widget = readFileSync(new URL('../features/WidgetIframePage.tsx', import.meta.url), 'utf8');
+const widget = readFileSync(new URL('../src/features/submit-inquiry/ui/WidgetIframePage.tsx', import.meta.url), 'utf8');
 const app = readFileSync(new URL('../src/App.tsx', import.meta.url), 'utf8');
 const workflow = readFileSync(new URL('../.github/workflows/verify.yml', import.meta.url), 'utf8');
 

@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { existsSync, readFileSync } from 'node:fs';
-import { testGoogleSheetsConnection, executeGoogleSheetsSync } from '../lib/integrations/sheetsConnector';
+import { testGoogleSheetsConnection, executeGoogleSheetsSync } from '../src/features/manage-integrations/api/sheetsConnector';
 import outbox from '../api/outbox-scheduler';
 
 test('unsupported Sheets never returns invented records or partial successful sync', async () => {

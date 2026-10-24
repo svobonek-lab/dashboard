@@ -1,5 +1,7 @@
-export type LeadStatus = 'New' | 'Contacted' | 'Quote' | 'In Progress' | 'Completed' | 'Lost';
-export type Priority = 'Low' | 'Medium' | 'High' | 'Urgent';
+import type { MappedLeadStatus, MappedPriority } from '../../../shared/model/integrationMapping';
+
+export type LeadStatus = MappedLeadStatus;
+export type Priority = MappedPriority;
 export type LeadSource = 'manual' | 'csv' | 'public_form' | 'ai_inbox' | 'widget' | 'connector' | string;
 
 export interface LeadChecklistItem {

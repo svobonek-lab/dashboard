@@ -2,7 +2,7 @@ import { useOrganization } from '@/context/OrganizationContext';
 import React from 'react';
 import { useRouter } from '../../app/router';
 import { OwnerDashboard } from '@/features/OwnerDashboard';
-import { OnboardingChecklist } from '@/features/OnboardingChecklist';
+import { OnboardingChecklist } from '../../features/onboarding-checklist';
 import { Lead, Employee } from '@/types';
 import { WorkspaceReadinessPanel } from '@/features/WorkspaceReadinessPanel';
 import { buildWorkspaceReadiness } from '@/src/app/workspaceReadiness';
@@ -26,7 +26,7 @@ export const OwnerDashboardPage: React.FC<OwnerDashboardPageProps> = ({
   // Condition for Empty Workspace
   const isEmptyWorkspace = leads.length === 0;
 
-  if (isEmptyWorkspace) return <OnboardingChecklist leadsCount={leads.length} employeesCount={employees.length} />;
+  if (isEmptyWorkspace) return <OnboardingChecklist leadsCount={leads.length} employeesCount={employees.length} organizationName={currentOrg?.name || ''} hasIdentity={Boolean(currentOrg?.name && (currentOrg?.city || currentOrg?.email))} onNavigate={navigate} />;
 
   return <div className="space-y-5">
     {readiness.percent < 100 && <WorkspaceReadinessPanel organization={currentOrg} leads={leads} employees={employees} role="owner" compact />}

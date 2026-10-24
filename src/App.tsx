@@ -7,7 +7,7 @@ import { RoleGuard } from './app/RoleGuard';
 import { SubscriptionGuard } from './app/SubscriptionGuard';
 import { getDefaultRouteForRole, UserRole } from './app/permissions';
 import { canEmployeeAccessLead, getEmployeeLeads } from './app/employeeScope';
-import { requestImmediateOutboxDispatch } from './app/emailNotifications';
+import { requestImmediateOutboxDispatch } from './shared/api/emailNotifications';
 
 // Layouts
 import { SuperAdminLayout } from './layouts/SuperAdminLayout';
@@ -35,11 +35,11 @@ import { Integrations } from './pages/owner/Integrations';
 import { EmployeeDashboardPage } from './pages/employee/Dashboard';
 import { EmployeeJobsPage } from './pages/employee/Jobs';
 import { EmployeePhotosPage } from './pages/employee/Photos';
-import { LeadDetail } from '@/features/LeadDetail';
+import { LeadDetail } from './features/manage-leads';
 
 // Public & Embed Views
 import { LoginPage } from '@/components/LoginPage';
-import { WidgetIframePage } from '@/features/WidgetIframePage';
+import { WidgetIframePage } from './features/submit-inquiry';
 
 // Types
 import { Lead, LeadStatus } from '@/types';

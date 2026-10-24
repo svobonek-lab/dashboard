@@ -1,6 +1,6 @@
 import React from 'react';
 import { OrganizationContext, type Organization, type OrganizationContextType } from '@/context/OrganizationContextBase';
-import { LeadsKanban } from '@/features/LeadsKanban';
+import { LeadsKanban } from '../../src/features/manage-leads';
 import { OwnerDashboard } from '@/features/OwnerDashboard';
 import { generateRealisticEmployees, generateRealisticLeads } from '@/lib/demoData';
 import { DEFAULT_DEMO_ORG_ID } from '@/lib/supabase';

@@ -15,7 +15,7 @@ test('clean workspace visual system defines the shared product language', () => 
 
 test('pilot dashboards expose only real product actions', () => {
   const owner = readFileSync(new URL('../features/OwnerDashboard.tsx', import.meta.url), 'utf8');
-  const employee = readFileSync(new URL('../features/EmployeeDashboard.tsx', import.meta.url), 'utf8');
+  const employee = readFileSync(new URL('../src/features/employee-workflow/ui/EmployeeDashboard.tsx', import.meta.url), 'utf8');
   const employeeLayout = readFileSync(new URL('../src/layouts/EmployeeLayout.tsx', import.meta.url), 'utf8');
 
   assert.doesNotMatch(owner, /onNavigateTab\(['"](?:quotes|analytics)['"]\)/);
@@ -33,7 +33,7 @@ test('configured login is onboarding-led rather than fake self-service provision
 });
 
 test('new company onboarding stays inside the verified pilot scope', () => {
-  const onboarding = readFileSync(new URL('../features/OnboardingChecklist.tsx', import.meta.url), 'utf8');
+  const onboarding = readFileSync(new URL('../src/features/onboarding-checklist/ui/OnboardingChecklist.tsx', import.meta.url), 'utf8');
   assert.match(onboarding, /4 kroky k první zakázce/);
   assert.doesNotMatch(onboarding, /POHODA|marže|automatické přijímání|Označit jako hotové/i);
   assert.doesNotMatch(onboarding, /tenantCache|manualChecks/);
@@ -55,13 +55,13 @@ test('owner settings persist only reviewed company fields through app schema', (
 });
 
 test('team page never fakes assignment or SMS delivery', () => {
-  const team = readFileSync(new URL('../features/EmployeesPage.tsx', import.meta.url), 'utf8');
+  const team = readFileSync(new URL('../src/features/manage-employees/ui/EmployeesPage.tsx', import.meta.url), 'utf8');
   assert.match(team, /Pozvat zaměstnance/);
   assert.doesNotMatch(team, /autoAssignEmployee|AI Přiřazení|odeslán SMS|Možný příjezd/i);
 });
 
 test('pilot lead detail contains only persisted customer, assignment, and history data', () => {
-  const detail = readFileSync(new URL('../features/LeadDetail.tsx', import.meta.url), 'utf8');
+  const detail = readFileSync(new URL('../src/features/manage-leads/ui/LeadDetail.tsx', import.meta.url), 'utf8');
   assert.match(detail, /Uložit přiřazení/);
   assert.match(detail, /Uložená historie/);
   assert.doesNotMatch(detail, /CommunicationTab|BudgetTab|InvoicesTab|AIChatMessage|setTimeout/i);
@@ -105,7 +105,7 @@ test('deprecated simulated product modules are removed from the application sour
 });
 
 test('public form and embed page use the real tenant-safe intake without simulated capabilities', () => {
-  const form = readFileSync(new URL('../features/WidgetIframePage.tsx', import.meta.url), 'utf8');
+  const form = readFileSync(new URL('../src/features/submit-inquiry/ui/WidgetIframePage.tsx', import.meta.url), 'utf8');
   const embed = readFileSync(new URL('../features/EmbedWidgetPage.tsx', import.meta.url), 'utf8');
   assert.match(form, /publicSupabase\.rpc\('app_submit_public_lead'/);
   assert.match(form, /Souhlasím/);

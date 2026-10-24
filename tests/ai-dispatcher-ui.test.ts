@@ -10,7 +10,7 @@ test('lead source badges identify AI inbox and website widget', () => {
 });
 
 test('Kanban renders the source badge from persisted lead source', () => {
-  const kanban = readFileSync(new URL('../features/LeadsKanban.tsx', import.meta.url), 'utf8');
+  const kanban = readFileSync(new URL('../src/features/manage-leads/ui/LeadsKanban.tsx', import.meta.url), 'utf8');
   assert.match(kanban, /getLeadSourceBadge\(lead\.source\)/);
   assert.match(kanban, /sourceBadge\.label/);
 });

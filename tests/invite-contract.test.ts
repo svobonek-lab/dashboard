@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { buildInviteRequest, toPendingEmployee } from '../src/app/inviteContract';
+import { buildInviteRequest, toPendingEmployee } from '../src/features/employee-invitations';
 
 test('owner invite request uses the server companyId contract', () => {
   assert.deepEqual(buildInviteRequest('11111111-1111-4111-8111-111111111111', {name:'Jan',email:'JAN@Example.com'}), {

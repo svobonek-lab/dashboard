@@ -55,7 +55,7 @@ test('cloud repository persists notes and signed uploads without local attachmen
 });
 
 test('owner and employee attachment screens reload records from the repository', () => {
-  const documents = read('../features/lead-tabs/DocumentsTab.tsx');
+  const documents = read('../src/features/manage-leads/ui/lead-tabs/DocumentsTab.tsx');
   const photos = read('../src/pages/employee/Photos.tsx');
   const app = read('../src/App.tsx');
 

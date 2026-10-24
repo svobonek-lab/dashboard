@@ -77,13 +77,13 @@
 - Consumes: Entity public APIs from Task 1.
 - Produces: One index.ts per feature slice, exporting only user-facing scenario UI and model/API functions consumed by pages, widgets, or app composition.
 
-- [ ] Step 1: Add fsd-feature-slices.test.ts asserting that each named scenario slice listed above has an index.ts.
-- [ ] Step 2: Run npx tsx --test tests/fsd-feature-slices.test.ts and confirm it fails because these feature slices do not exist yet.
-- [ ] Step 3: Move lead management and lead-tab interactions into manage-leads; move CSV parsing UI into import-leads; move employee management and onboarding into their named feature slices.
-- [ ] Step 4: Move invitation, lead-file, and integration actions into their feature slices. Keep server-side CSV import processing in its existing backend module.
-- [ ] Step 5: Update consumers to use the feature public APIs; keep intra-slice imports relative.
-- [ ] Step 6: Run npx tsx --test tests/fsd-feature-slices.test.ts, npm test, npm run lint, and npm run build. Confirm all named feature entry points exist and import, invitation, attachment, and integration tests pass.
-- [ ] Step 7: Commit as refactor: move browser scenarios into FSD features.
+- [x] Step 1: Add fsd-feature-slices.test.ts asserting that each named scenario slice listed above has an index.ts.
+- [x] Step 2: Run npx tsx --test tests/fsd-feature-slices.test.ts and confirm it fails because these feature slices do not exist yet.
+- [x] Step 3: Move lead management and lead-tab interactions into manage-leads; move CSV parsing UI into import-leads; move employee management and onboarding into their named feature slices.
+- [x] Step 4: Move invitation, lead-file, and integration actions into their feature slices. Keep server-side CSV import processing in its existing backend module.
+- [x] Step 5: Update consumers to use the feature public APIs; keep intra-slice imports relative.
+- [x] Step 6: Run npx tsx --test tests/fsd-feature-slices.test.ts, npm test, npm run lint, and npm run build. Confirm all named feature entry points exist and import, invitation, attachment, and integration tests pass.
+- [x] Step 7: Commit as refactor: move browser scenarios into FSD features.
 
 ### Task 3: Organize widgets and route pages
 
