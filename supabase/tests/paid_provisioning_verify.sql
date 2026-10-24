@@ -1,3 +1,9 @@
+-- The setup intentionally omits the legal table (observed staging prerequisite gap).
+do $$ begin
+ if not (select relrowsecurity from pg_class where oid='public.app_company_legal_acceptances'::regclass) then raise exception 'legal evidence RLS missing'; end if;
+ if has_table_privilege('authenticated','public.app_company_legal_acceptances','select') or has_table_privilege('anon','public.app_company_legal_acceptances','insert') then raise exception 'browser legal evidence access'; end if;
+ if has_table_privilege('service_role','public.app_company_legal_acceptances','update') or has_table_privilege('service_role','public.app_company_legal_acceptances','delete') then raise exception 'mutable legal evidence'; end if;
+end $$;
 begin;
 insert into public.app_paid_registration_intents(company_id,owner_user_id,owner_email,owner_name,company_name,slug,plan,stripe_customer_id,checkout_session_id,client_accepted_at)
 values
