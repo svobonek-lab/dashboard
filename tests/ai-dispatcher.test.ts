@@ -231,7 +231,7 @@ test('unsigned webhook is allowed only in local development when the signing sec
       body: { text_body: 'Prosím o nabídku.', org_id: '11111111-1111-4111-8111-111111111111' },
       headers: {},
     }, res);
-    assert.equal(res.code, 502);
+    assert.equal(res.code, 503);
     assert.match(warnings.join('\n'), /AI_INBOX_SIGNING_SECRET/);
   } finally {
     console.warn = originalWarn;
@@ -265,3 +265,4 @@ test('unsigned webhook remains unauthorized outside local development', async ()
     if (previousSigningSecret === undefined) delete process.env.AI_INBOX_SIGNING_SECRET; else process.env.AI_INBOX_SIGNING_SECRET = previousSigningSecret;
   }
 });
+
