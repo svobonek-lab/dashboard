@@ -56,13 +56,13 @@ export class AtomicJsonStore<T> {
   }
 
   async write(value: T): Promise<void> {
-    this.writeChain = this.writeChain.then(() => writeJsonAtomically(this.path, value));
+    this.writeChain = this.writeChain.catch(() => undefined).then(() => writeJsonAtomically(this.path, value));
     return this.writeChain;
   }
 
   async update(change: (current: T) => T): Promise<T> {
     let result!: T;
-    this.writeChain = this.writeChain.then(async () => {
+    this.writeChain = this.writeChain.catch(() => undefined).then(async () => {
       result = change(await this.read());
       await writeJsonAtomically(this.path, result);
     });

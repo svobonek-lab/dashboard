@@ -6,10 +6,10 @@ import test from 'node:test';
 
 import { SyncScheduler } from '../src/scheduler.js';
 
-const failed = { status: 'failure' as const, failureKind: 'transport' as const };
+const failed = { status: 'failure' as const, failureKind: 'authorization' as const };
 const success = { status: 'success' as const };
 
-test('pauses only after five consecutive run failures', async () => {
+test('pauses after five consecutive authorization failures', async () => {
   const root = await mkdtemp(join(tmpdir(), 'stavbaflow-scheduler-'));
   const scheduler = new SyncScheduler(join(root, 'scheduler.json'));
   for (let index = 0; index < 4; index++) {
@@ -54,4 +54,18 @@ test('uses at least a one-minute automatic interval and bounded exponential back
   assert.equal(scheduler.intervalMs, 60_000);
   assert.equal(scheduler.retryDelayMs(1), 1_000);
   assert.equal(scheduler.retryDelayMs(20), 300_000);
+});
+test('transport and source outages never permanently pause the durable worker',async()=>{
+ const root=await mkdtemp(join(tmpdir(),'sf-transport-retry-'));
+ const scheduler=new SyncScheduler(join(root,'scheduler.json'),{random:()=>0.5});
+ for(let i=0;i<12;i++){
+  const state=await scheduler.recordRun({status:'failure',failureKind:i%2?'transport':'source_connection'});
+  assert.equal(state.paused,false);
+ }
+ const state=await scheduler.state();
+ assert.equal(scheduler.automaticDelayRemaining(state,Date.parse(state.lastRunAt!)),300_000);
+ assert.equal(scheduler.automaticDelayRemaining(state,Date.parse(state.lastRunAt!)+300_000),0);
+ const restarted=new SyncScheduler(join(root,'scheduler.json'),{random:()=>0.5});
+ assert.equal((await restarted.state()).consecutiveFailures,12);
+ assert.equal((await restarted.state()).paused,false);
 });

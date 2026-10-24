@@ -1,3 +1,4 @@
+import { ConnectorApiError } from './api/client.js';
 import { AtomicJsonStore } from './state/atomicStore.js';
 
 export type RunFailureKind = 'transport' | 'authorization' | 'source_connection' | 'mapping';
@@ -67,7 +68,7 @@ export class SyncScheduler {
       const consecutiveFailures = failed ? current.consecutiveFailures + 1 : 0;
       return {
         consecutiveFailures,
-        paused: failed ? consecutiveFailures >= 5 : false,
+        paused: failed && (result.failureKind === 'authorization' || result.failureKind === 'mapping') ? consecutiveFailures >= 5 : false,
         lastStatus: result.status,
         lastRunAt: new Date().toISOString(),
       };
@@ -81,6 +82,13 @@ export class SyncScheduler {
     return Math.min(300_000, Math.round(base * jitter));
   }
 
+  automaticDelayRemaining(state: SchedulerState, now = Date.now()): number {
+    if (!state.lastRunAt || state.consecutiveFailures === 0) return 0;
+    const lastRun = Date.parse(state.lastRunAt);
+    if (!Number.isFinite(lastRun)) return 0;
+    return Math.max(0, lastRun + Math.max(this.intervalMs, this.retryDelayMs(state.consecutiveFailures)) - now);
+  }
+
   async runManual<T>(execute: () => Promise<T>): Promise<T> {
     return this.runExclusive(execute);
   }
@@ -88,7 +96,9 @@ export class SyncScheduler {
   startAutomatic(execute: () => Promise<RunResult>): void {
     if (this.timer) return;
     this.timer = setInterval(() => {
-      void this.runAutomatic(execute);
+      void this.runAutomatic(execute).catch(() => {
+        console.error('Connector scheduler state unavailable; durable batches retained.');
+      });
     }, this.intervalMs);
     this.timer.unref();
   }
@@ -99,7 +109,8 @@ export class SyncScheduler {
   }
 
   private async runAutomatic(execute: () => Promise<RunResult>): Promise<void> {
-    if ((await this.state()).paused || this.running) return;
+    const state = await this.state();
+    if (state.paused || this.running || this.automaticDelayRemaining(state) > 0) return;
     try {
       const result = await this.runExclusive(execute);
       await this.recordRun(result);
