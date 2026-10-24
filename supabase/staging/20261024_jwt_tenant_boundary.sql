@@ -79,7 +79,8 @@ create policy app_leads_delete_creator_boundary on public.app_leads as restricti
 using (app_private.app_role(company_id) = 'owner'
   or (created_by = auth.uid() and app_private.app_can_lead(company_id,id)));
 
--- No grants are widened. Employee UPDATE is still limited by guard_lead_mutation.
+-- Employee UPDATE is still limited by guard_lead_mutation. Lead DELETE is explicitly
+-- granted below, bounded by both restrictive tenant and creator policies.
 -- Notes/files keep their stricter existing 15-minute creator delete window.
 -- Service-only provisioning/public intake use separately reviewed server RPCs.
 commit;
@@ -109,4 +110,34 @@ end;
 $$;
 revoke all on function public.app_tenant_access_token_hook(jsonb) from public,anon,authenticated,service_role;
 grant execute on function public.app_tenant_access_token_hook(jsonb) to supabase_auth_admin;
+commit;
+
+begin;
+-- Table privileges and RLS are both required. DELETE stays restricted by the
+-- tenant boundary AND the immutable creator/assignment policy above.
+grant delete on public.app_leads to authenticated;
+
+-- Storage is a separate authorization surface: an authorized object-path request
+-- must match the same trusted JWT tenant, not merely a membership in another firm.
+-- Existing bucket/path/assignment/delete-window policies remain necessary.
+do $$
+begin
+ if to_regclass('storage.objects') is not null then
+  execute 'drop policy if exists app_lead_files_jwt_boundary on storage.objects';
+  execute $policy$
+    create policy app_lead_files_jwt_boundary on storage.objects as restrictive for all to authenticated
+    using (bucket_id <> 'lead-files' or (
+      split_part(name,'/',1) = (select app_private.jwt_tenant_id())::text
+      and app_private.app_role((select app_private.jwt_tenant_id())) is not null))
+    with check (bucket_id <> 'lead-files' or (
+      split_part(name,'/',1) = (select app_private.jwt_tenant_id())::text
+      and app_private.app_role((select app_private.jwt_tenant_id())) is not null))
+  $policy$;
+  execute 'drop policy if exists app_lead_files_anon_boundary on storage.objects';
+  execute $policy$
+    create policy app_lead_files_anon_boundary on storage.objects as restrictive for all to anon
+    using (bucket_id <> 'lead-files') with check (bucket_id <> 'lead-files')
+  $policy$;
+ end if;
+end $$;
 commit;

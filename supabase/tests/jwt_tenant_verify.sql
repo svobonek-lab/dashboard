@@ -62,3 +62,21 @@ begin
  if has_function_privilege('authenticated','public.app_tenant_access_token_hook(jsonb)','execute') then raise exception 'browser may mint claims'; end if;
 end $$;
 rollback;
+
+begin;
+set role authenticated;
+select set_config('request.jwt.claim.sub','10000000-0000-4000-8000-000000000001',true);
+select set_config('request.jwt.claims','{"app_metadata":{"tenant_id":"a0000000-0000-4000-8000-000000000001"}}',true);
+do $$
+declare n int;
+begin
+ select count(*) into n from storage.objects where bucket_id='lead-files';
+ if n<>1 then raise exception 'direct Storage access crosses JWT tenant'; end if;
+ delete from storage.objects where name like 'b0000000%';
+ get diagnostics n=row_count; if n<>0 then raise exception 'foreign Storage delete allowed'; end if;
+ begin
+  insert into storage.objects(bucket_id,name) values('lead-files','b0000000-0000-4000-8000-000000000002/forged/file.jpg');
+  raise exception 'foreign Storage insert allowed';
+ exception when insufficient_privilege then null; end;
+end $$;
+rollback;
