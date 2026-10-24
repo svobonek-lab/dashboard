@@ -2,13 +2,13 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { readFileSync } from 'node:fs';
 
-const workspace = readFileSync(new URL('../features/publicDemo/PublicDemoWorkspace.tsx', import.meta.url), 'utf8');
+const workspace = readFileSync(new URL('../src/pages/public/demo/ui/PublicDemoWorkspace.tsx', import.meta.url), 'utf8');
 const state = readFileSync(new URL('../src/features/public-demo/model/demoState.ts', import.meta.url), 'utf8');
 const main = readFileSync(new URL('../src/main.tsx', import.meta.url), 'utf8');
-const ownerLayout = readFileSync(new URL('../src/layouts/OwnerLayout.tsx', import.meta.url), 'utf8');
-const ownerDashboard = readFileSync(new URL('../features/OwnerDashboard.tsx', import.meta.url), 'utf8');
+const ownerLayout = readFileSync(new URL('../src/widgets/workspace-shell/ui/OwnerLayout.tsx', import.meta.url), 'utf8');
+const ownerDashboard = readFileSync(new URL('../src/widgets/owner-dashboard/ui/OwnerDashboard.tsx', import.meta.url), 'utf8');
 const kanban = readFileSync(new URL('../src/features/manage-leads/ui/LeadsKanban.tsx', import.meta.url), 'utf8');
-const companySwitcher = readFileSync(new URL('../components/CompanySwitcher.tsx', import.meta.url), 'utf8');
+const companySwitcher = readFileSync(new URL('../src/widgets/company-switcher/ui/CompanySwitcher.tsx', import.meta.url), 'utf8');
 
 test('public demo is static, read-only and sourced from the shared demo fixture', () => {
   assert.match(state, /PUBLIC_DEMO_LEADS/);

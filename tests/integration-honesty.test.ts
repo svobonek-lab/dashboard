@@ -172,11 +172,11 @@ test('removed admin and legacy connector surfaces cannot return fabricated data'
 });
 
 test('authenticated admin and employee shells do not expose simulated records or actions', () => {
-  const adminDashboard = readFileSync(new URL('../src/pages/admin/Dashboard.tsx', import.meta.url), 'utf8');
-  const adminCompanies = readFileSync(new URL('../src/pages/admin/Companies.tsx', import.meta.url), 'utf8');
-  const employeeDashboard = readFileSync(new URL('../src/pages/employee/Dashboard.tsx', import.meta.url), 'utf8');
-  const employeeJobs = readFileSync(new URL('../src/pages/employee/Jobs.tsx', import.meta.url), 'utf8');
-  const employeePhotos = readFileSync(new URL('../src/pages/employee/Photos.tsx', import.meta.url), 'utf8');
+  const adminDashboard = readFileSync(new URL('../src/pages/admin/dashboard/ui/Dashboard.tsx', import.meta.url), 'utf8');
+  const adminCompanies = readFileSync(new URL('../src/pages/admin/companies/ui/Companies.tsx', import.meta.url), 'utf8');
+  const employeeDashboard = readFileSync(new URL('../src/pages/employee/dashboard/ui/Dashboard.tsx', import.meta.url), 'utf8');
+  const employeeJobs = readFileSync(new URL('../src/pages/employee/jobs/ui/Jobs.tsx', import.meta.url), 'utf8');
+  const employeePhotos = readFileSync(new URL('../src/pages/employee/photos/ui/Photos.tsx', import.meta.url), 'utf8');
   const app = readFileSync(new URL('../src/App.tsx', import.meta.url), 'utf8');
   const repositoryFactory = readFileSync(new URL('../lib/data/repositoryFactory.ts', import.meta.url), 'utf8');
   const sources = [adminDashboard, adminCompanies, employeeDashboard, employeeJobs, employeePhotos, app, repositoryFactory].join('\n');

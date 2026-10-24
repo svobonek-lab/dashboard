@@ -1,4 +1,4 @@
-import { PaidRegistrationPage } from './pages/auth/PaidRegistration';
+import { PaidRegistrationPage } from './pages/auth/paid-registration';
 import React, { useState, useEffect } from 'react';
 import { useOrganization } from '@/context/OrganizationContext';
 import { RouterProvider, useRouter } from './app/router';
@@ -10,47 +10,45 @@ import { canEmployeeAccessLead, getEmployeeLeads } from './app/employeeScope';
 import { requestImmediateOutboxDispatch } from './shared/api/emailNotifications';
 
 // Layouts
-import { SuperAdminLayout } from './layouts/SuperAdminLayout';
-import { OwnerLayout } from './layouts/OwnerLayout';
-import { EmployeeLayout } from './layouts/EmployeeLayout';
+import { SuperAdminLayout, OwnerLayout, EmployeeLayout } from './widgets/workspace-shell';
 
 // Super Admin Pages
-import { AdminDashboardPage } from './pages/admin/Dashboard';
-import { AdminCompaniesPage } from './pages/admin/Companies';
-import { AdminSupportSessionPage } from './pages/admin/SupportSession';
+import { AdminDashboardPage } from './pages/admin/dashboard';
+import { AdminCompaniesPage } from './pages/admin/companies';
+import { AdminSupportSessionPage } from './pages/admin/support-session';
 
 // Owner Pages
-import { OwnerDashboardPage } from './pages/owner/Dashboard';
-import { OwnerLeadsPage } from './pages/owner/Leads';
-import { OwnerProjectsPage } from './pages/owner/Projects';
-import { OwnerEmployeesPage } from './pages/owner/Employees';
-import { OwnerWidgetPage } from './pages/owner/Widget';
-import { PilotUnavailablePage } from './pages/owner/PilotUnavailable';
+import { OwnerDashboardPage } from './pages/owner/dashboard';
+import { OwnerLeadsPage } from './pages/owner/leads';
+import { OwnerProjectsPage } from './pages/owner/projects';
+import { OwnerEmployeesPage } from './pages/owner/employees';
+import { OwnerWidgetPage } from './pages/owner/widget';
+import { PilotUnavailablePage } from './pages/owner/pilot-unavailable';
 import { isPilotUnavailablePath } from './app/pilotScope';
-import { OwnerSettingsPage } from './pages/owner/Settings';
-import { BillingReturnPage } from './pages/owner/BillingReturn';
-import { Integrations } from './pages/owner/Integrations';
+import { OwnerSettingsPage } from './pages/owner/settings';
+import { BillingReturnPage } from './pages/owner/billing-return';
+import { Integrations } from './pages/owner/integrations';
 
 // Employee Pages
-import { EmployeeDashboardPage } from './pages/employee/Dashboard';
-import { EmployeeJobsPage } from './pages/employee/Jobs';
-import { EmployeePhotosPage } from './pages/employee/Photos';
+import { EmployeeDashboardPage } from './pages/employee/dashboard';
+import { EmployeeJobsPage } from './pages/employee/jobs';
+import { EmployeePhotosPage } from './pages/employee/photos';
 import { LeadDetail } from './features/manage-leads';
 
 // Public & Embed Views
-import { LoginPage } from '@/components/LoginPage';
-import { WidgetIframePage } from './features/submit-inquiry';
+import { LoginPage } from './pages/auth/login';
+import { WidgetIframePage } from './pages/public/iframe';
 
 // Types
 import { Lead, LeadStatus } from '@/types';
 import { buildAppLoginUrl, getDeploymentConfig, shouldShowLandingAtRoot } from './app/deploymentSurface';
 import { getLeadTransitionError } from './app/leadLifecycle';
-import { SalesWorkspace } from '@/features/SalesWorkspace';
+import { SalesWorkspace } from './pages/public/sales';
 import { readTenantCache, removeTenantCache, writeTenantCache, TENANT_CACHE_NAMES } from './app/tenantCache';
 import { canEditLeadDetails, hydrateLeadAssignments, persistBeforeApply } from './app/pilotWrites';
 
 const { surface: deploymentSurface, appUrl } = getDeploymentConfig((import.meta as any).env || {});
-const LandingPage = React.lazy(() => import('@/features/LandingPage').then(module => ({ default: module.LandingPage })));
+const LandingPage = React.lazy(() => import('./pages/public/landing').then(module => ({ default: module.LandingPage })));
 
 function ExternalRedirect({ url }: { url: string }) {
   useEffect(() => {

@@ -54,7 +54,7 @@ test('platform identity reader accepts only the narrow active role result', asyn
 
 test('runtime sources contain no email-based platform authorization', () => {
   const context = readFileSync(new URL('../src/app/providers/OrganizationProvider.tsx', import.meta.url), 'utf8');
-  const switcher = readFileSync(new URL('../components/CompanySwitcher.tsx', import.meta.url), 'utf8');
+  const switcher = readFileSync(new URL('../src/widgets/company-switcher/ui/CompanySwitcher.tsx', import.meta.url), 'utf8');
   assert.doesNotMatch(context, /svobonek@gmail\.com/i);
   assert.doesNotMatch(switcher, /svobonek@gmail\.com/i);
   assert.doesNotMatch(context, /switchRoleToSuperAdmin/);

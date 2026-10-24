@@ -16,7 +16,7 @@ test('Kanban renders the source badge from persisted lead source', () => {
 });
 
 test('integrations expose AI inbox and widget while database connector stays Enterprise-only', () => {
-  const integrations = readFileSync(new URL('../src/pages/owner/Integrations.tsx', import.meta.url), 'utf8');
+  const integrations = readFileSync(new URL('../src/pages/owner/integrations/ui/Integrations.tsx', import.meta.url), 'utf8');
   assert.match(integrations, /AI Dispečer \(e-mail\)/);
   assert.match(integrations, /incomingLeadLoading/);
   assert.match(integrations, /Unikátní webhook URL/);

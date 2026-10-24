@@ -113,13 +113,13 @@
 - Consumes: Feature and entity public APIs from Tasks 1 and 2.
 - Produces: Route page and widget entry points through page/widget index.ts files; route-specific screens remain composed by the app layer.
 
-- [ ] Step 1: Add fsd-page-widget-slices.test.ts asserting the required page and widget layer directories exist and each listed slice has an index.ts.
-- [ ] Step 2: Run npx tsx --test tests/fsd-page-widget-slices.test.ts and confirm it fails before the page/widget slices are created.
-- [ ] Step 3: Move current route components into the page slices without changing URLs, access guards, or page behavior; keep the owner calendar route as a page slice that composes the calendar widget.
-- [ ] Step 4: Move complex reusable UI into widgets and preserve feature ownership of user actions.
-- [ ] Step 5: Update route composition and page/widget cross-slice imports to consume only public index.ts files.
-- [ ] Step 6: Run npx tsx --test tests/fsd-page-widget-slices.test.ts, npm test, npm run lint, and npm run build. Confirm page/widget APIs exist and demo/deployment behavior remains green.
-- [ ] Step 7: Commit as refactor: organize FSD pages and widgets.
+- [x] Step 1: Add fsd-page-widget-slices.test.ts asserting the required page and widget layer directories exist and each listed slice has an index.ts.
+- [x] Step 2: Run npx tsx --test tests/fsd-page-widget-slices.test.ts and confirm it fails before the page/widget slices are created.
+- [x] Step 3: Move current route components into the page slices without changing URLs, access guards, or page behavior; keep the owner calendar route as a page slice that composes the calendar widget.
+- [x] Step 4: Move complex reusable UI into widgets and preserve feature ownership of user actions.
+- [x] Step 5: Update route composition and page/widget cross-slice imports to consume only public index.ts files.
+- [x] Step 6: Run npx tsx --test tests/fsd-page-widget-slices.test.ts, npm test, npm run lint, and npm run build. Confirm page/widget APIs exist and demo/deployment behavior remains green.
+- [x] Step 7: Commit as refactor: organize FSD pages and widgets.
 
 ### Task 4: Consolidate app and shared code under the FSD boundary
 
