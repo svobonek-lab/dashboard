@@ -50,6 +50,19 @@ function isSyncState(value: unknown): value is SyncState {
     && (state.lastFullReconciliationAt === null || typeof state.lastFullReconciliationAt === 'string');
 }
 
+
+function validAcknowledgement(envelope: IngestEnvelopeV1, ack: IngestAckV1): boolean {
+  if (ack?.version !== 1 || ack.accepted !== true || ack.requestId !== envelope.requestId
+    || !Array.isArray(ack.results) || ack.results.length !== envelope.records.length) return false;
+  const expected = new Set(envelope.records.map(record => JSON.stringify([record.type, record.externalId])));
+  if (expected.size !== envelope.records.length) return false;
+  for (const result of ack.results) {
+    if (!result || !['created','updated','unchanged','archived'].includes(result.status)
+      || !expected.delete(JSON.stringify([result.type,result.externalId]))) return false;
+  }
+  return expected.size === 0;
+}
+
 export class SyncEngine {
   private readonly state: AtomicJsonStore<SyncState>;
   private readonly sourceKey: string;
@@ -79,7 +92,7 @@ export class SyncEngine {
       records: mapped.flatMap(result => result.record ? [result.record] : []),
     };
     const acknowledgement = await this.options.api.ingest(envelope);
-    if (!acknowledgement.accepted || acknowledgement.requestId !== envelope.requestId) throw new Error('dry run acknowledgement was rejected');
+    if (!validAcknowledgement(envelope, acknowledgement)) throw new Error('dry run acknowledgement was rejected');
     return summary;
   }
 
@@ -148,7 +161,7 @@ export class SyncEngine {
   private async flushPending(): Promise<void> {
     for (const envelope of await this.options.outbox.pending()) {
       const acknowledgement = await this.options.api.ingest(envelope);
-      if (!acknowledgement.accepted || acknowledgement.requestId !== envelope.requestId) throw new Error('pending ingestion acknowledgement was rejected');
+      if (!validAcknowledgement(envelope, acknowledgement)) throw new Error('pending ingestion acknowledgement was rejected');
       // Persist the acknowledged cursor before removing its durable batch.
       // A crash in between replays the same idempotency key safely.
       const checkpoint = await this.options.outbox.checkpoint(envelope.requestId);

@@ -167,3 +167,18 @@ test('checkpoint write failure retains acknowledged batch for idempotent replay'
   assert.deepEqual(await value.outbox.pending(), []);
   assert.notEqual(await value.checkpoints.load('public.customers'), null);
 });
+test('accepted=true alone cannot discard rejected, missing or foreign record acknowledgements',async()=>{
+ for(const kind of ['rejected','missing','foreign']){
+  const value=await fixture();const engine=value.create();await engine.approveDryRun(1);
+  value.api.ingest=async envelope=>({
+   version:1,requestId:envelope.requestId,accepted:true,
+   results:kind==='missing'?[]:envelope.records.map(record=>({
+    externalId:kind==='foreign'?'foreign':record.externalId,type:record.type,
+    status:kind==='rejected'?'rejected':'created',
+   })),
+  });
+  await assert.rejects(engine.run(),/acknowledgement/);
+  assert.equal((await value.outbox.pending()).length,1);
+  assert.equal(await value.checkpoints.load('public.customers'),null);
+ }
+});

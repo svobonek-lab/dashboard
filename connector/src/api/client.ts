@@ -89,7 +89,10 @@ export class ConnectorApi {
       try {
         const response = await this.fetcher(new URL(pathname, this.baseUrl), { method: 'POST', headers, body, redirect: 'error', signal: AbortSignal.timeout(30_000) });
         const parsed = await response.json().catch(() => ({})) as { code?: unknown };
-        if (response.ok) return parsed as T;
+        if (response.ok) {
+          if (pathname === '/api/connector/ingest' && response.status !== 200) throw new ConnectorApiError('CONNECTOR_ACK_STATUS_INVALID', response.status);
+          return parsed as T;
+        }
         const code = typeof parsed.code === 'string' && /^[A-Z0-9_]{1,80}$/.test(parsed.code) ? parsed.code : 'CONNECTOR_REQUEST_FAILED';
         if ((response.status === 429 || response.status >= 500) && attempt < 3) {
           await this.sleep(250 * (2 ** (attempt - 1)));

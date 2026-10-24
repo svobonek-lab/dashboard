@@ -121,3 +121,13 @@ test('every network attempt has an abort deadline and retries preserve the batch
   assert.ok(signals.every(signal => signal instanceof AbortSignal), 'every attempt needs an abort deadline');
   assert.deepEqual(requestIds, ['durable-request', 'durable-request', 'durable-request']);
 });
+test('ingest does not retire a batch on HTTP 201 or 202 even with accepted=true',async()=>{
+ const root=await mkdtemp(join(tmpdir(),'sf-ack-status-'));
+ const identity=await loadOrCreateIdentity(join(root,'identity.json'));
+ for(const status of [201,202]){
+  const api=new ConnectorApi({baseUrl:'https://app.example.test',connectorId:'connector-1',identity,
+   fetcher:async()=>new Response(JSON.stringify({accepted:true,requestId:'status-test',results:[]}),{status}),
+  });
+  await assert.rejects(api.ingest({version:1,connectorId:'connector-1',companyId:'company-1',mappingVersion:1,requestId:'status-test',dryRun:false,records:[]}),/CONNECTOR_ACK_STATUS_INVALID/);
+ }
+});
