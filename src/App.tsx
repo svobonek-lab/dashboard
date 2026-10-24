@@ -1,3 +1,4 @@
+import { PaidRegistrationPage } from './pages/auth/PaidRegistration';
 import React, { useState, useEffect } from 'react';
 import { useOrganization } from '@/context/OrganizationContext';
 import { RouterProvider, useRouter } from './app/router';
@@ -412,6 +413,8 @@ function AppContent() {
     '/owner/login': 'owner',
     '/employee/login': 'employee',
   };
+
+  if (pathname === '/register-paid') return <PaidRegistrationPage />;
 
   if (pathname === '/login' || roleLoginRoutes[pathname]) {
     if (deploymentSurface === 'landing' && appUrl) {

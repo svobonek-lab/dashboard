@@ -23,6 +23,8 @@ export interface StripeSubscriptionUpdate {
   subscriptionId: string;
   subscriptionStatus: BillingSubscriptionStatus;
   currentPeriodEnd: string | null;
+  checkoutSessionId?: string;
+  paymentStatus?: string;
 }
 
 interface StripeWebhookDependencies {
@@ -149,6 +151,8 @@ function toSubscriptionUpdate(event: Stripe.Event): StripeSubscriptionUpdate | n
           ? 'active'
           : 'past_due',
         currentPeriodEnd: null,
+        ...(session.metadata?.onboarding === 'paid_registration'
+          ? { checkoutSessionId: session.id, paymentStatus: session.payment_status } : {}),
       };
     }
     case 'customer.subscription.updated':
@@ -172,7 +176,7 @@ function toSubscriptionUpdate(event: Stripe.Event): StripeSubscriptionUpdate | n
   }
 }
 
-async function persistSubscriptionUpdate(update: StripeSubscriptionUpdate): Promise<StripeApplyResult> {
+export async function persistSubscriptionUpdate(update: StripeSubscriptionUpdate): Promise<StripeApplyResult> {
   const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
   const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
   if (!supabaseUrl || !serviceKey) throw new Error('Stripe billing persistence is not configured.');
@@ -180,6 +184,17 @@ async function persistSubscriptionUpdate(update: StripeSubscriptionUpdate): Prom
   const service = createClient(supabaseUrl, serviceKey, {
     auth: { persistSession: false, autoRefreshToken: false },
   });
+  if (update.checkoutSessionId) {
+    if (process.env.PAID_ONBOARDING_ENABLED !== 'true') throw new Error('Paid onboarding requires staging acceptance.');
+    const { data, error } = await service.rpc('app_provision_paid_checkout', {
+      p_event_id: update.eventId, p_event_created_at: update.eventCreatedAt,
+      p_tenant_id: update.tenantId, p_customer_id: update.customerId,
+      p_subscription_id: update.subscriptionId, p_session_id: update.checkoutSessionId,
+      p_payment_status: update.paymentStatus,
+    });
+    if (error || !['applied','duplicate','stale'].includes(String(data))) throw new Error('Paid provisioning rejected.');
+    return data as StripeApplyResult;
+  }
   const { data, error } = await service.rpc('app_apply_stripe_subscription_event', {
     p_event_id: update.eventId,
     p_event_type: update.eventType,
