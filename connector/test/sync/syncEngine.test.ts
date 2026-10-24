@@ -136,3 +136,49 @@ test('mapping version change invalidates approval and deletion maps to archive',
   await changed.run();
   assert.equal(value.api.calls.at(-1)?.records[0]?.payload.archived, true);
 });
+test('pending delivery recovers its durable cursor before the next source read', async () => {
+  const value = await fixture();
+  const first = value.create();
+  await first.approveDryRun(1);
+  value.api.failures = 1;
+  await assert.rejects(first.run(), /network unavailable/);
+  const pendingId = (await value.outbox.pending())[0]!.requestId;
+  // On restart, the source is unavailable. Recovery must still finish the
+  // already durable page without losing its checkpoint or changing its ID.
+  value.adapter.readPage = async () => { throw new Error('source offline'); };
+  await assert.rejects(value.create().run(), /source offline/);
+  assert.deepEqual(await value.checkpoints.load('public.customers'),
+    { updatedAt: '2026-10-04T08:00:00.000Z', primaryKey: '1' });
+  assert.equal(value.api.calls.at(-1)?.requestId, pendingId);
+  assert.deepEqual(await value.outbox.pending(), []);
+});
+test('checkpoint write failure retains acknowledged batch for idempotent replay', async () => {
+  const value = await fixture();
+  const engine = value.create();
+  await engine.approveDryRun(1);
+  const originalCommit = value.checkpoints.commit.bind(value.checkpoints);
+  value.checkpoints.commit = async () => { throw new Error('disk full'); };
+  await assert.rejects(engine.run(), /disk full/);
+  const id = (await value.outbox.pending())[0]!.requestId;
+  value.checkpoints.commit = originalCommit;
+  value.adapter.readPage = async () => { throw new Error('source offline'); };
+  await assert.rejects(value.create().run(), /source offline/);
+  assert.equal(value.api.calls.at(-1)?.requestId, id);
+  assert.deepEqual(await value.outbox.pending(), []);
+  assert.notEqual(await value.checkpoints.load('public.customers'), null);
+});
+test('accepted=true alone cannot discard rejected, missing or foreign record acknowledgements',async()=>{
+ for(const kind of ['rejected','missing','foreign']){
+  const value=await fixture();const engine=value.create();await engine.approveDryRun(1);
+  value.api.ingest=async envelope=>({
+   version:1,requestId:envelope.requestId,accepted:true,
+   results:kind==='missing'?[]:envelope.records.map(record=>({
+    externalId:kind==='foreign'?'foreign':record.externalId,type:record.type,
+    status:kind==='rejected'?'rejected':'created',
+   })),
+  });
+  await assert.rejects(engine.run(),/acknowledgement/);
+  assert.equal((await value.outbox.pending()).length,1);
+  assert.equal(await value.checkpoints.load('public.customers'),null);
+ }
+});
