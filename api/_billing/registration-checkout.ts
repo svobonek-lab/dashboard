@@ -26,12 +26,14 @@ function clients() {
  const options={auth:{persistSession:false,autoRefreshToken:false}};
  return {auth:createClient(url,anon,options),service:createClient(url,service,options)};
 }
+class RegistrationBillingConfigurationError extends Error {
+ constructor(readonly checks:Record<string,boolean>){super('REGISTRATION_BILLING_CONFIG_INVALID');}
+}
 function stripe() {
  const config=readBillingConfig();
- if(!/^(sk|rk)_test_[A-Za-z0-9]+$/.test(config.secretKey)||config.mode!=='test'
-  ||!/^price_[A-Za-z0-9]+$/.test(config.prices.pilot)||new URL(config.returnUrl).protocol!=='https:') {
-  throw new Error('registration test billing unavailable');
- }
+ let httpsReturn=false;try{httpsReturn=new URL(config.returnUrl).protocol==='https:';}catch{}
+ const checks={testKey:/^(sk|rk)_test_[A-Za-z0-9]+$/.test(config.secretKey),testMode:config.mode==='test',pilotPrice:/^price_[A-Za-z0-9]+$/.test(config.prices.pilot),httpsReturn};
+ if(!Object.values(checks).every(Boolean))throw new RegistrationBillingConfigurationError(checks);
  return {client:new Stripe(config.secretKey),config};
 }
 async function body(req:Request):Promise<unknown>{
@@ -67,15 +69,23 @@ export function createRegistrationCheckoutHandler(deps:Dependencies){
   }catch{res.status(400).json({code:'REGISTRATION_INPUT_INVALID'});return;}
   let user:{id:string};
   try{user=await deps.authorize(req);}catch{res.status(401).json({code:'REGISTRATION_AUTH_REQUIRED'});return;}
+  let stage='prepare';
   try{
    const intent=await deps.prepare(user.id,input);
+   stage='customer';
    const customer=await deps.customer(intent);
+   stage='session';
    const session=await deps.session(intent,customer.id);
    if(!session.url||new URL(session.url).protocol!=='https:'||new URL(session.url).hostname!=='checkout.stripe.com')throw new Error('invalid checkout');
    // A payable URL is never exposed until its exact Stripe bindings are durable.
+   stage='bind';
    await deps.bind(intent,customer.id,session.id);
    res.status(200).json({url:session.url});
-  }catch{res.status(502).json({code:'REGISTRATION_CHECKOUT_FAILED'});}
+  }catch(error){
+   // Never log request bodies, credentials, Stripe URLs or raw upstream errors.
+   console.error('registration_checkout_failed',{stage,code:error instanceof RegistrationBillingConfigurationError?error.message:'UPSTREAM_FAILURE',...(error instanceof RegistrationBillingConfigurationError?{checks:error.checks}:{})});
+   res.status(502).json({code:'REGISTRATION_CHECKOUT_FAILED'});
+  }
  };
 }
 export default createRegistrationCheckoutHandler({

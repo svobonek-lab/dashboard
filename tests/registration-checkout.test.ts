@@ -50,3 +50,11 @@ test('browser price, plan, owner and tenant overrides are never forwarded',async
  assert.equal(res.code,200);assert.equal(owner,'owner-verified');assert.equal(forwarded.plan,'pilot');
  assert.equal(forwarded.price,undefined);assert.equal(forwarded.owner_user_id,undefined);assert.equal(forwarded.company_id,undefined);
 });
+
+
+test('checkout failures log only the failed stage and safe code, never upstream private data',async()=>{
+ const {deps}=fixture();deps.customer=async()=>{throw new Error('sk_test_private upstream bearer token');};
+ const logs:unknown[][]=[];const old=console.error;console.error=(...args)=>{logs.push(args);};
+ try{const res=response();await createRegistrationCheckoutHandler(deps)(req(),res);assert.equal(res.code,502);}finally{console.error=old;}
+ assert.equal(logs.length,1);const out=JSON.stringify(logs);assert.match(out,/customer/);assert.doesNotMatch(out,/sk_test_private|bearer token/);
+});
