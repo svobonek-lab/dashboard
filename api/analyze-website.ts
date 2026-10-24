@@ -1,4 +1,5 @@
 import { GoogleGenAI } from '@google/genai';
+import { GEMINI_MODEL, withGeminiBackoff } from '../lib/gemini.js';
 import { createClient } from '@supabase/supabase-js';
 import dns from 'dns';
 import net from 'net';
@@ -789,13 +790,13 @@ INSTRUCTIONS:
   "services": ${JSON.stringify(extracted.services)}
 }`;
 
-    const response = await ai.models.generateContent({
-      model: 'gemini-3.6-flash',
+    const response = await withGeminiBackoff(() => ai.models.generateContent({
+      model: GEMINI_MODEL,
       contents: prompt,
       config: {
         responseMimeType: 'application/json'
       }
-    });
+    }));
 
     const text = response.text || '{}';
     const cleanJson = text.replace(/```json/g, '').replace(/```/g, '').trim();
