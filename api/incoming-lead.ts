@@ -1,6 +1,6 @@
 import { createHash } from 'node:crypto';
 import { createClient } from '@supabase/supabase-js';
-import { generateGeminiResponse } from '../lib/gemini.js';
+import { generateGeminiResponse, GeminiBusyError, GEMINI_BUSY_MESSAGE } from '../lib/gemini.js';
 import { verifyAiInboxToken } from './_shared/aiInboxToken.js';
 import { runImmediateOutboxDispatch } from './outbox-dispatch.js';
 
@@ -173,6 +173,10 @@ export function createIncomingLeadHandler(dependencies: IncomingLeadDependencies
       }
       res.status(201).json({ status: 'created', lead_id: leadId, notification });
     } catch (error) {
+      if (error instanceof GeminiBusyError) {
+        res.status(503).json({ error: GEMINI_BUSY_MESSAGE });
+        return;
+      }
       console.error('Incoming lead processing failed:', error instanceof Error ? error.message : 'unknown error');
       res.status(502).json({ error: 'E-mail se nepodařilo bezpečně zpracovat.' });
     }
