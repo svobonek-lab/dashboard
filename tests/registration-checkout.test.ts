@@ -58,3 +58,11 @@ test('checkout failures log only the failed stage and safe code, never upstream 
  try{const res=response();await createRegistrationCheckoutHandler(deps)(req(),res);assert.equal(res.code,502);}finally{console.error=old;}
  assert.equal(logs.length,1);const out=JSON.stringify(logs);assert.match(out,/customer/);assert.doesNotMatch(out,/sk_test_private|bearer token/);
 });
+
+
+test('known provider failure category is observable without raw authentication error text',async()=>{
+ const {deps}=fixture();deps.customer=async()=>{throw Object.assign(new Error('sk_test_private'),{type:'StripeAuthenticationError',code:'api_key_expired'});};
+ const logs:unknown[][]=[];const old=console.error;console.error=(...args)=>{logs.push(args);};
+ try{await createRegistrationCheckoutHandler(deps)(req(),response());}finally{console.error=old;}
+ const out=JSON.stringify(logs);assert.match(out,/StripeAuthenticationError/);assert.match(out,/api_key_expired/);assert.doesNotMatch(out,/sk_test_private/);
+});

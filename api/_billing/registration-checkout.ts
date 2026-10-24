@@ -83,7 +83,10 @@ export function createRegistrationCheckoutHandler(deps:Dependencies){
    res.status(200).json({url:session.url});
   }catch(error){
    // Never log request bodies, credentials, Stripe URLs or raw upstream errors.
-   console.error('registration_checkout_failed',{stage,code:error instanceof RegistrationBillingConfigurationError?error.message:'UPSTREAM_FAILURE',...(error instanceof RegistrationBillingConfigurationError?{checks:error.checks}:{})});
+   const upstream=error as {type?:unknown;code?:unknown}|null;
+   const provider=['StripeAuthenticationError','StripeInvalidRequestError','StripeConnectionError','StripeAPIError','StripeRateLimitError','StripeIdempotencyError'].find(type=>type===upstream?.type)??'unknown';
+   const providerCode=['api_key_expired','resource_missing','parameter_missing','parameter_invalid_empty','idempotency_key_in_use'].find(code=>code===upstream?.code)??'unknown';
+   console.error('registration_checkout_failed',{stage,provider,providerCode,code:error instanceof RegistrationBillingConfigurationError?error.message:'UPSTREAM_FAILURE',...(error instanceof RegistrationBillingConfigurationError?{checks:error.checks}:{})});
    res.status(502).json({code:'REGISTRATION_CHECKOUT_FAILED'});
   }
  };
