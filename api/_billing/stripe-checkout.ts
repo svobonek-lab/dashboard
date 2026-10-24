@@ -177,6 +177,7 @@ export function createStripeCheckoutHandler(dependencies: CheckoutDependencies) 
       }
       const sessionInput: StripeCheckoutInput = {
         mode: 'subscription',
+        managed_payments: { enabled: false },
         customer: customerId,
         line_items: [{ price: priceId, quantity: 1 }],
         client_reference_id: owner.companyId,

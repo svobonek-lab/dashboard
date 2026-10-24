@@ -1,7 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 import Stripe from 'stripe';
 import { type OwnerLegalConsent } from '../../src/app/legalConsent.js';
-import { readBillingConfig } from './stripe-checkout.js';
+import { readBillingConfig, type BillingConfig } from './stripe-checkout.js';
 
 type Request = {
  method?: string; headers?: Record<string,string|string[]|undefined>; body?: unknown;
@@ -91,6 +91,17 @@ export function createRegistrationCheckoutHandler(deps:Dependencies){
   }
  };
 }
+export function registrationSessionInput(intent:RegistrationIntent,customer:string,config:BillingConfig):Stripe.Checkout.SessionCreateParams {
+ const origin=new URL(config.returnUrl).origin;
+ return {mode:'subscription',customer,
+  // Ordinary Stripe Billing; never inherit account-level merchant-of-record defaults.
+  managed_payments:{enabled:false},
+  line_items:[{price:config.prices.pilot,quantity:1}],client_reference_id:intent.company_id,
+  metadata:{tenant_id:intent.company_id,onboarding:'paid_registration'},
+  subscription_data:{metadata:{tenant_id:intent.company_id}},
+  success_url:origin+'/register-paid?paid=return',cancel_url:origin+'/register-paid?paid=canceled',
+ };
+}
 export default createRegistrationCheckoutHandler({
  enabled:()=>process.env.PAID_ONBOARDING_ENABLED==='true',
  authorize:async req=>{
@@ -114,13 +125,9 @@ export default createRegistrationCheckoutHandler({
    {idempotencyKey:'registration-customer:'+intent.id});
  },
  session:async(intent,customer)=>{
-  const {client,config}=stripe();const origin=new URL(config.returnUrl).origin;
-  return client.checkout.sessions.create({mode:'subscription',customer,
-   line_items:[{price:config.prices.pilot,quantity:1}],client_reference_id:intent.company_id,
-   metadata:{tenant_id:intent.company_id,onboarding:'paid_registration'},
-   subscription_data:{metadata:{tenant_id:intent.company_id}},
-   success_url:origin+'/register-paid?paid=return',cancel_url:origin+'/register-paid?paid=canceled',
-  },{idempotencyKey:'registration-checkout:'+intent.id});
+  const {client,config}=stripe();
+  return client.checkout.sessions.create(registrationSessionInput(intent,customer,config),
+   {idempotencyKey:'registration-checkout:'+intent.id});
  },
  bind:async(intent,customer,session)=>{
   const {error}=await clients().service.rpc('app_bind_registration_checkout',{

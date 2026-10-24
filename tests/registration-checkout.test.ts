@@ -1,6 +1,17 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { createRegistrationCheckoutHandler } from '../api/_billing/registration-checkout.ts';
+import { createRegistrationCheckoutHandler, registrationSessionInput } from '../api/_billing/registration-checkout.ts';
+
+test('registration uses ordinary Billing regardless of account Managed Payments defaults',()=>{
+ const input=registrationSessionInput({id:'intent',company_id:'tenant-server',owner_email:'verified@example.invalid'},'cus_test',{
+  secretKey:'sk_test_unitonly',mode:'test',returnUrl:'https://preview.example.invalid/path',prices:{pilot:'price_allowed',starter:'',growth:''},
+ });
+ assert.deepEqual(input.managed_payments,{enabled:false});
+ assert.equal(input.mode,'subscription');
+ assert.deepEqual(input.line_items,[{price:'price_allowed',quantity:1}]);
+ assert.equal(input.client_reference_id,'tenant-server');
+ assert.equal(input.success_url,'https://preview.example.invalid/register-paid?paid=return');
+});
 
 const req = () => ({ method: 'POST', headers: { authorization: 'Bearer test', 'x-stavbaflow-idempotency-key': '10000000-0000-4000-8000-000000000001' },
  body: { companyName: 'Synthetic', slug: 'synthetic', ownerName: 'Owner', legalConsent: { termsAccepted: true, dpaAccepted: true, acceptedAt: new Date().toISOString() } } });

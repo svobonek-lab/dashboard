@@ -77,6 +77,7 @@ test('checkout creates and binds a customer, then binds the server-approved plan
   });
   assert.deepEqual(bound, [tenantId, 'cus_testunitonly']);
   assert.equal(captured?.customer, 'cus_testunitonly');
+  assert.deepEqual(captured?.managed_payments, { enabled: false });
   assert.equal(captured?.client_reference_id, tenantId);
   assert.deepEqual(captured?.metadata, { tenant_id: tenantId, plan: 'pilot' });
   assert.deepEqual(captured?.line_items, [{ price: 'price_testunitonly', quantity: 1 }]);
