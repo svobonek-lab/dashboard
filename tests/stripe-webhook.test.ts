@@ -268,3 +268,55 @@ test('acknowledges unhandled and duplicate events without a second mutation', as
   assert.equal(duplicateResponse.statusCode, 200);
   assert.deepEqual(duplicateResponse.body, { received: true, result: 'duplicate' });
 });
+test('registration checkout carries its signed session binding into atomic provisioning', async () => {
+  const event = checkoutEvent();
+  (event.data.object as Stripe.Checkout.Session).metadata = { onboarding: 'paid_registration' };
+  let received: any;
+  const handler = createStripeWebhookHandler({
+    verifyEvent: () => event,
+    applySubscriptionUpdate: async update => { received = update; return 'applied'; },
+  });
+  const response = responseRecorder();
+  await handler({ method: 'POST', headers: { 'stripe-signature': 'valid' }, body: Buffer.from('{}') }, response);
+  assert.equal(response.statusCode, 200);
+  assert.equal(received.checkoutSessionId, 'cs_test_1');
+  assert.equal(received.paymentStatus, 'paid');
+});
+test('registration persistence calls the service RPC only behind the reviewed feature gate', async () => {
+  const { persistSubscriptionUpdate } = await import('../api/_billing/stripe-webhook.ts');
+  const names = ['SUPABASE_URL','SUPABASE_SERVICE_ROLE_KEY','PAID_ONBOARDING_ENABLED'] as const;
+  const original = names.map(name => process.env[name]);
+  const oldFetch = globalThis.fetch;
+  const update: StripeSubscriptionUpdate = {
+    eventId: 'evt_registration', eventType: 'checkout.session.completed', eventCreatedAt: new Date().toISOString(),
+    tenantId: '10000000-0000-4000-8000-000000000001', customerId: 'cus_new',
+    subscriptionId: 'sub_new', subscriptionStatus: 'active', currentPeriodEnd: null,
+    checkoutSessionId: 'cs_new', paymentStatus: 'paid',
+  };
+  let calls = 0;
+  const bodies: any[] = [];
+  const urls: string[] = [];
+  try {
+    process.env.SUPABASE_URL = 'https://staging.example.invalid';
+    process.env.SUPABASE_SERVICE_ROLE_KEY = 'synthetic-key';
+    delete process.env.PAID_ONBOARDING_ENABLED;
+    globalThis.fetch = async (input, init) => {
+      calls++;
+      urls.push(String(input));
+      bodies.push(JSON.parse(String(init?.body)));
+      return new Response('"applied"', { status: 200, headers: { 'content-type': 'application/json' } });
+    };
+    await assert.rejects(persistSubscriptionUpdate(update), /staging acceptance/);
+    assert.equal(calls, 0);
+    process.env.PAID_ONBOARDING_ENABLED = 'true';
+    assert.equal(await persistSubscriptionUpdate(update), 'applied');
+    assert.match(urls[0], /rpc\/app_provision_paid_checkout$/);
+    assert.equal(bodies[0].p_session_id, 'cs_new');
+    assert.equal(bodies[0].p_payment_status, 'paid');
+    globalThis.fetch = async () => new Response('{"message":"private detail"}', { status: 400 });
+    await assert.rejects(persistSubscriptionUpdate(update), /Paid provisioning rejected/);
+  } finally {
+    globalThis.fetch = oldFetch;
+    names.forEach((name,i) => { if(original[i]===undefined) delete process.env[name]; else process.env[name]=original[i]; });
+  }
+});

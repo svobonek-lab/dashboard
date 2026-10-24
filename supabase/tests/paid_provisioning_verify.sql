@@ -1,0 +1,46 @@
+begin;
+insert into public.app_paid_registration_intents(company_id,owner_user_id,owner_email,owner_name,company_name,slug,plan,stripe_customer_id,checkout_session_id,client_accepted_at)
+values
+('a0000000-0000-4000-8000-000000000001','40000000-0000-4000-8000-000000000004','owner-a@example.invalid','Owner A','New A','new-a','pilot','cus_newa','cs_newa',clock_timestamp()),
+('b0000000-0000-4000-8000-000000000002','50000000-0000-4000-8000-000000000005','owner-b@example.invalid','Owner B','New B','new-b','pilot','cus_newb','cs_newb',clock_timestamp());
+
+do $$
+begin
+ begin
+ perform public.app_provision_paid_checkout('evt_bad',now(),'a0000000-0000-4000-8000-000000000001','cus_foreign','sub_newa','cs_newa','paid');
+ raise exception 'foreign customer allowed';
+ exception when insufficient_privilege then null; end;
+ begin
+ perform public.app_provision_paid_checkout('evt_unpaid',now(),'a0000000-0000-4000-8000-000000000001','cus_newa','sub_newa','cs_newa','unpaid');
+ raise exception 'unpaid provisioning allowed';
+ exception when invalid_parameter_value then null; end;
+ if exists(select 1 from public.app_companies where slug='new-a') then raise exception 'failed checkout left company'; end if;
+end $$;
+
+select public.app_provision_paid_checkout('evt_paid_a',now(),'a0000000-0000-4000-8000-000000000001','cus_newa','sub_newa','cs_newa','paid');
+do $$
+declare r text;
+begin
+ if not exists(select 1 from public.app_companies where slug='new-a' and subscription_status='active') then raise exception 'active company missing'; end if;
+ if (select count(*) from public.app_members where company_id='a0000000-0000-4000-8000-000000000001' and role='owner')<>1 then raise exception 'owner missing'; end if;
+ if not exists(select 1 from public.app_workspace_defaults where company_id='a0000000-0000-4000-8000-000000000001') then raise exception 'defaults missing'; end if;
+ if (select count(*) from public.app_company_legal_acceptances where company_id='a0000000-0000-4000-8000-000000000001')<>2 then raise exception 'legal audit missing'; end if;
+ r:=public.app_provision_paid_checkout('evt_paid_a',now(),'a0000000-0000-4000-8000-000000000001','cus_newa','sub_newa','cs_newa','paid');
+ if r<>'duplicate' then raise exception 'replayed checkout not idempotent'; end if;
+end $$;
+-- Inject a later-stage failure to prove earlier company/member writes roll back.
+create function public.test_fail_defaults() returns trigger language plpgsql as $$
+begin raise exception 'synthetic defaults failure' using errcode='23514'; end $$;
+create trigger fail_defaults before insert on public.app_workspace_defaults for each row execute function public.test_fail_defaults();
+do $$
+begin
+ begin
+ perform public.app_provision_paid_checkout('evt_paid_b',now(),'b0000000-0000-4000-8000-000000000002','cus_newb','sub_newb','cs_newb','paid');
+ raise exception 'failure injection did not fire';
+ exception when check_violation then null; end;
+ if exists(select 1 from public.app_companies where slug='new-b') or exists(select 1 from public.app_members where user_id='50000000-0000-4000-8000-000000000005') then
+ raise exception 'partial workspace survived rollback'; end if;
+ if exists(select 1 from public.app_paid_registration_intents where slug='new-b' and provisioned_at is not null) then raise exception 'intent consumed on failure'; end if;
+ if has_function_privilege('authenticated','public.app_provision_paid_checkout(text,timestamptz,uuid,text,text,text,text)','execute') then raise exception 'browser provisioning privilege'; end if;
+end $$;
+rollback;
