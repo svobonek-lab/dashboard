@@ -1,5 +1,25 @@
--- STAGING ONLY. Requires existing Stripe billing and legal audit contracts.
+-- STAGING ONLY. Requires existing Stripe billing, app_companies/app_members/app_invites.
+-- Bootstrap only the legal evidence table if the earlier consent contract is absent.
+-- Existing rows and invitation functions are preserved; no customer data is seeded.
 begin;
+create table if not exists public.app_company_legal_acceptances (
+  id uuid primary key default gen_random_uuid(),
+  company_id uuid not null references public.app_companies(id) on delete restrict,
+  invite_id uuid references public.app_invites(id) on delete restrict,
+  actor_user_id uuid not null references auth.users(id) on delete restrict,
+  agreement text not null check (agreement in ('terms_of_service', 'data_processing_agreement')),
+  agreement_version text not null default '2026-10-16',
+  capture_source text not null check (capture_source in ('platform_company_onboarding', 'owner_invite_activation')),
+  client_accepted_at timestamptz not null,
+  accepted_at timestamptz not null default clock_timestamp(),
+  unique(company_id, invite_id, actor_user_id, agreement, agreement_version, capture_source)
+);
+
+alter table public.app_company_legal_acceptances enable row level security;
+revoke all on table public.app_company_legal_acceptances from public, anon, authenticated, service_role;
+grant select, insert on table public.app_company_legal_acceptances to service_role;
+
+
 create table if not exists public.app_paid_registration_intents (
  id uuid primary key default gen_random_uuid(),
  company_id uuid not null unique default gen_random_uuid(),
