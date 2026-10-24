@@ -21,3 +21,5 @@ To repeat combined SQL on disposable PostgreSQL 17 after both proposal files are
 These fixtures CREATE mock schemas/roles and are NEVER staging/production migrations.
 
 Remaining approval gates: manually review/apply proposal SQL on isolated staging; configure Auth hook and redirect URLs; enable both paid-registration flags only there; browser E2E including verified email, synthetic Stripe test payment, duplicate webhook, employee access and cross-company denial; actual MSSQL/MySQL/PostgreSQL integration acceptance. No production release, live payment or customer source database operation was performed.
+
+The `paid-jwt-integration-contract` CI job now runs this exact combined sequence on a disposable PostgreSQL 17 container for every PR/main verification. It has no staging or production credentials. Passing it proves the synthetic contract only; it does not replace the staging/Auth/browser acceptance gates above.
