@@ -1,12 +1,13 @@
 import assert from 'node:assert/strict';
 import { createClient } from '@supabase/supabase-js';
+import { assertIsolatedStagingProject } from './connector-staging-environment.mjs';
 
+const { stagingUrl } = assertIsolatedStagingProject(process.env);
 const previewUrl = new URL(process.env.STAGING_PREVIEW_URL || '');
 assert.equal(previewUrl.protocol, 'https:');
 assert.ok(previewUrl.hostname.endsWith('.vercel.app'));
-assert.equal(process.env.STAGING_SUPABASE_URL, 'https://oncmtmrhmjlerbwkrecv.supabase.co');
 assert.ok(process.env.STAGING_SUPABASE_PUBLISHABLE_KEY && process.env.STAGING_OWNER_A_EMAIL && process.env.STAGING_OWNER_A_PASSWORD);
-const client = createClient(process.env.STAGING_SUPABASE_URL, process.env.STAGING_SUPABASE_PUBLISHABLE_KEY, { auth: { persistSession: false, autoRefreshToken: false } });
+const client = createClient(stagingUrl, process.env.STAGING_SUPABASE_PUBLISHABLE_KEY, { auth: { persistSession: false, autoRefreshToken: false } });
 const { data, error } = await client.auth.signInWithPassword({ email: process.env.STAGING_OWNER_A_EMAIL, password: process.env.STAGING_OWNER_A_PASSWORD });
 assert.ifError(error);
 const headers = {
