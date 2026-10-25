@@ -17,6 +17,8 @@
 - Never retry writes or Auth mutations because a lost response can hide a completed operation.
 - Disable the Supabase SDK's PostgREST retry layer in serverless clients so the shared wrapper owns the three-attempt total.
 - Honor `Retry-After` up to the configured 1000 ms per-retry wait budget; return the response without retry when the requested wait is longer.
+- Abort immediately when the caller's signal is already aborted or becomes aborted during backoff, including when its reason is a `TypeError`.
+- Document a conservative starting pool allocation near 40% of available PostgreSQL connections and only approaching 80% after measurement and monitoring.
 - Keep production Supabase strictly read-only; make no production or staging calls or configuration changes.
 - Do not add Supavisor to `docker-compose.synology.yml`; it is not a self-hosted Supabase stack.
 - For any future direct PostgreSQL client used by serverless code, document transaction-mode port `6543`, a per-instance pool limit of `1`, SSL, and transaction-mode feature limits.
@@ -29,6 +31,7 @@
 - A transient network failure on GET must recover within the bounded attempt count; test network failure followed by success and final failure after three attempts.
 - `HEAD` must be treated as safe and reuse the same backoff policy; test retry on a transient status.
 - A server `Retry-After` delay within budget must be honored, and one beyond budget must be returned without an early retry.
+- An already-aborted signal or abort during backoff must stop retrying even when its reason is a `TypeError`.
 - Supabase's internal PostgREST retry must not multiply the wrapper's maximum attempts; test total underlying calls through the real client.
 
 ---

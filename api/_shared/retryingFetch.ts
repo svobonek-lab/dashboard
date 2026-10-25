@@ -12,7 +12,7 @@ export interface RetryOptions {
   maxAttempts?: number;
   baseDelayMs?: number;
   maxDelayMs?: number;
-  sleep?: (delayMs: number) => Promise<void>;
+  sleep?: (delayMs: number, signal?: AbortSignal) => Promise<void>;
   random?: () => number;
 }
 
@@ -20,21 +20,25 @@ export function createRetryingFetch(fetchImpl: typeof fetch, options: RetryOptio
   const maxAttempts = positiveInteger(options.maxAttempts, 3);
   const baseDelayMs = nonNegativeNumber(options.baseDelayMs, 100);
   const maxDelayMs = nonNegativeNumber(options.maxDelayMs, 1000);
-  const sleep = options.sleep ?? (delayMs => new Promise<void>(resolve => setTimeout(resolve, delayMs)));
+  const sleep = options.sleep ?? sleepWithSignal;
   const random = options.random ?? Math.random;
 
   return async (input, init) => {
     const method = requestMethod(input, init);
     if (method !== 'GET' && method !== 'HEAD') return fetchImpl(input, init);
+    const signal = requestSignal(input, init);
 
     let attempt = 0;
     while (true) {
+      throwIfAborted(signal);
       let response: Response;
       try {
         response = await fetchImpl(input, init);
       } catch (error) {
+        if (signal?.aborted) throw signal.reason ?? error;
         if (attempt >= maxAttempts - 1 || !isTransientNetworkError(error)) throw error;
-        await sleep(delayForRetry(attempt, baseDelayMs, maxDelayMs, random));
+        await sleep(delayForRetry(attempt, baseDelayMs, maxDelayMs, random), signal);
+        throwIfAborted(signal);
         attempt++;
         continue;
       }
@@ -43,10 +47,39 @@ export function createRetryingFetch(fetchImpl: typeof fetch, options: RetryOptio
       const retryAfterMs = retryAfterDelay(response);
       if (retryAfterMs !== undefined && retryAfterMs > maxDelayMs) return response;
       await response.body?.cancel().catch(() => undefined);
-      await sleep(retryAfterMs ?? delayForRetry(attempt, baseDelayMs, maxDelayMs, random));
+      await sleep(retryAfterMs ?? delayForRetry(attempt, baseDelayMs, maxDelayMs, random), signal);
+      throwIfAborted(signal);
       attempt++;
     }
   };
+}
+
+function requestSignal(input: RequestInfo | URL, init?: RequestInit): AbortSignal | undefined {
+  if (init?.signal) return init.signal;
+  return typeof Request !== 'undefined' && input instanceof Request ? input.signal : undefined;
+}
+
+function throwIfAborted(signal: AbortSignal | undefined): void {
+  if (!signal?.aborted) return;
+  throw signal.reason ?? Object.assign(new Error('The operation was aborted'), { name: 'AbortError' });
+}
+
+function sleepWithSignal(delayMs: number, signal?: AbortSignal): Promise<void> {
+  if (!signal) return new Promise(resolve => setTimeout(resolve, delayMs));
+  throwIfAborted(signal);
+  return new Promise((resolve, reject) => {
+    const timer = setTimeout(() => {
+      signal.removeEventListener('abort', onAbort);
+      resolve();
+    }, delayMs);
+    const onAbort = () => {
+      clearTimeout(timer);
+      signal.removeEventListener('abort', onAbort);
+      reject(signal.reason ?? Object.assign(new Error('The operation was aborted'), { name: 'AbortError' }));
+    };
+    signal.addEventListener('abort', onAbort, { once: true });
+    if (signal.aborted) onAbort();
+  });
 }
 
 function requestMethod(input: RequestInfo | URL, init?: RequestInit): string {
