@@ -2,6 +2,7 @@ import { CANONICAL_ENTITY_TYPES, CANONICAL_PAYLOAD_FIELDS, type ConnectorDryRunS
 import { validateCanonicalRecord } from '../../connector/src/protocol/canonical.js';
 import { ConnectorHttpError } from './http.js';
 import { z } from 'zod';
+import type { ConnectorMemberRole } from './ownerAuth.js';
 
 const ingestRecordSchema = z.strictObject({
   version: z.literal(1),
@@ -31,6 +32,157 @@ const SAFE_SOURCE_IDENTIFIER = /^[\p{L}\p{N}_.$ -]{1,128}$/u;
 const DRY_RUN_CODES = new Set(['EXTERNAL_ID_MISSING', 'REQUIRED_VALUE_MISSING', 'CONVERSION_INVALID', 'ENUM_VALUE_UNKNOWN']);
 const SECRET_LIKE = /password|secret|token|private[_-]?key|api[_-]?key/i;
 
+const connectorModeSchema = z.strictObject({
+  version: z.literal(1),
+  mode: z.enum(['managed_cloud', 'byodb']),
+  driver: z.enum(['postgres', 'mysql', 'mariadb', 'mssql']).optional(),
+}).refine(value => value.mode === 'byodb' ? value.driver !== undefined : value.driver === undefined);
+const connectorRegistrationSchema = z.strictObject({
+  enrollmentCode: z.string().regex(/^[A-Za-z0-9_-]{20,200}$/),
+  secretFingerprint: z.string().regex(/^[a-f0-9]{64}$/),
+});
+const byodbOperationCreateSchema = z.strictObject({
+  version: z.literal(1),
+  idempotencyKey: z.string().uuid(),
+  mappingVersion: z.number().int().positive(),
+  entityType: z.enum(['company', 'lead']),
+  action: z.enum(['create', 'update', 'delete']),
+  externalId: z.string().min(1).max(512).refine(value => !/[\u0000-\u001f]/.test(value)),
+  expectedSourceVersion: z.string().regex(/^[a-f0-9]{64}$/).nullable(),
+  payload: z.record(z.string(), z.json()),
+});
+const byodbOperationAckSchema = z.strictObject({
+  operationId: z.string().uuid(),
+  status: z.enum(['applied', 'conflict', 'failed']),
+  sourceVersion: z.string().regex(/^[a-f0-9]{64}$/).optional(),
+  errorCode: z.enum(['SOURCE_CONFLICT', 'SOURCE_WRITE_REJECTED', 'MAPPING_STALE', 'SOURCE_UNAVAILABLE']).optional(),
+  projection: z.unknown().nullable().optional(),
+});
+const byodbOperationRequestSchema = z.discriminatedUnion('action', [
+  z.strictObject({ action: z.literal('create'), companyId: z.string().uuid(), connectorId: z.string().uuid(), operation: z.unknown() }),
+  z.strictObject({ action: z.literal('context'), companyId: z.string().uuid() }),
+  z.strictObject({ action: z.literal('records'), companyId: z.string().uuid(), entityType: z.enum(['company', 'lead']).optional() }),
+  z.strictObject({ action: z.literal('set_mode'), companyId: z.string().uuid(), connectorId: z.string().uuid().nullable(), mode: z.enum(['managed_cloud', 'byodb']), driver: z.enum(['postgres', 'mysql', 'mariadb', 'mssql']).nullable(), writeEnabled: z.boolean() }),
+  z.strictObject({ action: z.literal('list'), companyId: z.string().uuid(), cursor: z.string().uuid().optional(), limit: z.number().int().min(1).max(50).optional() }),
+  z.strictObject({ action: z.literal('poll'), limit: z.number().int().min(1).max(50).optional() }),
+  z.strictObject({ action: z.literal('ack'), ack: z.unknown() }),
+]);
+
+export function validateConnectorDatabaseMode(value: unknown) {
+  const parsed = connectorModeSchema.safeParse(value);
+  if (!parsed.success) throw new ConnectorHttpError('DATABASE_MODE_INVALID', 400);
+  return parsed.data;
+}
+
+export function validateConnectorRegistration(value: unknown) {
+  const parsed = connectorRegistrationSchema.safeParse(value);
+  if (!parsed.success) throw new ConnectorHttpError('CONNECTOR_REGISTRATION_INVALID', 400);
+  return parsed.data;
+}
+
+export function validateByodbOperationCreate(
+  value: unknown,
+  actorRole: ConnectorMemberRole,
+  mapping: ConnectorMappingDefinitionV1,
+) {
+  const parsed = byodbOperationCreateSchema.safeParse(value);
+  if (!parsed.success) throw new ConnectorHttpError('OPERATION_INVALID', 400);
+  const operation = parsed.data;
+  if (operation.entityType !== mapping.entityType || operation.mappingVersion !== mapping.mappingVersion) throw new ConnectorHttpError('MAPPING_VERSION_STALE', 409);
+  const targets = new Set(mapping.fields.map(field => field.targetField));
+  const payload = operation.payload as Record<string, unknown>;
+  const allowedTargets = new Set(CANONICAL_PAYLOAD_FIELDS[operation.entityType]);
+  if (JSON.stringify(payload).length > 8_192 || Object.keys(payload).some(key => !targets.has(key) || !allowedTargets.has(key))) throw new ConnectorHttpError('OPERATION_MAPPING_INVALID', 400);
+  if (Object.values(payload).some(field => field !== null && !['string', 'number', 'boolean'].includes(typeof field))) throw new ConnectorHttpError('OPERATION_MAPPING_INVALID', 400);
+  if (operation.action === 'create') {
+    if (operation.expectedSourceVersion !== null || Object.keys(payload).length === 0) throw new ConnectorHttpError('OPERATION_INVALID', 400);
+    const requiredTarget = operation.entityType === 'company' ? 'name' : 'title';
+    if (!Object.hasOwn(payload, requiredTarget)) throw new ConnectorHttpError('OPERATION_REQUIRED_FIELD_MISSING', 400);
+  } else if (!operation.expectedSourceVersion) {
+    throw new ConnectorHttpError('OPERATION_INVALID', 400);
+  } else if (operation.action === 'delete' && Object.keys(payload).length > 0) {
+    throw new ConnectorHttpError('OPERATION_INVALID', 400);
+  } else if (operation.action === 'update' && Object.keys(payload).length === 0) {
+    throw new ConnectorHttpError('OPERATION_INVALID', 400);
+  }
+  if (actorRole === 'employee') {
+    if (operation.entityType !== 'lead' || operation.action !== 'update' || Object.keys(payload).length !== 1 || typeof payload.status !== 'string') {
+      throw new ConnectorHttpError('OPERATION_ROLE_DENIED', 403);
+    }
+    if (!targets.has('assignedToEmail')) throw new ConnectorHttpError('EMPLOYEE_ASSIGNMENT_MAPPING_REQUIRED', 409);
+  }
+  return operation;
+}
+
+export function validateByodbOperationAck(value: unknown) {
+  const parsed = byodbOperationAckSchema.safeParse(value);
+  if (!parsed.success) throw new ConnectorHttpError('OPERATION_ACK_INVALID', 400);
+  const ack = parsed.data;
+  if ((ack.status === 'applied' && (!ack.sourceVersion || ack.errorCode !== undefined))
+    || (ack.status === 'conflict' && ack.errorCode !== 'SOURCE_CONFLICT')
+    || (ack.status === 'failed' && (!ack.errorCode || ack.sourceVersion !== undefined))
+    || (ack.status !== 'applied' && ack.projection != null)) {
+    throw new ConnectorHttpError('OPERATION_ACK_INVALID', 400);
+  }
+  if (ack.projection != null) {
+    try { return { ...ack, projection: validateCanonicalRecord(ack.projection) }; }
+    catch { throw new ConnectorHttpError('OPERATION_ACK_INVALID', 400); }
+  }
+  return ack;
+}
+
+export function validateByodbOperationRequest(value: unknown) {
+  const parsed = byodbOperationRequestSchema.safeParse(value);
+  if (!parsed.success) throw new ConnectorHttpError('OPERATION_REQUEST_INVALID', 400);
+  return parsed.data;
+}
+
+export function validateByodbPollBatch(value: unknown, sourceSchema: ConnectorSourceSchemaV1) {
+  if (!Array.isArray(value) || value.length > 50) throw new ConnectorHttpError('OPERATION_RESPONSE_INVALID', 502);
+  return value.map(item => {
+    if (!item || typeof item !== 'object' || Array.isArray(item)) throw new ConnectorHttpError('OPERATION_RESPONSE_INVALID', 502);
+    const row = item as Record<string, unknown>;
+    const allowedKeys = new Set(['operationId', 'idempotencyKey', 'mappingVersion', 'entityType', 'action', 'externalId', 'expectedSourceVersion', 'payload', 'actorRole', 'actorEmail', 'mappingDefinition']);
+    if (Object.keys(row).some(key => !allowedKeys.has(key))
+      || !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(String(row.operationId ?? ''))
+      || !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(String(row.idempotencyKey ?? ''))
+      || !Number.isInteger(row.mappingVersion) || Number(row.mappingVersion) < 1
+      || !['company', 'lead'].includes(String(row.entityType)) || !['create', 'update', 'delete'].includes(String(row.action))
+      || typeof row.externalId !== 'string' || row.externalId.length < 1 || row.externalId.length > 512
+      || (row.expectedSourceVersion !== null && (typeof row.expectedSourceVersion !== 'string' || !/^[a-f0-9]{64}$/.test(row.expectedSourceVersion)))
+      || !row.payload || typeof row.payload !== 'object' || Array.isArray(row.payload)
+      || !['owner', 'employee'].includes(String(row.actorRole))
+      || typeof row.actorEmail !== 'string' || row.actorEmail.length > 320 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(row.actorEmail)
+      || !row.mappingDefinition || typeof row.mappingDefinition !== 'object' || Array.isArray(row.mappingDefinition)) {
+      throw new ConnectorHttpError('OPERATION_RESPONSE_INVALID', 502);
+    }
+    let mapping: ConnectorMappingDefinitionV1;
+    try { mapping = validateConnectorMapping(row.mappingDefinition, sourceSchema); }
+    catch { throw new ConnectorHttpError('OPERATION_RESPONSE_INVALID', 502); }
+    if (mapping.mappingVersion !== row.mappingVersion || mapping.entityType !== row.entityType) throw new ConnectorHttpError('OPERATION_RESPONSE_INVALID', 502);
+    const payload = row.payload as Record<string, unknown>;
+    const allowedTargets = new Set(CANONICAL_PAYLOAD_FIELDS[row.entityType as keyof typeof CANONICAL_PAYLOAD_FIELDS]);
+    if (JSON.stringify(payload).length > 8_192 || Object.keys(payload).some(key => !allowedTargets.has(key))
+      || Object.values(payload).some(field => field !== null && !['string', 'number', 'boolean'].includes(typeof field))
+      || (row.action === 'create' && row.expectedSourceVersion !== null)
+      || (row.action !== 'create' && (typeof row.expectedSourceVersion !== 'string' || !row.expectedSourceVersion))) {
+      throw new ConnectorHttpError('OPERATION_RESPONSE_INVALID', 502);
+    }
+    return {
+      operationId: row.operationId as string,
+      idempotencyKey: row.idempotencyKey as string,
+      mappingVersion: row.mappingVersion as number,
+      entityType: row.entityType as 'company' | 'lead',
+      action: row.action as 'create' | 'update' | 'delete',
+      externalId: row.externalId,
+      expectedSourceVersion: row.expectedSourceVersion as string | null,
+      payload,
+      actorRole: row.actorRole as ConnectorMemberRole,
+      actorEmail: row.actorEmail,
+      mappingDefinition: mapping,
+    };
+  });
+}
 function validateConversion(value: unknown): ConnectorMappingDefinitionV1['fields'][number]['conversion'] {
   if (!value || typeof value !== 'object' || Array.isArray(value)) throw new ConnectorHttpError('MAPPING_INVALID', 400);
   const conversion = value as Record<string, unknown>;
@@ -91,8 +243,11 @@ export function validateSourceSchema(value: unknown): ConnectorSourceSchemaV1 {
       if (!value || typeof value !== 'object' || Array.isArray(value)) throw new ConnectorHttpError('SOURCE_SCHEMA_INVALID', 400);
       const column = value as Record<string, unknown>;
       const columnName = String(column.name ?? ''), dataType = String(column.dataType ?? '');
-      if (!SAFE_SOURCE_IDENTIFIER.test(columnName) || !SAFE_SOURCE_IDENTIFIER.test(dataType) || typeof column.nullable !== 'boolean') throw new ConnectorHttpError('SOURCE_SCHEMA_INVALID', 400);
-      return { name: columnName, dataType, nullable: column.nullable };
+      if (!SAFE_SOURCE_IDENTIFIER.test(columnName) || !SAFE_SOURCE_IDENTIFIER.test(dataType) || typeof column.nullable !== 'boolean'
+        || column.primaryKey !== undefined && typeof column.primaryKey !== 'boolean'
+        || column.generated !== undefined && typeof column.generated !== 'boolean'
+        || column.hasDefault !== undefined && typeof column.hasDefault !== 'boolean') throw new ConnectorHttpError('SOURCE_SCHEMA_INVALID', 400);
+      return { name: columnName, dataType, nullable: column.nullable, ...(typeof column.primaryKey === 'boolean' ? { primaryKey: column.primaryKey } : {}), ...(typeof column.generated === 'boolean' ? { generated: column.generated } : {}), ...(typeof column.hasDefault === 'boolean' ? { hasDefault: column.hasDefault } : {}) };
     });
     return { schema, name, columns };
   }) };
@@ -113,15 +268,18 @@ export function validateConnectorMapping(value: unknown, sourceSchema: Connector
   if (!knownTable) throw new ConnectorHttpError('MAPPING_SOURCE_UNKNOWN', 400);
   const knownColumns = new Set(knownTable.columns.map(column => column.name));
   const optionalColumns = [mapping.updatedAtColumn, mapping.deletedAtColumn].filter((item): item is string => typeof item === 'string' && Boolean(item));
-  if (![externalIdColumn, ...optionalColumns].every(column => knownColumns.has(column))) throw new ConnectorHttpError('MAPPING_SOURCE_UNKNOWN', 400);
+  const selectedColumns = [externalIdColumn, ...optionalColumns];
+  if (!selectedColumns.every(column => knownColumns.has(column))) throw new ConnectorHttpError('MAPPING_SOURCE_UNKNOWN', 400);
+  if (selectedColumns.some(column => SECRET_LIKE.test(column))) throw new ConnectorHttpError('MAPPING_INVALID', 400);
   const allowedTargets = new Set(CANONICAL_PAYLOAD_FIELDS[entityType]);
   const targets = new Set<string>();
   const fields = mapping.fields.map(value => {
     if (!value || typeof value !== 'object' || Array.isArray(value)) throw new ConnectorHttpError('MAPPING_INVALID', 400);
     const field = value as Record<string, unknown>;
+    if (Object.keys(field).some(key => !['sourceColumn', 'targetField', 'conversion', 'required'].includes(key))) throw new ConnectorHttpError('MAPPING_INVALID', 400);
     const sourceColumn = String(field.sourceColumn ?? ''), targetField = String(field.targetField ?? '');
     const conversion = validateConversion(field.conversion);
-    if (!knownColumns.has(sourceColumn) || !allowedTargets.has(targetField) || targets.has(targetField)) throw new ConnectorHttpError('MAPPING_INVALID', 400);
+    if (!knownColumns.has(sourceColumn) || SECRET_LIKE.test(sourceColumn) || !allowedTargets.has(targetField) || targets.has(targetField)) throw new ConnectorHttpError('MAPPING_INVALID', 400);
     targets.add(targetField);
     return { sourceColumn, targetField, conversion, ...(field.required === true ? { required: true } : {}) };
   });

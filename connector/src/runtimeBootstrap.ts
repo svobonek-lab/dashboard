@@ -3,14 +3,15 @@ import { join } from 'node:path';
 
 import type { ConnectorMappingDefinitionV1, ConnectorSourceSchemaV1 } from '../../shared/connectorProtocol.js';
 import type { ConnectorConfig } from './config.js';
-import { ConnectorApi } from './api/client.js';
+import { ConnectorApi, ConnectorApiError } from './api/client.js';
 import { createSourceAdapter } from './adapters/types.js';
 import { processConnectorCommands } from './commands/processCommands.js';
+import { processByodbOperations } from './commands/processOperations.js';
 import { ConnectorHealth, HealthServer } from './health.js';
 import { ConnectorRuntime, verifyStateDirectory } from './main.js';
 import { compileMapping } from './mapping/compileMapping.js';
 import { SyncScheduler, type RunResult } from './scheduler.js';
-import { loadOrCreateIdentity } from './security/identity.js';
+import { loadIdentity } from './security/identity.js';
 import { AtomicJsonStore, writeJsonAtomically } from './state/atomicStore.js';
 import { CheckpointStore } from './state/checkpoints.js';
 import { FileOutbox } from './state/outbox.js';
@@ -31,7 +32,7 @@ function isRegistrationState(value: unknown): value is RegistrationState {
     && Boolean(state.connectorId) === Boolean(state.companyId);
 }
 
-async function loadRegistration(config: ConnectorConfig, identity: Awaited<ReturnType<typeof loadOrCreateIdentity>>): Promise<RegistrationState> {
+async function loadRegistration(config: ConnectorConfig, identity: Awaited<ReturnType<typeof loadIdentity>>): Promise<RegistrationState> {
   const store = new AtomicJsonStore<RegistrationState>(
     join(config.stateRoot, 'registration.json'),
     () => ({ connectorId: null, companyId: null }),
@@ -70,7 +71,7 @@ export async function bootstrapConnector(config: ConnectorConfig): Promise<void>
     const readOnly = await adapter.verifyReadOnly();
     if (!readOnly.selectAllowed || !readOnly.writesDenied) throw new Error('source database account is not read-only');
 
-    const identity = await loadOrCreateIdentity(config.identityPath);
+    const identity = await loadIdentity(config.identityPath);
     const registration = await loadRegistration(config, identity);
     const connectorId = registration.connectorId!;
     const companyId = registration.companyId!;
@@ -81,13 +82,14 @@ export async function bootstrapConnector(config: ConnectorConfig): Promise<void>
     const sourceSchema: ConnectorSourceSchemaV1 = { tables: schema.tables.map(table => ({
       schema: table.schema,
       name: table.name,
-      columns: table.columns.map(column => ({ name: column.name, dataType: column.dataType, nullable: column.nullable })),
+      columns: table.columns.map(column => ({ name: column.name, dataType: column.dataType, nullable: column.nullable, primaryKey: column.primaryKey, generated: column.generated === true, hasDefault: column.hasDefault === true })),
     })) };
     const createEngine = (definition: ConnectorMappingDefinitionV1) => new SyncEngine({
       adapter, api, outbox, checkpoints, statePath: join(config.stateRoot, 'sync-state.json'),
       mapping: compileMapping(definition, schema), connectorId, companyId, pageSize: 250,
     });
     const storedMapping = await loadMapping(config.mappingPath);
+    let activeMapping = storedMapping;
     let engine: SyncEngine | null = storedMapping ? createEngine(storedMapping) : null;
 
     const currentStatus = async () => !engine
@@ -130,6 +132,7 @@ export async function bootstrapConnector(config: ConnectorConfig): Promise<void>
         refreshMapping: async definition => {
           const nextEngine = createEngine(definition);
           await writeJsonAtomically(config.mappingPath, definition);
+          activeMapping = definition;
           engine = nextEngine;
           const result = await engine.reportDryRun();
           await heartbeat('dry_run_required', { completedAt: new Date().toISOString(), processed: result.total, changed: result.valid, failed: result.failed });
@@ -147,6 +150,14 @@ export async function bootstrapConnector(config: ConnectorConfig): Promise<void>
         },
         acknowledge: commandId => api.acknowledgeCommand(commandId),
       });
+      if (config.database.writeUsername) {
+        try {
+          const operations = await api.pollOperations();
+          await processByodbOperations(operations, activeMapping, adapter, schema, api);
+        } catch (error) {
+          if (!(error instanceof ConnectorApiError && error.code === 'BYODB_RELEASE_GATE_CLOSED')) throw error;
+        }
+      }
     };
 
     runtime = new ConnectorRuntime({

@@ -17,7 +17,7 @@ test('production blocks legacy employee, project and platform mutations', () => 
     assert.match(functionBody, /BLOCK_LEGACY_WRITES && isSupabaseConfigured/);
   }
   const settingsStart = source.indexOf('const updateBrandingAdmin =');
-  const settingsBody = source.slice(settingsStart, settingsStart + 4000);
+  const settingsBody = source.slice(settingsStart, source.indexOf('const suspendOrganizationAdmin =', settingsStart));
   assert.match(settingsBody, /if \(APP_SCHEMA_READS && isSupabaseConfigured && supabase\)/);
   assert.match(settingsBody, /from\(['"]app_companies['"]\)/);
   assert.match(settingsBody, /BLOCK_LEGACY_WRITES && isSupabaseConfigured/);

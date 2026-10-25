@@ -8,7 +8,9 @@ create table if not exists public.app_connector_enrollments (
   id uuid primary key default gen_random_uuid(),
   company_id uuid not null references public.app_companies(id) on delete cascade,
   code_hash bytea not null unique,
-  scopes text[] not null default array['heartbeat','ingest','commands']::text[],
+  secret_fingerprint bytea not null,
+  secret_ciphertext text not null,
+  scopes text[] not null default array['heartbeat','ingest','commands','operations']::text[],
   created_by uuid not null,
   created_at timestamptz not null default now(),
   expires_at timestamptz not null,
@@ -18,7 +20,7 @@ create table if not exists public.app_connector_enrollments (
 create table if not exists public.app_connectors (
   id uuid primary key default gen_random_uuid(),
   company_id uuid not null references public.app_companies(id) on delete cascade,
-  public_key text not null,
+  secret_ciphertext text not null,
   scopes text[] not null,
   status text not null default 'mapping_required',
   version text,
@@ -31,6 +33,10 @@ create table if not exists public.app_connectors (
   revoked_at timestamptz,
   unique (company_id, id)
 );
+alter table public.app_connector_enrollments add column if not exists secret_fingerprint bytea;
+alter table public.app_connector_enrollments add column if not exists secret_ciphertext text;
+alter table public.app_connectors add column if not exists secret_ciphertext text;
+alter table public.app_connectors drop column if exists public_key;
 create table if not exists public.app_connector_mappings (
   connector_id uuid not null references public.app_connectors(id) on delete cascade,
   company_id uuid not null references public.app_companies(id) on delete cascade,
@@ -96,23 +102,24 @@ revoke all on public.app_connector_requests from anon, authenticated;
 revoke all on public.app_connector_records from anon, authenticated;
 revoke all on public.app_connector_commands from anon, authenticated;
 
-create or replace function public.app_register_connector(p_enrollment_code text, p_public_key text)
+drop function if exists public.app_register_connector(text, text);
+create or replace function public.app_register_connector(p_enrollment_code text, p_secret_fingerprint bytea)
 returns jsonb language plpgsql security definer set search_path = public, pg_temp as $$
 declare v_enrollment public.app_connector_enrollments%rowtype; v_connector_id uuid;
 begin
-  if nullif(trim(p_enrollment_code), '') is null or p_public_key not like '-----BEGIN PUBLIC KEY-----%' then raise exception 'registration invalid'; end if;
+  if nullif(trim(p_enrollment_code), '') is null or p_secret_fingerprint is null then raise exception 'registration invalid'; end if;
   select * into v_enrollment from public.app_connector_enrollments
-   where code_hash = digest(trim(p_enrollment_code), 'sha256') and consumed_at is null and expires_at > now()
+   where code_hash = digest(trim(p_enrollment_code), 'sha256') and secret_fingerprint=p_secret_fingerprint and secret_ciphertext is not null and consumed_at is null and expires_at > now()
    for update;
   if not found then raise exception 'registration invalid'; end if;
-  insert into public.app_connectors(company_id, public_key, scopes)
-  values(v_enrollment.company_id, p_public_key, v_enrollment.scopes) returning id into v_connector_id;
+  insert into public.app_connectors(company_id, secret_ciphertext, scopes)
+  values(v_enrollment.company_id, v_enrollment.secret_ciphertext, v_enrollment.scopes) returning id into v_connector_id;
   update public.app_connector_enrollments set consumed_at = now() where id = v_enrollment.id and consumed_at is null;
   if not found then raise exception 'registration invalid'; end if;
   return jsonb_build_object('connector_id', v_connector_id, 'company_id', v_enrollment.company_id);
 end; $$;
-revoke all on function public.app_register_connector(text, text) from public, anon, authenticated;
-grant execute on function public.app_register_connector(text, text) to service_role;
+revoke all on function public.app_register_connector(text, bytea) from public, anon, authenticated;
+grant execute on function public.app_register_connector(text, bytea) to service_role;
 
 create or replace function public.app_reserve_connector_request(p_connector_id uuid, p_request_id text, p_expires_at timestamptz)
 returns boolean language plpgsql security definer set search_path = public, pg_temp as $$
@@ -199,17 +206,18 @@ end; $$;
 revoke all on function public.app_ack_connector_command(uuid, uuid) from public, anon, authenticated;
 grant execute on function public.app_ack_connector_command(uuid, uuid) to service_role;
 
-create or replace function public.app_create_connector_enrollment(p_company_id uuid, p_user_id uuid, p_code_hash bytea, p_expires_at timestamptz)
+drop function if exists public.app_create_connector_enrollment(uuid, uuid, bytea, timestamptz);
+create or replace function public.app_create_connector_enrollment(p_company_id uuid, p_user_id uuid, p_code_hash bytea, p_secret_fingerprint bytea, p_secret_ciphertext text, p_expires_at timestamptz)
 returns uuid language plpgsql security definer set search_path = public, pg_temp as $$
 declare v_id uuid;
 begin
   if not exists(select 1 from public.app_members where company_id=p_company_id and user_id=p_user_id and active and role='owner') then raise exception 'owner required'; end if;
-  if p_expires_at>now()+interval '15 minutes' or p_expires_at<=now() then raise exception 'expiry invalid'; end if;
-  insert into public.app_connector_enrollments(company_id,code_hash,created_by,expires_at) values(p_company_id,p_code_hash,p_user_id,p_expires_at) returning id into v_id;
+  if p_expires_at>now()+interval '15 minutes' or p_expires_at<=now() or p_secret_fingerprint is null or nullif(p_secret_ciphertext,'') is null then raise exception 'enrollment invalid'; end if;
+  insert into public.app_connector_enrollments(company_id,code_hash,secret_fingerprint,secret_ciphertext,created_by,expires_at) values(p_company_id,p_code_hash,p_secret_fingerprint,p_secret_ciphertext,p_user_id,p_expires_at) returning id into v_id;
   return v_id;
 end; $$;
-revoke all on function public.app_create_connector_enrollment(uuid, uuid, bytea, timestamptz) from public, anon, authenticated;
-grant execute on function public.app_create_connector_enrollment(uuid, uuid, bytea, timestamptz) to service_role;
+revoke all on function public.app_create_connector_enrollment(uuid, uuid, bytea, bytea, text, timestamptz) from public, anon, authenticated;
+grant execute on function public.app_create_connector_enrollment(uuid, uuid, bytea, bytea, text, timestamptz) to service_role;
 
 create or replace function public.app_owner_connector_status(p_company_id uuid, p_user_id uuid)
 returns jsonb language sql security definer set search_path = public, pg_temp as $$

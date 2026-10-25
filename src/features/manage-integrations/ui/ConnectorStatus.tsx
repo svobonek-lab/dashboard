@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Activity, AlertTriangle, Pause, Play, RefreshCw, Unplug } from 'lucide-react';
 import { connectorClient } from '../api/connectorClient';
 import type { ConnectorSummary } from '../api/connectorContract';
@@ -25,6 +25,12 @@ export function ConnectorStatus({ companyId, items, onRefresh }: { companyId: st
   const [pending, setPending] = useState<string | null>(null);
   const [confirmRevokeId, setConfirmRevokeId] = useState<string | null>(null);
   const [error, setError] = useState('');
+  const [operations, setOperations] = useState<Array<{ operationId: string; status: string; entityType: string; action: string; createdAt: string; errorCode: string | null }>>([]);
+  const refreshOperations = async () => {
+    try { setOperations((await connectorClient.operations(companyId)).operations); }
+    catch { setOperations([]); }
+  };
+  useEffect(() => { void refreshOperations(); const timer = window.setInterval(() => void refreshOperations(), 15_000); return () => window.clearInterval(timer); }, [companyId]);
 
   const command = async (item: ConnectorSummary, value: 'sync_now' | 'pause' | 'resume' | 'revoke') => {
     const operation = `${item.id}:${value}`;
@@ -33,6 +39,7 @@ export function ConnectorStatus({ companyId, items, onRefresh }: { companyId: st
     try {
       await connectorClient.command(companyId, item.id, value);
       if (value === 'revoke') setConfirmRevokeId(null);
+      await refreshOperations();
       onRefresh();
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : 'Příkaz se nepodařilo bezpečně předat konektoru.');
@@ -82,6 +89,11 @@ export function ConnectorStatus({ companyId, items, onRefresh }: { companyId: st
           </article>
         );
       })}
+      <article className="workspace-panel p-5" aria-live="polite">
+        <div className="flex flex-wrap items-center justify-between gap-3"><div><h3 className="font-semibold text-slate-950">Zápisy do firemní databáze</h3><p className="mt-1 text-xs text-slate-500">Stav se obnovuje průběžně. Čekající zápis není uložený.</p></div><button type="button" onClick={() => void refreshOperations()} className="rounded-xl border border-slate-200 px-3 py-2 text-xs font-semibold">Obnovit stav</button></div>
+        <p className="mt-3 text-sm text-slate-700">Čekající zápisy: {operations.filter(item => item.status === 'pending' || item.status === 'processing').length} · Konflikty: {operations.filter(item => item.status === 'conflict').length} · Chyby: {operations.filter(item => item.status === 'failed').length}</p>
+        {operations.filter(item => ['pending', 'processing', 'conflict', 'failed'].includes(item.status)).slice(0, 5).map(item => <div key={item.operationId} className="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-slate-100 pt-3 text-xs"><span>{item.entityType === 'lead' ? 'Poptávka' : 'Firma'} · {item.action} · {item.status === 'pending' ? 'čeká na konektor' : item.status === 'processing' ? 'zpracovává se' : item.status === 'conflict' ? 'vyžaduje kontrolu konfliktu' : 'nebylo uloženo'}</span>{item.status === 'pending' && items[0] ? <button type="button" disabled={Boolean(pending)} onClick={() => void command(items[0]!, 'sync_now')} className="rounded-lg border border-slate-200 px-2.5 py-1.5 font-semibold disabled:opacity-50">Zkusit bezpečně znovu</button> : null}{item.errorCode ? <span className="text-amber-700">{item.errorCode === 'SOURCE_CONFLICT' ? 'Zdrojová data se mezitím změnila.' : item.errorCode === 'MAPPING_STALE' ? 'Mapování vyžaduje nové schválení.' : item.errorCode === 'SOURCE_WRITE_REJECTED' ? 'Zdroj odmítl změnu.' : 'Zdroj není dostupný.'}</span> : null}</div>)}
+      </article>
       {error ? <p role="alert" className="text-sm text-rose-700">{error}</p> : null}
     </section>
   );

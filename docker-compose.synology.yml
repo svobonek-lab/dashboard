@@ -18,6 +18,8 @@ services:
       - /volume1/docker/stavbaflow/state:/var/lib/stavbaflow:rw
     secrets:
       - source_db_password
+      - source_db_write_password
+      - connector_identity
       - enrollment_code
     tmpfs:
       - /tmp:size=16m,mode=1777
@@ -33,5 +35,9 @@ services:
 secrets:
   source_db_password:
     file: /volume1/docker/stavbaflow/secrets/source-db-password
+  source_db_write_password:
+    file: /volume1/docker/stavbaflow/secrets/source-db-write-password
+  connector_identity:
+    file: /volume1/docker/stavbaflow/secrets/connector-identity
   enrollment_code:
     file: ${CONNECTOR_SECRET:?Set the absolute path to the enrollment-code secret file}

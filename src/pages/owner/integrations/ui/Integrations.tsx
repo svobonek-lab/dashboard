@@ -21,11 +21,15 @@ export const Integrations: React.FC<IntegrationsProps> = () => {
   const [isCsvOpen, setIsCsvOpen] = useState(false);
   const [connectors, setConnectors] = useState<ConnectorSummary[]>([]);
   const [connectorError, setConnectorError] = useState('');
+  const [databaseMode, setDatabaseMode] = useState<'managed_cloud' | 'byodb'>('managed_cloud');
+  const [databaseDriver, setDatabaseDriver] = useState<'postgres' | 'mysql' | 'mariadb' | 'mssql'>('postgres');
+  const [modeBusy, setModeBusy] = useState(false);
   const [copied, setCopied] = useState<'inbox' | 'widget' | null>(null);
   const [securedIncomingLeadUrl, setSecuredIncomingLeadUrl] = useState('');
   const [incomingLeadError, setIncomingLeadError] = useState('');
   const [incomingLeadLoading, setIncomingLeadLoading] = useState(true);
   const connectorEnabled = import.meta.env.VITE_CONNECTOR_ENABLED === 'true';
+  const byodbEnabled = import.meta.env.VITE_BYODB_ENABLED === 'true';
   const isEnterprise = String(currentOrg?.plan || '').toUpperCase() === 'ENTERPRISE';
   const origin = typeof window === 'undefined' ? 'https://[DOMENA]' : window.location.origin;
   const publicTenantKey = currentOrg?.slug || '[PUBLIC_KEY]';
@@ -42,7 +46,13 @@ export const Integrations: React.FC<IntegrationsProps> = () => {
   };
   const refreshConnectors = useCallback(async (signal?: AbortSignal) => {
     if (!connectorEnabled || !currentOrg?.id) return;
-    try { setConnectorError(''); setConnectors((await connectorClient.status(currentOrg.id, signal)).connectors); }
+    try {
+      setConnectorError('');
+      const [status, mode] = await Promise.all([connectorClient.status(currentOrg.id, signal), connectorClient.databaseMode(currentOrg.id, signal)]);
+      setConnectors(status.connectors);
+      setDatabaseMode(mode.mode);
+      if (mode.driver) setDatabaseDriver(mode.driver as typeof databaseDriver);
+    }
     catch (cause) { if (!(cause instanceof DOMException && cause.name === 'AbortError')) setConnectorError('Napojení databáze zatím není na tomto prostředí dostupné.'); }
   }, [connectorEnabled, currentOrg?.id]);
   useEffect(() => { const controller = new AbortController(); void refreshConnectors(controller.signal); return () => controller.abort(); }, [refreshConnectors]);
@@ -73,6 +83,24 @@ export const Integrations: React.FC<IntegrationsProps> = () => {
     return () => controller.abort();
   }, [currentOrg?.id]);
   const activeConnector = connectors.find(item => item.status !== 'revoked');
+  const canActivateByodb = byodbEnabled
+    && Boolean(activeConnector?.mappings?.some(mapping => mapping.entityType === 'company' && mapping.approvedAt && mapping.mappedTargets.includes('name')))
+    && Boolean(activeConnector?.mappings?.some(mapping => mapping.entityType === 'lead' && mapping.approvedAt && mapping.mappedTargets.includes('assignedToEmail')))
+    && ['ready', 'success', 'partial_failure', 'paused'].includes(activeConnector?.status ?? '');
+  const changeDatabaseMode = async (nextMode: 'managed_cloud' | 'byodb') => {
+    if (!currentOrg?.id || modeBusy) return;
+    if (nextMode === 'byodb' && (!activeConnector || !canActivateByodb)) return;
+    setModeBusy(true);
+    setConnectorError('');
+    try {
+      await connectorClient.setDatabaseMode(currentOrg.id, nextMode === 'byodb' ? activeConnector!.id : null,
+        nextMode, nextMode === 'byodb' ? databaseDriver : null, nextMode === 'byodb');
+      setDatabaseMode(nextMode);
+      await fetchLeads();
+    } catch {
+      setConnectorError('Režim databáze se nepodařilo bezpečně změnit. Zkontrolujte schválené mapování a stav konektoru.');
+    } finally { setModeBusy(false); }
+  };
 
   const importCsv = async (
     _rows: Record<string, unknown>[],
@@ -82,6 +110,7 @@ export const Integrations: React.FC<IntegrationsProps> = () => {
     source: { fileName: string; csv: string },
   ) => {
     if (!currentOrg?.id) throw new Error('Import vyžaduje aktivní firmu.');
+    if (databaseMode === 'byodb') throw new Error('CSV zápis do firemní databáze ještě není podporovaný. CSV import je při zapnutém BYODB vypnutý.');
     const { data } = await supabase?.auth.getSession() || { data: { session: null } };
     const token = data.session?.access_token;
     if (!token) throw new Error('Před importem se znovu přihlaste.');
@@ -110,11 +139,11 @@ export const Integrations: React.FC<IntegrationsProps> = () => {
   return (
     <div className="workspace-page mx-auto max-w-5xl">
       <header className="workspace-page-header">
-        <div><p className="workspace-kicker">Chytrý dispečink</p><h1 className="workspace-title">Příjem poptávek a data</h1><p className="workspace-subtitle">Poptávky z e-mailu a webu míří rovnou do StavbaFlow. CSV zůstává bezpečnou cestou pro první import stávajících dat.</p></div>
-        <button type="button" onClick={() => setIsCsvOpen(true)} className="workspace-primary-action inline-flex min-h-11 items-center justify-center gap-2 px-4 text-sm font-semibold"><UploadCloud className="h-4 w-4" /> Nahrát CSV</button>
+        <div><p className="workspace-kicker">Chytrý dispečink</p><h1 className="workspace-title">Příjem poptávek a data</h1><p className="workspace-subtitle">Poptávky z e-mailu, webu a CSV jsou dostupné v režimu Managed Cloud. BYODB směruje pouze schválené mapované změny do firemní databáze.</p></div>
+        <button type="button" disabled={databaseMode === 'byodb'} title={databaseMode === 'byodb' ? 'CSV import do firemní databáze není podporovaný.' : undefined} onClick={() => setIsCsvOpen(true)} className="workspace-primary-action inline-flex min-h-11 items-center justify-center gap-2 px-4 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-50"><UploadCloud className="h-4 w-4" /> Nahrát CSV</button>
       </header>
 
-      <section className="mb-6 grid gap-4 lg:grid-cols-2">
+      {databaseMode === 'managed_cloud' ? <section className="mb-6 grid gap-4 lg:grid-cols-2">
         <article className="workspace-panel overflow-hidden p-6 sm:p-7">
           <div className="flex items-start justify-between gap-4">
             <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-violet-50 text-violet-700"><Bot className="h-5 w-5" /></span>
@@ -149,7 +178,7 @@ export const Integrations: React.FC<IntegrationsProps> = () => {
           </div>
           <p className="mt-3 text-xs leading-5 text-slate-400">Formulář se otevře nad existujícím webem a uloží poptávku do správné firmy.</p>
         </article>
-      </section>
+      </section> : <p className="mb-6 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">Veřejné formuláře a AI příjem zatím zapisují do cloudu, proto jsou v režimu BYODB skryté. Jejich bezpečné směrování do zdrojové databáze čeká na oddělený veřejný ingest kontrakt.</p>}
 
       <section className="grid gap-4 md:grid-cols-[1.25fr_.75fr]">
         <article className="workspace-panel p-6 sm:p-7">
@@ -165,7 +194,7 @@ export const Integrations: React.FC<IntegrationsProps> = () => {
         <aside className="workspace-panel p-6 sm:p-7">
           <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-slate-100 text-slate-600"><LockKeyhole className="h-5 w-5" /></span>
           <h2 className="mt-5 text-base font-semibold text-slate-950">Dvě bezpečné cesty</h2>
-          <p className="mt-2 text-sm leading-6 text-slate-500">CSV je vhodné pro jednorázový start. Ověřený Synology konektor níže drží vybraná data průběžně aktuální bez zápisu zpět do firemní databáze.</p>
+          <p className="mt-2 text-sm leading-6 text-slate-500">CSV je vhodné pro jednorázový start v Managed Cloud. Ověřený Synology konektor níže předává schválená mapovaná čtení a změny mezi aplikací a firemní databází.</p>
           <div className="mt-5 flex items-center gap-3 rounded-xl bg-slate-50 p-3 text-sm text-slate-600"><Database className="h-4 w-4" /><span>PostgreSQL · MariaDB · SQL Server</span></div>
         </aside>
       </section>
@@ -174,7 +203,7 @@ export const Integrations: React.FC<IntegrationsProps> = () => {
         <div>
           <p className="workspace-kicker">Průběžné napojení</p>
           <h2 className="mt-1 text-xl font-semibold tracking-tight text-slate-950">Databáze firmy navíc</h2>
-          <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-500">Nemusíte přecházet ze stávající databáze. StavbaFlow dál používá svou databázi pro přihlášení a práci týmu; konektor z vaší databáze pouze čte mapovaná data a synchronizuje je do StavbaFlow. Do zdrojové databáze nikdy nezapisuje.</p>
+          <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-500">Nemusíte přecházet ze stávající databáze. V režimu Managed Cloud zůstává zdrojem Supabase. V režimu BYODB je zdrojem vaše schválená firemní mapa a potvrzené změny se přes odchozí konektor zapíší do vaší databáze.</p>
           <p className="mt-1 text-xs text-slate-400">Synology · PostgreSQL · MariaDB / MySQL · SQL Server</p>
         </div>
         {!connectorEnabled && <div className="workspace-panel p-5 text-sm leading-6 text-slate-600">Konektor není na tomto nasazení aktivovaný. CSV import zůstává dostupný a žádné ukázkové připojení se nezobrazuje jako živé.</div>}
@@ -182,11 +211,17 @@ export const Integrations: React.FC<IntegrationsProps> = () => {
           {!activeConnector ? <ConnectorSetup companyId={currentOrg.id} onCreated={() => void refreshConnectors()} /> : null}
           <ConnectorStatus companyId={currentOrg.id} items={connectors} onRefresh={() => void refreshConnectors()} />
           {activeConnector && activeConnector.status !== 'awaiting_enrollment' ? <ConnectorMapping companyId={currentOrg.id} connector={activeConnector} onSaved={() => void refreshConnectors()} /> : null}
+          <article className="workspace-panel grid gap-4 p-5 sm:grid-cols-[1fr_auto_auto] sm:items-end" aria-busy={modeBusy}>
+            <div><h3 className="font-semibold text-slate-950">Režim databáze</h3><p className="mt-1 text-sm text-slate-500">Firemní režim se zapne až po schválené mapě. Zápisy zůstávají vypnuté, dokud connector build nemá schválený image digest.</p></div>
+            <label className="text-xs font-semibold text-slate-600">Databázový server<select aria-label="Typ firemní databáze" value={databaseDriver} onChange={event => setDatabaseDriver(event.target.value as typeof databaseDriver)} className="mt-1 block min-h-10 rounded-xl border border-slate-200 bg-white px-3 text-sm font-normal"><option value="postgres">PostgreSQL</option><option value="mysql">MySQL</option><option value="mariadb">MariaDB</option><option value="mssql">Microsoft SQL Server</option></select></label>
+            <label className="text-xs font-semibold text-slate-600">Ukládání dat<select aria-label="Režim databáze" value={databaseMode} disabled={modeBusy} onChange={event => void changeDatabaseMode(event.target.value as 'managed_cloud' | 'byodb')} className="mt-1 block min-h-10 rounded-xl border border-slate-200 bg-white px-3 text-sm font-normal"><option value="managed_cloud">Managed Cloud · Supabase</option><option value="byodb" disabled={!canActivateByodb}>Firemní databáze (BYODB){!byodbEnabled ? ' · čeká na staging ověření' : ''}</option></select></label>
+            {!byodbEnabled && <p className="text-xs text-amber-700 sm:col-span-3">BYODB zůstává na tomto nasazení vypnuté, dokud nebude dokončeno oddělené staging ověření a vydán neměnný obraz konektoru.</p>}
+          </article>
         </> : null}
         {connectorError && <p role="alert" className="text-sm text-amber-700">{connectorError}</p>}
       </section>}
 
-      <CSVImportModal isOpen={isCsvOpen} onClose={() => setIsCsvOpen(false)} onImportBatch={importCsv} />
+      {databaseMode === 'managed_cloud' && <CSVImportModal isOpen={isCsvOpen} onClose={() => setIsCsvOpen(false)} onImportBatch={importCsv} />}
     </div>
   );
 };

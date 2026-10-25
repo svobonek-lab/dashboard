@@ -2,10 +2,13 @@ import pg from 'pg';
 
 import { findKnownTable, knownColumns, normalizeRows, quotePostgresIdentifier, validatePageLimit } from './sqlSafety.js';
 import type { IncrementalQuery, ReadOnlyReport, SourceAdapter, SourceAdapterConfig, SourcePage, SourceSchema } from './types.js';
+import { applyMappedOperationWithTransaction, type MappedSourceOperation } from './mappedOperations.js';
+import type { ConnectorMappingDefinitionV1 } from '../../../shared/connectorProtocol.js';
 
 export class PostgresSourceAdapter implements SourceAdapter {
   readonly driver = 'postgres' as const;
   private readonly pool: pg.Pool;
+  private readonly writePool: pg.Pool | null;
   private schemaCache: SourceSchema | null = null;
 
   constructor(private readonly config: SourceAdapterConfig) {
@@ -21,6 +24,10 @@ export class PostgresSourceAdapter implements SourceAdapter {
       connectionTimeoutMillis: 10_000,
       idleTimeoutMillis: 30_000,
     });
+    this.writePool = config.writeUsername && config.writePassword ? new pg.Pool({
+      host: config.host, port: config.port, database: config.database, user: config.writeUsername, password: config.writePassword,
+      ssl: config.ssl ? { rejectUnauthorized: true } : undefined, max: 2, connectionTimeoutMillis: 10_000, idleTimeoutMillis: 30_000,
+    }) : null;
   }
 
   async testConnection() {
@@ -32,7 +39,7 @@ export class PostgresSourceAdapter implements SourceAdapter {
     const values = this.config.schema ? [this.config.schema] : [];
     const filter = this.config.schema ? 'AND c.table_schema = $1' : "AND c.table_schema NOT IN ('pg_catalog', 'information_schema')";
     const result = await this.pool.query(`
-      SELECT c.table_schema, c.table_name, c.column_name, c.data_type, c.is_nullable,
+      SELECT c.table_schema, c.table_name, c.column_name, c.data_type, c.is_nullable, c.is_identity, c.is_generated, c.column_default,
              EXISTS (
                SELECT 1 FROM information_schema.table_constraints tc
                JOIN information_schema.key_column_usage kcu
@@ -75,6 +82,23 @@ export class PostgresSourceAdapter implements SourceAdapter {
     return { rows, nextCursor: cursorFromRows(rows, query) };
   }
 
+  async applyMappedOperation(operation: MappedSourceOperation, mapping: ConnectorMappingDefinitionV1, schema: SourceSchema) {
+    if (!this.writePool) throw new Error('BYODB_WRITE_CREDENTIALS_REQUIRED');
+    const client = await this.writePool.connect();
+    try {
+      return await applyMappedOperationWithTransaction(this.driver, operation, mapping, schema, {
+        begin: async () => { await client.query('BEGIN'); },
+        savepoint: async name => { await client.query(`SAVEPOINT ${name}`); },
+        query: async statement => (await client.query(statement.sql, statement.values)).rows as Record<string, unknown>[],
+        rollbackToSavepoint: async name => { await client.query(`ROLLBACK TO SAVEPOINT ${name}`); },
+        releaseSavepoint: async name => { await client.query(`RELEASE SAVEPOINT ${name}`); },
+        commit: async () => { await client.query('COMMIT'); },
+        rollback: async () => { await client.query('ROLLBACK'); },
+        isDuplicateKeyError: error => Boolean(error && typeof error === 'object' && (error as { code?: string }).code === '23505'),
+      });
+    } finally { client.release(); }
+  }
+
   async verifyReadOnly(): Promise<ReadOnlyReport> {
     const schema = this.schemaCache ?? await this.inspectSchema();
     const table = schema.tables[0];
@@ -93,7 +117,7 @@ export class PostgresSourceAdapter implements SourceAdapter {
     return { selectAllowed: true, writesDenied, checkedTable: `${table.schema}.${table.name}` };
   }
 
-  async close(): Promise<void> { await this.pool.end(); }
+  async close(): Promise<void> { await Promise.all([this.pool.end(), this.writePool?.end()]); }
 }
 
 function rowsToSchema(rows: Record<string, unknown>[]): SourceSchema {
@@ -103,7 +127,7 @@ function rowsToSchema(rows: Record<string, unknown>[]): SourceSchema {
     const name = String(row.table_name);
     const key = `${schema}.${name}`;
     const table = tables.get(key) ?? { schema, name, columns: [] };
-    table.columns.push({ name: String(row.column_name), dataType: String(row.data_type), nullable: row.is_nullable === 'YES', primaryKey: Boolean(row.primary_key) });
+    table.columns.push({ name: String(row.column_name), dataType: String(row.data_type), nullable: row.is_nullable === 'YES', primaryKey: Boolean(row.primary_key), generated: row.is_identity === 'YES' || row.is_generated === 'ALWAYS' || String(row.column_default ?? '').startsWith('nextval('), hasDefault: row.column_default !== null && row.column_default !== undefined });
     tables.set(key, table);
   }
   return { inspectedAt: new Date().toISOString(), tables: [...tables.values()] };

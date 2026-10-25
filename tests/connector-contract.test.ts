@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import test from 'node:test';
+import { resolveConnectorRoute } from '../api/connector/[route].js';
 
 test('owner connector contract never exposes source credentials or private keys', async()=>{
   const contract=await readFile(new URL('../src/features/manage-integrations/api/connectorContract.ts',import.meta.url),'utf8');
@@ -21,4 +22,32 @@ test('owner contract exposes an explicit dry-run approval action', async()=>{
   assert.match(client,/approveMapping/);
   assert.match(command,/approve_mapping/);
   assert.match(command,/app_approve_connector_mapping/);
+});
+
+test('BYODB operations route is explicitly registered and keeps user, connector, and release boundaries', async()=>{
+  assert.equal(typeof resolveConnectorRoute('operations'), 'function');
+  assert.equal(resolveConnectorRoute('../operations'), undefined);
+  const route = await readFile(new URL('../api/_connector/routes/operations.ts', import.meta.url), 'utf8');
+  assert.match(route, /authorizeConnectorMember/);
+  assert.match(route, /authenticateConnectorHttpRequest\(request, '\/api\/connector\/operations', 'operations'\)/);
+  assert.match(route, /requireByodbReleaseGate\(\)/);
+  assert.match(route, /app_create_byodb_operation/);
+  assert.match(route, /validateByodbPollBatch/);
+});
+
+test('BYODB cloud reads are tenant-authorized, employee-scoped, and return only mapped projection data', async()=>{
+  const route = await readFile(new URL('../api/_connector/routes/operations.ts', import.meta.url), 'utf8');
+  assert.match(route, /action === 'context'/);
+  assert.match(route, /action === 'records'/);
+  assert.match(route, /authorizeConnectorMember/);
+  assert.match(route, /app_get_byodb_context/);
+  assert.match(route, /app_list_byodb_records/);
+  assert.match(route, /app_set_company_database_mode/);
+  assert.doesNotMatch(route, /databaseHost|connectionString|secret_ciphertext|passwordFile/i);
+});
+
+test('connector dispatches each server-approved operation with its attached map even when active sync map differs', async () => {
+  const runtime = await readFile(new URL('../connector/src/runtimeBootstrap.ts', import.meta.url), 'utf8');
+  assert.match(runtime, /if \(config\.database\.writeUsername\)[\s\S]+pollOperations\(\)[\s\S]+processByodbOperations\(operations, activeMapping/);
+  assert.doesNotMatch(runtime, /if \(config\.database\.writeUsername && engine && await engine\.mappingApproved\(\)\)/);
 });

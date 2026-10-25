@@ -12,6 +12,8 @@
     "database": "CUSTOMER_DATABASE_NAME",
     "username": "CUSTOMER_READ_ONLY_USER",
     "passwordFile": "/run/secrets/source_db_password",
+    "writeUsername": "CUSTOMER_MAPPED_WRITE_USER",
+    "writePasswordFile": "/run/secrets/source_db_write_password",
     "schema": "public",
     "ssl": true
   }
