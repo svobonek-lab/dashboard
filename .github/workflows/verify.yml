@@ -202,8 +202,17 @@ jobs:
       - uses: actions/checkout@v6
         with:
           persist-credentials: false
+      - uses: docker/setup-buildx-action@v3
       - name: Build disposable PostgreSQL with pgTAP
-        run: docker build -f supabase/tests/Dockerfile.jwt-pgtap -t jwt-pgtap .
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: supabase/tests/Dockerfile.jwt-pgtap
+          platforms: linux/amd64
+          load: true
+          tags: jwt-pgtap
+          cache-from: type=gha,scope=jwt-tenant-pgtap
+          cache-to: type=gha,mode=max,scope=jwt-tenant-pgtap
       - name: Start disposable PostgreSQL
         run: docker run --detach --name jwt-pgtap-postgres --volume "$PWD:/workspace:ro" --env POSTGRES_PASSWORD=postgres jwt-pgtap
       - name: Wait for PostgreSQL
