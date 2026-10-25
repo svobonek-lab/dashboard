@@ -171,7 +171,12 @@ export const Integrations: React.FC<IntegrationsProps> = () => {
       </section>
 
       {isEnterprise && <section className="mt-6 space-y-4">
-        <div><p className="workspace-kicker">Průběžné napojení</p><h2 className="mt-1 text-xl font-semibold tracking-tight text-slate-950">Synology Database Connector</h2></div>
+        <div>
+          <p className="workspace-kicker">Průběžné napojení</p>
+          <h2 className="mt-1 text-xl font-semibold tracking-tight text-slate-950">Databáze firmy navíc</h2>
+          <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-500">Nemusíte přecházet ze stávající databáze. StavbaFlow dál používá svou databázi pro přihlášení a práci týmu; konektor z vaší databáze pouze čte mapovaná data a synchronizuje je do StavbaFlow. Do zdrojové databáze nikdy nezapisuje.</p>
+          <p className="mt-1 text-xs text-slate-400">Synology · PostgreSQL · MariaDB / MySQL · SQL Server</p>
+        </div>
         {!connectorEnabled && <div className="workspace-panel p-5 text-sm leading-6 text-slate-600">Konektor není na tomto nasazení aktivovaný. CSV import zůstává dostupný a žádné ukázkové připojení se nezobrazuje jako živé.</div>}
         {connectorEnabled && currentOrg?.id ? <>
           {!activeConnector ? <ConnectorSetup companyId={currentOrg.id} onCreated={() => void refreshConnectors()} /> : null}

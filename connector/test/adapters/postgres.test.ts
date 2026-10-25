@@ -27,12 +27,12 @@ test('PostgreSQL read-only proof fails closed when no readable table exists', as
 test('PostgreSQL adapter contract', { skip: process.env.RUN_DB_INTEGRATION !== '1' }, async () => {
   await assertAdapterContract({
     create: createSourceAdapter,
-    config: { driver: 'postgres', host: '127.0.0.1', port: 55432, database: 'fixture', username: 'fixture_reader', password: 'fixture_reader_password', schema: 'public' },
+    config: { driver: 'postgres', host: '127.0.0.1', port: 25432, database: 'fixture', username: 'fixture_reader', password: 'fixture_reader_password', schema: 'public' },
   });
 });
 
 test('PostgreSQL fixture account denies direct writes', { skip: process.env.RUN_DB_INTEGRATION !== '1' }, async () => {
-  const pool = new pg.Pool({ host: '127.0.0.1', port: 55432, database: 'fixture', user: 'fixture_reader', password: 'fixture_reader_password' });
+  const pool = new pg.Pool({ host: '127.0.0.1', port: 25432, database: 'fixture', user: 'fixture_reader', password: 'fixture_reader_password' });
   try {
     await assert.rejects(pool.query("INSERT INTO leads (id, title, updated_at) VALUES (99, 'denied', now())"), /permission denied/i);
     await assert.rejects(pool.query("UPDATE customers SET name = 'denied' WHERE id = 1"), /permission denied/i);

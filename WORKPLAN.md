@@ -35,8 +35,12 @@ Deliver the first controlled pilot for a small construction company: owner login
 
 - Implemented: local Synology runtime, PostgreSQL/MySQL/MariaDB/SQL Server read-only adapters, signed tenant-bound protocol, durable cursor/outbox, explicit mapping, dry-run approval, owner controls, multi-architecture CI and digest rollback scripts.
 - Reviewable only: `supabase/staging/20261004_connector_contract.sql`; it is not an applied migration and CI never applies it.
-- Release boundary: the image publishing workflow is manual and restricted to `main`. It publishes only after verification and records an immutable digest.
-- Unverified gate: the connector-specific two-company staging and exact Preview checks require the reviewed SQL contract plus synthetic credentials. Until those checks pass, the connector is not part of the sellable customer claim.
+- PR #112's connector hardening and database-adapter CI passed on 2026-10-25 (Actions run 40187857992). This proves the code and synthetic source adapters, not a connection to a company database.
+- The connector release list was empty on 2026-10-25. There is no published image digest to install yet.
+- The owner UI describes the customer database as an optional, read-only addition. The connector remains disabled until `VITE_CONNECTOR_ENABLED` is deliberately enabled in a reviewed deployment.
+- Before image publication: review and manually apply the staging-only connector contract to the isolated staging project; configure the staging-only synthetic accounts and Preview URL; run `connector-staging-acceptance` from `main`. The image publisher requires a successful run for the exact main commit and publishes the install bundle with its immutable digest.
+- Before enabling a customer deployment: install the reviewed digest on a staging NAS, connect a synthetic database with a SELECT-only account, prove heartbeat, dry run, approved import, replay/idempotency, failure recovery, and tenant isolation in the exact Preview. Do not send customer credentials through chat or store them in Vercel/Supabase.
+- The first real company setup still needs that company's reachable SQL endpoint, a customer-managed read-only database user, explicit table/field mapping, and a private NAS secret file. Until the staging and customer acceptance steps are recorded, the connector is not a sellable or live integration.
 
 The repository now contains a staging-only provisioning command with dry-run-by-default behavior. It remains unverified for a new synthetic tenant until the staging service-role key is rotated and the operator runs the full checklist.
 

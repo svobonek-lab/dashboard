@@ -6,7 +6,7 @@ services:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: synthetic_admin_password
     ports:
-      - "55432:5432"
+      - "127.0.0.1:25432:5432"
     volumes:
       - ./test/fixtures/postgres.sql:/docker-entrypoint-initdb.d/fixture.sql:ro
     healthcheck:
@@ -21,7 +21,7 @@ services:
       MARIADB_DATABASE: fixture
       MARIADB_ROOT_PASSWORD: synthetic_admin_password
     ports:
-      - "53306:3306"
+      - "127.0.0.1:23306:3306"
     volumes:
       - ./test/fixtures/mysql.sql:/docker-entrypoint-initdb.d/fixture.sql:ro
     healthcheck:
@@ -37,7 +37,7 @@ services:
       MSSQL_SA_PASSWORD: Synthetic_admin_password_1!
       MSSQL_PID: Developer
     ports:
-      - "51433:1433"
+      - "127.0.0.1:21433:1433"
     healthcheck:
       test: ["CMD-SHELL", "/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P 'Synthetic_admin_password_1!' -C -Q 'SELECT 1' || exit 1"]
       interval: 5s

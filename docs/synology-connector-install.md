@@ -18,14 +18,14 @@ Použijte nový účet pouze pro StavbaFlow. Povolte mu přihlášení z adresy 
 
 ## Soubory na NASu
 
-1. Stáhněte z kontrolovaného GitHub release `docker-compose.synology.yml`, `config.example.json` a manifest. Pro instalaci skriptem lze použít také `connector/compose.yaml` a `install.ps1`.
+1. Stáhněte z kontrolovaného GitHub release `docker-compose.synology.yml`, `config.example.json`, instalační a aktualizační skripty a `connector-manifest.json`. Release obsahuje image s neměnným digestem i soubory pro instalaci.
 2. Zkopírujte vzor konfigurace do `/volume1/docker/stavbaflow/config/config.json`.
 3. Nastavte v `config.json` ovladač (`mariadb` pro Synology MariaDB 10+, jinak `mysql`, `postgres` nebo `mssql`), název databáze, schéma, `CUSTOMER_READ_ONLY_USER` a přesnou HTTPS adresu aplikace. Hodnoty `database.host` a `database.port` v souboru slouží jako záloha; Compose je přepíše proměnnými `DB_HOST` a `DB_PORT`.
 4. Uložte databázové heslo bez konce řádku do `/volume1/docker/stavbaflow/secrets/source-db-password`.
 5. V dashboardu vlastníka vytvořte jednorázový kód a uložte jej do `/volume1/docker/stavbaflow/secrets/enrollment-code`.
 6. Omezte přístup ke složkám `secrets` a `state` pouze na správce NASu a účet Container Manageru.
 
-Instalační skript odmítne jinou cílovou cestu, chybějící secrets, neplatný Compose soubor i neúspěšné spuštění. Hodnoty secrets nevypisuje.
+Před spuštěním instalačního skriptu nastavte `STAVBAFLOW_CONNECTOR_IMAGE` na hodnotu `image@digest` z manifestu. Skript odmítne jinou cílovou cestu, chybějící secrets, neplatný Compose soubor i neúspěšné spuštění. Hodnoty secrets nevypisuje.
 
 ## Projekt v Synology Container Manageru
 
@@ -50,10 +50,14 @@ Vyberte jednu tabulku a explicitně namapujte sloupce. První běh je vždy dry-
 
 ## Přijetí instalace
 
-Instalace je úspěšná pouze když:
+Před prvním firemním nasazením dokončete ruční workflow **connector-staging-acceptance** na větvi `main`. V GitHub repository nastavte tyto **Actions variables**: `STAGING_SUPABASE_URL` (izolovaný staging ref), `STAGING_PREVIEW_URL` (ověřený Vercel Preview). Do **Actions secrets** patří `STAGING_SUPABASE_PUBLISHABLE_KEY`, `STAGING_OWNER_A_EMAIL`, `STAGING_OWNER_A_PASSWORD`, `STAGING_EMPLOYEE_A_EMAIL`, `STAGING_EMPLOYEE_A_PASSWORD`, `STAGING_OWNER_B_EMAIL` a `STAGING_OWNER_B_PASSWORD`; `STAGING_PREVIEW_BYPASS_TOKEN` je volitelný secret. Všechny účty musí být syntetické. Volitelná variable `CONNECTOR_EXPECTED_ID` zpřísní Preview kontrolu na konkrétní staging konektor.
+
+Workflow používá syntetické účty a kontroluje dvě firmy, zamítnutí zaměstnance, Preview endpoint a bezpečný tvar odpovědi. Vydání image vyžaduje ID úspěšného staging běhu pro stejný commit. Workflow nepoužívá service-role klíč ani neaplikuje SQL. Kontrakt v `supabase/staging/20261004_connector_contract.sql` musí předtím samostatně zkontrolovat a ručně aplikovat správce izolovaného staging projektu.
+
+Instalace na firemním NASu je přijatá pouze když:
 
 - image běží pod neprivilegovaným uživatelem a NAS nemá nový veřejný port;
-- read-only kontrola všech tří podporovaných motorů pro daný pilot projde;
+- read-only kontrola adaptéru vybraného pro tento pilot projde (CI ověřuje všechny tři podporované motory);
 - dashboard zaznamená čerstvý podepsaný heartbeat;
 - dry-run nevypíše zdrojové hodnoty ani přihlašovací údaje;
 - vlastník jiné syntetické firmy stav konektoru nevidí;
