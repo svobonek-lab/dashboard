@@ -72,7 +72,7 @@ Před prvním firemním nasazením dokončete ruční workflow **connector-stagi
 
 Workflow používá syntetické účty a kontroluje dvě firmy, zamítnutí zaměstnance, Preview endpoint a bezpečný tvar odpovědi. Vydání image vyžaduje ID úspěšného staging běhu pro stejný commit. Workflow nepoužívá service-role klíč ani neaplikuje SQL. Kontrakty v `supabase/staging/20261004_connector_contract.sql` a `supabase/staging/20261025_byodb_operations.sql` musí předtím správce zkontrolovat a ručně aplikovat pouze v izolovaném staging projektu.
 
-**Aktuální blocker:** repozitář nemá nakonfigurované oddělené staging Supabase URL/ref a publishable key, workflow nemá úspěšný staging běh a není publikovaného image digestu. Proto konektorový balíček a aktivace BYODB zůstávají vypnuté. Nepoužívejte produkční projekt jako náhradu stagingu a nevytvářejte nový projekt bez samostatného rozhodnutí.
+**Aktuální stav (2026-10-25):** GitHub Actions už obsahuje oddělený staging projekt `xwzweltjvreqhjpbjrxa`, staging publishable key, Preview URL a syntetické účty. Produkční projekt `oncmtmrhmjlerbwkrecv` zůstává oddělený. První ruční acceptance běh `40233268156` se zastavil, protože workflow nepředalo `STAGING_PREVIEW_URL` prvnímu staging testu; oprava je připravena v PR #121 a po jejím sloučení je potřeba acceptance znovu ručně spustit. Zatím není úspěšný staging běh ani publikovaný image digest, takže Synology balíček a aktivaci BYODB nepoužívejte. Produkci nepoužívejte jako náhradu stagingu a další Supabase projekt nevytvářejte.
 
 Serverové nasazení musí mít nakonfigurovaný secret `CONNECTOR_SECRET_ENCRYPTION_KEY`; jeho hodnotu uchovávejte jen v tajném úložišti serverového prostředí, nikdy v repozitáři nebo návodu.
 
