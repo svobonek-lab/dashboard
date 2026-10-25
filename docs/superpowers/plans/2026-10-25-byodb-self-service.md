@@ -143,7 +143,7 @@
 - [x] **Step 3: Implement** engine-specific prepared statements and transactional conflict checks; use a separate write credential path while keeping read-only sync connections unchanged.
 - [x] **Step 4: Run** `npm test` from `connector/`.
   **Expected:** mapped writes work in fixtures, unauthorized writes are rejected, and existing sync/outbox tests remain green.
-- [ ] **Step 5: Commit** `feat(connector): apply approved mapped database operations`.
+- [x] **Step 5: Commit** `feat(connector): apply approved mapped database operations`.
 
 ### Task 5: Signed operation execution and cloud projection
 
@@ -173,7 +173,7 @@
 - [x] **Step 3: Implement** signed operation execution and server-side projection/ack transitions.
 - [x] **Step 4: Run the same tests.**
   **Expected:** source and mirror converge once, retries do not duplicate, and offline operations remain pending.
-- [ ] **Step 5: Commit** `feat(byodb): sync acknowledged source writes into the tenant view`.
+- [x] **Step 5: Commit** `feat(byodb): sync acknowledged source writes into the tenant view`.
 
 ### Task 6: Mode-aware repository and owner/employee write status
 
@@ -192,13 +192,13 @@
 - BYODB reads use the tenant read projection; mapped business writes wait for the operation result or return an explicit pending/conflict error with an idempotency reference.
 - The repository never falls through to a cloud write after a BYODB source error.
 
-- [ ] **Step 1: Write failing tests** proving managed-cloud calls are unchanged; BYODB lead/company writes enter the operation API; pending/offline/conflict results cannot be rendered as saved; no BYODB error falls back to Supabase writes.
-- [ ] **Step 2: Run** `npm test -- tests/connector-ui.test.ts tests/connector-api.test.ts`.
+- [x] **Step 1: Write failing tests** proving managed-cloud calls are unchanged; BYODB lead/company writes enter the operation API; pending/offline/conflict results cannot be rendered as saved; no BYODB error falls back to Supabase writes.
+- [x] **Step 2: Run** `npm test -- tests/connector-ui.test.ts tests/connector-api.test.ts`.
   **Expected:** mode-aware repository assertions fail because only the Supabase repository exists.
-- [ ] **Step 3: Implement** mode-aware repository and safe pending/result behavior for mapped fields.
-- [ ] **Step 4: Run the same tests.**
+- [x] **Step 3: Implement** mode-aware repository and safe pending/result behavior for mapped fields.
+- [x] **Step 4: Run the same tests.**
   **Expected:** cloud behavior is unchanged and BYODB writes acknowledge source commits.
-- [ ] **Step 5: Commit** `feat(byodb): route mapped company writes through connector`.
+- [x] **Step 5: Commit** `feat(byodb): route mapped company writes through connector`.
 
 ### Task 7: Owner mode wizard, mapping, status, and generated bundle
 
@@ -220,13 +220,13 @@
 - Bundle builder returns ZIP bytes for `docker-compose.synology.yml` and `config.json`; only the reviewed immutable image digest is accepted; source DB credentials are file-path placeholders.
 - `ConnectorStatus` exposes connected, pending write count, last sync, sync failure, conflict, and safe retry states.
 
-- [ ] **Step 1: Write failing tests** for mode gating, field suggestions, required-field mapping, missing digest, ZIP file names/content, secret absence from logs/storage, and status labels.
-- [ ] **Step 2: Run** `npx tsx --test tests/connector-ui.test.ts`.
+- [x] **Step 1: Write failing tests** for mode gating, field suggestions, required-field mapping, missing digest, ZIP file names/content, secret absence from logs/storage, and status labels.
+- [x] **Step 2: Run** `npx tsx --test tests/connector-ui.test.ts`.
   **Expected:** bundle and BYODB states are absent.
-- [ ] **Step 3: Implement** UI by extending existing FSD slices and the project's workspace styles; keep secret display one-time and keyboard accessible.
-- [ ] **Step 4: Run** the same tests and `npm run lint`.
+- [x] **Step 3: Implement** UI by extending existing FSD slices and the project's workspace styles; keep secret display one-time and keyboard accessible.
+- [x] **Step 4: Run** the same tests and `npm run lint`.
   **Expected:** tests, TypeScript, and ESLint pass.
-- [ ] **Step 5: Commit** `feat(byodb): add self-service database mode wizard`.
+- [x] **Step 5: Commit** `feat(byodb): add self-service database mode wizard` (`a05a144`).
 
 ### Task 8: Full synthetic acceptance, three-action Synology guide, and release boundaries
 
@@ -243,12 +243,12 @@
 - Documents exactly three top-level Container Manager actions while retaining explicit local credential setup and failure recovery.
 - Documents `CONNECTOR_SECRET_ENCRYPTION_KEY` by name only, never its value.
 
-- [ ] **Step 1: Write failing acceptance assertions** for the whole synthetic lifecycle and the install guide's three actions and credential boundaries.
-- [ ] **Step 2: Run** the focused root and connector tests and confirm missing acceptance behavior fails.
-- [ ] **Step 3: Implement** any missing integration glue and documentation.
-- [ ] **Step 4: Run** `npm ci`, `npm test`, `npm run lint`, `npm run build`, `npm ci --prefix connector`, `npm test --prefix connector`, `npm run lint --prefix connector`, and `npm run build --prefix connector` sequentially.
+- [x] **Step 1: Write failing acceptance assertions** for the whole synthetic lifecycle and the install guide's three actions and credential boundaries.
+- [x] **Step 2: Run** the focused root and connector tests and confirm missing acceptance behavior fails.
+- [x] **Step 3: Implement** any missing integration glue and documentation.
+- [x] **Step 4: Run** `npm ci`, `npm test`, `npm run lint`, `npm run build`, `npm ci --prefix connector`, `npm test --prefix connector`, `npm run lint --prefix connector`, and `npm run build --prefix connector` sequentially.
   **Expected:** all commands pass; the connector unit suite may skip adapter-fixture tests only when disposable databases are not configured, and skips are reported honestly.
-- [ ] **Step 5: Review** generated bundle contents, staged diff, and secret scan; verify git status and no production/staging writes occurred.
+- [x] **Step 5: Review** generated bundle contents, staged diff, and secret scan; verify git status and no production/staging writes occurred.
 - [ ] **Step 6: Commit** `docs(byodb): document self-service connector setup` and open a draft PR against `main`.
 
 ## Final review focus

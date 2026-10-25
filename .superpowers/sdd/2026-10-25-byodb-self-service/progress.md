@@ -27,3 +27,6 @@ Task 4: complete (commits 91a1e49..78520b2, tests: npm test --prefix connector �
 Task 5: Ruling: source projection and operation terminal state update in one service-only acknowledgement RPC — separate ingest and ack requests could show a saved value while its operation remains pending, or mark completion before the UI read model changes.
 Task 5: Ruling: a retry after a lost acknowledgement treats a create with the same stable external key and requested values, an update already at its desired mapped values, or an already-absent delete as idempotently complete — this avoids a source-side DDL journal; if wrong, a coincident external change to the exact desired values is accepted without a second mutation.
 Task 5: complete (commits 78520b2..78520b2, tests: npm test --prefix connector → ℹ duration_ms 14321.1021)
+Task 6: complete (commits db5ee5f..90acac9, tests: npm test → ℹ duration_ms 10973.5995)
+Task 7: complete (commit 90acac9..a05a144, tests: npm test → 362/362; connector npm test → 81 passed, 6 database fixture tests skipped; root and connector lint/build passed)
+Task 8: implementation and local verification complete; staging acceptance, immutable image publication, and NAS acceptance remain blocked on an already-existing isolated staging project and credentials. No SQL was applied and no database writes were performed.

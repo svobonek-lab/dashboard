@@ -18,7 +18,7 @@ test('connector acceptance scripts are staging-only and test cross-company autho
   assert.match(preview, /password\|privateKey\|service_role/);
 });
 
-test('staging acceptance is read-only and release requires evidence for the exact main commit', async () => {
+test('staging acceptance does not apply SQL and release requires evidence for the exact main commit', async () => {
   const acceptance = await readFile('.github/workflows/connector-staging-acceptance.yml', 'utf8');
   const publish = await readFile('.github/workflows/connector-publish.yml', 'utf8');
   const compose = await readFile('connector/compose.yaml', 'utf8');
@@ -37,5 +37,9 @@ test('staging acceptance is read-only and release requires evidence for the exac
   for (const asset of ['docker-compose.synology.yml', 'connector/config.example.json', 'connector/scripts/install.ps1', 'connector/scripts/update.ps1']) assert.ok(publish.includes(asset));
   assert.match(compose, /STAVBAFLOW_CONNECTOR_IMAGE:\?Set a verified connector image digest/);
   assert.doesNotMatch(compose, /:stable/);
-  assert.match(install, /read-only kontrola adaptéru vybraného pro tento pilot/);
+  assert.match(install, /čtecí i omezená zápisová kontrola adaptéru vybraného pro tento pilot/);
+  assert.match(install, /aktuální blocker/i);
+  assert.match(install, /Rychlý postup ve třech krocích[\s\S]+1\. \*\*Připravte zdroj[\s\S]+2\. \*\*Vytvořte projekt[\s\S]+3\. \*\*Připojte a schvalte/);
+  assert.match(install, /CONNECTOR_SECRET_ENCRYPTION_KEY/);
+  assert.match(install, /source-db-write-password/);
 });

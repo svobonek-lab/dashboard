@@ -4,6 +4,10 @@
 
 Konektor se synchronizuje nejvýše jednou za minutu a lze spustit ručně. Stav `ready` čeká na schválené mapování, `running` právě čte, `success` dokončil běh, `partial_failure` vyžaduje opravu konkrétních polí a `paused` zastavuje automatické běhy. Opakované chyby přenosu nebo spojení se zdrojem vyvolají omezený exponenciální backoff a plánovač zůstane aktivní; pět po sobě jdoucích chyb autorizace nebo mapování jej pozastaví. Chyba jednoho řádku nezastaví ostatní platné řádky.
 
+V BYODB režimu je firemní databáze zdrojem pravdy pro schválená pole. Aplikací vytvořené nebo upravené záznamy se zobrazují jako čekající, dokud je konektor nepotvrdí; offline nebo odmítnutý zápis se nesmí považovat za uložený. Konflikt verze řešte porovnáním záznamu ve firemní databázi a aplikaci a pak proveďte novou uživatelskou změnu. Neopakujte operaci ručním SQL, dokud není jasné, zda původní transakce proběhla. Konektor používá idempotency key, takže bezpečné opakování stejné operace nevytvoří duplicitní zápis.
+
+Veřejné formuláře a CSV import jsou v BYODB režimu vypnuté, dokud není nasazen a schválen jejich tenantově bezpečný vstupní kontrakt. Nezapínejte je přes obcházení UI/API guardů.
+
 Logy a podpora smějí obsahovat verzi, digest, čas, safe error code, tabulku/sloupec a počty. Nesmějí obsahovat řádky zákazníka, hesla, connection string, enrollment kód, privátní klíč, bearer token ani request podpis.
 
 ## Aktualizace a návrat
@@ -33,7 +37,7 @@ Odpojení v dashboardu je dvoukrokové a serverově okamžité. Po revokaci star
 Při podezření na kompromitaci:
 
 1. ihned revoke konektor a pozastavte import;
-2. izolujte NAS od sítě a otočte heslo read-only databázového účtu;
+2. izolujte NAS od sítě a otočte hesla čtecího i zápisového databázového účtu;
 3. zachovejte čas, digest, bezpečné logy a auditní ID;
 4. ověřte poslední přijatý request a tenant audit bez exportu zákaznických řádků;
 5. obnovte konektor novou identitou až po vyřešení příčiny.

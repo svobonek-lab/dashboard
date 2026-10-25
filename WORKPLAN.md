@@ -31,16 +31,14 @@ Deliver the first controlled pilot for a small construction company: owner login
 10. Verify the platform administrator login and minimal company directory in the exact Preview. Owner and employee sessions must receive `403`, and the administrator must remain unable to read tenant business rows.
 11. Configure `VITE_DEMO_URL` on the landing deployment to the verified dashboard `/demo` URL and repeat browser navigation checks.
 
-## Read-only database connector
+## Customer-managed database connector (BYODB)
 
-- Implemented: local Synology runtime, PostgreSQL/MySQL/MariaDB/SQL Server read-only adapters, signed tenant-bound protocol, durable cursor/outbox, explicit mapping, dry-run approval, owner controls, multi-architecture CI and digest rollback scripts.
-- Reviewable only: `supabase/staging/20261004_connector_contract.sql`; it is not an applied migration and CI never applies it.
-- PR #112's connector hardening and database-adapter CI passed on 2026-10-25 (Actions run 40187857992). This proves the code and synthetic source adapters, not a connection to a company database.
-- The connector release list was empty on 2026-10-25. There is no published image digest to install yet.
-- The owner UI describes the customer database as an optional, read-only addition. The connector remains disabled until `VITE_CONNECTOR_ENABLED` is deliberately enabled in a reviewed deployment.
-- Before image publication: review and manually apply the staging-only connector contract to the isolated staging project; configure the staging-only synthetic accounts and Preview URL; run `connector-staging-acceptance` from `main`. The image publisher requires a successful run for the exact main commit and publishes the install bundle with its immutable digest.
-- Before enabling a customer deployment: install the reviewed digest on a staging NAS, connect a synthetic database with a SELECT-only account, prove heartbeat, dry run, approved import, replay/idempotency, failure recovery, and tenant isolation in the exact Preview. Do not send customer credentials through chat or store them in Vercel/Supabase.
-- The first real company setup still needs that company's reachable SQL endpoint, a customer-managed read-only database user, explicit table/field mapping, and a private NAS secret file. Until the staging and customer acceptance steps are recorded, the connector is not a sellable or live integration.
+- Implemented on `codex/byodb-source-of-truth`: owner BYODB mode, company and lead field mapping, HMAC enrollment, tenant-scoped durable operations, parameterized SQL adapters for PostgreSQL/MySQL/MariaDB/SQL Server, separate source read/write accounts, version-conflict handling, and source-backed company/lead projections.
+- Managed Cloud remains the default. BYODB is guarded by `VITE_BYODB_ENABLED` and server-side `ENABLE_BYODB_WRITES`; mapped company and lead writes do not fall through to Supabase. Public lead intake and CSV writes remain disabled in BYODB until a safe source-write contract exists.
+- Reviewable SQL proposals: `supabase/staging/20261004_connector_contract.sql` and `supabase/staging/20261025_byodb_operations.sql`. Neither is applied by CI or this branch.
+- No separate isolated staging URL/ref and publishable key are configured, no `connector-staging-acceptance` run has succeeded, and there is no published immutable image digest. BYODB activation and Synology package download therefore stay disabled.
+- Do not create another Supabase project or use the production-shared project for acceptance. The owner must identify an already-existing isolated non-production project and matching Preview URL, configure staging-only synthetic accounts, manually review/apply the SQL there, then run `connector-staging-acceptance` from `main`. Image publication requires successful evidence for the exact main commit.
+- A customer rollout additionally requires a reachable SQL endpoint, separate least-privilege read and mapped-write accounts, approved company/lead maps, one unambiguous source company-profile row, and private NAS secret files. Never send customer credentials in chat.
 
 The repository now contains a staging-only provisioning command with dry-run-by-default behavior. It remains unverified for a new synthetic tenant until the staging service-role key is rotated and the operator runs the full checklist.
 
