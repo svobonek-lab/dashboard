@@ -94,3 +94,13 @@ test('Synology Compose download uses a reviewed immutable image and keeps enroll
   assert.doesNotMatch(compose, /connectorSecret|enrollmentCode|companyKey/i);
   assert.throws(() => packageModel.buildSynologyCompose('latest'), /CONNECTOR_IMAGE_DIGEST_REQUIRED/);
 });
+
+test('connector setup keeps the package action clickable and lets digest validation explain a missing release', async () => {
+  const setup = await readFile(new URL('../src/features/manage-integrations/ui/ConnectorSetup.tsx', import.meta.url), 'utf8');
+  assert.match(setup, /onClick=\{\(\) => void downloadPackage\(\)\}/);
+  assert.match(setup, /disabled=\{packageBusy\}/);
+  assert.doesNotMatch(setup, /disabled=\{packageBusy\s*\|\|/);
+  assert.match(setup, /buildConnectorPackage\(\{ image, driver, apiBaseUrl: window\.location\.origin \}\)/);
+  assert.match(setup, /CONNECTOR_IMAGE_DIGEST_REQUIRED[\s\S]*neměnné vydání konektoru/);
+  assert.match(setup, /role="alert"/);
+});

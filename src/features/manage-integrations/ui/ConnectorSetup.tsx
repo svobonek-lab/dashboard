@@ -52,7 +52,12 @@ export function ConnectorSetup({ companyId, onCreated, initialDriver, onDriverCh
       const url = URL.createObjectURL(new Blob([bytes as unknown as BlobPart], { type: 'application/zip' }));
       const anchor = document.createElement('a'); anchor.href = url; anchor.download = 'stavbaflow-synology-connector.zip'; anchor.click();
       window.setTimeout(() => URL.revokeObjectURL(url), 1000);
-    } catch (cause) { setError(cause instanceof Error ? cause.message : 'Balíček zatím nelze bezpečně připravit.'); }
+    } catch (cause) {
+      const message = cause instanceof Error ? cause.message : '';
+      setError(message === 'CONNECTOR_IMAGE_DIGEST_REQUIRED'
+        ? 'Instalační balíček zatím nelze stáhnout: čeká se na publikované a schválené neměnné vydání konektoru.'
+        : message || 'Balíček zatím nelze bezpečně připravit.');
+    }
     finally { setPackageBusy(false); }
   };
 
@@ -74,7 +79,7 @@ export function ConnectorSetup({ companyId, onCreated, initialDriver, onDriverCh
         <div className="mt-2 flex items-center gap-2"><code className="min-w-0 flex-1 break-all rounded-xl bg-white px-3 py-2 text-sm text-slate-900">{enrollment.enrollmentCode}</code><button type="button" aria-label="Kopírovat kód" onClick={() => void copyCode()} className="rounded-xl border border-blue-200 bg-white p-2 text-blue-700">{copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}</button></div>
         <ol className="mt-4 grid gap-2 text-xs leading-5 text-slate-600 sm:grid-cols-3"><li><strong className="text-slate-800">1.</strong> Stáhněte instalační balíček z prověřeného vydání.</li><li><strong className="text-slate-800">2.</strong> Uložte kód do souboru pouze na NAS.</li><li><strong className="text-slate-800">3.</strong> Po prvním spojení se kód zneplatní.</li></ol>
         <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-3"><p className="text-xs font-semibold text-amber-900">Jednorázový klíč konektoru</p><code className="mt-1 block break-all text-xs text-amber-950">{enrollment.connectorSecret}</code><p className="mt-1 text-xs text-amber-800">Uložte tento klíč pouze do souboru connector-identity na NAS. Po zavření stránky ho už nezobrazíme.</p></div>
-        <button type="button" disabled={packageBusy || !/^ghcr\.io\/svobonek-lab\/stavbaflow-connector@sha256:[a-f0-9]{64}$/.test(image)} onClick={() => void downloadPackage()} className="mt-4 inline-flex min-h-10 items-center gap-2 rounded-xl bg-slate-950 px-4 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50"><Download className="h-4 w-4" />{packageBusy ? 'Připravuji balíček…' : 'Stáhnout balíček pro Synology'}</button>
+        <button type="button" disabled={packageBusy} onClick={() => void downloadPackage()} className="mt-4 inline-flex min-h-10 items-center gap-2 rounded-xl bg-slate-950 px-4 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50"><Download className="h-4 w-4" />{packageBusy ? 'Připravuji balíček…' : 'Stáhnout balíček pro Synology'}</button>
         {!image && <p className="mt-2 text-xs text-amber-700">Stažení se otevře po publikaci a revizi neměnného konektoru. CI zatím nemá schválený image digest.</p>}
         <p className="mt-3 text-xs text-slate-500">Platnost jednorázového kódu končí {new Date(enrollment.expiresAt).toLocaleString('cs-CZ')}. Přístupové údaje SQL doplňte jen na NAS; stáhnutý balíček obsahuje bezpečné zástupné hodnoty.</p>
       </div> : null}
