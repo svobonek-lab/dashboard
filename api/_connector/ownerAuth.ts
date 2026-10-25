@@ -1,7 +1,8 @@
-import { createClient, type SupabaseClient } from '@supabase/supabase-js';
+import type { SupabaseClient } from '@supabase/supabase-js';
 
 import { ConnectorHttpError } from './http.js';
 import { getConnectorServiceClient } from './supabaseAdmin.js';
+import { createServerlessSupabaseClient } from '../_shared/supabaseClient.js';
 
 export async function authorizeConnectorOwner(
   request: { headers?: Record<string, string | string[] | undefined> },
@@ -14,7 +15,7 @@ export async function authorizeConnectorOwner(
   const url = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
   const anonKey = process.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY;
   if (!clients && (!url || !anonKey)) throw new ConnectorHttpError('OWNER_API_UNAVAILABLE', 503);
-  const auth = clients?.auth ?? createClient(url!, anonKey!, { auth: { persistSession: false, autoRefreshToken: false } });
+  const auth = clients?.auth ?? createServerlessSupabaseClient(url!, anonKey!, { auth: { persistSession: false, autoRefreshToken: false } });
   const service = clients?.service ?? getConnectorServiceClient();
   const { data, error } = await auth.auth.getUser(token);
   if (error || !data.user) throw new ConnectorHttpError('OWNER_AUTH_INVALID', 401);

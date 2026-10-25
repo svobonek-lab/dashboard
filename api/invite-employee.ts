@@ -1,4 +1,4 @@
-import { createClient } from '@supabase/supabase-js';
+import { createServerlessSupabaseClient } from './_shared/supabaseClient.js';
 
 function getAuthRedirectUrl(rawUrl: string | undefined): string | null {
   try {
@@ -42,7 +42,7 @@ export default async function inviteEmployeeHandler(req: any, res: any) {
     res.status(503).json({ error: 'Pozvánky nemají nakonfigurované stagingové Supabase klíče.', code: 'APP_INVITE_CONFIG_MISSING' });
     return;
   }
-  const authClient = createClient(supabaseUrl, anonKey, {
+  const authClient = createServerlessSupabaseClient(supabaseUrl, anonKey, {
     auth: { persistSession: false }, global: { headers: { Authorization: `Bearer ${token}` } },
   });
   const { data: authData, error: authError } = await authClient.auth.getUser(token);
@@ -50,7 +50,7 @@ export default async function inviteEmployeeHandler(req: any, res: any) {
     res.status(401).json({ error: 'Přihlášení pro pozvánku není platné.' });
     return;
   }
-  const serviceClient = createClient(supabaseUrl, serviceKey, { auth: { persistSession: false } });
+  const serviceClient = createServerlessSupabaseClient(supabaseUrl, serviceKey, { auth: { persistSession: false } });
   const { data: member, error: memberError } = await serviceClient
     .from('app_members')
     .select('role')

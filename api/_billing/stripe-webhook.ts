@@ -1,5 +1,6 @@
-import { createClient } from '@supabase/supabase-js';
 import Stripe from 'stripe';
+
+import { createServerlessSupabaseClient } from '../_shared/supabaseClient.js';
 
 const MAX_WEBHOOK_BYTES = 1024 * 1024;
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -183,7 +184,7 @@ export async function persistSubscriptionUpdate(update: StripeSubscriptionUpdate
   const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
   if (!supabaseUrl || !serviceKey) throw new Error('Stripe billing persistence is not configured.');
 
-  const service = createClient(supabaseUrl, serviceKey, {
+  const service = createServerlessSupabaseClient(supabaseUrl, serviceKey, {
     auth: { persistSession: false, autoRefreshToken: false },
   });
   if (update.checkoutSessionId) {

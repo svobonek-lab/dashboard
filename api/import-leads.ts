@@ -1,5 +1,5 @@
 import { createImportFingerprint, parseCsvDryRun } from '../lib/integrations/pilotImport.js';
-import { createClient } from '@supabase/supabase-js';
+import { createServerlessSupabaseClient } from './_shared/supabaseClient.js';
 import type { FieldMappingConfig, TargetFieldType } from '../src/shared/model/integrations.js';
 
 const MAX_CSV_BYTES = 2 * 1024 * 1024;
@@ -105,13 +105,13 @@ export default async function importLeadsHandler(req: any, res: any) {
       res.status(503).json({ error: 'Import worker nemá nakonfigurované stagingové Supabase klíče.', code: 'IMPORT_WORKER_CONFIG_MISSING' });
       return;
     }
-    const authClient = createClient(supabaseUrl, anonKey, { auth: { persistSession: false } });
+    const authClient = createServerlessSupabaseClient(supabaseUrl, anonKey, { auth: { persistSession: false } });
     const { data: authData, error: authError } = await authClient.auth.getUser(token);
     if (authError || !authData.user) {
       res.status(401).json({ error: 'Přihlášení pro import není platné.' });
       return;
     }
-    const serviceClient = createClient(supabaseUrl, serviceKey, { auth: { persistSession: false } });
+    const serviceClient = createServerlessSupabaseClient(supabaseUrl, serviceKey, { auth: { persistSession: false } });
     const { data: member, error: memberError } = await serviceClient
       .from('app_members')
       .select('role')

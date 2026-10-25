@@ -1,6 +1,6 @@
 import { GoogleGenAI } from '@google/genai';
 import { GEMINI_MODEL, withGeminiBackoff } from '../lib/gemini.js';
-import { createClient } from '@supabase/supabase-js';
+import { createServerlessSupabaseClient } from './_shared/supabaseClient.js';
 import dns from 'dns';
 import net from 'net';
 
@@ -860,7 +860,7 @@ export default async function handler(req: any, res: any) {
   if (!token || !supabaseUrl || !anonKey) {
     return res.status(401).json({ error: 'Pro analýzu webu je nutné přihlášení.' });
   }
-  const authClient = createClient(supabaseUrl, anonKey, { auth: { persistSession: false } });
+  const authClient = createServerlessSupabaseClient(supabaseUrl, anonKey, { auth: { persistSession: false } });
   const { data: authData, error: authError } = await authClient.auth.getUser(token);
   if (authError || !authData.user) {
     return res.status(401).json({ error: 'Přihlášení pro analýzu webu není platné.' });

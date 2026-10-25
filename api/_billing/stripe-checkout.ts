@@ -1,5 +1,7 @@
-import { createClient, type SupabaseClient } from '@supabase/supabase-js';
+import type { SupabaseClient } from '@supabase/supabase-js';
 import Stripe from 'stripe';
+
+import { createServerlessSupabaseClient } from '../_shared/supabaseClient.js';
 
 export type CheckoutRequest = {
   method?: string;
@@ -55,7 +57,7 @@ function supabaseClients(): { auth: SupabaseClient; service: SupabaseClient } {
   const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
   if (!url || !anonKey || !serviceKey) throw new BillingHttpError('BILLING_API_UNAVAILABLE', 503);
   const options = { auth: { persistSession: false, autoRefreshToken: false } };
-  return { auth: createClient(url, anonKey, options), service: createClient(url, serviceKey, options) };
+  return { auth: createServerlessSupabaseClient(url, anonKey, options), service: createServerlessSupabaseClient(url, serviceKey, options) };
 }
 
 export async function authorizeOwner(request: CheckoutRequest): Promise<OwnerBillingIdentity> {
