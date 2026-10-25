@@ -94,6 +94,7 @@ jobs:
         run: docker compose -f connector/compose.test.yaml down -v
 
   image:
+    needs: connector
     runs-on: ubuntu-latest
     timeout-minutes: 25
     steps:
@@ -103,21 +104,25 @@ jobs:
       - uses: docker/setup-qemu-action@v3
       - uses: docker/setup-buildx-action@v3
       - name: Build amd64 and arm64 image without publishing
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v5
         with:
           context: .
           file: connector/Dockerfile
           platforms: linux/amd64,linux/arm64
           outputs: type=cacheonly
           tags: stavbaflow-connector:verify
+          cache-from: type=gha,scope=stavbaflow-connector
+          cache-to: type=gha,mode=max,scope=stavbaflow-connector
       - name: Load the scanned amd64 image from the verified build
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v5
         with:
           context: .
           file: connector/Dockerfile
           platforms: linux/amd64
           load: true
           tags: stavbaflow-connector:verify
+          cache-from: type=gha,scope=stavbaflow-connector
+          cache-to: type=gha,mode=max,scope=stavbaflow-connector
       - name: Reject unresolved high and critical image vulnerabilities
         uses: aquasecurity/trivy-action@v0.36.0
         with:

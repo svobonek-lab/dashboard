@@ -10,9 +10,36 @@ test('container runs non-root with a local-only health probe', async () => {
   const dockerfile = await readFile(join(connectorRoot, 'Dockerfile'), 'utf8');
   assert.match(dockerfile, /USER 10001:10001/);
   assert.match(dockerfile, /127\.0\.0\.1:8787\/health/);
-  assert.match(dockerfile, /apt-get upgrade -y/);
+  assert.match(dockerfile, /apk upgrade --no-cache/);
   assert.match(dockerfile, /rm -rf \/usr\/local\/lib\/node_modules\/npm/);
+  assert.match(dockerfile, /ENTRYPOINT \["\/sbin\/tini", "--"\]/);
   assert.doesNotMatch(dockerfile, /COPY\s+\.\s+\./);
+});
+
+test('Docker image caches production dependencies and keeps only runtime artifacts', async () => {
+  const dockerfile = await readFile(join(connectorRoot, 'Dockerfile'), 'utf8');
+  assert.match(dockerfile, /FROM node:24-alpine AS dependencies[\s\S]*?COPY connector\/package\.json connector\/package-lock\.json \.\/[\s\S]*?npm ci --omit=dev/);
+  assert.match(dockerfile, /FROM node:24-alpine AS builder[\s\S]*?npm ci[\s\S]*?npm run build/);
+  assert.match(dockerfile, /FROM node:24-alpine AS runtime/);
+  assert.match(dockerfile, /COPY --from=dependencies[\s\S]*?\/node_modules/);
+  assert.match(dockerfile, /COPY --from=builder[\s\S]*?\/dist/);
+  assert.equal((dockerfile.match(/^FROM /gm) ?? []).length, 3);
+});
+
+test('connector Docker builds use the shared GHA cache and wait for tests', async () => {
+  const verify = await readFile(join(connectorRoot, '..', '.github', 'workflows', 'connector-verify.yml'), 'utf8');
+  const publish = await readFile(join(connectorRoot, '..', '.github', 'workflows', 'connector-publish.yml'), 'utf8');
+  const rootVerify = await readFile(join(connectorRoot, '..', '.github', 'workflows', 'verify.yml'), 'utf8');
+  assert.match(verify, /image:\s*\n\s+needs: connector/);
+  assert.equal((verify.match(/uses: docker\/build-push-action@v5/g) ?? []).length, 2);
+  assert.equal((verify.match(/cache-from: type=gha,scope=stavbaflow-connector/g) ?? []).length, 2);
+  assert.equal((verify.match(/cache-to: type=gha,mode=max,scope=stavbaflow-connector/g) ?? []).length, 2);
+  assert.match(publish, /uses: docker\/build-push-action@v5/);
+  assert.match(publish, /cache-from: type=gha,scope=stavbaflow-connector/);
+  assert.match(publish, /cache-to: type=gha,mode=max,scope=stavbaflow-connector/);
+  assert.match(rootVerify, /uses: docker\/build-push-action@v5/);
+  assert.match(rootVerify, /cache-from: type=gha,scope=jwt-tenant-pgtap/);
+  assert.match(rootVerify, /cache-to: type=gha,mode=max,scope=jwt-tenant-pgtap/);
 });
 
 test('Synology compose publishes no port and hardens the container', async () => {
