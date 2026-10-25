@@ -6,6 +6,8 @@ Tento dokument popisuje bezpečnou aktivaci Checkout, Billing Portal a endpointu
 
 `supabase/staging/20261015_stripe_billing_contract.sql` přidává do `app_companies` stav předplatného, unikátní Stripe Customer a Subscription ID, konec období a čas poslední události. `app_stripe_webhook_events` uchovává provozní metadata pro idempotenci. Browser role k tabulce ani zapisovacímu RPC nemají přístup.
 
+RPC `app_apply_stripe_subscription_event` kontroluje `event_id`, zamyká řádek firmy, odmítá starší `event.created` a zapisuje událost i stav předplatného v jedné transakci. Duplicitní událost vrací `duplicate`, starší `stale`; obě dostanou HTTP 200. Databázová chyba vrací HTTP 500, aby Stripe doručení zopakoval. CI navíc spouští dvě stejná doručení současně proti jednorázové PostgreSQL instanci a ověřuje jediný zápis.
+
 `supabase/staging/20261016_stripe_billing_completion.sql` přidává dvě service-only operace. `app_platform_set_billing_plan` dovolí ověřenému platform adminovi zvolit pouze `pilot`, `starter` nebo `growth`, ale nikdy nemění `subscription_status`. `app_bind_stripe_customer` atomicky sváže Stripe Customer s jedinou firmou. Obě funkce mají pevný `search_path` a odebraná browserová oprávnění.
 
 ## Checkout a Portal
@@ -60,4 +62,4 @@ Signing secret testovacího a produkčního endpointu je odlišný. Po změně s
 9. Ověřte zrušení/past due a rozdílnou obrazovku ownera a zaměstnance.
 10. Produkční SQL, klíče a webhook aktivujte až po samostatném schválení. Nikdy nekopírujte stagingové secrets.
 
-Neplatný podpis vrací `400`. Databázová chyba nebo neplatná tenant vazba vrací `500`, takže Stripe doručení zopakuje. Odpovědi a logy neobsahují podpis, secret ani zákaznický payload.
+Neplatný podpis vrací `400`. Databázová chyba nebo neplatná tenant vazba vrací `500`, takže Stripe doručení zopakuje. Chybové odpovědi webhooku mají `Content-Type: application/problem+json` a položky `type`, `title`, `status`, `detail` a `code`. Odpovědi a logy neobsahují podpis, secret ani zákaznický payload.

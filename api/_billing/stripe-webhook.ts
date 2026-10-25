@@ -41,13 +41,41 @@ interface WebhookRequest {
 }
 
 interface WebhookResponse {
-  setHeader?(name: string, value: string): unknown;
+  setHeader(name: string, value: string): unknown;
   status(code: number): WebhookResponse;
   json(body: unknown): unknown;
 }
 
+const PROBLEM_DETAILS = {
+  METHOD_NOT_ALLOWED: 'Send Stripe webhooks with POST.',
+  STRIPE_WEBHOOK_NOT_CONFIGURED: 'The Stripe webhook endpoint is unavailable.',
+  STRIPE_SIGNATURE_INVALID: 'Stripe signature verification failed.',
+  STRIPE_RAW_BODY_REQUIRED: 'The exact raw request body is required.',
+  STRIPE_WEBHOOK_TOO_LARGE: 'The Stripe webhook payload is too large.',
+  STRIPE_PAYLOAD_INVALID: 'The signed Stripe payload is invalid JSON.',
+  STRIPE_WEBHOOK_VERIFICATION_FAILED: 'The Stripe event could not be verified.',
+  STRIPE_WEBHOOK_PROCESSING_FAILED: 'The Stripe event could not be processed.',
+} as const;
+
+function sendProblem(response: WebhookResponse, status: 400 | 405 | 413 | 500, code: keyof typeof PROBLEM_DETAILS): void {
+  const title = {
+    400: 'Bad Request',
+    405: 'Method Not Allowed',
+    413: 'Payload Too Large',
+    500: 'Internal Server Error',
+  }[status];
+  response.setHeader('Content-Type', 'application/problem+json');
+  response.status(status).json({
+    type: 'about:blank',
+    title,
+    status,
+    detail: PROBLEM_DETAILS[code],
+    code,
+  });
+}
+
 class WebhookHttpError extends Error {
-  constructor(readonly status: number, readonly code: string) {
+  constructor(readonly status: 400 | 413, readonly code: 'STRIPE_RAW_BODY_REQUIRED' | 'STRIPE_WEBHOOK_TOO_LARGE') {
     super(code);
     this.name = 'WebhookHttpError';
   }
@@ -218,21 +246,21 @@ export async function persistSubscriptionUpdate(update: StripeSubscriptionUpdate
 export function createStripeWebhookHandler(dependencies: StripeWebhookDependencies) {
   return async function stripeWebhookHandler(request: WebhookRequest, response: WebhookResponse) {
     if (request.method !== 'POST') {
-      response.setHeader?.('Allow', 'POST');
-      response.status(405).json({ received: false, code: 'METHOD_NOT_ALLOWED' });
+      response.setHeader('Allow', 'POST');
+      sendProblem(response, 405, 'METHOD_NOT_ALLOWED');
       return;
     }
 
     const webhookSecret = String(process.env.STRIPE_WEBHOOK_SECRET || '').trim();
     if (!webhookSecret) {
       console.error('Stripe webhook is missing STRIPE_WEBHOOK_SECRET.');
-      response.status(500).json({ received: false, code: 'STRIPE_WEBHOOK_NOT_CONFIGURED' });
+      sendProblem(response, 500, 'STRIPE_WEBHOOK_NOT_CONFIGURED');
       return;
     }
 
     const signature = headerValue(request.headers, 'stripe-signature');
     if (!signature) {
-      response.status(400).json({ received: false, code: 'STRIPE_SIGNATURE_INVALID' });
+      sendProblem(response, 400, 'STRIPE_SIGNATURE_INVALID');
       return;
     }
 
@@ -242,10 +270,21 @@ export function createStripeWebhookHandler(dependencies: StripeWebhookDependenci
       event = dependencies.verifyEvent(rawBody, signature, webhookSecret);
     } catch (error) {
       if (error instanceof WebhookHttpError) {
-        response.status(error.status).json({ received: false, code: error.code });
+        sendProblem(response, error.status, error.code);
         return;
       }
-      response.status(400).json({ received: false, code: 'STRIPE_SIGNATURE_INVALID' });
+      if (error instanceof Stripe.errors.StripeSignatureVerificationError) {
+        sendProblem(response, 400, 'STRIPE_SIGNATURE_INVALID');
+        return;
+      }
+      if (error instanceof SyntaxError) {
+        sendProblem(response, 400, 'STRIPE_PAYLOAD_INVALID');
+        return;
+      }
+      console.error('Stripe webhook verification failed.', {
+        reason: error instanceof Error ? error.name : 'UnknownError',
+      });
+      sendProblem(response, 500, 'STRIPE_WEBHOOK_VERIFICATION_FAILED');
       return;
     }
 
@@ -263,7 +302,7 @@ export function createStripeWebhookHandler(dependencies: StripeWebhookDependenci
         eventType: event.type,
         reason: error instanceof Error ? error.name : 'UnknownError',
       });
-      response.status(500).json({ received: false, code: 'STRIPE_WEBHOOK_PROCESSING_FAILED' });
+      sendProblem(response, 500, 'STRIPE_WEBHOOK_PROCESSING_FAILED');
     }
   };
 }

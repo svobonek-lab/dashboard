@@ -24,6 +24,7 @@ test('CI executes the disposable Stripe billing database contract', () => {
   assert.match(workflow, /supabase\/staging\/20261015_stripe_billing_contract\.sql/);
   assert.match(workflow, /supabase\/staging\/20261016_stripe_billing_completion\.sql/);
   assert.match(workflow, /supabase\/tests\/stripe_billing_verify\.sql/);
+  assert.match(workflow, /supabase\/tests\/stripe_billing_concurrency\.sh/);
 });
 
 test('billing completion functions are service-only and plan changes cannot activate access', () => {
