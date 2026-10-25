@@ -65,4 +65,4 @@ export interface ConnectorMappingV1 {
 
 export type { ByodbMappingDefinitionV1, ConnectorDatabaseDriverV1, ConnectorDatabaseModeConfigV1 } from '../../../../shared/connectorProtocol.js';
 
-export interface EnrollmentResponse { enrollmentId: string; enrollmentCode: string; expiresAt: string }
+export interface EnrollmentResponse { enrollmentId: string; enrollmentCode: string; connectorSecret: string; expiresAt: string }

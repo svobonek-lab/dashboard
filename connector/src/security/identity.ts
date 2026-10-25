@@ -1,17 +1,9 @@
-import {
-  createHash,
-  generateKeyPairSync,
-  sign,
-  verify,
-} from 'node:crypto';
-import { chmod, mkdir, readFile, writeFile } from 'node:fs/promises';
-import { dirname } from 'node:path';
+import { createHash, createHmac, timingSafeEqual } from 'node:crypto';
+import { chmod, lstat, readFile } from 'node:fs/promises';
 
 export interface ConnectorIdentity {
-  algorithm: 'Ed25519';
-  publicKey: string;
-  privateKey: string;
-  createdAt: string;
+  algorithm: 'HMAC-SHA256';
+  secret: string;
 }
 
 export interface SigningRequest {
@@ -23,23 +15,14 @@ export interface SigningRequest {
 }
 
 export interface SignedRequest {
-  algorithm: 'Ed25519';
+  algorithm: 'HMAC-SHA256';
   signature: string;
 }
 
-function isIdentity(value: unknown): value is ConnectorIdentity {
-  if (!value || typeof value !== 'object') return false;
-  const candidate = value as Partial<ConnectorIdentity>;
-  return candidate.algorithm === 'Ed25519'
-    && typeof candidate.publicKey === 'string'
-    && candidate.publicKey.includes('BEGIN PUBLIC KEY')
-    && typeof candidate.privateKey === 'string'
-    && candidate.privateKey.includes('BEGIN PRIVATE KEY')
-    && typeof candidate.createdAt === 'string';
-}
-
-function bodyBytes(body: string | Uint8Array): Uint8Array {
-  return typeof body === 'string' ? Buffer.from(body, 'utf8') : body;
+function secretBytes(value: string): Buffer {
+  const bytes = Buffer.from(value, 'base64url');
+  if (bytes.length !== 32 || bytes.toString('base64url') !== value) throw new Error('connector secret file is invalid');
+  return bytes;
 }
 
 export function canonicalSigningInput(request: SigningRequest): string {
@@ -48,64 +31,41 @@ export function canonicalSigningInput(request: SigningRequest): string {
   }
   const timestamp = new Date(request.timestamp);
   if (Number.isNaN(timestamp.valueOf())) throw new Error('request timestamp must be ISO-8601');
-  const digest = createHash('sha256').update(bodyBytes(request.body)).digest('hex');
-  return [
-    request.method.trim().toUpperCase(),
-    request.pathname,
-    timestamp.toISOString(),
-    request.requestId.trim(),
-    digest,
-  ].join('\n');
+  const body = typeof request.body === 'string' ? Buffer.from(request.body, 'utf8') : request.body;
+  const digest = createHash('sha256').update(body).digest('hex');
+  return [request.method.trim().toUpperCase(), request.pathname, timestamp.toISOString(), request.requestId.trim(), digest].join('\n');
 }
 
-export async function loadOrCreateIdentity(path: string): Promise<ConnectorIdentity> {
+export async function loadIdentity(path: string): Promise<ConnectorIdentity> {
   try {
-    const saved = JSON.parse(await readFile(path, 'utf8')) as unknown;
-    if (!isIdentity(saved)) throw new Error('connector identity file is invalid');
+    if (!(await lstat(path)).isFile()) throw new Error('connector secret file is invalid');
+    const secret = (await readFile(path, 'utf8')).trim();
+    secretBytes(secret);
     await chmod(path, 0o600);
-    return saved;
+    return { algorithm: 'HMAC-SHA256', secret };
   } catch (error) {
-    const code = (error as NodeJS.ErrnoException).code;
-    if (code !== 'ENOENT') throw error;
+    if ((error as NodeJS.ErrnoException).code === 'ENOENT') throw new Error('connector secret file is unavailable');
+    if (error instanceof Error && error.message === 'connector secret file is invalid') throw error;
+    throw new Error('connector secret file is invalid');
   }
-
-  const keys = generateKeyPairSync('ed25519', {
-    publicKeyEncoding: { type: 'spki', format: 'pem' },
-    privateKeyEncoding: { type: 'pkcs8', format: 'pem' },
-  });
-  const identity: ConnectorIdentity = {
-    algorithm: 'Ed25519',
-    publicKey: keys.publicKey,
-    privateKey: keys.privateKey,
-    createdAt: new Date().toISOString(),
-  };
-  await mkdir(dirname(path), { recursive: true, mode: 0o700 });
-  try {
-    await writeFile(path, `${JSON.stringify(identity)}\n`, { encoding: 'utf8', flag: 'wx', mode: 0o600 });
-  } catch (error) {
-    if ((error as NodeJS.ErrnoException).code !== 'EEXIST') throw error;
-    const saved = JSON.parse(await readFile(path, 'utf8')) as unknown;
-    if (!isIdentity(saved)) throw new Error('connector identity file is invalid');
-    await chmod(path, 0o600);
-    return saved;
-  }
-  await chmod(path, 0o600);
-  return identity;
 }
 
 export function signRequest(identity: ConnectorIdentity, request: SigningRequest): SignedRequest {
-  const signature = sign(null, Buffer.from(canonicalSigningInput(request), 'utf8'), identity.privateKey);
-  return { algorithm: 'Ed25519', signature: signature.toString('base64') };
+  const signature = createHmac('sha256', secretBytes(identity.secret)).update(canonicalSigningInput(request), 'utf8').digest('base64');
+  return { algorithm: 'HMAC-SHA256', signature };
 }
 
-export function verifyRequest(publicKey: string, request: SigningRequest, signature: string): boolean {
+export function fingerprintSecret(secret: string): string {
+  return createHash('sha256').update(secretBytes(secret)).digest('hex');
+}
+
+export function verifyRequest(secret: string, request: SigningRequest, signature: string): boolean {
   try {
-    return verify(
-      null,
-      Buffer.from(canonicalSigningInput(request), 'utf8'),
-      publicKey,
-      Buffer.from(signature, 'base64'),
-    );
+    const key = secretBytes(secret);
+    const provided = Buffer.from(signature, 'base64');
+    if (provided.length !== 32 || provided.toString('base64') !== signature) return false;
+    const expected = createHmac('sha256', key).update(canonicalSigningInput(request), 'utf8').digest();
+    return timingSafeEqual(expected, provided);
   } catch {
     return false;
   }

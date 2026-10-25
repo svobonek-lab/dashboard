@@ -1,12 +1,15 @@
-import { createHash, createPublicKey, verify } from 'node:crypto';
+import { createHash, createHmac, timingSafeEqual } from 'node:crypto';
 
 export interface StoredConnectorIdentity {
   connectorId: string;
   companyId: string;
-  publicKey: string;
+  /** Decrypted only for the duration of request authentication. */
+  secret: string;
   revoked: boolean;
   scopes: string[];
 }
+
+export type AuthenticatedConnectorIdentity = Omit<StoredConnectorIdentity, 'secret'>;
 
 export class ConnectorRequestError extends Error {
   constructor(readonly code: string, readonly status = 401) {
@@ -28,7 +31,7 @@ function safeId(value: string): boolean {
 
 function signedInput(method: string, pathname: string, timestamp: string, requestId: string, body: string): Buffer {
   const digest = createHash('sha256').update(body, 'utf8').digest('hex');
-  return Buffer.from(`${method.toUpperCase()}\n${pathname}\n${timestamp}\n${requestId}\n${digest}`, 'utf8');
+  return Buffer.from(`${method.trim().toUpperCase()}\n${pathname}\n${new Date(timestamp).toISOString()}\n${requestId}\n${digest}`, 'utf8');
 }
 
 export interface AuthenticateConnectorOptions {
@@ -43,7 +46,7 @@ export interface AuthenticateConnectorOptions {
   reserveNonce: (connectorId: string, requestId: string, expiresAt: Date) => Promise<boolean>;
 }
 
-export async function authenticateConnectorRequest(options: AuthenticateConnectorOptions): Promise<StoredConnectorIdentity> {
+export async function authenticateConnectorRequest(options: AuthenticateConnectorOptions): Promise<AuthenticatedConnectorIdentity> {
   const connectorId = header(options.headers, 'x-sf-connector-id');
   const timestamp = header(options.headers, 'x-sf-timestamp');
   const requestId = header(options.headers, 'x-sf-request-id');
@@ -60,15 +63,17 @@ export async function authenticateConnectorRequest(options: AuthenticateConnecto
   if (!identity.scopes.includes(options.requiredScope)) throw new ConnectorRequestError('CONNECTOR_SCOPE_DENIED', 403);
   if (options.body.connectorId !== undefined && options.body.connectorId !== identity.connectorId) throw new ConnectorRequestError('CONNECTOR_TENANT_MISMATCH', 403);
   if (options.body.companyId !== undefined && options.body.companyId !== identity.companyId) throw new ConnectorRequestError('CONNECTOR_TENANT_MISMATCH', 403);
+
+  const key = Buffer.from(identity.secret, 'base64url');
+  const provided = Buffer.from(signature, 'base64');
   let valid = false;
-  try {
-    valid = verify(null, signedInput(options.method, options.pathname, timestamp, requestId, options.rawBody), createPublicKey(identity.publicKey), Buffer.from(signature, 'base64'));
-  } catch {
-    valid = false;
+  if (key.length === 32 && key.toString('base64url') === identity.secret && provided.length === 32 && provided.toString('base64') === signature) {
+    const expected = createHmac('sha256', key).update(signedInput(options.method, options.pathname, timestamp, requestId, options.rawBody)).digest();
+    valid = timingSafeEqual(expected, provided);
   }
   if (!valid) throw new ConnectorRequestError('CONNECTOR_SIGNATURE_INVALID');
   if (!await options.reserveNonce(identity.connectorId, requestId, new Date(now.valueOf() + 10 * 60 * 1000))) {
     throw new ConnectorRequestError('CONNECTOR_REPLAYED', 409);
   }
-  return identity;
+  return { connectorId: identity.connectorId, companyId: identity.companyId, revoked: identity.revoked, scopes: identity.scopes };
 }

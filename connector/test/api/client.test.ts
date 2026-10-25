@@ -1,16 +1,23 @@
 import assert from 'node:assert/strict';
 import { mkdtemp, writeFile } from 'node:fs/promises';
+import { randomBytes } from 'node:crypto';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import test from 'node:test';
 
 import { ConnectorApi, ConnectorApiError } from '../../src/api/client.js';
 import { loadConnectorConfig, parseConnectorConfig } from '../../src/config.js';
-import { loadOrCreateIdentity, verifyRequest } from '../../src/security/identity.js';
+import { fingerprintSecret, loadIdentity, verifyRequest } from '../../src/security/identity.js';
+
+async function testIdentity(path: string) {
+  const secret = randomBytes(32).toString('base64url');
+  await writeFile(path, `${secret}\n`, { mode: 0o600 });
+  return loadIdentity(path);
+}
 
 test('signs canonical requests and retries only transient responses', async () => {
   const directory = await mkdtemp(join(tmpdir(), 'stavbaflow-client-'));
-  const identity = await loadOrCreateIdentity(join(directory, 'identity.json'));
+  const identity = await testIdentity(join(directory, 'identity.json'));
   let attempts = 0;
   const fetcher: typeof fetch = async (input, init) => {
     attempts++;
@@ -18,7 +25,7 @@ test('signs canonical requests and retries only transient responses', async () =
     const url = new URL(String(input));
     const headers = new Headers(init?.headers);
     const body = String(init?.body ?? '');
-    assert.equal(verifyRequest(identity.publicKey, {
+    assert.equal(verifyRequest(identity.secret, {
       method: 'POST', pathname: url.pathname, timestamp: headers.get('x-sf-timestamp')!, requestId: headers.get('x-sf-request-id')!, body,
     }, headers.get('x-sf-signature')!), true);
     return new Response(JSON.stringify({ version: 1, requestId: 'request-1', accepted: true, results: [] }), { status: 200, headers: { 'content-type': 'application/json' } });
@@ -31,17 +38,23 @@ test('signs canonical requests and retries only transient responses', async () =
 
 test('enrollment returns the server-bound connector and company identities', async () => {
   const directory = await mkdtemp(join(tmpdir(), 'stavbaflow-client-'));
-  const identity = await loadOrCreateIdentity(join(directory, 'identity.json'));
+  const identity = await testIdentity(join(directory, 'identity.json'));
+  const secretFingerprint = fingerprintSecret(identity.secret);
   const api = new ConnectorApi({
     baseUrl: 'https://app.example.test', identity,
-    fetcher: async () => new Response(JSON.stringify({ connectorId: 'connector-1', companyId: 'company-1' }), { status: 200 }),
+    fetcher: async (_input, init) => {
+      const body = JSON.parse(String(init?.body)) as Record<string, unknown>;
+      assert.equal(body.secretFingerprint, secretFingerprint);
+      assert.equal('publicKey' in body, false);
+      return new Response(JSON.stringify({ connectorId: 'connector-1', companyId: 'company-1' }), { status: 200 });
+    },
   });
   assert.deepEqual(await api.enroll('one-time-code'), { connectorId: 'connector-1', companyId: 'company-1' });
 });
 
 test('does not retry authorization failures or expose response details', async () => {
   const directory = await mkdtemp(join(tmpdir(), 'stavbaflow-client-'));
-  const identity = await loadOrCreateIdentity(join(directory, 'identity.json'));
+  const identity = await testIdentity(join(directory, 'identity.json'));
   let attempts = 0;
   const api = new ConnectorApi({
     baseUrl: 'https://app.example.test', connectorId: 'connector-1', identity,
@@ -59,7 +72,7 @@ test('does not retry authorization failures or expose response details', async (
 
 test('rejects oversized bodies and expired commands', async () => {
   const directory = await mkdtemp(join(tmpdir(), 'stavbaflow-client-'));
-  const identity = await loadOrCreateIdentity(join(directory, 'identity.json'));
+  const identity = await testIdentity(join(directory, 'identity.json'));
   const api = new ConnectorApi({
     baseUrl: 'https://app.example.test', connectorId: 'connector-1', identity, maxBodyBytes: 120,
     fetcher: async (_input, init) => String(init?.body).includes('records')
@@ -72,7 +85,7 @@ test('rejects oversized bodies and expired commands', async () => {
 
 test('rejects malformed or cross-connector command responses before dispatch', async () => {
   const directory = await mkdtemp(join(tmpdir(), 'stavbaflow-client-'));
-  const identity = await loadOrCreateIdentity(join(directory, 'identity.json'));
+  const identity = await testIdentity(join(directory, 'identity.json'));
   const api = new ConnectorApi({
     baseUrl: 'https://app.example.test', connectorId: 'connector-1', identity,
     fetcher: async () => new Response(JSON.stringify({ commands: [{ version: 1, id: 'cross', connectorId: 'connector-2', type: 'sync_now', expiresAt: '2026-10-05T12:00:00Z' }] }), { status: 200 }),
@@ -127,7 +140,7 @@ test('Synology DB_HOST and DB_PORT override only the database endpoint', async (
 });
 test('every network attempt has an abort deadline and retries preserve the batch request id', async () => {
   const root = await mkdtemp(join(tmpdir(), 'sf-timeout-'));
-  const identity = await loadOrCreateIdentity(join(root, 'identity.json'));
+  const identity = await testIdentity(join(root, 'identity.json'));
   let attempts = 0;
   const delays: number[] = [];
   const signals: unknown[] = [];
@@ -153,7 +166,7 @@ test('every network attempt has an abort deadline and retries preserve the batch
 });
 test('ingest does not retire a batch on HTTP 201 or 202 even with accepted=true',async()=>{
  const root=await mkdtemp(join(tmpdir(),'sf-ack-status-'));
- const identity=await loadOrCreateIdentity(join(root,'identity.json'));
+ const identity=await testIdentity(join(root,'identity.json'));
  for(const status of [201,202]){
   const api=new ConnectorApi({baseUrl:'https://app.example.test',connectorId:'connector-1',identity,
    fetcher:async()=>new Response(JSON.stringify({accepted:true,requestId:'status-test',results:[]}),{status}),

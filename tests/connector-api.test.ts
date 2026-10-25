@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 
 import { parseConnectorBody, requirePost } from '../api/_connector/http.js';
-import { validateConnectorDatabaseMode, validateConnectorMapping, validateIngestEnvelope, validateRunMetrics, validateSourceSchema } from '../api/_connector/validation.js';
+import { validateConnectorDatabaseMode, validateConnectorMapping, validateConnectorRegistration, validateIngestEnvelope, validateRunMetrics, validateSourceSchema } from '../api/_connector/validation.js';
 
 test('connector HTTP boundary rejects method, oversized body and malformed JSON', () => {
   assert.throws(() => requirePost({ method: 'GET' }), /METHOD_NOT_ALLOWED/);
@@ -99,6 +99,15 @@ test('connector database mode is versioned, strict, and requires a driver only f
   assert.throws(() => validateConnectorDatabaseMode({ version: 1, mode: 'byodb' }), /DATABASE_MODE_INVALID/);
   assert.throws(() => validateConnectorDatabaseMode({ version: 1, mode: 'managed_cloud', driver: 'postgres' }), /DATABASE_MODE_INVALID/);
   assert.throws(() => validateConnectorDatabaseMode({ version: 1, mode: 'byodb', driver: 'postgres', companyId: 'spoofed' }), /DATABASE_MODE_INVALID/);
+});
+
+test('connector registration accepts only an expiring enrollment code and HMAC secret fingerprint', () => {
+  const fingerprint = 'a'.repeat(64);
+  assert.deepEqual(validateConnectorRegistration({ enrollmentCode: 'a'.repeat(32), secretFingerprint: fingerprint }), {
+    enrollmentCode: 'a'.repeat(32), secretFingerprint: fingerprint,
+  });
+  assert.throws(() => validateConnectorRegistration({ enrollmentCode: 'a'.repeat(32), secretFingerprint: fingerprint, publicKey: 'legacy-key' }), /CONNECTOR_REGISTRATION_INVALID/);
+  assert.throws(() => validateConnectorRegistration({ enrollmentCode: 'a'.repeat(32), secretFingerprint: 'weak' }), /CONNECTOR_REGISTRATION_INVALID/);
 });
 
 test('heartbeat metrics cannot carry arbitrary source values', () => {

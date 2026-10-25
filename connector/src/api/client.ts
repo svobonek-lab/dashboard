@@ -1,7 +1,7 @@
 import { randomUUID } from 'node:crypto';
 
 import type { ConnectorCommandV1, ConnectorSourceSchemaV1, IngestAckV1, IngestEnvelopeV1 } from '../../../shared/connectorProtocol.js';
-import { signRequest, type ConnectorIdentity } from '../security/identity.js';
+import { fingerprintSecret, signRequest, type ConnectorIdentity } from '../security/identity.js';
 
 export class ConnectorApiError extends Error {
   constructor(readonly code: string, readonly status: number) {
@@ -37,7 +37,7 @@ export class ConnectorApi {
   }
 
   async enroll(enrollmentCode: string): Promise<{ connectorId: string; companyId: string }> {
-    return this.request('/api/connector/register', { enrollmentCode, publicKey: this.options.identity.publicKey }, false);
+    return this.request('/api/connector/register', { enrollmentCode, secretFingerprint: fingerprintSecret(this.options.identity.secret) }, false);
   }
 
   async heartbeat(status: { status: string; version: string; sourceSchema?: ConnectorSourceSchemaV1; metrics?: Record<string, unknown> }): Promise<{ accepted: boolean }> {

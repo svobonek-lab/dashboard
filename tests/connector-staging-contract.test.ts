@@ -48,3 +48,11 @@ test('connector commands can carry only the reviewed mapping definition', () => 
   assert.match(section, /app_connector_mappings/i);
   assert.doesNotMatch(section, /public_key|code_hash|payload/i);
 });
+
+test('connector registration stores only encrypted HMAC secrets and rejects the legacy public-key path', () => {
+  assert.match(sql, /secret_fingerprint bytea/i);
+  assert.match(sql, /secret_ciphertext text/i);
+  assert.match(sql, /p_secret_fingerprint bytea/i);
+  assert.match(sql, /secret_ciphertext, scopes/i);
+  assert.doesNotMatch(sql, /public_key\s+text|p_public_key/i);
+});

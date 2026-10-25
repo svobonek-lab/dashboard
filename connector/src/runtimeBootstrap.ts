@@ -10,7 +10,7 @@ import { ConnectorHealth, HealthServer } from './health.js';
 import { ConnectorRuntime, verifyStateDirectory } from './main.js';
 import { compileMapping } from './mapping/compileMapping.js';
 import { SyncScheduler, type RunResult } from './scheduler.js';
-import { loadOrCreateIdentity } from './security/identity.js';
+import { loadIdentity } from './security/identity.js';
 import { AtomicJsonStore, writeJsonAtomically } from './state/atomicStore.js';
 import { CheckpointStore } from './state/checkpoints.js';
 import { FileOutbox } from './state/outbox.js';
@@ -31,7 +31,7 @@ function isRegistrationState(value: unknown): value is RegistrationState {
     && Boolean(state.connectorId) === Boolean(state.companyId);
 }
 
-async function loadRegistration(config: ConnectorConfig, identity: Awaited<ReturnType<typeof loadOrCreateIdentity>>): Promise<RegistrationState> {
+async function loadRegistration(config: ConnectorConfig, identity: Awaited<ReturnType<typeof loadIdentity>>): Promise<RegistrationState> {
   const store = new AtomicJsonStore<RegistrationState>(
     join(config.stateRoot, 'registration.json'),
     () => ({ connectorId: null, companyId: null }),
@@ -70,7 +70,7 @@ export async function bootstrapConnector(config: ConnectorConfig): Promise<void>
     const readOnly = await adapter.verifyReadOnly();
     if (!readOnly.selectAllowed || !readOnly.writesDenied) throw new Error('source database account is not read-only');
 
-    const identity = await loadOrCreateIdentity(config.identityPath);
+    const identity = await loadIdentity(config.identityPath);
     const registration = await loadRegistration(config, identity);
     const connectorId = registration.connectorId!;
     const companyId = registration.companyId!;

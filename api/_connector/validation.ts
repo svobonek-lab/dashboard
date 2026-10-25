@@ -36,10 +36,20 @@ const connectorModeSchema = z.strictObject({
   mode: z.enum(['managed_cloud', 'byodb']),
   driver: z.enum(['postgres', 'mysql', 'mariadb', 'mssql']).optional(),
 }).refine(value => value.mode === 'byodb' ? value.driver !== undefined : value.driver === undefined);
+const connectorRegistrationSchema = z.strictObject({
+  enrollmentCode: z.string().regex(/^[A-Za-z0-9_-]{20,200}$/),
+  secretFingerprint: z.string().regex(/^[a-f0-9]{64}$/),
+});
 
 export function validateConnectorDatabaseMode(value: unknown) {
   const parsed = connectorModeSchema.safeParse(value);
   if (!parsed.success) throw new ConnectorHttpError('DATABASE_MODE_INVALID', 400);
+  return parsed.data;
+}
+
+export function validateConnectorRegistration(value: unknown) {
+  const parsed = connectorRegistrationSchema.safeParse(value);
+  if (!parsed.success) throw new ConnectorHttpError('CONNECTOR_REGISTRATION_INVALID', 400);
   return parsed.data;
 }
 function validateConversion(value: unknown): ConnectorMappingDefinitionV1['fields'][number]['conversion'] {
