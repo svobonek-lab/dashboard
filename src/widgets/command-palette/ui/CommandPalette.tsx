@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Search, LayoutDashboard, Kanban, HardHat, Users, Code2, Settings, X, ArrowRight, Upload } from 'lucide-react';
-import { CompanyBranding, Lead } from '@/types';
+import type { CompanyBranding } from '@/entities/company';
+import type { Lead } from '@/entities/lead';
 
 interface CommandPaletteProps {
   isOpen: boolean;

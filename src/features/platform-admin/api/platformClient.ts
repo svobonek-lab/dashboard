@@ -1,7 +1,6 @@
-import { supabase } from '@/lib/supabase';
-import type { OwnerLegalConsent } from './legalConsent';
-import type { AppCompanyRow } from './appSchemaIdentity';
-import type { AppLeadRow, AppMemberRow } from './productionSchema';
+import { supabase } from '@/shared/api/supabase';
+import type { OwnerLegalConsent } from '@/shared/model/legalConsent';
+import type { AppCompanyRow, AppLeadRow, AppMemberRow } from '@/shared/api/productionSchema';
 import { createSupportLeadMutator } from './supportMutationRetry';
 
 export interface PlatformCompany {

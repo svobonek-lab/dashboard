@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Activity, AlertTriangle, Pause, Play, RefreshCw, Unplug } from 'lucide-react';
-import { connectorClient } from '../../../app/connectorClient';
-import type { ConnectorSummary } from '../../../app/connectorContract';
+import { connectorClient } from '../api/connectorClient';
+import type { ConnectorSummary } from '../api/connectorContract';
 
 const labels: Record<ConnectorSummary['status'], string> = {
   awaiting_enrollment: 'Čeká na připojení NAS',

@@ -1,8 +1,8 @@
 import React,{useCallback,useEffect,useState} from 'react';
 import type {User} from '@supabase/supabase-js';
-import {supabase} from '@/lib/supabase';
-import {LegalConsentFields} from '@/components/LegalConsentFields';
-import {activationReady,registrationPayload,type RegistrationDraft} from '@/src/app/paidRegistration';
+import {supabase} from '@/shared/api/supabase';
+import {LegalConsentFields} from '@/shared/ui/LegalConsentFields';
+import {activationReady,registrationPayload,type RegistrationDraft} from '@/features/paid-registration';
 
 export function PaidRegistrationPage(){
  const [user,setUser]=useState<User|null>(null);

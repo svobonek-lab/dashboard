@@ -1,4 +1,4 @@
-import type { Employee, Lead, LeadSource, LeadStatus, Priority } from '@/types';
+import type { Employee, Lead } from './data/types';
 
 export interface AppMemberRow {
   company_id: string;
@@ -7,6 +7,22 @@ export interface AppMemberRow {
   email: string;
   role: 'owner' | 'employee';
   active: boolean;
+}
+
+export interface AppCompanyRow {
+  id: string;
+  name: string;
+  slug: string;
+  email?: string;
+  phone?: string;
+  address?: string;
+  color?: string;
+  logo_url?: string;
+  active?: boolean;
+  onboarding_completed?: boolean;
+  plan?: string;
+  email_notifications?: boolean;
+  subscription_status?: 'not_configured' | 'pilot' | 'trial' | 'trialing' | 'active' | 'past_due' | 'canceled';
 }
 
 export interface AppLeadRow {
@@ -24,7 +40,7 @@ export interface AppLeadRow {
   scheduled_at: string | null;
   duration_minutes: number;
   value: number;
-  source: LeadSource;
+  source: string;
   created_at: string;
   updated_at: string;
   revision: number;
@@ -40,7 +56,7 @@ export interface AppInviteRow {
   accepted_at: string | null;
 }
 
-const leadStatus: Record<AppLeadRow['status'], LeadStatus> = {
+const leadStatus: Record<AppLeadRow['status'], string> = {
   new: 'New',
   contacted: 'Contacted',
   scheduled: 'Quote',
@@ -49,7 +65,7 @@ const leadStatus: Record<AppLeadRow['status'], LeadStatus> = {
   lost: 'Lost',
 };
 
-const priority: Record<AppLeadRow['priority'], Priority> = {
+const priority: Record<AppLeadRow['priority'], string> = {
   low: 'Low',
   normal: 'Medium',
   high: 'High',

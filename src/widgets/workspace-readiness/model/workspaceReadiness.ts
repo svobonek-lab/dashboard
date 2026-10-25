@@ -1,4 +1,5 @@
-import { Employee, Lead } from '@/types';
+import type { Employee } from '@/entities/employee';
+import type { Lead } from '@/entities/lead';
 
 export type ReadinessRole = 'owner' | 'employee' | 'super_admin';
 

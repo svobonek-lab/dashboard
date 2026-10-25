@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import test from 'node:test';
-import { getLeadSourceBadge } from '../src/app/leadSource';
+import { getLeadSourceBadge } from '../src/entities/lead';
 
 test('lead source badges identify AI inbox and website widget', () => {
   assert.deepEqual(getLeadSourceBadge('ai_inbox'), { icon: '🤖', label: 'AI zpracováno' });

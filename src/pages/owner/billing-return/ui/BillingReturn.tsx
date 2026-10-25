@@ -1,7 +1,7 @@
 import React from 'react';
 import { CheckCircle2, CreditCard, XCircle } from 'lucide-react';
 
-import { useRouter } from '@/src/app/router';
+import { useRouter } from '@/shared/lib/router';
 
 export const BillingReturnPage: React.FC = () => {
   const { search, navigate } = useRouter();

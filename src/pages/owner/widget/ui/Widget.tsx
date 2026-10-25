@@ -1,8 +1,8 @@
-import { useOrganization } from '@/context/OrganizationContext';
+import { useOrganization } from '@/entities/session';
 import React from 'react';
 import { EmbedWidgetPage } from '../../../public/embed';
-import { useRouter } from '@/src/app/router';
-import { Lead } from '@/types';
+import { useRouter } from '@/shared/lib/router';
+import type { Lead } from '@/entities/lead';
 
 interface OwnerWidgetPageProps {
   onAddLead: (lead: Lead) => void;

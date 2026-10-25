@@ -3,7 +3,7 @@ import { readFile } from 'node:fs/promises';
 import test from 'node:test';
 
 test('owner connector contract never exposes source credentials or private keys', async()=>{
-  const contract=await readFile(new URL('../src/app/connectorContract.ts',import.meta.url),'utf8');
+  const contract=await readFile(new URL('../src/features/manage-integrations/api/connectorContract.ts',import.meta.url),'utf8');
   assert.doesNotMatch(contract,/password|privateKey|signature|databaseHost/);
   assert.match(contract,/not_configured[\s\S]+revoked/);
   assert.match(contract,/sourceSchema/);
@@ -16,7 +16,7 @@ test('owner APIs use tenant membership and service-only RPC boundaries',async()=
 });
 
 test('owner contract exposes an explicit dry-run approval action', async()=>{
-  const client=await readFile(new URL('../src/app/connectorClient.ts',import.meta.url),'utf8');
+  const client=await readFile(new URL('../src/features/manage-integrations/api/connectorClient.ts',import.meta.url),'utf8');
   const command=await readFile(new URL('../api/_connector/routes/command.ts',import.meta.url),'utf8');
   assert.match(client,/approveMapping/);
   assert.match(command,/approve_mapping/);

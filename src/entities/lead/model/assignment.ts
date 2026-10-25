@@ -33,3 +33,12 @@ export function buildLeadAssignmentPatch(leadId: string, employee?: Pick<Employe
     assignedEmployeeName: employee?.name || '',
   };
 }
+
+export function hydrateLeadAssignments(leads: Lead[], employees: Employee[]): Lead[] {
+  const employeesById = new Map(employees.map((employee) => [employee.id, employee]));
+  return leads.map((lead) => {
+    const employee = employeesById.get(lead.assignedEmployeeId || '');
+    if (!employee || employee.organization_id !== lead.organization_id || employee.active === false) return lead;
+    return { ...lead, assignedEmployeeName: employee.name };
+  });
+}

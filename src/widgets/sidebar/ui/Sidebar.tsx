@@ -16,7 +16,7 @@ import {
   LogOut,
   ChevronRight
 } from 'lucide-react';
-import { useOrganization } from '@/context/OrganizationContext';
+import { useOrganization } from '@/entities/session';
 
 interface SidebarProps {
   currentTab: string;

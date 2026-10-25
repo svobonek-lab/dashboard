@@ -4,7 +4,7 @@ import test from 'node:test';
 import outbox from '../api/outbox-scheduler';
 
 test('dashboard does not trust lead payloads from cross-window messages', () => {
-  const app = readFileSync(new URL('../src/App.tsx', import.meta.url), 'utf8');
+  const app = readFileSync(new URL('../src/app/App.tsx', import.meta.url), 'utf8');
   const context = readFileSync(new URL('../src/app/providers/OrganizationProvider.tsx', import.meta.url), 'utf8');
   assert.doesNotMatch(app, /addEventListener\(['"]message['"]/);
   assert.doesNotMatch(context, /postMessage\([^\n]+\*['"]/);

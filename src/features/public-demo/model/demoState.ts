@@ -77,4 +77,4 @@ export function createDemoLead(input: { customer: string; project: string; city:
 export function moveDemoLead(lead: DemoLead, status: DemoStatus): DemoLead {
   return { ...lead, status, updated: 'Právě změněno' };
 }
-import { PUBLIC_DEMO_LEADS } from '@/lib/demoData';
+import { PUBLIC_DEMO_LEADS } from './demoData';

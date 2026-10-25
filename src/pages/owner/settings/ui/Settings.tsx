@@ -1,8 +1,8 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Bell, Building2, Check, CreditCard, Image as ImageIcon, Mail, MapPin, Phone, Save, Upload } from 'lucide-react';
-import { useOrganization } from '@/context/OrganizationContext';
-import { canManageCompany } from '@/src/app/permissions';
-import { startBillingPortal } from '@/src/app/billingClient';
+import { useOrganization } from '@/entities/session';
+import { canManageCompany } from '@/shared/model/permissions';
+import { startBillingPortal } from '@/features/manage-billing';
 
 export const OwnerSettingsPage: React.FC = () => {
   const { dbUser, currentOrg, updateBrandingAdmin } = useOrganization();

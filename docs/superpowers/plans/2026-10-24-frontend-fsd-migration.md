@@ -136,13 +136,13 @@
 - Consumes: Entity, feature, page, and widget public APIs from Tasks 1 through 3.
 - Produces: src/app as the application composition layer; src/shared as the browser-side generic UI/infrastructure layer; @ aliases resolve to src only.
 
-- [ ] Step 1: Add fsd-layer-layout.test.ts asserting all six layers exist and there are no duplicate browser implementations in the legacy root directories.
-- [ ] Step 2: Run npx tsx --test tests/fsd-layer-layout.test.ts and confirm it fails before app/shared consolidation and alias cleanup.
-- [ ] Step 3: Keep entry initialization, routing, global providers, route guards, and global styles in app; move domain helpers to their owning feature/entity/shared slices.
-- [ ] Step 4: Move generic browser UI and infrastructure into shared; keep lib/gemini.ts, lib/integrations/pilotImport.ts, and shared/connectorProtocol.ts outside src because backend or connector code uses them.
-- [ ] Step 5: Change TypeScript and Vite @ aliases to src only, update all imports, and remove legacy browser copies.
-- [ ] Step 6: Run npx tsx --test tests/fsd-layer-layout.test.ts, npm test, npm run lint, and npm run build. Confirm server handler tests pass and the browser build succeeds.
-- [ ] Step 7: Commit as refactor: complete FSD app and shared layers.
+- [x] Step 1: Add fsd-layer-layout.test.ts asserting all six layers exist and there are no duplicate browser implementations in the legacy root directories.
+- [x] Step 2: Run npx tsx --test tests/fsd-layer-layout.test.ts and confirm it fails before app/shared consolidation and alias cleanup.
+- [x] Step 3: Keep entry initialization, routing, global providers, route guards, and global styles in app; move domain helpers to their owning feature/entity/shared slices.
+- [x] Step 4: Move generic browser UI and infrastructure into shared; keep lib/gemini.ts, lib/integrations/pilotImport.ts, and shared/connectorProtocol.ts outside src because backend or connector code uses them.
+- [x] Step 5: Change TypeScript and Vite @ aliases to src only, update all imports, and remove legacy browser copies.
+- [x] Step 6: Run npx tsx --test tests/fsd-layer-layout.test.ts, npm test, npm run lint, and npm run build. Confirm server handler tests pass and the browser build succeeds.
+- [x] Step 7: Commit as refactor: complete FSD app and shared layers.
 
 ### Task 5: Enforce layer and public API boundaries
 

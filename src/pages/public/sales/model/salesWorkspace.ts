@@ -1,4 +1,4 @@
-import { Lead, LeadStatus } from '@/types';
+import type { Lead, LeadStatus } from '@/entities/lead';
 
 export interface SalesStage {
   id: LeadStatus;

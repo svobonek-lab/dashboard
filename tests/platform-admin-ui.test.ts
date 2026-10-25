@@ -6,7 +6,7 @@ const layout = readFileSync(new URL('../src/widgets/workspace-shell/ui/SuperAdmi
 const dashboard = readFileSync(new URL('../src/pages/admin/dashboard/ui/Dashboard.tsx', import.meta.url), 'utf8');
 const companies = readFileSync(new URL('../src/pages/admin/companies/ui/Companies.tsx', import.meta.url), 'utf8');
 const support = readFileSync(new URL('../src/pages/admin/support-session/ui/SupportSession.tsx', import.meta.url), 'utf8');
-const app = readFileSync(new URL('../src/App.tsx', import.meta.url), 'utf8');
+const app = readFileSync(new URL('../src/app/App.tsx', import.meta.url), 'utf8');
 const ownerLayout = readFileSync(new URL('../src/widgets/workspace-shell/ui/OwnerLayout.tsx', import.meta.url), 'utf8');
 
 test('reachable platform navigation contains only verified control-plane surfaces', () => {

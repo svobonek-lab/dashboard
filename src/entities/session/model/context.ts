@@ -1,6 +1,6 @@
 import { createContext, useContext } from 'react';
-import type { OrganizationContextType } from '../../entities/session';
-export type { DBProject, DBUser, Organization, OrganizationContextType } from '../../entities/session';
+import type { OrganizationContextType } from './types';
+export type { DBProject, DBUser, Organization, OrganizationContextType } from './types';
 
 export const OrganizationContext = createContext<OrganizationContextType | undefined>(undefined);
 

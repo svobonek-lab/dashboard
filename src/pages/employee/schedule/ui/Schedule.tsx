@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Calendar, Clock, MapPin, CheckCircle2, ChevronRight, User, AlertCircle } from 'lucide-react';
-import { Lead } from '@/types';
+import type { Lead } from '@/entities/lead';
 
 interface EmployeeSchedulePageProps {
   leads: Lead[];

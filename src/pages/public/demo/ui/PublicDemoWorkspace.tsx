@@ -1,12 +1,12 @@
 import React from 'react';
-import { OrganizationContext, type Organization, type OrganizationContextType } from '@/context/OrganizationContextBase';
-import { LeadsKanban } from '@/src/features/manage-leads';
+import { OrganizationContext, type Organization, type OrganizationContextType } from '@/entities/session';
+import { LeadsKanban } from '@/features/manage-leads';
 import { OwnerDashboard } from '../../../../widgets/owner-dashboard';
-import { generateRealisticEmployees, generateRealisticLeads } from '@/lib/demoData';
-import { DEFAULT_DEMO_ORG_ID } from '@/lib/supabase';
+import { generateRealisticEmployees, generateRealisticLeads } from '@/features/public-demo';
+import { DEFAULT_DEMO_ORG_ID } from '@/shared/api/supabase';
 import { OwnerLayout } from '../../../../widgets/workspace-shell';
-import { RouterProvider, useRouter } from '@/src/app/router';
-import type { CompanyBranding } from '@/types';
+import { RouterProvider, useRouter } from '@/shared/lib/router';
+import type { CompanyBranding } from '@/entities/company';
 
 const DEMO_BRANDING: CompanyBranding = {
   name: 'Novákova stavební firma',

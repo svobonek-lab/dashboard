@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Building2, CheckCircle2, Database, FileCheck2, ShieldCheck, TriangleAlert } from 'lucide-react';
-import { listPlatformCompanies, type PlatformCompany } from '@/src/app/platformClient';
-import { useRouter } from '@/src/app/router';
+import { listPlatformCompanies, type PlatformCompany } from '@/features/platform-admin';
+import { useRouter } from '@/shared/lib/router';
 
 export const AdminDashboardPage: React.FC = () => {
   const { navigate } = useRouter();

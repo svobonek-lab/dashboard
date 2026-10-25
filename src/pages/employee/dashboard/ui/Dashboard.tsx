@@ -1,9 +1,9 @@
-import { useOrganization } from '@/context/OrganizationContext';
+import { useOrganization } from '@/entities/session';
 import React from 'react';
-import { EmployeeDashboard } from '@/src/features/employee-workflow';
-import { Lead, LeadStatus } from '@/types';
+import { EmployeeDashboard } from '@/features/employee-workflow';
+import type { Lead, LeadStatus } from '@/entities/lead';
 import { WorkspaceReadinessPanel } from '../../../../widgets/workspace-readiness';
-import { buildWorkspaceReadiness } from '@/src/app/workspaceReadiness';
+import { buildWorkspaceReadiness } from '@/widgets/workspace-readiness';
 
 interface EmployeeDashboardPageProps {
   leads: Lead[];

@@ -1,8 +1,8 @@
 import React, { memo, useCallback, useState } from 'react';
 import { CreditCard, LockKeyhole } from 'lucide-react';
 
-import { useOrganization } from '@/context/OrganizationContext';
-import { startSubscriptionCheckout } from './billingClient';
+import { useOrganization } from '@/entities/session';
+import { startSubscriptionCheckout } from '../features/manage-billing';
 
 export type SubscriptionAccess = 'allowed' | 'owner_blocked' | 'employee_blocked';
 

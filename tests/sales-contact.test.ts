@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { buildSalesContact, getSalesContactMode } from '../src/app/salesContact';
+import { buildSalesContact, getSalesContactMode } from '../src/pages/public/landing';
 import { readFileSync } from 'node:fs';
 
 const landing = readFileSync(new URL('../src/pages/public/landing/ui/LandingPage.tsx', import.meta.url), 'utf8');

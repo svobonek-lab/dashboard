@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { CheckCircle2, Database, ShieldCheck, TriangleAlert } from 'lucide-react';
-import { connectorClient } from '../../../app/connectorClient';
-import type { ConnectorSourceTable, ConnectorSummary } from '../../../app/connectorContract';
+import { connectorClient } from '../api/connectorClient';
+import type { ConnectorSourceTable, ConnectorSummary } from '../api/connectorContract';
 
 const tableKey = (table: ConnectorSourceTable) => `${table.schema}.${table.name}`;
 

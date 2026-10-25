@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { Employee, Lead, LeadStatus } from '@/types';
-import { LeadsKanban, LeadDetail } from '@/src/features/manage-leads';
-import { useOrganization } from '@/context/OrganizationContext';
+import type { Employee } from '@/entities/employee';
+import type { Lead, LeadStatus } from '@/entities/lead';
+import { LeadsKanban, LeadDetail } from '@/features/manage-leads';
+import { useOrganization } from '@/entities/session';
 
 interface OwnerLeadsPageProps {
   leads: Lead[];

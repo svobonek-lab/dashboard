@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useOrganization } from '@/context/OrganizationContextBase';
-import { useRouter } from '@/src/app/router';
+import { useOrganization } from '@/entities/session';
+import { useRouter } from '@/shared/lib/router';
 import { 
   Building2, 
   ChevronDown, 

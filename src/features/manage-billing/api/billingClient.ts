@@ -1,4 +1,4 @@
-import { supabase } from '@/lib/supabase';
+import { supabase } from '@/shared/api/supabase';
 
 export async function startSubscriptionCheckout(): Promise<void> {
   if (!supabase) throw new Error('Platba není v tomto prostředí dostupná.');

@@ -1,4 +1,7 @@
-import { Lead, Employee, CompanyBranding } from '../../types';
+export type DataRecord = Record<string, any>;
+export type Lead = DataRecord;
+export type Employee = DataRecord;
+export type CompanyBranding = DataRecord;
 
 export type StorageMode = 'cloud';
 

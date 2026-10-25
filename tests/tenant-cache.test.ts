@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { tenantCacheKey, readTenantCache, removeTenantCache, writeTenantCache } from '../src/app/tenantCache';
+import { tenantCacheKey, readTenantCache, removeTenantCache, writeTenantCache } from '../src/shared/lib/tenantCache';
 
 function installStorage() {
   const values = new Map<string, string>();

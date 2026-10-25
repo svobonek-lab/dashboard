@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { Check, Code2, Copy, ExternalLink, Globe2, ShieldCheck } from 'lucide-react';
-import { CompanyBranding } from '@/types';
-import { useOrganization } from '@/context/OrganizationContext';
+import type { CompanyBranding } from '@/entities/company';
+import { useOrganization } from '@/entities/session';
 
 interface EmbedWidgetPageProps {
   branding: CompanyBranding;

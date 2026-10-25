@@ -1,7 +1,8 @@
 import React, { useMemo, useState } from 'react';
 import { ArrowRight, BarChart3, BriefcaseBusiness, CheckCircle2, ChevronRight, CircleDollarSign, ClipboardCheck, Download, Filter, KanbanSquare, MapPin, Phone, Search, Sparkles, UserRound, UsersRound, X } from 'lucide-react';
-import { Lead, LeadStatus, Employee } from '@/types';
-import { SALES_STAGES, getNextSalesAction, sortSalesLeads, summarizeSalesWorkspace } from '@/src/app/salesWorkspace';
+import type { Lead, LeadStatus } from '@/entities/lead';
+import type { Employee } from '@/entities/employee';
+import { SALES_STAGES, getNextSalesAction, sortSalesLeads, summarizeSalesWorkspace } from '@/pages/public/sales';
 
 interface SalesWorkspaceProps {
   leads: Lead[];

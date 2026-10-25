@@ -1,7 +1,8 @@
 import React, { useMemo, useState } from 'react';
 import { ArrowRight, BriefcaseBusiness, CircleAlert, Plus, Search, UsersRound } from 'lucide-react';
-import { CompanyBranding, Lead } from '@/types';
-import { useOrganization } from '@/context/OrganizationContextBase';
+import type { CompanyBranding } from '@/entities/company';
+import type { Lead } from '@/entities/lead';
+import { useOrganization } from '@/entities/session';
 import { getOwnerActiveJobs, getOwnerAttentionItems } from '../model/dashboardMetrics';
 
 interface OwnerDashboardProps {

@@ -1,8 +1,8 @@
 import React from 'react';
 import { BriefcaseBusiness, Camera, LayoutDashboard, LogOut } from 'lucide-react';
-import { useOrganization } from '@/context/OrganizationContext';
-import { useRouter } from '@/src/app/router';
-import { Lead } from '@/types';
+import { useOrganization } from '@/entities/session';
+import { useRouter } from '@/shared/lib/router';
+import type { Lead } from '@/entities/lead';
 import { CompanyIdentity } from '../../../entities/company';
 
 interface EmployeeLayoutProps {

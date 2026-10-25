@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { isPublicDemoPath, resolveDemoUrl } from '../src/app/demoUrl';
+import { isPublicDemoPath, resolveDemoUrl } from '../src/shared/lib/demoUrl';
 
 test('only explicit public demo routes bypass the application login', () => {
   assert.equal(isPublicDemoPath('/demo'), true);

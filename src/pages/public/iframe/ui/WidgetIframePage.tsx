@@ -1,1 +1,1 @@
-export { WidgetIframePage } from '@/src/features/submit-inquiry';
+export { WidgetIframePage } from '@/features/submit-inquiry';

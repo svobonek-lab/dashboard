@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { useOrganization } from '@/context/OrganizationContextBase';
-import { useRouter, Link } from '@/src/app/router';
+import { useOrganization } from '@/entities/session';
+import { useRouter, Link } from '@/shared/lib/router';
 import { 
   LayoutDashboard, 
   Kanban, 
@@ -29,10 +29,11 @@ import {
   Zap,
   HardDrive
 } from 'lucide-react';
-import { CompanyBranding, Lead } from '@/types';
+import type { CompanyBranding } from '@/entities/company';
+import type { Lead } from '@/entities/lead';
 import { CommandPalette } from '../../command-palette';
 import { CompanySwitcher } from '../../company-switcher';
-import { isPilotOwnerNavigationPath } from '@/src/app/pilotScope';
+import { isPilotOwnerNavigationPath } from '@/shared/lib/pilotScope';
 
 interface OwnerLayoutProps {
   children: React.ReactNode;

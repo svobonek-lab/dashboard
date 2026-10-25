@@ -1,4 +1,4 @@
-import type { Lead } from '@/types';
+import type { Lead } from '@/entities/lead';
 
 export type DashboardLead = Pick<Lead,
   'id' | 'title' | 'customerName' | 'price' | 'status' | 'priority' | 'assignedEmployeeName' | 'calculatedMargin'

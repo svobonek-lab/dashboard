@@ -1,4 +1,6 @@
-import { Lead, Employee, CompanyBranding, TimelineStep, AIChatMessage, WeatherInfo } from '../types';
+import type { Lead, TimelineStep, AIChatMessage, WeatherInfo } from '../../../entities/lead';
+import type { Employee } from '../../../entities/employee';
+import type { CompanyBranding } from '../../../entities/company';
 
 export const PUBLIC_DEMO_LEADS = Object.freeze([
   { id: 'demo-101', customer: 'Rodinný dům Novotných', project: 'Rekonstrukce koupelny', city: 'Brno-Žabovřesky', value: 185000, status: 'new', updated: 'Dnes, 9:20' },

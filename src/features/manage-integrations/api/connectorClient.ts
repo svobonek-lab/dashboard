@@ -1,4 +1,4 @@
-import { supabase } from '@/lib/supabase';
+import { supabase } from '@/shared/api/supabase';
 import type { ConnectorMappingV1, ConnectorSummary, EnrollmentResponse } from './connectorContract';
 
 async function request<T>(path: string, body: Record<string, unknown>, signal?: AbortSignal): Promise<T> {

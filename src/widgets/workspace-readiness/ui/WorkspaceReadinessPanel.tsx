@@ -1,8 +1,9 @@
 import React from 'react';
 import { ArrowRight, Check, Circle, ShieldCheck, Sparkles, Users, BriefcaseBusiness, Building2 } from 'lucide-react';
-import { Employee, Lead } from '@/types';
-import { useRouter } from '@/src/app/router';
-import { buildWorkspaceReadiness, ReadinessRole } from '@/src/app/workspaceReadiness';
+import type { Employee } from '@/entities/employee';
+import type { Lead } from '@/entities/lead';
+import { useRouter } from '@/shared/lib/router';
+import { buildWorkspaceReadiness, type ReadinessRole } from '../model/workspaceReadiness';
 
 interface WorkspaceReadinessPanelProps {
   organization?: { name?: string; city?: string; email?: string; logo_url?: string } | null;

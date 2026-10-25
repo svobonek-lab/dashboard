@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Lead } from '@/types';
+import type { Lead } from '@/entities/lead';
 import { 
   Briefcase, 
   MapPin, 
@@ -8,8 +8,8 @@ import {
   Camera, 
   CalendarClock,
 } from 'lucide-react';
-import { useRouter } from '@/src/app/router';
-import { filterEmployeeJobs } from '@/src/app/leadAttachments';
+import { useRouter } from '@/shared/lib/router';
+import { filterEmployeeJobs } from '@/features/lead-files';
 
 interface EmployeeJobsPageProps {
   leads: Lead[];

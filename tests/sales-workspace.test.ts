@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { getNextSalesAction, sortSalesLeads, summarizeSalesWorkspace } from '../src/app/salesWorkspace';
+import { getNextSalesAction, sortSalesLeads, summarizeSalesWorkspace } from '../src/pages/public/sales';
 
 const lead = (id: string, status: any, price: number, priority: any = 'Medium', assignedEmployeeId = '') => ({ id, status, price, priority, assignedEmployeeId, title: id, customerName: id, city: 'Brno', address: '' } as any);
 

@@ -6,4 +6,4 @@ export {
   DEFAULT_DEMO_ORG_ID,
   canUseLocalMockAuth,
   LocalSupabaseMock,
-} from '../../../lib/supabase';
+} from './supabaseClient';

@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { Building2, ExternalLink, LayoutDashboard, LogOut, Menu, ShieldCheck, X } from 'lucide-react';
-import { useOrganization } from '@/context/OrganizationContext';
-import { Link, useRouter } from '@/src/app/router';
-import { resolveDemoUrl } from '@/src/app/demoUrl';
+import { useOrganization } from '@/entities/session';
+import { Link, useRouter } from '@/shared/lib/router';
+import { resolveDemoUrl } from '@/shared/lib/demoUrl';
 
 const ADMIN_DEMO = resolveDemoUrl(((import.meta as any).env || {}) as Record<string, unknown>, {
   isDevelopment: Boolean((import.meta as any).env?.DEV),

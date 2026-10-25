@@ -23,9 +23,9 @@ import {
   Check,
   X
 } from 'lucide-react';
-import { useRouter } from '@/src/app/router';
-import { buildSalesContact, getSalesContactMode } from '@/src/app/salesContact';
-import { resolveDemoUrl } from '@/src/app/demoUrl';
+import { useRouter } from '@/shared/lib/router';
+import { buildSalesContact, getSalesContactMode } from '@/pages/public/landing';
+import { resolveDemoUrl } from '@/shared/lib/demoUrl';
 
 const PUBLIC_CONTACT_EMAIL = 'svobonek@gmail.com';
 const PUBLIC_CONTACT_ADDRESS = 'Vincence Makovského 4428/11';

@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
-import { useOrganization } from '@/context/OrganizationContext';
+import { useOrganization } from '@/entities/session';
 import { Building, Lock, Mail, ArrowRight, CheckCircle2, ShieldAlert, Building2, BriefcaseBusiness, ShieldCheck } from 'lucide-react';
-import type { UserRole } from '@/src/app/permissions';
-import { supabase } from '@/lib/supabase';
-import { buildRecoveryRequest, parseRecoveryResponse, validateNewPassword } from '@/src/app/authRecovery';
-import { createOwnerLegalConsent } from '@/src/app/legalConsent';
-import { LegalConsentFields } from '@/components/LegalConsentFields';
+import type { UserRole } from '@/shared/model/permissions';
+import { supabase } from '@/shared/api/supabase';
+import { buildRecoveryRequest, parseRecoveryResponse, validateNewPassword } from '@/features/login';
+import { createOwnerLegalConsent } from '@/shared/model/legalConsent';
+import { LegalConsentFields } from '@/shared/ui/LegalConsentFields';
 
 interface LoginPageProps {
   onSuccess: (user?: any) => void;

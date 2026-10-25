@@ -1,18 +1,20 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Clock3, ShieldCheck } from 'lucide-react';
-import { OrganizationContext, useOrganization, type OrganizationContextType } from '@/context/OrganizationContext';
+import { OrganizationContext, useOrganization, type OrganizationContextType } from '@/entities/session';
 import { OwnerDashboard } from '../../../../widgets/owner-dashboard';
 import { OwnerLeadsPage } from '../../../owner/leads';
 import { OwnerProjectsPage } from '../../../owner/projects';
 import { OwnerLayout } from '../../../../widgets/workspace-shell';
-import { toAppLead, toAppMember, type AppLeadRow } from '@/src/app/productionSchema';
-import { hydrateLeadAssignments, toLeadPatch } from '@/src/app/pilotWrites';
+import { toAppLead, toAppMember, type AppLeadRow } from '@/shared/api/productionSchema';
+import { hydrateLeadAssignments } from '@/entities/lead';
+import { toLeadPatch } from '@/shared/api/data/leadWritePatch';
 import {
   getPlatformSupportSession, getPlatformSupportWorkspace, mutatePlatformSupportLead,
   revokePlatformSupportSession, type PlatformSupportSession,
-} from '@/src/app/platformClient';
-import { useRouter } from '@/src/app/router';
-import type { Lead, LeadStatus } from '@/types';
+} from '@/features/platform-admin';
+import { useRouter } from '@/shared/lib/router';
+import type { Lead, LeadStatus } from '@/entities/lead';
+import type { Employee } from '@/entities/employee';
 
 const STORAGE_KEY = 'stavbaflow_platform_support_session';
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -36,8 +38,8 @@ export const AdminSupportSessionPage: React.FC<{ sessionId: string }> = ({ sessi
   }, [navigate, sessionId]);
 
   const applyWorkspace = useCallback((workspace: Awaited<ReturnType<typeof getPlatformSupportWorkspace>>) => {
-    const members = (workspace.members || []).map(toAppMember);
-    const mappedLeads = hydrateLeadAssignments((workspace.leads || []).map((row) => toAppLead(row)), members);
+    const members = (workspace.members || []).map((row) => toAppMember(row) as Employee);
+    const mappedLeads = hydrateLeadAssignments((workspace.leads || []).map((row) => toAppLead(row) as Lead), members);
     setCompany(workspace.company); setEmployees(members); setLeads(mappedLeads);
     setSelectedLead((current) => current ? mappedLeads.find((lead) => lead.id === current.id) || null : null);
     return { members, mappedLeads };
@@ -61,7 +63,7 @@ export const AdminSupportSessionPage: React.FC<{ sessionId: string }> = ({ sessi
     const action = input.id && UUID.test(input.id) ? 'update_lead' : 'create_lead';
     const row = await mutatePlatformSupportLead(sessionId, action, toLeadPatch(input), action === 'update_lead' ? input.id : undefined);
     const employee = employees.find((item) => item.id === row.assigned_to);
-    const mapped = toAppLead(row as AppLeadRow, employee?.name || '');
+    const mapped = toAppLead(row as AppLeadRow, employee?.name || '') as Lead;
     setLeads((current) => action === 'create_lead' ? [mapped, ...current] : current.map((lead) => lead.id === mapped.id ? mapped : lead));
     setSelectedLead((current) => current?.id === mapped.id ? mapped : current);
     return mapped;
@@ -70,7 +72,7 @@ export const AdminSupportSessionPage: React.FC<{ sessionId: string }> = ({ sessi
   const updateStatus = useCallback(async (leadId: string, status: string) => {
     const row = await mutatePlatformSupportLead(sessionId, 'update_status', toLeadPatch({ status: status as LeadStatus }), leadId);
     const employee = employees.find((item) => item.id === row.assigned_to);
-    const mapped = toAppLead(row as AppLeadRow, employee?.name || '');
+    const mapped = toAppLead(row as AppLeadRow, employee?.name || '') as Lead;
     setLeads((current) => current.map((lead) => lead.id === leadId ? mapped : lead));
     setSelectedLead((current) => current?.id === leadId ? mapped : current);
   }, [employees, sessionId]);

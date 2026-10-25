@@ -3,7 +3,7 @@ import test from 'node:test';
 import { readFileSync } from 'node:fs';
 
 import { readPlatformIdentity, resolveApplicationIdentity } from '../src/app/platformIdentity';
-import { canAccessAdmin, canAccessFieldTools, canEditLeads, canManageCompany, canViewRevenue, getDefaultRouteForRole } from '../src/app/permissions';
+import { canAccessAdmin, canAccessFieldTools, canEditLeads, canManageCompany, canViewRevenue, getDefaultRouteForRole } from '../src/shared/model/permissions';
 
 test('active platform identity is resolved before company membership', () => {
   const result = resolveApplicationIdentity(

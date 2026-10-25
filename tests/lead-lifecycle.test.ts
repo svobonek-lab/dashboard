@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { canTransitionLeadStatus, getEmployeeNextStatus, getLeadTransitionError } from '../src/app/leadLifecycle';
+import { canTransitionLeadStatus, getEmployeeNextStatus, getLeadTransitionError } from '../src/entities/lead';
 
 test('employee can advance an assigned lead through the normal delivery flow', () => {
   assert.equal(canTransitionLeadStatus('New', 'Contacted', 'employee'), true);

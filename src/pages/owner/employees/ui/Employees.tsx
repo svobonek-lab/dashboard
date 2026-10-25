@@ -1,7 +1,8 @@
-import { useOrganization } from '@/context/OrganizationContext';
+import { useOrganization } from '@/entities/session';
 import React from 'react';
-import { EmployeesPage } from '@/src/features/manage-employees';
-import { Employee, Lead } from '@/types';
+import { EmployeesPage } from '@/features/manage-employees';
+import type { Employee } from '@/entities/employee';
+import type { Lead } from '@/entities/lead';
 
 interface OwnerEmployeesPageProps {
   employees: Employee[];

@@ -3,7 +3,7 @@ import { CheckCircle2, KeyRound, Mail, Phone, Send, ShieldCheck, UserPlus, Users
 import type { Employee } from '../../../entities/employee';
 import type { Lead } from '../../../entities/lead';
 import { EmployeeIdentity } from '../../../entities/employee';
-import { AppButton, AppInput, AppModal } from '../../../components/ui/common';
+import { AppButton, AppInput, AppModal } from '../../../shared/ui/common';
 
 interface EmployeesPageProps {
   employees: Employee[];

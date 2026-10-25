@@ -1,10 +1,11 @@
 import { ICRMRepository, LeadNote, LeadStoredFile, RepositoryHealthStatus } from './types';
-import { Lead, Employee, CompanyBranding } from '../../types';
+import type { Lead, Employee, CompanyBranding } from './types';
 import { supabase, isSupabaseConfigured, isValidUUID } from '../supabase';
-import { AppInviteRow, AppLeadRow, AppMemberRow, toAppLead, toAppMember, toPendingInvite } from '../../src/app/productionSchema';
-import { APP_SCHEMA_WRITES_BLOCKED_MESSAGE } from '../../src/app/productionDataPolicy';
-import { canWritePilot, toLeadPatch } from '../../src/app/pilotWrites';
-import { buildLeadFilePath, normalizeLeadNote, validateLeadUpload } from '../../src/app/leadAttachments';
+import { AppInviteRow, AppLeadRow, AppMemberRow, toAppLead, toAppMember, toPendingInvite } from '../productionSchema';
+import { APP_SCHEMA_WRITES_BLOCKED_MESSAGE } from '../productionDataPolicy';
+import { canWritePilot } from '../pilotWritePolicy';
+import { toLeadPatch } from './leadWritePatch';
+import { buildLeadFilePath, normalizeLeadNote, validateLeadUpload } from './leadFilePolicy';
 
 const appSchemaReadsEnabled = Boolean((import.meta as any).env?.PROD) || (import.meta as any).env?.VITE_APP_SCHEMA_READS === 'true';
 

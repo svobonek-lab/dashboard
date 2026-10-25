@@ -2,8 +2,8 @@ import type { Lead } from '../model';
 import type { LeadNote, LeadStoredFile } from '../../../shared/api/crm-repository';
 import { crmRepo } from '../../../shared/api/crm-repository';
 
-export const getLeads = (orgId: string): Promise<Lead[]> => crmRepo.getLeads(orgId);
-export const saveLead = (orgId: string, lead: Partial<Lead>): Promise<Lead> => crmRepo.saveLead(orgId, lead);
+export const getLeads = async (orgId: string): Promise<Lead[]> => await crmRepo.getLeads(orgId) as Lead[];
+export const saveLead = async (orgId: string, lead: Partial<Lead>): Promise<Lead> => await crmRepo.saveLead(orgId, lead) as Lead;
 export const updateLeadStatus = (orgId: string, leadId: string, status: string): Promise<void> => crmRepo.updateLeadStatus(orgId, leadId, status);
 export const deleteLead = (orgId: string, leadId: string): Promise<void> => crmRepo.deleteLead(orgId, leadId);
 export const getLeadNotes = (orgId: string, leadId: string): Promise<LeadNote[]> => crmRepo.getLeadNotes(orgId, leadId);

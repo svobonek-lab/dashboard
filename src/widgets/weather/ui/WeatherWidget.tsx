@@ -1,6 +1,6 @@
 import React from 'react';
 import { CloudRain, Sun, Cloud, Snowflake, Wind, AlertTriangle } from 'lucide-react';
-import { WeatherInfo } from '@/types';
+import type { WeatherInfo } from '@/entities/lead';
 
 interface WeatherWidgetProps {
   weather?: WeatherInfo;

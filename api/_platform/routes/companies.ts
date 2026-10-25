@@ -3,7 +3,7 @@ import type { SupabaseClient, User } from '@supabase/supabase-js';
 import { authorizePlatformRequest, recordPlatformAudit } from '../auth.js';
 import { runPlatformHandler } from '../handler.js';
 import { PlatformHttpError } from '../http.js';
-import { hasOwnerLegalConsent, type OwnerLegalConsent } from '../../../src/app/legalConsent.js';
+import { hasOwnerLegalConsent, type OwnerLegalConsent } from '../../../src/shared/model/legalConsent.js';
 
 const SLUG_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;

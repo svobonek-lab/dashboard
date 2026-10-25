@@ -1,54 +1,55 @@
-import { PaidRegistrationPage } from './pages/auth/paid-registration';
+import { PaidRegistrationPage } from '../pages/auth/paid-registration';
 import React, { useState, useEffect } from 'react';
-import { useOrganization } from '@/context/OrganizationContext';
-import { RouterProvider, useRouter } from './app/router';
-import { ProtectedRoute } from './app/ProtectedRoute';
-import { RoleGuard } from './app/RoleGuard';
-import { SubscriptionGuard } from './app/SubscriptionGuard';
-import { getDefaultRouteForRole, UserRole } from './app/permissions';
-import { canEmployeeAccessLead, getEmployeeLeads } from './app/employeeScope';
-import { requestImmediateOutboxDispatch } from './shared/api/emailNotifications';
+import { useOrganization } from '@/entities/session';
+import { RouterProvider, useRouter } from '../shared/lib/router';
+import { ProtectedRoute } from './ProtectedRoute';
+import { RoleGuard } from './RoleGuard';
+import { SubscriptionGuard } from './SubscriptionGuard';
+import { getDefaultRouteForRole, type UserRole } from '../shared/model/permissions';
+import { canEmployeeAccessLead, getEmployeeLeads } from './employeeScope';
+import { requestImmediateOutboxDispatch } from '../shared/api/emailNotifications';
 
 // Layouts
-import { SuperAdminLayout, OwnerLayout, EmployeeLayout } from './widgets/workspace-shell';
+import { SuperAdminLayout, OwnerLayout, EmployeeLayout } from '../widgets/workspace-shell';
 
 // Super Admin Pages
-import { AdminDashboardPage } from './pages/admin/dashboard';
-import { AdminCompaniesPage } from './pages/admin/companies';
-import { AdminSupportSessionPage } from './pages/admin/support-session';
+import { AdminDashboardPage } from '../pages/admin/dashboard';
+import { AdminCompaniesPage } from '../pages/admin/companies';
+import { AdminSupportSessionPage } from '../pages/admin/support-session';
 
 // Owner Pages
-import { OwnerDashboardPage } from './pages/owner/dashboard';
-import { OwnerLeadsPage } from './pages/owner/leads';
-import { OwnerProjectsPage } from './pages/owner/projects';
-import { OwnerEmployeesPage } from './pages/owner/employees';
-import { OwnerWidgetPage } from './pages/owner/widget';
-import { PilotUnavailablePage } from './pages/owner/pilot-unavailable';
-import { isPilotUnavailablePath } from './app/pilotScope';
-import { OwnerSettingsPage } from './pages/owner/settings';
-import { BillingReturnPage } from './pages/owner/billing-return';
-import { Integrations } from './pages/owner/integrations';
+import { OwnerDashboardPage } from '../pages/owner/dashboard';
+import { OwnerLeadsPage } from '../pages/owner/leads';
+import { OwnerProjectsPage } from '../pages/owner/projects';
+import { OwnerEmployeesPage } from '../pages/owner/employees';
+import { OwnerWidgetPage } from '../pages/owner/widget';
+import { PilotUnavailablePage } from '../pages/owner/pilot-unavailable';
+import { isPilotUnavailablePath } from '../shared/lib/pilotScope';
+import { OwnerSettingsPage } from '../pages/owner/settings';
+import { BillingReturnPage } from '../pages/owner/billing-return';
+import { Integrations } from '../pages/owner/integrations';
 
 // Employee Pages
-import { EmployeeDashboardPage } from './pages/employee/dashboard';
-import { EmployeeJobsPage } from './pages/employee/jobs';
-import { EmployeePhotosPage } from './pages/employee/photos';
-import { LeadDetail } from './features/manage-leads';
+import { EmployeeDashboardPage } from '../pages/employee/dashboard';
+import { EmployeeJobsPage } from '../pages/employee/jobs';
+import { EmployeePhotosPage } from '../pages/employee/photos';
+import { LeadDetail } from '../features/manage-leads';
 
 // Public & Embed Views
-import { LoginPage } from './pages/auth/login';
-import { WidgetIframePage } from './pages/public/iframe';
+import { LoginPage } from '../pages/auth/login';
+import { WidgetIframePage } from '../pages/public/iframe';
 
 // Types
-import { Lead, LeadStatus } from '@/types';
-import { buildAppLoginUrl, getDeploymentConfig, shouldShowLandingAtRoot } from './app/deploymentSurface';
-import { getLeadTransitionError } from './app/leadLifecycle';
-import { SalesWorkspace } from './pages/public/sales';
-import { readTenantCache, removeTenantCache, writeTenantCache, TENANT_CACHE_NAMES } from './app/tenantCache';
-import { canEditLeadDetails, hydrateLeadAssignments, persistBeforeApply } from './app/pilotWrites';
+import type { Lead, LeadStatus } from '@/entities/lead';
+import { buildAppLoginUrl, getDeploymentConfig, shouldShowLandingAtRoot } from './deploymentSurface';
+import { getLeadTransitionError } from '../entities/lead';
+import { SalesWorkspace } from '../pages/public/sales';
+import { readTenantCache, removeTenantCache, writeTenantCache, TENANT_CACHE_NAMES } from '../shared/lib/tenantCache';
+import { canEditLeadDetails, persistBeforeApply } from './pilotWrites';
+import { hydrateLeadAssignments } from '../entities/lead';
 
 const { surface: deploymentSurface, appUrl } = getDeploymentConfig((import.meta as any).env || {});
-const LandingPage = React.lazy(() => import('./pages/public/landing').then(module => ({ default: module.LandingPage })));
+const LandingPage = React.lazy(() => import('../pages/public/landing').then(module => ({ default: module.LandingPage })));
 
 function ExternalRedirect({ url }: { url: string }) {
   useEffect(() => {

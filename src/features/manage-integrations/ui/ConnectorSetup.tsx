@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Cable, Check, Copy, Database, Loader2, ShieldCheck } from 'lucide-react';
-import { connectorClient } from '../../../app/connectorClient';
-import type { EnrollmentResponse } from '../../../app/connectorContract';
+import { connectorClient } from '../api/connectorClient';
+import type { EnrollmentResponse } from '../api/connectorContract';
 
 type DatabaseDriver = 'postgres' | 'mariadb' | 'mssql';
 

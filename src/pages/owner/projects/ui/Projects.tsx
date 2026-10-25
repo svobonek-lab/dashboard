@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { ArrowRight, BriefcaseBusiness, CheckCircle2, MapPin, UserRound } from 'lucide-react';
-import type { Lead } from '@/types';
-import { useRouter } from '@/src/app/router';
+import type { Lead } from '@/entities/lead';
+import { useRouter } from '@/shared/lib/router';
 
 interface OwnerProjectsPageProps { leads: Lead[]; onSelectLead: (lead: Lead) => void; leadDestination?: string; }
 const currency = new Intl.NumberFormat('cs-CZ', { style: 'currency', currency: 'CZK', maximumFractionDigits: 0 });

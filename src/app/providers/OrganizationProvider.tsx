@@ -1,24 +1,24 @@
 import React, { useState, useEffect } from 'react';
-import { supabase, isSupabaseConfigured, LocalSupabaseMock, isValidUUID, DEFAULT_DEMO_ORG_ID, canUseLocalMockAuth } from '../../../lib/supabase';
+import { supabase, isSupabaseConfigured, LocalSupabaseMock, isValidUUID, DEFAULT_DEMO_ORG_ID, canUseLocalMockAuth } from '../../shared/api/supabase';
 import type { CompanyBranding } from '../../entities/company';
 import type { Lead } from '../../entities/lead';
 import type { Employee } from '../../entities/employee';
 import * as Sentry from "@sentry/react";
-import { crmRepo } from '../../../lib/data/repositoryFactory';
+import { crmRepo } from '../../shared/api/crm-repository';
 import { getLeads, saveLead as saveLeadEntity, updateLeadStatus as updateLeadStatusEntity } from '../../entities/lead';
 import { getEmployees, saveEmployee as saveEmployeeEntity } from '../../entities/employee';
-import { APP_SCHEMA_WRITES_BLOCKED_MESSAGE, isAppSchemaReadsEnabled, shouldBlockLegacyWrites } from '../productionDataPolicy';
-import { removeTenantCache, TENANT_CACHE_NAMES } from '../tenantCache';
+import { APP_SCHEMA_WRITES_BLOCKED_MESSAGE, isAppSchemaReadsEnabled, shouldBlockLegacyWrites } from '../../shared/api/productionDataPolicy';
+import { removeTenantCache, TENANT_CACHE_NAMES } from '../../shared/lib/tenantCache';
 import { getRuntimePolicy } from '../runtimePolicy';
 import { resolveOrAcceptAppIdentity } from '../appSchemaIdentity';
 import { toAuthenticatedWorkspaceUser } from '../authWorkspaceUser';
 import { buildInviteRequest, toPendingEmployee } from '../../features/employee-invitations';
-import { buildRecoveryRequest, parseRecoveryResponse } from '../authRecovery';
+import { buildRecoveryRequest, parseRecoveryResponse } from '../../features/login';
 import { readPlatformIdentity } from '../platformIdentity';
 import { buildCompletedInviteMetadata, requiresInvitePasswordSetup } from '../../features/employee-invitations';
-import { hasOwnerLegalConsent, type OwnerLegalConsent } from '../legalConsent';
-import { OrganizationContext, type DBProject, type DBUser, type Organization, type OrganizationContextType } from './OrganizationContext';
-export { OrganizationContext, useOrganization, type DBProject, type DBUser, type Organization, type OrganizationContextType } from './OrganizationContext';
+import { hasOwnerLegalConsent, type OwnerLegalConsent } from '../../shared/model/legalConsent';
+import { OrganizationContext, type DBProject, type DBUser, type Organization, type OrganizationContextType } from '../../entities/session';
+export { OrganizationContext, useOrganization, type DBProject, type DBUser, type Organization, type OrganizationContextType } from '../../entities/session';
 
 const IS_PRODUCTION = !!(import.meta as any).env?.PROD;
 // Production always resolves identity/data through the verified app_* model.
@@ -1282,7 +1282,7 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
     const notes = (leadData as any).notes || '';
 
     if (BLOCK_LEGACY_WRITES && isSupabaseConfigured) {
-      return crmRepo.saveLead(targetOrgId, {
+      return saveLeadEntity(targetOrgId, {
         ...leadData,
         organization_id: targetOrgId,
       });
@@ -1603,7 +1603,7 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
     if (!currentOrg) throw new Error('Organizace není vybrána');
 
     if (BLOCK_LEGACY_WRITES && isSupabaseConfigured) {
-      return crmRepo.saveEmployee(currentOrg.id, empData);
+      return saveEmployeeEntity(currentOrg.id, empData);
     }
 
     const empRecord = {

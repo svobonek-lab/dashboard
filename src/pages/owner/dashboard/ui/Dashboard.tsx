@@ -1,11 +1,12 @@
-import { useOrganization } from '@/context/OrganizationContext';
+import { useOrganization } from '@/entities/session';
 import React from 'react';
-import { useRouter } from '@/src/app/router';
+import { useRouter } from '@/shared/lib/router';
 import { OwnerDashboard } from '../../../../widgets/owner-dashboard';
-import { OnboardingChecklist } from '@/src/features/onboarding-checklist';
-import { Lead, Employee } from '@/types';
+import { OnboardingChecklist } from '@/features/onboarding-checklist';
+import type { Lead } from '@/entities/lead';
+import type { Employee } from '@/entities/employee';
 import { WorkspaceReadinessPanel } from '../../../../widgets/workspace-readiness';
-import { buildWorkspaceReadiness } from '@/src/app/workspaceReadiness';
+import { buildWorkspaceReadiness } from '@/widgets/workspace-readiness';
 
 interface OwnerDashboardPageProps {
   leads: Lead[];

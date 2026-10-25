@@ -1,8 +1,8 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Building2, CheckCircle2, Circle, Copy, CreditCard, LogIn, Mail, Plus, RefreshCw, Search, ShieldAlert, X } from 'lucide-react';
-import { createPlatformCompany, createPlatformSupportSession, getPlatformPublicFormLink, listPlatformCompanies, resendPlatformOwnerInvite, revokePlatformSupportSession, setPlatformCompanyBillingPlan, type NewPlatformCompany, type PlatformCompany } from '@/src/app/platformClient';
-import { useRouter } from '@/src/app/router';
-import { createOwnerLegalConsent } from '@/src/app/legalConsent';
+import { createPlatformCompany, createPlatformSupportSession, getPlatformPublicFormLink, listPlatformCompanies, resendPlatformOwnerInvite, revokePlatformSupportSession, setPlatformCompanyBillingPlan, type NewPlatformCompany, type PlatformCompany } from '@/features/platform-admin';
+import { useRouter } from '@/shared/lib/router';
+import { createOwnerLegalConsent } from '@/shared/model/legalConsent';
 
 const SUBSCRIPTIONS: Record<PlatformCompany['subscription_status'], string> = { not_configured: 'Nenastaveno', pilot: 'Pilot', trial: 'Zkušební', active: 'Aktivní', past_due: 'Po splatnosti', canceled: 'Ukončeno' };
 const EMPTY_COMPANY: NewPlatformCompany = { name: '', slug: '', ownerName: '', ownerEmail: '', plan: 'pilot', legalConsent: { termsAccepted: false, dpaAccepted: false, acceptedAt: createOwnerLegalConsent().acceptedAt } };

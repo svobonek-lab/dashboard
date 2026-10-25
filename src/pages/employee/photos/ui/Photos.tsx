@@ -1,9 +1,9 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { Building, Camera, CheckCircle2, LoaderCircle, Trash2, UploadCloud } from 'lucide-react';
-import type { Lead } from '@/types';
-import type { LeadStoredFile } from '@/lib/data/types';
-import { crmRepo } from '@/lib/data/repositoryFactory';
-import { resizeImageForUpload } from '@/src/app/leadAttachments';
+import type { Lead } from '@/entities/lead';
+import type { LeadStoredFile } from '@/shared/api/crm-repository';
+import { crmRepo } from '@/shared/api/crm-repository';
+import { resizeImageForUpload } from '@/features/lead-files';
 
 interface EmployeePhotosPageProps { leads: Lead[]; }
 
