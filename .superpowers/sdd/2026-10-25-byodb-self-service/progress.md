@@ -18,4 +18,8 @@ Task 2: Ruling: generate `CONNECTOR_SECRET` during the owner-authorized server e
 Task 2: complete (commits 94cb139..fdae309, tests: npm test --prefix connector → ℹ duration_ms 4233.3942)
 
 Task 3: Ruling: an employee may only change lead status when the mapped source row's assigned email matches the authenticated employee email — role-only checks would let an employee alter an unrelated lead; the connector must enforce row assignment inside the source transaction.
-Task 3: complete (commits fdae309..fdae309, tests: npx tsx --test tests/connector-api.test.ts tests/connector-staging-contract.test.ts tests/connector-owner-api.test.ts tests/connector-contract.test.ts → ℹ duration_ms 1798.85)
+Task 3: complete (commits fdae309..91a1e49, tests: npx tsx --test tests/connector-api.test.ts tests/connector-staging-contract.test.ts tests/connector-owner-api.test.ts tests/connector-contract.test.ts → ℹ duration_ms 1798.85)
+
+Task 4: Ruling: source reads keep their read-only credential and source writes require a separate file-provisioned write credential — using one broad credential for both paths makes the routine sync worker more privileged than needed; companies must grant only mapped-table writes to the local write account.
+Task 4: Ruling: create is enabled only when the mapped external ID is the table's sole, non-generated primary key, and all other required fields have an approved mapping or database default — otherwise safe replay cannot be guaranteed without inventing schema behavior.
+Task 4: complete (commits 91a1e49..91a1e49, tests: npm test --prefix connector → ℹ duration_ms 6602.5975)

@@ -2,10 +2,14 @@ import sql from 'mssql';
 
 import { findKnownTable, knownColumns, normalizeRows, quoteMssqlIdentifier, validatePageLimit } from './sqlSafety.js';
 import type { IncrementalQuery, ReadOnlyReport, SourceAdapter, SourceAdapterConfig, SourcePage, SourceSchema } from './types.js';
+import { applyMappedOperationWithTransaction, type MappedSourceOperation } from './mappedOperations.js';
+import type { ConnectorMappingDefinitionV1 } from '../../../shared/connectorProtocol.js';
 
 export class MssqlSourceAdapter implements SourceAdapter {
   readonly driver = 'mssql' as const;
   private readonly pool: sql.ConnectionPool;
+  private readonly writePool: sql.ConnectionPool | null;
+  private writeConnected: Promise<sql.ConnectionPool> | null = null;
   private connected: Promise<sql.ConnectionPool> | null = null;
   private schemaCache: SourceSchema | null = null;
 
@@ -21,6 +25,11 @@ export class MssqlSourceAdapter implements SourceAdapter {
       connectionTimeout: 10_000,
       requestTimeout: 30_000,
     });
+    this.writePool = config.writeUsername && config.writePassword ? new sql.ConnectionPool({
+      server: config.host, port: config.port, database: config.database, user: config.writeUsername, password: config.writePassword,
+      pool: { max: 2, min: 0, idleTimeoutMillis: 30_000 }, options: { encrypt: Boolean(config.ssl), trustServerCertificate: !config.ssl, enableArithAbort: true },
+      connectionTimeout: 10_000, requestTimeout: 30_000,
+    }) : null;
   }
 
   private connect(): Promise<sql.ConnectionPool> {
@@ -39,7 +48,7 @@ export class MssqlSourceAdapter implements SourceAdapter {
     if (this.config.schema) request.input('schema', sql.NVarChar(128), this.config.schema);
     const result = await request.query(`
       SELECT s.name AS table_schema, t.name AS table_name, c.name AS column_name,
-             ty.name AS data_type, c.is_nullable,
+             ty.name AS data_type, c.is_nullable, c.is_identity, c.is_computed, c.default_object_id,
              CASE WHEN pk.column_id IS NULL THEN 0 ELSE 1 END AS primary_key
       FROM sys.tables t
       JOIN sys.schemas s ON s.schema_id = t.schema_id
@@ -59,7 +68,7 @@ export class MssqlSourceAdapter implements SourceAdapter {
       const name = String(row.table_name);
       const key = `${schema}.${name}`;
       const table = tables.get(key) ?? { schema, name, columns: [] };
-      table.columns.push({ name: String(row.column_name), dataType: String(row.data_type), nullable: Boolean(row.is_nullable), primaryKey: Boolean(row.primary_key) });
+      table.columns.push({ name: String(row.column_name), dataType: String(row.data_type), nullable: Boolean(row.is_nullable), primaryKey: Boolean(row.primary_key), generated: Boolean(row.is_identity) || Boolean(row.is_computed), hasDefault: Number(row.default_object_id) !== 0 || Boolean(row.is_identity) || Boolean(row.is_computed) });
       tables.set(key, table);
     }
     this.schemaCache = { inspectedAt: new Date().toISOString(), tables: [...tables.values()] };
@@ -89,6 +98,31 @@ export class MssqlSourceAdapter implements SourceAdapter {
     return { rows, nextCursor: cursorFromRows(rows, query) };
   }
 
+  async applyMappedOperation(operation: MappedSourceOperation, mapping: ConnectorMappingDefinitionV1, schema: SourceSchema) {
+    if (!this.writePool) throw new Error('BYODB_WRITE_CREDENTIALS_REQUIRED');
+    this.writeConnected ??= this.writePool.connect();
+    const transaction = new sql.Transaction(await this.writeConnected);
+    const bind = async (statement: { sql: string; values: unknown[] }) => {
+      const request = new sql.Request(transaction);
+      statement.values.forEach((value, index) => {
+        const type = typeof value === 'number' ? sql.Float : typeof value === 'boolean' ? sql.Bit : sql.NVarChar(4000);
+        request.input(`p${index + 1}`, type, value);
+      });
+      const result = await request.query(statement.sql);
+      return result.recordset as Record<string, unknown>[];
+    };
+    return applyMappedOperationWithTransaction(this.driver, operation, mapping, schema, {
+        begin: async () => { await transaction.begin(); },
+        savepoint: async name => { await new sql.Request(transaction).query(`SAVE TRANSACTION ${name}`); },
+        query: bind,
+        rollbackToSavepoint: async name => { await new sql.Request(transaction).query(`ROLLBACK TRANSACTION ${name}`); },
+        releaseSavepoint: async () => {},
+        commit: async () => { await transaction.commit(); },
+        rollback: async () => { await transaction.rollback(); },
+        isDuplicateKeyError: error => Boolean(error && typeof error === 'object' && [2601, 2627].includes(Number((error as { number?: string | number }).number))),
+    });
+  }
+
   async verifyReadOnly(): Promise<ReadOnlyReport> {
     const schema = this.schemaCache ?? await this.inspectSchema();
     const table = schema.tables[0];
@@ -107,7 +141,7 @@ export class MssqlSourceAdapter implements SourceAdapter {
     return { selectAllowed: true, writesDenied, checkedTable: `${table.schema}.${table.name}` };
   }
 
-  async close(): Promise<void> { if (this.connected) await this.pool.close(); }
+  async close(): Promise<void> { await Promise.all([this.connected ? this.pool.close() : Promise.resolve(), this.writeConnected ? this.writePool!.close() : Promise.resolve()]); }
 }
 
 function cursorFromRows(rows: Record<string, unknown>[], query: IncrementalQuery) {

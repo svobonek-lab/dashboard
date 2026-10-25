@@ -32,6 +32,7 @@ class FakeAdapter implements SourceAdapter {
   async testConnection() { return { ok: true, driver: this.driver, database: 'fixture' }; }
   async inspectSchema() { return schema; }
   async readPage() { this.reads++; return this.page; }
+  async applyMappedOperation(): Promise<never> { throw new Error('BYODB_WRITE_CREDENTIALS_REQUIRED'); }
   async verifyReadOnly() { return { selectAllowed: true, writesDenied: true }; }
   async close() {}
 }

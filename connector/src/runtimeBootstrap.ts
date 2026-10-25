@@ -81,7 +81,7 @@ export async function bootstrapConnector(config: ConnectorConfig): Promise<void>
     const sourceSchema: ConnectorSourceSchemaV1 = { tables: schema.tables.map(table => ({
       schema: table.schema,
       name: table.name,
-      columns: table.columns.map(column => ({ name: column.name, dataType: column.dataType, nullable: column.nullable })),
+      columns: table.columns.map(column => ({ name: column.name, dataType: column.dataType, nullable: column.nullable, primaryKey: column.primaryKey, generated: column.generated === true, hasDefault: column.hasDefault === true })),
     })) };
     const createEngine = (definition: ConnectorMappingDefinitionV1) => new SyncEngine({
       adapter, api, outbox, checkpoints, statePath: join(config.stateRoot, 'sync-state.json'),

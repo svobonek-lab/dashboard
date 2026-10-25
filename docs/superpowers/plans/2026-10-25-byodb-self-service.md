@@ -116,6 +116,7 @@
 
 **Files:**
 - Modify: `connector/src/adapters/types.ts`
+- Create: `connector/src/adapters/mappedOperations.ts`
 - Modify: `connector/src/adapters/sqlSafety.ts`
 - Modify: `connector/src/adapters/postgres.ts`
 - Modify: `connector/src/adapters/mysql.ts`
@@ -123,7 +124,9 @@
 - Modify: `connector/src/commands/processCommands.ts`
 - Modify: `connector/src/state/outbox.ts`
 - Modify: `connector/src/sync/syncEngine.ts`
+- Modify: `connector/src/config.ts`
 - Test: `connector/test/adapters/contract.ts`
+- Create: `connector/test/adapters/mappedOperations.test.ts`
 - Test: `connector/test/adapters/postgres.test.ts`
 - Test: `connector/test/adapters/mysql.test.ts`
 - Test: `connector/test/adapters/mssql.test.ts`
@@ -135,10 +138,10 @@
 - All SQL identifiers come from inspected schema and mapping; all values are bound parameters. A transaction checks the expected source version before updating/deleting.
 - The existing file-backed durable Outbox remains the retry store; add command-result persistence if needed without exposing source values in status.
 
-- [ ] **Step 1: Write failing adapter contract tests** for one mapped create/update/delete, an unmapped-field injection, identifier injection, stale-timestamp and stale-fingerprint conflicts, stable-key create replay, unsupported auto-increment create, and rollback on each engine.
-- [ ] **Step 2: Run** the focused adapter tests from `connector/` with `npx tsx --test test/adapters/postgres.test.ts test/adapters/mysql.test.ts test/adapters/mssql.test.ts` and confirm each new case fails for the missing operation method.
-- [ ] **Step 3: Implement** engine-specific prepared statements and transactional conflict checks; remove any read-only default only for the explicitly approved operation path.
-- [ ] **Step 4: Run** `npm test` from `connector/`.
+- [x] **Step 1: Write failing adapter contract tests** for one mapped create/update/delete, an unmapped-field injection, identifier injection, stale-timestamp and stale-fingerprint conflicts, stable-key create replay, unsupported auto-increment create, and rollback on each engine.
+- [x] **Step 2: Run** the focused adapter tests from `connector/` with `npx tsx --test test/adapters/postgres.test.ts test/adapters/mysql.test.ts test/adapters/mssql.test.ts` and confirm each new case fails for the missing operation method.
+- [x] **Step 3: Implement** engine-specific prepared statements and transactional conflict checks; use a separate write credential path while keeping read-only sync connections unchanged.
+- [x] **Step 4: Run** `npm test` from `connector/`.
   **Expected:** mapped writes work in fixtures, unauthorized writes are rejected, and existing sync/outbox tests remain green.
 - [ ] **Step 5: Commit** `feat(connector): apply approved mapped database operations`.
 

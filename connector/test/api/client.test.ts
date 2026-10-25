@@ -98,11 +98,15 @@ test('strict config reads password from a file and rejects unsafe paths and unkn
   const passwordPath = join(root, 'db-password');
   const configPath = join(root, 'config.json');
   await writeFile(passwordPath, 'file-secret\n');
+  const writePasswordPath = join(root, 'db-write-password');
+  await writeFile(writePasswordPath, 'write-file-secret\n');
   await writeFile(configPath, JSON.stringify({
     apiBaseUrl: 'https://app.example.test', stateRoot: root, identityPath: join(root, 'identity.json'), mappingPath: join(root, 'mapping.json'),
-    syncIntervalSeconds: 60, database: { driver: 'postgres', host: 'db.local', port: 5432, database: 'fixture', username: 'reader', passwordFile: passwordPath },
+    syncIntervalSeconds: 60, database: { driver: 'postgres', host: 'db.local', port: 5432, database: 'fixture', username: 'reader', passwordFile: passwordPath, writeUsername: 'writer', writePasswordFile: writePasswordPath },
   }));
   assert.equal((await loadConnectorConfig(configPath)).database.password, 'file-secret');
+  assert.equal((await loadConnectorConfig(configPath)).database.writePassword, 'write-file-secret');
+  assert.throws(() => parseConnectorConfig({ apiBaseUrl: 'https://app.example.test', stateRoot: root, identityPath: join(root, 'identity'), mappingPath: join(root, 'mapping'), syncIntervalSeconds: 60, database: { driver: 'postgres', host: 'db', port: 5432, database: 'x', username: 'reader', passwordFile: passwordPath, writeUsername: 'writer' } }), /configured together/);
   assert.throws(() => parseConnectorConfig({ apiBaseUrl: 'http://public.example.test', stateRoot: root, identityPath: join(root, 'identity'), mappingPath: join(root, 'mapping'), syncIntervalSeconds: 59, database: {}, extra: true }), /unknown config key: extra/);
   assert.throws(() => parseConnectorConfig({ apiBaseUrl: 'https://app.example.test', stateRoot: './relative', identityPath: join(root, 'identity'), mappingPath: join(root, 'mapping'), syncIntervalSeconds: 60, database: { driver: 'postgres', host: 'db', port: 5432, database: 'x', username: 'x', passwordFile: passwordPath } }), /stateRoot must be absolute/);
   assert.throws(() => parseConnectorConfig({ apiBaseUrl: 'https://app.example.test', stateRoot: root, identityPath: 'C:/outside/identity', mappingPath: join(root, 'mapping'), syncIntervalSeconds: 60, database: { driver: 'postgres', host: 'db', port: 5432, database: 'x', username: 'x', passwordFile: passwordPath } }), /inside stateRoot/);

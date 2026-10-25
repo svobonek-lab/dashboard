@@ -46,6 +46,14 @@ test('mapping accepts only columns reported by the connector schema', () => {
   assert.throws(() => validateConnectorMapping({ ...mapping, externalIdColumn: 'missing' }, sourceSchema), /MAPPING_SOURCE_UNKNOWN/);
 });
 
+test('source schema contract preserves key, identity, and default metadata required to gate safe creates', () => {
+  const schema = validateSourceSchema({ tables: [{ schema: 'public', name: 'leads', columns: [
+    { name: 'id', dataType: 'uuid', nullable: false, primaryKey: true, generated: false, hasDefault: false },
+  ] }] });
+  assert.deepEqual(schema.tables[0]?.columns[0], { name: 'id', dataType: 'uuid', nullable: false, primaryKey: true, generated: false, hasDefault: false });
+  assert.throws(() => validateSourceSchema({ tables: [{ schema: 'public', name: 'leads', columns: [{ name: 'id', dataType: 'uuid', nullable: false, generated: 'yes' }] }] }), /SOURCE_SCHEMA_INVALID/);
+});
+
 test('mapping rejects unbounded conversion options and secret-like enum values', () => {
   const schema = { tables: [{ schema: 'public', name: 'leads', columns: [{ name: 'id', dataType: 'uuid', nullable: false }, { name: 'status', dataType: 'text', nullable: true }] }] };
   const mapping = { version: 1, mappingVersion: 1, entityType: 'lead', sourceSystem: 'pilot', schema: 'public', table: 'leads', externalIdColumn: 'id', fields: [{ sourceColumn: 'status', targetField: 'status', conversion: { kind: 'enum', values: { password: 'secret-value' } } }] };

@@ -228,8 +228,11 @@ export function validateSourceSchema(value: unknown): ConnectorSourceSchemaV1 {
       if (!value || typeof value !== 'object' || Array.isArray(value)) throw new ConnectorHttpError('SOURCE_SCHEMA_INVALID', 400);
       const column = value as Record<string, unknown>;
       const columnName = String(column.name ?? ''), dataType = String(column.dataType ?? '');
-      if (!SAFE_SOURCE_IDENTIFIER.test(columnName) || !SAFE_SOURCE_IDENTIFIER.test(dataType) || typeof column.nullable !== 'boolean') throw new ConnectorHttpError('SOURCE_SCHEMA_INVALID', 400);
-      return { name: columnName, dataType, nullable: column.nullable };
+      if (!SAFE_SOURCE_IDENTIFIER.test(columnName) || !SAFE_SOURCE_IDENTIFIER.test(dataType) || typeof column.nullable !== 'boolean'
+        || column.primaryKey !== undefined && typeof column.primaryKey !== 'boolean'
+        || column.generated !== undefined && typeof column.generated !== 'boolean'
+        || column.hasDefault !== undefined && typeof column.hasDefault !== 'boolean') throw new ConnectorHttpError('SOURCE_SCHEMA_INVALID', 400);
+      return { name: columnName, dataType, nullable: column.nullable, ...(typeof column.primaryKey === 'boolean' ? { primaryKey: column.primaryKey } : {}), ...(typeof column.generated === 'boolean' ? { generated: column.generated } : {}), ...(typeof column.hasDefault === 'boolean' ? { hasDefault: column.hasDefault } : {}) };
     });
     return { schema, name, columns };
   }) };

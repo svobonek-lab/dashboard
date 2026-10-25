@@ -61,6 +61,9 @@ export interface ConnectorSourceColumnV1 {
   name: string;
   dataType: string;
   nullable: boolean;
+  primaryKey?: boolean;
+  generated?: boolean;
+  hasDefault?: boolean;
 }
 
 export interface ConnectorSourceTableV1 {

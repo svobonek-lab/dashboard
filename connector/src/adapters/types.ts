@@ -1,6 +1,8 @@
 import { MssqlSourceAdapter } from './mssql.js';
 import { MysqlSourceAdapter } from './mysql.js';
 import { PostgresSourceAdapter } from './postgres.js';
+import type { ConnectorMappingDefinitionV1 } from '../../../shared/connectorProtocol.js';
+import type { MappedSourceOperation } from './mappedOperations.js';
 
 export type SourceDriver = 'postgres' | 'mysql' | 'mariadb' | 'mssql';
 
@@ -11,6 +13,8 @@ export interface SourceAdapterConfig {
   database: string;
   username: string;
   password: string;
+  writeUsername?: string;
+  writePassword?: string;
   schema?: string;
   ssl?: boolean;
 }
@@ -20,6 +24,8 @@ export interface SourceColumn {
   dataType: string;
   nullable: boolean;
   primaryKey: boolean;
+  generated?: boolean;
+  hasDefault?: boolean;
 }
 
 export interface SourceTable {
@@ -70,6 +76,7 @@ export interface SourceAdapter {
   testConnection(): Promise<ConnectionReport>;
   inspectSchema(): Promise<SourceSchema>;
   readPage(query: IncrementalQuery): Promise<SourcePage>;
+  applyMappedOperation(operation: MappedSourceOperation, mapping: ConnectorMappingDefinitionV1, schema: SourceSchema): Promise<{ status: 'applied' | 'conflict'; sourceVersion?: string; replayed?: boolean }>;
   verifyReadOnly(): Promise<ReadOnlyReport>;
   close(): Promise<void>;
 }

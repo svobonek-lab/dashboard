@@ -2,10 +2,13 @@ import mysql, { type RowDataPacket } from 'mysql2/promise';
 
 import { findKnownTable, knownColumns, normalizeRows, quoteMysqlIdentifier, validatePageLimit } from './sqlSafety.js';
 import type { IncrementalQuery, ReadOnlyReport, SourceAdapter, SourceAdapterConfig, SourcePage, SourceSchema } from './types.js';
+import { applyMappedOperationWithTransaction, type MappedSourceOperation } from './mappedOperations.js';
+import type { ConnectorMappingDefinitionV1 } from '../../../shared/connectorProtocol.js';
 
 export class MysqlSourceAdapter implements SourceAdapter {
   readonly driver: 'mysql' | 'mariadb';
   private readonly pool: mysql.Pool;
+  private readonly writePool: mysql.Pool | null;
   private schemaCache: SourceSchema | null = null;
 
   constructor(private readonly config: SourceAdapterConfig) {
@@ -22,6 +25,10 @@ export class MysqlSourceAdapter implements SourceAdapter {
       connectTimeout: 10_000,
       dateStrings: true,
     });
+    this.writePool = config.writeUsername && config.writePassword ? mysql.createPool({
+      host: config.host, port: config.port, database: config.database, user: config.writeUsername, password: config.writePassword,
+      ssl: config.ssl ? { rejectUnauthorized: true } : undefined, waitForConnections: true, connectionLimit: 2, connectTimeout: 10_000, dateStrings: true,
+    }) : null;
   }
 
   private async connection(): Promise<mysql.PoolConnection> {
@@ -43,7 +50,7 @@ export class MysqlSourceAdapter implements SourceAdapter {
 
   async inspectSchema(): Promise<SourceSchema> {
     const [rows] = await this.pool.execute<RowDataPacket[]>(`
-      SELECT table_schema, table_name, column_name, data_type, is_nullable, column_key
+      SELECT table_schema, table_name, column_name, data_type, is_nullable, column_key, extra
       FROM information_schema.columns
       WHERE table_schema = ?
       ORDER BY table_name, ordinal_position
@@ -54,7 +61,7 @@ export class MysqlSourceAdapter implements SourceAdapter {
       const name = String(row.table_name);
       const key = `${schema}.${name}`;
       const table = tables.get(key) ?? { schema, name, columns: [] };
-      table.columns.push({ name: String(row.column_name), dataType: String(row.data_type), nullable: row.is_nullable === 'YES', primaryKey: row.column_key === 'PRI' });
+      table.columns.push({ name: String(row.column_name), dataType: String(row.data_type), nullable: row.is_nullable === 'YES', primaryKey: row.column_key === 'PRI', generated: /auto_increment|generated/i.test(String(row.extra ?? '')), hasDefault: row.column_default !== null && row.column_default !== undefined || /auto_increment|generated/i.test(String(row.extra ?? '')) });
       tables.set(key, table);
     }
     this.schemaCache = { inspectedAt: new Date().toISOString(), tables: [...tables.values()] };
@@ -90,6 +97,23 @@ export class MysqlSourceAdapter implements SourceAdapter {
     }
   }
 
+  async applyMappedOperation(operation: MappedSourceOperation, mapping: ConnectorMappingDefinitionV1, schema: SourceSchema) {
+    if (!this.writePool) throw new Error('BYODB_WRITE_CREDENTIALS_REQUIRED');
+    const connection = await this.writePool.getConnection();
+    try {
+      return await applyMappedOperationWithTransaction(this.driver, operation, mapping, schema, {
+        begin: async () => { await connection.beginTransaction(); },
+        savepoint: async name => { await connection.query(`SAVEPOINT ${name}`); },
+        query: async statement => { const [rows] = await connection.execute<RowDataPacket[]>(statement.sql, statement.values as (string | number | boolean | null)[]); return rows as Record<string, unknown>[]; },
+        rollbackToSavepoint: async name => { await connection.query(`ROLLBACK TO SAVEPOINT ${name}`); },
+        releaseSavepoint: async name => { await connection.query(`RELEASE SAVEPOINT ${name}`); },
+        commit: async () => { await connection.commit(); },
+        rollback: async () => { await connection.rollback(); },
+        isDuplicateKeyError: error => Boolean(error && typeof error === 'object' && (error as { code?: string }).code === 'ER_DUP_ENTRY'),
+      });
+    } finally { connection.release(); }
+  }
+
   async verifyReadOnly(): Promise<ReadOnlyReport> {
     const schema = this.schemaCache ?? await this.inspectSchema();
     const table = schema.tables[0];
@@ -109,7 +133,7 @@ export class MysqlSourceAdapter implements SourceAdapter {
     return { selectAllowed: true, writesDenied, checkedTable: `${table.schema}.${table.name}` };
   }
 
-  async close(): Promise<void> { await this.pool.end(); }
+  async close(): Promise<void> { await Promise.all([this.pool.end(), this.writePool?.end()]); }
 }
 
 function cursorFromRows(rows: Record<string, unknown>[], query: IncrementalQuery) {

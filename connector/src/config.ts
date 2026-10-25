@@ -10,6 +10,8 @@ interface ConfigDatabaseInput {
   database: string;
   username: string;
   passwordFile: string;
+  writeUsername?: string;
+  writePasswordFile?: string;
   schema?: string;
   ssl?: boolean;
 }
@@ -24,10 +26,11 @@ export interface ConnectorConfig {
   enrollmentCodeFile?: string;
   database: SourceAdapterConfig;
   databasePasswordFile: string;
+  databaseWritePasswordFile?: string;
 }
 
 const CONFIG_KEYS = new Set(['apiBaseUrl', 'stateRoot', 'identityPath', 'mappingPath', 'syncIntervalSeconds', 'connectorId', 'enrollmentCodeFile', 'database']);
-const DATABASE_KEYS = new Set(['driver', 'host', 'port', 'database', 'username', 'passwordFile', 'schema', 'ssl']);
+const DATABASE_KEYS = new Set(['driver', 'host', 'port', 'database', 'username', 'passwordFile', 'writeUsername', 'writePasswordFile', 'schema', 'ssl']);
 
 function requiredString(value: unknown, field: string): string {
   if (typeof value !== 'string' || !value.trim()) throw new Error(`${field} is required`);
@@ -67,6 +70,7 @@ export function parseConnectorConfig(value: unknown): Omit<ConnectorConfig, 'dat
   if (!['postgres', 'mysql', 'mariadb', 'mssql'].includes(database.driver)) throw new Error('database driver is unsupported');
   const port = Number(database.port);
   if (!Number.isInteger(port) || port < 1 || port > 65535) throw new Error('database port is invalid');
+  if (Boolean(database.writeUsername) !== Boolean(database.writePasswordFile)) throw new Error('writeUsername and writePasswordFile must be configured together');
 
   return {
     apiBaseUrl: apiBaseUrl.origin,
@@ -77,12 +81,14 @@ export function parseConnectorConfig(value: unknown): Omit<ConnectorConfig, 'dat
     connectorId: typeof input.connectorId === 'string' && input.connectorId.trim() ? input.connectorId.trim() : undefined,
     enrollmentCodeFile: typeof input.enrollmentCodeFile === 'string' ? absolutePath(input.enrollmentCodeFile, 'enrollmentCodeFile') : undefined,
     databasePasswordFile: absolutePath(database.passwordFile, 'database.passwordFile'),
+    ...(typeof database.writePasswordFile === 'string' && database.writePasswordFile.trim() ? { databaseWritePasswordFile: absolutePath(database.writePasswordFile, 'database.writePasswordFile') } : {}),
     database: {
       driver: database.driver,
       host: requiredString(database.host, 'database.host'),
       port,
       database: requiredString(database.database, 'database.database'),
       username: requiredString(database.username, 'database.username'),
+      ...(typeof database.writeUsername === 'string' && database.writeUsername.trim() ? { writeUsername: requiredString(database.writeUsername, 'database.writeUsername') } : {}),
       schema: typeof database.schema === 'string' && database.schema.trim() ? database.schema.trim() : undefined,
       ssl: database.ssl === true,
     },
@@ -105,5 +111,10 @@ export async function loadConnectorConfig(path: string): Promise<ConnectorConfig
   });
   const password = (await readFile(parsed.databasePasswordFile, 'utf8')).trim();
   if (!password) throw new Error('database password file is empty');
-  return { ...parsed, database: { ...parsed.database, password } };
+  let writePassword: string | undefined;
+  if (parsed.databaseWritePasswordFile) {
+    writePassword = (await readFile(parsed.databaseWritePasswordFile, 'utf8')).trim();
+    if (!writePassword) throw new Error('database write password file is empty');
+  }
+  return { ...parsed, database: { ...parsed.database, password, ...(writePassword ? { writePassword } : {}) } };
 }
