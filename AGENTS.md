@@ -11,7 +11,13 @@
 - Review the staged diff and scan for secrets before committing. Report suspected historical exposure without reproducing values; owner-controlled rotation may be required.
 
 ## Setup and verification
-Use Node 24 and the committed package-lock.json. Run npm ci, npm test, npm run lint, and npm run build. lint is TypeScript checking (tsc --noEmit), not ESLint. Add targeted verification when changing behavior. Do not weaken checks to obtain a green result.
+Use Node 24 and both committed lockfiles. From the repository root:
+- Install root dependencies with `npm ci` and connector dependencies with `npm ci --prefix connector`. The connector has a separate dependency tree required by root TypeScript checking.
+- Run `npm test`, `npm run lint`, and `npm run build`. `npm run lint` runs TypeScript checking (`tsc --noEmit`) and ESLint (`eslint src`).
+- When changing connector code, also run `npm test --prefix connector`, `npm run lint --prefix connector`, and `npm run build --prefix connector`.
+- The connector suite skips six database adapter cases unless disposable database fixtures are configured; do not count skipped cases as verified integration coverage.
+
+Add targeted verification when changing behavior. Do not weaken checks to obtain a green result.
 CI verify runs on PRs and main pushes without production credentials. CI does not deploy or migrate. A required branch-protection check must be configured separately by the repository owner before it can prevent merging.
 
 ## Architecture
