@@ -27,6 +27,7 @@ DECLARE
   t text;
   tenant_key text;
   boundary_count integer;
+  policy_drift integer;
   policy_row record;
 BEGIN
   SELECT array_agg(c.relname ORDER BY c.relname) INTO actual
@@ -58,7 +59,7 @@ BEGIN
     WHERE n.nspname='public' AND c.relname='app_leads'
       AND tr.tgname='app_guard_lead_creator' AND tr.tgenabled='O'
       AND tr.tgfoid=to_regprocedure('app_private.guard_lead_creator()')
-      AND tr.tgtype=23 AND tr.tgqual IS NULL AND array_length(tr.tgattr,1) IS NULL
+      AND tr.tgtype=23 AND tr.tgqual IS NULL AND tr.tgattr::text IN ('','0')
       AND NOT tr.tgisinternal
   ) THEN
     RAISE EXCEPTION 'JWT tenant migration blocked: immutable app_leads creator trigger contract is missing';
@@ -70,7 +71,7 @@ BEGIN
     WHERE n.nspname='public' AND c.relname='app_leads'
       AND tr.tgname='app_leads_guard_mutation' AND tr.tgenabled='O'
       AND tr.tgfoid=to_regprocedure('app_private.guard_lead_mutation()')
-      AND tr.tgtype=23 AND tr.tgqual IS NULL AND array_length(tr.tgattr,1) IS NULL
+      AND tr.tgtype=23 AND tr.tgqual IS NULL AND tr.tgattr::text IN ('','0')
       AND NOT tr.tgisinternal
   ) THEN
     RAISE EXCEPTION 'JWT tenant migration blocked: app_leads mutation guard trigger contract is missing';
@@ -192,7 +193,10 @@ BEGIN
     ELSIF has_table_privilege('service_role',format('public.%I',t),'SELECT') IS DISTINCT FROM true
        OR has_table_privilege('service_role',format('public.%I',t),'INSERT') IS DISTINCT FROM true
        OR has_table_privilege('service_role',format('public.%I',t),'UPDATE') IS DISTINCT FROM true
-       OR has_table_privilege('service_role',format('public.%I',t),'DELETE') IS DISTINCT FROM true THEN
+       OR has_table_privilege('service_role',format('public.%I',t),'DELETE') IS DISTINCT FROM true
+       OR has_table_privilege('service_role',format('public.%I',t),'TRUNCATE') IS DISTINCT FROM true
+       OR has_table_privilege('service_role',format('public.%I',t),'REFERENCES') IS DISTINCT FROM true
+       OR has_table_privilege('service_role',format('public.%I',t),'TRIGGER') IS DISTINCT FROM true THEN
       RAISE EXCEPTION 'JWT tenant migration blocked: service-role grant differs for public.%', t;
     END IF;
   END LOOP;
@@ -227,6 +231,66 @@ BEGIN
   IF boundary_count NOT IN (0, cardinality(tenant_tables)) THEN
     RAISE EXCEPTION 'JWT tenant migration blocked: only % of % restrictive tenant boundaries exist', boundary_count, cardinality(tenant_tables);
   END IF;
+
+  -- The snapshot rendered every policy on these nine tables. Reject missing,
+  -- extra, or re-scoped policies instead of trusting names or role lists alone.
+  WITH expected(table_name,policy_name,command,permissive,roles,using_required,check_required) AS (
+    SELECT * FROM (VALUES
+      ('app_companies','app_companies_select_member','r',true,ARRAY['authenticated']::text[],true,false),
+      ('app_companies','app_companies_update_owner','w',true,ARRAY['authenticated']::text[],true,true),
+      ('app_imports','app_imports_deny_direct','*',true,ARRAY['anon','authenticated']::text[],true,true),
+      ('app_invites','app_invites_owner_read','r',true,ARRAY['authenticated']::text[],true,false),
+      ('app_invites','app_invites_owner_write','*',true,ARRAY['authenticated']::text[],true,true),
+      ('app_lead_events','app_lead_events_read','r',true,ARRAY['authenticated']::text[],true,false),
+      ('app_lead_files','app_lead_files_delete_scoped','d',true,ARRAY['authenticated']::text[],true,false),
+      ('app_lead_files','app_lead_files_insert_scoped','a',true,ARRAY['authenticated']::text[],false,true),
+      ('app_lead_files','app_lead_files_select_scoped','r',true,ARRAY['authenticated']::text[],true,false),
+      ('app_lead_notes','app_lead_notes_delete_scoped','d',true,ARRAY['authenticated']::text[],true,false),
+      ('app_lead_notes','app_lead_notes_insert_scoped','a',true,ARRAY['authenticated']::text[],false,true),
+      ('app_lead_notes','app_lead_notes_select_scoped','r',true,ARRAY['authenticated']::text[],true,false),
+      ('app_leads','app_leads_delete_creator','d',true,ARRAY['authenticated']::text[],true,false),
+      ('app_leads','app_leads_delete_creator_boundary','d',false,ARRAY['authenticated']::text[],true,false),
+      ('app_leads','app_leads_insert_owner','a',true,ARRAY['authenticated']::text[],false,true),
+      ('app_leads','app_leads_select_scoped','r',true,ARRAY['authenticated']::text[],true,false),
+      ('app_leads','app_leads_update_scoped','w',true,ARRAY['authenticated']::text[],true,true),
+      ('app_members','app_members_owner_write','*',true,ARRAY['authenticated']::text[],true,true),
+      ('app_members','app_members_select_member','r',true,ARRAY['authenticated']::text[],true,false),
+      ('app_public_intake_events','app_public_intake_events_deny_direct','*',true,ARRAY['anon','authenticated']::text[],true,true),
+      ('app_companies','app_jwt_tenant_boundary','*',false,ARRAY['authenticated']::text[],true,true),
+      ('app_invites','app_jwt_tenant_boundary','*',false,ARRAY['authenticated']::text[],true,true),
+      ('app_lead_events','app_jwt_tenant_boundary','*',false,ARRAY['authenticated']::text[],true,true),
+      ('app_lead_files','app_jwt_tenant_boundary','*',false,ARRAY['authenticated']::text[],true,true),
+      ('app_lead_notes','app_jwt_tenant_boundary','*',false,ARRAY['authenticated']::text[],true,true),
+      ('app_leads','app_jwt_tenant_boundary','*',false,ARRAY['authenticated']::text[],true,true),
+      ('app_members','app_jwt_tenant_boundary','*',false,ARRAY['authenticated']::text[],true,true)
+    ) AS e(table_name,policy_name,command,permissive,roles,using_required,check_required)
+  ), actual AS (
+    SELECT c.relname AS table_name,p.polname AS policy_name,p.polcmd::text AS command,
+      p.polpermissive AS permissive,
+      ARRAY(SELECT r.rolname FROM unnest(p.polroles) AS role_oid(oid)
+        JOIN pg_roles r ON r.oid=role_oid.oid ORDER BY r.rolname) AS roles,
+      p.polqual IS NOT NULL AS using_required,p.polwithcheck IS NOT NULL AS check_required
+    FROM pg_policy p JOIN pg_class c ON c.oid=p.polrelid
+    JOIN pg_namespace n ON n.oid=c.relnamespace
+    WHERE n.nspname='public' AND c.relname=ANY(ARRAY[
+      'app_companies','app_imports','app_invites','app_lead_events','app_lead_files',
+      'app_lead_notes','app_leads','app_members','app_public_intake_events'
+    ]) AND (boundary_count=cardinality(tenant_tables) OR p.polname<>'app_jwt_tenant_boundary')
+  )
+  SELECT count(*) INTO policy_drift
+  FROM expected e FULL JOIN actual a ON a.table_name=e.table_name AND a.policy_name=e.policy_name
+  WHERE (e.policy_name IS NULL OR a.policy_name IS NULL)
+    AND coalesce(e.policy_name,'')<>'app_jwt_tenant_boundary'
+    OR (e.policy_name IS NOT NULL AND a.policy_name IS NOT NULL AND (
+      e.command IS DISTINCT FROM a.command OR e.permissive IS DISTINCT FROM a.permissive
+      OR e.roles IS DISTINCT FROM a.roles
+      OR e.using_required IS DISTINCT FROM a.using_required
+      OR e.check_required IS DISTINCT FROM a.check_required
+    ));
+  IF policy_drift<>0 THEN
+    RAISE EXCEPTION 'JWT tenant migration blocked: rendered app_* policy inventory or command/role contract differs (% drift rows)', policy_drift;
+  END IF;
+
   IF boundary_count=cardinality(tenant_tables) THEN
     FOREACH t IN ARRAY tenant_tables LOOP
       tenant_key := CASE WHEN t='app_companies' THEN 'id' ELSE 'company_id' END;
@@ -237,12 +301,14 @@ BEGIN
       WHERE n.nspname='public' AND c.relname=t AND p.polname='app_jwt_tenant_boundary';
       IF policy_row.polpermissive OR policy_row.polcmd<>'*'
          OR policy_row.polroles IS DISTINCT FROM ARRAY['authenticated'::regrole::oid]
-         OR policy_row.using_expr NOT ILIKE '%jwt_tenant_id%'
-         OR policy_row.check_expr NOT ILIKE '%jwt_tenant_id%'
-         OR policy_row.using_expr NOT ILIKE '%app_role%'
-         OR policy_row.check_expr NOT ILIKE '%app_role%'
-         OR policy_row.using_expr NOT ILIKE '%'||tenant_key||'%'
-         OR policy_row.check_expr NOT ILIKE '%'||tenant_key||'%' THEN
+         OR upper(policy_row.using_expr) ~ '\mOR\M'
+         OR upper(policy_row.check_expr) ~ '\mOR\M'
+         OR regexp_replace(lower(policy_row.using_expr),'[[:space:]]','','g') NOT LIKE '%'||tenant_key||'=(selectapp_private.jwt_tenant_id()%'
+         OR regexp_replace(lower(policy_row.check_expr),'[[:space:]]','','g') NOT LIKE '%'||tenant_key||'=(selectapp_private.jwt_tenant_id()%'
+         OR regexp_replace(lower(policy_row.using_expr),'[[:space:]]','','g') NOT LIKE '%app_private.app_role('||tenant_key||')isnotnull%'
+         OR regexp_replace(lower(policy_row.check_expr),'[[:space:]]','','g') NOT LIKE '%app_private.app_role('||tenant_key||')isnotnull%'
+         OR (length(policy_row.using_expr)-length(replace(policy_row.using_expr,tenant_key,'')))/length(tenant_key)<>2
+         OR (length(policy_row.check_expr)-length(replace(policy_row.check_expr,tenant_key,'')))/length(tenant_key)<>2 THEN
         RAISE EXCEPTION 'JWT tenant migration blocked: existing boundary on public.% is incompatible', t;
       END IF;
     END LOOP;

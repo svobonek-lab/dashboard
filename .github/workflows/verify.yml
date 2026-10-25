@@ -244,6 +244,38 @@ jobs:
           docker exec jwt-pgtap-postgres psql -v ON_ERROR_STOP=1 -U postgres -c 'DROP TABLE public.app_unclassified_probe'
       - name: Apply the review proposal to the disposable fixture
         run: docker exec jwt-pgtap-postgres psql -v ON_ERROR_STOP=1 -U postgres -f /workspace/supabase/migrations/20261025000000_secure_jwt_auth_hook.sql
+      - name: Reject partial and altered tenant boundaries
+        run: |
+          docker exec jwt-pgtap-postgres psql -v ON_ERROR_STOP=1 -U postgres -c 'DROP POLICY app_jwt_tenant_boundary ON public.app_invites'
+          set +e
+          docker exec jwt-pgtap-postgres psql -v ON_ERROR_STOP=1 -U postgres -f /workspace/supabase/migrations/20261025000000_secure_jwt_auth_hook.sql > tenant-partial.log 2>&1
+          status=$?
+          set -e
+          cat tenant-partial.log
+          test "$status" -ne 0
+          grep -q 'only 6 of 7 restrictive tenant boundaries exist' tenant-partial.log
+          docker exec jwt-pgtap-postgres psql -v ON_ERROR_STOP=1 -U postgres -c "CREATE POLICY app_jwt_tenant_boundary ON public.app_invites AS RESTRICTIVE FOR ALL TO authenticated USING (company_id = (SELECT app_private.jwt_tenant_id()) AND app_private.app_role(company_id) IS NOT NULL) WITH CHECK (company_id = (SELECT app_private.jwt_tenant_id()) AND app_private.app_role(company_id) IS NOT NULL)"
+          docker exec jwt-pgtap-postgres psql -v ON_ERROR_STOP=1 -U postgres -c 'DROP POLICY app_jwt_tenant_boundary ON public.app_companies'
+          docker exec jwt-pgtap-postgres psql -v ON_ERROR_STOP=1 -U postgres -c "CREATE POLICY app_jwt_tenant_boundary ON public.app_companies AS RESTRICTIVE FOR ALL TO authenticated USING (id = (SELECT app_private.jwt_tenant_id()) OR TRUE) WITH CHECK (id = (SELECT app_private.jwt_tenant_id()) OR TRUE)"
+          set +e
+          docker exec jwt-pgtap-postgres psql -v ON_ERROR_STOP=1 -U postgres -f /workspace/supabase/migrations/20261025000000_secure_jwt_auth_hook.sql > tenant-altered.log 2>&1
+          status=$?
+          set -e
+          cat tenant-altered.log
+          test "$status" -ne 0
+          grep -q 'existing boundary on public.app_companies is incompatible' tenant-altered.log
+          docker exec jwt-pgtap-postgres psql -v ON_ERROR_STOP=1 -U postgres -c 'DROP POLICY app_jwt_tenant_boundary ON public.app_companies'
+          docker exec jwt-pgtap-postgres psql -v ON_ERROR_STOP=1 -U postgres -c "CREATE POLICY app_jwt_tenant_boundary ON public.app_companies AS RESTRICTIVE FOR ALL TO authenticated USING (id = (SELECT app_private.jwt_tenant_id()) AND app_private.app_role(id) IS NOT NULL) WITH CHECK (id = (SELECT app_private.jwt_tenant_id()) AND app_private.app_role(id) IS NOT NULL)"
+          docker exec jwt-pgtap-postgres psql -v ON_ERROR_STOP=1 -U postgres -c 'GRANT UPDATE (company_id) ON public.app_lead_events TO authenticated'
+          set +e
+          docker exec jwt-pgtap-postgres psql -v ON_ERROR_STOP=1 -U postgres -f /workspace/supabase/migrations/20261025000000_secure_jwt_auth_hook.sql > tenant-column-grant.log 2>&1
+          status=$?
+          set -e
+          cat tenant-column-grant.log
+          test "$status" -ne 0
+          grep -q 'authenticated mutation grants differ for public.app_lead_events' tenant-column-grant.log
+          docker exec jwt-pgtap-postgres psql -v ON_ERROR_STOP=1 -U postgres -c 'REVOKE UPDATE (company_id) ON public.app_lead_events FROM authenticated'
+          docker exec jwt-pgtap-postgres psql -v ON_ERROR_STOP=1 -U postgres -f /workspace/supabase/migrations/20261025000000_secure_jwt_auth_hook.sql
       - name: Verify Auth hook and app_* RLS contracts
         run: |
           docker exec jwt-pgtap-postgres pg_prove -U postgres -d postgres /workspace/supabase/tests/jwt_tenant_auth_hook.pgtap.sql
