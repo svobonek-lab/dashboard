@@ -1,4 +1,4 @@
-const RETRYABLE_STATUSES = new Set([408, 425, 429, 500, 502, 503, 504]);
+const RETRYABLE_STATUSES = new Set([408, 425, 429, 500, 502, 503, 504, 520]);
 const TRANSIENT_NETWORK_CODES = new Set([
   'ECONNRESET',
   'ECONNREFUSED',
@@ -40,8 +40,10 @@ export function createRetryingFetch(fetchImpl: typeof fetch, options: RetryOptio
       }
 
       if (!RETRYABLE_STATUSES.has(response.status) || attempt >= maxAttempts - 1) return response;
+      const retryAfterMs = retryAfterDelay(response);
+      if (retryAfterMs !== undefined && retryAfterMs > maxDelayMs) return response;
       await response.body?.cancel().catch(() => undefined);
-      await sleep(delayForRetry(attempt, baseDelayMs, maxDelayMs, random));
+      await sleep(retryAfterMs ?? delayForRetry(attempt, baseDelayMs, maxDelayMs, random));
       attempt++;
     }
   };
@@ -66,6 +68,15 @@ function delayForRetry(attempt: number, baseDelayMs: number, maxDelayMs: number,
   const exponentialDelay = Math.min(maxDelayMs, baseDelayMs * (2 ** attempt));
   const jitter = Math.max(0, Math.min(1, random()));
   return Math.floor(exponentialDelay * jitter);
+}
+
+function retryAfterDelay(response: Response): number | undefined {
+  const value = response.headers.get('Retry-After')?.trim();
+  if (!value) return undefined;
+  if (/^\d+$/.test(value)) return Number(value) * 1000;
+
+  const retryAt = Date.parse(value);
+  return Number.isFinite(retryAt) ? Math.max(0, retryAt - Date.now()) : undefined;
 }
 
 function positiveInteger(value: number | undefined, fallback: number): number {

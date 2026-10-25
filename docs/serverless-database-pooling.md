@@ -4,7 +4,7 @@
 
 The serverless routes under `api/` use `@supabase/supabase-js` with the project's HTTPS URL. The SDK talks to Supabase Auth and the PostgREST API over HTTPS; it does not open a PostgreSQL TCP connection. Keep `SUPABASE_URL` set to the HTTPS project API URL. A PostgreSQL URI or port `6543` is not valid in this setting.
 
-The Supabase serverless driver guide describes this `supabase-js` API as using HTTPS and a built-in connection pooler. A raw PostgreSQL client is not currently used in `api/`. These HTTP clients use a shared fetch wrapper that retries only `GET` and `HEAD` on transient network errors and retryable HTTP statuses. Writes and Auth mutations are never automatically retried because a failed response can hide a completed operation.
+The Supabase serverless driver guide describes this `supabase-js` API as using HTTPS and a built-in connection pooler. A raw PostgreSQL client is not currently used in `api/`. These HTTP clients use a shared fetch wrapper that retries only `GET` and `HEAD` on transient network errors and retryable HTTP statuses, for at most three total attempts. It honors `Retry-After` up to a one-second retry wait; when the server asks for a longer delay, the API response is returned without an early retry. The SDK's own PostgREST retry layer is disabled so it cannot multiply those attempts. Writes and Auth mutations are never automatically retried because a failed response can hide a completed operation.
 
 ## Synology connector
 

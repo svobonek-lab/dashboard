@@ -4,7 +4,7 @@
 
 **Goal:** Make serverless Supabase HTTP requests resilient to transient read failures without misconfiguring HTTPS API clients as PostgreSQL wire-protocol connections.
 
-**Architecture:** Keep `supabase-js` pointed at the configured HTTPS Supabase URL. Add a shared serverless client factory whose fetch wrapper retries only safe `GET`/`HEAD` requests for transient network failures and selected retryable HTTP statuses, using bounded exponential backoff. No raw PostgreSQL client currently exists in `api/`, and `docker-compose.synology.yml` runs the customer connector and MariaDB rather than a self-hosted Supabase stack.
+**Architecture:** Keep `supabase-js` pointed at the configured HTTPS Supabase URL. Add a shared serverless client factory whose fetch wrapper retries only safe `GET`/`HEAD` requests for transient network failures and selected retryable HTTP statuses, using bounded exponential backoff. Disable the SDK's internal PostgREST retry so one wrapper enforces the attempt limit. No raw PostgreSQL client currently exists in `api/`, and `docker-compose.synology.yml` describes the customer connector and MariaDB rather than a self-hosted Supabase stack.
 
 **Tech Stack:** TypeScript, `@supabase/supabase-js`, Node built-in test runner (`tsx --test`).
 
@@ -15,6 +15,8 @@
 - Preserve `SUPABASE_URL` and `VITE_SUPABASE_URL` as HTTPS Supabase API URLs; do not add an unused database URL.
 - Retry at most two times after the initial request, only for `GET` and `HEAD`.
 - Never retry writes or Auth mutations because a lost response can hide a completed operation.
+- Disable the Supabase SDK's PostgREST retry layer in serverless clients so the shared wrapper owns the three-attempt total.
+- Honor `Retry-After` up to the configured 1000 ms per-retry wait budget; return the response without retry when the requested wait is longer.
 - Keep production Supabase strictly read-only; make no production or staging calls or configuration changes.
 - Do not add Supavisor to `docker-compose.synology.yml`; it is not a self-hosted Supabase stack.
 - For any future direct PostgreSQL client used by serverless code, document transaction-mode port `6543`, a per-instance pool limit of `1`, SSL, and transaction-mode feature limits.
@@ -26,6 +28,8 @@
 - A permanent HTTP response must pass through unchanged; test a non-retryable 400 response.
 - A transient network failure on GET must recover within the bounded attempt count; test network failure followed by success and final failure after three attempts.
 - `HEAD` must be treated as safe and reuse the same backoff policy; test retry on a transient status.
+- A server `Retry-After` delay within budget must be honored, and one beyond budget must be returned without an early retry.
+- Supabase's internal PostgREST retry must not multiply the wrapper's maximum attempts; test total underlying calls through the real client.
 
 ---
 
@@ -37,10 +41,10 @@
 
 **Interfaces:**
 - Produces: `createRetryingFetch(fetchImpl: typeof fetch, options?: RetryOptions): typeof fetch`.
-- Retry `GET`/`HEAD` for network `TypeError` failures except aborts, and statuses `408`, `425`, `429`, `500`, `502`, `503`, and `504`.
-- Use three maximum attempts, exponential delay starting at 100 ms capped at 1000 ms, and permit injected sleep/random sources for deterministic tests.
+- Retry `GET`/`HEAD` for network `TypeError` failures except aborts, and statuses `408`, `425`, `429`, `500`, `502`, `503`, `504`, and `520`.
+- Use three maximum attempts, exponential delay starting at 100 ms capped at 1000 ms, honor in-budget `Retry-After`, and permit injected sleep/random sources for deterministic tests.
 
-- [x] **Step 1: Write failing tests** for transient GET network recovery, 503 recovery, HEAD retry, bounded exhaustion, POST no-retry, 400 pass-through, and abort no-retry.
+- [x] **Step 1: Write failing tests** for transient GET network recovery, 503/520 recovery, HEAD retry, bounded exhaustion, POST no-retry, 400 pass-through, abort no-retry, and `Retry-After` handling.
 - [x] **Step 2: Run** `npx tsx --test tests/serverless-supabase-fetch.test.ts`; confirm the new module is missing.
 - [x] **Step 3: Implement** `createRetryingFetch` with safe-method gating, bounded exponential backoff, and transient error/status classification.
 - [x] **Step 4: Run** `npx tsx --test tests/serverless-supabase-fetch.test.ts`; all retry cases pass without real delays.
@@ -50,7 +54,7 @@
 **Files:**
 - Create: `api/_shared/supabaseClient.ts`
 - Modify: every `createClient(...)` call in `api/**/*.ts` to use `createServerlessSupabaseClient(...)`, preserving existing auth, headers, and client behavior.
-- Test: extend `tests/serverless-supabase-fetch.test.ts` to verify custom global headers/options survive factory configuration and its requests use the retrying fetch.
+- Test: extend `tests/serverless-supabase-fetch.test.ts` to verify custom global headers/options survive factory configuration, requests use the retrying fetch, and the SDK does not multiply the total attempts.
 
 **Interfaces:**
 - Consumes: `createRetryingFetch` from Task 1.
