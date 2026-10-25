@@ -1,7 +1,7 @@
 import { MssqlSourceAdapter } from './mssql.js';
 import { MysqlSourceAdapter } from './mysql.js';
 import { PostgresSourceAdapter } from './postgres.js';
-import type { ConnectorMappingDefinitionV1 } from '../../../shared/connectorProtocol.js';
+import type { CanonicalRecordV1, ConnectorMappingDefinitionV1 } from '../../../shared/connectorProtocol.js';
 import type { MappedSourceOperation } from './mappedOperations.js';
 
 export type SourceDriver = 'postgres' | 'mysql' | 'mariadb' | 'mssql';
@@ -76,7 +76,7 @@ export interface SourceAdapter {
   testConnection(): Promise<ConnectionReport>;
   inspectSchema(): Promise<SourceSchema>;
   readPage(query: IncrementalQuery): Promise<SourcePage>;
-  applyMappedOperation(operation: MappedSourceOperation, mapping: ConnectorMappingDefinitionV1, schema: SourceSchema): Promise<{ status: 'applied' | 'conflict'; sourceVersion?: string; replayed?: boolean }>;
+  applyMappedOperation(operation: MappedSourceOperation, mapping: ConnectorMappingDefinitionV1, schema: SourceSchema): Promise<{ status: 'applied' | 'conflict'; sourceVersion?: string; record?: CanonicalRecordV1; replayed?: boolean }>;
   verifyReadOnly(): Promise<ReadOnlyReport>;
   close(): Promise<void>;
 }
