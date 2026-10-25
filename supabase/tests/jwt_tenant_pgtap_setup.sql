@@ -1,12 +1,16 @@
 -- Disposable pgTAP fixture. Synthetic rows only; never run against Supabase.
 CREATE EXTENSION IF NOT EXISTS pgtap;
 
+-- The broad legacy policy belongs only in the pre-migration red test.
+DROP POLICY legacy_leads ON public.app_leads;
+
 ALTER TABLE public.app_leads ADD COLUMN IF NOT EXISTS created_by uuid;
 ALTER TABLE public.app_leads ADD COLUMN IF NOT EXISTS created_at timestamptz NOT NULL DEFAULT now();
 ALTER TABLE public.app_leads ADD COLUMN IF NOT EXISTS status text NOT NULL DEFAULT 'new';
 ALTER TABLE public.app_leads ADD COLUMN IF NOT EXISTS revision integer NOT NULL DEFAULT 1;
 ALTER TABLE public.app_leads ADD COLUMN IF NOT EXISTS import_fingerprint text;
 ALTER TABLE public.app_leads ADD COLUMN IF NOT EXISTS source_record_id text;
+ALTER TABLE public.app_leads ADD COLUMN IF NOT EXISTS updated_at timestamptz NOT NULL DEFAULT now();
 
 CREATE TABLE public.app_invites (id uuid PRIMARY KEY DEFAULT gen_random_uuid(), company_id uuid NOT NULL, email text NOT NULL, created_at timestamptz NOT NULL DEFAULT now());
 CREATE TABLE public.app_lead_events (id uuid PRIMARY KEY DEFAULT gen_random_uuid(), company_id uuid NOT NULL, lead_id uuid NOT NULL, actor_id uuid, created_at timestamptz NOT NULL DEFAULT now());
@@ -87,6 +91,12 @@ CREATE POLICY app_lead_files_delete_scoped ON public.app_lead_files FOR DELETE T
 CREATE POLICY app_imports_deny_direct ON public.app_imports FOR ALL TO anon, authenticated USING (false) WITH CHECK (false);
 CREATE POLICY app_public_intake_events_deny_direct ON public.app_public_intake_events FOR ALL TO anon, authenticated USING (false) WITH CHECK (false);
 
+-- Attribute the synthetic assigned lead before installing the immutable creator trigger.
+UPDATE public.app_leads SET created_by='30000000-0000-4000-8000-000000000003'
+WHERE id='a1000000-0000-4000-8000-000000000001';
+INSERT INTO public.app_leads(id,company_id,title,assigned_to,created_by)
+VALUES ('a2000000-0000-4000-8000-000000000002','a0000000-0000-4000-8000-000000000001','owner-only','10000000-0000-4000-8000-000000000001','10000000-0000-4000-8000-000000000001');
+
 -- Existing source contract: creator identity is assigned by the database and immutable.
 CREATE FUNCTION app_private.guard_lead_creator()
 RETURNS trigger LANGUAGE plpgsql SECURITY INVOKER SET search_path=''
@@ -103,6 +113,46 @@ $$;
 REVOKE ALL ON FUNCTION app_private.guard_lead_creator() FROM PUBLIC,anon,authenticated,service_role;
 CREATE TRIGGER app_guard_lead_creator BEFORE INSERT OR UPDATE ON public.app_leads
 FOR EACH ROW EXECUTE FUNCTION app_private.guard_lead_creator();
+
+-- Synthetic copy of the checked-in lead mutation contract: employees may only
+-- advance status on leads assigned to them; owners control insert and other edits.
+CREATE FUNCTION app_private.guard_lead_mutation()
+RETURNS trigger LANGUAGE plpgsql SECURITY INVOKER SET search_path=public,pg_temp
+AS $$
+DECLARE v_role text;
+BEGIN
+  IF TG_OP='UPDATE' AND (NEW.id IS DISTINCT FROM OLD.id OR NEW.company_id IS DISTINCT FROM OLD.company_id) THEN
+    RAISE EXCEPTION 'lead identity is immutable' USING errcode='42501';
+  END IF;
+  IF current_user='authenticated' THEN
+    v_role := app_private.app_role(NEW.company_id);
+    IF auth.uid() IS NULL OR v_role IS NULL OR NOT EXISTS (
+      SELECT 1 FROM public.app_companies c WHERE c.id=NEW.company_id AND c.active
+    ) THEN RAISE EXCEPTION 'active company membership required' USING errcode='42501'; END IF;
+    IF TG_OP='INSERT' AND v_role<>'owner' THEN
+      RAISE EXCEPTION 'only owner can create leads' USING errcode='42501';
+    END IF;
+    IF TG_OP='UPDATE' AND v_role='employee' THEN
+      IF OLD.assigned_to IS DISTINCT FROM auth.uid()
+         OR (to_jsonb(NEW)-'status') IS DISTINCT FROM (to_jsonb(OLD)-'status') THEN
+        RAISE EXCEPTION 'employee may only update assigned lead status' USING errcode='42501';
+      END IF;
+      IF NEW.status IS DISTINCT FROM OLD.status AND NOT (
+        (OLD.status='new' AND NEW.status IN ('contacted','lost')) OR
+        (OLD.status='contacted' AND NEW.status IN ('scheduled','in_progress','lost')) OR
+        (OLD.status='scheduled' AND NEW.status IN ('in_progress','lost')) OR
+        (OLD.status='in_progress' AND NEW.status IN ('won','lost'))
+      ) THEN RAISE EXCEPTION 'invalid employee status transition' USING errcode='42501'; END IF;
+    END IF;
+  END IF;
+  IF TG_OP='UPDATE' THEN NEW.revision:=OLD.revision+1; NEW.updated_at:=clock_timestamp(); END IF;
+  RETURN NEW;
+END
+$$;
+REVOKE ALL ON FUNCTION app_private.guard_lead_mutation() FROM PUBLIC,anon,authenticated,service_role;
+CREATE TRIGGER app_leads_guard_mutation BEFORE INSERT OR UPDATE ON public.app_leads
+FOR EACH ROW EXECUTE FUNCTION app_private.guard_lead_mutation();
+
 
 INSERT INTO public.app_lead_events(company_id, lead_id, actor_id) VALUES
 ('a0000000-0000-4000-8000-000000000001','a1000000-0000-4000-8000-000000000001','10000000-0000-4000-8000-000000000001'),

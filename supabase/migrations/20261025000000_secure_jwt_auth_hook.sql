@@ -57,9 +57,23 @@ BEGIN
     JOIN pg_namespace n ON n.oid=c.relnamespace
     WHERE n.nspname='public' AND c.relname='app_leads'
       AND tr.tgname='app_guard_lead_creator' AND tr.tgenabled='O'
-      AND (tr.tgtype & 23)=23 AND NOT tr.tgisinternal
+      AND tr.tgfoid=to_regprocedure('app_private.guard_lead_creator()')
+      AND tr.tgtype=23 AND tr.tgqual IS NULL AND array_length(tr.tgattr,1) IS NULL
+      AND NOT tr.tgisinternal
   ) THEN
     RAISE EXCEPTION 'JWT tenant migration blocked: immutable app_leads creator trigger contract is missing';
+  END IF;
+  IF to_regprocedure('app_private.guard_lead_mutation()') IS NULL OR NOT EXISTS (
+    SELECT 1 FROM pg_trigger tr
+    JOIN pg_class c ON c.oid=tr.tgrelid
+    JOIN pg_namespace n ON n.oid=c.relnamespace
+    WHERE n.nspname='public' AND c.relname='app_leads'
+      AND tr.tgname='app_leads_guard_mutation' AND tr.tgenabled='O'
+      AND tr.tgfoid=to_regprocedure('app_private.guard_lead_mutation()')
+      AND tr.tgtype=23 AND tr.tgqual IS NULL AND array_length(tr.tgattr,1) IS NULL
+      AND NOT tr.tgisinternal
+  ) THEN
+    RAISE EXCEPTION 'JWT tenant migration blocked: app_leads mutation guard trigger contract is missing';
   END IF;
   IF EXISTS (
     SELECT 1 FROM (VALUES
@@ -91,7 +105,11 @@ BEGIN
        OR has_table_privilege('anon',format('public.%I',t),'DELETE')
        OR has_table_privilege('anon',format('public.%I',t),'TRUNCATE')
        OR has_table_privilege('anon',format('public.%I',t),'REFERENCES')
-       OR has_table_privilege('anon',format('public.%I',t),'TRIGGER') THEN
+       OR has_table_privilege('anon',format('public.%I',t),'TRIGGER')
+       OR has_any_column_privilege('anon',format('public.%I',t),'SELECT')
+       OR has_any_column_privilege('anon',format('public.%I',t),'INSERT')
+       OR has_any_column_privilege('anon',format('public.%I',t),'UPDATE')
+       OR has_any_column_privilege('anon',format('public.%I',t),'REFERENCES') THEN
       RAISE EXCEPTION 'JWT tenant migration blocked: anon has a direct table grant on public.%', t;
     END IF;
   END LOOP;
@@ -112,7 +130,10 @@ BEGIN
        OR has_table_privilege('authenticated',format('public.%I',t),'DELETE') IS DISTINCT FROM (t=ANY(ARRAY['app_members','app_invites','app_leads','app_lead_notes','app_lead_files']))
        OR has_table_privilege('authenticated',format('public.%I',t),'TRUNCATE')
        OR has_table_privilege('authenticated',format('public.%I',t),'REFERENCES')
-       OR has_table_privilege('authenticated',format('public.%I',t),'TRIGGER') THEN
+       OR has_table_privilege('authenticated',format('public.%I',t),'TRIGGER')
+       OR (NOT (t=ANY(ARRAY['app_members','app_invites','app_leads','app_lead_notes','app_lead_files'])) AND has_any_column_privilege('authenticated',format('public.%I',t),'INSERT'))
+       OR (NOT (t=ANY(ARRAY['app_companies','app_members','app_invites','app_leads'])) AND has_any_column_privilege('authenticated',format('public.%I',t),'UPDATE'))
+       OR has_any_column_privilege('authenticated',format('public.%I',t),'REFERENCES') THEN
       RAISE EXCEPTION 'JWT tenant migration blocked: authenticated mutation grants differ for public.%', t;
     END IF;
     IF EXISTS (
@@ -133,7 +154,11 @@ BEGIN
        OR has_table_privilege('authenticated',format('public.%I',t),'DELETE')
        OR has_table_privilege('authenticated',format('public.%I',t),'TRUNCATE')
        OR has_table_privilege('authenticated',format('public.%I',t),'REFERENCES')
-       OR has_table_privilege('authenticated',format('public.%I',t),'TRIGGER') THEN
+       OR has_table_privilege('authenticated',format('public.%I',t),'TRIGGER')
+       OR has_any_column_privilege('authenticated',format('public.%I',t),'SELECT')
+       OR has_any_column_privilege('authenticated',format('public.%I',t),'INSERT')
+       OR has_any_column_privilege('authenticated',format('public.%I',t),'UPDATE')
+       OR has_any_column_privilege('authenticated',format('public.%I',t),'REFERENCES') THEN
       RAISE EXCEPTION 'JWT tenant migration blocked: authenticated has a direct service-only grant on public.%', t;
     END IF;
   END LOOP;
@@ -142,14 +167,26 @@ BEGIN
       IF has_table_privilege('service_role',format('public.%I',t),'SELECT')
          OR has_table_privilege('service_role',format('public.%I',t),'INSERT')
          OR has_table_privilege('service_role',format('public.%I',t),'UPDATE')
-         OR has_table_privilege('service_role',format('public.%I',t),'DELETE') THEN
+          OR has_table_privilege('service_role',format('public.%I',t),'DELETE')
+          OR has_table_privilege('service_role',format('public.%I',t),'TRUNCATE')
+          OR has_table_privilege('service_role',format('public.%I',t),'REFERENCES')
+          OR has_table_privilege('service_role',format('public.%I',t),'TRIGGER')
+          OR has_any_column_privilege('service_role',format('public.%I',t),'SELECT')
+          OR has_any_column_privilege('service_role',format('public.%I',t),'INSERT')
+          OR has_any_column_privilege('service_role',format('public.%I',t),'UPDATE')
+          OR has_any_column_privilege('service_role',format('public.%I',t),'REFERENCES') THEN
         RAISE EXCEPTION 'JWT tenant migration blocked: Stripe service-role grant differs';
       END IF;
     ELSIF t='app_company_legal_acceptances' THEN
       IF has_table_privilege('service_role',format('public.%I',t),'SELECT') IS DISTINCT FROM true
          OR has_table_privilege('service_role',format('public.%I',t),'INSERT') IS DISTINCT FROM true
          OR has_table_privilege('service_role',format('public.%I',t),'UPDATE')
-         OR has_table_privilege('service_role',format('public.%I',t),'DELETE') THEN
+          OR has_table_privilege('service_role',format('public.%I',t),'DELETE')
+          OR has_table_privilege('service_role',format('public.%I',t),'TRUNCATE')
+          OR has_table_privilege('service_role',format('public.%I',t),'REFERENCES')
+          OR has_table_privilege('service_role',format('public.%I',t),'TRIGGER')
+          OR has_any_column_privilege('service_role',format('public.%I',t),'UPDATE')
+          OR has_any_column_privilege('service_role',format('public.%I',t),'REFERENCES') THEN
         RAISE EXCEPTION 'JWT tenant migration blocked: legal-acceptance service-role grant differs';
       END IF;
     ELSIF has_table_privilege('service_role',format('public.%I',t),'SELECT') IS DISTINCT FROM true

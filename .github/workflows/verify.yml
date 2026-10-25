@@ -216,8 +216,7 @@ jobs:
       - name: Prepare synthetic tenant fixture
         run: |
           docker exec jwt-pgtap-postgres psql -v ON_ERROR_STOP=1 -U postgres -f /workspace/supabase/tests/jwt_tenant_setup.sql
-          docker exec jwt-pgtap-postgres psql -v ON_ERROR_STOP=1 -U postgres -f /workspace/supabase/tests/jwt_tenant_pgtap_setup.sql
-          docker exec jwt-pgtap-postgres psql -v ON_ERROR_STOP=1 -U postgres -c "SELECT extversion FROM pg_extension WHERE extname = 'pgtap'"
+          docker exec jwt-pgtap-postgres pg_prove --version
       - name: Prove the tenant test fails before the proposal
         run: |
           set +e
@@ -228,6 +227,10 @@ jobs:
           test "$status" -ne 0
           grep -q 'Tenant A sees only its own leads' tenant-red.log
           grep -q 'Looks like you failed 1 test of 1' tenant-red.log
+      - name: Complete synthetic tenant fixture
+        run: docker exec jwt-pgtap-postgres psql -v ON_ERROR_STOP=1 -U postgres -f /workspace/supabase/tests/jwt_tenant_pgtap_setup.sql
+      - name: Confirm pgTAP extension
+        run: docker exec jwt-pgtap-postgres psql -v ON_ERROR_STOP=1 -U postgres -c "SELECT extversion FROM pg_extension WHERE extname = 'pgtap'"
       - name: Prove the migration blocks unknown app_* tables
         run: |
           docker exec jwt-pgtap-postgres psql -v ON_ERROR_STOP=1 -U postgres -c 'CREATE TABLE public.app_unclassified_probe(id uuid)'

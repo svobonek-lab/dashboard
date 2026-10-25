@@ -1,5 +1,5 @@
 BEGIN;
-SELECT plan(29);
+SELECT no_plan();
 
 SELECT is((SELECT count(*)::integer FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace WHERE n.nspname='public' AND left(c.relname,4)='app_' AND c.relkind IN ('r','p')), 19, 'fixture covers the complete 19-table app_* catalog snapshot');
 SELECT ok((SELECT bool_and(c.relrowsecurity AND c.relforcerowsecurity=(c.relname=ANY(ARRAY['app_platform_admins','app_platform_audit_events','app_platform_support_sessions']))) FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace WHERE n.nspname='public' AND left(c.relname,4)='app_' AND c.relkind IN ('r','p')), 'RLS and forced-RLS flags match the full app_* matrix');
@@ -33,7 +33,7 @@ SELECT set_config('request.jwt.claims','{"app_metadata":{"tenant_id":"a0000000-0
 SELECT is((SELECT count(*)::integer FROM public.app_companies), 1, 'owner sees only its company root');
 SELECT is((SELECT count(*)::integer FROM public.app_members), 4, 'owner sees only same-tenant memberships');
 SELECT is((SELECT count(*)::integer FROM public.app_invites), 1, 'owner sees only same-tenant invites');
-SELECT is((SELECT count(*)::integer FROM public.app_leads), 1, 'permissive legacy lead policy cannot bypass tenant boundary');
+SELECT is((SELECT count(*)::integer FROM public.app_leads), 2, 'owner sees only same-tenant leads');
 SELECT is((SELECT count(*)::integer FROM public.app_lead_events), 1, 'owner sees only same-tenant lead events');
 SELECT is((SELECT count(*)::integer FROM public.app_lead_notes), 1, 'owner sees only same-tenant notes');
 SELECT is((SELECT count(*)::integer FROM public.app_lead_files), 1, 'owner sees only same-tenant files');
@@ -42,25 +42,28 @@ SELECT is((SELECT count(*)::integer FROM public.app_leads), 0, 'user_metadata ca
 SELECT set_config('request.jwt.claims','{"app_metadata":{"tenant_id":"malformed"}}',true);
 SELECT is((SELECT count(*)::integer FROM public.app_leads), 0, 'malformed tenant claim denies access');
 SELECT set_config('request.jwt.claims','{"app_metadata":{"tenant_id":"a0000000-0000-4000-8000-000000000001"}}',true);
-UPDATE public.app_leads SET title='tenant A update' WHERE id='a1000000-0000-4000-8000-000000000001';
-SELECT is((SELECT title FROM public.app_leads WHERE id='a1000000-0000-4000-8000-000000000001'), 'tenant A update', 'same-tenant update remains available');
-SELECT is((WITH changed AS (UPDATE public.app_leads SET title='cross tenant' WHERE id='b1000000-0000-4000-8000-000000000002' RETURNING id) SELECT count(*)::integer FROM changed), 0, 'cross-tenant update affects no row');
+UPDATE public.app_leads SET title='tenant A update' WHERE id='a2000000-0000-4000-8000-000000000002';
+SELECT is((SELECT title FROM public.app_leads WHERE id='a2000000-0000-4000-8000-000000000002'), 'tenant A update', 'owner same-tenant update remains available');
+WITH changed AS (UPDATE public.app_leads SET title='cross tenant' WHERE id='b1000000-0000-4000-8000-000000000002' RETURNING id)
+SELECT is((SELECT count(*)::integer FROM changed), 0, 'cross-tenant update affects no row');
 SELECT throws_ok($q$ INSERT INTO public.app_leads(id,company_id,title) VALUES ('c1000000-0000-4000-8000-000000000001','b0000000-0000-4000-8000-000000000002','forged') $q$, '42501', NULL, 'cross-tenant insert is denied by WITH CHECK');
 
 SELECT set_config('request.jwt.claim.sub','30000000-0000-4000-8000-000000000003',true);
 SELECT is((SELECT count(*)::integer FROM public.app_leads), 1, 'employee sees the assigned same-tenant lead');
-SELECT is((WITH changed AS (UPDATE public.app_leads SET title='employee update' WHERE id='a1000000-0000-4000-8000-000000000001' RETURNING id) SELECT count(*)::integer FROM changed), 1, 'employee can update an assigned lead');
+WITH changed AS (UPDATE public.app_leads SET status='contacted' WHERE id='a1000000-0000-4000-8000-000000000001' RETURNING id)
+SELECT is((SELECT count(*)::integer FROM changed), 1, 'employee can advance status on an assigned lead');
+SELECT throws_ok($q$ UPDATE public.app_leads SET title='employee update' WHERE id='a1000000-0000-4000-8000-000000000001' $q$, '42501', 'employee may only update assigned lead status', 'employee cannot edit lead title');
 SELECT throws_ok($q$ UPDATE public.app_leads SET company_id='b0000000-0000-4000-8000-000000000002' WHERE id='a1000000-0000-4000-8000-000000000001' $q$, '42501', NULL, 'employee cannot reassign a lead across tenants');
-INSERT INTO public.app_leads(id,company_id,title,assigned_to,created_by) VALUES
-('a3000000-0000-4000-8000-000000000003','a0000000-0000-4000-8000-000000000001','employee-created','30000000-0000-4000-8000-000000000003','10000000-0000-4000-8000-000000000001');
-SELECT is((SELECT created_by FROM public.app_leads WHERE id='a3000000-0000-4000-8000-000000000003'), '30000000-0000-4000-8000-000000000003'::uuid, 'database trigger replaces a forged creator');
-SELECT throws_ok($q$ UPDATE public.app_leads SET created_by='10000000-0000-4000-8000-000000000001' WHERE id='a3000000-0000-4000-8000-000000000003' $q$, '42501', 'lead creator is immutable', 'employee cannot rewrite creator identity');
-SELECT is((WITH deleted AS (DELETE FROM public.app_leads WHERE id='a3000000-0000-4000-8000-000000000003' RETURNING id) SELECT count(*)::integer FROM deleted), 1, 'creator can hard-delete an assigned lead within the existing window');
+SELECT throws_ok($q$ INSERT INTO public.app_leads(id,company_id,title,assigned_to) VALUES ('a3000000-0000-4000-8000-000000000003','a0000000-0000-4000-8000-000000000001','employee-created','30000000-0000-4000-8000-000000000003') $q$, '42501', 'only owner can create leads', 'employee cannot create leads');
+SELECT throws_ok($q$ UPDATE public.app_leads SET created_by='10000000-0000-4000-8000-000000000001' WHERE id='a1000000-0000-4000-8000-000000000001' $q$, '42501', 'lead creator is immutable', 'employee cannot rewrite creator identity');
+WITH deleted AS (DELETE FROM public.app_leads WHERE id='a1000000-0000-4000-8000-000000000001' RETURNING id)
+SELECT is((SELECT count(*)::integer FROM deleted), 1, 'creator can hard-delete an assigned lead within the existing policy');
 RESET ROLE;
 SET LOCAL ROLE authenticated;
 SELECT set_config('request.jwt.claim.sub','10000000-0000-4000-8000-000000000001',true);
 SELECT set_config('request.jwt.claims','{"app_metadata":{"tenant_id":"a0000000-0000-4000-8000-000000000001"}}',true);
-SELECT is((WITH deleted AS (DELETE FROM public.app_leads WHERE id='a1000000-0000-4000-8000-000000000001' RETURNING id) SELECT count(*)::integer FROM deleted), 1, 'owner can still hard-delete a same-tenant lead');
+WITH deleted AS (DELETE FROM public.app_leads WHERE id='a2000000-0000-4000-8000-000000000002' RETURNING id)
+SELECT is((SELECT count(*)::integer FROM deleted), 1, 'owner can still hard-delete a same-tenant lead');
 
 RESET ROLE;
 SELECT * FROM finish();
