@@ -442,7 +442,7 @@ export const LandingPage: React.FC = () => {
                   type="range"
                   min="30000"
                   max="300000"
-                  step="5000"
+                  step="1000"
                   value={avgMargin}
                   onChange={e => setAvgMargin(Number(e.target.value))}
                   className="w-full accent-blue-600 cursor-pointer"
