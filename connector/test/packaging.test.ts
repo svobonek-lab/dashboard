@@ -69,3 +69,15 @@ test('example configuration contains paths and placeholders but no secret value'
   assert.match(serialized, /\/run\/secrets\/source_db_password/);
   assert.doesNotMatch(serialized, /AP11|service_role|eyJ[A-Za-z0-9_-]+\./);
 });
+
+test('synthetic database fixtures bind localhost ports outside the Linux ephemeral range', async () => {
+  const compose = await readFile(join(connectorRoot, 'compose.test.yaml'), 'utf8');
+  const bindings = [...compose.matchAll(/"127\.0\.0\.1:(\d+):(\d+)"/g)];
+  assert.equal(bindings.length, 3);
+  assert.deepEqual(bindings.map(([, host, container]) => [Number(host), Number(container)]), [
+    [25432, 5432],
+    [23306, 3306],
+    [21433, 1433],
+  ]);
+  for (const [, host] of bindings) assert.ok(Number(host) < 32768, `host port ${host} overlaps the usual Linux ephemeral range`);
+});

@@ -26,12 +26,12 @@ test('MariaDB read-only proof fails closed when no readable table exists', async
 test('MariaDB adapter contract', { skip: process.env.RUN_DB_INTEGRATION !== '1' }, async () => {
   await assertAdapterContract({
     create: createSourceAdapter,
-    config: { driver: 'mariadb', host: '127.0.0.1', port: 53306, database: 'fixture', username: 'fixture_reader', password: 'fixture_reader_password' },
+    config: { driver: 'mariadb', host: '127.0.0.1', port: 23306, database: 'fixture', username: 'fixture_reader', password: 'fixture_reader_password' },
   });
 });
 
 test('MariaDB fixture account denies direct writes', { skip: process.env.RUN_DB_INTEGRATION !== '1' }, async () => {
-  const connection = await mysql.createConnection({ host: '127.0.0.1', port: 53306, database: 'fixture', user: 'fixture_reader', password: 'fixture_reader_password' });
+  const connection = await mysql.createConnection({ host: '127.0.0.1', port: 23306, database: 'fixture', user: 'fixture_reader', password: 'fixture_reader_password' });
   try {
     await assert.rejects(connection.query("INSERT INTO leads (id, title, updated_at) VALUES (99, 'denied', NOW())"), /denied|command denied/i);
     await assert.rejects(connection.query("UPDATE customers SET name = 'denied' WHERE id = 1"), /denied|command denied/i);
