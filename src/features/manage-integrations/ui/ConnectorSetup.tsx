@@ -13,8 +13,8 @@ const driverLabels: Record<DatabaseDriver, string> = {
   mysql: 'MySQL',
 };
 
-export function ConnectorSetup({ companyId, onCreated }: { companyId: string; onCreated: () => void }) {
-  const [driver, setDriver] = useState<DatabaseDriver>('postgres');
+export function ConnectorSetup({ companyId, onCreated, initialDriver, onDriverChange }: { companyId: string; onCreated: () => void; initialDriver?: DatabaseDriver; onDriverChange?: (driver: DatabaseDriver) => void }) {
+  const [driver, setDriver] = useState<DatabaseDriver>(initialDriver ?? 'postgres');
   const [enrollment, setEnrollment] = useState<EnrollmentResponse | null>(null);
   const [busy, setBusy] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -61,7 +61,7 @@ export function ConnectorSetup({ companyId, onCreated }: { companyId: string; on
       <div className="flex items-start gap-4"><span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-blue-50 text-blue-600"><Cable className="h-5 w-5" /></span><div><h2 className="text-lg font-semibold text-slate-950">Databáze na Synology</h2><p className="mt-1 text-sm leading-6 text-slate-500">Konektor nejdřív načte metadata a provede kontrolní běh. Do vaší databáze začne zapisovat jen po schváleném mapování a výslovném zapnutí BYODB.</p></div></div>
       <div className="mt-5 grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end">
         <label className="text-xs font-semibold text-slate-600">Typ databáze
-          <select value={driver} onChange={event => setDriver(event.target.value as DatabaseDriver)} className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm font-normal text-slate-950">
+            <select value={driver} onChange={event => { const nextDriver = event.target.value as DatabaseDriver; setDriver(nextDriver); onDriverChange?.(nextDriver); }} className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm font-normal text-slate-950">
             {Object.entries(driverLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
           </select>
         </label>

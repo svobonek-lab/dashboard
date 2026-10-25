@@ -63,3 +63,34 @@ test('owner integration UI names both storage modes and keeps write status visib
   assert.match(status, /čekající zápisy/i);
   assert.match(status, /konflikt/i);
 });
+
+test('owner integrations exposes an interactive company database card and actions without an enterprise or UI-flag lock', async () => {
+  const integrations = await readFile(new URL('../src/pages/owner/integrations/ui/Integrations.tsx', import.meta.url), 'utf8');
+  assert.match(integrations, /Vlastní firemní databáze \(Synology \/ On-Premise\)/);
+  assert.match(integrations, /Připojit vlastní databázi/);
+  assert.match(integrations, /Stáhnout Synology Docker Compose/);
+  assert.match(integrations, /Spravovat mapování polí/);
+  assert.match(integrations, /<button type="button" onClick=\{\(\) => \{ setConnectorError\(''\); setConnectorDialog\('setup'\); \}\}[^>]*>[\s\S]*?Připojit vlastní databázi/);
+  assert.match(integrations, /<button type="button" onClick=\{downloadSynologyCompose\}[^>]*>[\s\S]*?Stáhnout Synology Docker Compose/);
+  assert.match(integrations, /<button type="button" onClick=\{\(\) => \{ setConnectorError\(''\); setConnectorDialog\('mapping'\); \}\}[^>]*>[\s\S]*?Spravovat mapování polí/);
+  assert.match(integrations, /anchor\.download = 'docker-compose\.synology\.yml'/);
+  assert.match(integrations, /connectorDialog === 'setup' \? <ConnectorSetup/);
+  assert.match(integrations, /role="dialog" aria-modal="true"/);
+  const cardStart = integrations.indexOf('<aside className="workspace-panel border-l-4');
+  const cardEnd = integrations.indexOf('</aside>', cardStart);
+  const card = integrations.slice(cardStart, cardEnd);
+  assert.match(card, /<ConnectorStatus companyId=\{currentOrg\.id\}/);
+  assert.match(integrations, /<ConnectorMapping companyId=\{currentOrg\.id\}/);
+  assert.doesNotMatch(integrations, /isEnterprise && <section/);
+  assert.doesNotMatch(integrations, /connectorEnabled && currentOrg\?\.id/);
+});
+
+test('Synology Compose download uses a reviewed immutable image and keeps enrollment secrets out of the file', async () => {
+  const packageModel = await import('../src/features/manage-integrations/model/buildConnectorPackage.js');
+  assert.equal(typeof packageModel.buildSynologyCompose, 'function');
+  const compose = packageModel.buildSynologyCompose(`ghcr.io/svobonek-lab/stavbaflow-connector@sha256:${'b'.repeat(64)}`);
+  assert.match(compose, /image: ghcr\.io\/svobonek-lab\/stavbaflow-connector@sha256:/);
+  assert.match(compose, /connector_identity/);
+  assert.doesNotMatch(compose, /connectorSecret|enrollmentCode|companyKey/i);
+  assert.throws(() => packageModel.buildSynologyCompose('latest'), /CONNECTOR_IMAGE_DIGEST_REQUIRED/);
+});
