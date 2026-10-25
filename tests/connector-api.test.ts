@@ -1,9 +1,13 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
+import { createHash } from 'node:crypto';
 
 import { parseConnectorBody, requirePost } from '../api/_connector/http.js';
+import { registerConnector, recordConnectorHeartbeat, ingestConnectorBatch } from '../api/_connector/lifecycle.js';
+import { authenticateConnectorRequest, type StoredConnectorIdentity } from '../api/_connector/signature.js';
 import { contextResponse } from '../api/_connector/routes/operations.js';
 import { validateByodbOperationAck, validateByodbOperationCreate, validateByodbOperationRequest, validateByodbPollBatch, validateConnectorDatabaseMode, validateConnectorMapping, validateConnectorRegistration, validateIngestEnvelope, validateRunMetrics, validateSourceSchema } from '../api/_connector/validation.js';
+import { ConnectorApi, type ConnectorApiOptions } from '../connector/src/api/client.js';
 
 test('connector HTTP boundary rejects method, oversized body and malformed JSON', () => {
   assert.throws(() => requirePost({ method: 'GET' }), /METHOD_NOT_ALLOWED/);
@@ -119,6 +123,87 @@ test('connector registration accepts only an expiring enrollment code and HMAC s
   });
   assert.throws(() => validateConnectorRegistration({ enrollmentCode: 'a'.repeat(32), secretFingerprint: fingerprint, publicKey: 'legacy-key' }), /CONNECTOR_REGISTRATION_INVALID/);
   assert.throws(() => validateConnectorRegistration({ enrollmentCode: 'a'.repeat(32), secretFingerprint: 'weak' }), /CONNECTOR_REGISTRATION_INVALID/);
+});
+
+test('synthetic connector completes enrollment, signed heartbeat, and tenant-bound mapped ingest', async () => {
+  const companyId = '8123e456-e89b-42d3-a456-426614174000';
+  const connectorId = '9123e456-e89b-42d3-a456-426614174000';
+  const enrollmentCode = 'synthetic-enrollment-code-2026';
+  const secret = Buffer.alloc(32, 23).toString('base64url');
+  const expectedFingerprint = createHash('sha256').update(Buffer.from(secret, 'base64url')).digest('hex');
+  const state = { enrollmentConsumed: false, heartbeat: null as unknown, records: new Map<string, { companyId: string; payload: unknown }>(), nonces: new Set<string>() };
+  const rpcCalls: Array<{ name: string; args: Record<string, unknown> }> = [];
+  const service = {
+    rpc: async (name: string, args: Record<string, unknown>) => {
+      rpcCalls.push({ name, args });
+      if (name === 'app_register_connector') {
+        if (state.enrollmentConsumed || args.p_enrollment_code !== enrollmentCode || args.p_secret_fingerprint !== `\\x${expectedFingerprint}`) return { data: null, error: { code: 'REJECTED' } };
+        state.enrollmentConsumed = true;
+        return { data: { connector_id: connectorId, company_id: companyId }, error: null };
+      }
+      if (name === 'app_connector_heartbeat') {
+        assert.equal(args.p_connector_id, connectorId);
+        state.heartbeat = { status: args.p_status, schema: args.p_source_schema };
+        return { data: null, error: null };
+      }
+      if (name === 'app_ingest_connector_batch') {
+        assert.equal(args.p_connector_id, connectorId);
+        const input = args.p_records as Array<{ externalId: string; payload: unknown }>;
+        for (const record of input) state.records.set(record.externalId, { companyId, payload: record.payload });
+        return { data: { version: 1, requestId: args.p_request_id, accepted: true, results: input.map(record => ({ externalId: record.externalId, type: 'company', status: 'created' })) }, error: null };
+      }
+      throw new Error(`unexpected RPC: ${name}`);
+    },
+  } as never;
+  let storedIdentity: StoredConnectorIdentity | null = null;
+  const options: ConnectorApiOptions = {
+    baseUrl: 'https://api.example.test',
+    identity: { algorithm: 'HMAC-SHA256' as const, secret },
+    fetcher: async (input: string | URL | Request, init?: RequestInit) => {
+      const url = new URL(input instanceof Request ? input.url : input.toString());
+      const rawBody = String(init?.body ?? '');
+      const body = JSON.parse(rawBody) as Record<string, unknown>;
+      const json = (value: unknown, status = 200) => new Response(JSON.stringify(value), { status, headers: { 'content-type': 'application/json' } });
+      if (url.pathname === '/api/connector/register') {
+        try {
+          const result = await registerConnector(service, body);
+          storedIdentity = { connectorId, companyId, secret, revoked: false, scopes: ['heartbeat', 'ingest'] };
+          return json(result);
+        } catch { return json({ code: 'CONNECTOR_REGISTRATION_REJECTED' }, 401); }
+      }
+      const headers = Object.fromEntries(new Headers(init?.headers).entries());
+      const requiredScope = url.pathname.endsWith('/heartbeat') ? 'heartbeat' : 'ingest';
+      let identity;
+      try {
+        identity = await authenticateConnectorRequest({
+          method: String(init?.method ?? 'POST'), pathname: url.pathname, headers, rawBody, body,
+          requiredScope, identity: storedIdentity,
+          reserveNonce: async (_connectorId, requestId) => { if (state.nonces.has(requestId)) return false; state.nonces.add(requestId); return true; },
+        });
+      } catch { return json({ code: 'CONNECTOR_SIGNATURE_INVALID' }, 401); }
+      if (requiredScope === 'heartbeat') return json(await recordConnectorHeartbeat(service, identity, body));
+      return json(await ingestConnectorBatch(service, identity, body));
+    },
+    sleep: async () => undefined,
+  };
+  const api = new ConnectorApi(options);
+  const registered = await api.enroll(enrollmentCode);
+  options.connectorId = registered.connectorId;
+  const sourceSchema = { tables: [{ schema: 'public', name: 'companies', columns: [
+    { name: 'id', dataType: 'uuid', nullable: false, primaryKey: true, generated: false, hasDefault: false },
+    { name: 'firma_nazev', dataType: 'text', nullable: false },
+  ] }] };
+  assert.deepEqual(registered, { connectorId, companyId });
+  assert.deepEqual(await api.heartbeat({ status: 'mapping_required', version: '1.0.0', sourceSchema }), { accepted: true });
+  const ack = await api.ingest({
+    version: 1, connectorId, companyId, mappingVersion: 1, requestId: 'synthetic-ingest-1', dryRun: false,
+    records: [{ version: 1, type: 'company', sourceSystem: 'fixture', sourceTable: 'companies', externalId: 'company-row-1', fingerprint: 'a'.repeat(64), payload: { name: 'Syntetická firma' } }],
+  });
+  assert.equal(ack.accepted, true);
+  assert.equal(state.heartbeat && (state.heartbeat as { status: string }).status, 'mapping_required');
+  assert.deepEqual(state.records.get('company-row-1'), { companyId, payload: { name: 'Syntetická firma' } });
+  assert.deepEqual(rpcCalls.map(call => call.name), ['app_register_connector', 'app_connector_heartbeat', 'app_ingest_connector_batch']);
+  assert.equal(state.enrollmentConsumed, true);
 });
 
 test('BYODB operations are bounded by the approved mapping and role-specific write scope', () => {
