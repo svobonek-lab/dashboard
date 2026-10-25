@@ -246,6 +246,8 @@ jobs:
           docker exec jwt-pgtap-postgres psql -v ON_ERROR_STOP=1 -U postgres -c 'DROP TABLE public.app_unclassified_probe'
       - name: Apply the review proposal to the disposable fixture
         run: docker exec jwt-pgtap-postgres psql -v ON_ERROR_STOP=1 -U postgres -f /workspace/supabase/migrations/20261025000000_secure_jwt_auth_hook.sql
+      - name: Inspect the generated tenant boundary expression
+        run: docker exec jwt-pgtap-postgres psql -A -t -F '|' -U postgres -c "SELECT c.relname,pg_get_expr(p.polqual,p.polrelid),pg_get_expr(p.polwithcheck,p.polrelid) FROM pg_policy p JOIN pg_class c ON c.oid=p.polrelid WHERE p.polname='app_jwt_tenant_boundary' ORDER BY c.relname"
       - name: Reject partial and altered tenant boundaries
         run: |
           docker exec jwt-pgtap-postgres psql -v ON_ERROR_STOP=1 -U postgres -c 'DROP POLICY app_jwt_tenant_boundary ON public.app_invites'

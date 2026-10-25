@@ -9,7 +9,7 @@ Status: review proposal only. This PR does not apply SQL to Supabase or change A
 - Validates the complete 19-name public `app_*` relation inventory and the specific ACL, policy, helper, RLS, and FORCE RLS contracts the migration relies on. Any mismatch aborts the transaction.
 - Adds a restrictive authenticated boundary to the seven verified direct-access tenant tables if the complete set is absent. Existing complete boundaries are validated and left as-is. A partially present or incompatible set aborts.
 - Leaves narrower owner, employee assignment, creator, hard-delete, public intake, service-only, platform, Storage, and SECURITY DEFINER function contracts unchanged.
-- Requires the existing enabled `app_guard_lead_creator` trigger as a migration precondition because the metadata snapshot did not capture trigger state.
+- Requires the existing enabled `app_guard_lead_creator` and `app_leads_guard_mutation` triggers as migration preconditions because the metadata snapshot did not capture trigger state. Preflight verifies each trigger's function binding and exact BEFORE INSERT/UPDATE row event shape.
 
 ## Review and rollout gates
 
@@ -30,7 +30,7 @@ The earlier checked-in staging proposal adds a separate `storage.objects` policy
 ## Current blockers
 
 - Production hook body and Auth Dashboard hook setting were not independently captured.
-- The production creator trigger and update-guard source were not included in the metadata snapshot; verify them against source before any rollout.
+- Production creator and update-guard trigger state was not included in the metadata snapshot; verify both live trigger bindings and function bodies against source before any rollout.
 - The policy/function metadata report omits rows/names; only the exact boundary and direct-deny contracts represented in the matrix can be checked.
 - Six named SECURITY DEFINER functions with non-empty `search_path` remain outside this proposal pending exact source and authorization tests.
 - No production/staging DDL or writes have been performed. The migration is not marked safe to run until the blockers are resolved and a human approves deployment separately.

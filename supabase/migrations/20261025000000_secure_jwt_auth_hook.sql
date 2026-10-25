@@ -234,42 +234,43 @@ BEGIN
 
   -- The snapshot rendered every policy on these nine tables. Reject missing,
   -- extra, or re-scoped policies instead of trusting names or role lists alone.
-  WITH expected(table_name,policy_name,command,permissive,roles,using_required,check_required) AS (
+  WITH expected(table_name,policy_name,command,permissive,roles,using_required,check_required,using_expr,check_expr) AS (
     SELECT * FROM (VALUES
-      ('app_companies','app_companies_select_member','r',true,ARRAY['authenticated']::text[],true,false),
-      ('app_companies','app_companies_update_owner','w',true,ARRAY['authenticated']::text[],true,true),
-      ('app_imports','app_imports_deny_direct','*',true,ARRAY['anon','authenticated']::text[],true,true),
-      ('app_invites','app_invites_owner_read','r',true,ARRAY['authenticated']::text[],true,false),
-      ('app_invites','app_invites_owner_write','*',true,ARRAY['authenticated']::text[],true,true),
-      ('app_lead_events','app_lead_events_read','r',true,ARRAY['authenticated']::text[],true,false),
-      ('app_lead_files','app_lead_files_delete_scoped','d',true,ARRAY['authenticated']::text[],true,false),
-      ('app_lead_files','app_lead_files_insert_scoped','a',true,ARRAY['authenticated']::text[],false,true),
-      ('app_lead_files','app_lead_files_select_scoped','r',true,ARRAY['authenticated']::text[],true,false),
-      ('app_lead_notes','app_lead_notes_delete_scoped','d',true,ARRAY['authenticated']::text[],true,false),
-      ('app_lead_notes','app_lead_notes_insert_scoped','a',true,ARRAY['authenticated']::text[],false,true),
-      ('app_lead_notes','app_lead_notes_select_scoped','r',true,ARRAY['authenticated']::text[],true,false),
-      ('app_leads','app_leads_delete_creator','d',true,ARRAY['authenticated']::text[],true,false),
-      ('app_leads','app_leads_delete_creator_boundary','d',false,ARRAY['authenticated']::text[],true,false),
-      ('app_leads','app_leads_insert_owner','a',true,ARRAY['authenticated']::text[],false,true),
-      ('app_leads','app_leads_select_scoped','r',true,ARRAY['authenticated']::text[],true,false),
-      ('app_leads','app_leads_update_scoped','w',true,ARRAY['authenticated']::text[],true,true),
-      ('app_members','app_members_owner_write','*',true,ARRAY['authenticated']::text[],true,true),
-      ('app_members','app_members_select_member','r',true,ARRAY['authenticated']::text[],true,false),
-      ('app_public_intake_events','app_public_intake_events_deny_direct','*',true,ARRAY['anon','authenticated']::text[],true,true),
-      ('app_companies','app_jwt_tenant_boundary','*',false,ARRAY['authenticated']::text[],true,true),
-      ('app_invites','app_jwt_tenant_boundary','*',false,ARRAY['authenticated']::text[],true,true),
-      ('app_lead_events','app_jwt_tenant_boundary','*',false,ARRAY['authenticated']::text[],true,true),
-      ('app_lead_files','app_jwt_tenant_boundary','*',false,ARRAY['authenticated']::text[],true,true),
-      ('app_lead_notes','app_jwt_tenant_boundary','*',false,ARRAY['authenticated']::text[],true,true),
-      ('app_leads','app_jwt_tenant_boundary','*',false,ARRAY['authenticated']::text[],true,true),
-      ('app_members','app_jwt_tenant_boundary','*',false,ARRAY['authenticated']::text[],true,true)
-    ) AS e(table_name,policy_name,command,permissive,roles,using_required,check_required)
+      ('app_companies','app_companies_select_member','r',true,ARRAY['authenticated']::text[],true,false,'(app_private.app_role(id) IS NOT NULL)',NULL),
+      ('app_companies','app_companies_update_owner','w',true,ARRAY['authenticated']::text[],true,true,'(app_private.app_role(id) = ''owner''::text)','(app_private.app_role(id) = ''owner''::text)'),
+      ('app_imports','app_imports_deny_direct','*',true,ARRAY['anon','authenticated']::text[],true,true,'false','false'),
+      ('app_invites','app_invites_owner_read','r',true,ARRAY['authenticated']::text[],true,false,'(app_private.app_role(company_id) = ''owner''::text)',NULL),
+      ('app_invites','app_invites_owner_write','*',true,ARRAY['authenticated']::text[],true,true,'(app_private.app_role(company_id) = ''owner''::text)','(app_private.app_role(company_id) = ''owner''::text)'),
+      ('app_lead_events','app_lead_events_read','r',true,ARRAY['authenticated']::text[],true,false,'((app_private.app_role(company_id) = ''owner''::text) OR app_private.app_can_lead(company_id, lead_id))',NULL),
+      ('app_lead_files','app_lead_files_delete_scoped','d',true,ARRAY['authenticated']::text[],true,false,'((app_private.app_role(company_id) = ''owner''::text) OR (app_private.app_can_lead(company_id, lead_id) AND (author_id = auth.uid()) AND (created_at >= (clock_timestamp() - ''00:15:00''::interval))))',NULL),
+      ('app_lead_files','app_lead_files_insert_scoped','a',true,ARRAY['authenticated']::text[],false,true,NULL,'((author_id = auth.uid()) AND ((app_private.app_role(company_id) = ''owner''::text) OR app_private.app_can_lead(company_id, lead_id)))'),
+      ('app_lead_files','app_lead_files_select_scoped','r',true,ARRAY['authenticated']::text[],true,false,'((app_private.app_role(company_id) = ''owner''::text) OR app_private.app_can_lead(company_id, lead_id))',NULL),
+      ('app_lead_notes','app_lead_notes_delete_scoped','d',true,ARRAY['authenticated']::text[],true,false,'((app_private.app_role(company_id) = ''owner''::text) OR (app_private.app_can_lead(company_id, lead_id) AND (author_id = auth.uid()) AND (created_at >= (clock_timestamp() - ''00:15:00''::interval))))',NULL),
+      ('app_lead_notes','app_lead_notes_insert_scoped','a',true,ARRAY['authenticated']::text[],false,true,NULL,'((author_id = auth.uid()) AND ((app_private.app_role(company_id) = ''owner''::text) OR app_private.app_can_lead(company_id, lead_id)))'),
+      ('app_lead_notes','app_lead_notes_select_scoped','r',true,ARRAY['authenticated']::text[],true,false,'((app_private.app_role(company_id) = ''owner''::text) OR app_private.app_can_lead(company_id, lead_id))',NULL),
+      ('app_leads','app_leads_delete_creator','d',true,ARRAY['authenticated']::text[],true,false,'((app_private.app_role(company_id) = ''owner''::text) OR ((app_private.app_role(company_id) = ''employee''::text) AND (created_by = auth.uid()) AND app_private.app_can_lead(company_id, id)))',NULL),
+      ('app_leads','app_leads_delete_creator_boundary','d',false,ARRAY['authenticated']::text[],true,false,'((app_private.app_role(company_id) = ''owner''::text) OR ((created_by = auth.uid()) AND app_private.app_can_lead(company_id, id)))',NULL),
+      ('app_leads','app_leads_insert_owner','a',true,ARRAY['authenticated']::text[],false,true,NULL,'(app_private.app_role(company_id) = ''owner''::text)'),
+      ('app_leads','app_leads_select_scoped','r',true,ARRAY['authenticated']::text[],true,false,'((app_private.app_role(company_id) = ''owner''::text) OR app_private.app_can_lead(company_id, id))',NULL),
+      ('app_leads','app_leads_update_scoped','w',true,ARRAY['authenticated']::text[],true,true,'((app_private.app_role(company_id) = ''owner''::text) OR app_private.app_can_lead(company_id, id))','((app_private.app_role(company_id) = ''owner''::text) OR app_private.app_can_lead(company_id, id))'),
+      ('app_members','app_members_owner_write','*',true,ARRAY['authenticated']::text[],true,true,'(app_private.app_role(company_id) = ''owner''::text)','(app_private.app_role(company_id) = ''owner''::text)'),
+      ('app_members','app_members_select_member','r',true,ARRAY['authenticated']::text[],true,false,'(app_private.app_role(company_id) IS NOT NULL)',NULL),
+      ('app_public_intake_events','app_public_intake_events_deny_direct','*',true,ARRAY['anon','authenticated']::text[],true,true,'false','false'),
+      ('app_companies','app_jwt_tenant_boundary','*',false,ARRAY['authenticated']::text[],true,true,NULL,NULL),
+      ('app_invites','app_jwt_tenant_boundary','*',false,ARRAY['authenticated']::text[],true,true,NULL,NULL),
+      ('app_lead_events','app_jwt_tenant_boundary','*',false,ARRAY['authenticated']::text[],true,true,NULL,NULL),
+      ('app_lead_files','app_jwt_tenant_boundary','*',false,ARRAY['authenticated']::text[],true,true,NULL,NULL),
+      ('app_lead_notes','app_jwt_tenant_boundary','*',false,ARRAY['authenticated']::text[],true,true,NULL,NULL),
+      ('app_leads','app_jwt_tenant_boundary','*',false,ARRAY['authenticated']::text[],true,true,NULL,NULL),
+      ('app_members','app_jwt_tenant_boundary','*',false,ARRAY['authenticated']::text[],true,true,NULL,NULL)
+    ) AS e(table_name,policy_name,command,permissive,roles,using_required,check_required,using_expr,check_expr)
   ), actual AS (
     SELECT c.relname AS table_name,p.polname AS policy_name,p.polcmd::text AS command,
       p.polpermissive AS permissive,
       ARRAY(SELECT r.rolname::text FROM unnest(p.polroles) AS role_oid(oid)
         JOIN pg_roles r ON r.oid=role_oid.oid ORDER BY r.rolname) AS roles,
-      p.polqual IS NOT NULL AS using_required,p.polwithcheck IS NOT NULL AS check_required
+      p.polqual IS NOT NULL AS using_required,p.polwithcheck IS NOT NULL AS check_required,
+      pg_get_expr(p.polqual,p.polrelid) AS using_expr,pg_get_expr(p.polwithcheck,p.polrelid) AS check_expr
     FROM pg_policy p JOIN pg_class c ON c.oid=p.polrelid
     JOIN pg_namespace n ON n.oid=c.relnamespace
     WHERE n.nspname='public' AND c.relname=ANY(ARRAY[
@@ -286,6 +287,10 @@ BEGIN
       OR e.roles IS DISTINCT FROM a.roles
       OR e.using_required IS DISTINCT FROM a.using_required
       OR e.check_required IS DISTINCT FROM a.check_required
+      OR (e.policy_name<>'app_jwt_tenant_boundary' AND
+        regexp_replace(lower(coalesce(e.using_expr,'<null>')),'[[:space:]]','','g') IS DISTINCT FROM regexp_replace(lower(coalesce(a.using_expr,'<null>')),'[[:space:]]','','g'))
+      OR (e.policy_name<>'app_jwt_tenant_boundary' AND
+        regexp_replace(lower(coalesce(e.check_expr,'<null>')),'[[:space:]]','','g') IS DISTINCT FROM regexp_replace(lower(coalesce(a.check_expr,'<null>')),'[[:space:]]','','g'))
     ));
   IF policy_drift<>0 THEN
     RAISE EXCEPTION 'JWT tenant migration blocked: rendered app_* policy inventory or command/role contract differs (% drift rows)', policy_drift;
@@ -307,8 +312,8 @@ BEGIN
          OR regexp_replace(lower(policy_row.check_expr),'[[:space:]]','','g') NOT LIKE '%'||tenant_key||'=(selectapp_private.jwt_tenant_id()%'
          OR regexp_replace(lower(policy_row.using_expr),'[[:space:]]','','g') NOT LIKE '%app_private.app_role('||tenant_key||')isnotnull%'
          OR regexp_replace(lower(policy_row.check_expr),'[[:space:]]','','g') NOT LIKE '%app_private.app_role('||tenant_key||')isnotnull%'
-         OR (length(policy_row.using_expr)-length(replace(policy_row.using_expr,tenant_key,'')))/length(tenant_key)<>2
-         OR (length(policy_row.check_expr)-length(replace(policy_row.check_expr,tenant_key,'')))/length(tenant_key)<>2 THEN
+         OR regexp_count(lower(policy_row.using_expr),'\m'||tenant_key||'\M')<>2
+         OR regexp_count(lower(policy_row.check_expr),'\m'||tenant_key||'\M')<>2 THEN
         RAISE EXCEPTION 'JWT tenant migration blocked: existing boundary on public.% is incompatible', t;
       END IF;
     END LOOP;

@@ -49,13 +49,30 @@ SELECT is((SELECT count(*)::integer FROM changed), 0, 'cross-tenant update affec
 SELECT throws_ok($q$ INSERT INTO public.app_leads(id,company_id,title) VALUES ('c1000000-0000-4000-8000-000000000001','b0000000-0000-4000-8000-000000000002','forged') $q$, '42501', NULL, 'cross-tenant insert is denied by WITH CHECK');
 
 SELECT set_config('request.jwt.claim.sub','30000000-0000-4000-8000-000000000003',true);
+SELECT is((SELECT count(*)::integer FROM public.app_companies), 1, 'employee sees the same-tenant company');
+SELECT is((SELECT count(*)::integer FROM public.app_members), 4, 'employee sees only same-tenant memberships');
+SELECT is((SELECT count(*)::integer FROM public.app_invites), 0, 'employee cannot read owner-only invites');
 SELECT is((SELECT count(*)::integer FROM public.app_leads), 1, 'employee sees the assigned same-tenant lead');
+SELECT is((SELECT count(*)::integer FROM public.app_lead_events), 1, 'employee sees events for the assigned lead');
+SELECT is((SELECT count(*)::integer FROM public.app_lead_notes), 1, 'employee sees notes for the assigned lead');
+SELECT is((SELECT count(*)::integer FROM public.app_lead_files), 1, 'employee sees files for the assigned lead');
 WITH changed AS (UPDATE public.app_leads SET status='contacted' WHERE id='a1000000-0000-4000-8000-000000000001' RETURNING id)
 SELECT is((SELECT count(*)::integer FROM changed), 1, 'employee can advance status on an assigned lead');
 SELECT throws_ok($q$ UPDATE public.app_leads SET title='employee update' WHERE id='a1000000-0000-4000-8000-000000000001' $q$, '42501', 'employee may only update assigned lead status', 'employee cannot edit lead title');
 SELECT throws_ok($q$ UPDATE public.app_leads SET company_id='b0000000-0000-4000-8000-000000000002' WHERE id='a1000000-0000-4000-8000-000000000001' $q$, '42501', NULL, 'employee cannot reassign a lead across tenants');
 SELECT throws_ok($q$ INSERT INTO public.app_leads(id,company_id,title,assigned_to) VALUES ('a3000000-0000-4000-8000-000000000003','a0000000-0000-4000-8000-000000000001','employee-created','30000000-0000-4000-8000-000000000003') $q$, '42501', 'only owner can create leads', 'employee cannot create leads');
 SELECT throws_ok($q$ UPDATE public.app_leads SET created_by='10000000-0000-4000-8000-000000000001' WHERE id='a1000000-0000-4000-8000-000000000001' $q$, '42501', 'lead creator is immutable', 'employee cannot rewrite creator identity');
+SELECT throws_ok($q$ INSERT INTO public.app_lead_notes(company_id,lead_id,author_id,body) VALUES ('a0000000-0000-4000-8000-000000000001','a1000000-0000-4000-8000-000000000001','10000000-0000-4000-8000-000000000001','forged author') $q$, '42501', NULL, 'employee cannot forge a note author');
+WITH inserted AS (INSERT INTO public.app_lead_notes(company_id,lead_id,author_id,body) VALUES ('a0000000-0000-4000-8000-000000000001','a1000000-0000-4000-8000-000000000001','30000000-0000-4000-8000-000000000003','synthetic employee note') RETURNING id)
+SELECT is((SELECT count(*)::integer FROM inserted), 1, 'employee can add a note to an assigned lead');
+WITH deleted AS (DELETE FROM public.app_lead_notes WHERE author_id='30000000-0000-4000-8000-000000000003' AND body='synthetic employee note' RETURNING id)
+SELECT is((SELECT count(*)::integer FROM deleted), 1, 'employee can delete own recent note within the existing window');
+WITH inserted AS (INSERT INTO public.app_lead_files(company_id,lead_id,author_id,storage_path,file_name,mime_type,size_bytes) VALUES ('a0000000-0000-4000-8000-000000000001','a1000000-0000-4000-8000-000000000001','30000000-0000-4000-8000-000000000003','employee/file.jpg','file.jpg','image/jpeg',10) RETURNING id)
+SELECT is((SELECT count(*)::integer FROM inserted), 1, 'employee can add a file to an assigned lead');
+WITH deleted AS (DELETE FROM public.app_lead_files WHERE author_id='30000000-0000-4000-8000-000000000003' AND storage_path='employee/file.jpg' RETURNING id)
+SELECT is((SELECT count(*)::integer FROM deleted), 1, 'employee can delete own recent file within the existing window');
+WITH deleted AS (DELETE FROM public.app_leads WHERE id='b1000000-0000-4000-8000-000000000002' RETURNING id)
+SELECT is((SELECT count(*)::integer FROM deleted), 0, 'employee cannot hard-delete a cross-tenant lead');
 WITH deleted AS (DELETE FROM public.app_leads WHERE id='a1000000-0000-4000-8000-000000000001' RETURNING id)
 SELECT is((SELECT count(*)::integer FROM deleted), 1, 'creator can hard-delete an assigned lead within the existing policy');
 RESET ROLE;
