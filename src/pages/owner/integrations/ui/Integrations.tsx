@@ -1,12 +1,12 @@
-import React, { useCallback, useEffect, useState } from 'react';
-import { Bot, Check, CheckCircle2, Copy, Database, FileSpreadsheet, Globe2, LockKeyhole, UploadCloud } from 'lucide-react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { Bot, Check, CheckCircle2, Copy, Database, Download, FileSpreadsheet, Globe2, SlidersHorizontal, UploadCloud, X } from 'lucide-react';
 import { CSVImportModal } from '@/features/import-leads';
 import { useOrganization } from '@/entities/session';
 import { supabase } from '@/shared/api/supabase';
 import type { Employee } from '@/entities/employee';
 import type { Lead } from '@/entities/lead';
 import type { FieldMappingConfig } from '@/features/import-leads';
-import { ConnectorSetup, ConnectorStatus, ConnectorMapping } from '@/features/manage-integrations';
+import { buildSynologyCompose, ConnectorSetup, ConnectorStatus, ConnectorMapping } from '@/features/manage-integrations';
 import { connectorClient } from '@/features/manage-integrations';
 import type { ConnectorSummary } from '@/features/manage-integrations';
 
@@ -21,6 +21,8 @@ export const Integrations: React.FC<IntegrationsProps> = () => {
   const [isCsvOpen, setIsCsvOpen] = useState(false);
   const [connectors, setConnectors] = useState<ConnectorSummary[]>([]);
   const [connectorError, setConnectorError] = useState('');
+  const [connectorDialog, setConnectorDialog] = useState<'setup' | 'mapping' | null>(null);
+  const connectorDialogRef = useRef<HTMLDialogElement>(null);
   const [databaseMode, setDatabaseMode] = useState<'managed_cloud' | 'byodb'>('managed_cloud');
   const [databaseDriver, setDatabaseDriver] = useState<'postgres' | 'mysql' | 'mariadb' | 'mssql'>('postgres');
   const [modeBusy, setModeBusy] = useState(false);
@@ -28,9 +30,7 @@ export const Integrations: React.FC<IntegrationsProps> = () => {
   const [securedIncomingLeadUrl, setSecuredIncomingLeadUrl] = useState('');
   const [incomingLeadError, setIncomingLeadError] = useState('');
   const [incomingLeadLoading, setIncomingLeadLoading] = useState(true);
-  const connectorEnabled = import.meta.env.VITE_CONNECTOR_ENABLED === 'true';
   const byodbEnabled = import.meta.env.VITE_BYODB_ENABLED === 'true';
-  const isEnterprise = String(currentOrg?.plan || '').toUpperCase() === 'ENTERPRISE';
   const origin = typeof window === 'undefined' ? 'https://[DOMENA]' : window.location.origin;
   const publicTenantKey = currentOrg?.slug || '[PUBLIC_KEY]';
   const widgetSnippet = `<script src="${origin}/widget.js?org_id=${encodeURIComponent(publicTenantKey)}"></script>`;
@@ -45,7 +45,7 @@ export const Integrations: React.FC<IntegrationsProps> = () => {
     }
   };
   const refreshConnectors = useCallback(async (signal?: AbortSignal) => {
-    if (!connectorEnabled || !currentOrg?.id) return;
+    if (!currentOrg?.id) return;
     try {
       setConnectorError('');
       const [status, mode] = await Promise.all([connectorClient.status(currentOrg.id, signal), connectorClient.databaseMode(currentOrg.id, signal)]);
@@ -54,7 +54,7 @@ export const Integrations: React.FC<IntegrationsProps> = () => {
       if (mode.driver) setDatabaseDriver(mode.driver as typeof databaseDriver);
     }
     catch (cause) { if (!(cause instanceof DOMException && cause.name === 'AbortError')) setConnectorError('Napojení databáze zatím není na tomto prostředí dostupné.'); }
-  }, [connectorEnabled, currentOrg?.id]);
+  }, [currentOrg?.id]);
   useEffect(() => { const controller = new AbortController(); void refreshConnectors(controller.signal); return () => controller.abort(); }, [refreshConnectors]);
   useEffect(() => {
     const controller = new AbortController();
@@ -83,6 +83,8 @@ export const Integrations: React.FC<IntegrationsProps> = () => {
     return () => controller.abort();
   }, [currentOrg?.id]);
   const activeConnector = connectors.find(item => item.status !== 'revoked');
+  const heartbeatAge = activeConnector?.lastHeartbeatAt ? Date.now() - Date.parse(activeConnector.lastHeartbeatAt) : Number.POSITIVE_INFINITY;
+  const connectorRecentlyConnected = Number.isFinite(heartbeatAge) && heartbeatAge >= 0 && heartbeatAge < 15 * 60 * 1000;
   const canActivateByodb = byodbEnabled
     && Boolean(activeConnector?.mappings?.some(mapping => mapping.entityType === 'company' && mapping.approvedAt && mapping.mappedTargets.includes('name')))
     && Boolean(activeConnector?.mappings?.some(mapping => mapping.entityType === 'lead' && mapping.approvedAt && mapping.mappedTargets.includes('assignedToEmail')))
@@ -100,6 +102,32 @@ export const Integrations: React.FC<IntegrationsProps> = () => {
     } catch {
       setConnectorError('Režim databáze se nepodařilo bezpečně změnit. Zkontrolujte schválené mapování a stav konektoru.');
     } finally { setModeBusy(false); }
+  };
+
+  useEffect(() => {
+    const dialog = connectorDialogRef.current;
+    if (!connectorDialog || !dialog) return;
+    dialog.showModal();
+    return () => {
+      if (dialog.open) dialog.close();
+    };
+  }, [connectorDialog]);
+
+  const downloadSynologyCompose = () => {
+    setConnectorError('');
+    try {
+      const compose = buildSynologyCompose(import.meta.env.VITE_CONNECTOR_IMAGE ?? '');
+      const url = URL.createObjectURL(new Blob([compose], { type: 'application/yaml' }));
+      const anchor = document.createElement('a');
+      anchor.href = url;
+      anchor.download = 'docker-compose.synology.yml';
+      anchor.click();
+      window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+    } catch (cause) {
+      setConnectorError(cause instanceof Error && cause.message === 'CONNECTOR_IMAGE_DIGEST_REQUIRED'
+        ? 'Stažení čeká na vydaný a ověřený neměnný image digest. Nastavení připojení můžeš otevřít už teď.'
+        : 'Konfiguraci Docker Compose se nepodařilo připravit.');
+    }
   };
 
   const importCsv = async (
@@ -191,35 +219,58 @@ export const Integrations: React.FC<IntegrationsProps> = () => {
           <button type="button" onClick={() => setIsCsvOpen(true)} className="mt-6 inline-flex min-h-10 items-center justify-center rounded-xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-700 hover:bg-slate-50">Vybrat CSV soubor</button>
         </article>
 
-        <aside className="workspace-panel p-6 sm:p-7">
-          <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-slate-100 text-slate-600"><LockKeyhole className="h-5 w-5" /></span>
-          <h2 className="mt-5 text-base font-semibold text-slate-950">Dvě bezpečné cesty</h2>
-          <p className="mt-2 text-sm leading-6 text-slate-500">CSV je vhodné pro jednorázový start v Managed Cloud. Ověřený Synology konektor níže předává schválená mapovaná čtení a změny mezi aplikací a firemní databází.</p>
-          <div className="mt-5 flex items-center gap-3 rounded-xl bg-slate-50 p-3 text-sm text-slate-600"><Database className="h-4 w-4" /><span>PostgreSQL · MariaDB · SQL Server</span></div>
+        <aside className="workspace-panel border-l-4 border-blue-600 p-6 md:col-span-2 sm:p-7">
+          <div className="flex flex-wrap items-start justify-between gap-4">
+            <div className="flex items-start gap-3">
+              <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-blue-50 text-blue-700"><Database className="h-5 w-5" /></span>
+              <div>
+                <p className="text-xs font-semibold tracking-wide text-blue-700">Dvě bezpečné cesty</p>
+                <h2 className="mt-1 text-lg font-semibold tracking-tight text-slate-950">Vlastní firemní databáze (Synology / On-Premise)</h2>
+                <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">Ponechte si svůj PostgreSQL, MariaDB / MySQL nebo Microsoft SQL Server. Konektor navazuje pouze odchozí spojení; mapovaná data se zapisují až po kontrole a schválení.</p>
+              </div>
+            </div>
+            <div className="rounded-xl bg-slate-50 px-3 py-2 text-xs font-medium text-slate-600">{databaseMode === 'byodb' ? 'Aktivní zdroj: firemní databáze' : 'Aktivní zdroj: Managed Cloud'}</div>
+          </div>
+
+          <div className="mt-5 flex flex-wrap gap-2">
+            <button type="button" onClick={() => { setConnectorError(''); setConnectorDialog('setup'); }} className="workspace-primary-action inline-flex min-h-11 items-center justify-center gap-2 px-4 text-sm font-semibold"><Database className="h-4 w-4" />Připojit vlastní databázi</button>
+            <button type="button" onClick={downloadSynologyCompose} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white px-4 text-sm font-semibold text-slate-700 transition-colors hover:border-slate-400 hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600"><Download className="h-4 w-4" />Stáhnout Synology Docker Compose</button>
+            <button type="button" onClick={() => { setConnectorError(''); setConnectorDialog('mapping'); }} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white px-4 text-sm font-semibold text-slate-700 transition-colors hover:border-slate-400 hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600"><SlidersHorizontal className="h-4 w-4" />Spravovat mapování polí</button>
+          </div>
+
+          <p className="mt-3 text-xs leading-5 text-slate-500">Připojení začíná v průvodci. Přístup SQL ani jednorázový klíč firmy se nevkládá do Docker Compose; tajné údaje zůstávají v souborech na NAS.</p>
+
+          <div className="mt-5 rounded-2xl border border-slate-200 bg-slate-50/70 p-4">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div role="status" aria-live="polite" className="flex items-center gap-2 text-sm font-semibold text-slate-800">
+                <span className={`h-2.5 w-2.5 rounded-full ${connectorRecentlyConnected ? 'bg-emerald-500' : 'bg-slate-300'}`} aria-hidden="true" />
+                {connectorRecentlyConnected ? 'Konektor poslal heartbeat' : activeConnector ? 'Čeká se na připojení konektoru' : 'Databáze zatím není připojená'}
+              </div>
+              {activeConnector?.lastHeartbeatAt ? <span className="text-xs text-slate-500">Naposledy: {new Date(activeConnector.lastHeartbeatAt).toLocaleString('cs-CZ')}</span> : null}
+              {activeConnector ? <button type="button" onClick={() => { setConnectorError(''); setConnectorDialog('mapping'); }} className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-100">Upravit konfiguraci</button> : null}
+            </div>
+            {connectors.length > 0 && currentOrg?.id ? <div className="mt-4 border-t border-slate-200 pt-4"><ConnectorStatus companyId={currentOrg.id} items={connectors} onRefresh={() => void refreshConnectors()} /></div> : null}
+          </div>
+
+          <div className="mt-4 grid gap-4 rounded-2xl border border-slate-200 p-4 sm:grid-cols-[1fr_auto_auto] sm:items-end" aria-busy={modeBusy}>
+            <div><h3 className="font-semibold text-slate-950">Ukládání dat</h3><p className="mt-1 text-sm text-slate-500">Přepnutí na firemní databázi je dostupné po schválení mapování firmy i zakázek a úspěšném ověření konektoru.</p></div>
+            <label className="text-xs font-semibold text-slate-600">Databázový server<select aria-label="Typ firemní databáze" value={databaseDriver} onChange={event => setDatabaseDriver(event.target.value as typeof databaseDriver)} className="mt-1 block min-h-10 rounded-xl border border-slate-200 bg-white px-3 text-sm font-normal"><option value="postgres">PostgreSQL</option><option value="mysql">MySQL</option><option value="mariadb">MariaDB</option><option value="mssql">Microsoft SQL Server</option></select></label>
+            <label className="text-xs font-semibold text-slate-600">Aktivní zdroj<select aria-label="Režim databáze" value={databaseMode} disabled={modeBusy} onChange={event => void changeDatabaseMode(event.target.value as 'managed_cloud' | 'byodb')} className="mt-1 block min-h-10 rounded-xl border border-slate-200 bg-white px-3 text-sm font-normal"><option value="managed_cloud">Managed Cloud · Supabase</option><option value="byodb" disabled={!canActivateByodb}>Firemní databáze (BYODB){!byodbEnabled ? ' · čeká na staging ověření' : ''}</option></select></label>
+            {!byodbEnabled && <p className="text-xs text-amber-700 sm:col-span-3">Nastavení konektoru je dostupné. Přepnutí zdroje zápisů se otevře po staging přejímce a vydání ověřeného image digestu.</p>}
+          </div>
+          {connectorError && <p role="alert" className="mt-3 text-sm text-amber-800">{connectorError}</p>}
         </aside>
       </section>
 
-      {isEnterprise && <section className="mt-6 space-y-4">
-        <div>
-          <p className="workspace-kicker">Průběžné napojení</p>
-          <h2 className="mt-1 text-xl font-semibold tracking-tight text-slate-950">Databáze firmy navíc</h2>
-          <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-500">Nemusíte přecházet ze stávající databáze. V režimu Managed Cloud zůstává zdrojem Supabase. V režimu BYODB je zdrojem vaše schválená firemní mapa a potvrzené změny se přes odchozí konektor zapíší do vaší databáze.</p>
-          <p className="mt-1 text-xs text-slate-400">Synology · PostgreSQL · MariaDB / MySQL · SQL Server</p>
-        </div>
-        {!connectorEnabled && <div className="workspace-panel p-5 text-sm leading-6 text-slate-600">Konektor není na tomto nasazení aktivovaný. CSV import zůstává dostupný a žádné ukázkové připojení se nezobrazuje jako živé.</div>}
-        {connectorEnabled && currentOrg?.id ? <>
-          {!activeConnector ? <ConnectorSetup companyId={currentOrg.id} onCreated={() => void refreshConnectors()} /> : null}
-          <ConnectorStatus companyId={currentOrg.id} items={connectors} onRefresh={() => void refreshConnectors()} />
-          {activeConnector && activeConnector.status !== 'awaiting_enrollment' ? <ConnectorMapping companyId={currentOrg.id} connector={activeConnector} onSaved={() => void refreshConnectors()} /> : null}
-          <article className="workspace-panel grid gap-4 p-5 sm:grid-cols-[1fr_auto_auto] sm:items-end" aria-busy={modeBusy}>
-            <div><h3 className="font-semibold text-slate-950">Režim databáze</h3><p className="mt-1 text-sm text-slate-500">Firemní režim se zapne až po schválené mapě. Zápisy zůstávají vypnuté, dokud connector build nemá schválený image digest.</p></div>
-            <label className="text-xs font-semibold text-slate-600">Databázový server<select aria-label="Typ firemní databáze" value={databaseDriver} onChange={event => setDatabaseDriver(event.target.value as typeof databaseDriver)} className="mt-1 block min-h-10 rounded-xl border border-slate-200 bg-white px-3 text-sm font-normal"><option value="postgres">PostgreSQL</option><option value="mysql">MySQL</option><option value="mariadb">MariaDB</option><option value="mssql">Microsoft SQL Server</option></select></label>
-            <label className="text-xs font-semibold text-slate-600">Ukládání dat<select aria-label="Režim databáze" value={databaseMode} disabled={modeBusy} onChange={event => void changeDatabaseMode(event.target.value as 'managed_cloud' | 'byodb')} className="mt-1 block min-h-10 rounded-xl border border-slate-200 bg-white px-3 text-sm font-normal"><option value="managed_cloud">Managed Cloud · Supabase</option><option value="byodb" disabled={!canActivateByodb}>Firemní databáze (BYODB){!byodbEnabled ? ' · čeká na staging ověření' : ''}</option></select></label>
-            {!byodbEnabled && <p className="text-xs text-amber-700 sm:col-span-3">BYODB zůstává na tomto nasazení vypnuté, dokud nebude dokončeno oddělené staging ověření a vydán neměnný obraz konektoru.</p>}
-          </article>
-        </> : null}
-        {connectorError && <p role="alert" className="text-sm text-amber-700">{connectorError}</p>}
-      </section>}
+      {connectorDialog && currentOrg?.id ? <dialog ref={connectorDialogRef} role="dialog" aria-modal="true" aria-labelledby="connector-dialog-title" onCancel={event => { event.preventDefault(); setConnectorDialog(null); }} onClick={event => { if (event.target === event.currentTarget) setConnectorDialog(null); }} className="fixed inset-0 m-0 flex h-screen max-h-none w-screen max-w-none items-center justify-center overflow-y-auto border-0 bg-transparent p-4 backdrop:bg-slate-950/55">
+        <section className="max-h-[90vh] w-full max-w-3xl overflow-y-auto rounded-3xl bg-white p-5 shadow-2xl sm:p-7">
+          <header className="mb-5 flex items-start justify-between gap-4">
+            <div><p className="text-xs font-semibold tracking-wide text-blue-700">Vlastní firemní databáze</p><h2 id="connector-dialog-title" className="mt-1 text-xl font-semibold text-slate-950">{connectorDialog === 'setup' ? 'Připojit databázi firmy' : 'Mapování databázových polí'}</h2></div>
+            <button type="button" autoFocus onClick={() => setConnectorDialog(null)} aria-label="Zavřít průvodce databází" className="rounded-xl border border-slate-200 p-2 text-slate-600 hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600"><X className="h-4 w-4" /></button>
+          </header>
+          {connectorDialog === 'setup' ? <ConnectorSetup companyId={currentOrg.id} initialDriver={databaseDriver} onDriverChange={setDatabaseDriver} onCreated={() => void refreshConnectors()} /> : activeConnector && activeConnector.status !== 'awaiting_enrollment' ? <ConnectorMapping companyId={currentOrg.id} connector={activeConnector} onSaved={() => void refreshConnectors()} /> : <div className="rounded-2xl border border-blue-100 bg-blue-50/60 p-5"><h3 className="font-semibold text-slate-950">Nejdřív připojte firemní databázi</h3><p className="mt-2 text-sm leading-6 text-slate-600">Mapování se načte z metadat až po prvním heartbeat konektoru. Zákaznické řádky se při nastavení nečtou.</p><button type="button" onClick={() => setConnectorDialog('setup')} className="workspace-primary-action mt-4 inline-flex min-h-10 items-center gap-2 px-4 text-sm font-semibold"><Database className="h-4 w-4" />Připojit vlastní databázi</button></div>}
+        </section>
+      </dialog> : null}
 
       {databaseMode === 'managed_cloud' && <CSVImportModal isOpen={isCsvOpen} onClose={() => setIsCsvOpen(false)} onImportBatch={importCsv} />}
     </div>

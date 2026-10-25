@@ -15,7 +15,7 @@ test('Kanban renders the source badge from persisted lead source', () => {
   assert.match(kanban, /sourceBadge\.label/);
 });
 
-test('integrations expose AI inbox and widget while database connector stays Enterprise-only', () => {
+test('integrations expose AI inbox, widget and the owner database setup card', () => {
   const integrations = readFileSync(new URL('../src/pages/owner/integrations/ui/Integrations.tsx', import.meta.url), 'utf8');
   assert.match(integrations, /AI Dispečer \(e-mail\)/);
   assert.match(integrations, /incomingLeadLoading/);
@@ -26,8 +26,9 @@ test('integrations expose AI inbox and widget while database connector stays Ent
   assert.match(integrations, /widget\.js\?org_id=/);
   assert.match(integrations, /currentOrg\?\.slug/);
   assert.match(integrations, /encodeURIComponent\(publicTenantKey\)/);
-  assert.match(integrations, /isEnterprise/);
-  assert.match(integrations, /isEnterprise &&/);
+  assert.match(integrations, /Vlastní firemní databáze \(Synology \/ On-Premise\)/);
+  assert.match(integrations, /Připojit vlastní databázi/);
+  assert.doesNotMatch(integrations, /isEnterprise/);
   const widget = readFileSync(new URL('../public/widget.js', import.meta.url), 'utf8');
   assert.match(widget, /searchParams\.get\(['"]org_id['"]\)/);
 });

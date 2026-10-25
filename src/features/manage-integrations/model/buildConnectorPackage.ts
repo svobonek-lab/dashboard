@@ -10,19 +10,12 @@ export interface ConnectorPackageOptions {
 
 const IMMUTABLE_IMAGE = /^ghcr\.io\/svobonek-lab\/stavbaflow-connector@sha256:[a-f0-9]{64}$/;
 
-export async function buildConnectorPackage(options: ConnectorPackageOptions): Promise<Uint8Array> {
-  if (!IMMUTABLE_IMAGE.test(options.image)) throw new Error('CONNECTOR_IMAGE_DIGEST_REQUIRED');
-  if (!['postgres', 'mysql', 'mariadb', 'mssql'].includes(options.driver)) throw new Error('CONNECTOR_DRIVER_INVALID');
-  let apiUrl: URL;
-  try { apiUrl = new URL(options.apiBaseUrl); } catch { throw new Error('CONNECTOR_API_URL_INVALID'); }
-  if (apiUrl.protocol !== 'https:' || apiUrl.username || apiUrl.password || apiUrl.pathname !== '/' || apiUrl.search || apiUrl.hash) {
-    throw new Error('CONNECTOR_API_URL_INVALID');
-  }
-  const archive = new JSZip();
-  archive.file('docker-compose.synology.yml', `name: stavbaflow-connector
+export function buildSynologyCompose(image: string): string {
+  if (!IMMUTABLE_IMAGE.test(image)) throw new Error('CONNECTOR_IMAGE_DIGEST_REQUIRED');
+  return `name: stavbaflow-connector
 services:
   connector:
-    image: ${options.image}
+    image: ${image}
     restart: unless-stopped
     read_only: true
     cap_drop: [ALL]
@@ -53,7 +46,19 @@ secrets:
     file: /volume1/docker/stavbaflow/secrets/connector-identity
   enrollment_code:
     file: /volume1/docker/stavbaflow/secrets/enrollment-code
-`);
+`;
+}
+
+export async function buildConnectorPackage(options: ConnectorPackageOptions): Promise<Uint8Array> {
+  const compose = buildSynologyCompose(options.image);
+  if (!['postgres', 'mysql', 'mariadb', 'mssql'].includes(options.driver)) throw new Error('CONNECTOR_DRIVER_INVALID');
+  let apiUrl: URL;
+  try { apiUrl = new URL(options.apiBaseUrl); } catch { throw new Error('CONNECTOR_API_URL_INVALID'); }
+  if (apiUrl.protocol !== 'https:' || apiUrl.username || apiUrl.password || apiUrl.pathname !== '/' || apiUrl.search || apiUrl.hash) {
+    throw new Error('CONNECTOR_API_URL_INVALID');
+  }
+  const archive = new JSZip();
+  archive.file('docker-compose.synology.yml', compose);
   archive.file('config.json', JSON.stringify({
     apiBaseUrl: options.apiBaseUrl,
     stateRoot: '/var/lib/stavbaflow',
