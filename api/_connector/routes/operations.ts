@@ -1,4 +1,5 @@
 import { authorizeConnectorMember } from '../ownerAuth.js';
+import { CANONICAL_PAYLOAD_FIELDS } from '../../../shared/connectorProtocol.js';
 import { authenticateConnectorHttpRequest } from '../auth.js';
 import { ConnectorHttpError, parseConnectorBody, requirePost } from '../http.js';
 import { runConnectorHandler } from '../handler.js';
@@ -53,18 +54,70 @@ function operationList(value: unknown): Array<{ operationId: string; status: str
   });
 }
 
+function contextResponse(value: unknown) {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) throw new ConnectorHttpError('DATABASE_MODE_INVALID', 502);
+  const row = value as Record<string, unknown>;
+  const mode = row.mode;
+  const driver = row.driver === null ? null : row.driver;
+  const connectorId = row.connectorId === null ? null : row.connectorId;
+  const mappingVersion = row.mappingVersion === null ? null : row.mappingVersion;
+  const mappedTargets = row.mappedTargets;
+  if (!['managed_cloud', 'byodb'].includes(String(mode))
+    || (driver !== null && !['postgres', 'mysql', 'mariadb', 'mssql'].includes(String(driver)))
+    || (connectorId !== null && (typeof connectorId !== 'string' || !/^[0-9a-f-]{36}$/i.test(connectorId)))
+    || (mappingVersion !== null && (!Number.isInteger(mappingVersion) || Number(mappingVersion) < 1))
+    || !Array.isArray(mappedTargets) || mappedTargets.length > 64 || mappedTargets.some(target => typeof target !== 'string' || !CANONICAL_PAYLOAD_FIELDS.lead.includes(target)))
+    throw new ConnectorHttpError('DATABASE_MODE_INVALID', 502);
+  return { mode, driver, connectorId, mappingVersion, mappedTargets, writeEnabled: row.writeEnabled === true, connectorStatus: typeof row.connectorStatus === 'string' ? row.connectorStatus.slice(0, 40) : null };
+}
+
+function projectionRecords(value: unknown) {
+  if (!Array.isArray(value) || value.length > 5000) throw new ConnectorHttpError('BYODB_RECORDS_INVALID', 502);
+  return value.map(item => {
+    if (!item || typeof item !== 'object' || Array.isArray(item)) throw new ConnectorHttpError('BYODB_RECORDS_INVALID', 502);
+    const row = item as Record<string, unknown>;
+    if (Object.keys(row).some(key => !['externalId', 'fingerprint', 'payload'].includes(key))
+      || typeof row.externalId !== 'string' || !row.externalId || row.externalId.length > 512
+      || typeof row.fingerprint !== 'string' || !/^[a-f0-9]{64}$/.test(row.fingerprint)
+      || !row.payload || typeof row.payload !== 'object' || Array.isArray(row.payload)) throw new ConnectorHttpError('BYODB_RECORDS_INVALID', 502);
+    const payload = row.payload as Record<string, unknown>;
+    if (Object.keys(payload).some(key => !CANONICAL_PAYLOAD_FIELDS.lead.includes(key))
+      || Object.values(payload).some(field => field !== null && !['string', 'number', 'boolean'].includes(typeof field))) throw new ConnectorHttpError('BYODB_RECORDS_INVALID', 502);
+    return { externalId: row.externalId, fingerprint: row.fingerprint, payload };
+  });
+}
+
 export default async function byodbOperationsHandler(request: any, response: any) {
   await runConnectorHandler(response, async () => {
     requirePost(request);
     const { body } = parseConnectorBody(request, 32 * 1024);
     const operationRequest = validateByodbOperationRequest(body);
 
+    if (operationRequest.action === 'context') {
+      const { userId, service } = await authorizeConnectorMember(request, operationRequest.companyId);
+      const { data, error } = await service.rpc('app_get_byodb_context', { p_company_id: operationRequest.companyId, p_user_id: userId });
+      if (error && ['PGRST202', '42883'].includes(String(error.code))) return { mode: 'managed_cloud', driver: null, connectorId: null, mappingVersion: null, mappedTargets: [], writeEnabled: false, connectorStatus: null };
+      if (error) throw new ConnectorHttpError('DATABASE_MODE_UNAVAILABLE', 503);
+      return contextResponse(data);
+    }
+
+    if (operationRequest.action === 'records') {
+      const { userId, service } = await authorizeConnectorMember(request, operationRequest.companyId);
+      const { data, error } = await service.rpc('app_list_byodb_records', { p_company_id: operationRequest.companyId, p_user_id: userId });
+      if (error) throw new ConnectorHttpError('BYODB_RECORDS_UNAVAILABLE', 503);
+      return { records: projectionRecords(data) };
+    }
+
     if (operationRequest.action === 'poll') {
       requireByodbReleaseGate();
       const { identity, service } = await authenticateConnectorHttpRequest(request, '/api/connector/operations', 'operations');
+      const { data: connector, error: connectorError } = await service.from('app_connectors')
+        .select('source_schema').eq('id', identity.connectorId).eq('company_id', identity.companyId).is('revoked_at', null).maybeSingle();
+      if (connectorError || !connector?.source_schema) throw new ConnectorHttpError('CONNECTOR_UNAVAILABLE', 503);
+      const sourceSchema = validateSourceSchema(connector.source_schema);
       const { data, error } = await service.rpc('app_poll_byodb_operations', { p_connector_id: identity.connectorId, p_limit: operationRequest.limit ?? 25 });
       if (error) throw new ConnectorHttpError('OPERATIONS_UNAVAILABLE', 502);
-      const operations = validateByodbPollBatch(data);
+      const operations = validateByodbPollBatch(data, sourceSchema);
       if (operations.length > (operationRequest.limit ?? 25)) throw new ConnectorHttpError('OPERATION_RESPONSE_INVALID', 502);
       return { operations };
     }

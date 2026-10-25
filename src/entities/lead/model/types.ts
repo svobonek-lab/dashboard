@@ -67,6 +67,7 @@ export interface Lead {
   organization_id?: string;
   source?: LeadSource;
   id: string;
+  sourceVersion?: string;
   title: string;
   description: string;
   city: string;

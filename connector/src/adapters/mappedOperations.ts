@@ -16,6 +16,7 @@ export interface MappedSourceOperation {
   payload: Record<string, JsonPrimitive>;
   actorRole: 'owner' | 'employee';
   actorEmail: string;
+  mappingDefinition?: ConnectorMappingDefinitionV1;
 }
 
 export interface SqlStatement { sql: string; values: unknown[] }

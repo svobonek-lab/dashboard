@@ -60,6 +60,8 @@ const byodbOperationAckSchema = z.strictObject({
 });
 const byodbOperationRequestSchema = z.discriminatedUnion('action', [
   z.strictObject({ action: z.literal('create'), companyId: z.string().uuid(), connectorId: z.string().uuid(), operation: z.unknown() }),
+  z.strictObject({ action: z.literal('context'), companyId: z.string().uuid() }),
+  z.strictObject({ action: z.literal('records'), companyId: z.string().uuid() }),
   z.strictObject({ action: z.literal('list'), companyId: z.string().uuid(), cursor: z.string().uuid().optional(), limit: z.number().int().min(1).max(50).optional() }),
   z.strictObject({ action: z.literal('poll'), limit: z.number().int().min(1).max(50).optional() }),
   z.strictObject({ action: z.literal('ack'), ack: z.unknown() }),
@@ -134,12 +136,12 @@ export function validateByodbOperationRequest(value: unknown) {
   return parsed.data;
 }
 
-export function validateByodbPollBatch(value: unknown) {
+export function validateByodbPollBatch(value: unknown, sourceSchema: ConnectorSourceSchemaV1) {
   if (!Array.isArray(value) || value.length > 50) throw new ConnectorHttpError('OPERATION_RESPONSE_INVALID', 502);
   return value.map(item => {
     if (!item || typeof item !== 'object' || Array.isArray(item)) throw new ConnectorHttpError('OPERATION_RESPONSE_INVALID', 502);
     const row = item as Record<string, unknown>;
-    const allowedKeys = new Set(['operationId', 'idempotencyKey', 'mappingVersion', 'entityType', 'action', 'externalId', 'expectedSourceVersion', 'payload', 'actorRole', 'actorEmail']);
+    const allowedKeys = new Set(['operationId', 'idempotencyKey', 'mappingVersion', 'entityType', 'action', 'externalId', 'expectedSourceVersion', 'payload', 'actorRole', 'actorEmail', 'mappingDefinition']);
     if (Object.keys(row).some(key => !allowedKeys.has(key))
       || !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(String(row.operationId ?? ''))
       || !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(String(row.idempotencyKey ?? ''))
@@ -149,9 +151,14 @@ export function validateByodbPollBatch(value: unknown) {
       || (row.expectedSourceVersion !== null && (typeof row.expectedSourceVersion !== 'string' || !/^[a-f0-9]{64}$/.test(row.expectedSourceVersion)))
       || !row.payload || typeof row.payload !== 'object' || Array.isArray(row.payload)
       || !['owner', 'employee'].includes(String(row.actorRole))
-      || typeof row.actorEmail !== 'string' || row.actorEmail.length > 320 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(row.actorEmail)) {
+      || typeof row.actorEmail !== 'string' || row.actorEmail.length > 320 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(row.actorEmail)
+      || !row.mappingDefinition || typeof row.mappingDefinition !== 'object' || Array.isArray(row.mappingDefinition)) {
       throw new ConnectorHttpError('OPERATION_RESPONSE_INVALID', 502);
     }
+    let mapping: ConnectorMappingDefinitionV1;
+    try { mapping = validateConnectorMapping(row.mappingDefinition, sourceSchema); }
+    catch { throw new ConnectorHttpError('OPERATION_RESPONSE_INVALID', 502); }
+    if (mapping.mappingVersion !== row.mappingVersion || mapping.entityType !== row.entityType) throw new ConnectorHttpError('OPERATION_RESPONSE_INVALID', 502);
     const payload = row.payload as Record<string, unknown>;
     const allowedTargets = new Set(CANONICAL_PAYLOAD_FIELDS[row.entityType as keyof typeof CANONICAL_PAYLOAD_FIELDS]);
     if (JSON.stringify(payload).length > 8_192 || Object.keys(payload).some(key => !allowedTargets.has(key))
@@ -171,6 +178,7 @@ export function validateByodbPollBatch(value: unknown) {
       payload,
       actorRole: row.actorRole as ConnectorMemberRole,
       actorEmail: row.actorEmail,
+      mappingDefinition: mapping,
     };
   });
 }

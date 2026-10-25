@@ -20,13 +20,14 @@ export async function processByodbOperations(
 ): Promise<{ applied: number; conflicts: number; failed: number; pending: number }> {
   const result = { applied: 0, conflicts: 0, failed: 0, pending: 0 };
   for (const operation of operations) {
-    if (!mapping || operation.mappingVersion !== mapping.mappingVersion || operation.entityType !== mapping.entityType) {
+    const operationMapping = operation.mappingDefinition ?? (mapping?.mappingVersion === operation.mappingVersion && mapping.entityType === operation.entityType ? mapping : null);
+    if (!operationMapping || operation.mappingVersion !== operationMapping.mappingVersion || operation.entityType !== operationMapping.entityType) {
       await api.acknowledgeOperation({ operationId: operation.operationId, status: 'failed', errorCode: 'MAPPING_STALE' });
       result.failed++;
       continue;
     }
     let applied;
-    try { applied = await adapter.applyMappedOperation(operation, mapping, schema); }
+    try { applied = await adapter.applyMappedOperation(operation, operationMapping, schema); }
     catch (error) {
       const code = terminalWriteError(error);
       if (!code) { result.pending += operations.length - result.applied - result.conflicts - result.failed; break; }

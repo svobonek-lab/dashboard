@@ -3,7 +3,7 @@ export type Lead = DataRecord;
 export type Employee = DataRecord;
 export type CompanyBranding = DataRecord;
 
-export type StorageMode = 'cloud';
+export type StorageMode = 'cloud' | 'byodb';
 
 export interface RepositoryHealthStatus {
   ok: boolean;

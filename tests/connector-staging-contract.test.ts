@@ -72,6 +72,10 @@ test('BYODB operation queue is idempotent, tenant-bound, leased, and service-onl
   assert.doesNotMatch(byodbSql, /grant\s+(select|insert|update|delete|all)[^;]+app_byodb_operations\s+to\s+(anon|authenticated)/i);
   assert.match(byodbSql, /if p_cursor is not null then[\s\S]+if v_before is null then return '\[\]'::jsonb/i);
   assert.match(byodbSql, /lease_expires_at is null or lease_expires_at<=now\(\)/i);
+  const pollStart = byodbSql.indexOf('function public.app_poll_byodb_operations');
+  const poll = byodbSql.slice(pollStart, byodbSql.indexOf('$$;', pollStart) + 3);
+  assert.match(poll, /'mappingDefinition',m\.definition/i);
+  assert.match(poll, /m\.version=c\.mapping_version[\s\S]+m\.definition->>'entityType'=c\.entity_type/i);
 });
 
 test('BYODB source acknowledgement commits the validated tenant projection and terminal state together', () => {
@@ -82,4 +86,14 @@ test('BYODB source acknowledgement commits the validated tenant projection and t
   assert.match(ack, /where company_id=v_company_id and connector_id=p_connector_id[\s\S]+external_id=v_operation.external_id/i);
   assert.match(ack, /set status=p_status,source_version=p_source_version/);
   assert.match(byodbSql, /revoke all on function public\.app_ack_byodb_operation\(uuid,uuid,text,text,text,jsonb\) from public,anon,authenticated/i);
+});
+
+test('BYODB context and record RPCs derive tenant scope from active membership and hide unassigned employee leads', () => {
+  assert.match(byodbSql, /function public\.app_get_byodb_context\(p_company_id uuid,p_user_id uuid\)/i);
+  assert.match(byodbSql, /function public\.app_list_byodb_records\(p_company_id uuid,p_user_id uuid\)/i);
+  const recordsStart = byodbSql.indexOf('function public.app_list_byodb_records');
+  const records = byodbSql.slice(recordsStart, byodbSql.indexOf('$$;', recordsStart) + 3);
+  assert.match(records, /app_members[\s\S]+p_user_id[\s\S]+active/i);
+  assert.match(records, /assignedToEmail[\s\S]+v_email/i);
+  assert.match(byodbSql, /revoke all on function public\.app_list_byodb_records\(uuid,uuid\) from public,anon,authenticated/i);
 });

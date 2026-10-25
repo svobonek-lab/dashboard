@@ -34,3 +34,13 @@ test('BYODB operations route is explicitly registered and keeps user, connector,
   assert.match(route, /app_create_byodb_operation/);
   assert.match(route, /validateByodbPollBatch/);
 });
+
+test('BYODB cloud reads are tenant-authorized, employee-scoped, and return only mapped projection data', async()=>{
+  const route = await readFile(new URL('../api/_connector/routes/operations.ts', import.meta.url), 'utf8');
+  assert.match(route, /action === 'context'/);
+  assert.match(route, /action === 'records'/);
+  assert.match(route, /authorizeConnectorMember/);
+  assert.match(route, /app_get_byodb_context/);
+  assert.match(route, /app_list_byodb_records/);
+  assert.doesNotMatch(route, /databaseHost|connectionString|secret_ciphertext|passwordFile/i);
+});

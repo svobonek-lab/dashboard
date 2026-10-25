@@ -60,6 +60,7 @@ test('BYODB operations poll and acknowledge use the signed operations endpoint w
     operationId: 'b6b2a8fc-2f0b-45df-9aa9-1578f58c86f0', idempotencyKey: 'c7b2a8fc-2f0b-45df-9aa9-1578f58c86f0',
     mappingVersion: 2, entityType: 'lead', action: 'update', externalId: 'lead-1', expectedSourceVersion: 'a'.repeat(64),
     payload: { status: 'active' }, actorRole: 'employee', actorEmail: 'worker@example.test',
+    mappingDefinition: { version: 1, mappingVersion: 2, entityType: 'lead', sourceSystem: 'fixture', schema: 'public', table: 'leads', externalIdColumn: 'id', fields: [{ sourceColumn: 'status', targetField: 'status', conversion: { kind: 'text' } }] },
   };
   const api = new ConnectorApi({
     baseUrl: 'https://app.example.test', connectorId: 'connector-1', identity,
@@ -83,6 +84,16 @@ test('BYODB client rejects malformed or secret-bearing polled operations', async
   const api = new ConnectorApi({ baseUrl: 'https://app.example.test', connectorId: 'connector-1', identity,
     fetcher: async () => new Response(JSON.stringify({ operations: [{ operationId: 'invalid', connectionString: 'secret' }] }), { status: 200 }) });
   await assert.rejects(api.pollOperations(), /operation response is invalid/);
+});
+
+test('BYODB operation mappings remain attached per operation when two entity maps are polled together', async () => {
+  const root = await mkdtemp(join(tmpdir(), 'stavbaflow-operation-maps-'));
+  const identity = await testIdentity(join(root, 'identity.json'));
+  const company = { operationId: 'b6b2a8fc-2f0b-45df-9aa9-1578f58c86f0', idempotencyKey: 'c7b2a8fc-2f0b-45df-9aa9-1578f58c86f0', mappingVersion: 4, entityType: 'company', action: 'update', externalId: 'company-1', expectedSourceVersion: 'a'.repeat(64), payload: { name: 'Example' }, actorRole: 'owner', actorEmail: 'owner@example.test', mappingDefinition: { version: 1, mappingVersion: 4, entityType: 'company', sourceSystem: 'fixture', schema: 'public', table: 'companies', externalIdColumn: 'id', fields: [{ sourceColumn: 'name', targetField: 'name', conversion: { kind: 'text' } }] } };
+  const lead = { ...company, operationId: 'd6b2a8fc-2f0b-45df-9aa9-1578f58c86f0', idempotencyKey: 'e7b2a8fc-2f0b-45df-9aa9-1578f58c86f0', entityType: 'lead', externalId: 'lead-1', payload: { title: 'Lead' }, mappingDefinition: { ...company.mappingDefinition, entityType: 'lead', table: 'leads', fields: [{ sourceColumn: 'title', targetField: 'title', conversion: { kind: 'text' } }] } };
+  const api = new ConnectorApi({ baseUrl: 'https://app.example.test', connectorId: 'connector-1', identity, fetcher: async () => new Response(JSON.stringify({ operations: [company, lead] }), { status: 200 }) });
+  const operations = await api.pollOperations();
+  assert.deepEqual(operations.map(operation => operation.mappingDefinition?.table), ['companies', 'leads']);
 });
 
 test('does not retry authorization failures or expose response details', async () => {

@@ -51,3 +51,16 @@ test('rejects stale mappings and reports source conflicts without claiming succe
   assert.equal((acknowledgements[0] as { errorCode: string }).errorCode, 'MAPPING_STALE');
   assert.equal(result.failed, 1);
 });
+
+test('uses the approved mapping attached to each queued operation across entity maps', async () => {
+  const companyMapping: ConnectorMappingDefinitionV1 = { ...mapping, mappingVersion: 8, entityType: 'company', table: 'companies', fields: [{ sourceColumn: 'name', targetField: 'name', conversion: { kind: 'text' } }] };
+  const companyOperation: MappedSourceOperation = { ...operation, mappingVersion: 8, entityType: 'company', externalId: 'company-1', payload: { name: 'Example' }, mappingDefinition: companyMapping };
+  const leadOperation: MappedSourceOperation = { ...operation, mappingDefinition: mapping };
+  const received: string[] = [];
+  const outcome = await processByodbOperations([companyOperation, leadOperation], null, adapter(async (_operation, selected) => {
+    received.push(selected.table);
+    return { status: 'applied', sourceVersion: 'b'.repeat(64) };
+  }), schema, { acknowledgeOperation: async () => undefined });
+  assert.deepEqual(received, ['companies', 'leads']);
+  assert.equal(outcome.applied, 2);
+});

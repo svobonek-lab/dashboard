@@ -154,7 +154,7 @@ export const CANONICAL_PAYLOAD_FIELDS: Record<CanonicalEntityType, readonly stri
   company: ['name', 'companyNumber', 'vatNumber', 'email', 'phone', 'address', 'city', 'postalCode', 'country', 'archived'],
   customer: ['name', 'companyNumber', 'vatNumber', 'email', 'phone', 'address', 'city', 'postalCode', 'country', 'archived'],
   contact: ['firstName', 'lastName', 'name', 'email', 'phone', 'role', 'customerExternalId', 'archived'],
-  lead: ['title', 'description', 'email', 'assignedToEmail', 'customerExternalId', 'contactExternalId', 'value', 'currency', 'status', 'priority', 'address', 'city', 'scheduledAt', 'archived'],
+  lead: ['title', 'customer', 'description', 'email', 'phone', 'assignedToEmail', 'customerExternalId', 'contactExternalId', 'value', 'currency', 'status', 'priority', 'address', 'city', 'scheduledAt', 'archived'],
   project: ['title', 'description', 'customerExternalId', 'status', 'address', 'city', 'startsAt', 'endsAt', 'budget', 'currency', 'archived'],
   employee_directory: ['name', 'email', 'phone', 'role', 'active', 'archived'],
   invoice: ['number', 'customerExternalId', 'projectExternalId', 'issuedAt', 'dueAt', 'total', 'currency', 'status', 'paidAt', 'archived'],

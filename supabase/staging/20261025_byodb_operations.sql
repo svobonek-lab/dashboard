@@ -148,19 +148,26 @@ begin
   if v_company_id is null or p_limit<1 or p_limit>50 then return '[]'::jsonb; end if;
   select write_enabled into v_enabled from public.app_company_database_settings where company_id=v_company_id and connector_id=p_connector_id and mode='byodb';
   if not coalesce(v_enabled,false) then return '[]'::jsonb; end if;
+  update public.app_byodb_operations o set status='failed',error_code='MAPPING_STALE',updated_at=now()
+    where o.connector_id=p_connector_id and o.status='pending'
+      and not exists(select 1 from public.app_connector_mappings m where m.company_id=o.company_id and m.connector_id=o.connector_id
+        and m.version=o.mapping_version and m.approved_at is not null and m.definition->>'entityType'=o.entity_type);
   update public.app_byodb_operations set status='pending',lease_expires_at=null,updated_at=now()
     where connector_id=p_connector_id and status='processing' and (lease_expires_at is null or lease_expires_at<=now());
   with candidates as (
-    select id from public.app_byodb_operations where connector_id=p_connector_id and status='pending'
+    select id from public.app_byodb_operations o where connector_id=p_connector_id and status='pending'
+      and exists(select 1 from public.app_connector_mappings m where m.company_id=o.company_id and m.connector_id=o.connector_id
+        and m.version=o.mapping_version and m.approved_at is not null and m.definition->>'entityType'=o.entity_type)
     order by created_at,id for update skip locked limit p_limit
   ), claimed as (
     update public.app_byodb_operations o set status='processing',attempts=o.attempts+1,lease_expires_at=now()+interval '5 minutes',updated_at=now()
     from candidates c where o.id=c.id returning o.*
   )
-  select coalesce(jsonb_agg(jsonb_build_object('operationId',id,'idempotencyKey',idempotency_key,'mappingVersion',mapping_version,
-    'entityType',entity_type,'action',action,'externalId',external_id,'expectedSourceVersion',expected_source_version,
-    'payload',payload,'actorRole',actor_role,'actorEmail',actor_email) order by created_at,id),'[]'::jsonb)
-    into v_result from claimed;
+  select coalesce(jsonb_agg(jsonb_build_object('operationId',c.id,'idempotencyKey',c.idempotency_key,'mappingVersion',c.mapping_version,
+    'entityType',c.entity_type,'action',c.action,'externalId',c.external_id,'expectedSourceVersion',c.expected_source_version,
+    'payload',c.payload,'actorRole',c.actor_role,'actorEmail',c.actor_email,'mappingDefinition',m.definition) order by c.created_at,c.id),'[]'::jsonb)
+    into v_result from claimed c join public.app_connector_mappings m on m.company_id=c.company_id and m.connector_id=c.connector_id
+      and m.version=c.mapping_version and m.approved_at is not null and m.definition->>'entityType'=c.entity_type;
   return v_result;
 end; $$;
 revoke all on function public.app_poll_byodb_operations(uuid,integer) from public,anon,authenticated;
@@ -218,5 +225,47 @@ begin
 end; $$;
 revoke all on function public.app_ack_byodb_operation(uuid,uuid,text,text,text,jsonb) from public,anon,authenticated;
 grant execute on function public.app_ack_byodb_operation(uuid,uuid,text,text,text,jsonb) to service_role;
+
+create or replace function public.app_get_byodb_context(p_company_id uuid,p_user_id uuid)
+returns jsonb language plpgsql security definer set search_path=public,pg_temp as $$
+declare v_role text; v_settings public.app_company_database_settings%rowtype; v_connector public.app_connectors%rowtype;
+  v_mapping public.app_connector_mappings%rowtype; v_targets jsonb := '[]'::jsonb;
+begin
+  select role into v_role from public.app_members where company_id=p_company_id and user_id=p_user_id and active for share;
+  if v_role not in ('owner','employee') or v_role is null then return jsonb_build_object('errorCode','MEMBER_ACCESS_DENIED'); end if;
+  select * into v_settings from public.app_company_database_settings where company_id=p_company_id;
+  if not found or v_settings.mode<>'byodb' then
+    return jsonb_build_object('mode','managed_cloud','driver',null,'connectorId',null,'mappingVersion',null,'mappedTargets','[]'::jsonb,'writeEnabled',false,'connectorStatus',null);
+  end if;
+  select * into v_connector from public.app_connectors where id=v_settings.connector_id and company_id=p_company_id and revoked_at is null;
+  select * into v_mapping from public.app_connector_mappings where company_id=p_company_id and connector_id=v_settings.connector_id and approved_at is not null order by version desc limit 1;
+  if found then
+    select coalesce(jsonb_agg(field->>'targetField' order by field->>'targetField'),'[]'::jsonb) into v_targets
+      from jsonb_array_elements(v_mapping.definition->'fields') field;
+  end if;
+  return jsonb_build_object('mode','byodb','driver',v_settings.driver,'connectorId',v_settings.connector_id,
+    'mappingVersion',case when v_mapping.version>0 then v_mapping.version else null end,'mappedTargets',v_targets,
+    'writeEnabled',v_settings.write_enabled and v_connector.id is not null and v_mapping.version>0,
+    'connectorStatus',case when v_connector.id is null then 'revoked' else v_connector.status end);
+end; $$;
+revoke all on function public.app_get_byodb_context(uuid,uuid) from public,anon,authenticated;
+grant execute on function public.app_get_byodb_context(uuid,uuid) to service_role;
+
+create or replace function public.app_list_byodb_records(p_company_id uuid,p_user_id uuid)
+returns jsonb language plpgsql security definer set search_path=public,pg_temp as $$
+declare v_role text; v_email text; v_settings public.app_company_database_settings%rowtype; v_result jsonb;
+begin
+  select role,lower(trim(email)) into v_role,v_email from public.app_members where company_id=p_company_id and user_id=p_user_id and active for share;
+  if v_role not in ('owner','employee') or v_role is null then return '[]'::jsonb; end if;
+  select * into v_settings from public.app_company_database_settings where company_id=p_company_id and mode='byodb';
+  if not found or v_settings.connector_id is null then return '[]'::jsonb; end if;
+  select coalesce(jsonb_agg(jsonb_build_object('externalId',external_id,'fingerprint',fingerprint,'payload',payload) order by updated_at desc,external_id),'[]'::jsonb)
+    into v_result from public.app_connector_records
+    where company_id=p_company_id and connector_id=v_settings.connector_id and entity_type='lead' and archived_at is null
+      and (v_role='owner' or lower(coalesce(payload->>'assignedToEmail',''))=coalesce(v_email,''));
+  return v_result;
+end; $$;
+revoke all on function public.app_list_byodb_records(uuid,uuid) from public,anon,authenticated;
+grant execute on function public.app_list_byodb_records(uuid,uuid) to service_role;
 
 commit;

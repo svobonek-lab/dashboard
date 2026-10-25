@@ -126,7 +126,7 @@ export class ConnectorApi {
 function parseOperation(value: unknown): MappedSourceOperation {
   if (!value || typeof value !== 'object' || Array.isArray(value)) throw new Error('operation response is invalid');
   const row = value as Record<string, unknown>;
-  const keys = ['operationId', 'idempotencyKey', 'mappingVersion', 'entityType', 'action', 'externalId', 'expectedSourceVersion', 'payload', 'actorRole', 'actorEmail'];
+  const keys = ['operationId', 'idempotencyKey', 'mappingVersion', 'entityType', 'action', 'externalId', 'expectedSourceVersion', 'payload', 'actorRole', 'actorEmail', 'mappingDefinition'];
   if (Object.keys(row).some(key => !keys.includes(key)) || keys.some(key => !Object.hasOwn(row, key))
     || !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(String(row.operationId))
     || !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(String(row.idempotencyKey))
@@ -135,7 +135,13 @@ function parseOperation(value: unknown): MappedSourceOperation {
     || typeof row.externalId !== 'string' || !row.externalId || row.externalId.length > 512
     || (row.expectedSourceVersion !== null && (typeof row.expectedSourceVersion !== 'string' || !/^[a-f0-9]{64}$/.test(row.expectedSourceVersion)))
     || !row.payload || typeof row.payload !== 'object' || Array.isArray(row.payload)
-    || !['owner', 'employee'].includes(String(row.actorRole)) || typeof row.actorEmail !== 'string' || !/^\S+@\S+\.\S+$/.test(row.actorEmail)) throw new Error('operation response is invalid');
+    || !['owner', 'employee'].includes(String(row.actorRole)) || typeof row.actorEmail !== 'string' || !/^\S+@\S+\.\S+$/.test(row.actorEmail)
+    || !row.mappingDefinition || typeof row.mappingDefinition !== 'object' || Array.isArray(row.mappingDefinition)) throw new Error('operation response is invalid');
+  const mapping = row.mappingDefinition as Record<string, unknown>;
+  if (mapping.version !== 1 || mapping.mappingVersion !== row.mappingVersion || mapping.entityType !== row.entityType
+    || typeof mapping.schema !== 'string' || typeof mapping.table !== 'string' || typeof mapping.externalIdColumn !== 'string'
+    || !Array.isArray(mapping.fields) || mapping.fields.length < 1 || mapping.fields.length > 64
+    || Object.keys(mapping).some(key => !['version', 'mappingVersion', 'entityType', 'sourceSystem', 'schema', 'table', 'externalIdColumn', 'updatedAtColumn', 'deletedAtColumn', 'fields'].includes(key))) throw new Error('operation response is invalid');
   const payload = row.payload as Record<string, unknown>;
   const allowed = row.entityType === 'company' ? ['name', 'address', 'city', 'postalCode', 'phone', 'email', 'website'] : ['title', 'description', 'email', 'assignedToEmail', 'customerExternalId', 'contactExternalId', 'value', 'currency', 'status', 'priority', 'address', 'city', 'scheduledAt', 'archived'];
   if (JSON.stringify(payload).length > 8_192 || Object.keys(payload).some(key => !allowed.includes(key))

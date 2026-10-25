@@ -153,12 +153,18 @@ test('BYODB poll responses are strictly validated and cannot carry undeclared so
     entityType: 'lead', action: 'update', externalId: 'lead-123',
     expectedSourceVersion: 'a'.repeat(64), payload: { status: 'in_progress' },
     actorRole: 'employee', actorEmail: 'worker@example.test',
+    mappingDefinition: { version: 1, mappingVersion: 4, entityType: 'lead', sourceSystem: 'fixture', schema: 'public', table: 'leads', externalIdColumn: 'id', fields: [{ sourceColumn: 'status', targetField: 'status', conversion: { kind: 'text' } }] },
   };
-  assert.deepEqual(validateByodbPollBatch([operation]), [operation]);
-  assert.throws(() => validateByodbPollBatch([{ ...operation, connectionString: 'secret' }]), /OPERATION_RESPONSE_INVALID/);
-  assert.throws(() => validateByodbPollBatch([{ ...operation, payload: { password: 'secret' } }]), /OPERATION_RESPONSE_INVALID/);
-  assert.throws(() => validateByodbPollBatch([{ ...operation, actorEmail: 'not-an-email' }]), /OPERATION_RESPONSE_INVALID/);
-  assert.throws(() => validateByodbPollBatch(Array.from({ length: 51 }, () => operation)), /OPERATION_RESPONSE_INVALID/);
+  const sourceSchema = validateSourceSchema({ tables: [{ schema: 'public', name: 'leads', columns: [
+    { name: 'id', dataType: 'text', nullable: false }, { name: 'status', dataType: 'text', nullable: false },
+  ] }] });
+  assert.deepEqual(validateByodbPollBatch([operation], sourceSchema), [operation]);
+  assert.throws(() => validateByodbPollBatch([{ ...operation, connectionString: 'secret' }], sourceSchema), /OPERATION_RESPONSE_INVALID/);
+  assert.throws(() => validateByodbPollBatch([{ ...operation, mappingDefinition: { ...operation.mappingDefinition, table: 'other' } }], sourceSchema), /OPERATION_RESPONSE_INVALID/);
+  assert.throws(() => validateByodbPollBatch([{ ...operation, mappingDefinition: { ...operation.mappingDefinition, mappingVersion: 3 } }], sourceSchema), /OPERATION_RESPONSE_INVALID/);
+  assert.throws(() => validateByodbPollBatch([{ ...operation, payload: { password: 'secret' } }], sourceSchema), /OPERATION_RESPONSE_INVALID/);
+  assert.throws(() => validateByodbPollBatch([{ ...operation, actorEmail: 'not-an-email' }], sourceSchema), /OPERATION_RESPONSE_INVALID/);
+  assert.throws(() => validateByodbPollBatch(Array.from({ length: 51 }, () => operation), sourceSchema), /OPERATION_RESPONSE_INVALID/);
 });
 
 test('BYODB operation requests keep tenant IDs on owner actions and derive connector scope for poll and ack', () => {
