@@ -30,6 +30,8 @@ jobs:
       - name: Check required staging configuration without printing values
         env:
           STAGING_SUPABASE_URL: ${{ vars.STAGING_SUPABASE_URL }}
+          STAGING_SUPABASE_PROJECT_REF: ${{ vars.STAGING_SUPABASE_PROJECT_REF }}
+          PRODUCTION_SUPABASE_PROJECT_REF: ${{ vars.PRODUCTION_SUPABASE_PROJECT_REF }}
           STAGING_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.STAGING_SUPABASE_PUBLISHABLE_KEY }}
           STAGING_PREVIEW_URL: ${{ vars.STAGING_PREVIEW_URL }}
           STAGING_OWNER_A_EMAIL: ${{ secrets.STAGING_OWNER_A_EMAIL }}
@@ -41,7 +43,8 @@ jobs:
         shell: bash
         run: |
           missing=()
-          for name in STAGING_SUPABASE_URL STAGING_SUPABASE_PUBLISHABLE_KEY STAGING_PREVIEW_URL \
+          for name in STAGING_SUPABASE_URL STAGING_SUPABASE_PROJECT_REF PRODUCTION_SUPABASE_PROJECT_REF \
+            STAGING_SUPABASE_PUBLISHABLE_KEY STAGING_PREVIEW_URL \
             STAGING_OWNER_A_EMAIL STAGING_OWNER_A_PASSWORD STAGING_EMPLOYEE_A_EMAIL \
             STAGING_EMPLOYEE_A_PASSWORD STAGING_OWNER_B_EMAIL STAGING_OWNER_B_PASSWORD; do
             if [ -z "${!name}" ]; then missing+=("$name"); fi
@@ -50,11 +53,14 @@ jobs:
             printf 'Missing GitHub Actions variables/secrets: %s\n' "${missing[*]}" >&2
             exit 1
           fi
+          node --input-type=module -e "import { assertIsolatedStagingProject } from './scripts/connector-staging-environment.mjs'; assertIsolatedStagingProject(process.env)"
       - run: npm ci
       - name: Verify company and employee isolation against isolated staging
         run: npm run test:connector:staging
         env:
           STAGING_SUPABASE_URL: ${{ vars.STAGING_SUPABASE_URL }}
+          STAGING_SUPABASE_PROJECT_REF: ${{ vars.STAGING_SUPABASE_PROJECT_REF }}
+          PRODUCTION_SUPABASE_PROJECT_REF: ${{ vars.PRODUCTION_SUPABASE_PROJECT_REF }}
           STAGING_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.STAGING_SUPABASE_PUBLISHABLE_KEY }}
           STAGING_OWNER_A_EMAIL: ${{ secrets.STAGING_OWNER_A_EMAIL }}
           STAGING_OWNER_A_PASSWORD: ${{ secrets.STAGING_OWNER_A_PASSWORD }}
@@ -66,6 +72,8 @@ jobs:
         run: npm run test:connector:preview
         env:
           STAGING_SUPABASE_URL: ${{ vars.STAGING_SUPABASE_URL }}
+          STAGING_SUPABASE_PROJECT_REF: ${{ vars.STAGING_SUPABASE_PROJECT_REF }}
+          PRODUCTION_SUPABASE_PROJECT_REF: ${{ vars.PRODUCTION_SUPABASE_PROJECT_REF }}
           STAGING_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.STAGING_SUPABASE_PUBLISHABLE_KEY }}
           STAGING_PREVIEW_URL: ${{ vars.STAGING_PREVIEW_URL }}
           STAGING_PREVIEW_BYPASS_TOKEN: ${{ secrets.STAGING_PREVIEW_BYPASS_TOKEN }}

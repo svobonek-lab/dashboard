@@ -5,10 +5,14 @@ import test from 'node:test';
 test('connector acceptance scripts are staging-only and test cross-company authorization', async () => {
   const staging = await readFile('scripts/connector-staging-e2e.mjs', 'utf8');
   const preview = await readFile('scripts/connector-preview-e2e.mjs', 'utf8');
+  const environment = await readFile('scripts/connector-staging-environment.mjs', 'utf8');
   for (const source of [staging, preview]) {
-    assert.match(source, /oncmtmrhmjlerbwkrecv\.supabase\.co/);
+    assert.match(source, /assertIsolatedStagingProject\(process\.env\)/);
+    assert.doesNotMatch(source, /oncmtmrhmjlerbwkrecv/);
     assert.doesNotMatch(source, /SUPABASE_SERVICE_ROLE_KEY|STAGING_SUPABASE_SERVICE_ROLE_KEY/);
   }
+  assert.match(environment, /PRODUCTION_SUPABASE_PROJECT_REF/);
+  assert.match(environment, /STAGING_SUPABASE_PROJECT_REF/);
   assert.match(staging, /ownerACross\.status, 403/);
   assert.match(staging, /employeeOwn\.status, 403/);
   assert.match(preview, /password\|privateKey\|service_role/);
@@ -23,6 +27,9 @@ test('staging acceptance is read-only and release requires evidence for the exac
   assert.match(acceptance, /refs\/heads\/main/);
   assert.match(acceptance, /npm run test:connector:staging/);
   assert.match(acceptance, /npm run test:connector:preview/);
+  assert.match(acceptance, /PRODUCTION_SUPABASE_PROJECT_REF/);
+  assert.match(acceptance, /STAGING_SUPABASE_PROJECT_REF/);
+  assert.match(acceptance, /assertIsolatedStagingProject/);
   assert.doesNotMatch(acceptance, /SUPABASE_SERVICE_ROLE_KEY|db push|migrate|INSERT INTO/i);
   assert.match(publish, /staging_acceptance_run_id/);
   assert.match(publish, /needs: \[acceptance, verify\]/);

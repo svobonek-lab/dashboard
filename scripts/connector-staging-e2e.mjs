@@ -1,10 +1,10 @@
 import assert from 'node:assert/strict';
 import { createClient } from '@supabase/supabase-js';
+import { assertIsolatedStagingProject } from './connector-staging-environment.mjs';
 
-const stagingUrl = process.env.STAGING_SUPABASE_URL;
+const { stagingUrl } = assertIsolatedStagingProject(process.env);
 const publishableKey = process.env.STAGING_SUPABASE_PUBLISHABLE_KEY;
 const previewUrl = process.env.STAGING_PREVIEW_URL;
-assert.equal(stagingUrl, 'https://oncmtmrhmjlerbwkrecv.supabase.co', 'Connector acceptance is restricted to isolated staging.');
 assert.ok(publishableKey && previewUrl, 'Missing staging acceptance configuration.');
 const preview = new URL(previewUrl);
 assert.equal(preview.protocol, 'https:');
