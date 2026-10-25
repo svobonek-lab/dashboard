@@ -39,7 +39,8 @@ test('staging acceptance does not apply SQL and release requires evidence for th
   assert.doesNotMatch(compose, /:stable/);
   assert.match(install, /čtecí i omezená zápisová kontrola adaptéru vybraného pro tento pilot/);
   assert.match(install, /aktuální blocker/i);
-  assert.match(install, /Rychlý postup ve třech krocích[\s\S]+1\. \*\*Připravte zdroj[\s\S]+2\. \*\*Vytvořte projekt[\s\S]+3\. \*\*Připojte a schvalte/);
+  assert.match(install, /Rychlé nasazení: příprava a tři kroky v DSM[\s\S]+1\. Otevřete \*\*Container Manager[\s\S]+2\. Jako název zadejte[\s\S]+3\. Zkontrolujte souhrn/);
+  assert.match(install, /personalizovaný ZIP[\s\S]+obecný Compose soubor z release/);
   assert.match(install, /CONNECTOR_SECRET_ENCRYPTION_KEY/);
   assert.match(install, /source-db-write-password/);
 });
