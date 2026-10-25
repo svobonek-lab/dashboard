@@ -267,7 +267,7 @@ BEGIN
   ), actual AS (
     SELECT c.relname AS table_name,p.polname AS policy_name,p.polcmd::text AS command,
       p.polpermissive AS permissive,
-      ARRAY(SELECT r.rolname FROM unnest(p.polroles) AS role_oid(oid)
+      ARRAY(SELECT r.rolname::text FROM unnest(p.polroles) AS role_oid(oid)
         JOIN pg_roles r ON r.oid=role_oid.oid ORDER BY r.rolname) AS roles,
       p.polqual IS NOT NULL AS using_required,p.polwithcheck IS NOT NULL AS check_required
     FROM pg_policy p JOIN pg_class c ON c.oid=p.polrelid

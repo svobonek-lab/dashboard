@@ -229,6 +229,8 @@ jobs:
           grep -q 'Looks like you failed 1 test of 1' tenant-red.log
       - name: Complete synthetic tenant fixture
         run: docker exec jwt-pgtap-postgres psql -v ON_ERROR_STOP=1 -U postgres -f /workspace/supabase/tests/jwt_tenant_pgtap_setup.sql
+      - name: Inspect synthetic policy expression rendering
+        run: docker exec jwt-pgtap-postgres psql -A -t -F '|' -U postgres -c "SELECT c.relname,p.polname,coalesce(pg_get_expr(p.polqual,p.polrelid),'<null>'),coalesce(pg_get_expr(p.polwithcheck,p.polrelid),'<null>') FROM pg_policy p JOIN pg_class c ON c.oid=p.polrelid JOIN pg_namespace n ON n.oid=c.relnamespace WHERE n.nspname='public' ORDER BY c.relname,p.polname"
       - name: Confirm pgTAP extension
         run: docker exec jwt-pgtap-postgres psql -v ON_ERROR_STOP=1 -U postgres -c "SELECT extversion FROM pg_extension WHERE extname = 'pgtap'"
       - name: Prove the migration blocks unknown app_* tables
