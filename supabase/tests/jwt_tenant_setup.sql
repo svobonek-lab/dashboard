@@ -1,4 +1,5 @@
 -- Disposable fixture only, never a production migration.
+CREATE EXTENSION IF NOT EXISTS pgtap;
 create role anon;
 create role authenticated;
 create role service_role bypassrls;
