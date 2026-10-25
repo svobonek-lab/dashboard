@@ -26,7 +26,15 @@ try {
   await page.locator('input[type="email"]').fill(email);
   await page.locator('input[type="password"]').fill(password);
   await page.getByRole('button', { name: 'Pokračovat do workspace' }).click();
-  await page.waitForURL(url => url.pathname !== '/login', { timeout: 30_000 });
+  try {
+    await page.waitForURL(url => url.pathname !== '/login', { timeout: 30_000 });
+  } catch (error) {
+    const invalidCredentials = page.getByText('Nesprávný e-mail nebo heslo. Ověřte zadané údaje.');
+    if (await invalidCredentials.isVisible().catch(() => false)) {
+      throw new Error('STAGING_OWNER_A_CREDENTIALS_REJECTED');
+    }
+    throw error;
+  }
 
   step = 'open the owner integrations page';
   await page.goto(new URL('/integrations', previewUrl).toString(), { waitUntil: 'domcontentloaded' });
@@ -62,11 +70,15 @@ try {
     enrollmentCreated: false,
   }) + '\n');
 } catch (error) {
+  const safeErrorCode = error instanceof Error
+    && error.message === 'STAGING_OWNER_A_CREDENTIALS_REJECTED'
+    ? error.message
+    : error instanceof Error ? error.name : 'UnknownError';
   process.stderr.write(JSON.stringify({
     passed: false,
     environment: 'isolated-staging',
     step,
-    errorType: error instanceof Error ? error.name : 'UnknownError',
+    errorType: safeErrorCode,
   }) + '\n');
   process.exitCode = 1;
 } finally {
