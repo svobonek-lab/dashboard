@@ -22,4 +22,8 @@ Task 3: complete (commits fdae309..91a1e49, tests: npx tsx --test tests/connecto
 
 Task 4: Ruling: source reads keep their read-only credential and source writes require a separate file-provisioned write credential — using one broad credential for both paths makes the routine sync worker more privileged than needed; companies must grant only mapped-table writes to the local write account.
 Task 4: Ruling: create is enabled only when the mapped external ID is the table's sole, non-generated primary key, and all other required fields have an approved mapping or database default — otherwise safe replay cannot be guaranteed without inventing schema behavior.
-Task 4: complete (commits 91a1e49..91a1e49, tests: npm test --prefix connector → ℹ duration_ms 6602.5975)
+Task 4: complete (commits 91a1e49..78520b2, tests: npm test --prefix connector → ℹ duration_ms 6602.5975)
+
+Task 5: Ruling: source projection and operation terminal state update in one service-only acknowledgement RPC — separate ingest and ack requests could show a saved value while its operation remains pending, or mark completion before the UI read model changes.
+Task 5: Ruling: a retry after a lost acknowledgement treats a create with the same stable external key and requested values, an update already at its desired mapped values, or an already-absent delete as idempotently complete — this avoids a source-side DDL journal; if wrong, a coincident external change to the exact desired values is accepted without a second mutation.
+Task 5: complete (commits 78520b2..78520b2, tests: npm test --prefix connector → ℹ duration_ms 14321.1021)

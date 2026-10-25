@@ -56,6 +56,7 @@ const byodbOperationAckSchema = z.strictObject({
   status: z.enum(['applied', 'conflict', 'failed']),
   sourceVersion: z.string().regex(/^[a-f0-9]{64}$/).optional(),
   errorCode: z.enum(['SOURCE_CONFLICT', 'SOURCE_WRITE_REJECTED', 'MAPPING_STALE', 'SOURCE_UNAVAILABLE']).optional(),
+  projection: z.unknown().nullable().optional(),
 });
 const byodbOperationRequestSchema = z.discriminatedUnion('action', [
   z.strictObject({ action: z.literal('create'), companyId: z.string().uuid(), connectorId: z.string().uuid(), operation: z.unknown() }),
@@ -116,8 +117,13 @@ export function validateByodbOperationAck(value: unknown) {
   const ack = parsed.data;
   if ((ack.status === 'applied' && (!ack.sourceVersion || ack.errorCode !== undefined))
     || (ack.status === 'conflict' && ack.errorCode !== 'SOURCE_CONFLICT')
-    || (ack.status === 'failed' && (!ack.errorCode || ack.sourceVersion !== undefined))) {
+    || (ack.status === 'failed' && (!ack.errorCode || ack.sourceVersion !== undefined))
+    || (ack.status !== 'applied' && ack.projection != null)) {
     throw new ConnectorHttpError('OPERATION_ACK_INVALID', 400);
+  }
+  if (ack.projection != null) {
+    try { return { ...ack, projection: validateCanonicalRecord(ack.projection) }; }
+    catch { throw new ConnectorHttpError('OPERATION_ACK_INVALID', 400); }
   }
   return ack;
 }

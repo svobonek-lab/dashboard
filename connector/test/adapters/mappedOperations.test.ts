@@ -132,3 +132,36 @@ test('source-side assigned lead check and idempotent create replay protect retri
   await assert.rejects(applyMappedOperationWithTransaction('postgres', employee, mapping, schema, wrongAssignee), /OPERATION_ROLE_DENIED/);
   assert.equal(wrongAssignee.rolledBack, true);
 });
+
+test('lost update acknowledgements are replayed without rewriting rows, and deleted rows stay deleted', async () => {
+  class FakeTransaction implements MappedOperationTransaction {
+    mutationCalls = 0;
+    constructor(public row: Record<string, unknown> | null) {}
+    async begin() {}
+    async savepoint() {}
+    async query(statement: SqlStatement) {
+      if (/^SELECT/.test(statement.sql)) return this.row ? [{ ...this.row }] : [];
+      this.mutationCalls++;
+      if (/^UPDATE/.test(statement.sql)) this.row = { ...this.row!, status: statement.values[0] };
+      if (/^DELETE/.test(statement.sql)) this.row = null;
+      return [];
+    }
+    async rollbackToSavepoint() {}
+    async releaseSavepoint() {}
+    async commit() {}
+    async rollback() {}
+    isDuplicateKeyError() { return false; }
+  }
+  const changed = { id: 'lead-1', title: 'Lead', status: 'active', assigned_email: 'worker@example.test', updated_at: '2026-10-25T01:00:00.000Z' };
+  const repeated = new FakeTransaction(changed);
+  const update = await applyMappedOperationWithTransaction('postgres', { ...operation, expectedSourceVersion: 'a'.repeat(64) }, mapping, schema, repeated);
+  assert.equal(update.status, 'applied');
+  assert.equal(update.replayed, true);
+  assert.equal(repeated.mutationCalls, 0);
+
+  const deletion = { ...operation, action: 'delete' as const, payload: {}, expectedSourceVersion: 'a'.repeat(64) };
+  const absent = new FakeTransaction(null);
+  const deleted = await applyMappedOperationWithTransaction('postgres', deletion, mapping, schema, absent);
+  assert.equal(deleted.status, 'applied');
+  assert.equal(deleted.replayed, true);
+});

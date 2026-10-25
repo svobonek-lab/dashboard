@@ -1,6 +1,6 @@
 import { createHash } from 'node:crypto';
 
-import { CANONICAL_PAYLOAD_FIELDS, type ConnectorMappingDefinitionV1, type JsonPrimitive } from '../../../shared/connectorProtocol.js';
+import { CANONICAL_PAYLOAD_FIELDS, type CanonicalRecordV1, type ConnectorMappingDefinitionV1, type JsonPrimitive } from '../../../shared/connectorProtocol.js';
 import { compileMapping } from '../mapping/compileMapping.js';
 import type { SourceDriver, SourceSchema } from './types.js';
 import { findKnownTable, quoteMssqlIdentifier, quoteMysqlIdentifier, quotePostgresIdentifier } from './sqlSafety.js';
@@ -148,7 +148,7 @@ export async function applyMappedOperationWithTransaction(
   mapping: ConnectorMappingDefinitionV1,
   schema: SourceSchema,
   transaction: MappedOperationTransaction,
-): Promise<{ status: 'applied' | 'conflict'; sourceVersion?: string; replayed?: boolean }> {
+): Promise<{ status: 'applied' | 'conflict'; sourceVersion?: string; record?: CanonicalRecordV1; replayed?: boolean }> {
   const statements = buildMappedOperationStatements(driver, operation, mapping, schema);
   try {
     await transaction.begin();
@@ -157,7 +157,7 @@ export async function applyMappedOperationWithTransaction(
       if (rows.length) {
         const replayed = rows[0] && isCreateReplay(rows[0], operation, mapping, schema);
         await transaction.commit();
-        return replayed ? { status: 'applied', sourceVersion: fingerprintMappedSourceRow(rows[0]!, mapping, schema), replayed: true } : { status: 'conflict' };
+        return replayed ? { status: 'applied', sourceVersion: fingerprintMappedSourceRow(rows[0]!, mapping, schema), record: compileMapping(mapping, schema).mapRow(rows[0]!).record!, replayed: true } : { status: 'conflict' };
       }
       await transaction.savepoint('byodb_create');
       try {
@@ -173,23 +173,37 @@ export async function applyMappedOperationWithTransaction(
           return { status: 'conflict' };
         }
         await transaction.commit();
-        return { status: 'applied', sourceVersion: fingerprintMappedSourceRow(rows[0], mapping, schema), replayed: true };
+        return { status: 'applied', sourceVersion: fingerprintMappedSourceRow(rows[0], mapping, schema), record: compileMapping(mapping, schema).mapRow(rows[0]).record!, replayed: true };
       }
       rows = await transaction.query(statements.select);
       if (!rows[0]) throw new Error('SOURCE_WRITE_REJECTED');
       const sourceVersion = fingerprintMappedSourceRow(rows[0], mapping, schema);
       await transaction.commit();
-      return { status: 'applied', sourceVersion };
+      return { status: 'applied', sourceVersion, record: compileMapping(mapping, schema).mapRow(rows[0]).record! };
     }
 
     const current = rows[0];
-    if (!current || fingerprintMappedSourceRow(current, mapping, schema) !== operation.expectedSourceVersion) {
+    if (!current && operation.action === 'delete') {
+      const sourceVersion = createHash('sha256').update(`deleted:${operation.idempotencyKey}`).digest('hex');
+      await transaction.commit();
+      return { status: 'applied', sourceVersion, replayed: true };
+    }
+    if (!current) {
       await transaction.commit();
       return { status: 'conflict' };
     }
     const sourceRecord = compileMapping(mapping, schema).mapRow(current).record;
     if (!sourceRecord) throw new Error('SOURCE_ROW_INVALID');
     assertMappedOperationAuthorized(operation, mapping, sourceRecord.payload);
+    const currentVersion = sourceRecord.fingerprint;
+    if (currentVersion !== operation.expectedSourceVersion) {
+      if (operation.action === 'update' && Object.entries(operation.payload).every(([key, value]) => sourceRecord.payload[key] === value)) {
+        await transaction.commit();
+        return { status: 'applied', sourceVersion: currentVersion, record: sourceRecord, replayed: true };
+      }
+      await transaction.commit();
+      return { status: 'conflict' };
+    }
     if (operation.action === 'delete') {
       await transaction.query(statements.delete);
       const sourceVersion = createHash('sha256').update(`deleted:${operation.idempotencyKey}`).digest('hex');
@@ -201,7 +215,7 @@ export async function applyMappedOperationWithTransaction(
     if (!rows[0]) throw new Error('SOURCE_WRITE_REJECTED');
     const sourceVersion = fingerprintMappedSourceRow(rows[0], mapping, schema);
     await transaction.commit();
-    return { status: 'applied', sourceVersion };
+    return { status: 'applied', sourceVersion, record: compileMapping(mapping, schema).mapRow(rows[0]).record! };
   } catch (error) {
     await transaction.rollback().catch(() => undefined);
     throw error;

@@ -1,7 +1,8 @@
 import { randomUUID } from 'node:crypto';
 
-import type { ConnectorCommandV1, ConnectorSourceSchemaV1, IngestAckV1, IngestEnvelopeV1 } from '../../../shared/connectorProtocol.js';
+import type { CanonicalRecordV1, ConnectorCommandV1, ConnectorSourceSchemaV1, IngestAckV1, IngestEnvelopeV1 } from '../../../shared/connectorProtocol.js';
 import { fingerprintSecret, signRequest, type ConnectorIdentity } from '../security/identity.js';
+import type { MappedSourceOperation } from '../adapters/mappedOperations.js';
 
 export class ConnectorApiError extends Error {
   constructor(readonly code: string, readonly status: number) {
@@ -68,6 +69,16 @@ export class ConnectorApi {
     await this.request('/api/connector/commands', { action: 'acknowledge', commandId }, true);
   }
 
+  async pollOperations(limit = 25): Promise<MappedSourceOperation[]> {
+    const result = await this.request<{ operations?: unknown }>('/api/connector/operations', { action: 'poll', limit }, true);
+    if (!result || typeof result !== 'object' || Object.keys(result).some(key => key !== 'operations') || !Array.isArray(result.operations) || result.operations.length > limit) throw new Error('operation response is invalid');
+    return result.operations.map(parseOperation);
+  }
+
+  async acknowledgeOperation(ack: { operationId: string; status: 'applied' | 'conflict' | 'failed'; sourceVersion?: string; errorCode?: 'SOURCE_CONFLICT' | 'SOURCE_WRITE_REJECTED' | 'MAPPING_STALE' | 'SOURCE_UNAVAILABLE' }, projection?: CanonicalRecordV1 | null): Promise<void> {
+    await this.request('/api/connector/operations', { action: 'ack', ack: { ...ack, projection: projection ?? null } }, true);
+  }
+
   private async request<T = { accepted: boolean }>(pathname: string, payload: unknown, signed: boolean): Promise<T> {
     const body = JSON.stringify(payload);
     if (Buffer.byteLength(body, 'utf8') > this.maxBodyBytes) throw new Error('request body exceeds connector limit');
@@ -110,5 +121,26 @@ export class ConnectorApi {
     }
     throw new ConnectorApiError('CONNECTOR_NETWORK_UNAVAILABLE', 0);
   }
+}
+
+function parseOperation(value: unknown): MappedSourceOperation {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) throw new Error('operation response is invalid');
+  const row = value as Record<string, unknown>;
+  const keys = ['operationId', 'idempotencyKey', 'mappingVersion', 'entityType', 'action', 'externalId', 'expectedSourceVersion', 'payload', 'actorRole', 'actorEmail'];
+  if (Object.keys(row).some(key => !keys.includes(key)) || keys.some(key => !Object.hasOwn(row, key))
+    || !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(String(row.operationId))
+    || !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(String(row.idempotencyKey))
+    || !Number.isInteger(row.mappingVersion) || Number(row.mappingVersion) < 1
+    || !['company', 'lead'].includes(String(row.entityType)) || !['create', 'update', 'delete'].includes(String(row.action))
+    || typeof row.externalId !== 'string' || !row.externalId || row.externalId.length > 512
+    || (row.expectedSourceVersion !== null && (typeof row.expectedSourceVersion !== 'string' || !/^[a-f0-9]{64}$/.test(row.expectedSourceVersion)))
+    || !row.payload || typeof row.payload !== 'object' || Array.isArray(row.payload)
+    || !['owner', 'employee'].includes(String(row.actorRole)) || typeof row.actorEmail !== 'string' || !/^\S+@\S+\.\S+$/.test(row.actorEmail)) throw new Error('operation response is invalid');
+  const payload = row.payload as Record<string, unknown>;
+  const allowed = row.entityType === 'company' ? ['name', 'address', 'city', 'postalCode', 'phone', 'email', 'website'] : ['title', 'description', 'email', 'assignedToEmail', 'customerExternalId', 'contactExternalId', 'value', 'currency', 'status', 'priority', 'address', 'city', 'scheduledAt', 'archived'];
+  if (JSON.stringify(payload).length > 8_192 || Object.keys(payload).some(key => !allowed.includes(key))
+    || Object.values(payload).some(item => item !== null && !['string', 'number', 'boolean'].includes(typeof item))
+    || (row.action === 'create' ? row.expectedSourceVersion !== null : typeof row.expectedSourceVersion !== 'string')) throw new Error('operation response is invalid');
+  return row as unknown as MappedSourceOperation;
 }
 

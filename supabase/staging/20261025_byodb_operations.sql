@@ -166,28 +166,57 @@ end; $$;
 revoke all on function public.app_poll_byodb_operations(uuid,integer) from public,anon,authenticated;
 grant execute on function public.app_poll_byodb_operations(uuid,integer) to service_role;
 
+drop function if exists public.app_ack_byodb_operation(uuid,uuid,text,text,text);
 create or replace function public.app_ack_byodb_operation(
-  p_connector_id uuid,p_operation_id uuid,p_status text,p_source_version text default null,p_error_code text default null
+  p_connector_id uuid,p_operation_id uuid,p_status text,p_source_version text default null,p_error_code text default null,p_projection jsonb default null
 ) returns boolean language plpgsql security definer set search_path=public,pg_temp as $$
-declare v_company_id uuid; v_operation public.app_byodb_operations%rowtype;
+declare v_company_id uuid; v_operation public.app_byodb_operations%rowtype; v_mapping public.app_connector_mappings%rowtype; v_key text;
 begin
   select company_id into v_company_id from public.app_connectors where id=p_connector_id and revoked_at is null and 'operations'=any(scopes);
   if v_company_id is null then return false; end if;
   if p_status is null or p_status not in ('applied','conflict','failed') or
      (p_status='applied' and (p_source_version is null or p_source_version !~ '^[a-f0-9]{64}$' or p_error_code is not null)) or
      (p_status='conflict' and p_error_code is distinct from 'SOURCE_CONFLICT') or
-     (p_status='failed' and (p_error_code is null or p_error_code not in ('SOURCE_WRITE_REJECTED','MAPPING_STALE','SOURCE_UNAVAILABLE') or p_source_version is not null)) then return false; end if;
+     (p_status='failed' and (p_error_code is null or p_error_code not in ('SOURCE_WRITE_REJECTED','MAPPING_STALE','SOURCE_UNAVAILABLE') or p_source_version is not null)) or
+     (p_status<>'applied' and p_projection is not null) then return false; end if;
   select * into v_operation from public.app_byodb_operations where id=p_operation_id and connector_id=p_connector_id and company_id=v_company_id for update;
   if not found then return false; end if;
   if v_operation.status in ('applied','conflict','failed') then
-    return v_operation.status=p_status and v_operation.source_version is not distinct from p_source_version and v_operation.error_code is not distinct from p_error_code;
+    if v_operation.status<>p_status or v_operation.source_version is distinct from p_source_version or v_operation.error_code is distinct from p_error_code then return false; end if;
+    if p_status<>'applied' then return true; end if;
+    if v_operation.action='delete' then return exists(select 1 from public.app_connector_records where company_id=v_company_id and connector_id=p_connector_id and entity_type=v_operation.entity_type and external_id=v_operation.external_id and archived_at is not null); end if;
+    return p_projection is not null and exists(select 1 from public.app_connector_records where company_id=v_company_id and connector_id=p_connector_id and entity_type=v_operation.entity_type and external_id=v_operation.external_id and fingerprint=p_projection->>'fingerprint');
   end if;
   if v_operation.status<>'processing' then return false; end if;
+  if p_status='applied' then
+    if v_operation.action='delete' then
+      if p_projection is not null then return false; end if;
+      update public.app_connector_records set archived_at=now(),updated_at=now() where company_id=v_company_id and connector_id=p_connector_id and entity_type=v_operation.entity_type and external_id=v_operation.external_id;
+      if not found then return false; end if;
+    else
+      if p_projection is null or jsonb_typeof(p_projection)<>'object' or p_projection->>'version'<>'1'
+        or p_projection->>'type'<>v_operation.entity_type or p_projection->>'externalId'<>v_operation.external_id
+        or p_projection->>'fingerprint'<>p_source_version or p_projection->>'sourceTable' is null
+        or jsonb_typeof(p_projection->'payload')<>'object'
+        or exists(select 1 from jsonb_object_keys(p_projection) key where key not in ('version','type','sourceSystem','sourceTable','externalId','sourceUpdatedAt','fingerprint','payload')) then return false; end if;
+      select * into v_mapping from public.app_connector_mappings where company_id=v_company_id and connector_id=p_connector_id and version=v_operation.mapping_version and approved_at is not null;
+      if not found or p_projection->>'sourceSystem' is distinct from v_mapping.definition->>'sourceSystem'
+        or p_projection->>'sourceTable' is distinct from concat(v_mapping.definition->>'schema','.',v_mapping.definition->>'table') then return false; end if;
+      for v_key in select jsonb_object_keys(p_projection->'payload') loop
+        if not exists(select 1 from jsonb_array_elements(v_mapping.definition->'fields') field where field->>'targetField'=v_key)
+          or jsonb_typeof(p_projection->'payload'->v_key) not in ('string','number','boolean','null') then return false; end if;
+      end loop;
+      insert into public.app_connector_records(company_id,connector_id,mapping_version,entity_type,external_id,fingerprint,payload,source_updated_at,archived_at)
+      values(v_company_id,p_connector_id,v_operation.mapping_version,v_operation.entity_type,v_operation.external_id,p_source_version,p_projection->'payload',nullif(p_projection->>'sourceUpdatedAt','')::timestamptz,
+        case when coalesce((p_projection->'payload'->>'archived')::boolean,false) then now() else null end)
+      on conflict(company_id,connector_id,entity_type,external_id) do update set mapping_version=excluded.mapping_version,fingerprint=excluded.fingerprint,payload=excluded.payload,source_updated_at=excluded.source_updated_at,archived_at=excluded.archived_at,updated_at=now();
+    end if;
+  end if;
   update public.app_byodb_operations set status=p_status,source_version=p_source_version,error_code=p_error_code,lease_expires_at=null,updated_at=now()
     where id=p_operation_id and connector_id=p_connector_id and company_id=v_company_id;
   return found;
 end; $$;
-revoke all on function public.app_ack_byodb_operation(uuid,uuid,text,text,text) from public,anon,authenticated;
-grant execute on function public.app_ack_byodb_operation(uuid,uuid,text,text,text) to service_role;
+revoke all on function public.app_ack_byodb_operation(uuid,uuid,text,text,text,jsonb) from public,anon,authenticated;
+grant execute on function public.app_ack_byodb_operation(uuid,uuid,text,text,text,jsonb) to service_role;
 
 commit;

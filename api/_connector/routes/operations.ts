@@ -78,6 +78,7 @@ export default async function byodbOperationsHandler(request: any, response: any
         p_status: ack.status,
         p_source_version: ack.sourceVersion ?? null,
         p_error_code: ack.errorCode ?? null,
+        p_projection: ack.projection ?? null,
       });
       if (error || data !== true) throw new ConnectorHttpError('OPERATION_ACK_REJECTED', 409);
       return { accepted: true };

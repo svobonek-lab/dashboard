@@ -73,3 +73,13 @@ test('BYODB operation queue is idempotent, tenant-bound, leased, and service-onl
   assert.match(byodbSql, /if p_cursor is not null then[\s\S]+if v_before is null then return '\[\]'::jsonb/i);
   assert.match(byodbSql, /lease_expires_at is null or lease_expires_at<=now\(\)/i);
 });
+
+test('BYODB source acknowledgement commits the validated tenant projection and terminal state together', () => {
+  assert.match(byodbSql, /app_ack_byodb_operation\([\s\S]+p_projection jsonb/i);
+  const start = byodbSql.indexOf('function public.app_ack_byodb_operation');
+  const ack = byodbSql.slice(start, byodbSql.indexOf('$$;', start) + 3);
+  assert.match(ack, /app_connector_records[\s\S]+on conflict\(company_id,connector_id,entity_type,external_id\) do update/i);
+  assert.match(ack, /where company_id=v_company_id and connector_id=p_connector_id[\s\S]+external_id=v_operation.external_id/i);
+  assert.match(ack, /set status=p_status,source_version=p_source_version/);
+  assert.match(byodbSql, /revoke all on function public\.app_ack_byodb_operation\(uuid,uuid,text,text,text,jsonb\) from public,anon,authenticated/i);
+});

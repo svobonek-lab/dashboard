@@ -151,6 +151,7 @@
 - Modify: `connector/src/api/client.ts`
 - Modify: `connector/src/runtimeBootstrap.ts`
 - Modify: `connector/src/commands/processCommands.ts`
+- Create: `connector/src/commands/processOperations.ts`
 - Modify: `api/_connector/routes/commands.ts`
 - Modify: `api/_connector/routes/ingest.ts`
 - Modify: `api/_connector/validation.ts`
@@ -158,17 +159,19 @@
 - Test: `tests/connector-api.test.ts`
 - Test: `connector/test/runtime.test.ts`
 - Test: `connector/test/commands/processCommands.test.ts`
+- Test: `connector/test/commands/processOperations.test.ts`
+- Modify: `connector/test/api/client.test.ts`
 
 **Interfaces:**
 - Produces a pipeline that polls signed operations, validates mapping version, applies one source mutation, durably queues its result, submits a signed ingest/ack, and advances state only after server acknowledgement.
 - Server derives `company_id` from connector identity and stores only allowlisted canonical fields in the mirror.
 - Every stage is idempotent by operation/request ID; pending operations are queryable by the owner tenant.
 
-- [ ] **Step 1: Write failing tests** for poll→mutate→ingest→ack, network loss before/after source commit, duplicate poll, bad HMAC, and source failure.
-- [ ] **Step 2: Run** `npx tsx --test tests/connector-api.test.ts` and the focused connector command/runtime tests.
+- [x] **Step 1: Write failing tests** for poll→mutate→acknowledged projection, network loss before/after source commit, duplicate poll, bad HMAC, and source failure.
+- [x] **Step 2: Run** `npx tsx --test tests/connector-api.test.ts` and the focused connector command/runtime tests.
   **Expected:** the end-to-end write pipeline is missing.
-- [ ] **Step 3: Implement** signed operation execution and server-side projection/ack transitions.
-- [ ] **Step 4: Run the same tests.**
+- [x] **Step 3: Implement** signed operation execution and server-side projection/ack transitions.
+- [x] **Step 4: Run the same tests.**
   **Expected:** source and mirror converge once, retries do not duplicate, and offline operations remain pending.
 - [ ] **Step 5: Commit** `feat(byodb): sync acknowledged source writes into the tenant view`.
 

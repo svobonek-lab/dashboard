@@ -52,6 +52,39 @@ test('enrollment returns the server-bound connector and company identities', asy
   assert.deepEqual(await api.enroll('one-time-code'), { connectorId: 'connector-1', companyId: 'company-1' });
 });
 
+test('BYODB operations poll and acknowledge use the signed operations endpoint with strict payloads', async () => {
+  const directory = await mkdtemp(join(tmpdir(), 'stavbaflow-operations-'));
+  const identity = await testIdentity(join(directory, 'identity.json'));
+  const requests: Array<{ url: string; body: string; headers: Headers }> = [];
+  const operation = {
+    operationId: 'b6b2a8fc-2f0b-45df-9aa9-1578f58c86f0', idempotencyKey: 'c7b2a8fc-2f0b-45df-9aa9-1578f58c86f0',
+    mappingVersion: 2, entityType: 'lead', action: 'update', externalId: 'lead-1', expectedSourceVersion: 'a'.repeat(64),
+    payload: { status: 'active' }, actorRole: 'employee', actorEmail: 'worker@example.test',
+  };
+  const api = new ConnectorApi({
+    baseUrl: 'https://app.example.test', connectorId: 'connector-1', identity,
+    fetcher: async (input, init) => {
+      requests.push({ url: String(input), body: String(init?.body), headers: new Headers(init?.headers) });
+      return new Response(JSON.stringify(requests.length === 1 ? { operations: [operation] } : { accepted: true }), { status: 200 });
+    },
+  });
+  assert.deepEqual(await api.pollOperations(), [operation]);
+  await api.acknowledgeOperation({ operationId: operation.operationId, status: 'conflict', errorCode: 'SOURCE_CONFLICT' });
+  assert.equal(requests[0]?.url, 'https://app.example.test/api/connector/operations');
+  assert.equal(JSON.parse(requests[0]!.body).action, 'poll');
+  assert.ok(requests.every(request => request.headers.has('x-sf-signature')));
+  assert.equal(JSON.parse(requests[1]!.body).action, 'ack');
+  assert.equal(JSON.parse(requests[0]!.body).companyId, undefined);
+});
+
+test('BYODB client rejects malformed or secret-bearing polled operations', async () => {
+  const directory = await mkdtemp(join(tmpdir(), 'stavbaflow-operations-invalid-'));
+  const identity = await testIdentity(join(directory, 'identity.json'));
+  const api = new ConnectorApi({ baseUrl: 'https://app.example.test', connectorId: 'connector-1', identity,
+    fetcher: async () => new Response(JSON.stringify({ operations: [{ operationId: 'invalid', connectionString: 'secret' }] }), { status: 200 }) });
+  await assert.rejects(api.pollOperations(), /operation response is invalid/);
+});
+
 test('does not retry authorization failures or expose response details', async () => {
   const directory = await mkdtemp(join(tmpdir(), 'stavbaflow-client-'));
   const identity = await testIdentity(join(directory, 'identity.json'));

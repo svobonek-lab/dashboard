@@ -142,6 +142,7 @@ test('BYODB operation acknowledgements accept only bounded terminal outcomes', (
   });
   assert.deepEqual(validateByodbOperationAck({ operationId: 'b6b2a8fc-2f0b-45df-9aa9-1578f58c86f0', status: 'conflict', errorCode: 'SOURCE_CONFLICT' }).status, 'conflict');
   assert.throws(() => validateByodbOperationAck({ operationId: 'b6b2a8fc-2f0b-45df-9aa9-1578f58c86f0', status: 'failed', errorCode: 'DATABASE_PASSWORD', detail: 'secret' }), /OPERATION_ACK_INVALID/);
+  assert.throws(() => validateByodbOperationAck({ operationId: 'b6b2a8fc-2f0b-45df-9aa9-1578f58c86f0', status: 'conflict', errorCode: 'SOURCE_CONFLICT', projection: { secret: 'not a record' } }), /OPERATION_ACK_INVALID/);
 });
 
 test('BYODB poll responses are strictly validated and cannot carry undeclared source data', () => {

@@ -3,9 +3,10 @@ import { join } from 'node:path';
 
 import type { ConnectorMappingDefinitionV1, ConnectorSourceSchemaV1 } from '../../shared/connectorProtocol.js';
 import type { ConnectorConfig } from './config.js';
-import { ConnectorApi } from './api/client.js';
+import { ConnectorApi, ConnectorApiError } from './api/client.js';
 import { createSourceAdapter } from './adapters/types.js';
 import { processConnectorCommands } from './commands/processCommands.js';
+import { processByodbOperations } from './commands/processOperations.js';
 import { ConnectorHealth, HealthServer } from './health.js';
 import { ConnectorRuntime, verifyStateDirectory } from './main.js';
 import { compileMapping } from './mapping/compileMapping.js';
@@ -88,6 +89,7 @@ export async function bootstrapConnector(config: ConnectorConfig): Promise<void>
       mapping: compileMapping(definition, schema), connectorId, companyId, pageSize: 250,
     });
     const storedMapping = await loadMapping(config.mappingPath);
+    let activeMapping = storedMapping;
     let engine: SyncEngine | null = storedMapping ? createEngine(storedMapping) : null;
 
     const currentStatus = async () => !engine
@@ -130,6 +132,7 @@ export async function bootstrapConnector(config: ConnectorConfig): Promise<void>
         refreshMapping: async definition => {
           const nextEngine = createEngine(definition);
           await writeJsonAtomically(config.mappingPath, definition);
+          activeMapping = definition;
           engine = nextEngine;
           const result = await engine.reportDryRun();
           await heartbeat('dry_run_required', { completedAt: new Date().toISOString(), processed: result.total, changed: result.valid, failed: result.failed });
@@ -147,6 +150,14 @@ export async function bootstrapConnector(config: ConnectorConfig): Promise<void>
         },
         acknowledge: commandId => api.acknowledgeCommand(commandId),
       });
+      if (config.database.writeUsername && engine && await engine.mappingApproved()) {
+        try {
+          const operations = await api.pollOperations();
+          await processByodbOperations(operations, activeMapping, adapter, schema, api);
+        } catch (error) {
+          if (!(error instanceof ConnectorApiError && error.code === 'BYODB_RELEASE_GATE_CLOSED')) throw error;
+        }
+      }
     };
 
     runtime = new ConnectorRuntime({
