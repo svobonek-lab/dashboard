@@ -2,13 +2,28 @@
 
 Konektor je určen pro řízený pilot PostgreSQL, MySQL/MariaDB nebo Microsoft SQL Serveru. V režimu BYODB je schválená firemní databáze zdrojem pravdy pro namapovaná firemní a zakázková pole. Konektor čte změny přes odchozí HTTPS a provádí jen výslovně schválené, parametrizované zápisy z fronty; neotevírá příchozí port NASu. Managed Cloud nadále používá Supabase.
 
-## Rychlý postup ve třech krocích
+## Rychlé nasazení: příprava a tři kroky v DSM
 
-1. **Připravte zdroj:** založte omezený čtecí a zápisový účet, vytvořte složku projektu na NASu a uložte oba SQL secrets do souborů.
-2. **Vytvořte projekt:** v Container Manageru zvolte **Projekt → Vytvořit**, nahrajte `docker-compose.synology.yml`, doplňte dosažitelný `DB_HOST` a `DB_PORT` a připněte release digest.
-3. **Připojte a schvalte:** vložte enrollment kód a jednorázový HMAC secret jako NAS soubory, spusťte konektor, namapujte firmu i zakázky, ověřte dry-run a schvalte pouze po staging acceptance.
+Nejdřív připravte NAS a soubory podle následujícího předletového seznamu. Samotné vytvoření projektu pak v Container Manageru projde třemi obrazovkami/pracovními kroky. Počet potvrzovacích kliknutí se může mezi verzemi DSM lišit.
 
-Podrobnosti a bezpečnostní kontroly následují níže.
+### Před otevřením Container Manageru
+
+- Z dashboardu vlastníka vytvořte konektor pro zvolený databázový ovladač a stáhněte jeho personalizovaný ZIP. ZIP obsahuje pouze `docker-compose.synology.yml` a `config.json` se zvoleným ovladačem a URL aplikace; neobsahuje hesla, enrollment kód ani HMAC secret.
+- Stáhněte kontrolovaný GitHub release a ověřte `connector-manifest.json`. Použijte přesný neměnný digest image z manifestu; image tag `latest` nepoužívejte.
+- Vytvořte na NASu adresář `/volume1/docker/stavbaflow` a podadresáře `config`, `state` a `secrets`. ZIP rozbalte a zkopírujte `config.json` do `config/`.
+- V `config.json` nastavte adresu a název zdrojové databáze, schéma, databázové uživatele a zapnutí TLS podle certifikátu zdroje. Čtecí a omezené zápisové heslo vložte do souborů `secrets/source-db-password` a `secrets/source-db-write-password`.
+- Enrollment kód z dashboardu uložte do `secrets/enrollment-code`; jednorázový `connectorSecret` uložte beze změny do `secrets/connector-identity`. Tyto hodnoty nevkládejte do `config.json`, `.env`, Compose YAML ani do chatu.
+- V adresáři projektu vedle Compose souboru vytvořte `.env` pouze s `DB_HOST` (adresa dosažitelná z kontejneru) a `DB_PORT`. Nepřidávejte do něj žádná hesla ani klíče. Omezte oprávnění složky `secrets` na správce NASu a účet Container Manageru.
+
+### Tři kroky v Container Manageru
+
+1. Otevřete **Container Manager → Projekt → Vytvořit**.
+2. Jako název zadejte `stavbaflow-connector`, jako cestu `/volume1/docker/stavbaflow` a jako zdroj nahrajte personalizovaný `docker-compose.synology.yml`.
+3. Zkontrolujte souhrn, zvolte **Dokončit** a po výzvě potvrďte spuštění projektu.
+
+Po spuštění ověřte stav kontejneru a podepsaný heartbeat v dashboardu. Kód enrollmentu se spotřebuje jednou; smažte jeho soubor z NASu po úspěšném připojení. Namapujte nejdřív firemní profil a zakázky, proveďte dry-run bez zápisu a neschvalujte mapování, dokud není dokončena staging acceptance.
+
+Oficiální kroky průvodce Synology: [Container Manager — Project](https://kb.synology.com/en-global/DSM/help/ContainerManager/docker_project?version=7).
 
 ## Předpoklady
 
@@ -26,25 +41,22 @@ Vytvořte oddělené účty pouze pro StavbaFlow. Čtecí účet smí číst jen
 
 ## Soubory na NASu
 
-1. Stáhněte z kontrolovaného GitHub release `docker-compose.synology.yml`, `config.example.json`, instalační a aktualizační skripty a `connector-manifest.json`. Release obsahuje image s neměnným digestem i soubory pro instalaci.
-2. Zkopírujte vzor konfigurace do `/volume1/docker/stavbaflow/config/config.json`.
-3. Nastavte v `config.json` ovladač (`mariadb` pro Synology MariaDB 10+, jinak `mysql`, `postgres` nebo `mssql`), název databáze, schéma, `CUSTOMER_READ_ONLY_USER`, `writeUsername` pro omezený zápisový účet a přesnou HTTPS adresu aplikace. `passwordFile` i `writePasswordFile` ponechte jako cesty k Docker secrets. Hodnoty `database.host` a `database.port` v souboru slouží jako záloha; Compose je přepíše proměnnými `DB_HOST` a `DB_PORT`.
-4. Uložte heslo čtecího účtu do `/volume1/docker/stavbaflow/secrets/source-db-password` a heslo zápisového účtu do `/volume1/docker/stavbaflow/secrets/source-db-write-password`.
-5. V dashboardu vlastníka vytvořte jednorázový kód a uložte jej do `/volume1/docker/stavbaflow/secrets/enrollment-code`.
-6. Uložte jednorázový `connectorSecret` do `/volume1/docker/stavbaflow/secrets/connector-identity`; nejde o enrollment kód. Omezte přístup ke složkám `secrets` a `state` pouze na správce NASu a účet Container Manageru.
+1. Z kontrolovaného GitHub release získejte `connector-manifest.json`, instalační/aktualizační skripty a příklad konfigurace. Z dashboardu vlastníka získejte personalizovaný ZIP s připnutým image digestem; pro vytvoření projektu použijte Compose a `config.json` z tohoto ZIPu, nikoli obecný Compose soubor z release.
+2. V `/volume1/docker/stavbaflow/config/config.json` nastavte pouze spojení a ovladač: `mariadb` pro Synology MariaDB 10+, jinak `mysql`, `postgres` nebo `mssql`, název databáze, schéma, `CUSTOMER_READ_ONLY_USER`, `writeUsername` pro omezený zápisový účet a přesnou HTTPS adresu aplikace. `passwordFile` a `writePasswordFile` ponechte jako cesty k Docker secrets. `DB_HOST` a `DB_PORT` se nastavují v `.env` vedle Compose souboru a přepíší hodnoty host/port z configu.
+3. Vložte hesla, enrollment kód a jednorázový `connectorSecret` do čtyř oddělených souborů v `/volume1/docker/stavbaflow/secrets/` přesně podle předchozího seznamu. Omezte přístup k `secrets` a `state` pouze na správce NASu a účet Container Manageru.
 
-Před spuštěním instalačního skriptu nastavte `STAVBAFLOW_CONNECTOR_IMAGE` na hodnotu `image@digest` z manifestu. Skript odmítne jinou cílovou cestu, chybějící secrets, neplatný Compose soubor i neúspěšné spuštění. Hodnoty secrets nevypisuje.
+Personalizovaný Compose soubor už obsahuje digest image i cestu k enrollment souboru. Obecný šablonový Compose v GitHub release místo něj vyžaduje nastavit `STAVBAFLOW_CONNECTOR_IMAGE` na `image@digest` z manifestu a `CONNECTOR_SECRET` na absolutní cestu enrollment souboru. Instalační skript odmítne jinou cílovou cestu, chybějící secrets, neplatný Compose soubor i neúspěšné spuštění; hodnoty secrets nevypisuje.
 
 ## Projekt v Synology Container Manageru
 
-V **Container Manager → Projekt → Vytvořit** vyberte složku `/volume1/docker/stavbaflow` a nahrajte `docker-compose.synology.yml`. V proměnných projektu nastavte:
+Pokud používáte personalizovaný ZIP z dashboardu, vyberte složku `/volume1/docker/stavbaflow` a nahrajte jeho `docker-compose.synology.yml`. `DB_HOST` a `DB_PORT` načte Compose z `.env` v této složce. Vygenerovaný soubor už má digest image a cestu enrollment souboru. Obecná šablona z repozitáře používá tyto proměnné:
 
 | Proměnná | Příklad | Význam |
 | --- | --- | --- |
 | `STAVBAFLOW_CONNECTOR_IMAGE` | `ghcr.io/svobonek-lab/stavbaflow-connector@sha256:<ověřený digest>` | Přesně zkontrolovaný image z release. |
 | `DB_HOST` | `192.168.1.20` | Adresa databáze dostupná z kontejneru; pro databázi přímo na NASu použijte LAN adresu NASu, nikoli `localhost`. |
 | `DB_PORT` | `3306` | TCP port MariaDB/MySQL; pro PostgreSQL zpravidla `5432`, pro SQL Server `1433`. |
-| `CONNECTOR_SECRET` | `/volume1/docker/stavbaflow/secrets/enrollment-code` | Cesta k souboru s jednorázovým enrollment kódem. |
+| `CONNECTOR_SECRET` | `/volume1/docker/stavbaflow/secrets/enrollment-code` | Cesta k souboru s jednorázovým enrollment kódem (jen pro obecnou šablonu). |
 
 Hesla jsou v souborech `source-db-password` a `source-db-write-password`; identita je v `connector-identity`. Jejich obsah nepatří do proměnných projektu ani do Compose YAML. Konektor nepublikuje žádný port a do cloudu navazuje jen odchozí HTTPS spojení. Po úspěšném enrollmentu smažte soubor enrollment kódu. HMAC secret je unikátní pro tento konektor a server ho drží šifrovaný; nikdy jej nesdílejte mezi firmami.
 
