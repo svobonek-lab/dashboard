@@ -156,12 +156,12 @@
 - Consumes: Complete six-layer structure and public index.ts files from Tasks 1 through 4.
 - Produces: npm run lint executes tsc --noEmit and ESLint; ESLint uses eslint-plugin-boundaries to enforce the layer graph and permits cross-slice imports only through index.ts.
 
-- [ ] Step 1: Add fsd-boundaries.test.ts using the ESLint API to check a valid feature-to-entity public import, reject an entity-to-feature import, reject a feature deep import into an entity, reject a feature-to-feature deep import, and reject a shared-to-entity import.
-- [ ] Step 2: Run npx tsx --test tests/fsd-boundaries.test.ts and confirm it fails because the ESLint setup and boundary rules do not exist.
-- [ ] Step 3: Add eslint 10.13.0, @typescript-eslint/parser 8.72.0, eslint-plugin-boundaries 7.3.0, and eslint-import-resolver-typescript 4.4.5 as development dependencies.
-- [ ] Step 4: Configure eslint.config.js for TypeScript under src, the six FSD element types, public-entry file categories for index.ts, one-way layer policies, same-layer cross-slice public API imports, and unknown local dependencies.
-- [ ] Step 5: Change npm run lint to execute tsc --noEmit followed by eslint on src; update AGENTS.md with the layer order, public API rule, and backend/connector exclusions.
-- [ ] Step 6: Run npx tsx --test tests/fsd-boundaries.test.ts and confirm valid imports pass and all four forbidden import classes fail.
-- [ ] Step 7: Run npm ci, npm test, npm run lint, npm run build, git diff --check, and a staged secret scan. Confirm the existing verify workflow invokes ESLint through npm run lint.
-- [ ] Step 8: Commit as chore: enforce FSD import boundaries.
-- [ ] Step 9: Push only codex/fsd-frontend-migration and open a draft PR; do not merge or enable auto-merge.
+- [x] Step 1: Add fsd-boundaries.test.ts using the ESLint API to check a valid feature-to-entity public import, reject an entity-to-feature import, reject a feature deep import into an entity, reject a feature-to-feature deep import, and reject a shared-to-entity import.
+- [x] Step 2: Run npx tsx --test tests/fsd-boundaries.test.ts and confirm it fails because the ESLint setup and boundary rules do not exist.
+- [x] Step 3: Add eslint 10.13.0, @typescript-eslint/parser 8.72.0, eslint-plugin-boundaries 7.3.0, and eslint-import-resolver-typescript 4.4.5 as development dependencies.
+- [x] Step 4: Configure eslint.config.js for TypeScript under src, the six FSD element types, public-entry file categories for index.ts, one-way layer policies, same-layer cross-slice public API imports, and unknown local dependencies.
+- [x] Step 5: Change npm run lint to execute tsc --noEmit followed by eslint on src; update AGENTS.md with the layer order, public API rule, and backend/connector exclusions.
+- [x] Step 6: Run npx tsx --test tests/fsd-boundaries.test.ts and confirm valid imports pass and all four forbidden import classes fail.
+- [x] Step 7: Run npm ci, npm test, npm run lint, npm run build, git diff --check, and a staged secret scan. Confirm the existing verify workflow invokes ESLint through npm run lint.
+- [x] Step 8: Commit as chore: enforce FSD import boundaries.
+- [x] Step 9: Push only codex/fsd-frontend-migration and open a draft PR; do not merge or enable auto-merge.

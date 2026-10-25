@@ -15,12 +15,11 @@ Use Node 24 and the committed package-lock.json. Run npm ci, npm test, npm run l
 CI verify runs on PRs and main pushes without production credentials. CI does not deploy or migrate. A required branch-protection check must be configured separately by the repository owner before it can prevent merging.
 
 ## Architecture
-React 19, TypeScript, Vite 6, Tailwind 4, Supabase, Gemini, and Sentry. The @/ alias resolves to the repository root, not src/. Root-level context/, lib/, api/, features/, components/, hooks/, and types/ coexist with src/. Read existing callers before moving files.
-- src/main.tsx and src/App.tsx: entry and app.
-- src/app/: custom router and role guards.
-- context/OrganizationContext.tsx: auth and organization state.
-- lib/supabase.ts: client and local mock fallback.
-- lib/data/: cloud/Synology/local repository abstraction.
+React 19, TypeScript, Vite 6, Tailwind 4, Supabase, Gemini, and Sentry. Browser code lives under `src/` in the FSD layer order `app` → `pages` → `widgets` → `features` → `entities` → `shared`; a layer may import only itself and lower layers. Entity and feature slices expose cross-slice APIs through `index.ts`. Same-slice imports may use internal files. Shared segments may be imported directly. The `@/` alias resolves only to `src/`.
+- `src/main.tsx` is a thin entry point; `src/app/` owns initialization, global providers, route composition, guards, and global styles.
+- `src/pages/` composes screens; `src/widgets/` composes reusable screen blocks; `src/features/` owns user scenarios; `src/entities/` owns business models and operations; `src/shared/` owns generic UI, APIs, and utilities.
+- Root `api/`, `lib/`, `shared/`, and `types/` contain server, connector, or cross-runtime modules when they are not browser-owned. Keep backend and connector code outside `src/` unless it is deliberately migrated with all callers.
+- `npm run lint` runs TypeScript checking and ESLint. ESLint enforces layer direction, cross-slice public APIs, and known local imports.
 - api/: server handlers; vite.config.ts registers development middleware; vercel.json configures deployment routing.
 - supabase/migrations/: historical SQL proposals, not proof of deployed schema.
 Never run the app against production to test writes. Use synthetic local data.
