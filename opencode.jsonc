@@ -15,7 +15,7 @@
     "servers": {
       "supabase-ci": {
         "type": "remote",
-        "url": "https://mcp.supabase.com/mcp?project_ref=xwzweltjvreqhjpbjrxa&read_only=true&features=database,debugging,docs",
+        "url": "https://mcp.supabase.com/mcp?project_ref=oncmtmrhmjlerbwkrecv&read_only=true&features=database,debugging,docs",
         "oauth": false,
         "headers": {
           "Authorization": "Bearer {env:SUPABASE_ACCESS_TOKEN}"
