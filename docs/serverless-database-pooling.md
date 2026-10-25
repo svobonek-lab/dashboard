@@ -22,8 +22,8 @@ Configure one client-side connection per warm serverless instance, require SSL, 
 
 ## If Supabase is self-hosted
 
-Use the official Supabase self-hosted Compose stack and its documented `.env` configuration. Supavisor's default `POOLER_DEFAULT_POOL_SIZE` is `20`; size it below `max_connections` after reserving capacity for PostgreSQL and other Supabase services. The connection username follows `postgres.[POOLER_TENANT_ID]` and transaction mode uses port `6543`.
+Use the official Supabase self-hosted Compose stack and its documented `.env` configuration. Supavisor's default `POOLER_DEFAULT_POOL_SIZE` is `20`; size it below `max_connections` after reserving capacity for PostgreSQL and other Supabase services. As an initial allocation, keep application pool usage below about 40% of available connections; only cautiously approach 80% with measured demand and monitoring. The connection username follows `postgres.[POOLER_TENANT_ID]` and transaction mode uses port `6543`.
 
 The self-hosted stack also requires generated `SECRET_KEY_BASE` and `VAULT_ENC_KEY` values. Keep them in a secrets manager or private deployment environment; never commit their values. These settings do not belong in the current Synology connector Compose file.
 
-References: [Supabase serverless drivers](https://supabase.com/docs/guides/database/connecting-to-postgres/serverless-drivers), [Supabase self-hosted PostgreSQL access](https://supabase.com/docs/guides/self-hosting/accessing-postgres), and [self-hosting with Docker](https://supabase.com/docs/guides/self-hosting/docker).
+References: [Supabase serverless drivers](https://supabase.com/docs/guides/database/connecting-to-postgres/serverless-drivers), [Supabase self-hosted PostgreSQL access](https://supabase.com/docs/guides/self-hosting/accessing-postgres), [connection pooling and limits](https://supabase.com/docs/guides/database/connecting-to-postgres/pooling-and-limits), and [self-hosting with Docker](https://supabase.com/docs/guides/self-hosting/docker).
