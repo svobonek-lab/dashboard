@@ -22,6 +22,18 @@ function responseRecorder() {
   };
 }
 
+function assertProblem(response: ReturnType<typeof responseRecorder>, status: number, code: string) {
+  assert.equal(response.statusCode, status);
+  assert.equal(response.headers['Content-Type'], 'application/problem+json');
+  const problem = response.body as Record<string, unknown>;
+  assert.equal(problem.type, 'about:blank');
+  assert.equal(problem.status, status);
+  assert.equal(problem.code, code);
+  assert.equal(typeof problem.title, 'string');
+  assert.equal(typeof problem.detail, 'string');
+  assert.equal(Object.hasOwn(problem, 'received'), false);
+}
+
 function checkoutEvent(): Stripe.Event {
   return {
     id: 'evt_checkout_1',
@@ -100,7 +112,7 @@ test('Vercel lazy parsed-body helper cannot override the original signed request
  assert.equal(response.statusCode,200);assert.equal(applied,1);assert.equal(parsedReads,0);
  const tampered=Object.assign(Readable.from([Buffer.from(payload+' ')]),{method:'POST',headers:{'stripe-signature':signature}});
  const rejected=responseRecorder();await handler(tampered,rejected);
- assert.equal(rejected.statusCode,400);assert.equal(applied,1);
+ assertProblem(rejected,400,'STRIPE_SIGNATURE_INVALID');assert.equal(applied,1);
 });
 
 test('streamed webhook body retains the byte limit even when a parsed helper exists',async()=>{
@@ -110,20 +122,54 @@ test('streamed webhook body retains the byte limit even when a parsed helper exi
  });
  const response=responseRecorder();
  await createStripeWebhookHandler({verifyEvent:()=>{verified++;return checkoutEvent();},applySubscriptionUpdate:async()=>'applied'})(request,response);
- assert.equal(response.statusCode,413);assert.equal(verified,0);
+ assertProblem(response,413,'STRIPE_WEBHOOK_TOO_LARGE');assert.equal(verified,0);
 });
 
 test('rejects an invalid Stripe signature with 400 before any database call', async () => {
   let databaseCalls = 0;
   const handler = createStripeWebhookHandler({
-    verifyEvent: () => { throw new Error('bad signature'); },
+    verifyEvent: () => { throw new Stripe.errors.StripeSignatureVerificationError('invalid', '{}'); },
     applySubscriptionUpdate: async () => { databaseCalls += 1; return 'applied'; },
   });
   const response = responseRecorder();
 
   await handler({ method: 'POST', headers: { 'stripe-signature': 'invalid' }, body: Buffer.from('{}') }, response);
 
-  assert.equal(response.statusCode, 400);
+  assertProblem(response, 400, 'STRIPE_SIGNATURE_INVALID');
+  assert.equal(databaseCalls, 0);
+});
+
+test('unexpected verification failures return 500 so Stripe retries', async () => {
+  let databaseCalls = 0;
+  const handler = createStripeWebhookHandler({
+    verifyEvent: () => { throw new Error('verifier unavailable'); },
+    applySubscriptionUpdate: async () => { databaseCalls++; return 'applied'; },
+  });
+  const response = responseRecorder();
+
+  await handler({ method: 'POST', headers: { 'stripe-signature': 'present' }, body: Buffer.from('{}') }, response);
+
+  assertProblem(response, 500, 'STRIPE_WEBHOOK_VERIFICATION_FAILED');
+  assert.equal(databaseCalls, 0);
+  assert.doesNotMatch(JSON.stringify(response.body), /verifier unavailable/);
+});
+
+test('a signed malformed JSON payload returns a Problem Details 400', async () => {
+  const payload = '{';
+  const signature = Stripe.webhooks.generateTestHeaderString({
+    payload,
+    secret: process.env.STRIPE_WEBHOOK_SECRET!,
+  });
+  let databaseCalls = 0;
+  const handler = createStripeWebhookHandler({
+    verifyEvent: verifyStripeEvent,
+    applySubscriptionUpdate: async () => { databaseCalls++; return 'applied'; },
+  });
+  const response = responseRecorder();
+
+  await handler({ method: 'POST', headers: { 'stripe-signature': signature }, body: Buffer.from(payload) }, response);
+
+  assertProblem(response, 400, 'STRIPE_PAYLOAD_INVALID');
   assert.equal(databaseCalls, 0);
 });
 
@@ -137,16 +183,15 @@ test('rejects missing signatures, parsed bodies and oversized payloads before pe
 
   const missingSignature = responseRecorder();
   await handler({ method: 'POST', headers: {}, body: Buffer.from('{}') }, missingSignature);
-  assert.equal(missingSignature.statusCode, 400);
+  assertProblem(missingSignature, 400, 'STRIPE_SIGNATURE_INVALID');
 
   const parsedBody = responseRecorder();
   await handler({ method: 'POST', headers: { 'stripe-signature': 'valid' }, body: {} }, parsedBody);
-  assert.equal(parsedBody.statusCode, 400);
-  assert.deepEqual(parsedBody.body, { received: false, code: 'STRIPE_RAW_BODY_REQUIRED' });
+  assertProblem(parsedBody, 400, 'STRIPE_RAW_BODY_REQUIRED');
 
   const tooLarge = responseRecorder();
   await handler({ method: 'POST', headers: { 'stripe-signature': 'valid' }, body: Buffer.alloc(1024 * 1024 + 1) }, tooLarge);
-  assert.equal(tooLarge.statusCode, 413);
+  assertProblem(tooLarge, 413, 'STRIPE_WEBHOOK_TOO_LARGE');
   assert.equal(verificationCalls, 0);
   assert.equal(databaseCalls, 0);
 });
@@ -160,7 +205,7 @@ test('rejects non-POST requests with the allowed method header', async () => {
 
   await handler({ method: 'GET', headers: {} }, response);
 
-  assert.equal(response.statusCode, 405);
+  assertProblem(response, 405, 'METHOD_NOT_ALLOWED');
   assert.equal(response.headers.Allow, 'POST');
 });
 
@@ -174,8 +219,7 @@ test('fails closed when the Stripe endpoint secret is absent', async () => {
     });
     const response = responseRecorder();
     await handler({ method: 'POST', headers: { 'stripe-signature': 'valid' }, body: Buffer.from('{}') }, response);
-    assert.equal(response.statusCode, 500);
-    assert.deepEqual(response.body, { received: false, code: 'STRIPE_WEBHOOK_NOT_CONFIGURED' });
+    assertProblem(response, 500, 'STRIPE_WEBHOOK_NOT_CONFIGURED');
   } finally {
     process.env.STRIPE_WEBHOOK_SECRET = secret;
   }
@@ -228,7 +272,7 @@ test('rejects conflicting signed checkout tenant bindings without touching the d
   });
   const response = responseRecorder();
   await handler({ method: 'POST', headers: { 'stripe-signature': 'valid' }, body: Buffer.from('{}') }, response);
-  assert.equal(response.statusCode, 500);
+  assertProblem(response, 500, 'STRIPE_WEBHOOK_PROCESSING_FAILED');
   assert.equal(databaseCalls, 0);
 });
 
@@ -272,7 +316,8 @@ test('returns 500 when the subscription update cannot be persisted so Stripe ret
   await handler({ method: 'POST', headers: { 'stripe-signature': 'valid' }, body: Buffer.from('{}') }, response);
 
   assert.equal(response.statusCode, 500);
-  assert.deepEqual(response.body, { received: false, code: 'STRIPE_WEBHOOK_PROCESSING_FAILED' });
+  assertProblem(response, 500, 'STRIPE_WEBHOOK_PROCESSING_FAILED');
+  assert.doesNotMatch(JSON.stringify(response.body), /database unavailable/);
 });
 
 test('acknowledges unhandled and duplicate events without a second mutation', async () => {
