@@ -215,6 +215,7 @@ jobs:
           exit 1
       - name: Prepare synthetic tenant fixture
         run: |
+          docker exec jwt-pgtap-postgres psql -v ON_ERROR_STOP=1 -U postgres -c "CREATE EXTENSION IF NOT EXISTS pgtap"
           docker exec jwt-pgtap-postgres psql -v ON_ERROR_STOP=1 -U postgres -f /workspace/supabase/tests/jwt_tenant_setup.sql
           docker exec jwt-pgtap-postgres pg_prove --version
       - name: Prove the tenant test fails before the proposal
@@ -250,6 +251,17 @@ jobs:
         run: docker exec jwt-pgtap-postgres psql -A -t -F '|' -U postgres -c "SELECT c.relname,pg_get_expr(p.polqual,p.polrelid),pg_get_expr(p.polwithcheck,p.polrelid) FROM pg_policy p JOIN pg_class c ON c.oid=p.polrelid WHERE p.polname='app_jwt_tenant_boundary' ORDER BY c.relname"
       - name: Reject partial and altered tenant boundaries
         run: |
+          docker exec jwt-pgtap-postgres psql -v ON_ERROR_STOP=1 -U postgres -c 'DROP POLICY app_leads_insert_owner ON public.app_leads'
+          docker exec jwt-pgtap-postgres psql -v ON_ERROR_STOP=1 -U postgres -c 'CREATE POLICY app_leads_insert_owner ON public.app_leads FOR INSERT TO authenticated WITH CHECK (true)'
+          set +e
+          docker exec jwt-pgtap-postgres psql -v ON_ERROR_STOP=1 -U postgres -f /workspace/supabase/migrations/20261025000000_secure_jwt_auth_hook.sql > tenant-policy.log 2>&1
+          status=$?
+          set -e
+          cat tenant-policy.log
+          test "$status" -ne 0
+          grep -q 'rendered app_\* policy inventory or command/role contract differs' tenant-policy.log
+          docker exec jwt-pgtap-postgres psql -v ON_ERROR_STOP=1 -U postgres -c 'DROP POLICY app_leads_insert_owner ON public.app_leads'
+          docker exec jwt-pgtap-postgres psql -v ON_ERROR_STOP=1 -U postgres -c "CREATE POLICY app_leads_insert_owner ON public.app_leads FOR INSERT TO authenticated WITH CHECK (app_private.app_role(company_id) = 'owner')"
           docker exec jwt-pgtap-postgres psql -v ON_ERROR_STOP=1 -U postgres -c 'DROP POLICY app_jwt_tenant_boundary ON public.app_invites'
           set +e
           docker exec jwt-pgtap-postgres psql -v ON_ERROR_STOP=1 -U postgres -f /workspace/supabase/migrations/20261025000000_secure_jwt_auth_hook.sql > tenant-partial.log 2>&1
