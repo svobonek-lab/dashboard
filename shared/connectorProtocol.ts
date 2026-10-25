@@ -1,4 +1,5 @@
 export const CANONICAL_ENTITY_TYPES = [
+  'company',
   'customer',
   'contact',
   'lead',
@@ -10,6 +11,14 @@ export const CANONICAL_ENTITY_TYPES = [
 ] as const;
 
 export type CanonicalEntityType = typeof CANONICAL_ENTITY_TYPES[number];
+export type ConnectorDatabaseDriverV1 = 'postgres' | 'mysql' | 'mariadb' | 'mssql';
+export type ConnectorDatabaseModeV1 = 'managed_cloud' | 'byodb';
+
+export interface ConnectorDatabaseModeConfigV1 {
+  version: 1;
+  mode: ConnectorDatabaseModeV1;
+  driver?: ConnectorDatabaseDriverV1;
+}
 export type JsonPrimitive = string | number | boolean | null;
 export type JsonValue = JsonPrimitive | JsonValue[] | { [key: string]: JsonValue };
 
@@ -94,6 +103,10 @@ export interface ConnectorMappingDefinitionV1 {
   fields: ConnectorFieldMappingRuleV1[];
 }
 
+export type ByodbMappingDefinitionV1 = Omit<ConnectorMappingDefinitionV1, 'entityType'> & {
+  entityType: 'company' | 'lead';
+};
+
 export interface IngestRecordResultV1 {
   externalId: string;
   type: CanonicalEntityType;
@@ -135,9 +148,10 @@ export type ConnectorRunStatus =
   | 'paused';
 
 export const CANONICAL_PAYLOAD_FIELDS: Record<CanonicalEntityType, readonly string[]> = {
+  company: ['name', 'companyNumber', 'vatNumber', 'email', 'phone', 'address', 'city', 'postalCode', 'country', 'archived'],
   customer: ['name', 'companyNumber', 'vatNumber', 'email', 'phone', 'address', 'city', 'postalCode', 'country', 'archived'],
   contact: ['firstName', 'lastName', 'name', 'email', 'phone', 'role', 'customerExternalId', 'archived'],
-  lead: ['title', 'description', 'customerExternalId', 'contactExternalId', 'value', 'currency', 'status', 'priority', 'address', 'city', 'scheduledAt', 'archived'],
+  lead: ['title', 'description', 'email', 'customerExternalId', 'contactExternalId', 'value', 'currency', 'status', 'priority', 'address', 'city', 'scheduledAt', 'archived'],
   project: ['title', 'description', 'customerExternalId', 'status', 'address', 'city', 'startsAt', 'endsAt', 'budget', 'currency', 'archived'],
   employee_directory: ['name', 'email', 'phone', 'role', 'active', 'archived'],
   invoice: ['number', 'customerExternalId', 'projectExternalId', 'issuedAt', 'dueAt', 'total', 'currency', 'status', 'paidAt', 'archived'],

@@ -53,7 +53,7 @@ export interface ConnectorSummary {
 export interface ConnectorMappingV1 {
   version: 1;
   mappingVersion: number;
-  entityType: 'customer' | 'contact' | 'lead' | 'project' | 'employee_directory' | 'invoice' | 'payment' | 'custom_record';
+  entityType: 'company' | 'customer' | 'contact' | 'lead' | 'project' | 'employee_directory' | 'invoice' | 'payment' | 'custom_record';
   sourceSystem: string;
   schema: string;
   table: string;
@@ -62,5 +62,7 @@ export interface ConnectorMappingV1 {
   deletedAtColumn?: string;
   fields: Array<{ sourceColumn: string; targetField: string; conversion: { kind: string }; required?: boolean }>;
 }
+
+export type { ByodbMappingDefinitionV1, ConnectorDatabaseDriverV1, ConnectorDatabaseModeConfigV1 } from '../../../../shared/connectorProtocol.js';
 
 export interface EnrollmentResponse { enrollmentId: string; enrollmentCode: string; expiresAt: string }

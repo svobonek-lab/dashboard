@@ -31,6 +31,17 @@ const SAFE_SOURCE_IDENTIFIER = /^[\p{L}\p{N}_.$ -]{1,128}$/u;
 const DRY_RUN_CODES = new Set(['EXTERNAL_ID_MISSING', 'REQUIRED_VALUE_MISSING', 'CONVERSION_INVALID', 'ENUM_VALUE_UNKNOWN']);
 const SECRET_LIKE = /password|secret|token|private[_-]?key|api[_-]?key/i;
 
+const connectorModeSchema = z.strictObject({
+  version: z.literal(1),
+  mode: z.enum(['managed_cloud', 'byodb']),
+  driver: z.enum(['postgres', 'mysql', 'mariadb', 'mssql']).optional(),
+}).refine(value => value.mode === 'byodb' ? value.driver !== undefined : value.driver === undefined);
+
+export function validateConnectorDatabaseMode(value: unknown) {
+  const parsed = connectorModeSchema.safeParse(value);
+  if (!parsed.success) throw new ConnectorHttpError('DATABASE_MODE_INVALID', 400);
+  return parsed.data;
+}
 function validateConversion(value: unknown): ConnectorMappingDefinitionV1['fields'][number]['conversion'] {
   if (!value || typeof value !== 'object' || Array.isArray(value)) throw new ConnectorHttpError('MAPPING_INVALID', 400);
   const conversion = value as Record<string, unknown>;
@@ -113,15 +124,18 @@ export function validateConnectorMapping(value: unknown, sourceSchema: Connector
   if (!knownTable) throw new ConnectorHttpError('MAPPING_SOURCE_UNKNOWN', 400);
   const knownColumns = new Set(knownTable.columns.map(column => column.name));
   const optionalColumns = [mapping.updatedAtColumn, mapping.deletedAtColumn].filter((item): item is string => typeof item === 'string' && Boolean(item));
-  if (![externalIdColumn, ...optionalColumns].every(column => knownColumns.has(column))) throw new ConnectorHttpError('MAPPING_SOURCE_UNKNOWN', 400);
+  const selectedColumns = [externalIdColumn, ...optionalColumns];
+  if (!selectedColumns.every(column => knownColumns.has(column))) throw new ConnectorHttpError('MAPPING_SOURCE_UNKNOWN', 400);
+  if (selectedColumns.some(column => SECRET_LIKE.test(column))) throw new ConnectorHttpError('MAPPING_INVALID', 400);
   const allowedTargets = new Set(CANONICAL_PAYLOAD_FIELDS[entityType]);
   const targets = new Set<string>();
   const fields = mapping.fields.map(value => {
     if (!value || typeof value !== 'object' || Array.isArray(value)) throw new ConnectorHttpError('MAPPING_INVALID', 400);
     const field = value as Record<string, unknown>;
+    if (Object.keys(field).some(key => !['sourceColumn', 'targetField', 'conversion', 'required'].includes(key))) throw new ConnectorHttpError('MAPPING_INVALID', 400);
     const sourceColumn = String(field.sourceColumn ?? ''), targetField = String(field.targetField ?? '');
     const conversion = validateConversion(field.conversion);
-    if (!knownColumns.has(sourceColumn) || !allowedTargets.has(targetField) || targets.has(targetField)) throw new ConnectorHttpError('MAPPING_INVALID', 400);
+    if (!knownColumns.has(sourceColumn) || SECRET_LIKE.test(sourceColumn) || !allowedTargets.has(targetField) || targets.has(targetField)) throw new ConnectorHttpError('MAPPING_INVALID', 400);
     targets.add(targetField);
     return { sourceColumn, targetField, conversion, ...(field.required === true ? { required: true } : {}) };
   });

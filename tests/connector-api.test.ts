@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 
 import { parseConnectorBody, requirePost } from '../api/_connector/http.js';
-import { validateConnectorMapping, validateIngestEnvelope, validateRunMetrics, validateSourceSchema } from '../api/_connector/validation.js';
+import { validateConnectorDatabaseMode, validateConnectorMapping, validateIngestEnvelope, validateRunMetrics, validateSourceSchema } from '../api/_connector/validation.js';
 
 test('connector HTTP boundary rejects method, oversized body and malformed JSON', () => {
   assert.throws(() => requirePost({ method: 'GET' }), /METHOD_NOT_ALLOWED/);
@@ -51,6 +51,54 @@ test('mapping rejects unbounded conversion options and secret-like enum values',
   const mapping = { version: 1, mappingVersion: 1, entityType: 'lead', sourceSystem: 'pilot', schema: 'public', table: 'leads', externalIdColumn: 'id', fields: [{ sourceColumn: 'status', targetField: 'status', conversion: { kind: 'enum', values: { password: 'secret-value' } } }] };
   assert.throws(() => validateConnectorMapping(mapping, schema), /MAPPING_INVALID/);
   assert.throws(() => validateConnectorMapping({ ...mapping, fields: [{ sourceColumn: 'status', targetField: 'status', conversion: { kind: 'text', arbitrary: true } }] }, schema), /MAPPING_INVALID/);
+});
+
+test('BYODB mappings allow canonical company and lead fields while rejecting duplicates and unknown targets', () => {
+  const sourceSchema = validateSourceSchema({ tables: [{ schema: 'public', name: 'crm', columns: [
+    { name: 'id', dataType: 'uuid', nullable: false },
+    { name: 'firma_nazev', dataType: 'text', nullable: false },
+    { name: 'kontakt_email', dataType: 'text', nullable: true },
+    { name: 'zakazka_stav', dataType: 'text', nullable: true },
+  ] }] });
+  const base = { version: 1, mappingVersion: 1, sourceSystem: 'customer-db', schema: 'public', table: 'crm', externalIdColumn: 'id' };
+
+  const company = validateConnectorMapping({ ...base, entityType: 'company', fields: [
+    { sourceColumn: 'firma_nazev', targetField: 'name', conversion: { kind: 'text' }, required: true },
+  ] }, sourceSchema);
+  assert.equal(company.entityType, 'company');
+  assert.equal(company.fields[0]?.targetField, 'name');
+
+  const lead = validateConnectorMapping({ ...base, entityType: 'lead', fields: [
+    { sourceColumn: 'kontakt_email', targetField: 'email', conversion: { kind: 'email' } },
+    { sourceColumn: 'zakazka_stav', targetField: 'status', conversion: { kind: 'text' } },
+  ] }, sourceSchema);
+  assert.deepEqual(lead.fields.map(field => field.targetField), ['email', 'status']);
+  assert.throws(() => validateConnectorMapping({ ...base, entityType: 'lead', fields: [
+    { sourceColumn: 'kontakt_email', targetField: 'email', conversion: { kind: 'email' } },
+    { sourceColumn: 'zakazka_stav', targetField: 'email', conversion: { kind: 'text' } },
+  ] }, sourceSchema), /MAPPING_INVALID/);
+  assert.throws(() => validateConnectorMapping({ ...base, entityType: 'company', fields: [
+    { sourceColumn: 'firma_nazev', targetField: 'password', conversion: { kind: 'text' } },
+  ] }, sourceSchema), /MAPPING_INVALID/);
+});
+
+test('BYODB mapping cannot select secret-like source columns', () => {
+  const sourceSchema = validateSourceSchema({ tables: [{ schema: 'public', name: 'crm', columns: [
+    { name: 'id', dataType: 'uuid', nullable: false },
+    { name: 'api_token', dataType: 'text', nullable: true },
+  ] }] });
+  assert.throws(() => validateConnectorMapping({
+    version: 1, mappingVersion: 1, entityType: 'company', sourceSystem: 'customer-db', schema: 'public', table: 'crm', externalIdColumn: 'id',
+    fields: [{ sourceColumn: 'api_token', targetField: 'name', conversion: { kind: 'text' } }],
+  }, sourceSchema), /MAPPING_INVALID/);
+});
+
+test('connector database mode is versioned, strict, and requires a driver only for BYODB', () => {
+  assert.deepEqual(validateConnectorDatabaseMode({ version: 1, mode: 'managed_cloud' }), { version: 1, mode: 'managed_cloud' });
+  assert.deepEqual(validateConnectorDatabaseMode({ version: 1, mode: 'byodb', driver: 'mariadb' }), { version: 1, mode: 'byodb', driver: 'mariadb' });
+  assert.throws(() => validateConnectorDatabaseMode({ version: 1, mode: 'byodb' }), /DATABASE_MODE_INVALID/);
+  assert.throws(() => validateConnectorDatabaseMode({ version: 1, mode: 'managed_cloud', driver: 'postgres' }), /DATABASE_MODE_INVALID/);
+  assert.throws(() => validateConnectorDatabaseMode({ version: 1, mode: 'byodb', driver: 'postgres', companyId: 'spoofed' }), /DATABASE_MODE_INVALID/);
 });
 
 test('heartbeat metrics cannot carry arbitrary source values', () => {
