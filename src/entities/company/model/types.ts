@@ -71,4 +71,3 @@ export interface WebsiteAnalysisResult {
   branding?: CompanyBranding;
   audit?: WebsiteAudit;
 }
-

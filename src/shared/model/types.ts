@@ -31,4 +31,3 @@ export interface CRMNotification {
   read: boolean;
   type: 'lead' | 'quote' | 'employee' | 'system';
 }
-

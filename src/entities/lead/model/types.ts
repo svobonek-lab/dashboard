@@ -110,4 +110,3 @@ export interface Lead {
     transcript: string;
   }[];
 }
-
