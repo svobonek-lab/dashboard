@@ -1,4 +1,4 @@
-import { createClient } from '@supabase/supabase-js';
+import { createServerlessSupabaseClient } from './_shared/supabaseClient.js';
 import { createAiInboxToken } from './_shared/aiInboxToken.js';
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -52,10 +52,10 @@ async function authorizeOwner(accessToken: string, companyId: string): Promise<b
   const anonKey = process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY;
   const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
   if (!supabaseUrl || !anonKey || !serviceKey) throw new Error('AI inbox server is not configured.');
-  const auth = createClient(supabaseUrl, anonKey, { auth: { persistSession: false, autoRefreshToken: false } });
+  const auth = createServerlessSupabaseClient(supabaseUrl, anonKey, { auth: { persistSession: false, autoRefreshToken: false } });
   const { data: authData, error: authError } = await auth.auth.getUser(accessToken);
   if (authError || !authData.user) return false;
-  const service = createClient(supabaseUrl, serviceKey, { auth: { persistSession: false, autoRefreshToken: false } });
+  const service = createServerlessSupabaseClient(supabaseUrl, serviceKey, { auth: { persistSession: false, autoRefreshToken: false } });
   const { data, error } = await service.from('app_members').select('role').eq('company_id', companyId)
     .eq('user_id', authData.user.id).eq('active', true).maybeSingle();
   return !error && data?.role === 'owner';

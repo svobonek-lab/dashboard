@@ -1,5 +1,5 @@
 import { createHash } from 'node:crypto';
-import { createClient } from '@supabase/supabase-js';
+import { createServerlessSupabaseClient } from './_shared/supabaseClient.js';
 import { generateGeminiResponse, GeminiBusyError, GEMINI_BUSY_MESSAGE } from '../lib/gemini.js';
 import { verifyAiInboxToken } from './_shared/aiInboxToken.js';
 import { runImmediateOutboxDispatch } from './outbox-dispatch.js';
@@ -109,7 +109,7 @@ async function persistAiLead(input: PersistedAiLead): Promise<string> {
   const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
   const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
   if (!supabaseUrl || !serviceKey) throw new Error('AI inbox není nakonfigurovaný.');
-  const service = createClient(supabaseUrl, serviceKey, { auth: { persistSession: false, autoRefreshToken: false } });
+  const service = createServerlessSupabaseClient(supabaseUrl, serviceKey, { auth: { persistSession: false, autoRefreshToken: false } });
   const { data, error } = await service.rpc('app_submit_ai_inbox_lead', {
     p_company_id: input.companyId,
     p_request_key: input.requestKey,

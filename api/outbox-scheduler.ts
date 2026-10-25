@@ -1,4 +1,4 @@
-import { createClient } from '@supabase/supabase-js';
+import { createServerlessSupabaseClient } from './_shared/supabaseClient.js';
 import { timingSafeEqual } from 'node:crypto';
 
 function secretsMatch(provided: string, expected: string): boolean {
@@ -54,7 +54,7 @@ export default async function outboxSchedulerHandler(req: any, res: any) {
     return;
   }
 
-  const supabase = createClient(supabaseUrl, serviceKey, {
+  const supabase = createServerlessSupabaseClient(supabaseUrl, serviceKey, {
     auth: { persistSession: false }
   });
 

@@ -1,4 +1,4 @@
-import { createClient } from '@supabase/supabase-js';
+import { createServerlessSupabaseClient } from './_shared/supabaseClient.js';
 
 function getAuthRedirectUrl(rawUrl: string | undefined): string | null {
   try {
@@ -37,7 +37,7 @@ export default async function resetEmployeePasswordHandler(req: any, res: any) {
     res.status(503).json({ error: 'Auth recovery nemá nakonfigurovaný stagingový Supabase projekt.', code: 'AUTH_RECOVERY_CONFIG_MISSING' });
     return;
   }
-  const client = createClient(supabaseUrl, anonKey, { auth: { persistSession: false } });
+  const client = createServerlessSupabaseClient(supabaseUrl, anonKey, { auth: { persistSession: false } });
   const { error } = await client.auth.resetPasswordForEmail(email, {
     redirectTo,
   });

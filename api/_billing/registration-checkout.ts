@@ -1,4 +1,4 @@
-import { createClient } from '@supabase/supabase-js';
+import { createServerlessSupabaseClient } from '../_shared/supabaseClient.js';
 import Stripe from 'stripe';
 import { type OwnerLegalConsent } from '../../src/shared/model/legalConsent.js';
 import { readBillingConfig, type BillingConfig } from './stripe-checkout.js';
@@ -24,7 +24,7 @@ function clients() {
  const service=process.env.SUPABASE_SERVICE_ROLE_KEY;
  if(!url||!anon||!service) throw new Error('registration unavailable');
  const options={auth:{persistSession:false,autoRefreshToken:false}};
- return {auth:createClient(url,anon,options),service:createClient(url,service,options)};
+ return {auth:createServerlessSupabaseClient(url,anon,options),service:createServerlessSupabaseClient(url,service,options)};
 }
 class RegistrationBillingConfigurationError extends Error {
  constructor(readonly checks:Record<string,boolean>){super('REGISTRATION_BILLING_CONFIG_INVALID');}
