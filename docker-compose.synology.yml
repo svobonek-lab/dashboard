@@ -1,65 +1,37 @@
-version: '3.8'
+name: stavbaflow-connector
 
 services:
-  # The main connector service that bridges Synology local network and the Cloud CRM
-  synology-connector:
-    image: node:20-alpine
-    container_name: stavbacore-synology-connector
+  connector:
+    image: ${STAVBAFLOW_CONNECTOR_IMAGE:?Set a verified connector image digest}
     restart: unless-stopped
-    working_dir: /app
-    volumes:
-      # Mount the connector script/app
-      - ./synology-connector:/app
-      # Mount the Synology shared folder for file access (PDFs, Docs, Plans)
-      - /volume1/shared_crm_files:/app/data/files:ro
+    read_only: true
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
     environment:
-      # Security: API Token required for the Cloud CRM to authenticate against this connector
-      - API_TOKEN=${CONNECTOR_API_TOKEN:?CONNECTOR_API_TOKEN is required}
-      # Database connection (e.g. MariaDB running on Synology)
-      - SQL_HOST=${SQL_HOST:-mariadb}
-      - SQL_PORT=${SQL_PORT:-3306}
-      - SQL_USER=${SQL_USER:-crm_user}
-      - SQL_PASSWORD=${SQL_PASSWORD:?SQL_PASSWORD is required}
-      - SQL_DATABASE=${SQL_DATABASE:-crm_db}
-      # Network configuration
-      - PORT=8080
-    command: >
-      sh -c "npm install --production && node server.js"
-    networks:
-      - crm_network
-
-  # Optional: MariaDB database if not already running natively on Synology
-  mariadb:
-    image: mariadb:10.11
-    container_name: stavbacore-mariadb
-    restart: unless-stopped
-    environment:
-      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?MYSQL_ROOT_PASSWORD is required}
-      MYSQL_DATABASE: ${SQL_DATABASE:-crm_db}
-      MYSQL_USER: ${SQL_USER:-crm_user}
-      MYSQL_PASSWORD: ${SQL_PASSWORD:?SQL_PASSWORD is required}
+      STAVBAFLOW_CONNECTOR_CONFIG: /etc/stavbaflow/config.json
+      DB_HOST: ${DB_HOST:?Set the address reachable from the NAS}
+      DB_PORT: ${DB_PORT:?Set the database TCP port}
     volumes:
-      - /volume1/docker/mariadb_data:/var/lib/mysql
-    networks:
-      - crm_network
+      - /volume1/docker/stavbaflow/config:/etc/stavbaflow:ro
+      - /volume1/docker/stavbaflow/state:/var/lib/stavbaflow:rw
+    secrets:
+      - source_db_password
+      - enrollment_code
+    tmpfs:
+      - /tmp:size=16m,mode=1777
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:8787/health').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))"]
+      interval: 30s
+      timeout: 5s
+      start_period: 20s
+      retries: 3
+    pids_limit: 128
+    mem_limit: 512m
 
-  # Reverse proxy to provide HTTPS using Let's Encrypt / self-signed certificates
-  caddy:
-    image: caddy:2-alpine
-    container_name: stavbacore-caddy
-    restart: unless-stopped
-    ports:
-      - "80:80"
-      - "443:443"
-    volumes:
-      - ./Caddyfile:/etc/caddy/Caddyfile
-      - /volume1/docker/caddy_data:/data
-      - /volume1/docker/caddy_config:/config
-    depends_on:
-      - synology-connector
-    networks:
-      - crm_network
-
-networks:
-  crm_network:
-    driver: bridge
+secrets:
+  source_db_password:
+    file: /volume1/docker/stavbaflow/secrets/source-db-password
+  enrollment_code:
+    file: ${CONNECTOR_SECRET:?Set the absolute path to the enrollment-code secret file}

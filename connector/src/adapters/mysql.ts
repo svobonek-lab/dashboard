@@ -26,8 +26,13 @@ export class MysqlSourceAdapter implements SourceAdapter {
 
   private async connection(): Promise<mysql.PoolConnection> {
     const connection = await this.pool.getConnection();
-    await connection.query('SET SESSION TRANSACTION READ ONLY');
-    return connection;
+    try {
+      await connection.query('SET SESSION TRANSACTION READ ONLY');
+      return connection;
+    } catch (error) {
+      connection.release();
+      throw error;
+    }
   }
 
   async testConnection() {

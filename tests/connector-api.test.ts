@@ -17,6 +17,18 @@ test('ingest validation rejects unknown versions, oversized batches and mixed id
   assert.throws(() => validateIngestEnvelope({ ...base, connectorId: 'connector-2' }, { connectorId: 'connector-1', companyId: 'company-1' }), /TENANT_MISMATCH/);
 });
 
+test('ingest Zod boundary rejects malformed canonical records before persistence', () => {
+  const base = { version: 1, connectorId: 'connector-1', companyId: 'company-1', mappingVersion: 1, requestId: 'request-1', dryRun: false };
+  const record = {
+    version: 1, type: 'customer', sourceSystem: 'fixture', sourceTable: 'customers', externalId: '1',
+    fingerprint: 'a'.repeat(64), payload: { name: 'Test' },
+  };
+  assert.equal(validateIngestEnvelope({ ...base, records: [record] }).records.length, 1);
+  assert.throws(() => validateIngestEnvelope({ ...base, records: [{ ...record, payload: { name: 'Test', hidden: 'secret' } }] }), /unknown field/);
+  assert.throws(() => validateIngestEnvelope({ ...base, records: [{ ...record, externalId: 1 }] }), /ENVELOPE_INVALID/);
+  assert.throws(() => validateIngestEnvelope({ ...base, records: [{ ...record, payload: { name: 'Test', archived: { unexpected: undefined } } }] }), /ENVELOPE_INVALID/);
+});
+
 test('dry run requires count-consistent value-free issue metadata', () => {
   const base = { version: 1, connectorId: 'connector-1', companyId: 'company-1', mappingVersion: 1, requestId: 'request-1', dryRun: true, records: [] };
   assert.throws(() => validateIngestEnvelope(base), /DRY_RUN_SUMMARY_INVALID/);

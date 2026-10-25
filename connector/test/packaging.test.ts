@@ -25,6 +25,16 @@ test('Synology compose publishes no port and hardens the container', async () =>
   assert.doesNotMatch(compose, /(?:password|secret|token)\s*=\s*\S+/i);
 });
 
+test('root Synology project uses the released agent and file-backed enrollment code', async () => {
+  const compose = await readFile(join(connectorRoot, '..', 'docker-compose.synology.yml'), 'utf8');
+  assert.match(compose, /DB_HOST: \$\{DB_HOST:\?/);
+  assert.match(compose, /DB_PORT: \$\{DB_PORT:\?/);
+  assert.match(compose, /file: \$\{CONNECTOR_SECRET:\?/);
+  assert.match(compose, /read_only: true/);
+  assert.doesNotMatch(compose, /^\s+ports:/m);
+  assert.doesNotMatch(compose, /npm install|node server\.js|API_TOKEN=/);
+});
+
 test('example configuration contains paths and placeholders but no secret value', async () => {
   const config = JSON.parse(await readFile(join(connectorRoot, 'config.example.json'), 'utf8')) as Record<string, unknown>;
   const serialized = JSON.stringify(config);

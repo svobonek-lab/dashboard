@@ -1,6 +1,29 @@
 import { CANONICAL_ENTITY_TYPES, CANONICAL_PAYLOAD_FIELDS, type ConnectorDryRunSummaryV1, type ConnectorMappingDefinitionV1, type ConnectorSourceSchemaV1, type IngestEnvelopeV1 } from '../../shared/connectorProtocol.js';
 import { validateCanonicalRecord } from '../../connector/src/protocol/canonical.js';
 import { ConnectorHttpError } from './http.js';
+import { z } from 'zod';
+
+const ingestRecordSchema = z.strictObject({
+  version: z.literal(1),
+  type: z.enum(CANONICAL_ENTITY_TYPES),
+  sourceSystem: z.string().min(1).max(160),
+  sourceTable: z.string().min(1).max(256),
+  externalId: z.string().min(1).max(512),
+  sourceUpdatedAt: z.string().optional(),
+  fingerprint: z.string().regex(/^[0-9a-fA-F]{64}$/),
+  payload: z.record(z.string(), z.json()),
+});
+
+const ingestEnvelopeSchema = z.strictObject({
+  version: z.literal(1),
+  connectorId: z.string().regex(/^[A-Za-z0-9_-]{1,160}$/),
+  companyId: z.string().regex(/^[A-Za-z0-9_-]{1,160}$/),
+  mappingVersion: z.number().int().positive(),
+  requestId: z.string().regex(/^[A-Za-z0-9_-]{1,160}$/),
+  dryRun: z.boolean(),
+  dryRunSummary: z.unknown().optional(),
+  records: z.array(ingestRecordSchema).max(250),
+});
 
 const ENVELOPE_FIELDS = new Set(['version', 'connectorId', 'companyId', 'mappingVersion', 'requestId', 'dryRun', 'dryRunSummary', 'records']);
 const SAFE_ID = /^[A-Za-z0-9_-]{1,160}$/;
@@ -120,6 +143,8 @@ export function validateIngestEnvelope(value: unknown, identity?: { connectorId:
   if (!value || typeof value !== 'object' || Array.isArray(value)) throw new ConnectorHttpError('ENVELOPE_INVALID', 400);
   const envelope = value as Record<string, unknown>;
   for (const key of Object.keys(envelope)) if (!ENVELOPE_FIELDS.has(key)) throw new ConnectorHttpError('ENVELOPE_INVALID', 400);
+  if (Array.isArray(envelope.records) && envelope.records.length > 250) throw new ConnectorHttpError('BATCH_TOO_LARGE', 413);
+  if (!ingestEnvelopeSchema.safeParse(value).success) throw new ConnectorHttpError('ENVELOPE_INVALID', 400);
   if (envelope.version !== 1 || !SAFE_ID.test(String(envelope.connectorId ?? '')) || !SAFE_ID.test(String(envelope.companyId ?? ''))
     || !SAFE_ID.test(String(envelope.requestId ?? '')) || !Number.isInteger(envelope.mappingVersion) || Number(envelope.mappingVersion) < 1
     || typeof envelope.dryRun !== 'boolean' || !Array.isArray(envelope.records)) throw new ConnectorHttpError('ENVELOPE_INVALID', 400);

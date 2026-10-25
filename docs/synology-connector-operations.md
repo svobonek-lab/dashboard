@@ -2,7 +2,7 @@
 
 ## Běžný provoz
 
-Konektor se synchronizuje nejvýše jednou za minutu a lze spustit ručně. Stav `ready` čeká na schválené mapování, `running` právě čte, `success` dokončil běh, `partial_failure` vyžaduje opravu konkrétních polí a `paused` zastavuje automatické běhy. Pět po sobě jdoucích provozních chyb pozastaví plánovač. Chyba jednoho řádku nezastaví ostatní platné řádky.
+Konektor se synchronizuje nejvýše jednou za minutu a lze spustit ručně. Stav `ready` čeká na schválené mapování, `running` právě čte, `success` dokončil běh, `partial_failure` vyžaduje opravu konkrétních polí a `paused` zastavuje automatické běhy. Opakované chyby přenosu nebo spojení se zdrojem vyvolají omezený exponenciální backoff a plánovač zůstane aktivní; pět po sobě jdoucích chyb autorizace nebo mapování jej pozastaví. Chyba jednoho řádku nezastaví ostatní platné řádky.
 
 Logy a podpora smějí obsahovat verzi, digest, čas, safe error code, tabulku/sloupec a počty. Nesmějí obsahovat řádky zákazníka, hesla, connection string, enrollment kód, privátní klíč, bearer token ani request podpis.
 
