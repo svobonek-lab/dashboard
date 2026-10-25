@@ -249,7 +249,7 @@
 - [x] **Step 4: Run** `npm ci`, `npm test`, `npm run lint`, `npm run build`, `npm ci --prefix connector`, `npm test --prefix connector`, `npm run lint --prefix connector`, and `npm run build --prefix connector` sequentially.
   **Expected:** all commands pass; the connector unit suite may skip adapter-fixture tests only when disposable databases are not configured, and skips are reported honestly.
 - [x] **Step 5: Review** generated bundle contents, staged diff, and secret scan; verify git status and no production/staging writes occurred.
-- [ ] **Step 6: Commit** `docs(byodb): document self-service connector setup` and open a draft PR against `main`.
+- [x] **Step 6: Commit** `docs(byodb): document self-service connector setup` and open draft PR [#118](https://github.com/svobonek-lab/dashboard/pull/118) against `main`.
 
 ## Final review focus
 
