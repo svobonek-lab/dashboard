@@ -1,6 +1,17 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { createRegistrationCheckoutHandler } from '../api/_billing/registration-checkout.ts';
+import { createRegistrationCheckoutHandler, registrationSessionInput } from '../api/_billing/registration-checkout.ts';
+
+test('registration uses ordinary Billing regardless of account Managed Payments defaults',()=>{
+ const input=registrationSessionInput({id:'intent',company_id:'tenant-server',owner_email:'verified@example.invalid'},'cus_test',{
+  secretKey:'sk_test_unitonly',mode:'test',returnUrl:'https://preview.example.invalid/path',prices:{pilot:'price_allowed',starter:'',growth:''},
+ });
+ assert.deepEqual(input.managed_payments,{enabled:false});
+ assert.equal(input.mode,'subscription');
+ assert.deepEqual(input.line_items,[{price:'price_allowed',quantity:1}]);
+ assert.equal(input.client_reference_id,'tenant-server');
+ assert.equal(input.success_url,'https://preview.example.invalid/register-paid?paid=return');
+});
 
 const req = () => ({ method: 'POST', headers: { authorization: 'Bearer test', 'x-stavbaflow-idempotency-key': '10000000-0000-4000-8000-000000000001' },
  body: { companyName: 'Synthetic', slug: 'synthetic', ownerName: 'Owner', legalConsent: { termsAccepted: true, dpaAccepted: true, acceptedAt: new Date().toISOString() } } });
@@ -49,4 +60,20 @@ test('browser price, plan, owner and tenant overrides are never forwarded',async
  const res=response();await createRegistrationCheckoutHandler(deps)(request,res);
  assert.equal(res.code,200);assert.equal(owner,'owner-verified');assert.equal(forwarded.plan,'pilot');
  assert.equal(forwarded.price,undefined);assert.equal(forwarded.owner_user_id,undefined);assert.equal(forwarded.company_id,undefined);
+});
+
+
+test('checkout failures log only the failed stage and safe code, never upstream private data',async()=>{
+ const {deps}=fixture();deps.customer=async()=>{throw new Error('sk_test_private upstream bearer token');};
+ const logs:unknown[][]=[];const old=console.error;console.error=(...args)=>{logs.push(args);};
+ try{const res=response();await createRegistrationCheckoutHandler(deps)(req(),res);assert.equal(res.code,502);}finally{console.error=old;}
+ assert.equal(logs.length,1);const out=JSON.stringify(logs);assert.match(out,/customer/);assert.doesNotMatch(out,/sk_test_private|bearer token/);
+});
+
+
+test('known provider failure category is observable without raw authentication error text',async()=>{
+ const {deps}=fixture();deps.customer=async()=>{throw Object.assign(new Error('sk_test_private'),{type:'StripeAuthenticationError',code:'api_key_expired'});};
+ const logs:unknown[][]=[];const old=console.error;console.error=(...args)=>{logs.push(args);};
+ try{await createRegistrationCheckoutHandler(deps)(req(),response());}finally{console.error=old;}
+ const out=JSON.stringify(logs);assert.match(out,/StripeAuthenticationError/);assert.match(out,/api_key_expired/);assert.doesNotMatch(out,/sk_test_private/);
 });

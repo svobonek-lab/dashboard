@@ -1,7 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 import Stripe from 'stripe';
 import { type OwnerLegalConsent } from '../../src/shared/model/legalConsent.js';
-import { readBillingConfig } from './stripe-checkout.js';
+import { readBillingConfig, type BillingConfig } from './stripe-checkout.js';
 
 type Request = {
  method?: string; headers?: Record<string,string|string[]|undefined>; body?: unknown;
@@ -26,12 +26,14 @@ function clients() {
  const options={auth:{persistSession:false,autoRefreshToken:false}};
  return {auth:createClient(url,anon,options),service:createClient(url,service,options)};
 }
+class RegistrationBillingConfigurationError extends Error {
+ constructor(readonly checks:Record<string,boolean>){super('REGISTRATION_BILLING_CONFIG_INVALID');}
+}
 function stripe() {
  const config=readBillingConfig();
- if(!/^(sk|rk)_test_[A-Za-z0-9]+$/.test(config.secretKey)||config.mode!=='test'
-  ||!/^price_[A-Za-z0-9]+$/.test(config.prices.pilot)||new URL(config.returnUrl).protocol!=='https:') {
-  throw new Error('registration test billing unavailable');
- }
+ let httpsReturn=false;try{httpsReturn=new URL(config.returnUrl).protocol==='https:';}catch{}
+ const checks={testKey:/^(sk|rk)_test_[A-Za-z0-9]+$/.test(config.secretKey),testMode:config.mode==='test',pilotPrice:/^price_[A-Za-z0-9]+$/.test(config.prices.pilot),httpsReturn};
+ if(!Object.values(checks).every(Boolean))throw new RegistrationBillingConfigurationError(checks);
  return {client:new Stripe(config.secretKey),config};
 }
 async function body(req:Request):Promise<unknown>{
@@ -67,15 +69,37 @@ export function createRegistrationCheckoutHandler(deps:Dependencies){
   }catch{res.status(400).json({code:'REGISTRATION_INPUT_INVALID'});return;}
   let user:{id:string};
   try{user=await deps.authorize(req);}catch{res.status(401).json({code:'REGISTRATION_AUTH_REQUIRED'});return;}
+  let stage='prepare';
   try{
    const intent=await deps.prepare(user.id,input);
+   stage='customer';
    const customer=await deps.customer(intent);
+   stage='session';
    const session=await deps.session(intent,customer.id);
    if(!session.url||new URL(session.url).protocol!=='https:'||new URL(session.url).hostname!=='checkout.stripe.com')throw new Error('invalid checkout');
    // A payable URL is never exposed until its exact Stripe bindings are durable.
+   stage='bind';
    await deps.bind(intent,customer.id,session.id);
    res.status(200).json({url:session.url});
-  }catch{res.status(502).json({code:'REGISTRATION_CHECKOUT_FAILED'});}
+  }catch(error){
+   // Never log request bodies, credentials, Stripe URLs or raw upstream errors.
+   const upstream=error as {type?:unknown;code?:unknown}|null;
+   const provider=['StripeAuthenticationError','StripeInvalidRequestError','StripeConnectionError','StripeAPIError','StripeRateLimitError','StripeIdempotencyError'].find(type=>type===upstream?.type)??'unknown';
+   const providerCode=['api_key_expired','resource_missing','parameter_missing','parameter_invalid_empty','idempotency_key_in_use'].find(code=>code===upstream?.code)??'unknown';
+   console.error('registration_checkout_failed',{stage,provider,providerCode,code:error instanceof RegistrationBillingConfigurationError?error.message:'UPSTREAM_FAILURE',...(error instanceof RegistrationBillingConfigurationError?{checks:error.checks}:{})});
+   res.status(502).json({code:'REGISTRATION_CHECKOUT_FAILED'});
+  }
+ };
+}
+export function registrationSessionInput(intent:RegistrationIntent,customer:string,config:BillingConfig):Stripe.Checkout.SessionCreateParams {
+ const origin=new URL(config.returnUrl).origin;
+ return {mode:'subscription',customer,
+  // Ordinary Stripe Billing; never inherit account-level merchant-of-record defaults.
+  managed_payments:{enabled:false},
+  line_items:[{price:config.prices.pilot,quantity:1}],client_reference_id:intent.company_id,
+  metadata:{tenant_id:intent.company_id,onboarding:'paid_registration'},
+  subscription_data:{metadata:{tenant_id:intent.company_id}},
+  success_url:origin+'/register-paid?paid=return',cancel_url:origin+'/register-paid?paid=canceled',
  };
 }
 export default createRegistrationCheckoutHandler({
@@ -101,13 +125,10 @@ export default createRegistrationCheckoutHandler({
    {idempotencyKey:'registration-customer:'+intent.id});
  },
  session:async(intent,customer)=>{
-  const {client,config}=stripe();const origin=new URL(config.returnUrl).origin;
-  return client.checkout.sessions.create({mode:'subscription',customer,
-   line_items:[{price:config.prices.pilot,quantity:1}],client_reference_id:intent.company_id,
-   metadata:{tenant_id:intent.company_id,onboarding:'paid_registration'},
-   subscription_data:{metadata:{tenant_id:intent.company_id}},
-   success_url:origin+'/register-paid?paid=return',cancel_url:origin+'/register-paid?paid=canceled',
-  },{idempotencyKey:'registration-checkout:'+intent.id});
+  const {client,config}=stripe();
+  return client.checkout.sessions.create(registrationSessionInput(intent,customer,config),
+   // Version the changed request shape; retries within this version stay stable.
+   {idempotencyKey:'registration-checkout:billing-v1:'+intent.id});
  },
  bind:async(intent,customer,session)=>{
   const {error}=await clients().service.rpc('app_bind_registration_checkout',{

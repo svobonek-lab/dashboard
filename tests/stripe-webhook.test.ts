@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import Stripe from 'stripe';
+import { Readable } from 'node:stream';
 
 import {
   createStripeWebhookHandler,
@@ -84,6 +85,32 @@ test('cryptographically verifies the exact raw body with the Stripe endpoint sec
 
   assert.equal(verifyStripeEvent(rawBody, signature, endpointSecret).id, 'evt_checkout_1');
   assert.throws(() => verifyStripeEvent(Buffer.concat([rawBody, Buffer.from(' ')]), signature, endpointSecret));
+});
+
+test('Vercel lazy parsed-body helper cannot override the original signed request stream',async()=>{
+ const payload=JSON.stringify(checkoutEvent(),null,2)+'\n';
+ const signature=Stripe.webhooks.generateTestHeaderString({payload,secret:process.env.STRIPE_WEBHOOK_SECRET!});
+ let parsedReads=0,applied=0;
+ const request=Object.assign(Readable.from([Buffer.from(payload.slice(0,43)),Buffer.from(payload.slice(43))]),{
+  method:'POST',headers:{'stripe-signature':signature},
+ });
+ Object.defineProperty(request,'body',{get(){parsedReads++;return {untrusted:'parsed helper'};}});
+ const handler=createStripeWebhookHandler({verifyEvent:verifyStripeEvent,applySubscriptionUpdate:async()=>{applied++;return 'applied';}});
+ const response=responseRecorder();await handler(request,response);
+ assert.equal(response.statusCode,200);assert.equal(applied,1);assert.equal(parsedReads,0);
+ const tampered=Object.assign(Readable.from([Buffer.from(payload+' ')]),{method:'POST',headers:{'stripe-signature':signature}});
+ const rejected=responseRecorder();await handler(tampered,rejected);
+ assert.equal(rejected.statusCode,400);assert.equal(applied,1);
+});
+
+test('streamed webhook body retains the byte limit even when a parsed helper exists',async()=>{
+ let verified=0;
+ const request=Object.assign(Readable.from([Buffer.alloc(1024*1024),Buffer.from('x')]),{
+  method:'POST',headers:{'stripe-signature':'present'},body:{},
+ });
+ const response=responseRecorder();
+ await createStripeWebhookHandler({verifyEvent:()=>{verified++;return checkoutEvent();},applySubscriptionUpdate:async()=>'applied'})(request,response);
+ assert.equal(response.statusCode,413);assert.equal(verified,0);
 });
 
 test('rejects an invalid Stripe signature with 400 before any database call', async () => {

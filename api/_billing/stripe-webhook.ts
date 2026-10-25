@@ -58,6 +58,19 @@ function headerValue(headers: WebhookRequest['headers'], name: string): string {
 }
 
 async function readRawBody(request: WebhookRequest): Promise<Buffer> {
+  // Vercel's Node helper exposes a lazy parsed `body` AND restores the raw stream.
+  // Consume the stream first: touching the helper must never select reconstructed JSON.
+  if (typeof request[Symbol.asyncIterator] === 'function') {
+    const chunks: Buffer[] = [];
+    let length = 0;
+    for await (const chunk of request as Required<Pick<WebhookRequest, typeof Symbol.asyncIterator>>) {
+      const buffer = Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk as Uint8Array);
+      length += buffer.byteLength;
+      if (length > MAX_WEBHOOK_BYTES) throw new WebhookHttpError(413, 'STRIPE_WEBHOOK_TOO_LARGE');
+      chunks.push(buffer);
+    }
+    return Buffer.concat(chunks);
+  }
   if (Buffer.isBuffer(request.body)) {
     if (request.body.byteLength > MAX_WEBHOOK_BYTES) throw new WebhookHttpError(413, 'STRIPE_WEBHOOK_TOO_LARGE');
     return request.body;
@@ -72,18 +85,7 @@ async function readRawBody(request: WebhookRequest): Promise<Buffer> {
     if (buffer.byteLength > MAX_WEBHOOK_BYTES) throw new WebhookHttpError(413, 'STRIPE_WEBHOOK_TOO_LARGE');
     return buffer;
   }
-  if (request.body !== undefined) throw new WebhookHttpError(400, 'STRIPE_RAW_BODY_REQUIRED');
-  if (typeof request[Symbol.asyncIterator] !== 'function') throw new WebhookHttpError(400, 'STRIPE_RAW_BODY_REQUIRED');
-
-  const chunks: Buffer[] = [];
-  let length = 0;
-  for await (const chunk of request as Required<Pick<WebhookRequest, typeof Symbol.asyncIterator>>) {
-    const buffer = Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk as Uint8Array);
-    length += buffer.byteLength;
-    if (length > MAX_WEBHOOK_BYTES) throw new WebhookHttpError(413, 'STRIPE_WEBHOOK_TOO_LARGE');
-    chunks.push(buffer);
-  }
-  return Buffer.concat(chunks);
+  throw new WebhookHttpError(400, 'STRIPE_RAW_BODY_REQUIRED');
 }
 
 export function verifyStripeEvent(rawBody: Buffer, signature: string, webhookSecret: string): Stripe.Event {
