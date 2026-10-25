@@ -61,7 +61,8 @@ const byodbOperationAckSchema = z.strictObject({
 const byodbOperationRequestSchema = z.discriminatedUnion('action', [
   z.strictObject({ action: z.literal('create'), companyId: z.string().uuid(), connectorId: z.string().uuid(), operation: z.unknown() }),
   z.strictObject({ action: z.literal('context'), companyId: z.string().uuid() }),
-  z.strictObject({ action: z.literal('records'), companyId: z.string().uuid() }),
+  z.strictObject({ action: z.literal('records'), companyId: z.string().uuid(), entityType: z.enum(['company', 'lead']).optional() }),
+  z.strictObject({ action: z.literal('set_mode'), companyId: z.string().uuid(), connectorId: z.string().uuid().nullable(), mode: z.enum(['managed_cloud', 'byodb']), driver: z.enum(['postgres', 'mysql', 'mariadb', 'mssql']).nullable(), writeEnabled: z.boolean() }),
   z.strictObject({ action: z.literal('list'), companyId: z.string().uuid(), cursor: z.string().uuid().optional(), limit: z.number().int().min(1).max(50).optional() }),
   z.strictObject({ action: z.literal('poll'), limit: z.number().int().min(1).max(50).optional() }),
   z.strictObject({ action: z.literal('ack'), ack: z.unknown() }),

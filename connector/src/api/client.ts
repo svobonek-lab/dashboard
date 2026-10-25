@@ -1,5 +1,6 @@
 import { randomUUID } from 'node:crypto';
 
+import { CANONICAL_PAYLOAD_FIELDS } from '../../../shared/connectorProtocol.js';
 import type { CanonicalRecordV1, ConnectorCommandV1, ConnectorSourceSchemaV1, IngestAckV1, IngestEnvelopeV1 } from '../../../shared/connectorProtocol.js';
 import { fingerprintSecret, signRequest, type ConnectorIdentity } from '../security/identity.js';
 import type { MappedSourceOperation } from '../adapters/mappedOperations.js';
@@ -143,7 +144,7 @@ function parseOperation(value: unknown): MappedSourceOperation {
     || !Array.isArray(mapping.fields) || mapping.fields.length < 1 || mapping.fields.length > 64
     || Object.keys(mapping).some(key => !['version', 'mappingVersion', 'entityType', 'sourceSystem', 'schema', 'table', 'externalIdColumn', 'updatedAtColumn', 'deletedAtColumn', 'fields'].includes(key))) throw new Error('operation response is invalid');
   const payload = row.payload as Record<string, unknown>;
-  const allowed = row.entityType === 'company' ? ['name', 'address', 'city', 'postalCode', 'phone', 'email', 'website'] : ['title', 'description', 'email', 'assignedToEmail', 'customerExternalId', 'contactExternalId', 'value', 'currency', 'status', 'priority', 'address', 'city', 'scheduledAt', 'archived'];
+  const allowed = CANONICAL_PAYLOAD_FIELDS[row.entityType as keyof typeof CANONICAL_PAYLOAD_FIELDS];
   if (JSON.stringify(payload).length > 8_192 || Object.keys(payload).some(key => !allowed.includes(key))
     || Object.values(payload).some(item => item !== null && !['string', 'number', 'boolean'].includes(typeof item))
     || (row.action === 'create' ? row.expectedSourceVersion !== null : typeof row.expectedSourceVersion !== 'string')) throw new Error('operation response is invalid');

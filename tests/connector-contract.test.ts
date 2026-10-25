@@ -42,5 +42,12 @@ test('BYODB cloud reads are tenant-authorized, employee-scoped, and return only 
   assert.match(route, /authorizeConnectorMember/);
   assert.match(route, /app_get_byodb_context/);
   assert.match(route, /app_list_byodb_records/);
+  assert.match(route, /app_set_company_database_mode/);
   assert.doesNotMatch(route, /databaseHost|connectionString|secret_ciphertext|passwordFile/i);
+});
+
+test('connector dispatches each server-approved operation with its attached map even when active sync map differs', async () => {
+  const runtime = await readFile(new URL('../connector/src/runtimeBootstrap.ts', import.meta.url), 'utf8');
+  assert.match(runtime, /if \(config\.database\.writeUsername\)[\s\S]+pollOperations\(\)[\s\S]+processByodbOperations\(operations, activeMapping/);
+  assert.doesNotMatch(runtime, /if \(config\.database\.writeUsername && engine && await engine\.mappingApproved\(\)\)/);
 });

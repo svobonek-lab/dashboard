@@ -1,4 +1,4 @@
-import { authorizeConnectorMember } from '../ownerAuth.js';
+import { authorizeConnectorMember, authorizeConnectorOwner } from '../ownerAuth.js';
 import { CANONICAL_PAYLOAD_FIELDS } from '../../../shared/connectorProtocol.js';
 import { authenticateConnectorHttpRequest } from '../auth.js';
 import { ConnectorHttpError, parseConnectorBody, requirePost } from '../http.js';
@@ -54,7 +54,7 @@ function operationList(value: unknown): Array<{ operationId: string; status: str
   });
 }
 
-function contextResponse(value: unknown) {
+export function contextResponse(value: unknown) {
   if (!value || typeof value !== 'object' || Array.isArray(value)) throw new ConnectorHttpError('DATABASE_MODE_INVALID', 502);
   const row = value as Record<string, unknown>;
   const mode = row.mode;
@@ -62,16 +62,20 @@ function contextResponse(value: unknown) {
   const connectorId = row.connectorId === null ? null : row.connectorId;
   const mappingVersion = row.mappingVersion === null ? null : row.mappingVersion;
   const mappedTargets = row.mappedTargets;
+  const companyMappingVersion = row.companyMappingVersion === null ? null : row.companyMappingVersion;
+  const companyMappedTargets = row.companyMappedTargets;
   if (!['managed_cloud', 'byodb'].includes(String(mode))
     || (driver !== null && !['postgres', 'mysql', 'mariadb', 'mssql'].includes(String(driver)))
     || (connectorId !== null && (typeof connectorId !== 'string' || !/^[0-9a-f-]{36}$/i.test(connectorId)))
     || (mappingVersion !== null && (!Number.isInteger(mappingVersion) || Number(mappingVersion) < 1))
-    || !Array.isArray(mappedTargets) || mappedTargets.length > 64 || mappedTargets.some(target => typeof target !== 'string' || !CANONICAL_PAYLOAD_FIELDS.lead.includes(target)))
+    || !Array.isArray(mappedTargets) || mappedTargets.length > 64 || mappedTargets.some(target => typeof target !== 'string' || !CANONICAL_PAYLOAD_FIELDS.lead.includes(target))
+    || (companyMappingVersion !== null && (!Number.isInteger(companyMappingVersion) || Number(companyMappingVersion) < 1))
+    || !Array.isArray(companyMappedTargets) || companyMappedTargets.length > 64 || companyMappedTargets.some(target => typeof target !== 'string' || !CANONICAL_PAYLOAD_FIELDS.company.includes(target)))
     throw new ConnectorHttpError('DATABASE_MODE_INVALID', 502);
-  return { mode, driver, connectorId, mappingVersion, mappedTargets, writeEnabled: row.writeEnabled === true, connectorStatus: typeof row.connectorStatus === 'string' ? row.connectorStatus.slice(0, 40) : null };
+  return { mode, driver, connectorId, mappingVersion, mappedTargets, companyMappingVersion, companyMappedTargets, writeEnabled: row.writeEnabled === true, connectorStatus: typeof row.connectorStatus === 'string' ? row.connectorStatus.slice(0, 40) : null };
 }
 
-function projectionRecords(value: unknown) {
+function projectionRecords(value: unknown, entityType: 'company' | 'lead' = 'lead') {
   if (!Array.isArray(value) || value.length > 5000) throw new ConnectorHttpError('BYODB_RECORDS_INVALID', 502);
   return value.map(item => {
     if (!item || typeof item !== 'object' || Array.isArray(item)) throw new ConnectorHttpError('BYODB_RECORDS_INVALID', 502);
@@ -81,7 +85,7 @@ function projectionRecords(value: unknown) {
       || typeof row.fingerprint !== 'string' || !/^[a-f0-9]{64}$/.test(row.fingerprint)
       || !row.payload || typeof row.payload !== 'object' || Array.isArray(row.payload)) throw new ConnectorHttpError('BYODB_RECORDS_INVALID', 502);
     const payload = row.payload as Record<string, unknown>;
-    if (Object.keys(payload).some(key => !CANONICAL_PAYLOAD_FIELDS.lead.includes(key))
+    if (Object.keys(payload).some(key => !CANONICAL_PAYLOAD_FIELDS[entityType].includes(key))
       || Object.values(payload).some(field => field !== null && !['string', 'number', 'boolean'].includes(typeof field))) throw new ConnectorHttpError('BYODB_RECORDS_INVALID', 502);
     return { externalId: row.externalId, fingerprint: row.fingerprint, payload };
   });
@@ -96,16 +100,28 @@ export default async function byodbOperationsHandler(request: any, response: any
     if (operationRequest.action === 'context') {
       const { userId, service } = await authorizeConnectorMember(request, operationRequest.companyId);
       const { data, error } = await service.rpc('app_get_byodb_context', { p_company_id: operationRequest.companyId, p_user_id: userId });
-      if (error && ['PGRST202', '42883'].includes(String(error.code))) return { mode: 'managed_cloud', driver: null, connectorId: null, mappingVersion: null, mappedTargets: [], writeEnabled: false, connectorStatus: null };
+      if (error && ['PGRST202', '42883'].includes(String(error.code))) return { mode: 'managed_cloud', driver: null, connectorId: null, mappingVersion: null, mappedTargets: [], companyMappingVersion: null, companyMappedTargets: [], writeEnabled: false, connectorStatus: null };
       if (error) throw new ConnectorHttpError('DATABASE_MODE_UNAVAILABLE', 503);
       return contextResponse(data);
     }
 
     if (operationRequest.action === 'records') {
       const { userId, service } = await authorizeConnectorMember(request, operationRequest.companyId);
-      const { data, error } = await service.rpc('app_list_byodb_records', { p_company_id: operationRequest.companyId, p_user_id: userId });
+      const entityType = operationRequest.entityType ?? 'lead';
+      const { data, error } = await service.rpc('app_list_byodb_records', { p_company_id: operationRequest.companyId, p_user_id: userId, p_entity_type: entityType });
       if (error) throw new ConnectorHttpError('BYODB_RECORDS_UNAVAILABLE', 503);
-      return { records: projectionRecords(data) };
+      return { records: projectionRecords(data, entityType) };
+    }
+
+    if (operationRequest.action === 'set_mode') {
+      requireByodbReleaseGate();
+      const { userId, service } = await authorizeConnectorOwner(request, operationRequest.companyId);
+      const { data, error } = await service.rpc('app_set_company_database_mode', {
+        p_company_id: operationRequest.companyId, p_user_id: userId, p_connector_id: operationRequest.connectorId,
+        p_mode: operationRequest.mode, p_driver: operationRequest.driver, p_write_enabled: operationRequest.writeEnabled,
+      });
+      if (error || data !== true) throw new ConnectorHttpError('DATABASE_MODE_REJECTED', 409);
+      return { accepted: true, mode: operationRequest.mode, writeEnabled: operationRequest.writeEnabled };
     }
 
     if (operationRequest.action === 'poll') {

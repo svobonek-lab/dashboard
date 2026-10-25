@@ -78,6 +78,12 @@ test('BYODB operation queue is idempotent, tenant-bound, leased, and service-onl
   assert.match(poll, /m\.version=c\.mapping_version[\s\S]+m\.definition->>'entityType'=c\.entity_type/i);
 });
 
+test('BYODB mode prevents public, CSV, or legacy Supabase lead writes from becoming a second source of truth', () => {
+  assert.match(byodbSql, /function public\.app_block_cloud_lead_writes_for_byodb[\s\S]+security definer[\s\S]+BYODB_SOURCE_OF_TRUTH/i);
+  assert.match(byodbSql, /create trigger app_block_cloud_lead_writes_for_byodb before insert or update or delete on public\.app_leads/i);
+  assert.match(byodbSql, /create trigger app_block_cloud_company_writes_for_byodb before update of name,email,phone,address on public\.app_companies/i);
+});
+
 test('BYODB source acknowledgement commits the validated tenant projection and terminal state together', () => {
   assert.match(byodbSql, /app_ack_byodb_operation\([\s\S]+p_projection jsonb/i);
   const start = byodbSql.indexOf('function public.app_ack_byodb_operation');
@@ -90,10 +96,19 @@ test('BYODB source acknowledgement commits the validated tenant projection and t
 
 test('BYODB context and record RPCs derive tenant scope from active membership and hide unassigned employee leads', () => {
   assert.match(byodbSql, /function public\.app_get_byodb_context\(p_company_id uuid,p_user_id uuid\)/i);
-  assert.match(byodbSql, /function public\.app_list_byodb_records\(p_company_id uuid,p_user_id uuid\)/i);
+  assert.match(byodbSql, /function public\.app_list_byodb_records\(p_company_id uuid,p_user_id uuid,p_entity_type text default 'lead'\)/i);
   const recordsStart = byodbSql.indexOf('function public.app_list_byodb_records');
   const records = byodbSql.slice(recordsStart, byodbSql.indexOf('$$;', recordsStart) + 3);
   assert.match(records, /app_members[\s\S]+p_user_id[\s\S]+active/i);
   assert.match(records, /assignedToEmail[\s\S]+v_email/i);
-  assert.match(byodbSql, /revoke all on function public\.app_list_byodb_records\(uuid,uuid\) from public,anon,authenticated/i);
+  assert.match(byodbSql, /p_entity_type not in \('company','lead'\)[\s\S]+v_role='employee' and p_entity_type<>'lead'/i);
+  assert.match(byodbSql, /revoke all on function public\.app_list_byodb_records\(uuid,uuid,text\) from public,anon,authenticated/i);
+  assert.match(byodbSql, /companyMappingVersion[\s\S]+companyMappedTargets/i);
+});
+
+test('BYODB database mode changes require owner access and approved company plus lead mappings', () => {
+  assert.match(byodbSql, /function public\.app_set_company_database_mode\([\s\S]+v_role<>'owner'[\s\S]+definition->>'entityType'='lead'[\s\S]+definition->>'entityType'='company'[\s\S]+entity_type='company'[\s\S]+write_enabled/i);
+  assert.match(byodbSql, /p_mode='managed_cloud'[\s\S]+status in \('pending','processing'\)[\s\S]+return false/i);
+  assert.match(byodbSql, /revoke all on function public\.app_set_company_database_mode\(uuid,uuid,uuid,text,text,boolean\) from public,anon,authenticated/i);
+  assert.match(byodbSql, /grant execute on function public\.app_set_company_database_mode\(uuid,uuid,uuid,text,text,boolean\) to service_role/i);
 });

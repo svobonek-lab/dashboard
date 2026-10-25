@@ -150,7 +150,7 @@ export async function bootstrapConnector(config: ConnectorConfig): Promise<void>
         },
         acknowledge: commandId => api.acknowledgeCommand(commandId),
       });
-      if (config.database.writeUsername && engine && await engine.mappingApproved()) {
+      if (config.database.writeUsername) {
         try {
           const operations = await api.pollOperations();
           await processByodbOperations(operations, activeMapping, adapter, schema, api);

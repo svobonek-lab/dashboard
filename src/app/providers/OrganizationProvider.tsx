@@ -305,8 +305,22 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
           setOrganizations([]);
           return null;
         }
-        setOrganizations(identity.organizations);
-        setCurrentOrg(identity.organization);
+        let activeOrganization = identity.organization;
+        if (await crmRepo.repository(identity.organization.id) === 'byodb') {
+          const sourceBranding = await crmRepo.byodb.getBranding(identity.organization.id);
+          activeOrganization = {
+            ...identity.organization,
+            name: sourceBranding.name,
+            email: sourceBranding.email,
+            phone: sourceBranding.phone,
+            address: sourceBranding.address,
+            city: sourceBranding.city,
+            website: sourceBranding.website,
+            branding: { ...identity.organization.branding, ...sourceBranding },
+          };
+        }
+        setOrganizations(identity.organizations.map(organization => organization.id === activeOrganization.id ? activeOrganization : organization));
+        setCurrentOrg(activeOrganization);
         const resolvedDbUser: DBUser = {
           id: identity.member.user_id,
           organization_id: identity.member.company_id,
@@ -2081,6 +2095,33 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
     };
 
     const targetOrgId = orgId || currentOrg?.id || '';
+
+    if (APP_SCHEMA_READS && targetOrgId && await crmRepo.repository(targetOrgId) === 'byodb') {
+      if (!isValidUUID(targetOrgId) || targetOrgId !== currentOrg?.id || dbUser?.role !== 'owner') {
+        throw new Error('Firemní profil může upravit pouze majitel aktivní firmy.');
+      }
+      if (color !== currentOrg.primary_color || finalLogo !== (currentOrg.logo_url || '')
+        || (profile?.email_notifications !== undefined && profile.email_notifications !== (currentOrg.email_notifications !== false))) {
+        throw new Error('V BYODB jsou zatím upravitelné jen firemní údaje pokryté schválenou mapou. Barva, logo a e-mailová upozornění zůstávají v Managed Cloud.');
+      }
+      await crmRepo.saveBranding(targetOrgId, {
+        name,
+        email: profile?.email ?? currentOrg.email ?? '',
+        phone: profile?.phone ?? currentOrg.phone ?? '',
+        address: profile?.address ?? currentOrg.address ?? '',
+      });
+      setOrganizations(previous => previous.map(org => org.id === targetOrgId ? {
+        ...org, name, email: profile?.email ?? org.email, phone: profile?.phone ?? org.phone,
+        address: profile?.address ?? org.address,
+        branding: { ...org.branding, name, email: profile?.email ?? org.branding?.email, phone: profile?.phone ?? org.branding?.phone, address: profile?.address ?? org.branding?.address },
+      } : org));
+      setCurrentOrg(previous => previous ? {
+        ...previous, name, email: profile?.email ?? previous.email, phone: profile?.phone ?? previous.phone,
+        address: profile?.address ?? previous.address,
+        branding: { ...previous.branding, name, email: profile?.email ?? previous.branding?.email, phone: profile?.phone ?? previous.branding?.phone, address: profile?.address ?? previous.branding?.address },
+      } : previous);
+      return;
+    }
 
     if (APP_SCHEMA_READS && isSupabaseConfigured && supabase) {
       if (!isValidUUID(targetOrgId) || targetOrgId !== currentOrg?.id || dbUser?.role !== 'owner') {

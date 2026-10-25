@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 
 import { parseConnectorBody, requirePost } from '../api/_connector/http.js';
+import { contextResponse } from '../api/_connector/routes/operations.js';
 import { validateByodbOperationAck, validateByodbOperationCreate, validateByodbOperationRequest, validateByodbPollBatch, validateConnectorDatabaseMode, validateConnectorMapping, validateConnectorRegistration, validateIngestEnvelope, validateRunMetrics, validateSourceSchema } from '../api/_connector/validation.js';
 
 test('connector HTTP boundary rejects method, oversized body and malformed JSON', () => {
@@ -173,8 +174,16 @@ test('BYODB operation requests keep tenant IDs on owner actions and derive conne
   assert.deepEqual(validateByodbOperationRequest({ action: 'create', companyId, connectorId, operation: {} }), { action: 'create', companyId, connectorId, operation: {} });
   assert.deepEqual(validateByodbOperationRequest({ action: 'list', companyId, limit: 20 }), { action: 'list', companyId, limit: 20 });
   assert.deepEqual(validateByodbOperationRequest({ action: 'poll', limit: 10 }), { action: 'poll', limit: 10 });
+  assert.deepEqual(validateByodbOperationRequest({ action: 'records', companyId, entityType: 'company' }), { action: 'records', companyId, entityType: 'company' });
+  assert.deepEqual(validateByodbOperationRequest({ action: 'set_mode', companyId, connectorId, mode: 'byodb', driver: 'postgres', writeEnabled: false }), { action: 'set_mode', companyId, connectorId, mode: 'byodb', driver: 'postgres', writeEnabled: false });
   assert.throws(() => validateByodbOperationRequest({ action: 'poll', companyId, limit: 10 }), /OPERATION_REQUEST_INVALID/);
   assert.throws(() => validateByodbOperationRequest({ action: 'create', companyId, connectorId, userId: 'spoofed', operation: {} }), /OPERATION_REQUEST_INVALID/);
+});
+
+test('BYODB context validates lead and company mappings independently', () => {
+  const context = { mode: 'byodb', driver: 'postgres', connectorId: 'c89e7d49-38fd-4f2b-b5ec-19a31de19d26', mappingVersion: 3, mappedTargets: ['title', 'status'], companyMappingVersion: 4, companyMappedTargets: ['name', 'companyNumber'], writeEnabled: true, connectorStatus: 'success' };
+  assert.deepEqual(contextResponse(context), context);
+  assert.throws(() => contextResponse({ ...context, companyMappedTargets: ['role'] }), /DATABASE_MODE_INVALID/);
 });
 
 test('heartbeat metrics cannot carry arbitrary source values', () => {

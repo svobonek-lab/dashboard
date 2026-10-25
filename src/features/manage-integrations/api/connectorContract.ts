@@ -15,6 +15,9 @@ export interface ConnectorSourceColumn {
   name: string;
   dataType: string;
   nullable: boolean;
+  primaryKey?: boolean;
+  generated?: boolean;
+  hasDefault?: boolean;
 }
 
 export interface ConnectorSourceTable {
@@ -46,6 +49,7 @@ export interface ConnectorSummary {
   approvedMappingVersion: number | null;
   sourceSchema: ConnectorSourceSchema | null;
   dryRun: ConnectorDryRunSummary | null;
+  mappings?: Array<{ mappingVersion: number; entityType: 'company' | 'lead'; approvedAt: string | null; mappedTargets: string[]; dryRun: ConnectorDryRunSummary | null }>;
   lastRun: { completedAt: string; processed: number; changed: number; failed: number } | null;
   pauseReason: string | null;
 }

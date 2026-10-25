@@ -7,6 +7,8 @@ export interface ByodbContext {
   connectorId: string | null;
   mappingVersion: number | null;
   mappedTargets: string[];
+  companyMappingVersion: number | null;
+  companyMappedTargets: string[];
   writeEnabled: boolean;
   connectorStatus: string | null;
 }
@@ -26,6 +28,87 @@ export class ByodbOperationPendingError extends Error {
     this.name = 'ByodbOperationPendingError';
     this.status = resolvedStatus;
   }
+}
+
+export class ByodbOperationConflictError extends Error {
+  readonly status: 'conflict' | 'failed';
+  constructor(readonly operationId: string, status: string, readonly externalId?: string) {
+    const resolvedStatus = status === 'conflict' ? 'conflict' : 'failed';
+    super(resolvedStatus === 'conflict' ? 'Zdrojová databáze se od poslední synchronizace změnila. Znovu načtěte záznam a opakujte úpravu.' : 'Firemní databáze změnu odmítla. Zkontrolujte mapování a oprávnění.');
+    this.name = 'ByodbOperationConflictError';
+    this.status = resolvedStatus;
+  }
+}
+
+export interface StablePendingReference {
+  externalId: string;
+  idempotencyKey: string;
+  storageKey: string;
+}
+
+interface PendingReferenceStorage {
+  getItem(key: string): string | null;
+  setItem(key: string, value: string): void;
+  removeItem(key: string): void;
+}
+
+const pendingMemory = new Map<string, string>();
+const memoryStorage: PendingReferenceStorage = {
+  getItem: key => pendingMemory.get(key) ?? null,
+  setItem: (key, value) => { pendingMemory.set(key, value); },
+  removeItem: key => { pendingMemory.delete(key); },
+};
+
+function currentPendingStorage(): PendingReferenceStorage {
+  try { return typeof sessionStorage !== 'undefined' ? sessionStorage : memoryStorage; }
+  catch { return memoryStorage; }
+}
+
+function sortedJson(value: unknown): string {
+  if (Array.isArray(value)) return `[${value.map(sortedJson).join(',')}]`;
+  if (value && typeof value === 'object') return `{${Object.entries(value).sort(([a], [b]) => a.localeCompare(b)).map(([key, item]) => `${JSON.stringify(key)}:${sortedJson(item)}`).join(',')}}`;
+  return JSON.stringify(value);
+}
+
+export async function stablePendingReference(
+  companyId: string, entity: 'company' | 'lead', action: 'create' | 'update' | 'delete',
+  externalId: string | null, expectedSourceVersion: string | null, payload: Record<string, unknown>,
+  storage: PendingReferenceStorage = currentPendingStorage(),
+): Promise<StablePendingReference> {
+  const identity = `${companyId}|${entity}|${action}|${externalId ?? ''}|${expectedSourceVersion ?? ''}|${sortedJson(payload)}`;
+  const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(identity));
+  const fingerprint = Array.from(new Uint8Array(digest), byte => byte.toString(16).padStart(2, '0')).join('');
+  const storageKey = `stavbaflow:byodb:pending:${fingerprint}`;
+  try {
+    const existing = storage.getItem(storageKey);
+    if (existing) {
+      const parsed = JSON.parse(existing) as Partial<StablePendingReference>;
+      if (typeof parsed.externalId === 'string' && typeof parsed.idempotencyKey === 'string'
+        && /^[0-9a-f-]{36}$/i.test(parsed.externalId) && /^[0-9a-f-]{36}$/i.test(parsed.idempotencyKey)) {
+        return { externalId: parsed.externalId, idempotencyKey: parsed.idempotencyKey, storageKey };
+      }
+    }
+  } catch {
+    try {
+      const existing = memoryStorage.getItem(storageKey);
+      if (existing) {
+        const parsed = JSON.parse(existing) as Partial<StablePendingReference>;
+        if (typeof parsed.externalId === 'string' && typeof parsed.idempotencyKey === 'string'
+          && /^[0-9a-f-]{36}$/i.test(parsed.externalId) && /^[0-9a-f-]{36}$/i.test(parsed.idempotencyKey)) {
+          return { externalId: parsed.externalId, idempotencyKey: parsed.idempotencyKey, storageKey };
+        }
+      }
+    } catch { /* Generate a replacement reference below. */ }
+  }
+  const reference = { externalId: externalId ?? crypto.randomUUID(), idempotencyKey: crypto.randomUUID(), storageKey };
+  try { storage.setItem(storageKey, JSON.stringify({ externalId: reference.externalId, idempotencyKey: reference.idempotencyKey })); }
+  catch { memoryStorage.setItem(storageKey, JSON.stringify({ externalId: reference.externalId, idempotencyKey: reference.idempotencyKey })); }
+  return reference;
+}
+
+function clearPendingReference(reference: StablePendingReference): void {
+  try { currentPendingStorage().removeItem(reference.storageKey); } catch { /* Expiry is bounded by browser session lifetime. */ }
+  memoryStorage.removeItem(reference.storageKey);
 }
 
 export function byodbFeatureEnabled(environment: Record<string, unknown>): boolean {
@@ -60,6 +143,37 @@ export function mapByodbProjectionToLead(record: ByodbProjection, companyId: str
     thumbnail: '', photos: [], files: [], checklist: [], aiSummary: { jobType: String(payload.title ?? ''), complexity: 'Medium', estimatedRange: '', assignedEmployee: String(payload.assignedToEmail ?? ''), risks: [], recommendedNextStep: '' },
     timeline: [], aiChat: [], history: [],
   };
+}
+
+export function mapByodbProjectionToBranding(record: ByodbProjection, current: CompanyBranding, mappedTargets: string[]): CompanyBranding {
+  const payload = record.payload;
+  const targets = new Set(mappedTargets);
+  return {
+    ...current,
+    name: typeof payload.name === 'string' ? payload.name : '',
+    email: targets.has('email') && typeof payload.email === 'string' ? payload.email : '',
+    phone: targets.has('phone') && typeof payload.phone === 'string' ? payload.phone : '',
+    address: targets.has('address') && typeof payload.address === 'string' ? payload.address : '',
+    city: targets.has('city') && typeof payload.city === 'string' ? payload.city : '',
+    website: targets.has('website') && typeof payload.website === 'string' ? payload.website : '',
+  };
+}
+
+export function buildByodbCompanyPayload(branding: CompanyBranding, mappedTargets: string[]): Record<string, string> {
+  const pairs: Array<[keyof CompanyBranding, string]> = [['name', 'name'], ['email', 'email'], ['phone', 'phone'], ['address', 'address'], ['city', 'city'], ['website', 'website']];
+  const targets = new Set(mappedTargets);
+  const payload: Record<string, string> = {};
+  for (const [source, target] of pairs) {
+    const value = branding[source];
+    if (value === undefined) continue;
+    if (!targets.has(target)) {
+      if (String(value).trim() === '') continue;
+      throw new Error('BYODB_FIELD_NOT_MAPPED');
+    }
+    payload[target] = String(value).trim();
+  }
+  if (!payload.name) throw new Error('BYODB_COMPANY_NAME_REQUIRED');
+  return payload;
 }
 
 export function buildByodbLeadPayload(lead: Partial<Lead>, context: ByodbContext, assignedEmployeeEmail?: string): Record<string, string | number | boolean | null> {
@@ -114,9 +228,9 @@ export class ByodbRepository {
   }
 
   async getContext(companyId: string): Promise<ByodbContext> {
-    if (!this.options.enabled) return { mode: 'managed_cloud', driver: null, connectorId: null, mappingVersion: null, mappedTargets: [], writeEnabled: false, connectorStatus: null };
+    if (!this.options.enabled) return { mode: 'managed_cloud', driver: null, connectorId: null, mappingVersion: null, mappedTargets: [], companyMappingVersion: null, companyMappedTargets: [], writeEnabled: false, connectorStatus: null };
     const context = await this.request<ByodbContext>(companyId, { action: 'context' });
-    if (!context || !['managed_cloud', 'byodb'].includes(context.mode) || !Array.isArray(context.mappedTargets)) throw new Error('DATABASE_MODE_INVALID');
+    if (!context || !['managed_cloud', 'byodb'].includes(context.mode) || !Array.isArray(context.mappedTargets) || !Array.isArray(context.companyMappedTargets)) throw new Error('DATABASE_MODE_INVALID');
     return context;
   }
 
@@ -136,21 +250,26 @@ export class ByodbRepository {
   async saveLead(companyId: string, lead: Partial<Lead>): Promise<Lead> {
     const context = await this.getContext(companyId);
     if (!context.writeEnabled || !context.connectorId || !context.mappingVersion) throw new Error('BYODB_WRITE_DISABLED');
-    const externalId = lead.id || crypto.randomUUID();
+    const externalId = lead.id || null;
     const current = lead.id ? (await this.request<{ records: ByodbProjection[] }>(companyId, { action: 'records' })).records.find(row => row.externalId === lead.id) : undefined;
     if (lead.id && !current) throw new Error('BYODB_RECORD_NOT_FOUND');
     const employees = lead.assignedEmployeeId !== undefined ? await this.fallback.getEmployees(companyId) : [];
     const assignedEmployeeEmail = employees.find(employee => employee.id === lead.assignedEmployeeId)?.email;
     const payload = buildByodbLeadPayload(lead, context, assignedEmployeeEmail);
+    const reference = await stablePendingReference(companyId, 'lead', lead.id ? 'update' : 'create', externalId, current?.fingerprint ?? null, payload);
     const response = await this.request<{ operationId: string; status: string }>(companyId, {
       action: 'create', connectorId: context.connectorId,
-      operation: { version: 1, idempotencyKey: crypto.randomUUID(), mappingVersion: context.mappingVersion, entityType: 'lead', action: lead.id ? 'update' : 'create', externalId, expectedSourceVersion: current?.fingerprint ?? null, payload },
+      operation: { version: 1, idempotencyKey: reference.idempotencyKey, mappingVersion: context.mappingVersion, entityType: 'lead', action: lead.id ? 'update' : 'create', externalId: reference.externalId, expectedSourceVersion: current?.fingerprint ?? null, payload },
     });
     if (response.status === 'applied') {
-      const saved = (await this.getLeads(companyId)).find(item => item.id === externalId);
+      clearPendingReference(reference);
+      const saved = (await this.getLeads(companyId)).find(item => item.id === reference.externalId);
       if (saved) return saved;
+      throw new Error('BYODB_PROJECTION_NOT_UPDATED');
     }
-    throw new ByodbOperationPendingError(response.operationId, response.status, externalId);
+    if (response.status === 'conflict' || response.status === 'failed') throw new ByodbOperationConflictError(response.operationId, response.status, reference.externalId);
+    if (response.status !== 'pending' && response.status !== 'processing') throw new Error('BYODB_OPERATION_STATUS_INVALID');
+    throw new ByodbOperationPendingError(response.operationId, response.status, reference.externalId);
   }
 
   async updateLeadStatus(companyId: string, leadId: string, status: string): Promise<void> {
@@ -165,11 +284,45 @@ export class ByodbRepository {
     if (!context.writeEnabled || !context.connectorId || !context.mappingVersion) throw new Error('BYODB_WRITE_DISABLED');
     const current = (await this.request<{ records: ByodbProjection[] }>(companyId, { action: 'records' })).records.find(row => row.externalId === leadId);
     if (!current) throw new Error('BYODB_RECORD_NOT_FOUND');
+    const reference = await stablePendingReference(companyId, 'lead', 'delete', leadId, current.fingerprint, {});
     const response = await this.request<{ operationId: string; status: string }>(companyId, {
       action: 'create', connectorId: context.connectorId,
-      operation: { version: 1, idempotencyKey: crypto.randomUUID(), mappingVersion: context.mappingVersion, entityType: 'lead', action: 'delete', externalId: leadId, expectedSourceVersion: current.fingerprint, payload: {} },
+      operation: { version: 1, idempotencyKey: reference.idempotencyKey, mappingVersion: context.mappingVersion, entityType: 'lead', action: 'delete', externalId: leadId, expectedSourceVersion: current.fingerprint, payload: {} },
     });
-    if (response.status !== 'applied') throw new ByodbOperationPendingError(response.operationId, response.status, leadId);
+    if (response.status === 'applied') { clearPendingReference(reference); return; }
+    if (response.status === 'conflict' || response.status === 'failed') throw new ByodbOperationConflictError(response.operationId, response.status, leadId);
+    if (response.status !== 'pending' && response.status !== 'processing') throw new Error('BYODB_OPERATION_STATUS_INVALID');
+    throw new ByodbOperationPendingError(response.operationId, response.status, leadId);
+  }
+
+  async getBranding(companyId: string): Promise<CompanyBranding> {
+    const context = await this.getContext(companyId);
+    if (context.mode !== 'byodb') return this.fallback.getBranding(companyId);
+    const [{ records }, current] = await Promise.all([
+      this.request<{ records: ByodbProjection[] }>(companyId, { action: 'records', entityType: 'company' }),
+      this.fallback.getBranding(companyId),
+    ]);
+    if (!Array.isArray(records) || records.length !== 1) throw new Error('BYODB_COMPANY_RECORD_AMBIGUOUS');
+    return mapByodbProjectionToBranding(records[0]!, current, context.companyMappedTargets);
+  }
+
+  async saveBranding(companyId: string, branding: CompanyBranding): Promise<void> {
+    const context = await this.getContext(companyId);
+    if (context.mode !== 'byodb') return this.fallback.saveBranding(companyId, branding);
+    if (!context.writeEnabled || !context.connectorId || !context.companyMappingVersion) throw new Error('BYODB_WRITE_DISABLED');
+    const { records } = await this.request<{ records: ByodbProjection[] }>(companyId, { action: 'records', entityType: 'company' });
+    if (!Array.isArray(records) || records.length !== 1) throw new Error('BYODB_COMPANY_RECORD_AMBIGUOUS');
+    const current = records[0]!;
+    const payload = buildByodbCompanyPayload(branding, context.companyMappedTargets);
+    const reference = await stablePendingReference(companyId, 'company', 'update', current.externalId, current.fingerprint, payload);
+    const result = await this.request<{ operationId: string; status: string }>(companyId, {
+      action: 'create', connectorId: context.connectorId,
+      operation: { version: 1, idempotencyKey: reference.idempotencyKey, mappingVersion: context.companyMappingVersion, entityType: 'company', action: 'update', externalId: current.externalId, expectedSourceVersion: current.fingerprint, payload },
+    });
+    if (result.status === 'applied') { clearPendingReference(reference); return; }
+    if (result.status === 'conflict' || result.status === 'failed') throw new ByodbOperationConflictError(result.operationId, result.status, current.externalId);
+    if (result.status !== 'pending' && result.status !== 'processing') throw new Error('BYODB_OPERATION_STATUS_INVALID');
+    throw new ByodbOperationPendingError(result.operationId, result.status, current.externalId);
   }
 }
 
@@ -200,6 +353,6 @@ export class ModeAwareRepository implements ICRMRepository {
   async saveEmployee(orgId: string, employee: Partial<Employee>) { return this.fallback.saveEmployee(orgId, employee); }
   async getProjects(orgId: string) { return this.fallback.getProjects(orgId); }
   async saveProject(orgId: string, project: unknown) { return this.fallback.saveProject(orgId, project); }
-  async getBranding(orgId: string) { return this.fallback.getBranding(orgId); }
-  async saveBranding(orgId: string, branding: CompanyBranding) { return this.fallback.saveBranding(orgId, branding); }
+  async getBranding(orgId: string) { return await this.repository(orgId) === 'byodb' ? this.byodb.getBranding(orgId) : this.fallback.getBranding(orgId); }
+  async saveBranding(orgId: string, branding: CompanyBranding) { return await this.repository(orgId) === 'byodb' ? this.byodb.saveBranding(orgId, branding) : this.fallback.saveBranding(orgId, branding); }
 }
