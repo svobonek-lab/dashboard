@@ -90,7 +90,19 @@ export function parseConnectorConfig(value: unknown): Omit<ConnectorConfig, 'dat
 }
 
 export async function loadConnectorConfig(path: string): Promise<ConnectorConfig> {
-  const parsed = parseConnectorConfig(JSON.parse(await readFile(path, 'utf8')) as unknown);
+  const fileValue = JSON.parse(await readFile(path, 'utf8')) as unknown;
+  if (!fileValue || typeof fileValue !== 'object' || Array.isArray(fileValue)) throw new Error('connector config must be an object');
+  const input = fileValue as Record<string, unknown>;
+  if (!input.database || typeof input.database !== 'object' || Array.isArray(input.database)) throw new Error('database config is required');
+  const database = input.database as Record<string, unknown>;
+  const parsed = parseConnectorConfig({
+    ...input,
+    database: {
+      ...database,
+      ...(process.env.DB_HOST ? { host: process.env.DB_HOST } : {}),
+      ...(process.env.DB_PORT ? { port: process.env.DB_PORT } : {}),
+    },
+  });
   const password = (await readFile(parsed.databasePasswordFile, 'utf8')).trim();
   if (!password) throw new Error('database password file is empty');
   return { ...parsed, database: { ...parsed.database, password } };

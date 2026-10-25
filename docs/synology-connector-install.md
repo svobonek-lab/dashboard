@@ -18,14 +18,29 @@ Použijte nový účet pouze pro StavbaFlow. Povolte mu přihlášení z adresy 
 
 ## Soubory na NASu
 
-1. Stáhněte z kontrolovaného GitHub release `compose.yaml`, `config.example.json`, `install.ps1` a manifest.
+1. Stáhněte z kontrolovaného GitHub release `docker-compose.synology.yml`, `config.example.json` a manifest. Pro instalaci skriptem lze použít také `connector/compose.yaml` a `install.ps1`.
 2. Zkopírujte vzor konfigurace do `/volume1/docker/stavbaflow/config/config.json`.
-3. Nastavte `CUSTOMER_DB_HOST`, port, databázi, schéma, `CUSTOMER_READ_ONLY_USER` a přesnou HTTPS adresu aplikace.
+3. Nastavte v `config.json` ovladač (`mariadb` pro Synology MariaDB 10+, jinak `mysql`, `postgres` nebo `mssql`), název databáze, schéma, `CUSTOMER_READ_ONLY_USER` a přesnou HTTPS adresu aplikace. Hodnoty `database.host` a `database.port` v souboru slouží jako záloha; Compose je přepíše proměnnými `DB_HOST` a `DB_PORT`.
 4. Uložte databázové heslo bez konce řádku do `/volume1/docker/stavbaflow/secrets/source-db-password`.
 5. V dashboardu vlastníka vytvořte jednorázový kód a uložte jej do `/volume1/docker/stavbaflow/secrets/enrollment-code`.
 6. Omezte přístup ke složkám `secrets` a `state` pouze na správce NASu a účet Container Manageru.
 
 Instalační skript odmítne jinou cílovou cestu, chybějící secrets, neplatný Compose soubor i neúspěšné spuštění. Hodnoty secrets nevypisuje.
+
+## Projekt v Synology Container Manageru
+
+V **Container Manager → Projekt → Vytvořit** vyberte složku `/volume1/docker/stavbaflow` a nahrajte `docker-compose.synology.yml`. V proměnných projektu nastavte:
+
+| Proměnná | Příklad | Význam |
+| --- | --- | --- |
+| `STAVBAFLOW_CONNECTOR_IMAGE` | `ghcr.io/svobonek-lab/stavbaflow-connector@sha256:<ověřený digest>` | Přesně zkontrolovaný image z release. |
+| `DB_HOST` | `192.168.1.20` | Adresa databáze dostupná z kontejneru; pro databázi přímo na NASu použijte LAN adresu NASu, nikoli `localhost`. |
+| `DB_PORT` | `3306` | TCP port MariaDB/MySQL; pro PostgreSQL zpravidla `5432`, pro SQL Server `1433`. |
+| `CONNECTOR_SECRET` | `/volume1/docker/stavbaflow/secrets/enrollment-code` | **Cesta k souboru** s jednorázovým registračním kódem; nejde o hodnotu tajemství ani sdílený HMAC klíč. |
+
+Heslo databáze je v samostatném souboru `/volume1/docker/stavbaflow/secrets/source-db-password`. Oba soubory musí být čitelné pro Container Manager; jejich obsah nepatří do proměnných projektu ani do Compose YAML. Agent nepublikuje žádný port a do cloudu navazuje jen odchozí HTTPS spojení. Po spotřebování registračního kódu smažte jeho soubor.
+
+Požadavek v původním návrhu na `CONNECTOR_SECRET` jako HMAC klíč neodpovídá nasazenému protokolu: každý agent si vytváří vlastní Ed25519 klíč a server ověřuje podpis podle registrovaného veřejného klíče konektoru. Sdílený HMAC klíč pro všechny firmy se nepoužívá.
 
 ## První připojení
 

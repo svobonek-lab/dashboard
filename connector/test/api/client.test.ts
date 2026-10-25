@@ -95,6 +95,36 @@ test('strict config reads password from a file and rejects unsafe paths and unkn
   assert.throws(() => parseConnectorConfig({ apiBaseUrl: 'https://app.example.test', stateRoot: root, identityPath: 'C:/outside/identity', mappingPath: join(root, 'mapping'), syncIntervalSeconds: 60, database: { driver: 'postgres', host: 'db', port: 5432, database: 'x', username: 'x', passwordFile: passwordPath } }), /inside stateRoot/);
   assert.throws(() => parseConnectorConfig({ apiBaseUrl: 'https://app.example.test', stateRoot: root, identityPath: join(root, 'identity'), mappingPath: 'C:/outside/mapping.json', syncIntervalSeconds: 60, database: { driver: 'postgres', host: 'db', port: 5432, database: 'x', username: 'x', passwordFile: passwordPath } }), /mappingPath must be inside stateRoot/);
 });
+
+test('Synology DB_HOST and DB_PORT override only the database endpoint', async () => {
+  const root = await mkdtemp(join(tmpdir(), 'stavbaflow-synology-config-'));
+  const passwordPath = join(root, 'db-password');
+  const configPath = join(root, 'config.json');
+  await writeFile(passwordPath, 'fixture-password\n');
+  await writeFile(configPath, JSON.stringify({
+    apiBaseUrl: 'https://app.example.test', stateRoot: root,
+    identityPath: join(root, 'identity.json'), mappingPath: join(root, 'mapping.json'),
+    syncIntervalSeconds: 60,
+    database: { driver: 'mariadb', host: 'placeholder', port: 3306, database: 'fixture', username: 'reader', passwordFile: passwordPath },
+  }));
+  const previousHost = process.env.DB_HOST;
+  const previousPort = process.env.DB_PORT;
+  try {
+    process.env.DB_HOST = '192.168.1.20';
+    process.env.DB_PORT = '3307';
+    const config = await loadConnectorConfig(configPath);
+    assert.equal(config.database.driver, 'mariadb');
+    assert.equal(config.database.host, '192.168.1.20');
+    assert.equal(config.database.port, 3307);
+    process.env.DB_PORT = 'invalid';
+    await assert.rejects(loadConnectorConfig(configPath), /database port is invalid/);
+  } finally {
+    if (previousHost === undefined) delete process.env.DB_HOST;
+    else process.env.DB_HOST = previousHost;
+    if (previousPort === undefined) delete process.env.DB_PORT;
+    else process.env.DB_PORT = previousPort;
+  }
+});
 test('every network attempt has an abort deadline and retries preserve the batch request id', async () => {
   const root = await mkdtemp(join(tmpdir(), 'sf-timeout-'));
   const identity = await loadOrCreateIdentity(join(root, 'identity.json'));

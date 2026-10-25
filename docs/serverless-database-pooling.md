@@ -8,7 +8,7 @@ The Supabase serverless driver guide describes this `supabase-js` API as using H
 
 ## Synology connector
 
-`docker-compose.synology.yml` describes the StavbaFlow connector, an optional MariaDB instance, and Caddy. It is not a self-hosted Supabase stack and has no Supavisor service. The long-running Synology connector's PostgreSQL adapter creates a `pg.Pool` capped at three connections and marks its source transactions read-only. It connects to the configured source database, not StavbaFlow's Supabase database from a Vercel function. Do not set the MariaDB connector's port to `6543` or add Supavisor variables to this Compose file.
+`docker-compose.synology.yml` describes only the outbound StavbaFlow connector. It is not a self-hosted Supabase stack and has no Supavisor service. The long-running Synology connector's PostgreSQL adapter creates a `pg.Pool` capped at three connections and marks its source transactions read-only. It connects to the configured source database, not StavbaFlow's Supabase database from a Vercel function. Do not set the MariaDB connector's port to `6543` or add Supavisor variables to this Compose file.
 
 ## If a serverless raw PostgreSQL client is added later
 
