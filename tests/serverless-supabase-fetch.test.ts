@@ -136,6 +136,39 @@ test('GET does not retry caller aborts', async () => {
   assert.deepEqual(delays, []);
 });
 
+test('GET does not retry a TypeError used as an AbortSignal reason', async () => {
+  let attempts = 0;
+  const delays: number[] = [];
+  const controller = new AbortController();
+  const error = new TypeError('caller cancelled request');
+  const fetch = createRetryingFetch(async () => {
+    attempts++;
+    throw error;
+  }, retryOptions(delays));
+
+  controller.abort(error);
+  await assert.rejects(fetch('https://project.example.test/rest/v1/app_leads', { signal: controller.signal }), error);
+
+  assert.equal(attempts, 0);
+  assert.deepEqual(delays, []);
+});
+
+test('GET stops retrying when the caller aborts during backoff with a TypeError reason', async () => {
+  let attempts = 0;
+  const controller = new AbortController();
+  const error = new TypeError('caller cancelled request');
+  const fetch = createRetryingFetch(async () => {
+    attempts++;
+    return new Response('busy', { status: 503 });
+  }, {
+    sleep: async () => { controller.abort(error); },
+  });
+
+  await assert.rejects(fetch('https://project.example.test/rest/v1/app_leads', { signal: controller.signal }), error);
+
+  assert.equal(attempts, 1);
+});
+
 test('GET honors Retry-After when the requested delay fits the retry budget', async () => {
   let attempts = 0;
   const delays: number[] = [];
