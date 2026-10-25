@@ -4,6 +4,7 @@ import enroll from '../_connector/routes/enroll.js';
 import heartbeat from '../_connector/routes/heartbeat.js';
 import ingest from '../_connector/routes/ingest.js';
 import mapping from '../_connector/routes/mapping.js';
+import operations from '../_connector/routes/operations.js';
 import register from '../_connector/routes/register.js';
 import status from '../_connector/routes/status.js';
 
@@ -16,6 +17,7 @@ const routes: Readonly<Record<string, Handler>> = Object.freeze({
   heartbeat,
   ingest,
   mapping,
+  operations,
   register,
   status,
 });

@@ -10,7 +10,7 @@ create table if not exists public.app_connector_enrollments (
   code_hash bytea not null unique,
   secret_fingerprint bytea not null,
   secret_ciphertext text not null,
-  scopes text[] not null default array['heartbeat','ingest','commands']::text[],
+  scopes text[] not null default array['heartbeat','ingest','commands','operations']::text[],
   created_by uuid not null,
   created_at timestamptz not null default now(),
   expires_at timestamptz not null,

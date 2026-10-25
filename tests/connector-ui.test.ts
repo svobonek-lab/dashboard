@@ -7,6 +7,7 @@ test('BYODB field suggestions use only source names and SQL types',()=>{
   assert.deepEqual(suggestCanonicalField({name:'firma_nazev',dataType:'varchar',nullable:false}),{entityType:'company',targetField:'name',conversion:{kind:'text'}});
   assert.deepEqual(suggestCanonicalField({name:'kontakt_email',dataType:'varchar',nullable:true}),{entityType:'lead',targetField:'email',conversion:{kind:'email'}});
   assert.deepEqual(suggestCanonicalField({name:'zakazka_stav',dataType:'varchar',nullable:true}),{entityType:'lead',targetField:'status',conversion:{kind:'text'}});
+  assert.deepEqual(suggestCanonicalField({name:'assigned_email',dataType:'varchar',nullable:true}),{entityType:'lead',targetField:'assignedToEmail',conversion:{kind:'email'}});
   assert.equal(suggestCanonicalField({name:'customer_api_token',dataType:'varchar',nullable:true}),undefined);
 });
 

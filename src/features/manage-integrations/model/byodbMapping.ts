@@ -2,7 +2,7 @@ import type { ConnectorSourceColumn } from '../api/connectorContract.js';
 
 export interface CanonicalFieldSuggestion {
   entityType: 'company' | 'lead';
-  targetField: 'name' | 'email' | 'status' | 'title';
+  targetField: 'name' | 'email' | 'status' | 'title' | 'assignedToEmail';
   conversion: { kind: 'text' | 'email' };
 }
 
@@ -11,6 +11,8 @@ const FIELD_ALIASES: Record<string, CanonicalFieldSuggestion> = {
   firma_nazev: { entityType: 'company', targetField: 'name', conversion: { kind: 'text' } },
   company_name: { entityType: 'company', targetField: 'name', conversion: { kind: 'text' } },
   kontakt_email: { entityType: 'lead', targetField: 'email', conversion: { kind: 'email' } },
+  assigned_email: { entityType: 'lead', targetField: 'assignedToEmail', conversion: { kind: 'email' } },
+  assigned_to_email: { entityType: 'lead', targetField: 'assignedToEmail', conversion: { kind: 'email' } },
   email: { entityType: 'lead', targetField: 'email', conversion: { kind: 'email' } },
   zakazka_stav: { entityType: 'lead', targetField: 'status', conversion: { kind: 'text' } },
   lead_status: { entityType: 'lead', targetField: 'status', conversion: { kind: 'text' } },

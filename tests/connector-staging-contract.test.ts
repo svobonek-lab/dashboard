@@ -3,6 +3,7 @@ import { readFile } from 'node:fs/promises';
 import test from 'node:test';
 
 const sql = await readFile(new URL('../supabase/staging/20261004_connector_contract.sql', import.meta.url), 'utf8');
+const byodbSql = await readFile(new URL('../supabase/staging/20261025_byodb_operations.sql', import.meta.url), 'utf8');
 
 test('connector staging tables are tenant-scoped, RLS-enabled and browser read-only', () => {
   for (const table of ['app_connector_enrollments', 'app_connectors', 'app_connector_mappings', 'app_connector_requests', 'app_connector_records', 'app_connector_commands']) {
@@ -54,5 +55,21 @@ test('connector registration stores only encrypted HMAC secrets and rejects the 
   assert.match(sql, /secret_ciphertext text/i);
   assert.match(sql, /p_secret_fingerprint bytea/i);
   assert.match(sql, /secret_ciphertext, scopes/i);
+  assert.match(sql, /array\['heartbeat','ingest','commands','operations'\]/i);
   assert.doesNotMatch(sql, /public_key\s+text|p_public_key/i);
+});
+
+test('BYODB operation queue is idempotent, tenant-bound, leased, and service-only', () => {
+  assert.match(byodbSql, /unique\s*\(company_id\s*,\s*idempotency_key\)/i);
+  assert.match(byodbSql, /app_members[\s\S]+p_user_id[\s\S]+v_role not in \('owner','employee'\)/i);
+  assert.match(byodbSql, /p_connector_id[\s\S]+company_id[\s\S]+p_company_id/i);
+  assert.match(byodbSql, /for update skip locked/i);
+  assert.match(byodbSql, /lease_expires_at/i);
+  assert.match(byodbSql, /expected_source_version/i);
+  assert.match(byodbSql, /idempotency_conflict/i);
+  assert.match(byodbSql, /app_poll_byodb_operations\(p_connector_id uuid[\s\S]+company_id/i);
+  assert.match(byodbSql, /app_ack_byodb_operation[\s\S]+p_connector_id[\s\S]+operation_id/i);
+  assert.doesNotMatch(byodbSql, /grant\s+(select|insert|update|delete|all)[^;]+app_byodb_operations\s+to\s+(anon|authenticated)/i);
+  assert.match(byodbSql, /if p_cursor is not null then[\s\S]+if v_before is null then return '\[\]'::jsonb/i);
+  assert.match(byodbSql, /lease_expires_at is null or lease_expires_at<=now\(\)/i);
 });
