@@ -1,26 +1,27 @@
 import tailwindcss from '@tailwindcss/vite';
 import react from '@vitejs/plugin-react';
-import path from 'path';
-import { defineConfig, Plugin } from 'vite';
-import analyzeWebsiteHandler from './api/analyze-website';
-import inviteEmployeeHandler from './api/invite-employee';
-import resetEmployeePasswordHandler from './api/reset-employee-password';
-import outboxSchedulerHandler from './api/outbox-scheduler';
-import outboxDispatchHandler from './api/outbox-dispatch';
-import emailNotificationStatusHandler from './api/email-notification-status';
-import incomingLeadHandler from './api/incoming-lead';
-import incomingLeadConfigHandler from './api/incoming-lead-config';
-import stripeWebhookHandler from './api/_billing/stripe-webhook';
-import stripeCheckoutHandler from './api/_billing/stripe-checkout';
-import stripePortalHandler from './api/_billing/stripe-portal';
-import connectorRegisterHandler from './api/_connector/routes/register';
-import connectorHeartbeatHandler from './api/_connector/routes/heartbeat';
-import connectorIngestHandler from './api/_connector/routes/ingest';
-import connectorCommandsHandler from './api/_connector/routes/commands';
-import connectorEnrollHandler from './api/_connector/routes/enroll';
-import connectorStatusHandler from './api/_connector/routes/status';
-import connectorMappingHandler from './api/_connector/routes/mapping';
-import connectorCommandHandler from './api/_connector/routes/command';
+import path from 'node:path';
+import { defineConfig, type Plugin, type PluginOption } from 'vite';
+import { visualizer } from 'rollup-plugin-visualizer';
+import analyzeWebsiteHandler from './api/analyze-website.js';
+import inviteEmployeeHandler from './api/invite-employee.js';
+import resetEmployeePasswordHandler from './api/reset-employee-password.js';
+import outboxSchedulerHandler from './api/outbox-scheduler.js';
+import outboxDispatchHandler from './api/outbox-dispatch.js';
+import emailNotificationStatusHandler from './api/email-notification-status.js';
+import incomingLeadHandler from './api/incoming-lead.js';
+import incomingLeadConfigHandler from './api/incoming-lead-config.js';
+import stripeWebhookHandler from './api/_billing/stripe-webhook.js';
+import stripeCheckoutHandler from './api/_billing/stripe-checkout.js';
+import stripePortalHandler from './api/_billing/stripe-portal.js';
+import connectorRegisterHandler from './api/_connector/routes/register.js';
+import connectorHeartbeatHandler from './api/_connector/routes/heartbeat.js';
+import connectorIngestHandler from './api/_connector/routes/ingest.js';
+import connectorCommandsHandler from './api/_connector/routes/commands.js';
+import connectorEnrollHandler from './api/_connector/routes/enroll.js';
+import connectorStatusHandler from './api/_connector/routes/status.js';
+import connectorMappingHandler from './api/_connector/routes/mapping.js';
+import connectorCommandHandler from './api/_connector/routes/command.js';
 
 function apiMiddlewarePlugin(): Plugin {
   return {
@@ -148,12 +149,24 @@ function apiMiddlewarePlugin(): Plugin {
   };
 }
 
-export default defineConfig(() => {
+export default defineConfig(({ command, mode }) => {
   return {
-    plugins: [react(), tailwindcss(), apiMiddlewarePlugin()],
+    plugins: [
+      react(),
+      tailwindcss(),
+      apiMiddlewarePlugin(),
+      ...(command === 'build' && mode === 'production'
+        ? [visualizer({
+          filename: path.resolve(import.meta.dirname, 'stats.html'),
+          template: 'treemap',
+          gzipSize: true,
+          brotliSize: true,
+        }) as PluginOption]
+        : []),
+    ],
     resolve: {
       alias: {
-        '@': path.resolve(__dirname, 'src'),
+        '@': path.resolve(import.meta.dirname, 'src'),
       },
     },
     server: {
@@ -162,6 +175,31 @@ export default defineConfig(() => {
       hmr: process.env.DISABLE_HMR !== 'true',
       // Disable file watching when DISABLE_HMR is true to save CPU during agent edits.
       watch: process.env.DISABLE_HMR === 'true' ? null : {},
+    },
+    build: {
+      rolldownOptions: {
+        output: {
+          codeSplitting: {
+            groups: [
+              {
+                name: 'react-vendor',
+                test: /node_modules[\\/](?:react|react-dom|react-router-dom|scheduler)(?:[\\/]|$)/,
+                priority: 30,
+              },
+              {
+                name: 'ui-vendor',
+                test: /node_modules[\\/](?:lucide-react|clsx|tailwind-merge)(?:[\\/]|$)/,
+                priority: 20,
+              },
+              {
+                name: 'charts-vendor',
+                test: /node_modules[\\/](?:recharts|chart\.js|react-chartjs-2|d3-[^\\/]+|@visx[\\/])(?:[\\/]|$)/,
+                priority: 10,
+              },
+            ],
+          },
+        },
+      },
     },
   };
 });

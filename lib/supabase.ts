@@ -1,1 +1,1 @@
-export * from '../src/shared/api/supabase';
+export * from '../src/shared/api/supabase.js';
