@@ -84,4 +84,4 @@
 - [x] Run `npm run lint`.
 - [x] Run `npm run build`.
 - [x] Run `git diff --check` and review the full diff for credential leakage and accidental Compose changes.
-- [ ] Open a PR from `codex/serverless-supabase-retry`; do not merge it.
+- [x] Opened draft PR #109 from `codex/serverless-supabase-retry`; all GitHub Actions and Vercel checks passed.
