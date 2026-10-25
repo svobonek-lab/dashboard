@@ -1,0 +1,47 @@
+name: connector-owner-ui
+
+on:
+  pull_request:
+    paths:
+      - .github/workflows/connector-owner-ui.yml
+      - .github/workflows/connector-staging-acceptance.yml
+      - package.json
+      - package-lock.json
+      - scripts/connector-owner-ui-e2e.mjs
+      - src/features/manage-integrations/**
+      - src/pages/owner/integrations/**
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: connector-owner-ui-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  staging-owner-ui:
+    if: github.repository == 'svobonek-lab/dashboard'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+          cache: npm
+      - run: npm ci
+      - name: Install Playwright Chromium
+        run: npx playwright install --with-deps chromium
+      - name: Verify the owner database setup in isolated staging
+        run: npm run test:connector:owner-ui
+        env:
+          STAGING_SUPABASE_URL: ${{ vars.STAGING_SUPABASE_URL }}
+          STAGING_SUPABASE_PROJECT_REF: ${{ vars.STAGING_SUPABASE_PROJECT_REF }}
+          PRODUCTION_SUPABASE_PROJECT_REF: ${{ vars.PRODUCTION_SUPABASE_PROJECT_REF }}
+          STAGING_PREVIEW_URL: ${{ vars.STAGING_PREVIEW_URL }}
+          STAGING_PREVIEW_BYPASS_TOKEN: ${{ secrets.STAGING_PREVIEW_BYPASS_TOKEN }}
+          STAGING_OWNER_A_EMAIL: ${{ secrets.STAGING_OWNER_A_EMAIL }}
+          STAGING_OWNER_A_PASSWORD: ${{ secrets.STAGING_OWNER_A_PASSWORD }}

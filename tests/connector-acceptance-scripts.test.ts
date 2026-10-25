@@ -21,6 +21,9 @@ test('connector acceptance scripts are staging-only and test cross-company autho
 test('staging acceptance does not apply SQL and release requires evidence for the exact main commit', async () => {
   const acceptance = await readFile('.github/workflows/connector-staging-acceptance.yml', 'utf8');
   const stagingStep = acceptance.split('name: Verify company and employee isolation against isolated staging')[1]?.split('\n      - name:')[0] ?? '';
+  const ownerUiStep = acceptance.split('name: Verify owner database setup UI using Playwright')[1]?.split('\n      - name:')[0] ?? '';
+  const ownerUiScript = await readFile('scripts/connector-owner-ui-e2e.mjs', 'utf8');
+  const ownerUiWorkflow = await readFile('.github/workflows/connector-owner-ui.yml', 'utf8');
   const publish = await readFile('.github/workflows/connector-publish.yml', 'utf8');
   const compose = await readFile('connector/compose.yaml', 'utf8');
   const install = await readFile('docs/synology-connector-install.md', 'utf8');
@@ -28,6 +31,15 @@ test('staging acceptance does not apply SQL and release requires evidence for th
   assert.match(acceptance, /refs\/heads\/main/);
   assert.match(acceptance, /npm run test:connector:staging/);
   assert.match(stagingStep, /STAGING_PREVIEW_URL:\s*\$\{\{ vars\.STAGING_PREVIEW_URL \}\}/);
+  assert.match(acceptance, /playwright install --with-deps chromium/);
+  assert.match(ownerUiStep, /npm run test:connector:owner-ui/);
+  assert.match(ownerUiStep, /STAGING_OWNER_A_EMAIL:\s*\$\{\{ secrets\.STAGING_OWNER_A_EMAIL \}\}/);
+  assert.match(ownerUiWorkflow, /pull_request:/);
+  assert.match(ownerUiWorkflow, /STAGING_OWNER_A_PASSWORD:\s*\$\{\{ secrets\.STAGING_OWNER_A_PASSWORD \}\}/);
+  assert.match(ownerUiWorkflow, /npm run test:connector:owner-ui/);
+  assert.match(ownerUiScript, /getByRole\('button',\s*\{\s*name:\s*'Připojit vlastní databázi'/);
+  assert.match(ownerUiScript, /getByRole\('heading',\s*\{\s*name:\s*'Připojit databázi firmy'/);
+  assert.doesNotMatch(ownerUiScript, /getByRole\('button',\s*\{\s*name:\s*'Připravit napojení'[\s\S]*?\.click\(/);
   assert.match(acceptance, /npm run test:connector:preview/);
   assert.match(acceptance, /PRODUCTION_SUPABASE_PROJECT_REF/);
   assert.match(acceptance, /STAGING_SUPABASE_PROJECT_REF/);
@@ -41,6 +53,7 @@ test('staging acceptance does not apply SQL and release requires evidence for th
   assert.doesNotMatch(compose, /:stable/);
   assert.match(install, /čtecí i omezená zápisová kontrola adaptéru vybraného pro tento pilot/);
   assert.match(install, /aktuální (?:blocker|stav)/i);
+  assert.match(install, /Playwright[\s\S]+enrollment neodesílá/i);
   assert.match(install, /Rychlé nasazení: příprava a tři kroky v DSM[\s\S]+1\. Otevřete \*\*Container Manager[\s\S]+2\. Jako název zadejte[\s\S]+3\. Zkontrolujte souhrn/);
   assert.match(install, /personalizovaný ZIP[\s\S]+obecný Compose soubor z release/);
   assert.match(install, /CONNECTOR_SECRET_ENCRYPTION_KEY/);
