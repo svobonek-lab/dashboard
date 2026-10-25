@@ -59,5 +59,5 @@ test('BYODB pending writes are reported as pending and never fall through to a c
     return { operationId: 'operation-1', status: 'pending' } as never;
   } });
   await assert.rejects(repository.saveLead('company-1', { title: 'Pending lead' }), (error: unknown) => error instanceof ByodbOperationPendingError && error.status === 'pending');
-  assert.deepEqual(calls, ['context', 'create']);
+  assert.deepEqual(calls, ['context', 'context', 'create']);
 });
