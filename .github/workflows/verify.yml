@@ -194,6 +194,61 @@ jobs:
         if: always()
         run: docker rm --force jwt-postgres
 
+  jwt-tenant-pgtap:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - name: Build disposable PostgreSQL with pgTAP
+        run: docker build -f supabase/tests/Dockerfile.jwt-pgtap -t jwt-pgtap .
+      - name: Start disposable PostgreSQL
+        run: docker run --detach --name jwt-pgtap-postgres --volume "$PWD:/workspace:ro" --env POSTGRES_PASSWORD=postgres jwt-pgtap
+      - name: Wait for PostgreSQL
+        run: |
+          for attempt in {1..30}; do
+            if docker exec jwt-pgtap-postgres pg_isready -U postgres; then exit 0; fi
+            sleep 2
+          done
+          docker logs jwt-pgtap-postgres
+          exit 1
+      - name: Prepare synthetic tenant fixture
+        run: |
+          docker exec jwt-pgtap-postgres psql -v ON_ERROR_STOP=1 -U postgres -f /workspace/supabase/tests/jwt_tenant_setup.sql
+          docker exec jwt-pgtap-postgres psql -v ON_ERROR_STOP=1 -U postgres -f /workspace/supabase/tests/jwt_tenant_pgtap_setup.sql
+          docker exec jwt-pgtap-postgres psql -v ON_ERROR_STOP=1 -U postgres -c "SELECT extversion FROM pg_extension WHERE extname = 'pgtap'"
+      - name: Prove the tenant test fails before the proposal
+        run: |
+          set +e
+          docker exec jwt-pgtap-postgres pg_prove -U postgres -d postgres /workspace/supabase/tests/jwt_tenant_boundary_red.pgtap.sql > tenant-red.log 2>&1
+          status=$?
+          set -e
+          cat tenant-red.log
+          test "$status" -ne 0
+          grep -q 'Tenant A sees only its own leads' tenant-red.log
+          grep -q 'Looks like you failed 1 test of 1' tenant-red.log
+      - name: Prove the migration blocks unknown app_* tables
+        run: |
+          docker exec jwt-pgtap-postgres psql -v ON_ERROR_STOP=1 -U postgres -c 'CREATE TABLE public.app_unclassified_probe(id uuid)'
+          set +e
+          docker exec jwt-pgtap-postgres psql -v ON_ERROR_STOP=1 -U postgres -f /workspace/supabase/migrations/20261025000000_secure_jwt_auth_hook.sql > tenant-preflight.log 2>&1
+          status=$?
+          set -e
+          cat tenant-preflight.log
+          test "$status" -ne 0
+          grep -q 'public app_\* relation set differs' tenant-preflight.log
+          docker exec jwt-pgtap-postgres psql -v ON_ERROR_STOP=1 -U postgres -c 'DROP TABLE public.app_unclassified_probe'
+      - name: Apply the review proposal to the disposable fixture
+        run: docker exec jwt-pgtap-postgres psql -v ON_ERROR_STOP=1 -U postgres -f /workspace/supabase/migrations/20261025000000_secure_jwt_auth_hook.sql
+      - name: Verify Auth hook and app_* RLS contracts
+        run: |
+          docker exec jwt-pgtap-postgres pg_prove -U postgres -d postgres /workspace/supabase/tests/jwt_tenant_auth_hook.pgtap.sql
+          docker exec jwt-pgtap-postgres pg_prove -U postgres -d postgres /workspace/supabase/tests/jwt_tenant_rls.pgtap.sql
+      - name: Stop disposable PostgreSQL
+        if: always()
+        run: docker rm --force jwt-pgtap-postgres
+
   paid-provisioning-contract:
     runs-on: ubuntu-latest
     timeout-minutes: 10
