@@ -7,21 +7,47 @@ on:
         description: Semver already reviewed in connector/package.json
         required: true
         type: string
+      staging_acceptance_run_id:
+        description: Successful connector-staging-acceptance run ID for this exact main commit
+        required: true
+        type: string
 
 permissions:
   contents: read
+  actions: read
 
 concurrency:
   group: connector-publish
   cancel-in-progress: false
 
 jobs:
+  acceptance:
+    if: github.ref == 'refs/heads/main' && github.repository == 'svobonek-lab/dashboard'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+          cache: npm
+      - run: npm ci
+      - name: Require successful acceptance for this exact main commit
+        run: npx tsx scripts/connector-release-evidence.ts
+        env:
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          GITHUB_SHA: ${{ github.sha }}
+          GH_TOKEN: ${{ github.token }}
+          STAGING_ACCEPTANCE_RUN_ID: ${{ inputs.staging_acceptance_run_id }}
   verify:
     if: github.ref == 'refs/heads/main' && github.repository == 'svobonek-lab/dashboard'
     uses: ./.github/workflows/connector-verify.yml
+    needs: acceptance
 
   publish:
-    needs: verify
+    needs: [acceptance, verify]
     runs-on: ubuntu-latest
     timeout-minutes: 30
     permissions:
@@ -64,7 +90,20 @@ jobs:
           SOURCE_COMMIT: ${{ github.sha }}
         run: |
           node -e "const fs=require('fs'); const out={version:process.env.VERSION,image:'ghcr.io/svobonek-lab/stavbaflow-connector',digest:process.env.DIGEST,publishedAt:new Date().toISOString(),sourceCommit:process.env.SOURCE_COMMIT}; if(!/^sha256:[a-f0-9]{64}$/.test(out.digest)) process.exit(1); fs.writeFileSync('connector-manifest.json',JSON.stringify(out,null,2)+'\n')"
-      - name: Publish stable manifest only after verified image succeeds
+      - name: Publish immutable image and complete Synology install bundle
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: gh release create "connector-v${{ inputs.version }}" connector-manifest.json --repo "$GITHUB_REPOSITORY" --title "StavbaFlow connector ${{ inputs.version }}" --notes "Immutable digest release from $GITHUB_SHA" --latest
+        run: >-
+          gh release create "connector-v${{ inputs.version }}"
+          connector-manifest.json
+          docker-compose.synology.yml
+          connector/config.example.json
+          connector/compose.yaml
+          connector/scripts/install.ps1
+          connector/scripts/update.ps1
+          docs/synology-connector-install.md
+          docs/synology-connector-operations.md
+          --repo "$GITHUB_REPOSITORY"
+          --title "StavbaFlow connector ${{ inputs.version }}"
+          --notes "Immutable digest release from $GITHUB_SHA. Staging acceptance run: ${{ inputs.staging_acceptance_run_id }}"
+          --latest

@@ -2,7 +2,7 @@ name: stavbaflow-connector
 
 services:
   connector:
-    image: ${STAVBAFLOW_CONNECTOR_IMAGE:-ghcr.io/svobonek-lab/stavbaflow-connector:stable}
+    image: ${STAVBAFLOW_CONNECTOR_IMAGE:?Set a verified connector image digest}
     build:
       context: ..
       dockerfile: connector/Dockerfile
