@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { openOwnerProjectLead } from '../src/pages/owner/Projects';
+import { openOwnerProjectLead } from '../src/pages/owner/projects';
 import type { Lead } from '../types';
 
 test('support projects open inside the support workspace', () => {

@@ -1,5 +1,6 @@
-import { generateSmartMappings } from './fieldMapping.js';
-import type { SQLTestResult } from './sqlConnector.js';
+import { generateSmartMappings } from '../../src/shared/integrations/fieldMapping.js';
+import type { SQLTestResult } from '../../src/shared/model/sqlConnector.js';
+export { unsupportedSqlConnection } from '../../src/shared/api/integrationFallback.js';
 import Papa from 'papaparse';
 
 export interface CsvDryRunResult {
@@ -80,20 +81,4 @@ export function createImportFingerprint(companyId: string, fileName: string, con
     hash = Math.imul(hash, 16777619);
   }
   return `csv_${(hash >>> 0).toString(16).padStart(8, '0')}`;
-}
-
-export function unsupportedSqlConnection(): SQLTestResult {
-  return {
-    success: false,
-    latencyMs: 0,
-    message: 'Přímé SQL připojení zatím není aktivní. Použijte bezpečný CSV/API import v režimu dry-run.',
-    foundProjectsCount: 0,
-    tablesCount: 0,
-    recordsCount: 0,
-    availableTables: [],
-    sampleColumns: [],
-    sampleRows: [],
-    connectedStatus: 'disconnected',
-    testedAt: new Date().toISOString(),
-  };
 }

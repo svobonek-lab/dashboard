@@ -30,8 +30,8 @@ test('platform onboarding rejects a company without both owner agreements before
 });
 
 test('owner registration and owner invitation activation render both required legal agreements', () => {
-  const login = readFileSync(new URL('../components/LoginPage.tsx', import.meta.url), 'utf8');
-  const fields = readFileSync(new URL('../components/LegalConsentFields.tsx', import.meta.url), 'utf8');
+  const login = readFileSync(new URL('../src/pages/auth/login/ui/LoginPage.tsx', import.meta.url), 'utf8');
+  const fields = readFileSync(new URL('../src/shared/ui/LegalConsentFields.tsx', import.meta.url), 'utf8');
   assert.match(fields, /Souhlasím s Obchodními podmínkami \(TOS\)/);
   assert.match(fields, /Uzavírám Zpracovatelskou smlouvu \(DPA\) jménem své organizace/);
   assert.match(login, /LegalConsentFields/);

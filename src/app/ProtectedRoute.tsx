@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
-import { useOrganization } from '@/context/OrganizationContext';
-import { useRouter } from './router';
-import { UserRole } from './permissions';
+import { useOrganization } from '@/entities/session';
+import { useRouter } from '../shared/lib/router';
+import type { UserRole } from '../shared/model/permissions';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;

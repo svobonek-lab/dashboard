@@ -1,4 +1,5 @@
-import { Employee, Lead } from '@/types';
+import type { Employee } from '@/entities/employee';
+import type { Lead } from '@/entities/lead';
 
 /**
  * Returns only work assigned to the authenticated employee.

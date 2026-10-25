@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import test from 'node:test';
-import { getLeadSourceBadge } from '../src/app/leadSource';
+import { getLeadSourceBadge } from '../src/entities/lead';
 
 test('lead source badges identify AI inbox and website widget', () => {
   assert.deepEqual(getLeadSourceBadge('ai_inbox'), { icon: '🤖', label: 'AI zpracováno' });
@@ -10,13 +10,13 @@ test('lead source badges identify AI inbox and website widget', () => {
 });
 
 test('Kanban renders the source badge from persisted lead source', () => {
-  const kanban = readFileSync(new URL('../features/LeadsKanban.tsx', import.meta.url), 'utf8');
+  const kanban = readFileSync(new URL('../src/features/manage-leads/ui/LeadsKanban.tsx', import.meta.url), 'utf8');
   assert.match(kanban, /getLeadSourceBadge\(lead\.source\)/);
   assert.match(kanban, /sourceBadge\.label/);
 });
 
 test('integrations expose AI inbox and widget while database connector stays Enterprise-only', () => {
-  const integrations = readFileSync(new URL('../src/pages/owner/Integrations.tsx', import.meta.url), 'utf8');
+  const integrations = readFileSync(new URL('../src/pages/owner/integrations/ui/Integrations.tsx', import.meta.url), 'utf8');
   assert.match(integrations, /AI Dispečer \(e-mail\)/);
   assert.match(integrations, /incomingLeadLoading/);
   assert.match(integrations, /Unikátní webhook URL/);

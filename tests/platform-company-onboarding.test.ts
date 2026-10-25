@@ -114,7 +114,7 @@ test('staging SQL keeps onboarding service-only, transactional and audited', () 
 });
 
 test('company admin UI exposes creation, onboarding state, resend and public form actions', () => {
-  const source = readFileSync(new URL('../src/pages/admin/Companies.tsx', import.meta.url), 'utf8');
+  const source = readFileSync(new URL('../src/pages/admin/companies/ui/Companies.tsx', import.meta.url), 'utf8');
   assert.match(source, /Nová firma/);
   assert.match(source, /Pozvánka odeslána|Pozvánka přijata/);
   assert.match(source, /První poptávka/);

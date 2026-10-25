@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { existsSync, readFileSync } from 'node:fs';
-import { testGoogleSheetsConnection, executeGoogleSheetsSync } from '../lib/integrations/sheetsConnector';
+import { testGoogleSheetsConnection, executeGoogleSheetsSync } from '../src/features/manage-integrations/api/sheetsConnector';
 import outbox from '../api/outbox-scheduler';
 
 test('unsupported Sheets never returns invented records or partial successful sync', async () => {
@@ -172,13 +172,13 @@ test('removed admin and legacy connector surfaces cannot return fabricated data'
 });
 
 test('authenticated admin and employee shells do not expose simulated records or actions', () => {
-  const adminDashboard = readFileSync(new URL('../src/pages/admin/Dashboard.tsx', import.meta.url), 'utf8');
-  const adminCompanies = readFileSync(new URL('../src/pages/admin/Companies.tsx', import.meta.url), 'utf8');
-  const employeeDashboard = readFileSync(new URL('../src/pages/employee/Dashboard.tsx', import.meta.url), 'utf8');
-  const employeeJobs = readFileSync(new URL('../src/pages/employee/Jobs.tsx', import.meta.url), 'utf8');
-  const employeePhotos = readFileSync(new URL('../src/pages/employee/Photos.tsx', import.meta.url), 'utf8');
-  const app = readFileSync(new URL('../src/App.tsx', import.meta.url), 'utf8');
-  const repositoryFactory = readFileSync(new URL('../lib/data/repositoryFactory.ts', import.meta.url), 'utf8');
+  const adminDashboard = readFileSync(new URL('../src/pages/admin/dashboard/ui/Dashboard.tsx', import.meta.url), 'utf8');
+  const adminCompanies = readFileSync(new URL('../src/pages/admin/companies/ui/Companies.tsx', import.meta.url), 'utf8');
+  const employeeDashboard = readFileSync(new URL('../src/pages/employee/dashboard/ui/Dashboard.tsx', import.meta.url), 'utf8');
+  const employeeJobs = readFileSync(new URL('../src/pages/employee/jobs/ui/Jobs.tsx', import.meta.url), 'utf8');
+  const employeePhotos = readFileSync(new URL('../src/pages/employee/photos/ui/Photos.tsx', import.meta.url), 'utf8');
+  const app = readFileSync(new URL('../src/app/App.tsx', import.meta.url), 'utf8');
+  const repositoryFactory = readFileSync(new URL('../src/shared/api/data/repositoryFactory.ts', import.meta.url), 'utf8');
   const sources = [adminDashboard, adminCompanies, employeeDashboard, employeeJobs, employeePhotos, app, repositoryFactory].join('\n');
 
   assert.doesNotMatch(sources, /Pergoly Praha|Střechy Kovář|Dřevostavby Morava|Fasády Liberec/);

@@ -40,8 +40,8 @@ test('employee job tabs filter persisted jobs instead of only changing tab styli
 });
 
 test('cloud repository persists notes and signed uploads without local attachment fallback', () => {
-  const repository = read('../lib/data/SupabaseRepository.ts');
-  const types = read('../lib/data/types.ts');
+  const repository = read('../src/shared/api/data/SupabaseRepository.ts');
+  const types = read('../src/shared/api/data/types.ts');
 
   assert.match(types, /getLeadNotes\(/);
   assert.match(types, /addLeadNote\(/);
@@ -55,9 +55,9 @@ test('cloud repository persists notes and signed uploads without local attachmen
 });
 
 test('owner and employee attachment screens reload records from the repository', () => {
-  const documents = read('../features/lead-tabs/DocumentsTab.tsx');
-  const photos = read('../src/pages/employee/Photos.tsx');
-  const app = read('../src/App.tsx');
+  const documents = read('../src/features/manage-leads/ui/lead-tabs/DocumentsTab.tsx');
+  const photos = read('../src/pages/employee/photos/ui/Photos.tsx');
+  const app = read('../src/app/App.tsx');
 
   for (const source of [documents, photos]) {
     assert.match(source, /crmRepo\.getLeadFiles/);
@@ -71,9 +71,9 @@ test('owner and employee attachment screens reload records from the repository',
 });
 
 test('employee pages stay honest: no fake upload success, schedule text, or checklist persistence', () => {
-  const photos = read('../src/pages/employee/Photos.tsx');
-  const jobs = read('../src/pages/employee/Jobs.tsx');
-  const readiness = read('../src/app/workspaceReadiness.ts');
+  const photos = read('../src/pages/employee/photos/ui/Photos.tsx');
+  const jobs = read('../src/pages/employee/jobs/ui/Jobs.tsx');
+  const readiness = read('../src/widgets/workspace-readiness/model/workspaceReadiness.ts');
 
   assert.match(photos, /await crmRepo\.uploadLeadFile/);
   assert.match(photos, /await loadFiles/);

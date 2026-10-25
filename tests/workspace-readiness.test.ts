@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { isPilotOwnerNavigationPath, isPilotUnavailablePath } from '../src/app/pilotScope';
-import { buildWorkspaceReadiness } from '../src/app/workspaceReadiness';
+import { isPilotOwnerNavigationPath, isPilotUnavailablePath } from '../src/shared/lib/pilotScope';
+import { buildWorkspaceReadiness } from '../src/widgets/workspace-readiness';
 
 const lead = (status: any = 'New', assignedEmployeeId = '') => ({ status, assignedEmployeeId } as any);
 

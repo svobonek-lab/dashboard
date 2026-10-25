@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { registrationPayload, activationReady } from '../src/app/paidRegistration.ts';
+import { registrationPayload, activationReady } from '../src/features/paid-registration';
 test('registration retries preserve request id and agreement timestamp without passwords',()=>{
  const fields={companyName:'Firma',slug:'firma',ownerName:'Owner'};
  const a=registrationPayload(fields,null,()=> 'request-1',()=> '2026-10-24T12:00:00Z');

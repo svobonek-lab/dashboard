@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { buildRecoveryRequest, parseRecoveryResponse, validateNewPassword } from '../src/app/authRecovery';
+import { buildRecoveryRequest, parseRecoveryResponse, validateNewPassword } from '../src/features/login';
 
 test('password recovery sends only a normalized email and never an owner-chosen password', () => {
   assert.deepEqual(buildRecoveryRequest(' Worker@Example.COM '), { email: 'worker@example.com' });

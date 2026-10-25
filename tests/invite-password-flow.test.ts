@@ -6,7 +6,7 @@ import {
   buildCompletedInviteMetadata,
   isInviteCallbackUrl,
   shouldLoadWorkspaceIdentity,
-} from '../src/app/invitePassword.js';
+} from '../src/features/employee-invitations';
 
 const invitedOwner = {
   id: 'owner-auth-id',
@@ -45,9 +45,9 @@ test('successful password setup preserves invite metadata and unlocks identity r
 });
 
 test('application keeps an invited session out of protected dashboards until password completion', () => {
-  const context = readFileSync(new URL('../context/OrganizationContext.tsx', import.meta.url), 'utf8');
+  const context = readFileSync(new URL('../src/app/providers/OrganizationProvider.tsx', import.meta.url), 'utf8');
   const guard = readFileSync(new URL('../src/app/ProtectedRoute.tsx', import.meta.url), 'utf8');
-  const login = readFileSync(new URL('../components/LoginPage.tsx', import.meta.url), 'utf8');
+  const login = readFileSync(new URL('../src/pages/auth/login/ui/LoginPage.tsx', import.meta.url), 'utf8');
   assert.match(context, /requiresInvitePasswordSetup\(session\.user,[\s\S]{0,350}setDbUser\(null\)/);
   assert.match(guard, /isConfigured && \(!user \|\| !dbUser\)[\s\S]{0,120}Navigate to="\/login"/);
   assert.match(login, /invitePasswordRequired[\s\S]*Nastavte si heslo/);

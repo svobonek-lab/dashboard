@@ -1,8 +1,8 @@
 import React from 'react';
-import { useOrganization } from '@/context/OrganizationContext';
+import { useOrganization } from '@/entities/session';
 import { ShieldAlert, ArrowLeft, Lock, ArrowRight, Home } from 'lucide-react';
-import { UserRole, getDefaultRouteForRole } from './permissions';
-import { useRouter } from './router';
+import { getDefaultRouteForRole, type UserRole } from '../shared/model/permissions';
+import { useRouter } from '../shared/lib/router';
 
 interface RoleGuardProps {
   role?: UserRole | UserRole[];

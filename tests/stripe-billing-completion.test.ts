@@ -34,10 +34,10 @@ test('billing completion is plan-allowlisted, idempotent and keeps browser price
   const checkout = readFileSync(new URL('../api/_billing/stripe-checkout.ts', import.meta.url), 'utf8');
   const platform = readFileSync(new URL('../api/_platform/routes/companies.ts', import.meta.url), 'utf8');
   const billingRouter = readFileSync(new URL('../api/billing.ts', import.meta.url), 'utf8');
-  const client = readFileSync(new URL('../src/app/billingClient.ts', import.meta.url), 'utf8');
-  const settings = readFileSync(new URL('../src/pages/owner/Settings.tsx', import.meta.url), 'utf8');
-  const billingReturn = readFileSync(new URL('../src/pages/owner/BillingReturn.tsx', import.meta.url), 'utf8');
-  const admin = readFileSync(new URL('../src/pages/admin/Companies.tsx', import.meta.url), 'utf8');
+  const client = readFileSync(new URL('../src/features/manage-billing/api/billingClient.ts', import.meta.url), 'utf8');
+  const settings = readFileSync(new URL('../src/pages/owner/settings/ui/Settings.tsx', import.meta.url), 'utf8');
+  const billingReturn = readFileSync(new URL('../src/pages/owner/billing-return/ui/BillingReturn.tsx', import.meta.url), 'utf8');
+  const admin = readFileSync(new URL('../src/pages/admin/companies/ui/Companies.tsx', import.meta.url), 'utf8');
   const contract = readFileSync(new URL('../supabase/staging/20261016_stripe_billing_completion.sql', import.meta.url), 'utf8');
 
   assert.match(checkout, /createCustomer/);

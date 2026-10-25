@@ -3,7 +3,7 @@ import test from 'node:test';
 import { readFileSync } from 'node:fs';
 
 import { readPlatformIdentity, resolveApplicationIdentity } from '../src/app/platformIdentity';
-import { canAccessAdmin, canAccessFieldTools, canEditLeads, canManageCompany, canViewRevenue, getDefaultRouteForRole } from '../src/app/permissions';
+import { canAccessAdmin, canAccessFieldTools, canEditLeads, canManageCompany, canViewRevenue, getDefaultRouteForRole } from '../src/shared/model/permissions';
 
 test('active platform identity is resolved before company membership', () => {
   const result = resolveApplicationIdentity(
@@ -53,8 +53,8 @@ test('platform identity reader accepts only the narrow active role result', asyn
 });
 
 test('runtime sources contain no email-based platform authorization', () => {
-  const context = readFileSync(new URL('../context/OrganizationContext.tsx', import.meta.url), 'utf8');
-  const switcher = readFileSync(new URL('../components/CompanySwitcher.tsx', import.meta.url), 'utf8');
+  const context = readFileSync(new URL('../src/app/providers/OrganizationProvider.tsx', import.meta.url), 'utf8');
+  const switcher = readFileSync(new URL('../src/widgets/company-switcher/ui/CompanySwitcher.tsx', import.meta.url), 'utf8');
   assert.doesNotMatch(context, /svobonek@gmail\.com/i);
   assert.doesNotMatch(switcher, /svobonek@gmail\.com/i);
   assert.doesNotMatch(context, /switchRoleToSuperAdmin/);

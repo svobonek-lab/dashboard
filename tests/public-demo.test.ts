@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { calculateDemoMargin, createDemoLead, DEMO_COLUMNS, DEMO_SEED, nextDemoJourneyStep, nextDemoStatus, parseDemoLeads, moveDemoLead } from '../features/publicDemo/demoState.ts';
-import { getOwnerAttentionItems, getOwnerAverageMargin, getOwnerActiveJobs } from '../features/ownerDashboard/dashboardMetrics.ts';
+import { calculateDemoMargin, createDemoLead, DEMO_COLUMNS, DEMO_SEED, nextDemoJourneyStep, nextDemoStatus, parseDemoLeads, moveDemoLead } from '../src/features/public-demo/model/demoState.ts';
+import { getOwnerAttentionItems, getOwnerAverageMargin, getOwnerActiveJobs } from '../src/widgets/owner-dashboard';
 
 test('public demo uses a small, synthetic construction pipeline', () => {
   assert.equal(DEMO_SEED.length, 5);

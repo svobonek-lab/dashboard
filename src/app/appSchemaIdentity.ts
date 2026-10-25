@@ -1,21 +1,6 @@
-import type { Organization } from '../../context/OrganizationContext';
-import { AppMemberRow } from './productionSchema';
-
-export interface AppCompanyRow {
-  id: string;
-  name: string;
-  slug: string;
-  email?: string;
-  phone?: string;
-  address?: string;
-  color?: string;
-  logo_url?: string;
-  active?: boolean;
-  onboarding_completed?: boolean;
-  plan?: string;
-  email_notifications?: boolean;
-  subscription_status?: Organization['subscription_status'];
-}
+import type { Organization } from '../entities/session';
+import type { AppCompanyRow, AppMemberRow } from '../shared/api/productionSchema';
+export type { AppCompanyRow } from '../shared/api/productionSchema';
 
 export interface AppSchemaIdentity {
   member: AppMemberRow;

@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { createManualLeadDraft } from '../src/app/manualLeadDraft';
+import { createManualLeadDraft } from '../src/features/manage-leads';
 
 test('manual lead drafts do not invent an id or employee assignment', () => {
   const lead = createManualLeadDraft({

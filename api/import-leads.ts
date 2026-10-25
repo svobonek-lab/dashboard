@@ -1,6 +1,6 @@
 import { createImportFingerprint, parseCsvDryRun } from '../lib/integrations/pilotImport.js';
 import { createClient } from '@supabase/supabase-js';
-import type { FieldMappingConfig, TargetFieldType } from '../types/integrations.js';
+import type { FieldMappingConfig, TargetFieldType } from '../src/shared/model/integrations.js';
 
 const MAX_CSV_BYTES = 2 * 1024 * 1024;
 

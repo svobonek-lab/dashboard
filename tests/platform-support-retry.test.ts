@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { createSupportLeadMutator } from '../src/app/supportMutationRetry';
+import { createSupportLeadMutator } from '../src/features/platform-admin/api/supportMutationRetry';
 
 test('a lost response retry reuses the original operation id', async () => {
   const requestIds: string[] = [];

@@ -3,7 +3,7 @@ import { existsSync, readFileSync } from 'node:fs';
 import { test } from 'node:test';
 
 test('clean workspace visual system defines the shared product language', () => {
-  const css = readFileSync(new URL('../src/index.css', import.meta.url), 'utf8');
+  const css = readFileSync(new URL('../src/app/styles/index.css', import.meta.url), 'utf8');
   assert.match(css, /--workspace-canvas:\s*#f5f5f7/i);
   assert.match(css, /--workspace-primary:\s*#2563eb/i);
   assert.match(css, /\.workspace-shell/);
@@ -14,9 +14,9 @@ test('clean workspace visual system defines the shared product language', () => 
 });
 
 test('pilot dashboards expose only real product actions', () => {
-  const owner = readFileSync(new URL('../features/OwnerDashboard.tsx', import.meta.url), 'utf8');
-  const employee = readFileSync(new URL('../features/EmployeeDashboard.tsx', import.meta.url), 'utf8');
-  const employeeLayout = readFileSync(new URL('../src/layouts/EmployeeLayout.tsx', import.meta.url), 'utf8');
+  const owner = readFileSync(new URL('../src/widgets/owner-dashboard/ui/OwnerDashboard.tsx', import.meta.url), 'utf8');
+  const employee = readFileSync(new URL('../src/features/employee-workflow/ui/EmployeeDashboard.tsx', import.meta.url), 'utf8');
+  const employeeLayout = readFileSync(new URL('../src/widgets/workspace-shell/ui/EmployeeLayout.tsx', import.meta.url), 'utf8');
 
   assert.doesNotMatch(owner, /onNavigateTab\(['"](?:quotes|analytics)['"]\)/);
   assert.doesNotMatch(employee, /setTimeout|unsplash\.com|automaticky vygenerována|>Sync \(/i);
@@ -27,60 +27,60 @@ test('pilot dashboards expose only real product actions', () => {
 });
 
 test('configured login is onboarding-led rather than fake self-service provisioning', () => {
-  const login = readFileSync(new URL('../components/LoginPage.tsx', import.meta.url), 'utf8');
+  const login = readFileSync(new URL('../src/pages/auth/login/ui/LoginPage.tsx', import.meta.url), 'utf8');
   assert.match(login, /Firemní prostor připravujeme při onboardingu/);
   assert.match(login, /Jedno přihlášení, správný dashboard/);
 });
 
 test('new company onboarding stays inside the verified pilot scope', () => {
-  const onboarding = readFileSync(new URL('../features/OnboardingChecklist.tsx', import.meta.url), 'utf8');
+  const onboarding = readFileSync(new URL('../src/features/onboarding-checklist/ui/OnboardingChecklist.tsx', import.meta.url), 'utf8');
   assert.match(onboarding, /4 kroky k první zakázce/);
   assert.doesNotMatch(onboarding, /POHODA|marže|automatické přijímání|Označit jako hotové/i);
   assert.doesNotMatch(onboarding, /tenantCache|manualChecks/);
 });
 
 test('pilot integration surface exposes CSV worker without fake live connectors', () => {
-  const integrations = readFileSync(new URL('../src/pages/owner/Integrations.tsx', import.meta.url), 'utf8');
+  const integrations = readFileSync(new URL('../src/pages/owner/integrations/ui/Integrations.tsx', import.meta.url), 'utf8');
   assert.match(integrations, /\/api\/import-leads/);
   assert.match(integrations, /Kontrolovaný CSV import/);
   assert.doesNotMatch(integrations, /executeSQLSync|executeGoogleSheetsSync|handleSyncAll|WebhookDetailsModal/);
 });
 
 test('owner settings persist only reviewed company fields through app schema', () => {
-  const context = readFileSync(new URL('../context/OrganizationContext.tsx', import.meta.url), 'utf8');
-  const settings = readFileSync(new URL('../src/pages/owner/Settings.tsx', import.meta.url), 'utf8');
+  const context = readFileSync(new URL('../src/app/providers/OrganizationProvider.tsx', import.meta.url), 'utf8');
+  const settings = readFileSync(new URL('../src/pages/owner/settings/ui/Settings.tsx', import.meta.url), 'utf8');
   assert.match(context, /from\(['"]app_companies['"]\)\.update\(appRecord\)/);
   assert.match(settings, /Kontaktní údaje/);
   assert.doesNotMatch(settings, /White Label ZIP|API token|služeb a integračních/i);
 });
 
 test('team page never fakes assignment or SMS delivery', () => {
-  const team = readFileSync(new URL('../features/EmployeesPage.tsx', import.meta.url), 'utf8');
+  const team = readFileSync(new URL('../src/features/manage-employees/ui/EmployeesPage.tsx', import.meta.url), 'utf8');
   assert.match(team, /Pozvat zaměstnance/);
   assert.doesNotMatch(team, /autoAssignEmployee|AI Přiřazení|odeslán SMS|Možný příjezd/i);
 });
 
 test('pilot lead detail contains only persisted customer, assignment, and history data', () => {
-  const detail = readFileSync(new URL('../features/LeadDetail.tsx', import.meta.url), 'utf8');
+  const detail = readFileSync(new URL('../src/features/manage-leads/ui/LeadDetail.tsx', import.meta.url), 'utf8');
   assert.match(detail, /Uložit přiřazení/);
   assert.match(detail, /Uložená historie/);
   assert.doesNotMatch(detail, /CommunicationTab|BudgetTab|InvoicesTab|AIChatMessage|setTimeout/i);
 });
 
 test('project overview never invents margin, staff, photos, or handover status', () => {
-  const projects = readFileSync(new URL('../src/pages/owner/Projects.tsx', import.meta.url), 'utf8');
+  const projects = readFileSync(new URL('../src/pages/owner/projects/ui/Projects.tsx', import.meta.url), 'utf8');
   assert.doesNotMatch(projects, /34\.2|100% podepsaných|Petr Novotný|\|\| 4|Math\.max\(15/i);
   assert.match(projects, /assignedEmployeeName/);
 });
 
 test('simulated AI copilot is excluded from the real company workspace', () => {
-  const layout = readFileSync(new URL('../src/layouts/OwnerLayout.tsx', import.meta.url), 'utf8');
+  const layout = readFileSync(new URL('../src/widgets/workspace-shell/ui/OwnerLayout.tsx', import.meta.url), 'utf8');
   assert.doesNotMatch(layout, /FloatingAIAssistant|demoNotifications|Záloha připsána/);
   assert.doesNotMatch(layout, /DemoGeneratorModal|OnboardingWizardModal/);
 });
 
 test('command palette exposes only routes inside the verified owner pilot', () => {
-  const palette = readFileSync(new URL('../components/CommandPalette.tsx', import.meta.url), 'utf8');
+  const palette = readFileSync(new URL('../src/widgets/command-palette/ui/CommandPalette.tsx', import.meta.url), 'utf8');
   assert.match(palette, /Přehled firmy/);
   assert.match(palette, /Poptávky/);
   assert.match(palette, /Tým/);
@@ -105,8 +105,8 @@ test('deprecated simulated product modules are removed from the application sour
 });
 
 test('public form and embed page use the real tenant-safe intake without simulated capabilities', () => {
-  const form = readFileSync(new URL('../features/WidgetIframePage.tsx', import.meta.url), 'utf8');
-  const embed = readFileSync(new URL('../features/EmbedWidgetPage.tsx', import.meta.url), 'utf8');
+  const form = readFileSync(new URL('../src/features/submit-inquiry/ui/WidgetIframePage.tsx', import.meta.url), 'utf8');
+  const embed = readFileSync(new URL('../src/pages/public/embed/ui/EmbedWidgetPage.tsx', import.meta.url), 'utf8');
   assert.match(form, /publicSupabase\.rpc\('app_submit_public_lead'/);
   assert.match(form, /Souhlasím/);
   assert.doesNotMatch(form, /setTimeout|aiAnalysisResult|isRecordingVoice|photo1\.jpg/i);
@@ -115,7 +115,7 @@ test('public form and embed page use the real tenant-safe intake without simulat
 });
 
 test('local signup preserves its tenant identity across a page reload', () => {
-  const context = readFileSync(new URL('../context/OrganizationContext.tsx', import.meta.url), 'utf8');
+  const context = readFileSync(new URL('../src/app/providers/OrganizationProvider.tsx', import.meta.url), 'utf8');
   const signupStart = context.indexOf('const signUp = async');
   const signupEnd = context.indexOf('// Auth Action: Log Out');
   const signup = context.slice(signupStart, signupEnd);

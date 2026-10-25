@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { isAssignedToMember, toAppLead, toAppMember, toPendingInvite } from '../src/app/productionSchema';
+import { isAssignedToMember, toAppLead, toAppMember, toPendingInvite } from '../src/shared/api/productionSchema';
 
 const member = { company_id: 'company-a', user_id: 'user-a', name: 'Pracovník', email: 'worker@example.com', role: 'employee' as const, active: true };
 const row = {

@@ -1,12 +1,12 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { resolvePublicTenantKey } from '../src/app/publicIntakeRoute';
+import { resolvePublicTenantKey } from '../src/features/submit-inquiry';
 import { readFileSync } from 'node:fs';
 
 const sql = readFileSync(new URL('../supabase/staging/pilot_public_intake.sql', import.meta.url), 'utf8');
-const supabaseClient = readFileSync(new URL('../lib/supabase.ts', import.meta.url), 'utf8');
-const widget = readFileSync(new URL('../features/WidgetIframePage.tsx', import.meta.url), 'utf8');
-const app = readFileSync(new URL('../src/App.tsx', import.meta.url), 'utf8');
+const supabaseClient = readFileSync(new URL('../src/shared/api/supabaseClient.ts', import.meta.url), 'utf8');
+const widget = readFileSync(new URL('../src/features/submit-inquiry/ui/WidgetIframePage.tsx', import.meta.url), 'utf8');
+const app = readFileSync(new URL('../src/app/App.tsx', import.meta.url), 'utf8');
 const protectedRoute = readFileSync(new URL('../src/app/ProtectedRoute.tsx', import.meta.url), 'utf8');
 
 test('public intake uses tenant slug, stores the resulting lead id, and rate limits unique requests', () => {

@@ -1,6 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 import Stripe from 'stripe';
-import { type OwnerLegalConsent } from '../../src/app/legalConsent.js';
+import { type OwnerLegalConsent } from '../../src/shared/model/legalConsent.js';
 import { readBillingConfig, type BillingConfig } from './stripe-checkout.js';
 
 type Request = {
