@@ -20,6 +20,15 @@ try {
   browser = await chromium.launch({ headless: true });
   const context = await browser.newContext({ extraHTTPHeaders });
   const page = await context.newPage();
+  const authResponses = [];
+  page.on('response', response => {
+    try {
+      const url = new URL(response.url());
+      if (url.hostname.endsWith('.supabase.co') && url.pathname.startsWith('/auth/')) {
+        authResponses.push({ path: url.pathname, status: response.status() });
+      }
+    } catch { /* Ignore malformed response URLs without recording their content. */ }
+  });
 
   step = 'sign in with the synthetic staging owner';
   await page.goto(new URL('/login', previewUrl).toString(), { waitUntil: 'domcontentloaded' });
@@ -29,11 +38,12 @@ try {
   try {
     await page.waitForURL(url => url.pathname !== '/login', { timeout: 30_000 });
   } catch (error) {
-    const invalidCredentials = page.getByText('Nesprávný e-mail nebo heslo. Ověřte zadané údaje.');
-    if (await invalidCredentials.isVisible().catch(() => false)) {
-      throw new Error('STAGING_OWNER_A_CREDENTIALS_REJECTED');
-    }
-    throw error;
+    const alert = page.locator('.bg-rose-50').first();
+    const alertText = await alert.innerText().catch(() => '');
+    const loginAlert = alertText.toLowerCase().includes('nesprávný') ? 'INVALID_CREDENTIALS'
+      : alertText.toLowerCase().includes('oprávnění') ? 'ROLE_MISMATCH'
+        : alertText ? 'OTHER_LOGIN_ERROR' : 'NO_LOGIN_ERROR';
+    throw new Error(`STAGING_LOGIN_TIMEOUT:${loginAlert}:${new URL(page.url()).pathname}:${JSON.stringify(authResponses)}`);
   }
 
   step = 'open the owner integrations page';
@@ -71,7 +81,7 @@ try {
   }) + '\n');
 } catch (error) {
   const safeErrorCode = error instanceof Error
-    && error.message === 'STAGING_OWNER_A_CREDENTIALS_REJECTED'
+    && error.message.startsWith('STAGING_LOGIN_TIMEOUT:')
     ? error.message
     : error instanceof Error ? error.name : 'UnknownError';
   process.stderr.write(JSON.stringify({
