@@ -18,14 +18,6 @@ test('embed loader treats customer button text as text and validates message sen
   assert.doesNotMatch(widget, /innerHTML = sparklesIcon \+ '<span>' \+ btnText/);
 });
 
-test('paid website analysis requires a verified authenticated session', () => {
-  const api = readFileSync(new URL('../api/analyze-website.ts', import.meta.url), 'utf8');
-  const client = readFileSync(new URL('../lib/gemini.ts', import.meta.url), 'utf8');
-  assert.match(api, /auth\.getUser\(token\)/);
-  assert.match(api, /replace\(\/\^Bearer/);
-  assert.match(client, /Authorization: `Bearer \$\{token\}`/);
-});
-
 test('deployment defines CSP and HSTS while keeping only intake pages embeddable', () => {
   const config = JSON.parse(readFileSync(new URL('../vercel.json', import.meta.url), 'utf8'));
   const serialized = JSON.stringify(config);

@@ -1,3 +1,5 @@
+Archived source for the retired website analyzer. This .txt file is outside Vercel API discovery.
+
 import { GoogleGenAI } from '@google/genai';
 import { GEMINI_MODEL, withGeminiBackoff } from '../lib/gemini.js';
 import { createServerlessSupabaseClient } from './_shared/supabaseClient.js';
