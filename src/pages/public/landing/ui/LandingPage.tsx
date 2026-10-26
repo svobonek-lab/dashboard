@@ -25,25 +25,30 @@ import {
 } from 'lucide-react';
 import { useRouter } from '@/shared/lib/router';
 import { buildSalesContact, getSalesContactMode } from '@/pages/public/landing';
+import { getLegalIdentityReadiness } from '../model/legalReadiness';
 import { resolveDemoUrl } from '@/shared/lib/demoUrl';
 
 const PUBLIC_CONTACT_EMAIL = 'svobonek@gmail.com';
 const PUBLIC_CONTACT_ADDRESS = 'Vincence Makovského 4428/11';
+const LANDING_ENV = ((import.meta as any).env || {}) as Record<string, unknown>;
 const LEGAL_COMPANY_NAME = ((import.meta as any).env?.VITE_COMPANY_NAME || '').trim();
 const COMPANY_NAME = LEGAL_COMPANY_NAME || 'StavbaFlow';
 const COMPANY_ICO = ((import.meta as any).env?.VITE_COMPANY_ICO || '').trim();
 const COMPANY_ADDRESS = ((import.meta as any).env?.VITE_COMPANY_ADDRESS || '').trim() || PUBLIC_CONTACT_ADDRESS;
 const COMPANY_EMAIL = ((import.meta as any).env?.VITE_COMPANY_EMAIL || '').trim() || PUBLIC_CONTACT_EMAIL;
 const COMPANY_PHONE = ((import.meta as any).env?.VITE_COMPANY_PHONE || '').trim();
-const COMPANY_LEGAL_DETAILS_CONFIGURED = Boolean(COMPANY_ICO)
-  && Boolean(LEGAL_COMPANY_NAME)
-  && Boolean(COMPANY_ADDRESS)
-  && Boolean(COMPANY_EMAIL);
+const LEGAL_IDENTITY_READINESS = getLegalIdentityReadiness({
+  DEV: LANDING_ENV.DEV,
+  VITE_COMPANY_NAME: String(LANDING_ENV.VITE_COMPANY_NAME || ''),
+  VITE_COMPANY_ICO: String(LANDING_ENV.VITE_COMPANY_ICO || ''),
+  VITE_COMPANY_ADDRESS: String(LANDING_ENV.VITE_COMPANY_ADDRESS || ''),
+  VITE_COMPANY_EMAIL: String(LANDING_ENV.VITE_COMPANY_EMAIL || ''),
+});
+const COMPANY_LEGAL_DETAILS_CONFIGURED = LEGAL_IDENTITY_READINESS.ready;
 const SALES_CONTACT = getSalesContactMode({
   ...((import.meta as any).env || {}),
   VITE_COMPANY_EMAIL: COMPANY_EMAIL,
 });
-const LANDING_ENV = ((import.meta as any).env || {}) as Record<string, unknown>;
 const DEMO_DESTINATION = resolveDemoUrl(LANDING_ENV, {
   isDevelopment: Boolean(LANDING_ENV.DEV),
   origin: typeof window === 'undefined' ? '' : window.location.origin,
@@ -168,6 +173,12 @@ export const LandingPage: React.FC = () => {
           </div>
         </div>
       </header>
+
+      {LEGAL_IDENTITY_READINESS.showDevelopmentWarning && (
+        <aside role="status" data-testid="legal-identity-development-warning" className="border-b border-amber-300 bg-amber-50 px-4 py-3 text-center text-sm font-medium text-amber-950">
+          Vývojová kontrola: doplňte {LEGAL_IDENTITY_READINESS.missing.join(', ')} před ostrým nasazením. Veřejná kontaktní adresa se za právní adresu nepovažuje.
+        </aside>
+      )}
 
       {/* 2. Outcome Hero Section (Audit Page 11) */}
       <section className="pt-16 pb-14 px-4 sm:px-6 lg:px-8 max-w-5xl mx-auto text-center space-y-6">
