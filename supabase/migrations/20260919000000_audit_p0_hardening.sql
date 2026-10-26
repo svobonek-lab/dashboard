@@ -162,6 +162,10 @@ GRANT UPDATE (name, avatar_url, updated_at) ON public.users TO authenticated;
 
 -- 7. SECURE PUBLIC LEAD INGESTION RPC (AUDIT FINDING F-03 / Příloha B)
 -- Replaces direct anonymous insert with validated, bounded RPC
+-- Remove the historical six-argument overload. The replacement below keeps
+-- the last argument optional, so existing six-argument RPC calls still work.
+DROP FUNCTION IF EXISTS public.submit_public_lead(uuid, text, text, text, text, numeric);
+
 CREATE OR REPLACE FUNCTION public.submit_public_lead(
     p_org_id uuid,
     p_customer_name text,
@@ -243,8 +247,8 @@ END;
 $$;
 
 -- Allow anon and authenticated to execute the secure RPC
-REVOKE ALL ON FUNCTION public.submit_public_lead FROM PUBLIC;
-GRANT EXECUTE ON FUNCTION public.submit_public_lead TO anon, authenticated, service_role;
+REVOKE ALL ON FUNCTION public.submit_public_lead(uuid, text, text, text, text, numeric, text) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.submit_public_lead(uuid, text, text, text, text, numeric, text) TO anon, authenticated, service_role;
 
 -- 8. SECURE ATOMIC TENANT PROVISIONING RPC (AUDIT FINDING F-06)
 -- Set search_path and grant solely to service_role to prevent unauthenticated tenant creation
