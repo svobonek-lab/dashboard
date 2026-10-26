@@ -14,7 +14,8 @@ const companySwitcher = readFileSync(new URL('../src/widgets/company-switcher/ui
 test('public demo is static, read-only and sourced from the shared demo fixture', () => {
   assert.match(state, /PUBLIC_DEMO_LEADS/);
   assert.match(workspace, /pouze pro čtení/i);
-  assert.match(workspace, /OwnerLayout/);
+  assert.doesNotMatch(workspace, /OwnerLayout/);
+  assert.match(workspace, /aria-label="Public demo"/);
   assert.match(workspace, /OwnerDashboard/);
   assert.match(workspace, /LeadsKanban/);
   assert.match(workspace, /readOnly/);

@@ -27,7 +27,8 @@ import {
   FileArchive,
   Building2,
   Zap,
-  HardDrive
+  HardDrive,
+  type LucideIcon,
 } from 'lucide-react';
 import type { CompanyBranding } from '@/entities/company';
 import type { Lead } from '@/entities/lead';
@@ -39,7 +40,7 @@ interface OwnerLayoutProps {
   children: React.ReactNode;
   leads?: Lead[];
   onSelectLead?: (lead: Lead) => void;
-  readOnlyMode?: 'demo' | 'support';
+  readOnlyMode?: 'support';
   onExitReadOnly?: () => void;
 }
 
@@ -117,13 +118,11 @@ export const OwnerLayout: React.FC<OwnerLayoutProps> = ({
 
   const supportBase = readOnlyMode === 'support' ? pathname.split('/').slice(0, 3).join('/') : '';
   const route = (path: string) => {
-    if (readOnlyMode === 'demo') return path === '/dashboard' ? '/demo' : `/demo${path}`;
     if (readOnlyMode === 'support') return `${supportBase}${path}`;
     return path;
   };
-  const navItems = [
+  const navItems: Array<{ label: string; path: string; icon: LucideIcon; exact?: boolean; badge?: string }> = [
     { label: 'Přehled stavby (Executive)', path: '/dashboard', icon: LayoutDashboard, exact: true },
-    { label: 'Prodejní cockpit', path: '/sales', icon: Kanban, badge: leads.filter(l => l.status === 'New').length ? `${leads.filter(l => l.status === 'New').length} nové` : undefined },
     { label: 'Poptávky & Kanban', path: '/leads', icon: Kanban },
     { label: 'Poptávkový formulář', path: `/inquiry?org=${encodeURIComponent(currentOrg?.slug || '')}`, icon: Sparkles },
     { label: 'Realizace & Stavby', path: '/projects', icon: HardHat },
@@ -139,7 +138,6 @@ export const OwnerLayout: React.FC<OwnerLayoutProps> = ({
     { label: 'Klientský portál', path: '/portal', icon: Globe },
     { label: 'Nastavení & Export', path: '/settings', icon: Settings },
   ].filter((item) => {
-    if (readOnlyMode === 'demo') return ['/dashboard', '/leads'].includes(item.path);
     if (readOnlyMode === 'support') return ['/dashboard', '/leads', '/projects'].includes(item.path);
     return isPilotOwnerNavigationPath(item.path);
   })
@@ -158,7 +156,7 @@ export const OwnerLayout: React.FC<OwnerLayoutProps> = ({
               onClick={() => { if (onExitReadOnly) onExitReadOnly(); else { stopImpersonation(); navigate('/admin'); } }}
               className="bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 hover:border-cyan-500/50 px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2 shadow-sm shadow-cyan-500/10"
             >
-              {readOnlyMode === 'demo' ? '← Ukončit demo' : '← Vrátit se do Adminu'}
+              ← Vrátit se do Adminu
             </button>
 
             <div className="h-5 w-px bg-slate-800"></div>
@@ -170,15 +168,15 @@ export const OwnerLayout: React.FC<OwnerLayoutProps> = ({
                 </div>
               ) : null}
               <span className="bg-cyan-500/20 border border-cyan-500/40 text-cyan-400 px-2.5 py-0.5 rounded-lg text-[10px] font-black uppercase tracking-wider">
-                {readOnlyMode === 'demo' ? 'Veřejné demo' : 'Impersonating'}
+                Impersonating
               </span>
               <span className="text-white font-black text-sm tracking-tight">{activeCompanyName}</span>
               <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-slate-800 text-slate-300 border border-slate-700">
-                {readOnlyMode === 'demo' ? 'Pouze pro čtení' : 'Plná podpora'}
+                Plná podpora
               </span>
               <span className="hidden lg:inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[10px] font-mono text-green-400 bg-green-500/10 border border-green-500/20">
                 <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse"></span>
-                {readOnlyMode === 'demo' ? 'Syntetická data' : 'Auditovaná relace'}
+                Auditovaná relace
               </span>
             </div>
           </div>
@@ -333,7 +331,7 @@ export const OwnerLayout: React.FC<OwnerLayoutProps> = ({
                 className="flex items-center gap-1.5 px-2.5 py-2 rounded-app text-xs font-semibold text-muted hover:text-red-600 hover:bg-red-50/50 transition-colors cursor-pointer"
               >
                 <LogOut className="w-3.5 h-3.5" />
-                <span>{readOnlyMode === 'demo' ? 'Přihlásit' : 'Odhlásit'}</span>
+                <span>{readOnlyMode ? 'Vrátit se do Adminu' : 'Odhlásit'}</span>
               </button>
             </div>
           </div>
