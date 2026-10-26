@@ -497,7 +497,7 @@ export const LandingPage: React.FC = () => {
               </div>
 
               <div className="p-3.5 bg-slate-800/80 rounded-2xl border border-slate-700 text-[11px] text-slate-300 leading-relaxed">
-                Model používá zadanou průměrnou marži a předpoklad lepšího zpracování poptávek. Výsledek společně ověříme na skutečných datech během pilotu.
+                Ilustrativní výpočet s orientačními hodnotami. Model používá zadanou průměrnou marži a předpoklad lepšího zpracování poptávek; nejde o příslib výsledku. Skutečný přínos ověříme na datech během pilotu.
               </div>
 
               <button
@@ -622,7 +622,7 @@ export const LandingPage: React.FC = () => {
                 <li className="flex items-center gap-2">Přímé SQL/ERP propojení není součástí pilotu</li>
                 <li className="flex items-center gap-2">Obousměrná synchronizace databází</li>
                 <li className="flex items-center gap-2">Fakturace a účetní exporty</li>
-                <li className="flex items-center gap-2">Klientský portál a automatické follow-upy</li>
+                <li className="flex items-center gap-2">Klientský portál a automatické follow-upy — Připravujeme, nejsou součástí prvního pilotu</li>
               </ul>
             </div>
             <button
