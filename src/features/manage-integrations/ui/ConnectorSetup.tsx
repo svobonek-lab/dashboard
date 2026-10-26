@@ -48,7 +48,7 @@ export function ConnectorSetup({ companyId, onCreated, initialDriver, onDriverCh
   const downloadPackage = async () => {
     setPackageBusy(true); setError('');
     try {
-      const bytes = await buildConnectorPackage({ image, driver, apiBaseUrl: window.location.origin });
+      const bytes = await buildConnectorPackage({ image, driver, apiBaseUrl: window.location.origin, companyId });
       const url = URL.createObjectURL(new Blob([bytes as unknown as BlobPart], { type: 'application/zip' }));
       const anchor = document.createElement('a'); anchor.href = url; anchor.download = 'stavbaflow-synology-connector.zip'; anchor.click();
       window.setTimeout(() => URL.revokeObjectURL(url), 1000);

@@ -61,3 +61,8 @@ test('connector dispatches each server-approved operation with its attached map 
   assert.match(runtime, /if \(config\.database\.writeUsername\)[\s\S]+pollOperations\(\)[\s\S]+processByodbOperations\(operations, activeMapping/);
   assert.doesNotMatch(runtime, /if \(config\.database\.writeUsername && engine && await engine\.mappingApproved\(\)\)/);
 });
+
+test('personalized connector registration is pinned to the expected company id', async () => {
+  const runtime = await readFile(new URL('../connector/src/runtimeBootstrap.ts', import.meta.url), 'utf8');
+  assert.match(runtime, /config\.expectedCompanyId[\s\S]+registration\.companyId[\s\S]+throw new Error\('connector enrollment belongs to a different company'\)/);
+});

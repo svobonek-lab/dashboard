@@ -39,12 +39,16 @@ async function loadRegistration(config: ConnectorConfig, identity: Awaited<Retur
     isRegistrationState,
   );
   const existing = await store.read();
-  if (existing.connectorId && existing.companyId) return existing;
+  if (existing.connectorId && existing.companyId) {
+    if (config.expectedCompanyId && existing.companyId !== config.expectedCompanyId) throw new Error('connector enrollment belongs to a different company');
+    return existing;
+  }
   if (!config.enrollmentCodeFile) throw new Error('connector enrollment is required');
   const enrollmentCode = (await readFile(config.enrollmentCodeFile, 'utf8')).trim();
   if (!enrollmentCode) throw new Error('connector enrollment code is empty');
   const registration = await new ConnectorApi({ baseUrl: config.apiBaseUrl, identity }).enroll(enrollmentCode);
   if (!registration.connectorId || !registration.companyId) throw new Error('connector enrollment response is incomplete');
+  if (config.expectedCompanyId && registration.companyId !== config.expectedCompanyId) throw new Error('connector enrollment belongs to a different company');
   await store.write(registration);
   return registration;
 }

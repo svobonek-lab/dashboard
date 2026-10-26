@@ -18,6 +18,7 @@ interface ConfigDatabaseInput {
 
 export interface ConnectorConfig {
   apiBaseUrl: string;
+  expectedCompanyId?: string;
   stateRoot: string;
   identityPath: string;
   mappingPath: string;
@@ -29,8 +30,9 @@ export interface ConnectorConfig {
   databaseWritePasswordFile?: string;
 }
 
-const CONFIG_KEYS = new Set(['apiBaseUrl', 'stateRoot', 'identityPath', 'mappingPath', 'syncIntervalSeconds', 'connectorId', 'enrollmentCodeFile', 'database']);
+const CONFIG_KEYS = new Set(['apiBaseUrl', 'expectedCompanyId', 'stateRoot', 'identityPath', 'mappingPath', 'syncIntervalSeconds', 'connectorId', 'enrollmentCodeFile', 'database']);
 const DATABASE_KEYS = new Set(['driver', 'host', 'port', 'database', 'username', 'passwordFile', 'writeUsername', 'writePasswordFile', 'schema', 'ssl']);
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 function requiredString(value: unknown, field: string): string {
   if (typeof value !== 'string' || !value.trim()) throw new Error(`${field} is required`);
@@ -67,6 +69,8 @@ export function parseConnectorConfig(value: unknown): Omit<ConnectorConfig, 'dat
   const stateRoot = resolve(stateRootInput);
   const syncIntervalSeconds = Number(input.syncIntervalSeconds);
   if (!Number.isInteger(syncIntervalSeconds) || syncIntervalSeconds < 60) throw new Error('syncIntervalSeconds must be at least 60');
+  const expectedCompanyId = input.expectedCompanyId === undefined ? undefined : requiredString(input.expectedCompanyId, 'expectedCompanyId');
+  if (expectedCompanyId && !UUID.test(expectedCompanyId)) throw new Error('expectedCompanyId is invalid');
   if (!['postgres', 'mysql', 'mariadb', 'mssql'].includes(database.driver)) throw new Error('database driver is unsupported');
   const port = Number(database.port);
   if (!Number.isInteger(port) || port < 1 || port > 65535) throw new Error('database port is invalid');
@@ -74,6 +78,7 @@ export function parseConnectorConfig(value: unknown): Omit<ConnectorConfig, 'dat
 
   return {
     apiBaseUrl: apiBaseUrl.origin,
+    ...(expectedCompanyId ? { expectedCompanyId } : {}),
     stateRoot,
     identityPath: assertInside(stateRoot, requiredString(input.identityPath, 'identityPath'), 'identityPath'),
     mappingPath: assertInside(stateRoot, requiredString(input.mappingPath, 'mappingPath'), 'mappingPath'),
@@ -99,10 +104,15 @@ export async function loadConnectorConfig(path: string): Promise<ConnectorConfig
   const fileValue = JSON.parse(await readFile(path, 'utf8')) as unknown;
   if (!fileValue || typeof fileValue !== 'object' || Array.isArray(fileValue)) throw new Error('connector config must be an object');
   const input = fileValue as Record<string, unknown>;
+  const environmentCompanyId = process.env.STAVBAFLOW_EXPECTED_COMPANY_ID?.trim();
+  if (environmentCompanyId && input.expectedCompanyId && environmentCompanyId !== input.expectedCompanyId) {
+    throw new Error('expected company id does not match config.json');
+  }
   if (!input.database || typeof input.database !== 'object' || Array.isArray(input.database)) throw new Error('database config is required');
   const database = input.database as Record<string, unknown>;
   const parsed = parseConnectorConfig({
     ...input,
+    ...(environmentCompanyId ? { expectedCompanyId: environmentCompanyId } : {}),
     database: {
       ...database,
       ...(process.env.DB_HOST ? { host: process.env.DB_HOST } : {}),
