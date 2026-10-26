@@ -1,0 +1,73 @@
+name: staging-e2e
+
+on:
+  workflow_dispatch:
+  pull_request:
+    types: [labeled]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: staging-e2e-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  staging-e2e:
+    if: >-
+      github.repository == 'svobonek-lab/dashboard' &&
+      (github.event_name == 'workflow_dispatch' ||
+       (github.event.pull_request.head.repo.full_name == github.repository &&
+        contains(github.event.pull_request.labels.*.name, 'e2e')))
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+          cache: npm
+      - name: Check staging isolation and required credentials without printing values
+        run: node scripts/assert-staging-e2e-env.mjs
+        env:
+          STAGING_PREVIEW_URL: ${{ vars.STAGING_PREVIEW_URL }}
+          PRODUCTION_BASE_URL: ${{ vars.PRODUCTION_BASE_URL }}
+          STAGING_SUPABASE_URL: ${{ vars.STAGING_SUPABASE_URL }}
+          STAGING_SUPABASE_PROJECT_REF: ${{ vars.STAGING_SUPABASE_PROJECT_REF }}
+          PRODUCTION_SUPABASE_PROJECT_REF: ${{ vars.PRODUCTION_SUPABASE_PROJECT_REF }}
+          STAGING_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.STAGING_SUPABASE_PUBLISHABLE_KEY }}
+          STAGING_OWNER_A_EMAIL: ${{ secrets.STAGING_OWNER_A_EMAIL }}
+          STAGING_OWNER_A_PASSWORD: ${{ secrets.STAGING_OWNER_A_PASSWORD }}
+          STAGING_EMPLOYEE_A_EMAIL: ${{ secrets.STAGING_EMPLOYEE_A_EMAIL }}
+          STAGING_EMPLOYEE_A_PASSWORD: ${{ secrets.STAGING_EMPLOYEE_A_PASSWORD }}
+          STAGING_OWNER_B_EMAIL: ${{ secrets.STAGING_OWNER_B_EMAIL }}
+          STAGING_OWNER_B_PASSWORD: ${{ secrets.STAGING_OWNER_B_PASSWORD }}
+          STAGING_COMPANY_A_ID: ${{ vars.STAGING_COMPANY_A_ID }}
+          STAGING_COMPANY_B_ID: ${{ vars.STAGING_COMPANY_B_ID }}
+          STAGING_EMPLOYEE_A_ID: ${{ vars.STAGING_EMPLOYEE_A_ID }}
+          STAGING_PUBLIC_TENANT_KEY: ${{ vars.STAGING_PUBLIC_TENANT_KEY }}
+      - run: npm ci
+      - name: Install Playwright Chromium
+        run: npx playwright install --with-deps chromium
+      - name: Run five opt-in synthetic tenant smoke tests
+        run: npm run test:e2e:staging
+        env:
+          CI: 'true'
+          STAGING_PREVIEW_URL: ${{ vars.STAGING_PREVIEW_URL }}
+          PRODUCTION_BASE_URL: ${{ vars.PRODUCTION_BASE_URL }}
+          STAGING_SUPABASE_URL: ${{ vars.STAGING_SUPABASE_URL }}
+          STAGING_SUPABASE_PROJECT_REF: ${{ vars.STAGING_SUPABASE_PROJECT_REF }}
+          PRODUCTION_SUPABASE_PROJECT_REF: ${{ vars.PRODUCTION_SUPABASE_PROJECT_REF }}
+          STAGING_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.STAGING_SUPABASE_PUBLISHABLE_KEY }}
+          STAGING_OWNER_A_EMAIL: ${{ secrets.STAGING_OWNER_A_EMAIL }}
+          STAGING_OWNER_A_PASSWORD: ${{ secrets.STAGING_OWNER_A_PASSWORD }}
+          STAGING_EMPLOYEE_A_EMAIL: ${{ secrets.STAGING_EMPLOYEE_A_EMAIL }}
+          STAGING_EMPLOYEE_A_PASSWORD: ${{ secrets.STAGING_EMPLOYEE_A_PASSWORD }}
+          STAGING_OWNER_B_EMAIL: ${{ secrets.STAGING_OWNER_B_EMAIL }}
+          STAGING_OWNER_B_PASSWORD: ${{ secrets.STAGING_OWNER_B_PASSWORD }}
+          STAGING_COMPANY_A_ID: ${{ vars.STAGING_COMPANY_A_ID }}
+          STAGING_COMPANY_B_ID: ${{ vars.STAGING_COMPANY_B_ID }}
+          STAGING_EMPLOYEE_A_ID: ${{ vars.STAGING_EMPLOYEE_A_ID }}
+          STAGING_PUBLIC_TENANT_KEY: ${{ vars.STAGING_PUBLIC_TENANT_KEY }}

@@ -3,6 +3,8 @@ build/
 dist/
 stats.html
 coverage/
+test-results/
+playwright-report/
 .DS_Store
 *.log
 .env*
