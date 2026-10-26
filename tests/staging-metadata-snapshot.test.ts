@@ -59,6 +59,7 @@ test('staging metadata capture is catalog-only, read-only, and redacts Auth hook
   assert.equal(new Headers(queryRequest.init?.headers).get('authorization'), 'Bearer test-token-not-a-real-secret');
   assert.deepEqual(result.database, metadata);
   assert.deepEqual(result.authHook, {
+    readable: true,
     customAccessTokenEnabled: true,
     customAccessTokenConfigured: true,
     customAccessTokenUri: 'pg-functions://<database>/auth/app_tenant_access_token_hook',
@@ -71,4 +72,18 @@ test('staging metadata capture is catalog-only, read-only, and redacts Auth hook
     sanitizeAuthHookConfig({ hook_custom_access_token_uri: 'https://example.test/secret-token?access=secret' }).customAccessTokenUri,
     'https://example.test/<path-redacted>',
   );
+
+  const partial = await captureStagingMetadata({
+    stagingProjectRef: 'xwzweltjvreqhjpbjrxa',
+    productionProjectRef: 'oncmtmrhmjlerbwkrecv',
+    accessToken: 'test-token-not-a-real-secret',
+    fetchImpl: async (input) => String(input).includes('/database/query/read-only')
+      ? new Response(JSON.stringify(metadata), { status: 201 })
+      : new Response(JSON.stringify({ message: 'forbidden' }), { status: 403 }),
+  });
+  assert.deepEqual(partial.database, metadata);
+  assert.deepEqual(partial.authHook, {
+    readable: false,
+    error: 'Staging Auth hook configuration metadata query failed with HTTP 403.',
+  });
 });

@@ -186,16 +186,21 @@ export async function captureStagingMetadata({
     }),
     fetchImpl(`${baseUrl}/config/auth`, { method: 'GET', headers }),
   ]);
-  const [database, authConfig] = await Promise.all([
+  const [databaseResult, authConfigResult] = await Promise.allSettled([
     readJson(databaseResponse, 'Read-only staging database metadata query (database_read)'),
     readJson(authResponse, 'Staging Auth hook configuration metadata query'),
   ]);
+  if (databaseResult.status === 'rejected') throw databaseResult.reason;
+
+  const authHook = authConfigResult.status === 'fulfilled'
+    ? { readable: true, ...sanitizeAuthHookConfig(authConfigResult.value) }
+    : { readable: false, error: authConfigResult.reason instanceof Error ? authConfigResult.reason.message : 'Auth hook configuration could not be read.' };
 
   return {
     projectRef: stagingProjectRef,
     productionProjectRef,
-    database,
-    authHook: sanitizeAuthHookConfig(authConfig),
+    database: databaseResult.value,
+    authHook,
   };
 }
 
@@ -208,6 +213,7 @@ if (invokedPath === import.meta.url) {
       accessToken: process.env.SUPABASE_ACCESS_TOKEN,
     });
     console.log(JSON.stringify(snapshot, null, 2));
+    if (!snapshot.authHook.readable) process.exitCode = 1;
   } catch (error) {
     console.error(error instanceof Error ? error.message : 'Staging metadata capture failed.');
     process.exitCode = 1;
