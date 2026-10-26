@@ -11,6 +11,16 @@ test('owner connector contract never exposes source credentials or private keys'
   assert.match(contract,/dryRun/);
 });
 
+test('owner Playwright login blocks non-staging auth and scopes Preview bypass to Vercel', async()=>{
+  const script = await readFile(new URL('../scripts/connector-owner-ui-e2e.mjs', import.meta.url), 'utf8');
+  assert.match(script, /context\.route\('\*\*\/\*'/);
+  assert.match(script, /expectedStagingOrigin/);
+  assert.match(script, /route\.request\(\)\.url\(\)/);
+  assert.match(script, /url\.origin !== expectedStagingOrigin/);
+  assert.match(script, /url\.origin === previewUrl\.origin/);
+  assert.match(script, /NO_ACTIVE_MEMBERSHIP/);
+});
+
 test('owner APIs use tenant membership and service-only RPC boundaries',async()=>{
   const files=['enroll','status','mapping','command'];
   for(const file of files){const source=await readFile(new URL(`../api/_connector/routes/${file}.ts`,import.meta.url),'utf8');assert.match(source,/authorizeConnectorOwner/);assert.match(source,/\.rpc\(/);}
