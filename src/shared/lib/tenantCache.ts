@@ -46,6 +46,22 @@ export function removeTenantCache(name: string, organizationId?: string | null):
   }
 }
 
+export function clearTenantCaches(
+  storage: Pick<Storage, 'length' | 'key' | 'removeItem'> | null = typeof window === 'undefined' ? null : window.localStorage,
+): void {
+  if (!storage) return;
+  try {
+    const keys = Array.from({ length: storage.length }, (_, index) => storage.key(index)).filter((key): key is string => key !== null);
+    for (const key of keys) {
+      const tenantCache = key.startsWith('stavbacore:');
+      const legacyLeadCache = key.startsWith('leads_cache_') || key === 'demo_leads_cache' || key.startsWith('demo_leads_cache_');
+      if (tenantCache || legacyLeadCache) storage.removeItem(key);
+    }
+  } catch {
+    // Private browsing and storage errors must never interrupt sign-out.
+  }
+}
+
 export const TENANT_CACHE_NAMES = {
   leads: 'leads',
   onboarding: 'onboarding',

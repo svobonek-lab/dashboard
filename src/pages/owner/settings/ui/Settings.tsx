@@ -4,6 +4,7 @@ import { useOrganization } from '@/entities/session';
 import { canManageCompany } from '@/shared/model/permissions';
 import { startBillingPortal } from '@/features/manage-billing';
 import { crmRepo } from '@/shared/api/crm-repository';
+import { CompanyDataExport } from '@/features/export-company-data';
 
 export const OwnerSettingsPage: React.FC = () => {
   const { dbUser, currentOrg, updateBrandingAdmin } = useOrganization();
@@ -121,6 +122,7 @@ export const OwnerSettingsPage: React.FC = () => {
         </section>
         <div className="flex justify-end border-t border-slate-100 pt-6"><button type="submit" disabled={state.kind === 'saving' || storageModeLoading} className="workspace-primary-action inline-flex min-h-11 items-center justify-center gap-2 px-5 text-sm font-semibold disabled:opacity-60"><Save className="h-4 w-4" />{state.kind === 'saving' ? 'Ukládám…' : storageModeLoading ? 'Ověřuji režim…' : 'Uložit profil'}</button></div>
       </form>
+      {currentOrg && <CompanyDataExport companyId={currentOrg.id} role={dbUser?.role} />}
     </div>
   );
 };
