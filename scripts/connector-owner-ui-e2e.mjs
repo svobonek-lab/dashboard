@@ -2,30 +2,50 @@ import assert from 'node:assert/strict';
 import { chromium } from 'playwright';
 import { assertIsolatedStagingProject } from './connector-staging-environment.mjs';
 
-const { stagingProjectRef } = assertIsolatedStagingProject(process.env);
+const { stagingProjectRef, stagingUrl } = assertIsolatedStagingProject(process.env);
 const previewUrl = new URL(process.env.STAGING_PREVIEW_URL || '');
 const email = process.env.STAGING_OWNER_A_EMAIL;
 const password = process.env.STAGING_OWNER_A_PASSWORD;
+const expectedStagingOrigin = new URL(stagingUrl).origin;
+const previewBypassToken = process.env.STAGING_PREVIEW_BYPASS_TOKEN;
 assert.equal(previewUrl.protocol, 'https:');
 assert.ok(previewUrl.hostname.endsWith('.vercel.app'), 'Only a reviewed Vercel Preview is accepted.');
 assert.ok(email && password, 'Missing synthetic staging owner credentials.');
 
-const extraHTTPHeaders = process.env.STAGING_PREVIEW_BYPASS_TOKEN
-  ? { 'x-vercel-protection-bypass': process.env.STAGING_PREVIEW_BYPASS_TOKEN }
-  : {};
 let browser;
 let step = 'launch browser';
+let authTarget = 'not-requested';
 
 try {
   browser = await chromium.launch({ headless: true });
-  const context = await browser.newContext({ extraHTTPHeaders });
+  const context = await browser.newContext();
+  await context.route('**/*', async route => {
+    const url = new URL(route.request().url());
+    if (url.pathname.startsWith('/auth/v1/token')) {
+      authTarget = url.origin === expectedStagingOrigin ? 'isolated-staging' : 'unexpected-host-blocked';
+      if (url.origin !== expectedStagingOrigin) {
+        await route.abort();
+        return;
+      }
+    }
+
+    const headers = { ...route.request().headers() };
+    if (url.origin === previewUrl.origin && previewBypassToken) {
+      headers['x-vercel-protection-bypass'] = previewBypassToken;
+    }
+    await route.continue({ headers });
+  });
   const page = await context.newPage();
   const authResponses = [];
   page.on('response', response => {
     try {
       const url = new URL(response.url());
       if (url.hostname.endsWith('.supabase.co') && url.pathname.startsWith('/auth/')) {
-        authResponses.push({ path: url.pathname, status: response.status() });
+        authResponses.push({
+          path: url.pathname,
+          status: response.status(),
+          project: url.origin === expectedStagingOrigin ? 'isolated-staging' : 'unexpected',
+        });
       }
     } catch { /* Ignore malformed response URLs without recording their content. */ }
   });
@@ -42,8 +62,9 @@ try {
     const alertText = await alert.innerText().catch(() => '');
     const loginAlert = alertText.toLowerCase().includes('nesprávný') ? 'INVALID_CREDENTIALS'
       : alertText.toLowerCase().includes('oprávnění') ? 'ROLE_MISMATCH'
+        : alertText.toLowerCase().includes('aktivní členství') ? 'NO_ACTIVE_MEMBERSHIP'
         : alertText ? 'OTHER_LOGIN_ERROR' : 'NO_LOGIN_ERROR';
-    throw new Error(`STAGING_LOGIN_TIMEOUT:${loginAlert}:${new URL(page.url()).pathname}:${JSON.stringify(authResponses)}`);
+    throw new Error(`STAGING_LOGIN_TIMEOUT:${loginAlert}:${new URL(page.url()).pathname}:${authTarget}:${JSON.stringify(authResponses)}`);
   }
 
   step = 'open the owner integrations page';
