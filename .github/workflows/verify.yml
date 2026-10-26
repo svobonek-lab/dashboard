@@ -65,6 +65,40 @@ jobs:
         if: always()
         run: docker rm --force ai-dispatcher-postgres
 
+  public-intake-security-contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - name: Start disposable PostgreSQL
+        run: >-
+          docker run --detach --name public-intake-postgres
+          --env POSTGRES_PASSWORD=postgres
+          --health-cmd="pg_isready -U postgres"
+          --health-interval=2s --health-timeout=2s --health-retries=30
+          postgres:17-alpine
+      - name: Wait for PostgreSQL
+        run: |
+          for attempt in {1..30}; do
+            if [ "$(docker inspect --format='{{.State.Health.Status}}' public-intake-postgres)" = "healthy" ]; then
+              exit 0
+            fi
+            sleep 2
+          done
+          docker logs public-intake-postgres
+          exit 1
+      - name: Verify public intake hardening proposal
+        run: |
+          docker exec -i public-intake-postgres psql -v ON_ERROR_STOP=1 -U postgres < supabase/tests/ai_dispatcher_setup.sql
+          docker exec -i public-intake-postgres psql -v ON_ERROR_STOP=1 -U postgres < supabase/staging/20261006_ai_dispatcher_contract.sql
+          docker exec -i public-intake-postgres psql -v ON_ERROR_STOP=1 -U postgres < supabase/migrations/20261026000000_public_intake_rate_limit.sql
+          docker exec -i public-intake-postgres psql -v ON_ERROR_STOP=1 -U postgres < supabase/tests/public_intake_security_verify.sql
+      - name: Stop disposable PostgreSQL
+        if: always()
+        run: docker rm --force public-intake-postgres
+
   platform-support-contract:
     runs-on: ubuntu-latest
     timeout-minutes: 10
