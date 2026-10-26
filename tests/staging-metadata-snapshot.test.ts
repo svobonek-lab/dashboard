@@ -39,7 +39,7 @@ test('staging metadata capture is catalog-only, read-only, and redacts Auth hook
     accessToken: 'test-token-not-a-real-secret',
     fetchImpl: async (input, init) => {
       calls.push({ url: String(input), init });
-      if (String(input).includes('/database/query')) {
+      if (String(input).includes('/database/query/read-only')) {
         return new Response(JSON.stringify(metadata), { status: 201 });
       }
       return new Response(JSON.stringify({
@@ -52,13 +52,10 @@ test('staging metadata capture is catalog-only, read-only, and redacts Auth hook
   });
 
   assert.equal(calls.length, 2);
-  const queryRequest = calls.find(({ url }) => url.includes('/database/query'));
+  const queryRequest = calls.find(({ url }) => url.includes('/database/query/read-only'));
   assert.ok(queryRequest);
   assert.equal(queryRequest.init?.method, 'POST');
-  assert.deepEqual(JSON.parse(String(queryRequest.init?.body)), {
-    query: STAGING_METADATA_SQL,
-    read_only: true,
-  });
+  assert.deepEqual(JSON.parse(String(queryRequest.init?.body)), { query: STAGING_METADATA_SQL });
   assert.equal(new Headers(queryRequest.init?.headers).get('authorization'), 'Bearer test-token-not-a-real-secret');
   assert.deepEqual(result.database, metadata);
   assert.deepEqual(result.authHook, {

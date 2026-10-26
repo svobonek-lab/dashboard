@@ -152,8 +152,14 @@ export function sanitizeAuthHookConfig(config) {
 }
 
 async function readJson(response, label) {
-  if (!response.ok) throw new Error(`${label} failed with HTTP ${response.status}.`);
-  return response.json();
+  const body = await response.json().catch(() => null);
+  if (!response.ok) {
+    const missingPermissions = Array.isArray(body?.missing_permissions)
+      ? ` Missing token permissions: ${body.missing_permissions.filter((permission) => /^[a-z_]+$/.test(permission)).join(', ')}.`
+      : '';
+    throw new Error(`${label} failed with HTTP ${response.status}.${missingPermissions}`);
+  }
+  return body;
 }
 
 export async function captureStagingMetadata({
@@ -173,15 +179,15 @@ export async function captureStagingMetadata({
     'Content-Type': 'application/json',
   };
   const [databaseResponse, authResponse] = await Promise.all([
-    fetchImpl(`${baseUrl}/database/query`, {
+    fetchImpl(`${baseUrl}/database/query/read-only`, {
       method: 'POST',
       headers,
-      body: JSON.stringify({ query: STAGING_METADATA_SQL, read_only: true }),
+      body: JSON.stringify({ query: STAGING_METADATA_SQL }),
     }),
     fetchImpl(`${baseUrl}/config/auth`, { method: 'GET', headers }),
   ]);
   const [database, authConfig] = await Promise.all([
-    readJson(databaseResponse, 'Read-only staging database metadata query'),
+    readJson(databaseResponse, 'Read-only staging database metadata query (database_read)'),
     readJson(authResponse, 'Staging Auth hook configuration metadata query'),
   ]);
 
