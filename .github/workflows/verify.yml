@@ -71,6 +71,39 @@ jobs:
         if: always()
         run: docker rm --force legacy-migrations-postgres
 
+  outbox-run-evidence-contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - name: Start disposable PostgreSQL
+        run: >-
+          docker run --detach --name outbox-evidence-postgres
+          --env POSTGRES_PASSWORD=postgres
+          --health-cmd="pg_isready -U postgres"
+          --health-interval=2s --health-timeout=2s --health-retries=30
+          postgres:17-alpine
+      - name: Wait for PostgreSQL
+        run: |
+          for attempt in {1..30}; do
+            if [ "$(docker inspect --format='{{.State.Health.Status}}' outbox-evidence-postgres)" = "healthy" ]; then
+              exit 0
+            fi
+            sleep 2
+          done
+          docker logs outbox-evidence-postgres
+          exit 1
+      - name: Apply and verify the isolated run evidence contract
+        run: |
+          docker exec outbox-evidence-postgres psql -v ON_ERROR_STOP=1 -U postgres -c "create role anon nologin; create role authenticated nologin; create role service_role nologin bypassrls;"
+          docker exec -i outbox-evidence-postgres psql -v ON_ERROR_STOP=1 -U postgres < supabase/staging/20261027_outbox_run_evidence.sql
+          docker exec -i outbox-evidence-postgres psql -v ON_ERROR_STOP=1 -U postgres < supabase/tests/outbox_run_evidence_verify.sql
+      - name: Stop disposable PostgreSQL
+        if: always()
+        run: docker rm --force outbox-evidence-postgres
+
   ai-dispatcher-contract:
     runs-on: ubuntu-latest
     timeout-minutes: 10

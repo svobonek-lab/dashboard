@@ -131,11 +131,11 @@
 
 **Interfaces:** Logout removes all `TENANT_CACHE_NAMES` for active company plus keys with the tenant-cache prefix. Export uses only the signed-in client's RLS-protected queries and the active company; it excludes internal IDs, password/credential/token/hash fields and never uses service role.
 
-- [ ] Add failing tests for full-prefix logout removal and safe export columns/tenant filters.
-- [ ] Run focused tests and observe expected failures.
-- [ ] Audit dependencies across src/api/lib/shared/connector before removal; implement cleanup and an honest export including verifiable lead, employee and change-history sources.
-- [ ] Run full root and connector tests, lint, build, and verify the export fixture contains no forbidden fields.
-- [ ] Commit Task 9.
+- [x] Add failing tests for full-prefix logout removal and safe export columns/tenant filters.
+- [x] Run focused tests and observe expected failures.
+- [x] Audit dependencies across src/api/lib/shared/connector before removal; implement cleanup and an honest export including verifiable lead, employee and change-history sources.
+- [x] Run full root and connector tests, lint, build, and verify the export fixture contains no forbidden fields.
+- [x] Commit Task 9 (`72c6983`).
 
 ### Task 10: Monitoring and incident runbook
 
@@ -143,10 +143,10 @@
 
 **Interfaces:** Sentry initializes only with configured DSN; user context contains no email or display name and organization tags use internal ID and role only. Outbox run results expose safe status/count/time/error-code data and contain no customer content or secrets.
 
-- [ ] Add tests for DSN gating, PII-free scope and durable outbox run evidence.
-- [ ] Run targeted tests and observe expected failures.
-- [ ] Implement the minimal monitoring/runbook changes; add SQL only when repository evidence proves no existing durable result table/RPC.
-- [ ] Run full root and connector tests, lint, build and disposable SQL tests.
+- [x] Add tests for DSN gating, PII-free scope and durable outbox run evidence.
+- [x] Run targeted tests and observe expected failures.
+- [x] Implement the minimal monitoring/runbook changes; add SQL only when repository evidence proves no existing durable result table/RPC.
+- [ ] Run full root and connector tests, lint, build and disposable SQL tests. GitHub CI job is added; local PostgreSQL execution is blocked because Docker is not running.
 - [ ] Commit Task 10.
 
 ### Final audit

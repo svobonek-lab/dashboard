@@ -9,6 +9,7 @@ import { getLeads, saveLead as saveLeadEntity, updateLeadStatus as updateLeadSta
 import { getEmployees, saveEmployee as saveEmployeeEntity } from '../../entities/employee';
 import { APP_SCHEMA_WRITES_BLOCKED_MESSAGE, isAppSchemaReadsEnabled, shouldBlockLegacyWrites } from '../../shared/api/productionDataPolicy';
 import { clearTenantCaches, removeTenantCache, TENANT_CACHE_NAMES } from '../../shared/lib/tenantCache';
+import { setSentryWorkspaceContext } from '../../shared/lib/sentry';
 import { getRuntimePolicy } from '../runtimePolicy';
 import { resolveOrAcceptAppIdentity } from '../appSchemaIdentity';
 import { toAuthenticatedWorkspaceUser } from '../authWorkspaceUser';
@@ -49,6 +50,10 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
   const [user, setUser] = useState<any | null>(null);
   const [dbUser, setDbUser] = useState<DBUser | null>(null);
   const [currentOrg, setCurrentOrg] = useState<Organization | null>(null);
+
+  useEffect(() => {
+    setSentryWorkspaceContext({ companyId: currentOrg?.id, role: dbUser?.role });
+  }, [currentOrg?.id, dbUser?.role]);
   const [organizations, setOrganizations] = useState<Organization[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [invitePasswordRequired, setInvitePasswordRequired] = useState(false);

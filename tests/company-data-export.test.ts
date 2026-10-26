@@ -48,8 +48,13 @@ test('export fetches through the authenticated client and constrains reads to on
   const source = readFileSync(new URL('../src/features/export-company-data/api/exportCompanyData.ts', import.meta.url), 'utf8');
   const ui = readFileSync(new URL('../src/features/export-company-data/ui/CompanyDataExport.tsx', import.meta.url), 'utf8');
   assert.match(source, /supabase\.auth\.getUser\(\)/);
+  assert.match(source, /verifyOwnerMembership\(companyId, user\.id\)/);
+  assert.match(source, /\.eq\('user_id', userId\)/);
+  assert.match(source, /supabase!\.from\('app_leads'\)/);
+  assert.match(source, /supabase!\.from\('leads'\)/);
   assert.match(source, /\.eq\('company_id', companyId\)/);
   assert.match(source, /select\('lead_id,operation,old_status,new_status,created_at'\)/);
   assert.match(source, /role !== 'owner'/);
+  assert.doesNotMatch(source, /getLeads|getEmployees|crmRepo/);
   assert.doesNotMatch(source + ui, /service_role|SUPABASE_SERVICE_ROLE_KEY|actor_id|invite_token|secret_hash/i);
 });
