@@ -29,6 +29,48 @@ jobs:
       - run: npm run lint
       - run: npm run build
 
+  legacy-migration-chain:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - name: Start clean PostgreSQL 17
+        run: >-
+          docker run --detach --name legacy-migrations-postgres
+          --env POSTGRES_PASSWORD=postgres
+          --health-cmd="pg_isready -U postgres"
+          --health-interval=2s --health-timeout=2s --health-retries=30
+          postgres:17-alpine
+      - name: Wait for PostgreSQL
+        run: |
+          for attempt in {1..30}; do
+            if [ "$(docker inspect --format='{{.State.Health.Status}}' legacy-migrations-postgres)" = "healthy" ]; then
+              exit 0
+            fi
+            sleep 2
+          done
+          docker logs legacy-migrations-postgres
+          exit 1
+      - name: Bootstrap synthetic Supabase Auth primitives
+        run: docker exec -i legacy-migrations-postgres psql -v ON_ERROR_STOP=1 -U postgres < supabase/tests/legacy_migration_chain_bootstrap.sql
+      - name: Apply every historical migration in filename order
+        run: |
+          shopt -s nullglob
+          migrations=(supabase/migrations/202609*.sql)
+          if [ "${#migrations[@]}" -ne 10 ]; then
+            echo "Expected the 10-file historical 202609 migration chain; found ${#migrations[@]}"
+            exit 1
+          fi
+          for migration in "${migrations[@]}"; do
+            echo "Applying ${migration} to disposable PostgreSQL 17"
+            docker exec -i legacy-migrations-postgres psql -v ON_ERROR_STOP=1 -U postgres < "$migration"
+          done
+      - name: Stop disposable PostgreSQL
+        if: always()
+        run: docker rm --force legacy-migrations-postgres
+
   ai-dispatcher-contract:
     runs-on: ubuntu-latest
     timeout-minutes: 10
