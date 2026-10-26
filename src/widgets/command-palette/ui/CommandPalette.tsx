@@ -47,7 +47,6 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
 
   const navigationActions = [
     { id: 'dashboard', label: 'Přehled firmy', icon: LayoutDashboard },
-    { id: 'sales', label: 'Prodejní přehled', icon: Kanban },
     { id: 'leads', label: 'Poptávky', icon: Kanban },
     { id: 'projects', label: 'Zakázky v realizaci', icon: HardHat },
     { id: 'employees', label: 'Tým', icon: Users },
