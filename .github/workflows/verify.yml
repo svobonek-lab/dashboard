@@ -331,6 +331,32 @@ jobs:
         if: always()
         run: docker rm --force jwt-postgres
 
+  stavbacore-staging-jwt-reconcile:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - name: Start disposable PostgreSQL 17
+        run: docker run --detach --name stavbacore-jwt-postgres --env POSTGRES_PASSWORD=postgres postgres:17-alpine
+      - name: Wait for PostgreSQL
+        run: |
+          for attempt in {1..30}; do
+            if docker exec stavbacore-jwt-postgres pg_isready -U postgres; then exit 0; fi
+            sleep 2
+          done
+          docker logs stavbacore-jwt-postgres
+          exit 1
+      - name: Apply metadata-shaped fixture and staging candidate
+        run: |
+          docker exec -i stavbacore-jwt-postgres psql -v ON_ERROR_STOP=1 -U postgres < supabase/tests/staging_jwt_reconcile_setup.sql
+          docker exec -i stavbacore-jwt-postgres psql -v ON_ERROR_STOP=1 -U postgres < supabase/staging/20261027_stavbacore_jwt_tenant_reconcile.sql
+          docker exec -i stavbacore-jwt-postgres psql -v ON_ERROR_STOP=1 -U postgres < supabase/tests/staging_jwt_reconcile_verify.sql
+      - name: Stop disposable PostgreSQL
+        if: always()
+        run: docker rm --force stavbacore-jwt-postgres
+
   jwt-tenant-pgtap:
     runs-on: ubuntu-latest
     timeout-minutes: 15

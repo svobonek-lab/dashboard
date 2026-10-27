@@ -55,6 +55,14 @@ current application contract.
 | `20261026000000_public_intake_rate_limit.sql` | HMAC rate-limit state and hardened server-side public-intake RPC | **Proposal only.** CI applies it only after a disposable synthetic `app_*` baseline; the repo's historical migration chain does not create that baseline. |
 | `20261027000000_app_email_outbox_runs.sql` | `app_email_outbox_runs`; service-role-only durable scheduler run summaries | Operational source migration; CI applies and verifies it in the disposable `outbox-run-evidence-contract`. Not applied to any live database. |
 
+## Staging schema reconciliation candidate
+
+| Candidate | Objects/signatures | Status |
+|---|---|---|
+| `supabase/staging/20261027_stavbacore_jwt_tenant_reconcile.sql` | StavbaCore Staging's exact 20-table `app_*` inventory; existing public `app_role(uuid)` / `app_can_lead(uuid,uuid)` helpers and 36-policy contract; trusted Auth hook; restrictive boundaries on 18 company-scoped relations; explicit authenticated grants matching existing policy commands | Candidate only. Based on metadata-only Actions run 40509027192, not the production snapshot. Verify on disposable PostgreSQL 17 before any staging rollout. Never apply this file to production. |
+
+This staging candidate addresses the live drift found on 2026-10-27. It does not replace or change the production-derived `20261025000000_secure_jwt_auth_hook.sql`, and it does not create absent lead events, notes/files tables, write policies, or connector objects. Full snapshot and rollout sequence: `docs/security/stavbacore-staging-reconciliation-2026-10-27.md`.
+
 ## Non-destructive consolidation order
 
 1. Keep the historical chain immutable and make its clean PostgreSQL 17 run a
