@@ -338,9 +338,9 @@ jobs:
       - uses: actions/checkout@v6
         with:
           persist-credentials: false
-      - uses: docker/setup-buildx-action@v3
+      - uses: docker/setup-buildx-action@v4.4.1
       - name: Build disposable PostgreSQL with pgTAP
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v7.4.0
         with:
           context: .
           file: supabase/tests/Dockerfile.jwt-pgtap
