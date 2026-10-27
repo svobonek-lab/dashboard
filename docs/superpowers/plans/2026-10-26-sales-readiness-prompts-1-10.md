@@ -153,4 +153,4 @@
 
 - [x] Review every prompt against files and runtime evidence, including the carried-over connector-card change from the prior active goal.
 - [x] Run a full final test/lint/build pass and `git diff --check` (root: 408/408; lint/build passed on 27 Oct 2026).
-- [x] Complete a fresh whole-branch review, fix the unsupported pilot-acceptance marketing claim through regression tests, and keep the reviewable PR #123 draft/unmerged. Current exact-head GitHub checks remain to be observed after the latest push.
+- [x] Complete a fresh whole-branch review, fix the unsupported pilot-acceptance marketing claim through regression tests, and keep the reviewable PR #123 draft/unmerged. Exact-head check status was refreshed on `9f7d457`: 19 successful, one expected staging metadata-only skip, both Preview deployments Ready, no merge conflicts. The transient disposable PostgreSQL startup failure passed on retry (attempt 2).
