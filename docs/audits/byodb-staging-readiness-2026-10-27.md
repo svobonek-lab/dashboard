@@ -23,6 +23,17 @@ The current BYODB repository uses the company database as source of truth only f
 
 The staging Preview tab was also checked while signed out: it showed the login page, so authenticated owner UI behavior could not be independently exercised in this browser session. The automated acceptance workflow must perform that check using its synthetic staging credentials after Actions billing is restored.
 
+## Implemented versus live-verified
+
+| Area | Implemented evidence | Live/release status |
+| --- | --- | --- |
+| SQL source adapters | PostgreSQL, MySQL, MariaDB and SQL Server adapters; connector suite passes 83 tests. | Six DB fixture tests were skipped because Docker Desktop's Linux engine is unavailable. No customer DB has been connected. |
+| Owner enrollment and NAS package | Owner UI/API, HMAC identity, and digest-pinned Synology package generator are covered by tests. | Enrollment is now blocked in the UI until an immutable image digest exists. No image is released. |
+| Schema scan, mapping and dry run | Connector metadata schema, mapping validation, dry-run and approval flows exist in code and tests. | Not exercised against an actual connected SQL source in staging. |
+| BYODB record reads and writes | Tenant-bound company-profile and lead projections plus queued, version-checked source writes have code and unit/contract tests. | No live source write/read acceptance has run; feature flags remain off. |
+| Tenant isolation | Two-company/employee acceptance scripts and the read-only schema/grant preflight are in the workflow. | Workflow cannot start until GitHub Actions billing is fixed. |
+| Synology installation | Compose templates, install/update scripts and operator documentation are present. | No published digest or installed customer NAS exists. |
+
 ## Next sequence
 
 1. Restore GitHub Actions billing or raise the spending limit; this requires an account owner and may incur charges.
