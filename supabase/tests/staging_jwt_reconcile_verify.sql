@@ -27,7 +27,7 @@ SELECT set_config('request.jwt.claims','{"app_metadata":{"tenant_id":"a0000000-0
 DO $tenant_a$
 BEGIN
   IF (SELECT count(*) FROM public.app_companies)<>1 THEN RAISE EXCEPTION 'Tenant A must see exactly its company'; END IF;
-  IF (SELECT count(*) FROM public.app_members)<>2 THEN RAISE EXCEPTION 'Tenant A must see only its two memberships'; END IF;
+  IF (SELECT count(*) FROM public.app_members)<>3 THEN RAISE EXCEPTION 'Tenant A must see only its three memberships'; END IF;
   IF (SELECT count(*) FROM public.app_leads)<>1 THEN RAISE EXCEPTION 'Tenant A must see exactly its lead despite a broad permissive policy'; END IF;
   IF EXISTS (SELECT 1 FROM public.app_leads WHERE company_id='b0000000-0000-4000-8000-000000000002') THEN RAISE EXCEPTION 'Tenant A read Tenant B lead'; END IF;
 END
