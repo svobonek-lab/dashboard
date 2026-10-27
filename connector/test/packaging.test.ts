@@ -31,13 +31,13 @@ test('connector Docker builds use the shared GHA cache and wait for tests', asyn
   const publish = await readFile(join(connectorRoot, '..', '.github', 'workflows', 'connector-publish.yml'), 'utf8');
   const rootVerify = await readFile(join(connectorRoot, '..', '.github', 'workflows', 'verify.yml'), 'utf8');
   assert.match(verify, /image:\s*\n\s+needs: connector/);
-  assert.equal((verify.match(/uses: docker\/build-push-action@v5/g) ?? []).length, 2);
+  assert.equal((verify.match(/uses: docker\/build-push-action@v7(?:\.\d+)?/g) ?? []).length, 2);
   assert.equal((verify.match(/cache-from: type=gha,scope=stavbaflow-connector/g) ?? []).length, 2);
   assert.equal((verify.match(/cache-to: type=gha,mode=max,scope=stavbaflow-connector/g) ?? []).length, 2);
-  assert.match(publish, /uses: docker\/build-push-action@v5/);
+  assert.match(publish, /uses: docker\/build-push-action@v7(?:\.\d+)?/);
   assert.match(publish, /cache-from: type=gha,scope=stavbaflow-connector/);
   assert.match(publish, /cache-to: type=gha,mode=max,scope=stavbaflow-connector/);
-  assert.match(rootVerify, /uses: docker\/build-push-action@v5/);
+  assert.match(rootVerify, /uses: docker\/build-push-action@v7(?:\.\d+)?/);
   assert.match(rootVerify, /cache-from: type=gha,scope=jwt-tenant-pgtap/);
   assert.match(rootVerify, /cache-to: type=gha,mode=max,scope=jwt-tenant-pgtap/);
 });
