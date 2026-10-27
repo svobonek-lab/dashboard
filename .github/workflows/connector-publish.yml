@@ -63,7 +63,7 @@ jobs:
         run: |
           test "$REQUESTED_VERSION" = "$(node -p "require('./connector/package.json').version")"
           echo "$REQUESTED_VERSION" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+$'
-      - uses: docker/setup-qemu-action@v3
+      - uses: docker/setup-qemu-action@v4
       - uses: docker/setup-buildx-action@v4.4.1
       - uses: docker/login-action@v3
         with:
