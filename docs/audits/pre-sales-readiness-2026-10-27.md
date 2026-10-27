@@ -119,3 +119,7 @@ Workflow `verify.yml` run [`40487979591`](https://github.com/svobonek-lab/dashbo
 - Supabase Auth reported custom access-token hook disabled and unconfigured.
 
 This conflicts with `20261025000000_secure_jwt_auth_hook.sql`, which expects 19 different `app_*` relations and helpers in `app_private`. Keep it unapplied; revise its schema matrix/preflight only after the actual metadata output has been reconciled, and retain separate review plus staging rollout evidence. Do not check this snapshot file into the repository because full policy and grant metadata could disclose security internals; the workflow run is the evidence link.
+
+### Refresh (27. 10. 2026, 13:05 UTC)
+
+After the GitHub Actions `SUPABASE_ACCESS_TOKEN` secret was updated, the manually dispatched [`verify` run #330](https://github.com/svobonek-lab/dashboard/actions/runs/40509027192) completed successfully. Its `staging-metadata-snapshot` job succeeded in 7 seconds. The output identified staging `xwzweltjvreqhjpbjrxa` and production `oncmtmrhmjlerbwkrecv` as distinct refs, reported empty table/column grant arrays, and again showed the custom access-token hook disabled and unconfigured. The tail of the relation inventory again showed RLS enabled and `FORCE RLS` disabled on the listed `public.app_*` tables. The script queried metadata and Auth configuration only; it performed no customer-row reads or writes. Keep the migration and connector staging rollout blocked pending schema/policy reconciliation and separate acceptance.
