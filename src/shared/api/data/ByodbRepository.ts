@@ -338,21 +338,24 @@ export class ModeAwareRepository implements ICRMRepository {
     this.activeMode = context.mode === 'byodb' ? 'byodb' : 'cloud';
     return this.activeMode;
   }
+  private async cloudOnlyUntilSourcePath(companyId: string): Promise<void> {
+    if (await this.repository(companyId) === 'byodb') throw new Error('BYODB_SOURCE_PATH_UNAVAILABLE');
+  }
   async getHealthStatus() { return this.fallback.getHealthStatus(); }
   async getLeads(orgId: string) { return await this.repository(orgId) === 'byodb' ? this.byodb.getLeads(orgId) : this.fallback.getLeads(orgId); }
   async saveLead(orgId: string, lead: Partial<Lead>) { return await this.repository(orgId) === 'byodb' ? this.byodb.saveLead(orgId, lead) : this.fallback.saveLead(orgId, lead); }
   async updateLeadStatus(orgId: string, leadId: string, status: string) { return await this.repository(orgId) === 'byodb' ? this.byodb.updateLeadStatus(orgId, leadId, status) : this.fallback.updateLeadStatus(orgId, leadId, status); }
   async deleteLead(orgId: string, leadId: string) { return await this.repository(orgId) === 'byodb' ? this.byodb.deleteLead(orgId, leadId) : this.fallback.deleteLead(orgId, leadId); }
-  async getLeadNotes(orgId: string, leadId: string) { return this.fallback.getLeadNotes(orgId, leadId); }
-  async addLeadNote(orgId: string, leadId: string, body: string) { return this.fallback.addLeadNote(orgId, leadId, body); }
-  async deleteLeadNote(orgId: string, noteId: string) { return this.fallback.deleteLeadNote(orgId, noteId); }
-  async getLeadFiles(orgId: string, leadId: string) { return this.fallback.getLeadFiles(orgId, leadId); }
-  async uploadLeadFile(orgId: string, leadId: string, file: File) { return this.fallback.uploadLeadFile(orgId, leadId, file); }
-  async deleteLeadFile(orgId: string, file: LeadStoredFile) { return this.fallback.deleteLeadFile(orgId, file); }
-  async getEmployees(orgId: string) { return this.fallback.getEmployees(orgId); }
-  async saveEmployee(orgId: string, employee: Partial<Employee>) { return this.fallback.saveEmployee(orgId, employee); }
-  async getProjects(orgId: string) { return this.fallback.getProjects(orgId); }
-  async saveProject(orgId: string, project: unknown) { return this.fallback.saveProject(orgId, project); }
+  async getLeadNotes(orgId: string, leadId: string) { await this.cloudOnlyUntilSourcePath(orgId); return this.fallback.getLeadNotes(orgId, leadId); }
+  async addLeadNote(orgId: string, leadId: string, body: string) { await this.cloudOnlyUntilSourcePath(orgId); return this.fallback.addLeadNote(orgId, leadId, body); }
+  async deleteLeadNote(orgId: string, noteId: string) { await this.cloudOnlyUntilSourcePath(orgId); return this.fallback.deleteLeadNote(orgId, noteId); }
+  async getLeadFiles(orgId: string, leadId: string) { await this.cloudOnlyUntilSourcePath(orgId); return this.fallback.getLeadFiles(orgId, leadId); }
+  async uploadLeadFile(orgId: string, leadId: string, file: File) { await this.cloudOnlyUntilSourcePath(orgId); return this.fallback.uploadLeadFile(orgId, leadId, file); }
+  async deleteLeadFile(orgId: string, file: LeadStoredFile) { await this.cloudOnlyUntilSourcePath(orgId); return this.fallback.deleteLeadFile(orgId, file); }
+  async getEmployees(orgId: string) { await this.cloudOnlyUntilSourcePath(orgId); return this.fallback.getEmployees(orgId); }
+  async saveEmployee(orgId: string, employee: Partial<Employee>) { await this.cloudOnlyUntilSourcePath(orgId); return this.fallback.saveEmployee(orgId, employee); }
+  async getProjects(orgId: string) { await this.cloudOnlyUntilSourcePath(orgId); return this.fallback.getProjects(orgId); }
+  async saveProject(orgId: string, project: unknown) { await this.cloudOnlyUntilSourcePath(orgId); return this.fallback.saveProject(orgId, project); }
   async getBranding(orgId: string) { return await this.repository(orgId) === 'byodb' ? this.byodb.getBranding(orgId) : this.fallback.getBranding(orgId); }
   async saveBranding(orgId: string, branding: CompanyBranding) { return await this.repository(orgId) === 'byodb' ? this.byodb.saveBranding(orgId, branding) : this.fallback.saveBranding(orgId, branding); }
 }

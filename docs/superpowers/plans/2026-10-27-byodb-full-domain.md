@@ -62,7 +62,7 @@
 
 **Files:** `src/shared/api/data/ByodbRepository.ts`, `src/shared/api/data/types.ts`, owner/employee feature callers, `tests/byodb-repository.test.ts`, owner Playwright tests.
 
-- [ ] Add failing tests that assert BYODB never calls cloud employee, project or note business-row writes.
+- [x] Add a failing regression test for employee, project, note and file cloud delegation in BYODB mode. Unsupported source paths now fail closed with `BYODB_SOURCE_PATH_UNAVAILABLE`; source-backed implementations remain open.
 - [ ] Implement projection mapping and durable operations; keep `app_members` identity lookup separate from operational employee directory.
 - [ ] Preserve pending/conflict messages and stale-version handling in the UI.
 - [ ] Verify root tests/lint/build and commit.
