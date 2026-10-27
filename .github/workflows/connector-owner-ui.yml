@@ -1,27 +1,24 @@
 name: connector-owner-ui
 
 on:
-  pull_request:
-    paths:
-      - .github/workflows/connector-owner-ui.yml
-      - .github/workflows/connector-staging-acceptance.yml
-      - package.json
-      - package-lock.json
-      - scripts/connector-owner-ui-e2e.mjs
-      - src/features/manage-integrations/**
-      - src/pages/owner/integrations/**
   workflow_dispatch:
+    inputs:
+      confirm_isolated_staging:
+        description: Run the owner UI acceptance against the configured isolated staging project
+        type: boolean
+        required: true
+        default: false
 
 permissions:
   contents: read
 
 concurrency:
-  group: connector-owner-ui-${{ github.event.pull_request.number || github.ref }}
+  group: connector-owner-ui-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
   staging-owner-ui:
-    if: github.repository == 'svobonek-lab/dashboard'
+    if: github.repository == 'svobonek-lab/dashboard' && inputs.confirm_isolated_staging == true
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:

@@ -34,7 +34,9 @@ test('staging acceptance does not apply SQL and release requires evidence for th
   assert.match(acceptance, /playwright install --with-deps chromium/);
   assert.match(ownerUiStep, /npm run test:connector:owner-ui/);
   assert.match(ownerUiStep, /STAGING_OWNER_A_EMAIL:\s*\$\{\{ secrets\.STAGING_OWNER_A_EMAIL \}\}/);
-  assert.match(ownerUiWorkflow, /pull_request:/);
+  assert.doesNotMatch(ownerUiWorkflow, /pull_request:/);
+  assert.match(ownerUiWorkflow, /workflow_dispatch:[\s\S]+confirm_isolated_staging:[\s\S]+default:\s*false/);
+  assert.match(ownerUiWorkflow, /inputs\.confirm_isolated_staging\s*==\s*true/);
   assert.match(ownerUiWorkflow, /STAGING_OWNER_A_PASSWORD:\s*\$\{\{ secrets\.STAGING_OWNER_A_PASSWORD \}\}/);
   assert.match(ownerUiWorkflow, /npm run test:connector:owner-ui/);
   assert.match(ownerUiScript, /getByRole\('button',\s*\{\s*name:\s*'Připojit vlastní databázi'/);
