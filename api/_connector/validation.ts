@@ -1,4 +1,4 @@
-import { BYODB_OPERATION_ENTITY_TYPES, CANONICAL_ENTITY_TYPES, CANONICAL_PAYLOAD_FIELDS, type ConnectorDryRunSummaryV1, type ConnectorMappingDefinitionV1, type ConnectorSourceSchemaV1, type IngestEnvelopeV1 } from '../../shared/connectorProtocol.js';
+import { BYODB_OPERATION_ENTITY_TYPES, BYODB_PROJECTION_ENTITY_TYPES, CANONICAL_ENTITY_TYPES, CANONICAL_PAYLOAD_FIELDS, type ConnectorDryRunSummaryV1, type ConnectorMappingDefinitionV1, type ConnectorSourceSchemaV1, type IngestEnvelopeV1 } from '../../shared/connectorProtocol.js';
 import { validateCanonicalRecord } from '../../connector/src/protocol/canonical.js';
 import { ConnectorHttpError } from './http.js';
 import { z } from 'zod';
@@ -61,7 +61,7 @@ const byodbOperationAckSchema = z.strictObject({
 const byodbOperationRequestSchema = z.discriminatedUnion('action', [
   z.strictObject({ action: z.literal('create'), companyId: z.string().uuid(), connectorId: z.string().uuid(), operation: z.unknown() }),
   z.strictObject({ action: z.literal('context'), companyId: z.string().uuid() }),
-  z.strictObject({ action: z.literal('records'), companyId: z.string().uuid(), entityType: z.enum(['company', 'lead']).optional() }),
+  z.strictObject({ action: z.literal('records'), companyId: z.string().uuid(), entityType: z.enum(BYODB_PROJECTION_ENTITY_TYPES).optional() }),
   z.strictObject({ action: z.literal('set_mode'), companyId: z.string().uuid(), connectorId: z.string().uuid().nullable(), mode: z.enum(['managed_cloud', 'byodb']), driver: z.enum(['postgres', 'mysql', 'mariadb', 'mssql']).nullable(), writeEnabled: z.boolean() }),
   z.strictObject({ action: z.literal('list'), companyId: z.string().uuid(), cursor: z.string().uuid().optional(), limit: z.number().int().min(1).max(50).optional() }),
   z.strictObject({ action: z.literal('poll'), limit: z.number().int().min(1).max(50).optional() }),
