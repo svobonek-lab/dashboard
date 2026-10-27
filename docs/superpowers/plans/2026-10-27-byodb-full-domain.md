@@ -42,8 +42,8 @@
 
 **Files:** `connector/src/adapters/mappedOperations.ts`, `connector/src/api/client.ts`, `connector/src/commands/processOperations.ts`, `api/_connector/routes/operations.ts`, `connector/test/mappedOperations.test.ts`, `connector/test/adapters.integration.test.ts`.
 
-- [ ] Add failing unit and disposable DB fixture tests for create/update/delete, replay, conflict and non-generated stable keys on all three SQL engines.
-- [x] Run targeted tests to confirm current company/lead restrictions reject owner creates for operational employees and projects. The broader fixture tests above remain open.
+- [x] Add failing unit and disposable DB fixture tests for create/update/delete, replay, conflict and non-generated stable keys on all three SQL engines. The three new source-write cases passed twice (26/26 full adapter suite, zero skips).
+- [x] Run targeted tests to confirm current company/lead restrictions reject owner creates for operational employees and projects before extending the contract.
 - [x] Extend connector and API validators with entity-specific required fields and owner-only operational employee/project writes. Targeted tests, 420 root tests, 84 active connector tests, lint and builds pass; SQL and relationship checks remain separate tasks.
 - [ ] Reject dangling lead/customer references and cross-company IDs before enqueue and before source commit.
 - [ ] Verify tests and commit.
@@ -98,4 +98,4 @@
 
 ## Current evidence
 
-PR #127 is merged. The connector has 83 passing unit tests and all six fixture cases passed twice locally after the host restart. GitHub-hosted Actions jobs remain blocked before execution. No successful full-domain staging acceptance or released image digest exists.
+PR #127 is merged. The connector's original six fixture cases passed twice locally after the host restart. Operational employee/project CRUD, replay and conflict now also pass on disposable PostgreSQL, MariaDB and SQL Server. GitHub-hosted Actions jobs remain blocked before execution. No successful full-domain staging acceptance or released image digest exists.

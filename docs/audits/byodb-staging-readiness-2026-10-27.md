@@ -19,6 +19,8 @@ Local verification on the PR #127 work branch passed `npm test` (417/417), `npm 
 
 After the 2026-10-27 Windows restart, Docker Engine 29.9.2 started. Disposable PostgreSQL, MariaDB and SQL Server fixtures became healthy, SQL Server initialization succeeded, and `RUN_DB_INTEGRATION=1 npm run test:integration --prefix connector` passed twice (22/22, zero skips both times). The six previously skipped cases are now locally verified. `docker compose -f connector/compose.test.yaml down -v` removed the synthetic containers and network; Docker Desktop remains running. This does not replace staging acceptance or image release evidence.
 
+The expanded operational source-write fixture suite also passed twice (26/26, zero skips) on disposable PostgreSQL, MariaDB and SQL Server. It covers employee and project create, idempotent replay, version-checked update, stale conflict and delete against limited writer accounts. The first run exposed PostgreSQL primary-key discovery through `information_schema` under a SELECT-only account; the adapter now reads primary-key metadata from `pg_catalog`. Root tests passed 420/420, and root/connector lint and connector build passed. These are local fixture results, not proof of a staging installation.
+
 ## Product scope still requiring a release decision
 
 The current BYODB repository uses the company database as source of truth only for the mapped company profile and lead records. Employees, projects, lead notes, and files still use the existing StavbaFlow cloud repository. This is a hybrid connection, not a full replacement of every application's data store. The owner setup flow and SQL contracts do not currently define mappings for those other entities.
