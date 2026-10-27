@@ -148,7 +148,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onSuccess, expectedRole })
     <div className="min-h-screen bg-surface-secondary flex font-sans">
       <aside className="login-value-panel hidden lg:flex">
         <div className="relative z-10 max-w-lg">
-          <div className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1.5 text-xs font-semibold text-blue-100"><ShieldCheck className="h-4 w-4" /> Ověřený firemní pilot</div>
+          <div className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1.5 text-xs font-semibold text-blue-100"><ShieldCheck className="h-4 w-4" /> Firemní pilot StavbaFlow</div>
           <p className="mt-8 text-sm font-semibold text-blue-200">StavbaFlow</p>
           <h1 className="mt-3 text-4xl font-semibold leading-tight tracking-[-0.04em] text-white">Zakázky, tým a další krok. Bez zbytečného chaosu.</h1>
           <p className="mt-5 max-w-md text-base leading-7 text-slate-300">Jednoduchý pracovní prostor pro menší stavební firmu. Každý vidí jen to, co potřebuje ke své práci.</p>

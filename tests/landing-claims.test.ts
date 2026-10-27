@@ -3,6 +3,7 @@ import { readFileSync } from 'node:fs';
 import test from 'node:test';
 
 const landing = readFileSync(new URL('../src/pages/public/landing/ui/LandingPage.tsx', import.meta.url), 'utf8');
+const loginPage = readFileSync(new URL('../src/pages/auth/login/ui/LoginPage.tsx', import.meta.url), 'utf8');
 
 test('landing marks every unavailable pilot capability it mentions as preparing or outside scope', () => {
   const heading = landing.indexOf('Mimo první pilot');
@@ -25,6 +26,7 @@ test('landing claim changelog records unsupported features and illustrative calc
   assert.match(changelog, /připravujeme|mimo první pilot/i);
   assert.match(changelog, /NO_ACTIVE_MEMBERSHIP/);
   assert.match(changelog, /nasazení draft PR/);
+  assert.match(changelog, /Ověřený firemní pilot/);
 });
 
 test('Founding Pilot promise still names its onboarding and delivery scope', () => {
@@ -45,4 +47,9 @@ test('sales copy does not describe the current staging flow as accepted until ow
   assert.doesNotMatch(landing, /ukážeme ověřený tok formulář/);
   assert.match(landing, /Funkce plánované pro první nasazení/);
   assert.match(landing, /před zákaznickými daty/);
+});
+
+test('owner login badge does not claim an unverified pilot acceptance', () => {
+  assert.doesNotMatch(loginPage, /Ověřený firemní pilot/);
+  assert.match(loginPage, /Firemní pilot StavbaFlow/);
 });

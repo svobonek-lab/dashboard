@@ -35,11 +35,11 @@
 
 **Interfaces:** Consume the existing `ProtectedRoute` and public-demo route dispatch. Produce an owner route allowlist with no `/sales`, an unauthenticated demo UI without `OwnerLayout`, and optionally `/admin/sales` protected as `platform_admin`.
 
-- [ ] Add regression tests proving owner nav/allowlist/routing omit `/sales` and the public demo does not mount `OwnerLayout`.
-- [ ] Run targeted tests and observe the expected failures.
-- [ ] Implement the route/layout changes, retaining cockpit only under platform-admin authorization if still useful.
-- [ ] Run targeted tests, `npm test`, `npm run lint`, and `npm run build`.
-- [ ] Commit Task 1.
+- [x] Add regression tests proving owner nav/allowlist/routing omit `/sales` and the public demo does not mount `OwnerLayout`.
+- [x] Run targeted tests and observe the expected failures.
+- [x] Implement the route/layout changes, retaining cockpit only under platform-admin authorization if still useful.
+- [x] Run targeted tests, `npm test`, `npm run lint`, and `npm run build`.
+- [x] Commit Task 1.
 
 ### Task 2: Align landing claims with pilot scope
 
@@ -47,11 +47,11 @@
 
 **Interfaces:** Consume `PILOT_UNAVAILABLE_ROUTES` and existing pilot pricing/contact copy. Produce only claims supported by the live pilot and a changelog of all changed claims.
 
-- [ ] Add tests for unavailable-feature wording, illustrative calculator copy, and claims changelog coverage.
-- [ ] Run targeted tests and observe expected failures.
-- [ ] Edit unsupported claims without inventing metrics, users, references, or capabilities.
-- [ ] Run targeted tests, full `npm test`, lint, and build.
-- [ ] Commit Task 2.
+- [x] Add tests for unavailable-feature wording, illustrative calculator copy, and claims changelog coverage.
+- [x] Run targeted tests and observe expected failures.
+- [x] Edit unsupported claims without inventing metrics, users, references, or capabilities.
+- [x] Run targeted tests, full `npm test`, lint, and build.
+- [x] Commit Task 2. (A follow-up copy correction is included in PR #123.)
 
 ### Task 3: Secure public inquiry intake
 
@@ -59,11 +59,11 @@
 
 **Interfaces:** Preserve the existing public tenant key and request idempotency contract. The server derives an HMAC IP hash from a trusted platform client-IP header using a dedicated configured secret; the database limiter keys by company and that hash. Raw IPs are never stored. Direct untrusted clients cannot supply or choose the hash.
 
-- [ ] Add API/SQL tests for 5 requests per 10 minutes, field maxima (120/30/254/4000), honeypot drop, duplicate idempotency, and direct anonymous RPC bypass denial.
-- [ ] Run targeted tests and observe expected failures.
-- [ ] Implement the proxy, migration, UI honeypot and bounded validation; default closed when the hash secret or trusted IP is missing.
-- [ ] Run target tests and the disposable PostgreSQL contract; do not apply to staging or production.
-- [ ] Commit Task 3.
+- [x] Add API/SQL tests for 5 requests per 10 minutes, field maxima (120/30/254/4000), honeypot drop, duplicate idempotency, and direct anonymous RPC bypass denial.
+- [x] Run targeted tests and observe expected failures.
+- [x] Implement the proxy, migration, UI honeypot and bounded validation; default closed when the hash secret or trusted IP is missing.
+- [x] Run target tests and the disposable PostgreSQL contract; do not apply to staging or production.
+- [x] Commit Task 3.
 
 ### Task 4: Legal identity and release checklist
 
@@ -71,11 +71,11 @@
 
 **Interfaces:** Use existing company Vite variables. Missing ICO/address produces a visible warning only under `import.meta.env.DEV`; production render remains unchanged. Checklist items name an owner/verifier and concrete evidence.
 
-- [ ] Add tests for development-only warnings and working legal links.
-- [ ] Run targeted tests and observe expected failures.
-- [ ] Document every requested environment variable and release gate without changing legal copy substantively.
-- [ ] Run targeted tests, full test, lint, and build.
-- [ ] Commit Task 4.
+- [x] Add tests for development-only warnings and working legal links.
+- [x] Run targeted tests and observe expected failures.
+- [x] Document every requested environment variable and release gate without changing legal copy substantively.
+- [x] Run targeted tests, full test, lint, and build.
+- [x] Commit Task 4.
 
 ### Task 5: Responsive platform-admin company directory
 
@@ -83,11 +83,11 @@
 
 **Interfaces:** Desktop retains the existing table at 1280 px. At <=430 px render cards with name, slug, onboarding status, users, plan and a two-column action grid. Modal content scrolls within viewport.
 
-- [ ] Add responsive rendering and modal layout assertions.
-- [ ] Run targeted tests and observe expected failures.
-- [ ] Implement mobile cards, header truncation/hiding, and bounded scrollable dialog.
-- [ ] Verify at 375 px and 1280 px in Playwright; run full test, lint, and build.
-- [ ] Commit Task 5.
+- [x] Add responsive rendering and modal layout assertions.
+- [x] Run targeted tests and observe expected failures.
+- [x] Implement mobile cards, header truncation/hiding, and bounded scrollable dialog.
+- [x] Verify at 375 px and 1280 px in Playwright; run full test, lint, and build.
+- [x] Commit Task 5.
 
 ### Task 6: Staging-to-migration map and PostgreSQL 17 CI
 
@@ -95,11 +95,11 @@
 
 **Interfaces:** Map every `supabase/staging/*_contract.sql` object to numbered migrations by object name/signature/policy. Preserve staging files; CI must fail if all numbered migrations cannot run in order on an empty PostgreSQL 17 database with the minimum Supabase roles/extensions bootstrapped.
 
-- [ ] Add a CI/harness test showing ordered migration execution on clean Postgres 17.
-- [ ] Run it and observe expected failure before the job/harness exists.
-- [ ] Add the workflow job and complete the table with coverage, partial coverage, and not-covered statuses.
-- [ ] Run SQL verification locally if Docker/Postgres 17 is available and inspect the workflow command path.
-- [ ] Commit Task 6.
+- [x] Add a CI/harness test showing ordered migration execution on clean Postgres 17.
+- [x] Run it and observe expected failure before the job/harness exists.
+- [x] Add the workflow job and complete the table with coverage, partial coverage, and not-covered statuses.
+- [x] Run SQL verification in disposable GitHub PostgreSQL 17 CI; local Docker/Postgres was unavailable.
+- [x] Commit Task 6.
 
 ### Task 7: Remove unused website-analysis endpoint safely
 
@@ -107,11 +107,11 @@
 
 **Interfaces:** Preserve `lib/gemini.ts` and `@google/genai` if incoming-lead still consumes them. No Vercel API discovery may build the archived `.txt` file.
 
-- [ ] Add a call-graph regression proving there is no app fetch/client and no dev route after archive.
-- [ ] Run targeted test and observe expected failure.
-- [ ] Archive only after proving no supported caller; remove unused server dependencies only after repository-wide checks.
-- [ ] Run root and connector test/lint/build.
-- [ ] Commit Task 7.
+- [x] Add a call-graph regression proving there is no app fetch/client and no dev route after archive.
+- [x] Run targeted test and observe expected failure.
+- [x] Archive only after proving no supported caller; remove unused server dependencies only after repository-wide checks.
+- [x] Run root and connector test/lint/build.
+- [x] Commit Task 7.
 
 ### Task 8: Opt-in staging Playwright main-flow smoke tests
 
@@ -119,11 +119,11 @@
 
 **Interfaces:** `BASE_URL`, `OWNER_EMAIL`, `OWNER_PASSWORD`, `EMPLOYEE_EMAIL`, `EMPLOYEE_PASSWORD`, `OTHER_COMPANY_OWNER_EMAIL`, and `OTHER_COMPANY_OWNER_PASSWORD` are environment-only. Workflow runs only on `workflow_dispatch` or PR label `e2e`; tests use synthetic, uniquely named records and never print credentials.
 
-- [ ] Add five independent tests for owner menu, public idempotency, employee assignment scope, tenant REST isolation, and logout tenant-cache clearing.
-- [ ] Run against local mocked/fixture pages where possible; no tests may target production. External staging run is reported only if configured secrets and non-production base URL exist.
-- [ ] Add the opt-in workflow job, scoped environment and secret bindings.
-- [ ] Run static tests, Playwright local/fixture tests, full root suite, lint, and build.
-- [ ] Commit Task 8.
+- [x] Add five independent tests for owner menu, public idempotency, employee assignment scope, tenant REST isolation, and logout tenant-cache clearing.
+- [x] Run against local mocked/fixture pages where possible; no tests target production. External staging run is blocked by missing fixture variables and acceptance contract.
+- [x] Add the opt-in workflow job, scoped environment and secret bindings.
+- [x] Run static tests, Playwright local/fixture tests, full root suite, lint, and build.
+- [x] Commit Task 8.
 
 ### Task 9: Dependency audit, logout cache cleanup, and data export
 
@@ -146,11 +146,11 @@
 - [x] Add tests for DSN gating, PII-free scope and durable outbox run evidence.
 - [x] Run targeted tests and observe expected failures.
 - [x] Implement the minimal monitoring/runbook changes; add SQL only when repository evidence proves no existing durable result table/RPC.
-- [ ] Run full root and connector tests, lint, build and disposable SQL tests. GitHub CI job is added; local PostgreSQL execution is blocked because Docker is not running.
-- [ ] Commit Task 10.
+- [x] Run full root and connector tests, lint, build and disposable SQL tests. GitHub CI job passed; local PostgreSQL execution is blocked because Docker is not running.
+- [x] Commit Task 10.
 
 ### Final audit
 
-- [ ] Review every prompt against files and runtime evidence, including the carried-over connector-card change from the prior active goal.
-- [ ] Run a full final test/lint/build pass and `git diff --check`.
-- [ ] Complete one fresh whole-branch review, fix Critical/Important findings through TDD, and open a reviewable PR without merging or enabling auto-merge.
+- [x] Review every prompt against files and runtime evidence, including the carried-over connector-card change from the prior active goal.
+- [x] Run a full final test/lint/build pass and `git diff --check` (root: 408/408; lint/build passed on 27 Oct 2026).
+- [x] Complete a fresh whole-branch review, fix the unsupported pilot-acceptance marketing claim through regression tests, and keep the reviewable PR #123 draft/unmerged. Current exact-head GitHub checks remain to be observed after the latest push.
