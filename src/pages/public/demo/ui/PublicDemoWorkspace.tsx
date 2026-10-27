@@ -4,7 +4,6 @@ import { LeadsKanban } from '@/features/manage-leads';
 import { OwnerDashboard } from '../../../../widgets/owner-dashboard';
 import { generateRealisticEmployees, generateRealisticLeads } from '@/features/public-demo';
 import { DEFAULT_DEMO_ORG_ID } from '@/shared/api/supabase';
-import { OwnerLayout } from '../../../../widgets/workspace-shell';
 import { RouterProvider, useRouter } from '@/shared/lib/router';
 import type { CompanyBranding } from '@/entities/company';
 
@@ -92,30 +91,39 @@ const PublicDemoContent: React.FC = () => {
   const isKanban = pathname === '/demo/leads';
 
   return (
-    <OwnerLayout
-      leads={DEMO_LEADS}
-      readOnlyMode="demo"
-      onExitReadOnly={() => window.location.assign('/')}
-    >
+    <div className="min-h-screen bg-slate-50 text-slate-900" aria-label="Public demo">
       <p className="sr-only">Veřejné demo je pouze pro čtení a používá výhradně syntetická data.</p>
-      {isKanban ? (
-        <LeadsKanban
-          leads={DEMO_LEADS}
-          onSelectLead={() => undefined}
-          onUpdateLeadStatus={() => undefined}
-          readOnly
-        />
-      ) : (
-        <OwnerDashboard
-          branding={DEMO_BRANDING}
-          leads={DEMO_LEADS}
-          employees={DEMO_EMPLOYEES}
-          readOnly
-          onSelectLead={() => navigate('/demo/leads')}
-          onNavigateTab={(tab) => navigate(tab === 'leads' ? '/demo/leads' : '/demo')}
-        />
-      )}
-    </OwnerLayout>
+      <header className="border-b border-slate-200 bg-white">
+        <div className="mx-auto flex min-h-16 max-w-7xl flex-wrap items-center justify-between gap-3 px-4 py-3 sm:px-6">
+          <a href="/" className="text-base font-bold tracking-tight text-slate-950">StavbaFlow · demo</a>
+          <nav aria-label="Public demo navigation" className="flex items-center gap-2">
+            <button type="button" aria-current={!isKanban ? 'page' : undefined} onClick={() => navigate('/demo')} className="rounded-lg px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100">Přehled</button>
+            <button type="button" aria-current={isKanban ? 'page' : undefined} onClick={() => navigate('/demo/leads')} className="rounded-lg px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100">Poptávky</button>
+          </nav>
+          <a href="/login" className="rounded-lg border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">Přihlásit se</a>
+        </div>
+      </header>
+      <main className="mx-auto w-full max-w-7xl px-4 py-6 sm:px-6">
+        <div className="mb-5 rounded-xl border border-blue-100 bg-blue-50 px-4 py-3 text-sm text-blue-900">Veřejné demo · pouze syntetická data · pouze pro čtení</div>
+        {isKanban ? (
+          <LeadsKanban
+            leads={DEMO_LEADS}
+            onSelectLead={() => undefined}
+            onUpdateLeadStatus={() => undefined}
+            readOnly
+          />
+        ) : (
+          <OwnerDashboard
+            branding={DEMO_BRANDING}
+            leads={DEMO_LEADS}
+            employees={DEMO_EMPLOYEES}
+            readOnly
+            onSelectLead={() => navigate('/demo/leads')}
+            onNavigateTab={(tab) => navigate(tab === 'leads' ? '/demo/leads' : '/demo')}
+          />
+        )}
+      </main>
+    </div>
   );
 };
 

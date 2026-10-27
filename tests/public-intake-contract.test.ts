@@ -6,6 +6,7 @@ import { readFileSync } from 'node:fs';
 const sql = readFileSync(new URL('../supabase/staging/pilot_public_intake.sql', import.meta.url), 'utf8');
 const supabaseClient = readFileSync(new URL('../src/shared/api/supabaseClient.ts', import.meta.url), 'utf8');
 const widget = readFileSync(new URL('../src/features/submit-inquiry/ui/WidgetIframePage.tsx', import.meta.url), 'utf8');
+const intakeApi = readFileSync(new URL('../api/public-intake.ts', import.meta.url), 'utf8');
 const app = readFileSync(new URL('../src/app/App.tsx', import.meta.url), 'utf8');
 const protectedRoute = readFileSync(new URL('../src/app/ProtectedRoute.tsx', import.meta.url), 'utf8');
 
@@ -39,7 +40,8 @@ test('public intake never inherits an authenticated dashboard session', () => {
   assert.match(supabaseClient, /autoRefreshToken:\s*false/);
   assert.match(supabaseClient, /detectSessionInUrl:\s*false/);
   assert.match(widget, /publicSupabase\.rpc\('app_get_public_company'/);
-  assert.match(widget, /publicSupabase\.rpc\('app_submit_public_lead'/);
+  assert.match(widget, /fetch\('\/api\/public-intake'/);
+  assert.match(intakeApi, /p_client_ip_hash:\s*input\.clientIpHash/);
   assert.doesNotMatch(widget, /supabase\.rpc\('app_get_public_company'/);
   assert.doesNotMatch(widget, /supabase\.rpc\('app_submit_public_lead'/);
 });

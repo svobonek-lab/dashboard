@@ -1,0 +1,48 @@
+# StavbaFlow go-live checklist
+
+This checklist is for the operator and the person verifying a release. Keep production credentials in the matching provider's secret store. `.env.example` contains names and placeholders only. A checked box must have the linked run, screenshot, configuration record, or approved document as evidence. Never run a staging migration against production as part of a release.
+
+## Environment inventory
+
+Set only the variables needed by the selected surface and feature. `VITE_*` values are compiled into browser code and must never contain secrets. Server keys belong in Vercel server environment variables or the named provider's secret store.
+
+| Variables | Scope | Owner | Evidence / condition |
+| --- | --- | --- | --- |
+| `VITE_DEPLOYMENT_SURFACE`, `VITE_APP_URL`, `VITE_DEMO_URL` | Landing/app Preview and production build | Release operator | Inspect the built URLs; demo resolves to the reviewed synthetic read-only route. |
+| `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` | App Preview or production; service key server-only | Supabase operator | Confirm the public URL and anon key match that environment. Confirm service key is server-only and masked in provider settings. |
+| `STAGING_SUPABASE_URL`, `STAGING_SUPABASE_PROJECT_REF`, `STAGING_PLATFORM_ADMIN_USER_ID`, `STAGING_SUPABASE_SERVICE_ROLE_KEY`, `STAGING_APP_URL` | Isolated staging only | Staging operator | Show metadata proving the ref is non-production and the URL matches it. Do not copy the example placeholders or production values. |
+| `SUPABASE_ACCESS_TOKEN` | GitHub Actions metadata-only staging snapshot | Supabase operator | Use a scoped PAT restricted to the StavbaCore Staging project with Database Read and Auth Config Read only, plus a short expiry. The workflow runs read-only catalog SQL and GETs Auth config. See [Supabase PAT scoping](https://supabase.com/docs/guides/platform/personal-access-tokens) and the [Auth config read permission](https://supabase.com/docs/reference/api/v1-get-auth-service-config). |
+| `VITE_APP_SCHEMA_READS`, `VITE_PILOT_WRITES` | App Preview/production build | Product owner | Keep disabled until reviewed RLS/grants and the exact environment's pilot acceptance evidence are approved. |
+| `PUBLIC_INTAKE_HASH_SECRET` | Vercel server environment for public intake | Release operator | Configure at least 32 random characters; submit a synthetic form and verify rate limiting without storing raw IP. |
+| `VITE_COMPANY_NAME`, `VITE_COMPANY_ICO`, `VITE_COMPANY_ADDRESS`, `VITE_COMPANY_EMAIL`, `VITE_COMPANY_PHONE`, `VITE_BOOKING_URL` | Public landing build | Business owner | Verify the legal identity against approved business records; verify contact links and HTTPS booking URL. No test or placeholder identity in production. |
+| `GEMINI_API_KEY`, `AI_INBOX_SIGNING_SECRET` | Server secrets for AI services | AI operator | Verify provider project, quota, webhook token rotation, and no secret in the browser bundle or logs. |
+| `CRON_SECRET`, `RESEND_API_KEY`, `EMAIL_FROM`, `APP_URL` | Server secrets/config for notifications and auth links | Email operator | Deliver a staging test email; verify sender domain and exact HTTPS app redirect. Confirm cron rejects missing/wrong secret. |
+| `VITE_SENTRY_DSN` | Client build for the selected environment | Monitoring owner | Trigger a synthetic staging error and verify the event has no customer content, access token, or form fields. |
+| `STRIPE_WEBHOOK_SECRET`, `STRIPE_SECRET_KEY`, `STRIPE_BILLING_MODE`, `STRIPE_PRICE_ID`, `STRIPE_PRICE_PILOT_ID`, `STRIPE_PRICE_STARTER_ID`, `STRIPE_PRICE_GROWTH_ID`, `BILLING_RETURN_URL` | Billing server config; keys are server-only | Billing owner | Preview uses test mode and test prices. Verify signed webhook and an unpaid/invalid event denial. Production billing requires a separate business and legal approval. |
+| `VITE_CONNECTOR_ENABLED`, `VITE_BYODB_ENABLED`, `VITE_CONNECTOR_IMAGE` | App build for accepted connector release | Connector owner | Enable only after immutable image digest, separate staging DB, synthetic source, tenant isolation, replay and recovery evidence are reviewed. |
+| `PAID_ONBOARDING_ENABLED`, `VITE_PAID_REGISTRATION_ENABLED` | Paid onboarding server/client gates | Product owner | Keep false until legal acceptance, paid provisioning, staging Checkout, and account isolation are accepted. |
+
+## Release gates
+
+| Check | Owner | Evidence |
+| --- | --- | --- |
+| [ ] Review the exact branch diff and all required CI checks; no auto-merge or direct push to `main`. | Code owner | PR link and green required checks for the reviewed commit. |
+| [ ] Confirm Preview uses isolated synthetic data and an isolated non-production Supabase project; production stays read-only during acceptance. | Supabase operator | Environment settings plus project metadata showing URL/ref match and no shared production ref. |
+| [ ] Review Supabase Data API exposed schemas, tables, functions, grants and auto-exposure settings against the exact application data path; expose only the reviewed minimum. | Supabase operator | Metadata-only snapshot and reviewed configuration evidence; do not enable broad exposure to make a blocked UI appear functional. |
+| [ ] Run migrations only on disposable PostgreSQL first; have a human review the SQL proposal and apply it manually to the approved staging project. | Database owner | Disposable SQL job and separately recorded staging approval/run. Production application requires its own release approval. |
+| [ ] Verify login, owner, employee and platform-admin route separation with synthetic accounts. | QA owner | Playwright run link with route and role results; no production credentials or customer writes. |
+| [ ] Verify tenant isolation, public inquiry idempotency/rate limit, logout cache clearing, and RLS-only export behavior. | QA and data owner | E2E evidence plus fixtures that contain only synthetic records. |
+| [ ] Confirm legal identity and approved VOP, privacy notice, and DPA; keep paid onboarding disabled until reviewed. | Business/legal owner | Approved legal artifacts and exact identity/configuration record. |
+| [ ] Verify Stripe test-mode purchase, signed webhook, unpaid rejection, idempotent provisioning, and cancellation behavior before any production billing. | Billing owner | Test-mode event IDs and synthetic tenant acceptance record. |
+| [ ] Verify email outbox scheduling, provider delivery, retry/recovery, and duplicate suppression. | Email operator | Staging delivery plus worker run evidence; do not mark queued mail as delivered. |
+| [ ] Document the AI feature's intended purpose and operator/customer roles; provide fit-for-purpose AI literacy to staff who operate or use the extraction flow; keep human review before acting on extracted data and record whether any Article 50 transparency duty applies to the real workflow. | AI and privacy owners | Short use-case and responsibility record, training evidence, and documented transparency assessment. AI Act Article 4 has applied since 2 February 2025; see the [European Commission application timeline](https://digital-strategy.ec.europa.eu/en/policies/regulatory-framework-ai) and [Regulation (EU) 2024/1689, Article 4](https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:32024R1689). |
+| [ ] Review Gemini processing before accepting customer emails: confirm project/billing mode and current provider terms/DPA, document the full subject/body sent to the fixed model, check minimization/redaction and retention, and include the processing in customer-facing privacy information. | AI and privacy owners | Approved data-flow record and configuration evidence for the exact project; do not send customer email until reviewed. |
+| [ ] Verify Sentry environment, release, alert routing and PII filtering with synthetic errors. | Monitoring owner | Synthetic event link and reviewed privacy context. |
+| [ ] For BYODB, record the exact Synology model, DSM version, CPU architecture, Container Manager availability, registry/network and resource prerequisites; verify source backup, SELECT-only access, field map, dry run, explicit owner approval, write scope, rollback, and deletion/export ownership. | Connector owner and customer admin | Signed acceptance for each supported NAS profile and the exact immutable image digest with synthetic data. Customer DB credentials stay in the customer's private secret store. Synology's [image installation](https://kb.synology.com/sv-se/DSM/help/ContainerManager/docker_image), [container setup](https://kb.synology.com/en-me/DSM/help/ContainerManager/docker_container?version=7), and [CPU architecture list](https://kb.synology.com/de-de/DSM/tutorial/What_kind_of_CPU_does_my_NAS_have) show why the tested profile must be explicit. |
+| [ ] Record deployment commit, rollback commit, operator, and verification window. | Release operator | Release entry in the operator runbook with links to the preceding evidence. |
+
+## Stop conditions
+
+- Stop if the staging URL/ref cannot be proven separate from production, if a release gate lacks evidence, or if a check uses customer records where synthetic data would suffice.
+- Never run `supabase db push`, `supabase db reset`, deploy functions, enable auto-migration, or enable auto-merge as part of this checklist.
+- Treat missing legal identity, missing server secrets, failed tenant checks, failed webhook verification, or missing monitoring as blockers; do not mark the release ready by replacing a check with an unverified claim.

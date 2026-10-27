@@ -25,25 +25,30 @@ import {
 } from 'lucide-react';
 import { useRouter } from '@/shared/lib/router';
 import { buildSalesContact, getSalesContactMode } from '@/pages/public/landing';
+import { getLegalIdentityReadiness } from '../model/legalReadiness';
 import { resolveDemoUrl } from '@/shared/lib/demoUrl';
 
 const PUBLIC_CONTACT_EMAIL = 'svobonek@gmail.com';
 const PUBLIC_CONTACT_ADDRESS = 'Vincence Makovského 4428/11';
+const LANDING_ENV = ((import.meta as any).env || {}) as Record<string, unknown>;
 const LEGAL_COMPANY_NAME = ((import.meta as any).env?.VITE_COMPANY_NAME || '').trim();
 const COMPANY_NAME = LEGAL_COMPANY_NAME || 'StavbaFlow';
 const COMPANY_ICO = ((import.meta as any).env?.VITE_COMPANY_ICO || '').trim();
 const COMPANY_ADDRESS = ((import.meta as any).env?.VITE_COMPANY_ADDRESS || '').trim() || PUBLIC_CONTACT_ADDRESS;
 const COMPANY_EMAIL = ((import.meta as any).env?.VITE_COMPANY_EMAIL || '').trim() || PUBLIC_CONTACT_EMAIL;
 const COMPANY_PHONE = ((import.meta as any).env?.VITE_COMPANY_PHONE || '').trim();
-const COMPANY_LEGAL_DETAILS_CONFIGURED = Boolean(COMPANY_ICO)
-  && Boolean(LEGAL_COMPANY_NAME)
-  && Boolean(COMPANY_ADDRESS)
-  && Boolean(COMPANY_EMAIL);
+const LEGAL_IDENTITY_READINESS = getLegalIdentityReadiness({
+  DEV: LANDING_ENV.DEV,
+  VITE_COMPANY_NAME: String(LANDING_ENV.VITE_COMPANY_NAME || ''),
+  VITE_COMPANY_ICO: String(LANDING_ENV.VITE_COMPANY_ICO || ''),
+  VITE_COMPANY_ADDRESS: String(LANDING_ENV.VITE_COMPANY_ADDRESS || ''),
+  VITE_COMPANY_EMAIL: String(LANDING_ENV.VITE_COMPANY_EMAIL || ''),
+});
+const COMPANY_LEGAL_DETAILS_CONFIGURED = LEGAL_IDENTITY_READINESS.ready;
 const SALES_CONTACT = getSalesContactMode({
   ...((import.meta as any).env || {}),
   VITE_COMPANY_EMAIL: COMPANY_EMAIL,
 });
-const LANDING_ENV = ((import.meta as any).env || {}) as Record<string, unknown>;
 const DEMO_DESTINATION = resolveDemoUrl(LANDING_ENV, {
   isDevelopment: Boolean(LANDING_ENV.DEV),
   origin: typeof window === 'undefined' ? '' : window.location.origin,
@@ -169,6 +174,12 @@ export const LandingPage: React.FC = () => {
         </div>
       </header>
 
+      {LEGAL_IDENTITY_READINESS.showDevelopmentWarning && (
+        <aside role="status" data-testid="legal-identity-development-warning" className="border-b border-amber-300 bg-amber-50 px-4 py-3 text-center text-sm font-medium text-amber-950">
+          Vývojová kontrola: doplňte {LEGAL_IDENTITY_READINESS.missing.join(', ')} před ostrým nasazením. Veřejná kontaktní adresa se za právní adresu nepovažuje.
+        </aside>
+      )}
+
       {/* 2. Outcome Hero Section (Audit Page 11) */}
       <section className="pt-16 pb-14 px-4 sm:px-6 lg:px-8 max-w-5xl mx-auto text-center space-y-6">
         <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold bg-blue-50 text-blue-700 border border-blue-200">
@@ -207,7 +218,7 @@ export const LandingPage: React.FC = () => {
         {/* Horizontal Workflow Chain */}
         <div id="jak-to-funguje" className="pt-8 border-t border-slate-200/80 max-w-3xl mx-auto">
           <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-3">
-            Ověřený pracovní tok Founding Pilotu
+            Pracovní tok Founding Pilotu
           </span>
           <div className="flex flex-wrap items-center justify-center gap-2 text-xs font-bold text-slate-700">
             <span className="px-3 py-1 bg-white border border-slate-200 rounded-lg shadow-2xs">Webový formulář</span>
@@ -302,7 +313,7 @@ export const LandingPage: React.FC = () => {
             Formulář → poptávka → přiřazení → stav → historie
           </h2>
           <p className="text-xs sm:text-sm text-slate-500 max-w-xl mx-auto">
-            Tento průchod je ověřený v odděleném stagingu a nevrací demonstrační úspěch, pokud se zápis nepodaří.
+            Tento průchod je určen k přejímce v odděleném stagingu před vložením zákaznických dat. Aplikace nevrátí demonstrační úspěch, pokud se zápis nepodaří.
           </p>
         </div>
 
@@ -341,15 +352,15 @@ export const LandingPage: React.FC = () => {
 
             <div className="p-5 rounded-2xl bg-slate-900 text-white space-y-3 font-mono text-xs">
               <div className="flex items-center justify-between pb-2 border-b border-slate-800 text-slate-400">
-                <span>OVĚŘENÝ PILOTNÍ TOK</span>
-                <span className="text-emerald-400">TENANT-SAFE</span>
+                <span>SCÉNÁŘ PILOTU</span>
+                <span className="text-emerald-400">TENANT SCOPE</span>
               </div>
               <div className="space-y-1 text-slate-200">
                 <p>Zdroj: formulář na webu firmy</p>
                 <p>Role: majitel a přiřazený zaměstnanec</p>
-                <p>Oddělení: firma A nevidí firmu B</p>
+                <p>Oddělení: před zákaznickými daty ověřit firmu A vs. B</p>
                 <p>Import: kontrolovaný CSV dry-run a commit</p>
-                <p className="text-emerald-400 font-bold pt-1">Výsledek: skutečná uložená data bez demo fallbacku</p>
+                <p className="text-emerald-400 font-bold pt-1">Cíl: uložená data bez demo fallbacku</p>
               </div>
               <button
                 onClick={() => DEMO_DESTINATION.url && window.location.assign(DEMO_DESTINATION.url)}
@@ -497,7 +508,7 @@ export const LandingPage: React.FC = () => {
               </div>
 
               <div className="p-3.5 bg-slate-800/80 rounded-2xl border border-slate-700 text-[11px] text-slate-300 leading-relaxed">
-                Model používá zadanou průměrnou marži a předpoklad lepšího zpracování poptávek. Výsledek společně ověříme na skutečných datech během pilotu.
+                Ilustrativní výpočet s orientačními hodnotami. Model používá zadanou průměrnou marži a předpoklad lepšího zpracování poptávek; nejde o příslib výsledku. Skutečný přínos ověříme na datech během pilotu.
               </div>
 
               <button
@@ -564,9 +575,9 @@ export const LandingPage: React.FC = () => {
           <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs space-y-4 flex flex-col justify-between">
             <div className="space-y-3">
               <h4 className="text-base font-black text-slate-900">Součást pilotu</h4>
-              <p className="text-xs text-slate-500">Funkce ověřené ve stagingu a zahrnuté v prvním nasazení.</p>
+              <p className="text-xs text-slate-500">Funkce plánované pro první nasazení; živou přejímku dokončete před zákaznickými daty.</p>
               <div className="text-2xl font-black text-slate-900 font-mono">
-                Ověřený základ
+                Rozsah pilotu
               </div>
               <ul className="space-y-2 text-xs text-slate-700 pt-2 border-t border-slate-100">
                 <li className="flex items-center gap-2">✓ Přihlášení majitele a zaměstnance</li>
@@ -622,7 +633,7 @@ export const LandingPage: React.FC = () => {
                 <li className="flex items-center gap-2">Přímé SQL/ERP propojení není součástí pilotu</li>
                 <li className="flex items-center gap-2">Obousměrná synchronizace databází</li>
                 <li className="flex items-center gap-2">Fakturace a účetní exporty</li>
-                <li className="flex items-center gap-2">Klientský portál a automatické follow-upy</li>
+                <li className="flex items-center gap-2">Klientský portál a automatické follow-upy — Připravujeme, nejsou součástí prvního pilotu</li>
               </ul>
             </div>
             <button
@@ -793,7 +804,7 @@ export const LandingPage: React.FC = () => {
                     Ukázat StavbaFlow na mém procesu
                   </h3>
                   <p className="text-xs text-slate-500 mt-1">
-                    Společně projdeme vaše současné tabulky a ukážeme ověřený tok formulář → poptávka → zaměstnanec → stav zakázky.
+                    Společně projdeme vaše současné tabulky a ukážeme pilotní tok formulář → poptávka → zaměstnanec → stav zakázky.
                   </p>
                 </div>
 

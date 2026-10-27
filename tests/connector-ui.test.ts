@@ -32,12 +32,14 @@ test('mapping UI uses inspected metadata and requires explicit dry-run approval'
 });
 
 test('connector package requires an immutable digest and contains only safe Synology templates', async () => {
-  const options = { image: `ghcr.io/svobonek-lab/stavbaflow-connector@sha256:${'a'.repeat(64)}`, driver: 'postgres' as const, apiBaseUrl: 'https://app.example.test' };
+  const options = { image: `ghcr.io/svobonek-lab/stavbaflow-connector@sha256:${'a'.repeat(64)}`, driver: 'postgres' as const, apiBaseUrl: 'https://app.example.test', companyId: 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb' };
   const bundle = await buildConnectorPackage(options);
   const zip = await JSZip.loadAsync(bundle);
   assert.deepEqual(Object.keys(zip.files).filter(name => !zip.files[name]!.dir).sort(), ['config.json', 'docker-compose.synology.yml']);
   const compose = await zip.file('docker-compose.synology.yml')!.async('string');
   const config = await zip.file('config.json')!.async('string');
+  assert.match(compose, /STAVBAFLOW_EXPECTED_COMPANY_ID: bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb/);
+  assert.match(config, /"expectedCompanyId": "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb"/);
   assert.match(compose, /source_db_password/);
   assert.match(compose, /connector_identity/);
   assert.match(config, /"driver": "postgres"/);
@@ -85,14 +87,24 @@ test('owner integrations exposes an interactive company database card and action
   assert.doesNotMatch(integrations, /connectorEnabled && currentOrg\?\.id/);
 });
 
+test('owner integration heartbeat status refreshes periodically and stops on unmount', async () => {
+  const integrations = await readFile(new URL('../src/pages/owner/integrations/ui/Integrations.tsx', import.meta.url), 'utf8');
+  assert.match(integrations, /const refresh = \(\) => \{[\s\S]+?refreshConnectors\(controller\.signal\)/);
+  assert.match(integrations, /window\.setInterval\(refresh,\s*15_000\)/);
+  assert.match(integrations, /window\.clearInterval\(refreshTimer\)/);
+});
+
 test('Synology Compose download uses a reviewed immutable image and keeps enrollment secrets out of the file', async () => {
   const packageModel = await import('../src/features/manage-integrations/model/buildConnectorPackage.js');
   assert.equal(typeof packageModel.buildSynologyCompose, 'function');
-  const compose = packageModel.buildSynologyCompose(`ghcr.io/svobonek-lab/stavbaflow-connector@sha256:${'b'.repeat(64)}`);
+  const buildCompose = packageModel.buildSynologyCompose as (image: string, companyId: string) => string;
+  const compose = buildCompose(`ghcr.io/svobonek-lab/stavbaflow-connector@sha256:${'b'.repeat(64)}`, 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb');
   assert.match(compose, /image: ghcr\.io\/svobonek-lab\/stavbaflow-connector@sha256:/);
+  assert.match(compose, /STAVBAFLOW_EXPECTED_COMPANY_ID: bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb/);
   assert.match(compose, /connector_identity/);
   assert.doesNotMatch(compose, /connectorSecret|enrollmentCode|companyKey/i);
-  assert.throws(() => packageModel.buildSynologyCompose('latest'), /CONNECTOR_IMAGE_DIGEST_REQUIRED/);
+  assert.throws(() => buildCompose('latest', 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb'), /CONNECTOR_IMAGE_DIGEST_REQUIRED/);
+  assert.throws(() => buildCompose(`ghcr.io/svobonek-lab/stavbaflow-connector@sha256:${'b'.repeat(64)}`, 'not-a-company-id'), /CONNECTOR_COMPANY_ID_INVALID/);
 });
 
 test('connector setup keeps the package action clickable and lets digest validation explain a missing release', async () => {
@@ -100,7 +112,7 @@ test('connector setup keeps the package action clickable and lets digest validat
   assert.match(setup, /onClick=\{\(\) => void downloadPackage\(\)\}/);
   assert.match(setup, /disabled=\{packageBusy\}/);
   assert.doesNotMatch(setup, /disabled=\{packageBusy\s*\|\|/);
-  assert.match(setup, /buildConnectorPackage\(\{ image, driver, apiBaseUrl: window\.location\.origin \}\)/);
+  assert.match(setup, /buildConnectorPackage\(\{ image, driver, apiBaseUrl: window\.location\.origin, companyId \}\)/);
   assert.match(setup, /CONNECTOR_IMAGE_DIGEST_REQUIRED[\s\S]*neměnné vydání konektoru/);
   assert.match(setup, /role="alert"/);
 });

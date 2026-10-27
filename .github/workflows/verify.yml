@@ -35,6 +35,48 @@ jobs:
       - run: npm run lint
       - run: npm run build
 
+  legacy-migration-chain:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - name: Start clean PostgreSQL 17
+        run: >-
+          docker run --detach --name legacy-migrations-postgres
+          --env POSTGRES_PASSWORD=postgres
+          --health-cmd="pg_isready -U postgres"
+          --health-interval=2s --health-timeout=2s --health-retries=30
+          postgres:17-alpine
+      - name: Wait for PostgreSQL
+        run: |
+          for attempt in {1..30}; do
+            if [ "$(docker inspect --format='{{.State.Health.Status}}' legacy-migrations-postgres)" = "healthy" ]; then
+              exit 0
+            fi
+            sleep 2
+          done
+          docker logs legacy-migrations-postgres
+          exit 1
+      - name: Bootstrap synthetic Supabase Auth primitives
+        run: docker exec -i legacy-migrations-postgres psql -v ON_ERROR_STOP=1 -U postgres < supabase/tests/legacy_migration_chain_bootstrap.sql
+      - name: Apply every historical migration in filename order
+        run: |
+          shopt -s nullglob
+          migrations=(supabase/migrations/202609*.sql)
+          if [ "${#migrations[@]}" -ne 10 ]; then
+            echo "Expected the 10-file historical 202609 migration chain; found ${#migrations[@]}"
+            exit 1
+          fi
+          for migration in "${migrations[@]}"; do
+            echo "Applying ${migration} to disposable PostgreSQL 17"
+            docker exec -i legacy-migrations-postgres psql -v ON_ERROR_STOP=1 -U postgres < "$migration"
+          done
+      - name: Stop disposable PostgreSQL
+        if: always()
+        run: docker rm --force legacy-migrations-postgres
+
   staging-metadata-snapshot:
     if: >-
       github.repository == 'svobonek-lab/dashboard' &&
@@ -55,6 +97,39 @@ jobs:
           STAGING_SUPABASE_PROJECT_REF: ${{ vars.STAGING_SUPABASE_PROJECT_REF }}
           PRODUCTION_SUPABASE_PROJECT_REF: ${{ vars.PRODUCTION_SUPABASE_PROJECT_REF }}
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+
+  outbox-run-evidence-contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - name: Start disposable PostgreSQL
+        run: >-
+          docker run --detach --name outbox-evidence-postgres
+          --env POSTGRES_PASSWORD=postgres
+          --health-cmd="pg_isready -U postgres"
+          --health-interval=2s --health-timeout=2s --health-retries=30
+          postgres:17-alpine
+      - name: Wait for PostgreSQL
+        run: |
+          for attempt in {1..30}; do
+            if [ "$(docker inspect --format='{{.State.Health.Status}}' outbox-evidence-postgres)" = "healthy" ]; then
+              exit 0
+            fi
+            sleep 2
+          done
+          docker logs outbox-evidence-postgres
+          exit 1
+      - name: Apply and verify the isolated run evidence contract
+        run: |
+          docker exec outbox-evidence-postgres psql -v ON_ERROR_STOP=1 -U postgres -c "create role anon nologin; create role authenticated nologin; create role service_role nologin bypassrls;"
+          docker exec -i outbox-evidence-postgres psql -v ON_ERROR_STOP=1 -U postgres < supabase/migrations/20261027000000_app_email_outbox_runs.sql
+          docker exec -i outbox-evidence-postgres psql -v ON_ERROR_STOP=1 -U postgres < supabase/tests/outbox_run_evidence_verify.sql
+      - name: Stop disposable PostgreSQL
+        if: always()
+        run: docker rm --force outbox-evidence-postgres
 
   ai-dispatcher-contract:
     runs-on: ubuntu-latest
@@ -91,6 +166,40 @@ jobs:
       - name: Stop disposable PostgreSQL
         if: always()
         run: docker rm --force ai-dispatcher-postgres
+
+  public-intake-security-contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - name: Start disposable PostgreSQL
+        run: >-
+          docker run --detach --name public-intake-postgres
+          --env POSTGRES_PASSWORD=postgres
+          --health-cmd="pg_isready -U postgres"
+          --health-interval=2s --health-timeout=2s --health-retries=30
+          postgres:17-alpine
+      - name: Wait for PostgreSQL
+        run: |
+          for attempt in {1..30}; do
+            if [ "$(docker inspect --format='{{.State.Health.Status}}' public-intake-postgres)" = "healthy" ]; then
+              exit 0
+            fi
+            sleep 2
+          done
+          docker logs public-intake-postgres
+          exit 1
+      - name: Verify public intake hardening proposal
+        run: |
+          docker exec -i public-intake-postgres psql -v ON_ERROR_STOP=1 -U postgres < supabase/tests/ai_dispatcher_setup.sql
+          docker exec -i public-intake-postgres psql -v ON_ERROR_STOP=1 -U postgres < supabase/staging/20261006_ai_dispatcher_contract.sql
+          docker exec -i public-intake-postgres psql -v ON_ERROR_STOP=1 -U postgres < supabase/migrations/20261026000000_public_intake_rate_limit.sql
+          docker exec -i public-intake-postgres psql -v ON_ERROR_STOP=1 -U postgres < supabase/tests/public_intake_security_verify.sql
+      - name: Stop disposable PostgreSQL
+        if: always()
+        run: docker rm --force public-intake-postgres
 
   platform-support-contract:
     runs-on: ubuntu-latest
@@ -229,9 +338,9 @@ jobs:
       - uses: actions/checkout@v6
         with:
           persist-credentials: false
-      - uses: docker/setup-buildx-action@v3
+      - uses: docker/setup-buildx-action@v4.4.1
       - name: Build disposable PostgreSQL with pgTAP
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v7.4.0
         with:
           context: .
           file: supabase/tests/Dockerfile.jwt-pgtap

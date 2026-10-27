@@ -16,7 +16,7 @@ export const WidgetIframePage: React.FC = () => {
   const [error, setError] = useState('');
   const [requestKey] = useState(() => `web_${Date.now()}_${Math.random().toString(36).slice(2)}`);
   const [form, setForm] = useState({
-    name: '', phone: '', email: '', projectType: '', address: '', budget: '', description: '', consent: false
+    name: '', phone: '', email: '', projectType: '', address: '', budget: '', description: '', website: '', consent: false
   });
 
   useEffect(() => {
@@ -50,6 +50,10 @@ export const WidgetIframePage: React.FC = () => {
       setError('Doplňte jméno, telefon, typ práce a potvrďte souhlas.');
       return;
     }
+    if (form.name.trim().length > 120 || form.phone.trim().length > 30 || form.email.trim().length > 254 || form.address.trim().length > 250 || form.description.trim().length > 3500) {
+      setError('Některé pole překročilo povolenou délku.');
+      return;
+    }
     if (form.email && !/^\S+@\S+\.\S+$/.test(form.email)) {
       setError('Zadejte platný e-mail.');
       return;
@@ -65,17 +69,22 @@ export const WidgetIframePage: React.FC = () => {
 
     try {
       if (isSupabaseConfigured && publicSupabase) {
-        const { error: submitError } = await publicSupabase.rpc('app_submit_public_lead', {
-          p_public_key: company.id,
-          p_request_key: requestKey,
-          p_customer: form.name.trim(),
-          p_phone: form.phone.trim(),
-          p_email: form.email.trim() || null,
-          p_title: form.projectType,
-          p_description: description,
-          p_value: Number(form.budget) || 0
+        const response = await fetch('/api/public-intake', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            public_key: company.id,
+            request_key: requestKey,
+            customer: form.name.trim(),
+            phone: form.phone.trim(),
+            email: form.email.trim(),
+            title: form.projectType,
+            description,
+            value: Number(form.budget.replace(/\D/g, '')) || 0,
+            website: form.website,
+          }),
         });
-        if (submitError) throw submitError;
+        if (!response.ok) throw new Error(`Public intake failed (${response.status})`);
         await requestImmediateOutboxDispatch();
       } else {
         throw new Error('Public intake is not configured');
@@ -125,14 +134,16 @@ export const WidgetIframePage: React.FC = () => {
             </div>
 
             <div className="mt-6 grid gap-4 sm:grid-cols-2">
-              <Field icon={User} label="Jméno a příjmení" required><input value={form.name} onChange={(e) => update('name', e.target.value)} autoComplete="name" /></Field>
-              <Field icon={Phone} label="Telefon" required><input value={form.phone} onChange={(e) => update('phone', e.target.value)} autoComplete="tel" inputMode="tel" /></Field>
-              <Field icon={Mail} label="E-mail"><input value={form.email} onChange={(e) => update('email', e.target.value)} autoComplete="email" inputMode="email" /></Field>
+              <Field icon={User} label="Jméno a příjmení" required><input value={form.name} onChange={(e) => update('name', e.target.value)} autoComplete="name" maxLength={120} /></Field>
+              <Field icon={Phone} label="Telefon" required><input value={form.phone} onChange={(e) => update('phone', e.target.value)} autoComplete="tel" inputMode="tel" maxLength={30} /></Field>
+              <Field icon={Mail} label="E-mail"><input value={form.email} onChange={(e) => update('email', e.target.value)} autoComplete="email" inputMode="email" maxLength={254} /></Field>
               <Field label="Typ práce" required><select value={form.projectType} onChange={(e) => update('projectType', e.target.value)}><option value="">Vyberte typ práce</option>{PROJECT_TYPES.map((type) => <option key={type} value={type}>{type}</option>)}</select></Field>
-              <Field icon={MapPin} label="Místo realizace" wide><input value={form.address} onChange={(e) => update('address', e.target.value)} autoComplete="street-address" placeholder="Město nebo adresa" /></Field>
+              <Field icon={MapPin} label="Místo realizace" wide><input value={form.address} onChange={(e) => update('address', e.target.value)} autoComplete="street-address" placeholder="Město nebo adresa" maxLength={250} /></Field>
               <Field label="Orientační rozpočet" wide><input value={form.budget} onChange={(e) => update('budget', e.target.value)} inputMode="numeric" placeholder="Např. 250 000 Kč" /></Field>
-              <label className="sm:col-span-2"><span className="mb-1.5 block text-xs font-semibold text-slate-700">Stručný popis</span><textarea rows={4} value={form.description} onChange={(e) => update('description', e.target.value)} className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-950 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-50" placeholder="Rozměry, stav objektu nebo další požadavky" /></label>
+              <label className="sm:col-span-2"><span className="mb-1.5 block text-xs font-semibold text-slate-700">Stručný popis</span><textarea rows={4} value={form.description} onChange={(e) => update('description', e.target.value)} maxLength={3500} className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-950 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-50" placeholder="Rozměry, stav objektu nebo další požadavky" /></label>
             </div>
+
+            <div aria-hidden="true" className="absolute -left-[10000px] h-px w-px overflow-hidden"><label htmlFor="public-intake-website">Nechte toto pole prázdné</label><input id="public-intake-website" name="website" tabIndex={-1} autoComplete="off" value={form.website} onChange={(e) => update('website', e.target.value)} /></div>
 
             <label className="mt-5 flex cursor-pointer items-start gap-3 rounded-2xl bg-slate-50 p-4 text-xs leading-5 text-slate-600"><input type="checkbox" checked={form.consent} onChange={(e) => update('consent', e.target.checked)} className="mt-0.5 h-4 w-4 rounded border-slate-300" /><span>Souhlasím, aby mě {company.name} kontaktovala kvůli této poptávce. Údaje budou použity pouze pro její vyřízení.</span></label>
 

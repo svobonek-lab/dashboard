@@ -43,7 +43,6 @@ import { WidgetIframePage } from '../pages/public/iframe';
 import type { Lead, LeadStatus } from '@/entities/lead';
 import { buildAppLoginUrl, getDeploymentConfig, shouldShowLandingAtRoot } from './deploymentSurface';
 import { getLeadTransitionError } from '../entities/lead';
-import { SalesWorkspace } from '../pages/public/sales';
 import { readTenantCache, removeTenantCache, writeTenantCache, TENANT_CACHE_NAMES } from '../shared/lib/tenantCache';
 import { canEditLeadDetails, persistBeforeApply } from './pilotWrites';
 import { hydrateLeadAssignments } from '../entities/lead';
@@ -489,14 +488,6 @@ function AppContent() {
       <OwnerLayout leads={leads} onSelectLead={setSelectedLead}>
         {pathname === '/dashboard' || pathname === '/' ? (
           <OwnerDashboardPage leads={leads} onSelectLead={setSelectedLead} />
-        ) : pathname === '/sales' ? (
-          <SalesWorkspace
-            leads={leads}
-            employees={employees}
-            onSelectLead={setSelectedLead}
-            onUpdateLeadStatus={handleUpdateLeadStatus}
-            onNavigate={navigate}
-          />
         ) : pathname === '/leads' ? (
           <OwnerLeadsPage 
             leads={leads} 

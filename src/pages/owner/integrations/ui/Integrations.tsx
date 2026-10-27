@@ -55,7 +55,21 @@ export const Integrations: React.FC<IntegrationsProps> = () => {
     }
     catch (cause) { if (!(cause instanceof DOMException && cause.name === 'AbortError')) setConnectorError('Napojení databáze zatím není na tomto prostředí dostupné.'); }
   }, [currentOrg?.id]);
-  useEffect(() => { const controller = new AbortController(); void refreshConnectors(controller.signal); return () => controller.abort(); }, [refreshConnectors]);
+  useEffect(() => {
+    const controller = new AbortController();
+    let refreshing = false;
+    const refresh = () => {
+      if (refreshing || controller.signal.aborted) return;
+      refreshing = true;
+      void refreshConnectors(controller.signal).finally(() => { refreshing = false; });
+    };
+    refresh();
+    const refreshTimer = window.setInterval(refresh, 15_000);
+    return () => {
+      controller.abort();
+      window.clearInterval(refreshTimer);
+    };
+  }, [refreshConnectors]);
   useEffect(() => {
     const controller = new AbortController();
     const loadWebhook = async () => {
@@ -116,7 +130,7 @@ export const Integrations: React.FC<IntegrationsProps> = () => {
   const downloadSynologyCompose = () => {
     setConnectorError('');
     try {
-      const compose = buildSynologyCompose(import.meta.env.VITE_CONNECTOR_IMAGE ?? '');
+      const compose = buildSynologyCompose(import.meta.env.VITE_CONNECTOR_IMAGE ?? '', currentOrg?.id ?? '');
       const url = URL.createObjectURL(new Blob([compose], { type: 'application/yaml' }));
       const anchor = document.createElement('a');
       anchor.href = url;

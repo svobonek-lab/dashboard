@@ -6,12 +6,15 @@ export interface ConnectorPackageOptions {
   image: string;
   driver: ConnectorPackageDriver;
   apiBaseUrl: string;
+  companyId: string;
 }
 
 const IMMUTABLE_IMAGE = /^ghcr\.io\/svobonek-lab\/stavbaflow-connector@sha256:[a-f0-9]{64}$/;
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
-export function buildSynologyCompose(image: string): string {
+export function buildSynologyCompose(image: string, companyId: string): string {
   if (!IMMUTABLE_IMAGE.test(image)) throw new Error('CONNECTOR_IMAGE_DIGEST_REQUIRED');
+  if (!UUID.test(companyId)) throw new Error('CONNECTOR_COMPANY_ID_INVALID');
   return `name: stavbaflow-connector
 services:
   connector:
@@ -22,6 +25,7 @@ services:
     security_opt: [no-new-privileges:true]
     environment:
       STAVBAFLOW_CONNECTOR_CONFIG: /etc/stavbaflow/config.json
+      STAVBAFLOW_EXPECTED_COMPANY_ID: ${companyId}
       DB_HOST: \u0024{DB_HOST:?Set the NAS-reachable database host}
       DB_PORT: \u0024{DB_PORT:?Set the database port}
     volumes:
@@ -50,7 +54,7 @@ secrets:
 }
 
 export async function buildConnectorPackage(options: ConnectorPackageOptions): Promise<Uint8Array> {
-  const compose = buildSynologyCompose(options.image);
+  const compose = buildSynologyCompose(options.image, options.companyId);
   if (!['postgres', 'mysql', 'mariadb', 'mssql'].includes(options.driver)) throw new Error('CONNECTOR_DRIVER_INVALID');
   let apiUrl: URL;
   try { apiUrl = new URL(options.apiBaseUrl); } catch { throw new Error('CONNECTOR_API_URL_INVALID'); }
@@ -61,6 +65,7 @@ export async function buildConnectorPackage(options: ConnectorPackageOptions): P
   archive.file('docker-compose.synology.yml', compose);
   archive.file('config.json', JSON.stringify({
     apiBaseUrl: options.apiBaseUrl,
+    expectedCompanyId: options.companyId,
     stateRoot: '/var/lib/stavbaflow',
     identityPath: '/run/secrets/connector_identity',
     enrollmentCodeFile: '/run/secrets/enrollment_code',

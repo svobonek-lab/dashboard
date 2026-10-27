@@ -16,7 +16,7 @@ test('scheduler asks the database to enqueue alerts for leads older than 24 hour
   assert.equal(queued, 3);
 });
 
-test('scheduler does not hide a stale-lead enqueue failure', async () => {
+test('scheduler exposes only a safe stale-lead enqueue error code', async () => {
   const service = { rpc: async () => ({ data: null, error: { message: 'contract unavailable' } }) } as any;
-  await assert.rejects(() => queueStaleLeadAlerts(service), /contract unavailable/);
+  await assert.rejects(() => queueStaleLeadAlerts(service), { message: 'STALE_ALERT_QUEUE_FAILED' });
 });

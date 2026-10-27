@@ -48,10 +48,12 @@ test('AI prompt requests only the approved JSON fields', () => {
   assert.doesNotMatch(prompt, /markdown/i);
 });
 
-test('server-side Gemini module uses Node ESM compatible local imports', () => {
+test('shared server-side Gemini module is kept independent of retired website analysis', () => {
   const source = readFileSync(new URL('../lib/gemini.ts', import.meta.url), 'utf8');
-  assert.match(source, /from '\.\/supabase\.js'/);
-  assert.match(source, /from '\.\.\/types\/index\.js'/);
+  assert.match(source, /from '@google\/genai'/);
+  assert.match(source, /generateGeminiResponse/);
+  assert.doesNotMatch(source, /from '\.\/supabase\.js'/);
+  assert.doesNotMatch(source, /WebsiteAnalysis|analyzeWebsiteWithGemini/);
 });
 
 test('incoming mail that is not a lead is ignored without a database write', async () => {

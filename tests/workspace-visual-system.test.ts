@@ -107,7 +107,9 @@ test('deprecated simulated product modules are removed from the application sour
 test('public form and embed page use the real tenant-safe intake without simulated capabilities', () => {
   const form = readFileSync(new URL('../src/features/submit-inquiry/ui/WidgetIframePage.tsx', import.meta.url), 'utf8');
   const embed = readFileSync(new URL('../src/pages/public/embed/ui/EmbedWidgetPage.tsx', import.meta.url), 'utf8');
-  assert.match(form, /publicSupabase\.rpc\('app_submit_public_lead'/);
+  assert.match(form, /publicSupabase\.rpc\('app_get_public_company'/);
+  assert.match(form, /fetch\('\/api\/public-intake'/);
+  assert.doesNotMatch(form, /publicSupabase\.rpc\('app_submit_public_lead'/);
   assert.match(form, /Souhlasím/);
   assert.doesNotMatch(form, /setTimeout|aiAnalysisResult|isRecordingVoice|photo1\.jpg/i);
   assert.match(embed, /<iframe src=/);

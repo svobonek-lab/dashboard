@@ -4,6 +4,7 @@ import { useOrganization } from '@/entities/session';
 import { canManageCompany } from '@/shared/model/permissions';
 import { startBillingPortal } from '@/features/manage-billing';
 import { crmRepo } from '@/shared/api/crm-repository';
+import { CompanyDataExport } from '@/features/export-company-data';
 
 export const OwnerSettingsPage: React.FC = () => {
   const { dbUser, currentOrg, updateBrandingAdmin } = useOrganization();
@@ -15,6 +16,9 @@ export const OwnerSettingsPage: React.FC = () => {
   const [billingError, setBillingError] = useState('');
   const [byodbMode, setByodbMode] = useState(false);
   const [storageModeLoading, setStorageModeLoading] = useState(true);
+  const [storageModeError, setStorageModeError] = useState(false);
+  const [storageModeRetry, setStorageModeRetry] = useState(0);
+  const [storageModeCompanyId, setStorageModeCompanyId] = useState<string | null>(null);
   const billingReturn = new URLSearchParams(window.location.search).get('billing');
 
   useEffect(() => {
@@ -26,8 +30,10 @@ export const OwnerSettingsPage: React.FC = () => {
 
   useEffect(() => {
     let active = true;
-    if (!currentOrg?.id) { setByodbMode(false); setStorageModeLoading(false); return; }
+    if (!currentOrg?.id) { setByodbMode(false); setStorageModeError(false); setStorageModeCompanyId(null); setStorageModeLoading(false); return; }
     setStorageModeLoading(true);
+    setStorageModeError(false);
+    setStorageModeCompanyId(null);
     void crmRepo.repository(currentOrg.id).then(async mode => {
       if (!active) return;
       setByodbMode(mode === 'byodb');
@@ -35,10 +41,15 @@ export const OwnerSettingsPage: React.FC = () => {
         const branding = await crmRepo.byodb.getBranding(currentOrg.id);
         if (active) setForm(previous => ({ ...previous, name: branding.name || '', email: branding.email || '', phone: branding.phone || '', address: branding.address || '' }));
       }
-      if (active) setStorageModeLoading(false);
-    }).catch(() => { if (active) setState({ kind: 'error', message: 'Režim databáze firmy se nepodařilo ověřit. Uložení zůstává vypnuté.' }); });
+      if (active) { setStorageModeCompanyId(currentOrg.id); setStorageModeLoading(false); }
+    }).catch(() => {
+      if (active) {
+        setStorageModeError(true);
+        setStorageModeLoading(false);
+      }
+    });
     return () => { active = false; };
-  }, [currentOrg?.id]);
+  }, [currentOrg?.id, storageModeRetry]);
 
   useEffect(() => {
     fetch('/api/email-notification-status')
@@ -80,6 +91,7 @@ export const OwnerSettingsPage: React.FC = () => {
       <header className="workspace-page-header"><div><p className="workspace-kicker">Nastavení firmy</p><h1 className="workspace-title">Firemní profil</h1><p className="workspace-subtitle">Údaje používané v pracovním prostoru a při komunikaci se zákazníkem.</p></div></header>
       {state.kind === 'success' && <div className="flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-800"><Check className="h-4 w-4" />{state.message}</div>}
       {state.kind === 'error' && <div role="alert" className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-700">{state.message}</div>}
+      {storageModeError && <div role="alert" className="flex flex-col gap-3 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700 sm:flex-row sm:items-center sm:justify-between"><span>Režim databáze firmy se nepodařilo ověřit. Uložení profilu zůstává vypnuté.</span><button type="button" disabled={storageModeLoading} onClick={() => setStorageModeRetry(attempt => attempt + 1)} className="min-h-10 shrink-0 rounded-lg border border-rose-300 bg-white px-3 font-semibold disabled:opacity-60">{storageModeLoading ? 'Ověřuji…' : 'Zkusit znovu'}</button></div>}
       {billingReturn === 'success' && <div role="status" className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-800">Platba byla přijata. Aktivace předplatného se ověřuje přes Stripe.</div>}
       {billingReturn === 'canceled' && <div role="status" className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-medium text-amber-800">Platba byla zrušena a tarif se nezměnil.</div>}
       {billingReturn === 'portal_return' && <div role="status" className="rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm font-medium text-blue-800">Vrátili jste se ze zabezpečené správy plateb.</div>}
@@ -119,8 +131,9 @@ export const OwnerSettingsPage: React.FC = () => {
             <label className="text-sm font-medium text-slate-700 sm:col-span-2">Adresa<div className="relative"><MapPin className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" /><input value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} className={`${fieldClass} pl-10`} /></div></label>
           </div>
         </section>
-        <div className="flex justify-end border-t border-slate-100 pt-6"><button type="submit" disabled={state.kind === 'saving' || storageModeLoading} className="workspace-primary-action inline-flex min-h-11 items-center justify-center gap-2 px-5 text-sm font-semibold disabled:opacity-60"><Save className="h-4 w-4" />{state.kind === 'saving' ? 'Ukládám…' : storageModeLoading ? 'Ověřuji režim…' : 'Uložit profil'}</button></div>
+        <div className="flex justify-end border-t border-slate-100 pt-6"><button type="submit" disabled={state.kind === 'saving' || storageModeLoading || storageModeError || storageModeCompanyId !== (currentOrg?.id ?? null)} className="workspace-primary-action inline-flex min-h-11 items-center justify-center gap-2 px-5 text-sm font-semibold disabled:opacity-60"><Save className="h-4 w-4" />{state.kind === 'saving' ? 'Ukládám…' : storageModeLoading ? 'Ověřuji režim…' : 'Uložit profil'}</button></div>
       </form>
+      {currentOrg && <CompanyDataExport companyId={currentOrg.id} role={dbUser?.role} />}
     </div>
   );
 };

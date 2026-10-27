@@ -1,6 +1,5 @@
 export const PILOT_OWNER_ROUTES = new Set([
   '/dashboard',
-  '/sales',
   '/leads',
   '/inquiry',
   '/projects',

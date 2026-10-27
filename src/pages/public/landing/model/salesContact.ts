@@ -45,7 +45,7 @@ export function buildSalesContact(targetEmail: string, draft: SalesContactDraft)
     `E-mail: ${draft.email.trim()}`,
     `Preferovaný termín: ${draft.preferredTime.trim()}`,
     '',
-    'Mám zájem o nezávaznou ukázku ověřeného 30denního pilotu StavbaFlow.'
+    'Mám zájem o nezávaznou ukázku 30denního pilotu StavbaFlow.'
   ].join('\n');
 
   return `mailto:${targetEmail}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
