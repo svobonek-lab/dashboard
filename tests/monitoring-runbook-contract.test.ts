@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { readdirSync, readFileSync } from 'node:fs';
 import test from 'node:test';
 
 function source(path: string): string {
@@ -9,11 +9,19 @@ function source(path: string): string {
 
 const sentry = source('../src/shared/lib/sentry.ts');
 const scheduler = source('../api/outbox-scheduler.ts');
-const runEvidence = source('../api/outbox-run-evidence.ts');
+const runEvidence = source('../api/_outbox-run-evidence.ts');
 const migration = source('../supabase/staging/20261027_outbox_run_evidence.sql');
 const productionMigration = source('../supabase/migrations/20261027000000_app_email_outbox_runs.sql');
 const verifyWorkflow = source('../.github/workflows/verify.yml');
 const runbook = source('../docs/runbook-incident.md');
+
+function countVercelRouteFiles(directory: URL): number {
+  return readdirSync(directory, { withFileTypes: true }).reduce((count, entry) => {
+    if (entry.name.startsWith('_')) return count;
+    if (entry.isDirectory()) return count + countVercelRouteFiles(new URL(`${entry.name}/`, directory));
+    return count + Number(entry.isFile() && entry.name.endsWith('.ts'));
+  }, 0);
+}
 
 test('Sentry is DSN-gated and workspace context contains only a company UUID and approved role', () => {
   assert.match(sentry, /if\s*\(!dsn\)[\s\S]{0,160}return/);
@@ -41,6 +49,14 @@ test('outbox run evidence is part of the numbered migration chain and disposable
   assert.match(productionMigration, /grant select, insert, update on table public\.app_email_outbox_runs to service_role/i);
   assert.doesNotMatch(productionMigration, /grant [^;]*(anon|authenticated)/i);
   assert.match(verifyWorkflow, /outbox-run-evidence-contract:[\s\S]*?supabase\/migrations\/20261027000000_app_email_outbox_runs\.sql/);
+});
+
+test('outbox evidence helper stays outside the Vercel route count on the Hobby plan', () => {
+  const apiRoot = new URL('../api/', import.meta.url);
+  const apiFiles = readdirSync(apiRoot);
+  const VERCEL_HOBBY_FUNCTION_LIMIT = 12;
+  assert.ok(apiFiles.includes('_outbox-run-evidence.ts'));
+  assert.equal(countVercelRouteFiles(apiRoot), VERCEL_HOBBY_FUNCTION_LIMIT);
 });
 
 test('incident runbook covers Supabase, email outbox, Stripe and evidence-preserving escalation', () => {

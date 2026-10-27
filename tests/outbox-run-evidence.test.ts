@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { buildOutboxRunEvidence, persistOutboxRun, startOutboxRun } from '../api/outbox-run-evidence';
+import { buildOutboxRunEvidence, persistOutboxRun, startOutboxRun } from '../api/_outbox-run-evidence';
 
 test('run evidence contains only aggregate counts, timestamps and bounded error codes', () => {
   const result = buildOutboxRunEvidence({

@@ -5,7 +5,7 @@ import {
   persistOutboxRun,
   startOutboxRun,
   type OutboxRunItemStatus,
-} from './outbox-run-evidence.js';
+} from './_outbox-run-evidence.js';
 
 function secretsMatch(provided: string, expected: string): boolean {
   const actualBuffer = Buffer.from(provided);
