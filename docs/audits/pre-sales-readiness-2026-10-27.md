@@ -57,7 +57,7 @@ Landing Preview pro commit nemohl být živě ověřen: Vercel deploy sice proš
 4. **Outbox:** novou `20261027000000_app_email_outbox_runs.sql` ověřit v GitHub disposable CI; teprve po revizi rozhodnout o migraci do cílového prostředí a o testovací zprávě.
 5. **BYODB:** získat samostatný staging zdroj s umělými daty, publikovat neměnný image digest, instalovat na testovací Synology a prokázat inspekci, dry-run, schválený zápis, tenant izolaci, replay a obnovu.
 6. **Prodejní identita a provoz:** potvrdit IČO/sídlo a právní dokumenty, provider env proměnné, backup/restore, e-mail, Sentry a Stripe test mode podle `docs/go-live-checklist.md`.
-7. **CI/Preview a token:** Vercel Preview pro aktuální commit je zelený; verify workflow také. GitHub Actions secret `SUPABASE_ACCESS_TOKEN` existuje a metadata-only workflow `40462790973` s ním prošel. Protože byl PAT vložen do konverzace v otevřeném textu, po dokončení metadatové práce ho zneplatnit/rotovat a nahradit v Actions novým scoped tokenem. Staging schema drift je popsán níže.
+7. **CI/Preview a token:** Vercel a verify byly naposledy ověřeny jako zelené na starších commitech uvedených níže; pro aktuální PR head `88349d4` se živý stav kontrol nepodařilo načíst kvůli opakovaným GitHub API TLS timeoutům. Push commitu do PR větve proběhl. GitHub Actions secret `SUPABASE_ACCESS_TOKEN` existuje a metadata-only workflow `40462790973` s ním prošel. Protože byl PAT vložen do konverzace v otevřeném textu, zneplatni/rotuj ho a nahraď v Actions novým scoped tokenem. Staging schema drift je popsán níže.
 
 ## Doporučená posloupnost nabídky
 
