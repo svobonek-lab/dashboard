@@ -13,7 +13,7 @@
 
 ## Acceptance blocker
 
-GitHub Actions runs `40539439427`, `40539877306`, and `40540852195` failed before any workflow step started. The job annotation says the job could not start because recent account payments failed or the spending limit must be increased. Runner ID was `0` and the job had no steps. These are not staging or application test failures. The connector-staging-acceptance run therefore has no result.
+GitHub Actions runs `40539439427`, `40539877306`, `40540852195`, and PR verification `40543958525` failed before any workflow step started. The job annotation says the job could not start because recent account payments failed or the spending limit must be increased. Runner ID was `0` and the job had no steps. These are not staging or application test failures. The connector-staging-acceptance run therefore has no result.
 
 ## Next sequence
 
