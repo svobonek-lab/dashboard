@@ -252,6 +252,28 @@ test('BYODB operations are bounded by the approved mapping and role-specific wri
   assert.throws(() => validateByodbOperationCreate(base, 'employee', { ...mapping, fields: [mapping.fields[0]] }), /EMPLOYEE_ASSIGNMENT_MAPPING_REQUIRED/);
 });
 
+test('BYODB owner can queue mapped operational employees and projects but employees cannot', () => {
+  const base = { version: 1, idempotencyKey: 'b6b2a8fc-2f0b-45df-9aa9-1578f58c86f0', mappingVersion: 4, action: 'create', externalId: 'stable-1', expectedSourceVersion: null };
+  const mappingBase = { version: 1 as const, mappingVersion: 4, sourceSystem: 'fixture', schema: 'public', table: 'records', externalIdColumn: 'id' };
+  const employeeMapping = { ...mappingBase, entityType: 'employee_directory' as const, fields: [
+    { sourceColumn: 'name', targetField: 'name', conversion: { kind: 'text' as const } },
+    { sourceColumn: 'email', targetField: 'email', conversion: { kind: 'email' as const } },
+  ] };
+  const employeeCreate = { ...base, entityType: 'employee_directory', payload: { name: 'Worker', email: 'worker@example.test' } };
+  assert.equal(validateByodbOperationCreate(employeeCreate, 'owner', employeeMapping).entityType, 'employee_directory');
+  assert.throws(() => validateByodbOperationCreate(employeeCreate, 'employee', employeeMapping), /OPERATION_ROLE_DENIED/);
+  assert.throws(() => validateByodbOperationCreate({ ...employeeCreate, payload: { name: 'Worker' } }, 'owner', employeeMapping), /OPERATION_REQUIRED_FIELD_MISSING/);
+
+  const projectMapping = { ...mappingBase, entityType: 'project' as const, fields: [
+    { sourceColumn: 'title', targetField: 'title', conversion: { kind: 'text' as const } },
+    { sourceColumn: 'lead_id', targetField: 'leadExternalId', conversion: { kind: 'text' as const } },
+  ] };
+  const projectCreate = { ...base, entityType: 'project', payload: { title: 'Roof', leadExternalId: 'lead-1' } };
+  assert.equal(validateByodbOperationCreate(projectCreate, 'owner', projectMapping).entityType, 'project');
+  assert.throws(() => validateByodbOperationCreate(projectCreate, 'employee', projectMapping), /OPERATION_ROLE_DENIED/);
+  assert.throws(() => validateByodbOperationCreate({ ...projectCreate, payload: { leadExternalId: 'lead-1' } }, 'owner', projectMapping), /OPERATION_REQUIRED_FIELD_MISSING/);
+});
+
 test('BYODB operation acknowledgements accept only bounded terminal outcomes', () => {
   assert.deepEqual(validateByodbOperationAck({ operationId: 'b6b2a8fc-2f0b-45df-9aa9-1578f58c86f0', status: 'applied', sourceVersion: 'b'.repeat(64) }), {
     operationId: 'b6b2a8fc-2f0b-45df-9aa9-1578f58c86f0', status: 'applied', sourceVersion: 'b'.repeat(64),

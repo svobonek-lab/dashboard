@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto';
 
-import { CANONICAL_PAYLOAD_FIELDS } from '../../../shared/connectorProtocol.js';
+import { BYODB_OPERATION_ENTITY_TYPES, CANONICAL_PAYLOAD_FIELDS } from '../../../shared/connectorProtocol.js';
 import type { CanonicalRecordV1, ConnectorCommandV1, ConnectorSourceSchemaV1, IngestAckV1, IngestEnvelopeV1 } from '../../../shared/connectorProtocol.js';
 import { fingerprintSecret, signRequest, type ConnectorIdentity } from '../security/identity.js';
 import type { MappedSourceOperation } from '../adapters/mappedOperations.js';
@@ -132,7 +132,7 @@ function parseOperation(value: unknown): MappedSourceOperation {
     || !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(String(row.operationId))
     || !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(String(row.idempotencyKey))
     || !Number.isInteger(row.mappingVersion) || Number(row.mappingVersion) < 1
-    || !['company', 'lead'].includes(String(row.entityType)) || !['create', 'update', 'delete'].includes(String(row.action))
+    || !BYODB_OPERATION_ENTITY_TYPES.includes(row.entityType as typeof BYODB_OPERATION_ENTITY_TYPES[number]) || !['create', 'update', 'delete'].includes(String(row.action))
     || typeof row.externalId !== 'string' || !row.externalId || row.externalId.length > 512
     || (row.expectedSourceVersion !== null && (typeof row.expectedSourceVersion !== 'string' || !/^[a-f0-9]{64}$/.test(row.expectedSourceVersion)))
     || !row.payload || typeof row.payload !== 'object' || Array.isArray(row.payload)

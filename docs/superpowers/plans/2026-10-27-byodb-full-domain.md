@@ -43,8 +43,8 @@
 **Files:** `connector/src/adapters/mappedOperations.ts`, `connector/src/api/client.ts`, `connector/src/commands/processOperations.ts`, `api/_connector/routes/operations.ts`, `connector/test/mappedOperations.test.ts`, `connector/test/adapters.integration.test.ts`.
 
 - [ ] Add failing unit and disposable DB fixture tests for create/update/delete, replay, conflict and non-generated stable keys on all three SQL engines.
-- [ ] Run tests to confirm current company/lead restrictions cause the failures.
-- [ ] Extend connector and API validators with entity-specific required fields and owner-only operational employee/project writes.
+- [x] Run targeted tests to confirm current company/lead restrictions reject owner creates for operational employees and projects. The broader fixture tests above remain open.
+- [x] Extend connector and API validators with entity-specific required fields and owner-only operational employee/project writes. Targeted tests, 420 root tests, 84 active connector tests, lint and builds pass; SQL and relationship checks remain separate tasks.
 - [ ] Reject dangling lead/customer references and cross-company IDs before enqueue and before source commit.
 - [ ] Verify tests and commit.
 
