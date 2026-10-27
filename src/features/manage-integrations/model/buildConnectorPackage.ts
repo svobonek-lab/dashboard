@@ -12,8 +12,12 @@ export interface ConnectorPackageOptions {
 const IMMUTABLE_IMAGE = /^ghcr\.io\/svobonek-lab\/stavbaflow-connector@sha256:[a-f0-9]{64}$/;
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
+export function isImmutableConnectorImage(image: string): boolean {
+  return IMMUTABLE_IMAGE.test(image);
+}
+
 export function buildSynologyCompose(image: string, companyId: string): string {
-  if (!IMMUTABLE_IMAGE.test(image)) throw new Error('CONNECTOR_IMAGE_DIGEST_REQUIRED');
+  if (!isImmutableConnectorImage(image)) throw new Error('CONNECTOR_IMAGE_DIGEST_REQUIRED');
   if (!UUID.test(companyId)) throw new Error('CONNECTOR_COMPANY_ID_INVALID');
   return `name: stavbaflow-connector
 services:

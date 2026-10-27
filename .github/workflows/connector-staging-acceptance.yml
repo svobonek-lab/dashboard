@@ -40,13 +40,14 @@ jobs:
           STAGING_EMPLOYEE_A_PASSWORD: ${{ secrets.STAGING_EMPLOYEE_A_PASSWORD }}
           STAGING_OWNER_B_EMAIL: ${{ secrets.STAGING_OWNER_B_EMAIL }}
           STAGING_OWNER_B_PASSWORD: ${{ secrets.STAGING_OWNER_B_PASSWORD }}
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
         shell: bash
         run: |
           missing=()
           for name in STAGING_SUPABASE_URL STAGING_SUPABASE_PROJECT_REF PRODUCTION_SUPABASE_PROJECT_REF \
             STAGING_SUPABASE_PUBLISHABLE_KEY STAGING_PREVIEW_URL \
             STAGING_OWNER_A_EMAIL STAGING_OWNER_A_PASSWORD STAGING_EMPLOYEE_A_EMAIL \
-            STAGING_EMPLOYEE_A_PASSWORD STAGING_OWNER_B_EMAIL STAGING_OWNER_B_PASSWORD; do
+            STAGING_EMPLOYEE_A_PASSWORD STAGING_OWNER_B_EMAIL STAGING_OWNER_B_PASSWORD SUPABASE_ACCESS_TOKEN; do
             if [ -z "${!name}" ]; then missing+=("$name"); fi
           done
           if [ "${#missing[@]}" -gt 0 ]; then
@@ -54,6 +55,12 @@ jobs:
             exit 1
           fi
           node --input-type=module -e "import { assertIsolatedStagingProject } from './scripts/connector-staging-environment.mjs'; assertIsolatedStagingProject(process.env)"
+      - name: Verify BYODB tables, RPCs, and enabled Auth hook using metadata only
+        run: node scripts/connector-staging-preflight.mjs
+        env:
+          STAGING_SUPABASE_PROJECT_REF: ${{ vars.STAGING_SUPABASE_PROJECT_REF }}
+          PRODUCTION_SUPABASE_PROJECT_REF: ${{ vars.PRODUCTION_SUPABASE_PROJECT_REF }}
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
       - run: npm ci
       - name: Install Playwright Chromium for the staging UI check
         run: npx playwright install --with-deps chromium

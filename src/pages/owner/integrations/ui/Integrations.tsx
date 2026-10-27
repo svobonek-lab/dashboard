@@ -220,7 +220,7 @@ export const Integrations: React.FC<IntegrationsProps> = () => {
           </div>
           <p className="mt-3 text-xs leading-5 text-slate-400">Formulář se otevře nad existujícím webem a uloží poptávku do správné firmy.</p>
         </article>
-      </section> : <p className="mb-6 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">Veřejné formuláře a AI příjem zatím zapisují do cloudu, proto jsou v režimu BYODB skryté. Jejich bezpečné směrování do zdrojové databáze čeká na oddělený veřejný ingest kontrakt.</p>}
+      </section> : <p className="mb-6 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">Namapovaný firemní profil a zakázky jsou zatím jediná data ukládaná do BYODB; zaměstnanci, projekty, poznámky a soubory zůstávají v StavbaFlow Cloud. Veřejné formuláře, AI příjem a CSV import zde nejsou podporované, protože jejich bezpečné směrování do zákaznické databáze ještě není implementované.</p>}
 
       <section className="grid gap-4 md:grid-cols-[1.25fr_.75fr]">
         <article className="workspace-panel p-6 sm:p-7">
