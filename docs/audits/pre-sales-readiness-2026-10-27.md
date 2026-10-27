@@ -35,13 +35,13 @@ To, že route/menu, formulář, karty integrace či tlačítko existují, prokaz
 
 ## Release blokery před prvním zákazníkem
 
-1. **Staging acceptance:** dokončit owner, employee, public-intake, odhlášení/cache a izolaci dvou firem se syntetickými účty. Aktuální Playwright job vyžaduje staging URL/fixture variables; poslední známý owner průchod skončil `NO_ACTIVE_MEMBERSHIP`.
+1. **Staging acceptance:** dokončit owner, employee, public-intake, odhlášení/cache a izolaci dvou firem se syntetickými účty. Owner-only Playwright acceptance `40466843417` 27. 10. 2026 ověřil, že Supabase Auth přijalo syntetické owner přihlašovací údaje (`/auth/v1/token` HTTP 200), ale aplikace vrátila `NO_ACTIVE_MEMBERSHIP` a průvodce se neotevřel. Účet tedy existuje v Auth; aktivní členství firmy není potvrzené. Dvou-tenant E2E navíc nemá v GitHub proměnných požadovaná fixture IDs a public intake key.
 2. **Databázové kontrakty:** aktuální `app_*` schéma se liší od historických číslovaných migrací. JWT/RLS návrh zůstává návrhem, dokud není reconciliován proti čerstvým metadata-only údajům. Žádná migrace z tohoto auditu nebyla aplikována na staging nebo produkci.
 3. **Veřejný intake:** dokončit izolovaný PostgreSQL acceptance pro navrženou rate-limit migraci, provést separátní kontrolu a následně ověřit pouze na schváleném stagingu.
 4. **Outbox:** novou `20261027000000_app_email_outbox_runs.sql` ověřit v GitHub disposable CI; teprve po revizi rozhodnout o migraci do cílového prostředí a o testovací zprávě.
 5. **BYODB:** získat samostatný staging zdroj s umělými daty, publikovat neměnný image digest, instalovat na testovací Synology a prokázat inspekci, dry-run, schválený zápis, tenant izolaci, replay a obnovu.
 6. **Prodejní identita a provoz:** potvrdit IČO/sídlo a právní dokumenty, provider env proměnné, backup/restore, e-mail, Sentry a Stripe test mode podle `docs/go-live-checklist.md`.
-7. **CI/Preview:** uzavřít všechny checky pro přesný commit. `SUPABASE_ACCESS_TOKEN` je v GitHub Actions secret uložený a ověřený podle názvu. Metadata-only workflow `40462790973` prošel; staging schema drift je popsán níže.
+7. **CI/Preview a token:** Vercel Preview pro aktuální commit je zelený; verify workflow také. GitHub Actions secret `SUPABASE_ACCESS_TOKEN` existuje a metadata-only workflow `40462790973` s ním prošel. Protože byl PAT vložen do konverzace v otevřeném textu, po dokončení metadatové práce ho zneplatnit/rotovat a nahradit v Actions novým scoped tokenem. Staging schema drift je popsán níže.
 
 ## Doporučená posloupnost nabídky
 
@@ -51,8 +51,11 @@ To, že route/menu, formulář, karty integrace či tlačítko existují, prokaz
 
 ## Reprodukovatelné lokální ověření v této relaci
 
-- `npm test` — 405/405 prošlo (27. 10. 2026).
-- Dříve v této práci: root lint/build, connector lint/build/test, syntetický Playwright admin viewport 375/1280 px — výsledky jsou zaznamenány v pracovním ledgeru; změnu outbox migrace ještě musí ověřit aktuální CI.
+- `npm test` — 406/406 prošlo; `npm run lint` a `npm run build` prošly po přesunu helperu mimo Vercel API routy (27. 10. 2026).
+- GitHub Actions verify run `40466262183` na přesném PR head `016994267407a358624925ca2175df613ace05ce` prošel, včetně izolovaných PostgreSQL kontraktů, testů, lint a buildu. Vercel Preview `dashboard` i `jobflow-pro` pro tento commit mají stav success; počet Vercel route souborů je nyní 12.
+- Playwright smoke test stejného dashboard Preview na šířkách 375 a 1280 px prošel pro `/`, `/login`, `/owner/login`, `/employee/login`, `/dashboard`, `/employee`, `/admin` a `/integrations`: HTTP 200, přítomný e-mail/heslo formulář, žádná JavaScript page error. Chráněné cesty bez session skončily na `/login`. Tím se potvrzuje pouze načtení a přesměrování, ne přihlášení, tenant data ani živé zápisy.
+- GitHub Actions staging secrets obsahují syntetické přihlašovací údaje owner A, employee A a owner B a staging publishable key; v aktuálním seznamu proměnných ale chyběly `PRODUCTION_BASE_URL`, `STAGING_COMPANY_A_ID`, `STAGING_COMPANY_B_ID`, `STAGING_EMPLOYEE_A_ID` a `STAGING_PUBLIC_TENANT_KEY`. `STAGING_PREVIEW_BYPASS_TOKEN` také nebyl v seznamu secrets. Staging dvou-tenant E2E proto z tohoto nastavení nelze bezpečně spustit.
+- Užší owner-only Playwright acceptance (`connector-owner-ui`, workflow run `40466843417`) selhal před otevřením BYODB: účet se ověřil přes izolovaný staging Auth, ale chybí aktivní členství.
 - Neprovedeno: staging/produkční DB přístupy či zápisy, live owner/employee mutace, skutečné e-maily, Stripe transakce, živé napojení Synology a zákaznická data.
 
 ## Ověřené externí kontrolní rámce
