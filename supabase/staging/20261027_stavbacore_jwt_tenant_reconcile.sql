@@ -1,5 +1,5 @@
 -- STAGING ONLY. Candidate reconciled against StavbaCore Staging metadata
--- captured by Actions run 40509027192 on 2026-10-27. Never apply to production.
+-- captured by Actions run 40509027192 and a fresh metadata-only query on 2026-10-27. Never apply to production.
 -- Requires the fresh schema/policy/grant preflight below to match exactly.
 BEGIN;
 
@@ -16,7 +16,7 @@ DECLARE
   actual_relations text[];
   actual_policy_count integer;
   drift_count integer;
-  t text;
+  column_drift_count integer;
 BEGIN
   SELECT array_agg(c.relname ORDER BY c.relname) INTO actual_relations
   FROM pg_catalog.pg_class c
@@ -97,20 +97,99 @@ BEGIN
     RAISE EXCEPTION 'StavbaCore staging reconciliation stopped: policy inventory drift (% rows, % total)', drift_count, actual_policy_count;
   END IF;
 
-  FOREACH t IN ARRAY expected_relations LOOP
-    IF has_table_privilege('anon',format('public.%I',t),'SELECT')
-       OR has_table_privilege('anon',format('public.%I',t),'INSERT')
-       OR has_table_privilege('anon',format('public.%I',t),'UPDATE')
-       OR has_table_privilege('anon',format('public.%I',t),'DELETE')
-       OR has_table_privilege('authenticated',format('public.%I',t),'SELECT')
-       OR has_table_privilege('authenticated',format('public.%I',t),'INSERT')
-       OR has_table_privilege('authenticated',format('public.%I',t),'UPDATE')
-       OR has_table_privilege('authenticated',format('public.%I',t),'DELETE')
-       OR has_any_column_privilege('anon',format('public.%I',t),'SELECT')
-       OR has_any_column_privilege('authenticated',format('public.%I',t),'SELECT') THEN
-      RAISE EXCEPTION 'StavbaCore staging reconciliation stopped: direct anon/authenticated grants already exist on public.%',t;
-    END IF;
-  END LOOP;
+  -- This exact baseline was re-read from pg_class.relacl after the first
+  -- metadata snapshot omitted table ACLs. Do not treat existing grants as drift.
+  WITH expected(table_name,can_select,can_insert,can_update,can_delete) AS (VALUES
+    ('app_audit',true,false,false,false),
+    ('app_companies',true,false,false,false),
+    ('app_costs',true,true,false,true),
+    ('app_demo_requests',true,false,false,false),
+    ('app_email_outbox',true,false,false,false),
+    ('app_handovers',true,false,false,false),
+    ('app_imports',true,false,false,false),
+    ('app_integrations',true,true,true,true),
+    ('app_invites',true,false,false,true),
+    ('app_invoices',true,true,true,true),
+    ('app_job_budgets',true,true,false,false),
+    ('app_leads',true,false,false,false),
+    ('app_members',true,false,false,false),
+    ('app_notes',true,true,false,false),
+    ('app_quotes',true,false,false,false),
+    ('app_rate_limits',false,false,false,false),
+    ('app_reminders',true,true,true,true),
+    ('app_requests',false,false,false,false),
+    ('app_tasks',true,true,false,true),
+    ('app_time_entries',true,true,false,true)
+  ), actual AS (
+    SELECT c.relname AS table_name,
+      has_table_privilege('anon',c.oid,'SELECT') AS anon_select,
+      has_table_privilege('anon',c.oid,'INSERT') AS anon_insert,
+      has_table_privilege('anon',c.oid,'UPDATE') AS anon_update,
+      has_table_privilege('anon',c.oid,'DELETE') AS anon_delete,
+      has_table_privilege('authenticated',c.oid,'SELECT') AS auth_select,
+      has_table_privilege('authenticated',c.oid,'INSERT') AS auth_insert,
+      has_table_privilege('authenticated',c.oid,'UPDATE') AS auth_update,
+      has_table_privilege('authenticated',c.oid,'DELETE') AS auth_delete
+    FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace
+    WHERE n.nspname='public' AND left(c.relname,4)='app_' AND c.relkind IN ('r','p')
+  )
+  SELECT count(*) INTO drift_count FROM expected e LEFT JOIN actual a USING (table_name)
+  WHERE a.table_name IS NULL
+    OR a.anon_select IS DISTINCT FROM false OR a.anon_insert IS DISTINCT FROM false
+    OR a.anon_update IS DISTINCT FROM false OR a.anon_delete IS DISTINCT FROM false
+    OR a.auth_select IS DISTINCT FROM e.can_select OR a.auth_insert IS DISTINCT FROM e.can_insert
+    OR a.auth_update IS DISTINCT FROM e.can_update OR a.auth_delete IS DISTINCT FROM e.can_delete;
+  IF drift_count<>0 THEN
+    RAISE EXCEPTION 'StavbaCore staging reconciliation stopped: effective table grant matrix changed (% relations)',drift_count;
+  END IF;
+
+  -- Preserve exact column-scoped UPDATE grants; converting these to table-wide
+  -- UPDATE would expand what authenticated clients may change.
+  WITH expected(table_name,column_name,grantee,privilege_type,is_grantable) AS (VALUES
+    ('app_companies','address','authenticated','UPDATE',false),
+    ('app_companies','color','authenticated','UPDATE',false),
+    ('app_companies','dic','authenticated','UPDATE',false),
+    ('app_companies','email','authenticated','UPDATE',false),
+    ('app_companies','email_notifications','authenticated','UPDATE',false),
+    ('app_companies','form_button_label','authenticated','UPDATE',false),
+    ('app_companies','form_heading','authenticated','UPDATE',false),
+    ('app_companies','form_intro','authenticated','UPDATE',false),
+    ('app_companies','form_success_text','authenticated','UPDATE',false),
+    ('app_companies','form_success_title','authenticated','UPDATE',false),
+    ('app_companies','ico','authenticated','UPDATE',false),
+    ('app_companies','logo_url','authenticated','UPDATE',false),
+    ('app_companies','name','authenticated','UPDATE',false),
+    ('app_companies','onboarding_completed','authenticated','UPDATE',false),
+    ('app_companies','phone','authenticated','UPDATE',false),
+    ('app_companies','privacy_url','authenticated','UPDATE',false),
+    ('app_companies','public_form','authenticated','UPDATE',false),
+    ('app_companies','response_target_minutes','authenticated','UPDATE',false),
+    ('app_companies','terms_url','authenticated','UPDATE',false),
+    ('app_demo_requests','status','authenticated','UPDATE',false),
+    ('app_job_budgets','note','authenticated','UPDATE',false),
+    ('app_job_budgets','planned_cost','authenticated','UPDATE',false),
+    ('app_job_budgets','revenue','authenticated','UPDATE',false),
+    ('app_job_budgets','updated_at','authenticated','UPDATE',false),
+    ('app_tasks','done','authenticated','UPDATE',false)
+  ), actual AS (
+    SELECT c.relname AS table_name,a.attname AS column_name,
+      COALESCE(r.rolname,'PUBLIC') AS grantee,x.privilege_type,x.is_grantable
+    FROM pg_attribute a
+    JOIN pg_class c ON c.oid=a.attrelid
+    JOIN pg_namespace n ON n.oid=c.relnamespace
+    CROSS JOIN LATERAL pg_catalog.aclexplode(a.attacl) AS x
+    LEFT JOIN pg_roles r ON r.oid=x.grantee
+    WHERE n.nspname='public' AND left(c.relname,4)='app_' AND c.relkind IN ('r','p')
+      AND a.attnum>0 AND NOT a.attisdropped AND a.attacl IS NOT NULL
+      AND COALESCE(r.rolname,'PUBLIC') IN ('anon','authenticated','PUBLIC')
+      AND x.privilege_type IN ('SELECT','INSERT','UPDATE','REFERENCES')
+  )
+  SELECT count(*) INTO column_drift_count
+  FROM expected e FULL JOIN actual a USING (table_name,column_name,grantee,privilege_type,is_grantable)
+  WHERE e.table_name IS NULL OR a.table_name IS NULL;
+  IF column_drift_count<>0 THEN
+    RAISE EXCEPTION 'StavbaCore staging reconciliation stopped: column-level grant inventory changed (% grants)',column_drift_count;
+  END IF;
 
   IF to_regprocedure('app_private.jwt_tenant_id()') IS NOT NULL
      OR to_regprocedure('public.app_tenant_access_token_hook(jsonb)') IS NOT NULL THEN
@@ -187,18 +266,19 @@ END
 $boundaries$;
 
 -- Restore only the rights supported by the policies observed in the snapshot.
-GRANT SELECT ON public.app_audit, public.app_companies, public.app_email_outbox,
+GRANT SELECT ON public.app_audit, public.app_companies, public.app_demo_requests, public.app_email_outbox,
   public.app_handovers, public.app_imports, public.app_leads, public.app_members,
   public.app_notes, public.app_quotes TO authenticated;
-GRANT UPDATE ON public.app_companies TO authenticated;
 GRANT SELECT,INSERT,DELETE ON public.app_costs TO authenticated;
 GRANT SELECT,INSERT,UPDATE,DELETE ON public.app_integrations, public.app_invoices,
-  public.app_reminders, public.app_tasks TO authenticated;
+  public.app_reminders TO authenticated;
 GRANT SELECT,DELETE ON public.app_invites TO authenticated;
-GRANT SELECT,INSERT,UPDATE ON public.app_job_budgets TO authenticated;
+GRANT SELECT,INSERT ON public.app_job_budgets TO authenticated;
 GRANT INSERT ON public.app_notes TO authenticated;
-GRANT SELECT,INSERT,DELETE ON public.app_time_entries TO authenticated;
--- Intentionally no direct app_* grant on platform demo requests, rate limits,
--- or requests; their existing policy posture stays server/platform-only.
+GRANT SELECT,INSERT,DELETE ON public.app_tasks, public.app_time_entries TO authenticated;
+-- app_demo_requests retains its existing SELECT and status-only UPDATE column
+-- grants under platform-only policies. No new rights are added to server-only
+-- rate limits or requests, and no table-wide UPDATE is added to companies,
+-- budgets, or tasks; their existing column-scoped grants remain in force.
 
 COMMIT;

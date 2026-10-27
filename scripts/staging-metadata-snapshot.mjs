@@ -10,7 +10,20 @@ SELECT jsonb_build_object(
       'name', c.relname,
       'relkind', c.relkind,
       'rls_enabled', c.relrowsecurity,
-      'rls_forced', c.relforcerowsecurity
+      'rls_forced', c.relforcerowsecurity,
+      'relacl', c.relacl::text,
+      'anon_table_privileges', jsonb_build_object(
+        'select', has_table_privilege('anon', c.oid, 'SELECT'),
+        'insert', has_table_privilege('anon', c.oid, 'INSERT'),
+        'update', has_table_privilege('anon', c.oid, 'UPDATE'),
+        'delete', has_table_privilege('anon', c.oid, 'DELETE')
+      ),
+      'authenticated_table_privileges', jsonb_build_object(
+        'select', has_table_privilege('authenticated', c.oid, 'SELECT'),
+        'insert', has_table_privilege('authenticated', c.oid, 'INSERT'),
+        'update', has_table_privilege('authenticated', c.oid, 'UPDATE'),
+        'delete', has_table_privilege('authenticated', c.oid, 'DELETE')
+      )
     ) ORDER BY n.nspname, c.relname)
     FROM pg_catalog.pg_class AS c
     JOIN pg_catalog.pg_namespace AS n ON n.oid = c.relnamespace
@@ -47,26 +60,39 @@ SELECT jsonb_build_object(
   ), '[]'::jsonb),
   'table_grants', COALESCE((
     SELECT jsonb_agg(jsonb_build_object(
-      'grantee', grantee,
-      'schema', table_schema,
-      'table', table_name,
-      'privilege', privilege_type,
-      'grantable', is_grantable
-    ) ORDER BY table_schema, table_name, grantee, privilege_type)
-    FROM information_schema.table_privileges
-    WHERE table_schema = 'public' AND left(table_name, 4) = 'app_'
+      'grantee', COALESCE(r.rolname, 'PUBLIC'),
+      'schema', n.nspname,
+      'table', c.relname,
+      'privilege', x.privilege_type,
+      'grantable', x.is_grantable
+    ) ORDER BY n.nspname, c.relname, COALESCE(r.rolname, 'PUBLIC'), x.privilege_type)
+    FROM pg_catalog.pg_class AS c
+    JOIN pg_catalog.pg_namespace AS n ON n.oid = c.relnamespace
+    CROSS JOIN LATERAL pg_catalog.aclexplode(
+      COALESCE(c.relacl, pg_catalog.acldefault('r', c.relowner))
+    ) AS x
+    LEFT JOIN pg_catalog.pg_roles AS r ON r.oid = x.grantee
+    WHERE n.nspname = 'public' AND left(c.relname, 4) = 'app_'
+      AND c.relkind IN ('r', 'p')
+      AND x.privilege_type IN ('SELECT', 'INSERT', 'UPDATE', 'DELETE', 'TRUNCATE', 'REFERENCES', 'TRIGGER')
   ), '[]'::jsonb),
   'column_grants', COALESCE((
     SELECT jsonb_agg(jsonb_build_object(
-      'grantee', grantee,
-      'schema', table_schema,
-      'table', table_name,
-      'column', column_name,
-      'privilege', privilege_type,
-      'grantable', is_grantable
-    ) ORDER BY table_schema, table_name, column_name, grantee, privilege_type)
-    FROM information_schema.column_privileges
-    WHERE table_schema = 'public' AND left(table_name, 4) = 'app_'
+      'grantee', COALESCE(r.rolname, 'PUBLIC'),
+      'schema', n.nspname,
+      'table', c.relname,
+      'column', a.attname,
+      'privilege', x.privilege_type,
+      'grantable', x.is_grantable
+    ) ORDER BY n.nspname, c.relname, a.attname, COALESCE(r.rolname, 'PUBLIC'), x.privilege_type)
+    FROM pg_catalog.pg_attribute AS a
+    JOIN pg_catalog.pg_class AS c ON c.oid = a.attrelid
+    JOIN pg_catalog.pg_namespace AS n ON n.oid = c.relnamespace
+    CROSS JOIN LATERAL pg_catalog.aclexplode(a.attacl) AS x
+    LEFT JOIN pg_catalog.pg_roles AS r ON r.oid = x.grantee
+    WHERE n.nspname = 'public' AND left(c.relname, 4) = 'app_'
+      AND c.relkind IN ('r', 'p') AND a.attnum > 0 AND NOT a.attisdropped AND a.attacl IS NOT NULL
+      AND x.privilege_type IN ('SELECT', 'INSERT', 'UPDATE', 'REFERENCES')
   ), '[]'::jsonb),
   'functions', COALESCE((
     SELECT jsonb_agg(jsonb_build_object(
