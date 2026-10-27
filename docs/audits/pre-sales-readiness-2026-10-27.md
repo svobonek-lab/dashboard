@@ -1,7 +1,7 @@
 # Předprodejní audit StavbaFlow
 
 **Datum:** 27. 10. 2026
-**Zdroj:** aktuální větev `codex/sales-readiness-prompts-1-10-resume` (runtime kód ověřen na commitu `c9c8b45`; tento commit přidává pouze auditní/instalační dokumentaci), zdrojový kód, smluvní testy a dostupné CI/Playwright záznamy.
+**Zdroj:** aktuální větev `codex/sales-readiness-prompts-1-10-resume` (runtime kód ověřen na commitu `c9c8b45`; následné commity doplňují auditní důkazy a kompatibilitu verzí GitHub Actions), zdrojový kód, smluvní testy a dostupné CI/Playwright záznamy.
 **Hranice auditu:** lokální syntetické testy prokazují chování kódu v testovaném scénáři. Samy o sobě nepotvrzují aktuální nasazení, produkční RLS, nastavení Vercelu/Supabase, doručování e-mailů ani bezpečné použití zákaznické databáze.
 
 ## Shrnutí
@@ -57,7 +57,7 @@ Dashboard Preview pro přihlášené Playwright průchody zůstává chráněný
 4. **Outbox:** novou `20261027000000_app_email_outbox_runs.sql` ověřit v GitHub disposable CI; teprve po revizi rozhodnout o migraci do cílového prostředí a o testovací zprávě.
 5. **BYODB:** získat samostatný staging zdroj s umělými daty, publikovat neměnný image digest, instalovat na testovací Synology a prokázat inspekci, dry-run, schválený zápis, tenant izolaci, replay a obnovu.
 6. **Prodejní identita a provoz:** potvrdit IČO/sídlo a právní dokumenty, provider env proměnné, backup/restore, e-mail, Sentry a Stripe test mode podle `docs/go-live-checklist.md`.
-7. **CI/Preview a token:** Na headu `cb733e1` PR #123 zůstává draft; GitHub Actions run `40481204177` prošel, PR zobrazuje 19 úspěšných kontrol a jeden očekávaně přeskočený staging metadata snapshot. Dashboard i `jobflow-pro` Preview deploye jsou Ready a konflikty s `main` nejsou. Produkční landing a veřejné read-only demo byly znovu načteny Playwrightem na 375 a 1280 px: HTTP 200, bez horizontálního přetečení a bez zachycených JS chyb. To nepotvrzuje autentizované dashboard toky ani změnu produkce. GitHub Actions secret `SUPABASE_ACCESS_TOKEN` existuje a metadata-only workflow `40462790973` s ním prošel. Protože byl PAT vložen do konverzace v otevřeném textu, zneplatni/rotuj ho a nahraď v Actions novým scoped tokenem. Staging schema drift je popsán níže.
+7. **CI/Preview a token:** PR #123 zůstává draft. Na headu `ac54379` proběhlo všech 19 běžných GitHub Actions kontrol úspěšně; jeden metadata snapshot byl správně přeskočen pro `pull_request`. Vercel Preview pro dashboard i `jobflow-pro` je `Ready`, konflikty s `main` nejsou. Aktualizace `docker/setup-qemu-action@v4` odstranila předchozí warning o Node.js 20; zbývají pouze informační poznámky runneru Ubuntu 26. Landing a veřejné read-only demo byly Playwrightem načteny na 375 a 1280 px: HTTP 200, bez horizontálního přetečení a bez zachycených JS chyb. To nepotvrzuje autentizované dashboard toky ani změnu produkce. Dříve uložený Actions secret `SUPABASE_ACCESS_TOKEN` použil úspěšný metadata-only workflow `40462790973`; nově dodaný PAT se nepodařilo nahradit kvůli požadavku GitHubu na nové ověření účtu. Protože byl token vložen do konverzace v otevřeném textu, zneplatni/rotuj ho a další token nahraď v Actions až po novém přihlášení. Staging schema drift je popsán níže.
 
 ## Doporučená posloupnost nabídky
 
