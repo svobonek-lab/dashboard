@@ -33,6 +33,10 @@ Některé viditelné položky jsou záměrně nedostupné; jejich route je v `sr
 
 To, že route/menu, formulář, karty integrace či tlačítko existují, prokazuje pouze existenci UI. Funkční tok vyžaduje navazující API/RPC, potvrzenou persistenci a test tenant/role oprávnění v reálném neprodukčním prostředí.
 
+## Veřejný vstupní bod
+
+Na aktuálním Preview vrací `/` přihlašovací/onboarding obrazovku se štítkem „Ověřený firemní pilot“; nenašel jsem samostatnou veřejnou produktovou či demo stránku ani veřejný kontaktní/rezervační odkaz. Registrace nového workspace je vypnutá a stránka odkazuje na onboarding se správcem StavbaFlow. Před prodejním spuštěním ověřit, že výraz „ověřený“ odpovídá aktuálním acceptance důkazům, a připravit schválenou cestu pro poptávku/onboarding.
+
 ## Release blokery před prvním zákazníkem
 
 1. **Staging acceptance:** dokončit owner, employee, public-intake, odhlášení/cache a izolaci dvou firem se syntetickými účty. Owner-only Playwright acceptance `40466843417` 27. 10. 2026 ověřil, že Supabase Auth přijalo syntetické owner přihlašovací údaje (`/auth/v1/token` HTTP 200), ale aplikace vrátila `NO_ACTIVE_MEMBERSHIP` a průvodce se neotevřel. Účet tedy existuje v Auth; aktivní členství firmy není potvrzené. Dvou-tenant E2E navíc nemá v GitHub proměnných požadovaná fixture IDs a public intake key.
