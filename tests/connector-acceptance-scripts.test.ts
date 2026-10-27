@@ -20,6 +20,7 @@ test('connector acceptance scripts are staging-only and test cross-company autho
 
 test('staging acceptance does not apply SQL and release requires evidence for the exact main commit', async () => {
   const acceptance = await readFile('.github/workflows/connector-staging-acceptance.yml', 'utf8');
+  const preflight = await readFile('scripts/connector-staging-preflight.mjs', 'utf8');
   const stagingStep = acceptance.split('name: Verify company and employee isolation against isolated staging')[1]?.split('\n      - name:')[0] ?? '';
   const ownerUiStep = acceptance.split('name: Verify owner database setup UI using Playwright')[1]?.split('\n      - name:')[0] ?? '';
   const ownerUiScript = await readFile('scripts/connector-owner-ui-e2e.mjs', 'utf8');
@@ -46,6 +47,14 @@ test('staging acceptance does not apply SQL and release requires evidence for th
   assert.match(acceptance, /PRODUCTION_SUPABASE_PROJECT_REF/);
   assert.match(acceptance, /STAGING_SUPABASE_PROJECT_REF/);
   assert.match(acceptance, /assertIsolatedStagingProject/);
+  assert.match(acceptance, /SUPABASE_ACCESS_TOKEN:\s*\$\{\{ secrets\.SUPABASE_ACCESS_TOKEN \}\}/);
+  assert.match(acceptance, /Verify BYODB tables, RPCs, and enabled Auth hook using metadata only/);
+  assert.match(acceptance, /node scripts\/connector-staging-preflight\.mjs/);
+  assert.match(preflight, /REQUIRED_CONNECTOR_TABLES/);
+  assert.match(preflight, /REQUIRED_CONNECTOR_FUNCTIONS/);
+  assert.match(preflight, /customAccessTokenEnabled === true/);
+  assert.match(preflight, /customerRowsRead: false/);
+  assert.doesNotMatch(preflight, /SUPABASE_SERVICE_ROLE_KEY|STAGING_SUPABASE_SERVICE_ROLE_KEY/);
   assert.doesNotMatch(acceptance, /SUPABASE_SERVICE_ROLE_KEY|db push|migrate|INSERT INTO/i);
   assert.match(publish, /staging_acceptance_run_id/);
   assert.match(publish, /needs: \[acceptance, verify\]/);
