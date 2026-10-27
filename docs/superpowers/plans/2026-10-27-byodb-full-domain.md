@@ -35,8 +35,8 @@
 - [x] Write failing tests for `employee_directory`, `project`, `lead_note`, and `lead_file` mappings, including required fields, relationship keys and rejected unknown payloads.
 - [x] Run the targeted tests and confirm each fails for the intended missing contract.
 - [ ] Add the entity types and field allowlists; define exact create requirements and size limits for notes and metadata. Field allowlists and mapping requirements are in place; create validation and per-field limits remain for the operation path.
-- [x] Run the targeted tests, `npm test`, root lint/build and connector lint/build. Root 419/419, connector 83 passing and 6 Docker fixture skips; all lint/build checks passed.
-- [ ] Commit the protocol and validation change.
+- [x] Run the targeted tests, `npm test`, root lint/build and connector lint/build. Root 419/419, connector 83 passing; the six fixture cases later passed twice with Docker. All lint/build checks passed.
+- [x] Commit the protocol and validation change (`e613cde`).
 
 ### Task 2: Implement mapped source CRUD for operational employees and projects
 
@@ -89,7 +89,7 @@
 
 **Files:** `.github/workflows/connector-verify.yml`, `.github/workflows/connector-staging-acceptance.yml`, `.github/workflows/connector-publish.yml`, acceptance tests, `docs/audits/`.
 
-- [ ] Run the six skipped fixture tests with disposable PostgreSQL, MariaDB and SQL Server; investigate Docker WSL `ERROR_NO_SYSTEM_RESOURCES` or use an isolated runner with those engines.
+- [x] Run the six skipped fixture tests with disposable PostgreSQL, MariaDB and SQL Server. After Windows restart Docker Engine 29.9.2 started; `RUN_DB_INTEGRATION=1 npm run test:integration --prefix connector` passed twice (22/22 each, zero skips). Synthetic containers and network were removed with `docker compose down -v`.
 - [ ] Configure a dedicated self-hosted runner restricted to trusted `main` manual jobs if the repository owner chooses this no-GitHub-charge route. Do not expose secrets to PR code.
 - [ ] Run read-only staging metadata preflight and manually reviewed SQL rollout; verify two-company isolation, employee rights and all domain paths.
 - [ ] Run logged-in owner Playwright against the staging Preview and a synthetic source; verify files and public/AI/CSV paths.
@@ -98,4 +98,4 @@
 
 ## Current evidence
 
-PR #127 is merged. The connector has 83 passing unit tests and six skipped fixture cases. Docker Desktop currently fails to create its WSL VM with `ERROR_NO_SYSTEM_RESOURCES`; the host had under 0.2 GB free physical RAM during diagnosis. GitHub-hosted Actions jobs are blocked before execution. No successful full-domain acceptance or released image digest exists.
+PR #127 is merged. The connector has 83 passing unit tests and all six fixture cases passed twice locally after the host restart. GitHub-hosted Actions jobs remain blocked before execution. No successful full-domain staging acceptance or released image digest exists.
