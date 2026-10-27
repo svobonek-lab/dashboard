@@ -283,6 +283,13 @@ export function validateConnectorMapping(value: unknown, sourceSchema: Connector
     targets.add(targetField);
     return { sourceColumn, targetField, conversion, ...(field.required === true ? { required: true } : {}) };
   });
+  const requiredByodbTargets: Record<string, readonly string[]> = {
+    employee_directory: ['name', 'email'],
+    project: ['title'],
+    lead_note: ['leadExternalId', 'body', 'authorEmail', 'createdAt'],
+    lead_file: ['leadExternalId', 'objectPath', 'fileName', 'mimeType', 'sizeBytes', 'sha256'],
+  };
+  if (requiredByodbTargets[entityType]?.some(target => !targets.has(target))) throw new ConnectorHttpError('MAPPING_REQUIRED_FIELD_MISSING', 400);
   return {
     version: 1,
     mappingVersion: Number(mapping.mappingVersion),

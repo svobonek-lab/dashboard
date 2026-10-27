@@ -5,6 +5,8 @@ export const CANONICAL_ENTITY_TYPES = [
   'lead',
   'project',
   'employee_directory',
+  'lead_note',
+  'lead_file',
   'invoice',
   'payment',
   'custom_record',
@@ -107,7 +109,7 @@ export interface ConnectorMappingDefinitionV1 {
 }
 
 export type ByodbMappingDefinitionV1 = Omit<ConnectorMappingDefinitionV1, 'entityType'> & {
-  entityType: 'company' | 'lead';
+  entityType: 'company' | 'lead' | 'employee_directory' | 'project' | 'lead_note' | 'lead_file';
 };
 
 export interface IngestRecordResultV1 {
@@ -155,8 +157,10 @@ export const CANONICAL_PAYLOAD_FIELDS: Record<CanonicalEntityType, readonly stri
   customer: ['name', 'companyNumber', 'vatNumber', 'email', 'phone', 'address', 'city', 'postalCode', 'country', 'archived'],
   contact: ['firstName', 'lastName', 'name', 'email', 'phone', 'role', 'customerExternalId', 'archived'],
   lead: ['title', 'customer', 'description', 'email', 'phone', 'assignedToEmail', 'customerExternalId', 'contactExternalId', 'value', 'currency', 'status', 'priority', 'address', 'city', 'scheduledAt', 'archived'],
-  project: ['title', 'description', 'customerExternalId', 'status', 'address', 'city', 'startsAt', 'endsAt', 'budget', 'currency', 'archived'],
-  employee_directory: ['name', 'email', 'phone', 'role', 'active', 'archived'],
+  project: ['title', 'description', 'customerExternalId', 'leadExternalId', 'status', 'address', 'city', 'startsAt', 'endsAt', 'budget', 'currency', 'archived'],
+  employee_directory: ['name', 'email', 'phone', 'role', 'specialization', 'capacity', 'active', 'archived'],
+  lead_note: ['leadExternalId', 'body', 'authorEmail', 'createdAt', 'archived'],
+  lead_file: ['leadExternalId', 'objectPath', 'fileName', 'mimeType', 'sizeBytes', 'sha256', 'createdAt', 'archived'],
   invoice: ['number', 'customerExternalId', 'projectExternalId', 'issuedAt', 'dueAt', 'total', 'currency', 'status', 'paidAt', 'archived'],
   payment: ['invoiceExternalId', 'paidAt', 'amount', 'currency', 'method', 'reference', 'archived'],
   custom_record: ['namespace', 'fields', 'archived'],

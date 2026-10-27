@@ -32,10 +32,10 @@
 
 **Files:** `shared/connectorProtocol.ts`, `api/_connector/validation.ts`, `connector/src/mapping/compileMapping.ts`, `tests/connector-api.test.ts`, `connector/test/mapping.test.ts`.
 
-- [ ] Write failing tests for `employee_directory`, `project`, `lead_note`, and `lead_file` mappings, including required fields, relationship keys and rejected unknown payloads.
-- [ ] Run the targeted tests and confirm each fails for the intended missing contract.
-- [ ] Add the entity types and field allowlists; define exact create requirements and size limits for notes and metadata.
-- [ ] Run the targeted tests, `npm test`, root lint/build and connector lint/build.
+- [x] Write failing tests for `employee_directory`, `project`, `lead_note`, and `lead_file` mappings, including required fields, relationship keys and rejected unknown payloads.
+- [x] Run the targeted tests and confirm each fails for the intended missing contract.
+- [ ] Add the entity types and field allowlists; define exact create requirements and size limits for notes and metadata. Field allowlists and mapping requirements are in place; create validation and per-field limits remain for the operation path.
+- [x] Run the targeted tests, `npm test`, root lint/build and connector lint/build. Root 419/419, connector 83 passing and 6 Docker fixture skips; all lint/build checks passed.
 - [ ] Commit the protocol and validation change.
 
 ### Task 2: Implement mapped source CRUD for operational employees and projects
