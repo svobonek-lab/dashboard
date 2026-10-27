@@ -23,6 +23,8 @@ The expanded operational source-write fixture suite also passed twice (26/26, ze
 
 Draft PR #128 now includes `20261027_byodb_operational_projection.sql`, a staging-only proposal for source-backed employee, project, note and file metadata reads. A disposable PostgreSQL fixture proved two-company isolation, owner versus employee visibility, loss of note/file/project access after lead reassignment, exclusion of the internal file object path, and service-only function execution grants. The full local connector adapter suite passed 27/27 with zero skips, root tests passed 422/422, and root/connector lint and builds passed. The SQL was **not** applied to StavbaCore Staging; operation queue expansion, full-domain routing and staging acceptance remain open.
 
+The draft also includes `20261027_byodb_operational_queue.sql` for employee/project operations. A disposable PostgreSQL test verifies owner-only queueing, approved mapping versions, idempotent replay, denied cross-company and dangling project references, denied spoofed actor email, and service-only function grants. The complete adapter suite passed 28/28 with zero skips. The queue SQL is **not** deployed; source-side relationship rechecks, full-domain activation and all staging/release gates remain open.
+
 ## Product scope still requiring a release decision
 
 The current BYODB repository uses the company database as source of truth only for the mapped company profile and lead records. Employees, projects, lead notes, and files still use the existing StavbaFlow cloud repository. This is a hybrid connection, not a full replacement of every application's data store. The owner setup flow and SQL contracts do not currently define mappings for those other entities.
