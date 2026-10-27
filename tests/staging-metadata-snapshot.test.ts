@@ -21,11 +21,20 @@ test('staging metadata capture is catalog-only, read-only, and redacts Auth hook
   assert.match(STAGING_METADATA_SQL, /pg_class/);
   assert.match(STAGING_METADATA_SQL, /pg_policies/);
   assert.match(STAGING_METADATA_SQL, /information_schema\.columns/);
-  assert.match(STAGING_METADATA_SQL, /information_schema\.column_privileges/);
+  assert.doesNotMatch(STAGING_METADATA_SQL, /information_schema\.(table_privileges|column_privileges)/);
+  assert.match(STAGING_METADATA_SQL, /pg_catalog\.aclexplode/);
+  assert.match(STAGING_METADATA_SQL, /relacl/);
+  assert.match(STAGING_METADATA_SQL, /has_table_privilege/);
+  assert.match(STAGING_METADATA_SQL, /attacl/);
+  assert.match(STAGING_METADATA_SQL, /aclexplode\(a\.attacl\)[\s\S]*?a\.attacl IS NOT NULL/);
+  assert.doesNotMatch(STAGING_METADATA_SQL, /aclexplode\(COALESCE\(a\.attacl/);
   assert.match(STAGING_METADATA_SQL, /left\(c\.relname, 4\) = 'app_'/);
   assert.doesNotMatch(STAGING_METADATA_SQL, /column_default\s*,/);
   assert.match(STAGING_METADATA_SQL, /pg_get_function_identity_arguments/);
-  assert.doesNotMatch(STAGING_METADATA_SQL, /\b(insert|update|delete|alter|drop|create|grant|revoke|truncate)\b/i);
+  assert.doesNotMatch(
+    STAGING_METADATA_SQL,
+    /\b(?:INSERT\s+INTO|UPDATE\s+\S+\s+SET|DELETE\s+FROM|ALTER\s+(?:TABLE|FUNCTION|SCHEMA)|DROP\s+(?:TABLE|FUNCTION|SCHEMA)|CREATE\s+(?:TABLE|FUNCTION|SCHEMA)|GRANT\s+\S+\s+ON|REVOKE\s+\S+\s+ON|TRUNCATE\s+\S)/i,
+  );
   assert.throws(
     () => validateProjectIdentity('oncmtmrhmjlerbwkrecv', 'oncmtmrhmjlerbwkrecv'),
     /must be isolated from production/,

@@ -11,25 +11,30 @@ CREATE FUNCTION auth.jwt() RETURNS jsonb LANGUAGE sql STABLE AS
 GRANT USAGE ON SCHEMA auth TO authenticated,supabase_auth_admin;
 GRANT EXECUTE ON FUNCTION auth.uid(),auth.jwt() TO authenticated,supabase_auth_admin;
 
-CREATE TABLE public.app_companies(id uuid PRIMARY KEY,active boolean NOT NULL DEFAULT true);
+CREATE TABLE public.app_companies(
+  id uuid PRIMARY KEY,active boolean NOT NULL DEFAULT true,name text,address text,color text,dic text,email text,
+  email_notifications boolean,form_button_label text,form_heading text,form_intro text,form_success_text text,
+  form_success_title text,ico text,logo_url text,onboarding_completed boolean,phone text,privacy_url text,
+  public_form boolean,response_target_minutes integer,terms_url text
+);
 CREATE TABLE public.app_members(company_id uuid NOT NULL,user_id uuid NOT NULL,role text NOT NULL,active boolean NOT NULL DEFAULT true,PRIMARY KEY(company_id,user_id));
 CREATE TABLE public.app_leads(id uuid PRIMARY KEY,company_id uuid NOT NULL,assigned_to uuid);
 CREATE TABLE public.app_audit(id uuid,company_id uuid);
 CREATE TABLE public.app_costs(id uuid,company_id uuid,lead_id uuid,created_by uuid);
-CREATE TABLE public.app_demo_requests(id uuid);
+CREATE TABLE public.app_demo_requests(id uuid,status text);
 CREATE TABLE public.app_email_outbox(id uuid,company_id uuid);
 CREATE TABLE public.app_handovers(id uuid,company_id uuid,lead_id uuid);
 CREATE TABLE public.app_imports(id uuid,company_id uuid);
 CREATE TABLE public.app_integrations(id uuid,company_id uuid);
 CREATE TABLE public.app_invites(id uuid,company_id uuid);
 CREATE TABLE public.app_invoices(id uuid,company_id uuid);
-CREATE TABLE public.app_job_budgets(company_id uuid,lead_id uuid);
+CREATE TABLE public.app_job_budgets(company_id uuid,lead_id uuid,note text,planned_cost numeric,revenue numeric,updated_at timestamptz);
 CREATE TABLE public.app_notes(id uuid,company_id uuid,lead_id uuid,author uuid);
 CREATE TABLE public.app_quotes(id uuid,company_id uuid);
 CREATE TABLE public.app_rate_limits(key text);
 CREATE TABLE public.app_reminders(id uuid,company_id uuid);
 CREATE TABLE public.app_requests(key text,company_id uuid);
-CREATE TABLE public.app_tasks(id uuid,company_id uuid,lead_id uuid);
+CREATE TABLE public.app_tasks(id uuid,company_id uuid,lead_id uuid,done boolean);
 CREATE TABLE public.app_time_entries(id uuid,company_id uuid,lead_id uuid,member_id uuid);
 
 CREATE FUNCTION public.app_role(c uuid) RETURNS text LANGUAGE sql STABLE SECURITY DEFINER SET search_path=public,pg_temp AS
@@ -80,13 +85,33 @@ BEGIN
   ALTER POLICY company_read ON public.app_companies USING (public.app_role(id) IS NOT NULL);
   ALTER POLICY lead_read ON public.app_leads USING (public.app_role(company_id)='owner' OR (public.app_role(company_id)='employee' AND assigned_to=auth.uid()));
   ALTER POLICY member_read ON public.app_members USING (public.app_role(company_id) IS NOT NULL);
+  ALTER POLICY platform_read_demo_requests ON public.app_demo_requests USING (public.app_is_platform_admin());
+  ALTER POLICY platform_update_demo_requests ON public.app_demo_requests USING (public.app_is_platform_admin()) WITH CHECK (public.app_is_platform_admin());
   ALTER POLICY rate_server_only ON public.app_rate_limits USING (false) WITH CHECK (false);
   ALTER POLICY request_server_only ON public.app_requests USING (false) WITH CHECK (false);
 END
 $policies$;
 
+-- Synthetic fixture mirrors staging's existing effective table grants.
+GRANT SELECT ON public.app_audit, public.app_companies, public.app_demo_requests,
+  public.app_email_outbox, public.app_handovers, public.app_imports, public.app_leads,
+  public.app_members, public.app_quotes TO authenticated;
+GRANT SELECT,INSERT,DELETE ON public.app_costs, public.app_tasks, public.app_time_entries TO authenticated;
+GRANT SELECT,INSERT,UPDATE,DELETE ON public.app_integrations, public.app_invoices, public.app_reminders TO authenticated;
+GRANT SELECT,DELETE ON public.app_invites TO authenticated;
+GRANT SELECT,INSERT ON public.app_job_budgets, public.app_notes TO authenticated;
+
+-- These are column-scoped UPDATE permissions, not table-wide UPDATE grants.
+GRANT UPDATE (address,color,dic,email,email_notifications,form_button_label,form_heading,form_intro,
+  form_success_text,form_success_title,ico,logo_url,name,onboarding_completed,phone,privacy_url,
+  public_form,response_target_minutes,terms_url) ON public.app_companies TO authenticated;
+GRANT UPDATE (status) ON public.app_demo_requests TO authenticated;
+GRANT UPDATE (note,planned_cost,revenue,updated_at) ON public.app_job_budgets TO authenticated;
+GRANT UPDATE (done) ON public.app_tasks TO authenticated;
+
 INSERT INTO public.app_companies(id,active) VALUES
  ('a0000000-0000-4000-8000-000000000001',true),('b0000000-0000-4000-8000-000000000002',true);
+INSERT INTO public.app_demo_requests(id,status) VALUES ('d0000000-0000-4000-8000-000000000004','pending');
 INSERT INTO public.app_members(company_id,user_id,role,active) VALUES
  ('a0000000-0000-4000-8000-000000000001','10000000-0000-4000-8000-000000000001','owner',true),
  ('a0000000-0000-4000-8000-000000000001','30000000-0000-4000-8000-000000000003','employee',true),

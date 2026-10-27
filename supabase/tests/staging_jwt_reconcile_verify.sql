@@ -30,6 +30,7 @@ BEGIN
   IF (SELECT count(*) FROM public.app_members)<>3 THEN RAISE EXCEPTION 'Tenant A must see only its three memberships'; END IF;
   IF (SELECT count(*) FROM public.app_leads)<>1 THEN RAISE EXCEPTION 'Tenant A must see exactly its lead despite a broad permissive policy'; END IF;
   IF EXISTS (SELECT 1 FROM public.app_leads WHERE company_id='b0000000-0000-4000-8000-000000000002') THEN RAISE EXCEPTION 'Tenant A read Tenant B lead'; END IF;
+  IF EXISTS (SELECT 1 FROM public.app_demo_requests) THEN RAISE EXCEPTION 'non-platform user read a demo request'; END IF;
 END
 $tenant_a$;
 
@@ -63,11 +64,31 @@ ROLLBACK;
 
 DO $grants$
 BEGIN
-  IF has_table_privilege('anon','public.app_leads','SELECT') THEN RAISE EXCEPTION 'anon received a table grant'; END IF;
+  IF has_table_privilege('anon','public.app_leads','SELECT')
+     OR has_table_privilege('anon','public.app_companies','UPDATE') THEN RAISE EXCEPTION 'anon received a table grant'; END IF;
   IF has_table_privilege('authenticated','public.app_rate_limits','SELECT')
-     OR has_table_privilege('authenticated','public.app_requests','SELECT')
-     OR has_table_privilege('authenticated','public.app_demo_requests','SELECT') THEN
-    RAISE EXCEPTION 'server/platform table received an authenticated grant';
+     OR has_table_privilege('authenticated','public.app_requests','SELECT') THEN
+    RAISE EXCEPTION 'server-only table received an authenticated grant';
+  END IF;
+  IF NOT has_table_privilege('authenticated','public.app_demo_requests','SELECT')
+     OR has_table_privilege('authenticated','public.app_demo_requests','UPDATE')
+     OR NOT has_column_privilege('authenticated','public.app_demo_requests','status','UPDATE') THEN
+    RAISE EXCEPTION 'platform demo request grants were not preserved at their original scope';
+  END IF;
+  IF has_table_privilege('authenticated','public.app_companies','UPDATE')
+     OR NOT has_column_privilege('authenticated','public.app_companies','name','UPDATE')
+     OR has_column_privilege('authenticated','public.app_companies','active','UPDATE') THEN
+    RAISE EXCEPTION 'company updates were broadened beyond the existing column allowlist';
+  END IF;
+  IF has_table_privilege('authenticated','public.app_job_budgets','UPDATE')
+     OR NOT has_column_privilege('authenticated','public.app_job_budgets','revenue','UPDATE')
+     OR has_column_privilege('authenticated','public.app_job_budgets','company_id','UPDATE') THEN
+    RAISE EXCEPTION 'job budget updates were broadened beyond the existing column allowlist';
+  END IF;
+  IF has_table_privilege('authenticated','public.app_tasks','UPDATE')
+     OR NOT has_column_privilege('authenticated','public.app_tasks','done','UPDATE')
+     OR has_column_privilege('authenticated','public.app_tasks','lead_id','UPDATE') THEN
+    RAISE EXCEPTION 'task updates were broadened beyond the existing column allowlist';
   END IF;
 END
 $grants$;
