@@ -13,9 +13,9 @@
 
 ## Acceptance blocker
 
-GitHub Actions runs `40539439427`, `40539877306`, `40540852195`, and PR verification `40543958525` failed before any workflow step started. The job annotation says the job could not start because recent account payments failed or the spending limit must be increased. Runner ID was `0` and the job had no steps. These are not staging or application test failures. The connector-staging-acceptance run therefore has no result.
+GitHub Actions runs `40539439427`, `40539877306`, `40540852195`, `40543958525`, and `40544615710` failed before any workflow step started. The job annotation says the job could not start because recent account payments failed or the spending limit must be increased. Runner ID was `0` and the job had no steps. These are not staging or application test failures. The connector-staging-acceptance run therefore has no result. On run `40544615710`, both Vercel Preview checks succeeded; all GitHub-hosted jobs still had no runner or steps.
 
-Local verification on the work branch passed `npm test` (417/417), `npm run lint`, and `npm run build`. Connector unit tests passed 83/83 active cases; six PostgreSQL/MariaDB/SQL Server adapter integration cases were skipped because Docker Desktop's Linux engine was not running. The integration workflow already defines disposable localhost fixtures for all three engines; rerun it after Actions billing is restored.
+Local verification on the work branch passed `npm test` (417/417), `npm run lint`, and `npm run build`. The owner connector setup now blocks enrollment creation until the configured image is an immutable GHCR digest, avoiding short-lived enrollment codes that cannot be installed. Its targeted regression test passed. Connector unit tests passed 83/83 active cases; six PostgreSQL/MariaDB/SQL Server adapter integration cases were skipped because Docker Desktop's Linux engine was not running. The integration workflow already defines disposable localhost fixtures for all three engines; rerun it after Actions billing is restored.
 
 ## Next sequence
 

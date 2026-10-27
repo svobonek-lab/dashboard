@@ -3,7 +3,7 @@ import { readFile } from 'node:fs/promises';
 import test from 'node:test';
 import { suggestCanonicalField } from '../src/features/manage-integrations/model/byodbMapping.js';
 import { buildConnectorMapping } from '../src/features/manage-integrations/model/buildConnectorMapping.js';
-import { buildConnectorPackage } from '../src/features/manage-integrations/model/buildConnectorPackage.js';
+import { buildConnectorPackage, isImmutableConnectorImage } from '../src/features/manage-integrations/model/buildConnectorPackage.js';
 import JSZip from 'jszip';
 
 test('BYODB field suggestions use only source names and SQL types',()=>{
@@ -107,12 +107,14 @@ test('Synology Compose download uses a reviewed immutable image and keeps enroll
   assert.throws(() => buildCompose(`ghcr.io/svobonek-lab/stavbaflow-connector@sha256:${'b'.repeat(64)}`, 'not-a-company-id'), /CONNECTOR_COMPANY_ID_INVALID/);
 });
 
-test('connector setup keeps the package action clickable and lets digest validation explain a missing release', async () => {
+test('connector enrollment stays blocked until an immutable connector image is released', async () => {
   const setup = await readFile(new URL('../src/features/manage-integrations/ui/ConnectorSetup.tsx', import.meta.url), 'utf8');
-  assert.match(setup, /onClick=\{\(\) => void downloadPackage\(\)\}/);
-  assert.match(setup, /disabled=\{packageBusy\}/);
-  assert.doesNotMatch(setup, /disabled=\{packageBusy\s*\|\|/);
+  const image = `ghcr.io/svobonek-lab/stavbaflow-connector@sha256:${'c'.repeat(64)}`;
+  assert.equal(isImmutableConnectorImage(image), true);
+  assert.equal(isImmutableConnectorImage(''), false);
+  assert.equal(isImmutableConnectorImage('latest'), false);
+  assert.match(setup, /disabled=\{busy\s*\|\|\s*!imageReady\}/);
+  assert.match(setup, /imageReady[\s\S]*neměnné vydání konektoru/);
   assert.match(setup, /buildConnectorPackage\(\{ image, driver, apiBaseUrl: window\.location\.origin, companyId \}\)/);
-  assert.match(setup, /CONNECTOR_IMAGE_DIGEST_REQUIRED[\s\S]*neměnné vydání konektoru/);
   assert.match(setup, /role="alert"/);
 });

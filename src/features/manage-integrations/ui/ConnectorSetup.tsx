@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Cable, Check, Copy, Database, Download, Loader2, ShieldCheck } from 'lucide-react';
 import { connectorClient } from '../api/connectorClient';
 import type { EnrollmentResponse } from '../api/connectorContract';
-import { buildConnectorPackage, type ConnectorPackageDriver } from '../model/buildConnectorPackage';
+import { buildConnectorPackage, isImmutableConnectorImage, type ConnectorPackageDriver } from '../model/buildConnectorPackage';
 
 type DatabaseDriver = ConnectorPackageDriver;
 
@@ -21,6 +21,7 @@ export function ConnectorSetup({ companyId, onCreated, initialDriver, onDriverCh
   const [error, setError] = useState('');
   const [packageBusy, setPackageBusy] = useState(false);
   const image = import.meta.env.VITE_CONNECTOR_IMAGE ?? '';
+  const imageReady = isImmutableConnectorImage(image);
 
   const create = async () => {
     setBusy(true);
@@ -70,8 +71,9 @@ export function ConnectorSetup({ companyId, onCreated, initialDriver, onDriverCh
             {Object.entries(driverLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
           </select>
         </label>
-        {!enrollment ? <button type="button" disabled={busy} onClick={() => void create()} className="workspace-primary-action inline-flex min-h-11 items-center justify-center gap-2 px-4 text-sm font-semibold disabled:opacity-50">{busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Database className="h-4 w-4" />}Připravit napojení</button> : null}
+        {!enrollment ? <button type="button" disabled={busy || !imageReady} onClick={() => void create()} className="workspace-primary-action inline-flex min-h-11 items-center justify-center gap-2 px-4 text-sm font-semibold disabled:opacity-50">{busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Database className="h-4 w-4" />}Připravit napojení</button> : null}
       </div>
+      {!imageReady && !enrollment ? <p className="mt-2 text-xs text-amber-700">Připojení půjde připravit až po publikaci a kontrole neměnného vydání konektoru s image digestem.</p> : null}
       <div className="mt-4 flex items-center gap-2 text-sm text-emerald-700"><ShieldCheck className="h-4 w-4" />Bez příchozího portu · hesla zůstávají jako lokální soubory na NAS</div>
 
       {enrollment ? <div className="mt-6 rounded-2xl border border-blue-100 bg-blue-50/60 p-4">
@@ -80,7 +82,7 @@ export function ConnectorSetup({ companyId, onCreated, initialDriver, onDriverCh
         <ol className="mt-4 grid gap-2 text-xs leading-5 text-slate-600 sm:grid-cols-3"><li><strong className="text-slate-800">1.</strong> Stáhněte instalační balíček z prověřeného vydání.</li><li><strong className="text-slate-800">2.</strong> Uložte kód do souboru pouze na NAS.</li><li><strong className="text-slate-800">3.</strong> Po prvním spojení se kód zneplatní.</li></ol>
         <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-3"><p className="text-xs font-semibold text-amber-900">Jednorázový klíč konektoru</p><code className="mt-1 block break-all text-xs text-amber-950">{enrollment.connectorSecret}</code><p className="mt-1 text-xs text-amber-800">Uložte tento klíč pouze do souboru connector-identity na NAS. Po zavření stránky ho už nezobrazíme.</p></div>
         <button type="button" disabled={packageBusy} onClick={() => void downloadPackage()} className="mt-4 inline-flex min-h-10 items-center gap-2 rounded-xl bg-slate-950 px-4 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50"><Download className="h-4 w-4" />{packageBusy ? 'Připravuji balíček…' : 'Stáhnout balíček pro Synology'}</button>
-        {!image && <p className="mt-2 text-xs text-amber-700">Stažení se otevře po publikaci a revizi neměnného konektoru. CI zatím nemá schválený image digest.</p>}
+        {!imageReady && <p className="mt-2 text-xs text-amber-700">Stažení se otevře po publikaci a revizi neměnného konektoru. CI zatím nemá schválený image digest.</p>}
         <p className="mt-3 text-xs text-slate-500">Platnost jednorázového kódu končí {new Date(enrollment.expiresAt).toLocaleString('cs-CZ')}. Přístupové údaje SQL doplňte jen na NAS; stáhnutý balíček obsahuje bezpečné zástupné hodnoty.</p>
       </div> : null}
       {error ? <p role="alert" className="mt-4 text-sm text-rose-700">{error}</p> : null}
