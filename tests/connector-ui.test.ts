@@ -61,6 +61,7 @@ test('owner integration UI names both storage modes and keeps write status visib
   assert.match(integrations, /entityType === 'lead'[\s\S]+mappedTargets\.includes\('assignedToEmail'\)/);
   const settings = await readFile(new URL('../src/pages/owner/settings/ui/Settings.tsx', import.meta.url), 'utf8');
   assert.match(settings, /Firemní údaje se načítají ze zdrojové databáze/);
+  assert.match(integrations, /Namapovaný firemní profil a zakázky[\s\S]*zaměstnanci, projekty, poznámky a soubory[\s\S]*StavbaFlow Cloud/);
   assert.match(settings, /disabled=\{byodbMode\}/);
   assert.match(status, /čekající zápisy/i);
   assert.match(status, /konflikt/i);
