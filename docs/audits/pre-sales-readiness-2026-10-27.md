@@ -35,7 +35,7 @@ To, že route/menu, formulář, karty integrace či tlačítko existují, prokaz
 
 ## Veřejný vstupní bod
 
-Na aktuálním Preview vrací `/` přihlašovací/onboarding obrazovku se štítkem „Ověřený firemní pilot“; nenašel jsem samostatnou veřejnou produktovou či demo stránku ani veřejný kontaktní/rezervační odkaz. Registrace nového workspace je vypnutá a stránka odkazuje na onboarding se správcem StavbaFlow. Před prodejním spuštěním ověřit, že výraz „ověřený“ odpovídá aktuálním acceptance důkazům, a připravit schválenou cestu pro poptávku/onboarding.
+Dashboard Preview `/` vrací přihlašovací/onboarding obrazovku se štítkem „Ověřený firemní pilot“. Samostatný Vercel projekt `jobflow-pro` slouží pro landing deployment; jeho poslední Preview sice build/deploy prošel, ale při Playwright otevření přesměroval na Vercel login/SSO a `/api/jwt` vrátil 403. Repository secret `STAGING_PREVIEW_BYPASS_TOKEN` chybí, takže landing nelze z tohoto běhu živě zkontrolovat. Zdrojový landing komponent existuje a textové kontrakty jsou testované, to však nepotvrzuje výstup Preview. Registrace nového workspace je ve výchozím nastavení vypnutá. Před prodejním spuštěním zkontrolovat marketing copy na skutečném deploymentu a potvrdit kontaktní/onboarding cestu.
 
 ## Release blokery před prvním zákazníkem
 
