@@ -41,10 +41,12 @@ test('server generation uses the fixed model even when an environment override e
   const oldKey = process.env.GEMINI_API_KEY;
   const oldModel = process.env.GEMINI_MODEL;
   let calledUrl = '';
+  let calledBody: Record<string, unknown> | null = null;
   process.env.GEMINI_API_KEY = 'synthetic-test-only';
   process.env.GEMINI_MODEL = 'unapproved-model';
-  globalThis.fetch = async (input) => {
+  globalThis.fetch = async (input, init) => {
     calledUrl = String(input);
+    calledBody = JSON.parse(String(init?.body)) as Record<string, unknown>;
     return new Response(JSON.stringify({
       candidates: [{ content: { parts: [{ text: '{"is_lead":false}' }], role: 'model' }, finishReason: 'STOP' }],
     }), { status: 200, headers: { 'content-type': 'application/json' } });
@@ -53,6 +55,8 @@ test('server generation uses the fixed model even when an environment override e
     assert.equal(await generateGeminiResponse('prompt', 'body'), '{"is_lead":false}');
     assert.match(calledUrl, /gemini-3\.8-flash/);
     assert.doesNotMatch(calledUrl, /unapproved-model/);
+    const config = (calledBody?.generationConfig || {}) as Record<string, unknown>;
+    assert.equal(config.temperature, undefined, 'Gemini 3.8 Flash does not accept the deprecated temperature parameter');
   } finally {
     globalThis.fetch = oldFetch;
     if (oldKey === undefined) delete process.env.GEMINI_API_KEY; else process.env.GEMINI_API_KEY = oldKey;

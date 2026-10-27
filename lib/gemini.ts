@@ -34,7 +34,7 @@ export async function generateGeminiResponse(prompt: string, textBody: string): 
     const response = await ai.models.generateContent({
       model: GEMINI_MODEL,
       contents: prompt + '\n\nVSTUPNÍ E-MAIL:\n' + textBody,
-      config: { responseMimeType: 'application/json', temperature: 0 },
+      config: { responseMimeType: 'application/json' },
     });
     const text = response.text?.trim();
     if (!text) throw new Error('Empty Gemini response.');
