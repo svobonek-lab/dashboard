@@ -11,6 +11,8 @@ const sentry = source('../src/shared/lib/sentry.ts');
 const scheduler = source('../api/outbox-scheduler.ts');
 const runEvidence = source('../api/outbox-run-evidence.ts');
 const migration = source('../supabase/staging/20261027_outbox_run_evidence.sql');
+const productionMigration = source('../supabase/migrations/20261027000000_app_email_outbox_runs.sql');
+const verifyWorkflow = source('../.github/workflows/verify.yml');
 const runbook = source('../docs/runbook-incident.md');
 
 test('Sentry is DSN-gated and workspace context contains only a company UUID and approved role', () => {
@@ -31,6 +33,14 @@ test('scheduler persists bounded run summaries and never returns provider or cus
   assert.match(migration, /enable row level security/i);
   assert.match(migration, /grant select, insert, update on table public\.app_email_outbox_runs to service_role/i);
   assert.doesNotMatch(migration, /grant [^;]*(anon|authenticated)/i);
+});
+
+test('outbox run evidence is part of the numbered migration chain and disposable PostgreSQL CI', () => {
+  assert.match(productionMigration, /create table if not exists public\.app_email_outbox_runs/i);
+  assert.match(productionMigration, /enable row level security/i);
+  assert.match(productionMigration, /grant select, insert, update on table public\.app_email_outbox_runs to service_role/i);
+  assert.doesNotMatch(productionMigration, /grant [^;]*(anon|authenticated)/i);
+  assert.match(verifyWorkflow, /outbox-run-evidence-contract:[\s\S]*?supabase\/migrations\/20261027000000_app_email_outbox_runs\.sql/);
 });
 
 test('incident runbook covers Supabase, email outbox, Stripe and evidence-preserving escalation', () => {

@@ -8,7 +8,7 @@ map.
 
 Coverage: full, partial, not covered, or proposal only. “CI contract” means the
 named disposable PostgreSQL job runs the contract against a synthetic baseline;
-it does not mean an equivalent numbered migration exists.
+numbered migration coverage is stated separately for each row.
 
 | Staging contract | Objects and signatures covered | Numbered migration coverage | CI contract |
 | --- | --- | --- | --- |
@@ -22,7 +22,7 @@ it does not mean an equivalent numbered migration exists.
 | `20261014_immediate_email_notifications_contract.sql` | lead notification columns, `app_email_outbox` extensions/index; `app_queue_immediate_lead_email()` and trigger; `app_set_email_notifications(uuid, boolean)` | **Not covered.** Historical outbox is not the current `app_*` outbox/trigger contract. | Partial: `ai-dispatcher-contract` runs the notification setup, contract, and verification scripts. |
 | `20261015_stripe_billing_contract.sql` | company billing columns, `app_stripe_webhook_events`, `app_apply_stripe_subscription_event(...)`, platform company-list overload | **Not covered.** No numbered migration is a canonical migration of this billing contract. | Partial: `stripe-billing-contract` applies billing SQL and concurrency acceptance on disposable PostgreSQL. |
 | `20261016_legal_consent_contract.sql` | `app_company_legal_acceptances`; owner consent, invite acceptance and company-onboarding RPC signatures | **Not covered.** There is no numbered migration for this append-only legal evidence contract. | **Not covered by a dedicated CI contract job** at this revision. |
-| `20261027_outbox_run_evidence.sql` | `app_email_outbox_runs`; running marker and aggregate completion counts; service-role-only access | **Not covered.** This new operational table is an independent staging contract; it is not part of the historical numbered chain. | Full disposable PostgreSQL job `outbox-run-evidence-contract` plus helper tests. Local execution is unavailable because Docker/PostgreSQL is unavailable. |
+| `20261027_outbox_run_evidence.sql` | `app_email_outbox_runs`; running marker and aggregate completion counts; service-role-only access | Full: `20261027000000_app_email_outbox_runs.sql` creates the operational table and grants only the service-role API role. It remains a source migration and has not been applied to a live database. | Full disposable PostgreSQL job `outbox-run-evidence-contract` applies the numbered migration and verifies its access boundary; helper tests cover safe run summaries. |
 
 For the function argument lists and full SQL policy predicates (including the
 connector, billing, admin and consent contracts), the staging SQL itself is the
@@ -33,7 +33,7 @@ editable source of truth.
 
 ## Numbered migrations
 
-The first nine files are the historical `organizations/users/leads` model and
+The first ten files are the historical `organizations/users/leads` model and
 run in lexical filename order in `legacy-migration-chain` on a clean PostgreSQL
 17 instance with only synthetic Supabase Auth roles/schema/functions bootstrapped.
 This verifies executability; it does not certify these legacy tables as the
@@ -53,6 +53,7 @@ current application contract.
 | `20260920000001_get_public_org_branding.sql` | `get_public_org_branding(uuid)` | Historical; CI clean-chain |
 | `20261025000000_secure_jwt_auth_hook.sql` | `app_private` JWT tenant helpers and `app_tenant_access_token_hook(jsonb)`, restrictive app-table policies and grant guards | **Proposal only.** Its staging preflight exposed schema drift: live staging has 20 `app_*` relations and `public.app_role(uuid)`; this proposal expects a different app table inventory and `app_private.app_role(uuid)`. Its isolated CI fixture validates only that fixture. Do not apply or enable the hook until a staging-specific verified migration is reviewed. |
 | `20261026000000_public_intake_rate_limit.sql` | HMAC rate-limit state and hardened server-side public-intake RPC | **Proposal only.** CI applies it only after a disposable synthetic `app_*` baseline; the repo's historical migration chain does not create that baseline. |
+| `20261027000000_app_email_outbox_runs.sql` | `app_email_outbox_runs`; service-role-only durable scheduler run summaries | Operational source migration; CI applies and verifies it in the disposable `outbox-run-evidence-contract`. Not applied to any live database. |
 
 ## Non-destructive consolidation order
 
