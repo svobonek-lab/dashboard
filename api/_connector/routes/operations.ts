@@ -86,6 +86,7 @@ export function projectionRecords(value: unknown, entityType: ByodbProjectionEnt
       || !row.payload || typeof row.payload !== 'object' || Array.isArray(row.payload)) throw new ConnectorHttpError('BYODB_RECORDS_INVALID', 502);
     const payload = row.payload as Record<string, unknown>;
     if (Object.keys(payload).some(key => !CANONICAL_PAYLOAD_FIELDS[entityType].includes(key))
+      || (entityType === 'lead_file' && Object.hasOwn(payload, 'objectPath'))
       || Object.values(payload).some(field => field !== null && !['string', 'number', 'boolean'].includes(typeof field))) throw new ConnectorHttpError('BYODB_RECORDS_INVALID', 502);
     return { externalId: row.externalId, fingerprint: row.fingerprint, payload };
   });

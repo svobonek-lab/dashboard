@@ -326,6 +326,7 @@ test('BYODB operational projections accept bounded canonical fields and reject u
   assert.deepEqual(projectionRecords([{ ...row, payload: { title: 'Roof', leadExternalId: 'lead-1' } }], 'project').length, 1);
   assert.deepEqual(projectionRecords([{ ...row, payload: { leadExternalId: 'lead-1', body: 'Note' } }], 'lead_note').length, 1);
   assert.deepEqual(projectionRecords([{ ...row, payload: { leadExternalId: 'lead-1', fileName: 'plan.pdf', sizeBytes: 2 } }], 'lead_file').length, 1);
+  assert.throws(() => projectionRecords([{ ...row, payload: { leadExternalId: 'lead-1', fileName: 'plan.pdf', objectPath: 'private/lead-1/plan.pdf' } }], 'lead_file'), /BYODB_RECORDS_INVALID/);
   assert.throws(() => projectionRecords([{ ...row, payload: { ...row.payload, sourcePassword: 'secret' } }], 'employee_directory'), /BYODB_RECORDS_INVALID/);
   assert.throws(() => projectionRecords([{ ...row, payload: { name: { nested: 'leak' } } }], 'employee_directory'), /BYODB_RECORDS_INVALID/);
 });
