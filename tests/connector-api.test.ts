@@ -5,7 +5,7 @@ import { createHash } from 'node:crypto';
 import { parseConnectorBody, requirePost } from '../api/_connector/http.js';
 import { registerConnector, recordConnectorHeartbeat, ingestConnectorBatch } from '../api/_connector/lifecycle.js';
 import { authenticateConnectorRequest, type StoredConnectorIdentity } from '../api/_connector/signature.js';
-import { contextResponse } from '../api/_connector/routes/operations.js';
+import { contextResponse, projectionRecords } from '../api/_connector/routes/operations.js';
 import { validateByodbOperationAck, validateByodbOperationCreate, validateByodbOperationRequest, validateByodbPollBatch, validateConnectorDatabaseMode, validateConnectorMapping, validateConnectorRegistration, validateIngestEnvelope, validateRunMetrics, validateSourceSchema } from '../api/_connector/validation.js';
 import { ConnectorApi, type ConnectorApiOptions } from '../connector/src/api/client.js';
 
@@ -312,9 +312,22 @@ test('BYODB operation requests keep tenant IDs on owner actions and derive conne
   assert.deepEqual(validateByodbOperationRequest({ action: 'list', companyId, limit: 20 }), { action: 'list', companyId, limit: 20 });
   assert.deepEqual(validateByodbOperationRequest({ action: 'poll', limit: 10 }), { action: 'poll', limit: 10 });
   assert.deepEqual(validateByodbOperationRequest({ action: 'records', companyId, entityType: 'company' }), { action: 'records', companyId, entityType: 'company' });
+  for (const entityType of ['employee_directory', 'project', 'lead_note', 'lead_file']) {
+    assert.deepEqual(validateByodbOperationRequest({ action: 'records', companyId, entityType }), { action: 'records', companyId, entityType });
+  }
   assert.deepEqual(validateByodbOperationRequest({ action: 'set_mode', companyId, connectorId, mode: 'byodb', driver: 'postgres', writeEnabled: false }), { action: 'set_mode', companyId, connectorId, mode: 'byodb', driver: 'postgres', writeEnabled: false });
   assert.throws(() => validateByodbOperationRequest({ action: 'poll', companyId, limit: 10 }), /OPERATION_REQUEST_INVALID/);
   assert.throws(() => validateByodbOperationRequest({ action: 'create', companyId, connectorId, userId: 'spoofed', operation: {} }), /OPERATION_REQUEST_INVALID/);
+});
+
+test('BYODB operational projections accept bounded canonical fields and reject unexpected source data', () => {
+  const row = { externalId: 'row-1', fingerprint: 'a'.repeat(64), payload: { name: 'Worker', email: 'worker@example.test' } };
+  assert.deepEqual(projectionRecords([row], 'employee_directory'), [row]);
+  assert.deepEqual(projectionRecords([{ ...row, payload: { title: 'Roof', leadExternalId: 'lead-1' } }], 'project').length, 1);
+  assert.deepEqual(projectionRecords([{ ...row, payload: { leadExternalId: 'lead-1', body: 'Note' } }], 'lead_note').length, 1);
+  assert.deepEqual(projectionRecords([{ ...row, payload: { leadExternalId: 'lead-1', fileName: 'plan.pdf', sizeBytes: 2 } }], 'lead_file').length, 1);
+  assert.throws(() => projectionRecords([{ ...row, payload: { ...row.payload, sourcePassword: 'secret' } }], 'employee_directory'), /BYODB_RECORDS_INVALID/);
+  assert.throws(() => projectionRecords([{ ...row, payload: { name: { nested: 'leak' } } }], 'employee_directory'), /BYODB_RECORDS_INVALID/);
 });
 
 test('BYODB context validates lead and company mappings independently', () => {

@@ -52,8 +52,8 @@
 
 **Files:** new reviewed SQL proposal under `supabase/staging/`, `api/_connector/routes/operations.ts`, `scripts/connector-staging-preflight.mjs`, `tests/connector-api.test.ts`, `tests/connector-staging.test.ts`.
 
-- [ ] Test owner/employee projections, RLS/grants and operation queue for new entity types with two synthetic companies.
-- [ ] Add a migration proposal that alters only the reviewed `app_*` contracts, including explicit role/entity checks and mapping-version validation. Never apply automatically.
+- [ ] Test owner/employee projections, RLS/grants and operation queue for new entity types with two synthetic companies. The projection RPC, function grants, reassignment and two-company isolation pass in a disposable PostgreSQL fixture; table RLS and the expanded operation queue remain open.
+- [ ] Add a migration proposal that alters only the reviewed `app_*` contracts, including explicit role/entity checks and mapping-version validation. A read-only projection RPC proposal exists; the operation queue and activation gate are still missing. Never apply automatically.
 - [ ] Extend read-only metadata preflight to verify the new constraints, RPC signatures, RLS and grants.
 - [ ] Exercise proposal against a disposable local Supabase-compatible database; obtain separate staging approval before applying there.
 - [ ] Commit SQL and tests.
@@ -98,4 +98,4 @@
 
 ## Current evidence
 
-PR #127 is merged. The connector's original six fixture cases passed twice locally after the host restart. Operational employee/project CRUD, replay and conflict now also pass on disposable PostgreSQL, MariaDB and SQL Server. GitHub-hosted Actions jobs remain blocked before execution. No successful full-domain staging acceptance or released image digest exists.
+PR #127 is merged and draft PR #128 is open. The connector's original six fixture cases passed twice locally after the host restart. Operational employee/project CRUD, replay and conflict pass on disposable PostgreSQL, MariaDB and SQL Server. A separate PostgreSQL projection test proves owner/employee scope and reassignment using two synthetic companies; the full connector adapter suite passed 27/27 with zero skips. The projection SQL is a proposal and has not been applied to staging. GitHub-hosted Actions jobs remain blocked before execution. No successful full-domain staging acceptance or released image digest exists.

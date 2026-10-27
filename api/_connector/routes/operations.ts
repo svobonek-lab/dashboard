@@ -1,5 +1,5 @@
 import { authorizeConnectorMember, authorizeConnectorOwner } from '../ownerAuth.js';
-import { BYODB_OPERATION_ENTITY_TYPES, CANONICAL_PAYLOAD_FIELDS } from '../../../shared/connectorProtocol.js';
+import { BYODB_OPERATION_ENTITY_TYPES, CANONICAL_PAYLOAD_FIELDS, type ByodbProjectionEntityType } from '../../../shared/connectorProtocol.js';
 import { authenticateConnectorHttpRequest } from '../auth.js';
 import { ConnectorHttpError, parseConnectorBody, requirePost } from '../http.js';
 import { runConnectorHandler } from '../handler.js';
@@ -75,7 +75,7 @@ export function contextResponse(value: unknown) {
   return { mode, driver, connectorId, mappingVersion, mappedTargets, companyMappingVersion, companyMappedTargets, writeEnabled: row.writeEnabled === true, connectorStatus: typeof row.connectorStatus === 'string' ? row.connectorStatus.slice(0, 40) : null };
 }
 
-function projectionRecords(value: unknown, entityType: 'company' | 'lead' = 'lead') {
+export function projectionRecords(value: unknown, entityType: ByodbProjectionEntityType = 'lead') {
   if (!Array.isArray(value) || value.length > 5000) throw new ConnectorHttpError('BYODB_RECORDS_INVALID', 502);
   return value.map(item => {
     if (!item || typeof item !== 'object' || Array.isArray(item)) throw new ConnectorHttpError('BYODB_RECORDS_INVALID', 502);
