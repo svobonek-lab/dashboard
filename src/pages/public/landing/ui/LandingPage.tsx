@@ -218,7 +218,7 @@ export const LandingPage: React.FC = () => {
         {/* Horizontal Workflow Chain */}
         <div id="jak-to-funguje" className="pt-8 border-t border-slate-200/80 max-w-3xl mx-auto">
           <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-3">
-            Ověřený pracovní tok Founding Pilotu
+            Pracovní tok Founding Pilotu
           </span>
           <div className="flex flex-wrap items-center justify-center gap-2 text-xs font-bold text-slate-700">
             <span className="px-3 py-1 bg-white border border-slate-200 rounded-lg shadow-2xs">Webový formulář</span>
@@ -313,7 +313,7 @@ export const LandingPage: React.FC = () => {
             Formulář → poptávka → přiřazení → stav → historie
           </h2>
           <p className="text-xs sm:text-sm text-slate-500 max-w-xl mx-auto">
-            Tento průchod je ověřený v odděleném stagingu a nevrací demonstrační úspěch, pokud se zápis nepodaří.
+            Tento průchod je určen k přejímce v odděleném stagingu před vložením zákaznických dat. Aplikace nevrátí demonstrační úspěch, pokud se zápis nepodaří.
           </p>
         </div>
 
@@ -352,15 +352,15 @@ export const LandingPage: React.FC = () => {
 
             <div className="p-5 rounded-2xl bg-slate-900 text-white space-y-3 font-mono text-xs">
               <div className="flex items-center justify-between pb-2 border-b border-slate-800 text-slate-400">
-                <span>OVĚŘENÝ PILOTNÍ TOK</span>
-                <span className="text-emerald-400">TENANT-SAFE</span>
+                <span>SCÉNÁŘ PILOTU</span>
+                <span className="text-emerald-400">TENANT SCOPE</span>
               </div>
               <div className="space-y-1 text-slate-200">
                 <p>Zdroj: formulář na webu firmy</p>
                 <p>Role: majitel a přiřazený zaměstnanec</p>
-                <p>Oddělení: firma A nevidí firmu B</p>
+                <p>Oddělení: před zákaznickými daty ověřit firmu A vs. B</p>
                 <p>Import: kontrolovaný CSV dry-run a commit</p>
-                <p className="text-emerald-400 font-bold pt-1">Výsledek: skutečná uložená data bez demo fallbacku</p>
+                <p className="text-emerald-400 font-bold pt-1">Cíl: uložená data bez demo fallbacku</p>
               </div>
               <button
                 onClick={() => DEMO_DESTINATION.url && window.location.assign(DEMO_DESTINATION.url)}
@@ -575,9 +575,9 @@ export const LandingPage: React.FC = () => {
           <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs space-y-4 flex flex-col justify-between">
             <div className="space-y-3">
               <h4 className="text-base font-black text-slate-900">Součást pilotu</h4>
-              <p className="text-xs text-slate-500">Funkce ověřené ve stagingu a zahrnuté v prvním nasazení.</p>
+              <p className="text-xs text-slate-500">Funkce plánované pro první nasazení; živou přejímku dokončete před zákaznickými daty.</p>
               <div className="text-2xl font-black text-slate-900 font-mono">
-                Ověřený základ
+                Rozsah pilotu
               </div>
               <ul className="space-y-2 text-xs text-slate-700 pt-2 border-t border-slate-100">
                 <li className="flex items-center gap-2">✓ Přihlášení majitele a zaměstnance</li>
@@ -804,7 +804,7 @@ export const LandingPage: React.FC = () => {
                     Ukázat StavbaFlow na mém procesu
                   </h3>
                   <p className="text-xs text-slate-500 mt-1">
-                    Společně projdeme vaše současné tabulky a ukážeme ověřený tok formulář → poptávka → zaměstnanec → stav zakázky.
+                    Společně projdeme vaše současné tabulky a ukážeme pilotní tok formulář → poptávka → zaměstnanec → stav zakázky.
                   </p>
                 </div>
 

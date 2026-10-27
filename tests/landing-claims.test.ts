@@ -23,11 +23,26 @@ test('landing claim changelog records unsupported features and illustrative calc
   assert.match(changelog, /follow-upy/);
   assert.match(changelog, /ilustrativní výpočet/i);
   assert.match(changelog, /připravujeme|mimo první pilot/i);
+  assert.match(changelog, /NO_ACTIVE_MEMBERSHIP/);
+  assert.match(changelog, /nasazení draft PR/);
 });
 
-test('Founding Pilot promise still names the verified onboarding and delivery scope', () => {
+test('Founding Pilot promise still names its onboarding and delivery scope', () => {
   const pilotDescription = landing.slice(landing.indexOf('Osobní založení firmy'), landing.indexOf('</p>', landing.indexOf('Osobní založení firmy')));
   for (const item of ['přihlášení majitele', 'pozvání zaměstnanců', 'webového formuláře', 'kontrolovaný CSV import']) {
     assert.ok(pilotDescription.includes(item), `Founding Pilot must continue to include: ${item}`);
   }
+});
+
+test('sales copy does not describe the current staging flow as accepted until owner acceptance passes', () => {
+  assert.doesNotMatch(landing, /Ověřený pracovní tok Founding Pilotu/);
+  assert.doesNotMatch(landing, /Tento průchod je ověřený v odděleném stagingu/);
+  assert.doesNotMatch(landing, /OVĚŘENÝ PILOTNÍ TOK/);
+  assert.doesNotMatch(landing, /Oddělení: firma A nevidí firmu B/);
+  assert.doesNotMatch(landing, /Výsledek: skutečná uložená data bez demo fallbacku/);
+  assert.doesNotMatch(landing, /Funkce ověřené ve stagingu a zahrnuté v prvním nasazení/);
+  assert.doesNotMatch(landing, /Ověřený základ/);
+  assert.doesNotMatch(landing, /ukážeme ověřený tok formulář/);
+  assert.match(landing, /Funkce plánované pro první nasazení/);
+  assert.match(landing, /před zákaznickými daty/);
 });
