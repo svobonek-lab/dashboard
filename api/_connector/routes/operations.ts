@@ -1,5 +1,5 @@
 import { authorizeConnectorMember, authorizeConnectorOwner } from '../ownerAuth.js';
-import { BYODB_OPERATION_ENTITY_TYPES, CANONICAL_PAYLOAD_FIELDS } from '../../../shared/connectorProtocol.js';
+import { BYODB_OPERATION_ENTITY_TYPES, CANONICAL_PAYLOAD_FIELDS, type ByodbProjectionEntityType } from '../../../shared/connectorProtocol.js';
 import { authenticateConnectorHttpRequest } from '../auth.js';
 import { ConnectorHttpError, parseConnectorBody, requirePost } from '../http.js';
 import { runConnectorHandler } from '../handler.js';
@@ -75,7 +75,7 @@ export function contextResponse(value: unknown) {
   return { mode, driver, connectorId, mappingVersion, mappedTargets, companyMappingVersion, companyMappedTargets, writeEnabled: row.writeEnabled === true, connectorStatus: typeof row.connectorStatus === 'string' ? row.connectorStatus.slice(0, 40) : null };
 }
 
-function projectionRecords(value: unknown, entityType: 'company' | 'lead' = 'lead') {
+export function projectionRecords(value: unknown, entityType: ByodbProjectionEntityType = 'lead') {
   if (!Array.isArray(value) || value.length > 5000) throw new ConnectorHttpError('BYODB_RECORDS_INVALID', 502);
   return value.map(item => {
     if (!item || typeof item !== 'object' || Array.isArray(item)) throw new ConnectorHttpError('BYODB_RECORDS_INVALID', 502);
@@ -86,6 +86,7 @@ function projectionRecords(value: unknown, entityType: 'company' | 'lead' = 'lea
       || !row.payload || typeof row.payload !== 'object' || Array.isArray(row.payload)) throw new ConnectorHttpError('BYODB_RECORDS_INVALID', 502);
     const payload = row.payload as Record<string, unknown>;
     if (Object.keys(payload).some(key => !CANONICAL_PAYLOAD_FIELDS[entityType].includes(key))
+      || (entityType === 'lead_file' && Object.hasOwn(payload, 'objectPath'))
       || Object.values(payload).some(field => field !== null && !['string', 'number', 'boolean'].includes(typeof field))) throw new ConnectorHttpError('BYODB_RECORDS_INVALID', 502);
     return { externalId: row.externalId, fingerprint: row.fingerprint, payload };
   });

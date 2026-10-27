@@ -112,6 +112,8 @@ export type ByodbMappingDefinitionV1 = Omit<ConnectorMappingDefinitionV1, 'entit
   entityType: 'company' | 'lead' | 'employee_directory' | 'project' | 'lead_note' | 'lead_file';
 };
 
+export const BYODB_PROJECTION_ENTITY_TYPES = ['company', 'lead', 'employee_directory', 'project', 'lead_note', 'lead_file'] as const;
+export type ByodbProjectionEntityType = typeof BYODB_PROJECTION_ENTITY_TYPES[number];
 export const BYODB_OPERATION_ENTITY_TYPES = ['company', 'lead', 'employee_directory', 'project'] as const;
 export type ByodbOperationEntityType = typeof BYODB_OPERATION_ENTITY_TYPES[number];
 

@@ -92,6 +92,31 @@ test('BYODB pending writes are reported as pending and never fall through to a c
   assert.deepEqual(calls, ['context', 'context', 'create']);
 });
 
+test('BYODB never delegates operational employees, projects, notes or files to cloud business rows', async () => {
+  const calls: string[] = [];
+  const cloudCall = async () => { calls.push('cloud-business-row'); throw new Error('cloud-business-row'); };
+  const fallback = {
+    getEmployees: cloudCall, saveEmployee: cloudCall, getProjects: cloudCall, saveProject: cloudCall,
+    getLeadNotes: cloudCall, addLeadNote: cloudCall, deleteLeadNote: cloudCall,
+    getLeadFiles: cloudCall, uploadLeadFile: cloudCall, deleteLeadFile: cloudCall,
+  } as unknown as ICRMRepository;
+  const repository = new ModeAwareRepository(fallback, { enabled: true, request: async () => context });
+  const operations = [
+    () => repository.getEmployees('company-1'),
+    () => repository.saveEmployee('company-1', { name: 'Worker' }),
+    () => repository.getProjects('company-1'),
+    () => repository.saveProject('company-1', { title: 'Roof' }),
+    () => repository.getLeadNotes('company-1', 'lead-1'),
+    () => repository.addLeadNote('company-1', 'lead-1', 'Note'),
+    () => repository.deleteLeadNote('company-1', 'note-1'),
+    () => repository.getLeadFiles('company-1', 'lead-1'),
+    () => repository.uploadLeadFile('company-1', 'lead-1', new File(['x'], 'photo.jpg')),
+    () => repository.deleteLeadFile('company-1', { id: 'file-1', companyId: 'company-1', leadId: 'lead-1', authorId: 'user-1', storagePath: 'x', fileName: 'photo.jpg', mimeType: 'image/jpeg', sizeBytes: 1, createdAt: '', previewUrl: '' }),
+  ];
+  for (const operation of operations) await assert.rejects(operation(), /BYODB_SOURCE_PATH_UNAVAILABLE/);
+  assert.deepEqual(calls, []);
+});
+
 test('retrying the same create reuses a stable source id and idempotency key without storing lead content', async () => {
   const values = new Map<string, string>();
   const storage = { getItem: (key: string) => values.get(key) ?? null, setItem: (key: string, value: string) => values.set(key, value), removeItem: (key: string) => values.delete(key) };

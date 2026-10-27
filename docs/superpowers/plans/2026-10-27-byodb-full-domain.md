@@ -52,8 +52,8 @@
 
 **Files:** new reviewed SQL proposal under `supabase/staging/`, `api/_connector/routes/operations.ts`, `scripts/connector-staging-preflight.mjs`, `tests/connector-api.test.ts`, `tests/connector-staging.test.ts`.
 
-- [ ] Test owner/employee projections, RLS/grants and operation queue for new entity types with two synthetic companies.
-- [ ] Add a migration proposal that alters only the reviewed `app_*` contracts, including explicit role/entity checks and mapping-version validation. Never apply automatically.
+- [ ] Test owner/employee projections, RLS/grants and operation queue for new entity types with two synthetic companies. Projection and queue RPCs, function grants, reassignment, same-company references and two-company isolation pass in disposable PostgreSQL; full table RLS and source-commit reference checks remain open.
+- [ ] Add a migration proposal that alters only the reviewed `app_*` contracts, including explicit role/entity checks and mapping-version validation. Projection and operational queue proposals exist; full-domain activation gating and note/file queue support are still missing. Never apply automatically.
 - [ ] Extend read-only metadata preflight to verify the new constraints, RPC signatures, RLS and grants.
 - [ ] Exercise proposal against a disposable local Supabase-compatible database; obtain separate staging approval before applying there.
 - [ ] Commit SQL and tests.
@@ -62,7 +62,7 @@
 
 **Files:** `src/shared/api/data/ByodbRepository.ts`, `src/shared/api/data/types.ts`, owner/employee feature callers, `tests/byodb-repository.test.ts`, owner Playwright tests.
 
-- [ ] Add failing tests that assert BYODB never calls cloud employee, project or note business-row writes.
+- [x] Add a failing regression test for employee, project, note and file cloud delegation in BYODB mode. Unsupported source paths now fail closed with `BYODB_SOURCE_PATH_UNAVAILABLE`; source-backed implementations remain open.
 - [ ] Implement projection mapping and durable operations; keep `app_members` identity lookup separate from operational employee directory.
 - [ ] Preserve pending/conflict messages and stale-version handling in the UI.
 - [ ] Verify root tests/lint/build and commit.
@@ -98,4 +98,4 @@
 
 ## Current evidence
 
-PR #127 is merged. The connector's original six fixture cases passed twice locally after the host restart. Operational employee/project CRUD, replay and conflict now also pass on disposable PostgreSQL, MariaDB and SQL Server. GitHub-hosted Actions jobs remain blocked before execution. No successful full-domain staging acceptance or released image digest exists.
+PRs #127 and #128 are merged; the operational projection and queue proposals are in the follow-up branch. The connector's original six fixture cases passed twice locally after the host restart. Operational employee/project CRUD, replay and conflict pass on disposable PostgreSQL, MariaDB and SQL Server. Disposable PostgreSQL tests prove projection and queue role scope, reassignment, same-company references and two-company isolation; the full connector adapter suite passed 28/28 with zero skips. The SQL is only a proposal and has not been applied to staging. GitHub-hosted Actions jobs remain blocked before execution. No successful full-domain staging acceptance or released image digest exists.
