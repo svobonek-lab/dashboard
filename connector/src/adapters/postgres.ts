@@ -41,12 +41,13 @@ export class PostgresSourceAdapter implements SourceAdapter {
     const result = await this.pool.query(`
       SELECT c.table_schema, c.table_name, c.column_name, c.data_type, c.is_nullable, c.is_identity, c.is_generated, c.column_default,
              EXISTS (
-               SELECT 1 FROM information_schema.table_constraints tc
-               JOIN information_schema.key_column_usage kcu
-                 ON tc.constraint_name = kcu.constraint_name AND tc.table_schema = kcu.table_schema
-               WHERE tc.constraint_type = 'PRIMARY KEY'
-                 AND tc.table_schema = c.table_schema AND tc.table_name = c.table_name
-                 AND kcu.column_name = c.column_name
+               SELECT 1 FROM pg_catalog.pg_index i
+               JOIN pg_catalog.pg_class cls ON cls.oid = i.indrelid
+               JOIN pg_catalog.pg_namespace ns ON ns.oid = cls.relnamespace
+               JOIN pg_catalog.pg_attribute attr ON attr.attrelid = cls.oid AND attr.attnum = ANY(i.indkey)
+               WHERE i.indisprimary
+                 AND ns.nspname = c.table_schema AND cls.relname = c.table_name
+                 AND attr.attname = c.column_name
              ) AS primary_key
       FROM information_schema.columns c
       JOIN information_schema.tables t ON t.table_schema = c.table_schema AND t.table_name = c.table_name

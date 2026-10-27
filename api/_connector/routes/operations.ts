@@ -1,5 +1,5 @@
 import { authorizeConnectorMember, authorizeConnectorOwner } from '../ownerAuth.js';
-import { CANONICAL_PAYLOAD_FIELDS } from '../../../shared/connectorProtocol.js';
+import { BYODB_OPERATION_ENTITY_TYPES, CANONICAL_PAYLOAD_FIELDS } from '../../../shared/connectorProtocol.js';
 import { authenticateConnectorHttpRequest } from '../auth.js';
 import { ConnectorHttpError, parseConnectorBody, requirePost } from '../http.js';
 import { runConnectorHandler } from '../handler.js';
@@ -47,7 +47,7 @@ function operationList(value: unknown): Array<{ operationId: string; status: str
     const createdAt = String(row.createdAt ?? ''), updatedAt = String(row.updatedAt ?? '');
     const errorCode = row.errorCode === null ? null : String(row.errorCode ?? '');
     if (!/^[0-9a-f-]{36}$/i.test(operationId) || !OPERATION_STATES.has(status)
-      || !['company', 'lead'].includes(entityType) || !['create', 'update', 'delete'].includes(action)
+      || !BYODB_OPERATION_ENTITY_TYPES.includes(entityType as typeof BYODB_OPERATION_ENTITY_TYPES[number]) || !['create', 'update', 'delete'].includes(action)
       || Number.isNaN(new Date(createdAt).valueOf()) || Number.isNaN(new Date(updatedAt).valueOf())
       || (errorCode !== null && !TERMINAL_ERROR_CODES.has(errorCode))) throw new ConnectorHttpError('OPERATION_RESPONSE_INVALID', 502);
     return { operationId, status, entityType, action, createdAt: new Date(createdAt).toISOString(), updatedAt: new Date(updatedAt).toISOString(), errorCode };

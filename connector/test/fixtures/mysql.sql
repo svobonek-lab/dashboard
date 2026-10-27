@@ -15,6 +15,11 @@ CREATE TABLE projects (id bigint PRIMARY KEY, title varchar(255) NOT NULL, updat
 CREATE TABLE employees (id bigint PRIMARY KEY, name varchar(255) NOT NULL, updated_at timestamp(6) NOT NULL);
 CREATE TABLE invoices (id bigint PRIMARY KEY, number varchar(80) NOT NULL, total decimal(12,2), updated_at timestamp(6) NOT NULL);
 CREATE TABLE payments (id bigint PRIMARY KEY, invoice_id bigint, amount decimal(12,2), updated_at timestamp(6) NOT NULL);
+CREATE TABLE byodb_employees (id varchar(36) PRIMARY KEY, name varchar(255) NOT NULL, email varchar(320) NOT NULL);
+CREATE TABLE byodb_projects (id varchar(36) PRIMARY KEY, title varchar(255) NOT NULL);
 CREATE USER 'fixture_reader'@'%' IDENTIFIED BY 'fixture_reader_password';
 GRANT SELECT ON fixture.* TO 'fixture_reader'@'%';
+CREATE USER 'fixture_writer'@'%' IDENTIFIED BY 'fixture_writer_password';
+GRANT SELECT, INSERT, UPDATE, DELETE ON fixture.byodb_employees TO 'fixture_writer'@'%';
+GRANT SELECT, INSERT, UPDATE, DELETE ON fixture.byodb_projects TO 'fixture_writer'@'%';
 FLUSH PRIVILEGES;

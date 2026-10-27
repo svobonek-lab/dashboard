@@ -1,4 +1,4 @@
-import { CANONICAL_ENTITY_TYPES, CANONICAL_PAYLOAD_FIELDS, type ConnectorDryRunSummaryV1, type ConnectorMappingDefinitionV1, type ConnectorSourceSchemaV1, type IngestEnvelopeV1 } from '../../shared/connectorProtocol.js';
+import { BYODB_OPERATION_ENTITY_TYPES, CANONICAL_ENTITY_TYPES, CANONICAL_PAYLOAD_FIELDS, type ConnectorDryRunSummaryV1, type ConnectorMappingDefinitionV1, type ConnectorSourceSchemaV1, type IngestEnvelopeV1 } from '../../shared/connectorProtocol.js';
 import { validateCanonicalRecord } from '../../connector/src/protocol/canonical.js';
 import { ConnectorHttpError } from './http.js';
 import { z } from 'zod';
@@ -45,7 +45,7 @@ const byodbOperationCreateSchema = z.strictObject({
   version: z.literal(1),
   idempotencyKey: z.string().uuid(),
   mappingVersion: z.number().int().positive(),
-  entityType: z.enum(['company', 'lead']),
+  entityType: z.enum(BYODB_OPERATION_ENTITY_TYPES),
   action: z.enum(['create', 'update', 'delete']),
   externalId: z.string().min(1).max(512).refine(value => !/[\u0000-\u001f]/.test(value)),
   expectedSourceVersion: z.string().regex(/^[a-f0-9]{64}$/).nullable(),
@@ -96,8 +96,9 @@ export function validateByodbOperationCreate(
   if (Object.values(payload).some(field => field !== null && !['string', 'number', 'boolean'].includes(typeof field))) throw new ConnectorHttpError('OPERATION_MAPPING_INVALID', 400);
   if (operation.action === 'create') {
     if (operation.expectedSourceVersion !== null || Object.keys(payload).length === 0) throw new ConnectorHttpError('OPERATION_INVALID', 400);
-    const requiredTarget = operation.entityType === 'company' ? 'name' : 'title';
-    if (!Object.hasOwn(payload, requiredTarget)) throw new ConnectorHttpError('OPERATION_REQUIRED_FIELD_MISSING', 400);
+    const requiredTargets = operation.entityType === 'company' ? ['name']
+      : operation.entityType === 'employee_directory' ? ['name', 'email'] : ['title'];
+    if (requiredTargets.some(target => !Object.hasOwn(payload, target))) throw new ConnectorHttpError('OPERATION_REQUIRED_FIELD_MISSING', 400);
   } else if (!operation.expectedSourceVersion) {
     throw new ConnectorHttpError('OPERATION_INVALID', 400);
   } else if (operation.action === 'delete' && Object.keys(payload).length > 0) {
@@ -147,7 +148,7 @@ export function validateByodbPollBatch(value: unknown, sourceSchema: ConnectorSo
       || !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(String(row.operationId ?? ''))
       || !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(String(row.idempotencyKey ?? ''))
       || !Number.isInteger(row.mappingVersion) || Number(row.mappingVersion) < 1
-      || !['company', 'lead'].includes(String(row.entityType)) || !['create', 'update', 'delete'].includes(String(row.action))
+      || !BYODB_OPERATION_ENTITY_TYPES.includes(row.entityType as typeof BYODB_OPERATION_ENTITY_TYPES[number]) || !['create', 'update', 'delete'].includes(String(row.action))
       || typeof row.externalId !== 'string' || row.externalId.length < 1 || row.externalId.length > 512
       || (row.expectedSourceVersion !== null && (typeof row.expectedSourceVersion !== 'string' || !/^[a-f0-9]{64}$/.test(row.expectedSourceVersion)))
       || !row.payload || typeof row.payload !== 'object' || Array.isArray(row.payload)
@@ -172,7 +173,7 @@ export function validateByodbPollBatch(value: unknown, sourceSchema: ConnectorSo
       operationId: row.operationId as string,
       idempotencyKey: row.idempotencyKey as string,
       mappingVersion: row.mappingVersion as number,
-      entityType: row.entityType as 'company' | 'lead',
+      entityType: row.entityType as typeof BYODB_OPERATION_ENTITY_TYPES[number],
       action: row.action as 'create' | 'update' | 'delete',
       externalId: row.externalId,
       expectedSourceVersion: row.expectedSourceVersion as string | null,
@@ -283,6 +284,13 @@ export function validateConnectorMapping(value: unknown, sourceSchema: Connector
     targets.add(targetField);
     return { sourceColumn, targetField, conversion, ...(field.required === true ? { required: true } : {}) };
   });
+  const requiredByodbTargets: Record<string, readonly string[]> = {
+    employee_directory: ['name', 'email'],
+    project: ['title'],
+    lead_note: ['leadExternalId', 'body', 'authorEmail', 'createdAt'],
+    lead_file: ['leadExternalId', 'objectPath', 'fileName', 'mimeType', 'sizeBytes', 'sha256'],
+  };
+  if (requiredByodbTargets[entityType]?.some(target => !targets.has(target))) throw new ConnectorHttpError('MAPPING_REQUIRED_FIELD_MISSING', 400);
   return {
     version: 1,
     mappingVersion: Number(mapping.mappingVersion),

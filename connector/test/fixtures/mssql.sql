@@ -19,10 +19,13 @@ CREATE TABLE dbo.projects (id bigint PRIMARY KEY, title nvarchar(255) NOT NULL, 
 CREATE TABLE dbo.employees (id bigint PRIMARY KEY, name nvarchar(255) NOT NULL, updated_at datetimeoffset NOT NULL);
 CREATE TABLE dbo.invoices (id bigint PRIMARY KEY, number nvarchar(80) NOT NULL, total decimal(12,2), updated_at datetimeoffset NOT NULL);
 CREATE TABLE dbo.payments (id bigint PRIMARY KEY, invoice_id bigint, amount decimal(12,2), updated_at datetimeoffset NOT NULL);
+CREATE TABLE dbo.byodb_employees (id nvarchar(36) PRIMARY KEY, name nvarchar(255) NOT NULL, email nvarchar(320) NOT NULL);
+CREATE TABLE dbo.byodb_projects (id nvarchar(36) PRIMARY KEY, title nvarchar(255) NOT NULL);
 GO
 USE master;
 GO
 CREATE LOGIN fixture_reader WITH PASSWORD = 'Synthetic_ReadOnly_9!', CHECK_POLICY = ON;
+CREATE LOGIN fixture_writer WITH PASSWORD = 'Synthetic_Write_9!', CHECK_POLICY = ON;
 GO
 USE fixture;
 GO
@@ -30,4 +33,8 @@ CREATE USER fixture_reader FOR LOGIN fixture_reader;
 GRANT CONNECT TO fixture_reader;
 GRANT SELECT ON SCHEMA::dbo TO fixture_reader;
 DENY INSERT, UPDATE, DELETE ON SCHEMA::dbo TO fixture_reader;
+CREATE USER fixture_writer FOR LOGIN fixture_writer;
+GRANT CONNECT TO fixture_writer;
+GRANT SELECT, INSERT, UPDATE, DELETE ON dbo.byodb_employees TO fixture_writer;
+GRANT SELECT, INSERT, UPDATE, DELETE ON dbo.byodb_projects TO fixture_writer;
 GO

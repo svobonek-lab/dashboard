@@ -1,6 +1,6 @@
 import { createHash } from 'node:crypto';
 
-import { CANONICAL_PAYLOAD_FIELDS, type CanonicalRecordV1, type ConnectorMappingDefinitionV1, type JsonPrimitive } from '../../../shared/connectorProtocol.js';
+import { BYODB_OPERATION_ENTITY_TYPES, CANONICAL_PAYLOAD_FIELDS, type ByodbOperationEntityType, type CanonicalRecordV1, type ConnectorMappingDefinitionV1, type JsonPrimitive } from '../../../shared/connectorProtocol.js';
 import { compileMapping } from '../mapping/compileMapping.js';
 import type { SourceDriver, SourceSchema } from './types.js';
 import { findKnownTable, quoteMssqlIdentifier, quoteMysqlIdentifier, quotePostgresIdentifier } from './sqlSafety.js';
@@ -9,7 +9,7 @@ export interface MappedSourceOperation {
   operationId: string;
   idempotencyKey: string;
   mappingVersion: number;
-  entityType: 'company' | 'lead';
+  entityType: ByodbOperationEntityType;
   action: 'create' | 'update' | 'delete';
   externalId: string;
   expectedSourceVersion: string | null;
@@ -74,7 +74,7 @@ export function buildMappedOperationStatements(
   mapping: ConnectorMappingDefinitionV1,
   schema: SourceSchema,
 ): MappedOperationStatements {
-  if (!['company', 'lead'].includes(operation.entityType) || operation.entityType !== mapping.entityType
+  if (!BYODB_OPERATION_ENTITY_TYPES.includes(operation.entityType) || operation.entityType !== mapping.entityType
     || operation.mappingVersion !== mapping.mappingVersion || !operation.externalId || operation.externalId.length > 512
     || operation.expectedSourceVersion !== null && !/^[a-f0-9]{64}$/.test(operation.expectedSourceVersion)) throw new Error('OPERATION_INVALID');
   const targets = new Set(CANONICAL_PAYLOAD_FIELDS[operation.entityType]);
@@ -82,7 +82,10 @@ export function buildMappedOperationStatements(
   const payloadKeys = Object.keys(operation.payload);
   if (JSON.stringify(operation.payload).length > 8_192 || payloadKeys.some(key => !targets.has(key) || !mappingTargets.has(key))) throw new Error('OPERATION_MAPPING_INVALID');
   if (operation.action === 'create' ? operation.expectedSourceVersion !== null : !operation.expectedSourceVersion) throw new Error('OPERATION_VERSION_INVALID');
-  if (operation.action === 'create' && !Object.hasOwn(operation.payload, operation.entityType === 'company' ? 'name' : 'title')) throw new Error('OPERATION_REQUIRED_FIELD_MISSING');
+  const requiredTargets = operation.entityType === 'company' ? ['name']
+    : operation.entityType === 'employee_directory' ? ['name', 'email'] : ['title'];
+  if (operation.action === 'create' && requiredTargets.some(target => !Object.hasOwn(operation.payload, target))) throw new Error('OPERATION_REQUIRED_FIELD_MISSING');
+  if (operation.actorRole === 'employee' && operation.entityType !== 'lead') throw new Error('OPERATION_ROLE_DENIED');
   if (operation.action === 'delete' && payloadKeys.length) throw new Error('OPERATION_MAPPING_INVALID');
   if (operation.action === 'update' && !payloadKeys.length) throw new Error('OPERATION_MAPPING_INVALID');
 

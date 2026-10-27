@@ -15,7 +15,11 @@
 
 GitHub Actions runs `40539439427`, `40539877306`, `40540852195`, `40543958525`, and `40544615710` failed before any workflow step started. The job annotation says the job could not start because recent account payments failed or the spending limit must be increased. Runner ID was `0` and the job had no steps. These are not staging or application test failures. The connector-staging-acceptance run therefore has no result. On run `40544615710`, both Vercel Preview checks succeeded; all GitHub-hosted jobs still had no runner or steps.
 
-Local verification on the work branch passed `npm test` (417/417), `npm run lint`, and `npm run build`. The owner connector setup now blocks enrollment creation until the configured image is an immutable GHCR digest, avoiding short-lived enrollment codes that cannot be installed. Its targeted regression test passed. Connector unit tests passed 83/83 active cases; six PostgreSQL/MariaDB/SQL Server adapter integration cases were skipped because Docker Desktop's Linux engine was not running. The integration workflow already defines disposable localhost fixtures for all three engines; rerun it after Actions billing is restored.
+Local verification on the PR #127 work branch passed `npm test` (417/417), `npm run lint`, and `npm run build`. The owner connector setup now blocks enrollment creation until the configured image is an immutable GHCR digest, avoiding short-lived enrollment codes that cannot be installed. Its targeted regression test passed. Connector unit tests passed 83/83 active cases. The six PostgreSQL/MariaDB/SQL Server adapter fixture cases initially skipped because Docker's Linux engine was not running.
+
+After the 2026-10-27 Windows restart, Docker Engine 29.9.2 started. Disposable PostgreSQL, MariaDB and SQL Server fixtures became healthy, SQL Server initialization succeeded, and `RUN_DB_INTEGRATION=1 npm run test:integration --prefix connector` passed twice (22/22, zero skips both times). The six previously skipped cases are now locally verified. `docker compose -f connector/compose.test.yaml down -v` removed the synthetic containers and network; Docker Desktop remains running. This does not replace staging acceptance or image release evidence.
+
+The expanded operational source-write fixture suite also passed twice (26/26, zero skips) on disposable PostgreSQL, MariaDB and SQL Server. It covers employee and project create, idempotent replay, version-checked update, stale conflict and delete against limited writer accounts. The first run exposed PostgreSQL primary-key discovery through `information_schema` under a SELECT-only account; the adapter now reads primary-key metadata from `pg_catalog`. Root tests passed 420/420, and root/connector lint and connector build passed. These are local fixture results, not proof of a staging installation.
 
 ## Product scope still requiring a release decision
 
@@ -27,7 +31,7 @@ The staging Preview tab was also checked while signed out: it showed the login p
 
 | Area | Implemented evidence | Live/release status |
 | --- | --- | --- |
-| SQL source adapters | PostgreSQL, MySQL, MariaDB and SQL Server adapters; connector suite passes 83 tests. | Six DB fixture tests were skipped because Docker Desktop's Linux engine is unavailable. No customer DB has been connected. |
+| SQL source adapters | PostgreSQL, MySQL, MariaDB and SQL Server adapters; connector suite passes 83 unit tests. | Six DB fixture tests passed twice on local disposable PostgreSQL, MariaDB and SQL Server after restart. No customer DB has been connected. |
 | Owner enrollment and NAS package | Owner UI/API, HMAC identity, and digest-pinned Synology package generator are covered by tests. | Enrollment is now blocked in the UI until an immutable image digest exists. No image is released. |
 | Schema scan, mapping and dry run | Connector metadata schema, mapping validation, dry-run and approval flows exist in code and tests. | Not exercised against an actual connected SQL source in staging. |
 | BYODB record reads and writes | Tenant-bound company-profile and lead projections plus queued, version-checked source writes have code and unit/contract tests. | No live source write/read acceptance has run; feature flags remain off. |

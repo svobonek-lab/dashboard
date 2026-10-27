@@ -52,6 +52,29 @@ test('create requires an explicit stable source key and rejects identity-only ge
   assert.throws(() => buildMappedOperationStatements('postgres', create, mapping, generatedSchema), /STABLE_EXTERNAL_KEY/);
 });
 
+test('operational employee and project creates use only inspected mapped columns', () => {
+  const source: SourceSchema = { inspectedAt: new Date(0).toISOString(), tables: [{ schema: 'public', name: 'records', columns: [
+    { name: 'id', dataType: 'uuid', nullable: false, primaryKey: true, generated: false },
+    { name: 'name', dataType: 'text', nullable: true, primaryKey: false, generated: false },
+    { name: 'email', dataType: 'text', nullable: true, primaryKey: false, generated: false },
+    { name: 'title', dataType: 'text', nullable: true, primaryKey: false, generated: false },
+  ] }] };
+  for (const [entityType, payload, fields] of [
+    ['employee_directory', { name: 'Worker', email: 'worker@example.test' }, [{ sourceColumn: 'name', targetField: 'name', conversion: { kind: 'text' } }, { sourceColumn: 'email', targetField: 'email', conversion: { kind: 'email' } }]],
+    ['project', { title: 'Roof' }, [{ sourceColumn: 'title', targetField: 'title', conversion: { kind: 'text' } }]],
+  ] as const) {
+    const mapped: ConnectorMappingDefinitionV1 = { version: 1, mappingVersion: 2, entityType, sourceSystem: 'fixture', schema: 'public', table: 'records', externalIdColumn: 'id', fields: [...fields] };
+    const create = { ...operation, entityType, action: 'create' as const, expectedSourceVersion: null, externalId: 'stable-key', payload };
+    for (const driver of ['postgres', 'mysql', 'mariadb', 'mssql'] as const) {
+      const statements = buildMappedOperationStatements(driver, create, mapped, source);
+      assert.match(statements.insert!.sql, /INSERT INTO/);
+      assert.ok(statements.insert!.values.includes('stable-key'));
+      assert.ok(statements.insert!.values.includes(Object.values(payload)[0]));
+    }
+    assert.throws(() => buildMappedOperationStatements('postgres', { ...create, actorRole: 'employee' }, mapped, source), /OPERATION_ROLE_DENIED/);
+  }
+});
+
 test('employee status writes require the source row to remain assigned to that employee', () => {
   const employeeOperation = { ...operation, actorRole: 'employee' as const, actorEmail: 'worker@example.test' };
   assert.throws(() => assertMappedOperationAuthorized(employeeOperation, mapping, { assignedToEmail: 'other@example.test' }), /OPERATION_ROLE_DENIED/);

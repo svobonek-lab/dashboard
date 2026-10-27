@@ -97,6 +97,36 @@ test('BYODB mappings allow canonical company and lead fields while rejecting dup
   ] }, sourceSchema), /MAPPING_INVALID/);
 });
 
+test('BYODB note and file mappings require their source-of-truth fields', () => {
+  const columns = ['id', 'lead_id', 'body', 'author_email', 'created_at', 'object_path', 'file_name', 'mime_type', 'size_bytes', 'sha256'];
+  const schema = validateSourceSchema({ tables: [{ schema: 'public', name: 'attachments', columns: columns.map(name => ({ name, dataType: 'text', nullable: false })) }] });
+  const base = { version: 1, mappingVersion: 1, sourceSystem: 'customer-db', schema: 'public', table: 'attachments', externalIdColumn: 'id' };
+  const rule = (sourceColumn: string, targetField: string) => ({ sourceColumn, targetField, conversion: { kind: 'text' } });
+  const noteFields = [rule('lead_id', 'leadExternalId'), rule('body', 'body'), rule('author_email', 'authorEmail'), rule('created_at', 'createdAt')];
+  assert.equal(validateConnectorMapping({ ...base, entityType: 'lead_note', fields: noteFields }, schema).entityType, 'lead_note');
+  assert.throws(() => validateConnectorMapping({ ...base, entityType: 'lead_note', fields: noteFields.slice(1) }, schema), /MAPPING_REQUIRED_FIELD_MISSING/);
+  const fileFields = [rule('lead_id', 'leadExternalId'), rule('object_path', 'objectPath'), rule('file_name', 'fileName'), rule('mime_type', 'mimeType'), rule('size_bytes', 'sizeBytes'), rule('sha256', 'sha256')];
+  assert.equal(validateConnectorMapping({ ...base, entityType: 'lead_file', fields: fileFields }, schema).entityType, 'lead_file');
+  assert.throws(() => validateConnectorMapping({ ...base, entityType: 'lead_file', fields: fileFields.slice(0, -1) }, schema), /MAPPING_REQUIRED_FIELD_MISSING/);
+  const envelope = { version: 1, connectorId: 'connector-1', companyId: 'company-1', mappingVersion: 1, requestId: 'request-1', dryRun: false };
+  const fileRecord = { version: 1, type: 'lead_file', sourceSystem: 'fixture', sourceTable: 'attachments', externalId: 'file-1', fingerprint: 'a'.repeat(64), payload: { leadExternalId: 'lead-1', objectPath: 'files/file-1', fileName: 'plan.pdf', mimeType: 'application/pdf', sizeBytes: 10, sha256: 'b'.repeat(64) } };
+  assert.equal(validateIngestEnvelope({ ...envelope, records: [fileRecord] }).records.length, 1);
+  assert.throws(() => validateIngestEnvelope({ ...envelope, records: [{ ...fileRecord, payload: { ...fileRecord.payload, secret: 'not-allowed' } }] }), /unknown field/);
+});
+
+test('BYODB employee and project mappings retain operational fields and references', () => {
+  const columns = ['id', 'name', 'email', 'specialization', 'capacity', 'title', 'lead_id'];
+  const schema = validateSourceSchema({ tables: [{ schema: 'public', name: 'records', columns: columns.map(name => ({ name, dataType: 'text', nullable: false })) }] });
+  const base = { version: 1, mappingVersion: 1, sourceSystem: 'customer-db', schema: 'public', table: 'records', externalIdColumn: 'id' };
+  const rule = (name: string, targetField = name) => ({ sourceColumn: name, targetField, conversion: { kind: 'text' } });
+  const employeeFields = [rule('name'), rule('email'), rule('specialization'), rule('capacity')];
+  assert.equal(validateConnectorMapping({ ...base, entityType: 'employee_directory', fields: employeeFields }, schema).fields.length, 4);
+  assert.throws(() => validateConnectorMapping({ ...base, entityType: 'employee_directory', fields: [rule('name')] }, schema), /MAPPING_REQUIRED_FIELD_MISSING/);
+  const projectFields = [rule('title'), rule('lead_id', 'leadExternalId')];
+  assert.equal(validateConnectorMapping({ ...base, entityType: 'project', fields: projectFields }, schema).fields.length, 2);
+  assert.throws(() => validateConnectorMapping({ ...base, entityType: 'project', fields: [rule('lead_id', 'leadExternalId')] }, schema), /MAPPING_REQUIRED_FIELD_MISSING/);
+});
+
 test('BYODB mapping cannot select secret-like source columns', () => {
   const sourceSchema = validateSourceSchema({ tables: [{ schema: 'public', name: 'crm', columns: [
     { name: 'id', dataType: 'uuid', nullable: false },
@@ -220,6 +250,28 @@ test('BYODB operations are bounded by the approved mapping and role-specific wri
   assert.throws(() => validateByodbOperationCreate({ ...base, mappingVersion: 3 }, 'owner', mapping), /MAPPING_VERSION_STALE/);
   assert.throws(() => validateByodbOperationCreate({ ...base, expectedSourceVersion: null, action: 'update' }, 'owner', mapping), /OPERATION_INVALID/);
   assert.throws(() => validateByodbOperationCreate(base, 'employee', { ...mapping, fields: [mapping.fields[0]] }), /EMPLOYEE_ASSIGNMENT_MAPPING_REQUIRED/);
+});
+
+test('BYODB owner can queue mapped operational employees and projects but employees cannot', () => {
+  const base = { version: 1, idempotencyKey: 'b6b2a8fc-2f0b-45df-9aa9-1578f58c86f0', mappingVersion: 4, action: 'create', externalId: 'stable-1', expectedSourceVersion: null };
+  const mappingBase = { version: 1 as const, mappingVersion: 4, sourceSystem: 'fixture', schema: 'public', table: 'records', externalIdColumn: 'id' };
+  const employeeMapping = { ...mappingBase, entityType: 'employee_directory' as const, fields: [
+    { sourceColumn: 'name', targetField: 'name', conversion: { kind: 'text' as const } },
+    { sourceColumn: 'email', targetField: 'email', conversion: { kind: 'email' as const } },
+  ] };
+  const employeeCreate = { ...base, entityType: 'employee_directory', payload: { name: 'Worker', email: 'worker@example.test' } };
+  assert.equal(validateByodbOperationCreate(employeeCreate, 'owner', employeeMapping).entityType, 'employee_directory');
+  assert.throws(() => validateByodbOperationCreate(employeeCreate, 'employee', employeeMapping), /OPERATION_ROLE_DENIED/);
+  assert.throws(() => validateByodbOperationCreate({ ...employeeCreate, payload: { name: 'Worker' } }, 'owner', employeeMapping), /OPERATION_REQUIRED_FIELD_MISSING/);
+
+  const projectMapping = { ...mappingBase, entityType: 'project' as const, fields: [
+    { sourceColumn: 'title', targetField: 'title', conversion: { kind: 'text' as const } },
+    { sourceColumn: 'lead_id', targetField: 'leadExternalId', conversion: { kind: 'text' as const } },
+  ] };
+  const projectCreate = { ...base, entityType: 'project', payload: { title: 'Roof', leadExternalId: 'lead-1' } };
+  assert.equal(validateByodbOperationCreate(projectCreate, 'owner', projectMapping).entityType, 'project');
+  assert.throws(() => validateByodbOperationCreate(projectCreate, 'employee', projectMapping), /OPERATION_ROLE_DENIED/);
+  assert.throws(() => validateByodbOperationCreate({ ...projectCreate, payload: { leadExternalId: 'lead-1' } }, 'owner', projectMapping), /OPERATION_REQUIRED_FIELD_MISSING/);
 });
 
 test('BYODB operation acknowledgements accept only bounded terminal outcomes', () => {

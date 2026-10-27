@@ -1,3 +1,5 @@
+import type { CanonicalEntityType } from '../../../../shared/connectorProtocol.js';
+
 export type ConnectorUiStatus =
   | 'not_configured'
   | 'awaiting_enrollment'
@@ -57,7 +59,7 @@ export interface ConnectorSummary {
 export interface ConnectorMappingV1 {
   version: 1;
   mappingVersion: number;
-  entityType: 'company' | 'customer' | 'contact' | 'lead' | 'project' | 'employee_directory' | 'invoice' | 'payment' | 'custom_record';
+  entityType: CanonicalEntityType;
   sourceSystem: string;
   schema: string;
   table: string;
