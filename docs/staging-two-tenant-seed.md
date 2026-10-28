@@ -41,6 +41,8 @@ Do not paste secrets into issues or source files. The seed never prints password
 
 The read-only name inventory confirms `STAGING_SUPABASE_URL`, both project refs, the publishable key, the staging Preview URL, and the A/owner-B account credentials are configured. The following required entries are missing:
 
+The configured `STAGING_PREVIEW_URL` currently points to an older `codex/real-company` deployment. A 2026-10-28 live check found the obsolete “Ověřený firemní pilot” login copy there. The newer PR #133 Preview has the corrected copy, but its compiled JavaScript targets the production Supabase project `oncmtmrhmjlerbwkrecv`. Neither deployment is safe evidence for current staging E2E. The staging preflight now inspects the actual deployed JavaScript and rejects a production or unidentified Supabase target before credentials are used. A current Preview built with the StavbaCore Staging URL must be deployed before acceptance tests.
+
 - Actions secrets: `STAGING_SUPABASE_SERVICE_ROLE_KEY`, `STAGING_EMPLOYEE_B_EMAIL`, `STAGING_EMPLOYEE_B_PASSWORD`, `STAGING_PUBLIC_TENANT_KEY`.
 - Actions variables: `PRODUCTION_BASE_URL`, `STAGING_COMPANY_A_ID`, `STAGING_COMPANY_B_ID`, `STAGING_OWNER_A_ID`, `STAGING_EMPLOYEE_A_ID`, `STAGING_OWNER_B_ID`, `STAGING_EMPLOYEE_B_ID`, `STAGING_LEAD_A_ID`, and `STAGING_LEAD_B_ID`.
 - After the notes/files staging migration and verified private bucket are in place: `STAGING_LEAD_B_FILE_PATH`, plus set `STAGING_LEAD_FILES_ENABLED=true` only in the seed invocation that creates the synthetic file fixture.
