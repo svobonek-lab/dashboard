@@ -114,6 +114,7 @@ function AppContent() {
     return Array.isArray(cached) ? cached : [];
   });
   const [employees, setEmployees] = useState([]);
+  const [dataLoadError, setDataLoadError] = useState<string | null>(null);
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
   const employeeLeads = dbUser?.role === 'employee'
     ? getEmployeeLeads(leads, employees, dbUser.id, dbUser.email, currentOrg?.id)
@@ -122,8 +123,10 @@ function AppContent() {
   // Synchronize leads & employees from active organization
   useEffect(() => {
     if (currentOrg) {
+      setDataLoadError(null);
       Promise.all([fetchLeads(), fetchEmployees()])
         .then(([dbLeads, dbEmployees]) => {
+          setDataLoadError(null);
           const hydratedLeads = hydrateLeadAssignments(dbLeads, dbEmployees);
           if (dbLeads.length > 0) {
             setLeads(hydratedLeads);
@@ -147,6 +150,7 @@ function AppContent() {
           console.error('Error synchronizing organization data:', err);
           setLeads([]);
           setEmployees([]);
+          setDataLoadError('Zakázky a zaměstnance se nepodařilo načíst. Zkontrolujte připojení a zkuste stránku obnovit.');
         });
     }
   // The organization can be restored before Supabase restores the authenticated
@@ -346,6 +350,20 @@ function AppContent() {
 
   if (deploymentSurface === 'app' && !isConfigured) {
     return <AppSetupRequired />;
+  }
+
+  if (dataLoadError) {
+    return (
+      <main className="min-h-screen bg-slate-50 p-6 text-slate-900">
+        <div role="alert" aria-live="assertive" className="mx-auto mt-16 max-w-xl rounded-2xl border border-amber-200 bg-white p-6 shadow-sm">
+          <h1 className="text-lg font-semibold">Data se nepodařilo načíst</h1>
+          <p className="mt-2 text-sm text-slate-600">{dataLoadError}</p>
+          <button type="button" onClick={() => window.location.reload()} className="mt-5 rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white">
+            Zkusit znovu
+          </button>
+        </div>
+      </main>
+    );
   }
 
   // 1. Standalone / Public / Embed Routes (No Layout, No Auth required, No company data leakage)

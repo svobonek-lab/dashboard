@@ -24,6 +24,12 @@ test('replaying a synthetic public inquiry with one request key creates one lead
   const replay = await request.post(`${preview}/api/public-intake`, { data: body });
   expect(first.status()).toBe(200);
   expect(replay.status()).toBe(200);
+  const [firstBody, replayBody] = await Promise.all([first.text(), replay.text()]);
+  for (const responseBody of [firstBody, replayBody]) {
+    expect(responseBody).not.toContain('StavbaFlow E2E Isolation Lead B');
+    expect(responseBody).not.toContain('e2e-lead-b@stavbaflow.example.test');
+    expect(responseBody).not.toContain(requiredValue('STAGING_COMPANY_B_ID'));
+  }
 
   const owner = await accessToken(request, 'OWNER_A');
   const params = new URLSearchParams({

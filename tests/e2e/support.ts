@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import type { APIRequestContext, Page } from 'playwright/test';
+import { validateStagingPreview } from '../../scripts/validate-staging-preview.mjs';
 
 export function stagingConfig() {
   const url = process.env.STAGING_SUPABASE_URL;
@@ -10,11 +11,10 @@ export function stagingConfig() {
   const productionBaseUrl = process.env.PRODUCTION_BASE_URL;
   assert.ok(url && key && preview && stagingRef && productionRef && productionBaseUrl, 'Missing required isolated staging/production identity configuration.');
   assert.notEqual(stagingRef, productionRef, 'Refusing to run against the production Supabase project.');
-  assert.notEqual(new URL(preview).origin, new URL(productionBaseUrl).origin, 'Refusing to run against the production web app.');
-  assert.equal(new URL(preview).protocol, 'https:');
+  const safePreview = validateStagingPreview(preview, productionBaseUrl);
   assert.equal(new URL(url).protocol, 'https:');
   assert.equal(new URL(url).hostname, `${stagingRef}.supabase.co`, 'Staging Supabase URL must match the declared staging project ref.');
-  return { url: url.replace(/\/$/, ''), key, preview: preview.replace(/\/$/, '') };
+  return { url: url.replace(/\/$/, ''), key, preview: safePreview };
 }
 
 export function requiredValue(name: string): string {
@@ -54,4 +54,28 @@ export async function restGet(request: APIRequestContext, token: string, table: 
   });
   assert.equal(response.ok(), true, `Staging REST read of ${table} failed (HTTP ${response.status()}).`);
   return await response.json() as Array<Record<string, unknown>>;
+}
+
+export async function restPatch(request: APIRequestContext, token: string, table: string, query: string, body: Record<string, unknown>) {
+  const { url, key } = stagingConfig();
+  return request.patch(`${url}/rest/v1/${table}?${query}`, {
+    headers: {
+      apikey: key,
+      Authorization: `Bearer ${token}`,
+      Prefer: 'return=representation',
+      'Content-Type': 'application/json',
+    },
+    data: body,
+  });
+}
+
+export async function restDelete(request: APIRequestContext, token: string, table: string, query: string) {
+  const { url, key } = stagingConfig();
+  return request.delete(`${url}/rest/v1/${table}?${query}`, {
+    headers: {
+      apikey: key,
+      Authorization: `Bearer ${token}`,
+      Prefer: 'return=representation',
+    },
+  });
 }

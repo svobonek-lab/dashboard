@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { validateStagingPreview } from './validate-staging-preview.mjs';
 
 const required = [
   'STAGING_PREVIEW_URL',
@@ -16,6 +17,9 @@ const required = [
   'STAGING_COMPANY_A_ID',
   'STAGING_COMPANY_B_ID',
   'STAGING_EMPLOYEE_A_ID',
+  'STAGING_EMPLOYEE_B_ID',
+  'STAGING_LEAD_A_ID',
+  'STAGING_LEAD_B_ID',
   'STAGING_PUBLIC_TENANT_KEY',
 ];
 const missing = required.filter((name) => !process.env[name]);
@@ -27,12 +31,10 @@ if (missing.length) {
 assert.notEqual(process.env.STAGING_SUPABASE_PROJECT_REF, process.env.PRODUCTION_SUPABASE_PROJECT_REF,
   'Refusing to run staging E2E against the production Supabase project.');
 const stagingUrl = new URL(process.env.STAGING_SUPABASE_URL);
-const previewUrl = new URL(process.env.STAGING_PREVIEW_URL);
-const productionUrl = new URL(process.env.PRODUCTION_BASE_URL);
+validateStagingPreview(process.env.STAGING_PREVIEW_URL, process.env.PRODUCTION_BASE_URL);
 assert.equal(stagingUrl.protocol, 'https:', 'Staging Supabase URL must use HTTPS.');
 assert.equal(stagingUrl.hostname, `${process.env.STAGING_SUPABASE_PROJECT_REF}.supabase.co`, 'Staging Supabase URL must match the declared staging project ref.');
-assert.equal(previewUrl.protocol, 'https:', 'Staging Preview URL must use HTTPS.');
-assert.notEqual(previewUrl.origin, productionUrl.origin, 'Refusing to run staging E2E against the production web app.');
+assert.equal(stagingUrl.href, `${stagingUrl.origin}/`, 'Staging Supabase URL must not contain credentials, a path, query, or fragment.');
 assert.match(stagingUrl.hostname, /^([a-z0-9-]+\.)?supabase\.co$/i, 'Staging Supabase URL must be a hosted Supabase HTTPS endpoint.');
 
 console.log('Staging E2E configuration is complete and isolated from production.');

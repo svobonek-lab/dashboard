@@ -142,9 +142,7 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
           }
         } catch (err: any) {
           console.error('Supabase Auth init error:', err);
-          Sentry.captureException(err, {
-            extra: { organization_id: currentOrg?.id, context: 'initAuth' }
-          });
+          Sentry.captureException(err);
           setError(err.message || 'Chyba při připojování k Supabase');
           const activeSession = canUseLocalMockAuth(IS_PRODUCTION) ? LocalSupabaseMock.getActiveSessionUser() : null;
           if (activeSession) {
@@ -500,9 +498,7 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
       return formattedDbUser;
     } catch (err: any) {
       console.error('Error loading user organization details:', err);
-      Sentry.captureException(err, {
-        extra: { organization_id: currentOrg?.id, context: 'loadUserData' }
-      });
+      Sentry.captureException(err);
       if (err?.code === 'PGRST125' || (err?.message && err.message.includes('PGRST125'))) {
         if (IS_PRODUCTION) {
           setSchemaError('Databáze není správně nastavená. Kontaktujte podporu (support@stavbacore.cz).');
@@ -650,9 +646,7 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
       return toAuthenticatedWorkspaceUser(authUser, resolvedDbUser);
     } catch (err: any) {
       console.error('login error:', err);
-      Sentry.captureException(err, {
-        extra: { organization_id: currentOrg?.id, context: 'login' }
-      });
+      Sentry.captureException(err);
       setError(err.message || 'Přihlášení selhalo');
       throw err;
     }
@@ -780,9 +774,7 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
       return newUser;
     } catch (err: any) {
       console.error('signUp error:', err);
-      Sentry.captureException(err, {
-        extra: { organization_id: currentOrg?.id, context: 'signUp' }
-      });
+      Sentry.captureException(err);
       setError(err.message || 'Registrace selhala');
       throw err;
     }
@@ -1230,9 +1222,7 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
       }));
     } catch (err: any) {
       console.error('fetchLeads error:', err);
-      Sentry.captureException(err, {
-        extra: { organization_id: currentOrg?.id, context: 'fetchLeads' }
-      });
+      Sentry.captureException(err);
       if (err?.code === 'PGRST125' || (err?.message && err.message.includes('PGRST125')) || err?.code === '22P02') {
         if (IS_PRODUCTION && err?.code === 'PGRST125') {
           setSchemaError('Databáze není správně nastavená. Kontaktujte podporu (support@stavbacore.cz).');
@@ -1240,6 +1230,10 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
         } else {
           return fetchLeadsLocal();
         }
+      }
+      if (IS_PRODUCTION) {
+        setSchemaError('Zakázky se z databáze nepodařilo načíst. Zkontrolujte připojení a zkuste to znovu.');
+        throw err;
       }
       return fetchLeadsLocal();
     }
@@ -1532,9 +1526,11 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
       });
     } catch (err: any) {
       console.error('fetchEmployees error:', err);
-      Sentry.captureException(err, {
-        extra: { organization_id: currentOrg?.id, context: 'fetchEmployees' }
-      });
+      Sentry.captureException(err);
+      if (IS_PRODUCTION) {
+        setSchemaError('Zaměstnance se z databáze nepodařilo načíst. Zkontrolujte připojení a zkuste to znovu.');
+        throw err;
+      }
       return fetchEmployeesLocal();
     }
   };
@@ -2035,9 +2031,7 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
       return Array.from(allCombinedOrgsMap.values());
     } catch (err: any) {
       console.error('fetchAllOrganizationsAdmin error:', err);
-      Sentry.captureException(err, {
-        extra: { organization_id: currentOrg?.id, context: 'fetchAllOrganizationsAdmin' }
-      });
+      Sentry.captureException(err);
       if (IS_PRODUCTION) {
         setSchemaError(RUNTIME_POLICY.failClosedMessage);
         return [];
@@ -2080,9 +2074,7 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
       setOrganizations(prev => prev.filter(o => o.id !== orgId));
     } catch (err: any) {
       console.error('deleteOrganizationAdmin error:', err);
-      Sentry.captureException(err, {
-        extra: { organization_id: currentOrg?.id, context: 'deleteOrganizationAdmin' }
-      });
+      Sentry.captureException(err);
       throw err;
     }
   };
@@ -2247,9 +2239,7 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
       }
     } catch (err: any) {
       console.error('updateBrandingAdmin error:', err);
-      Sentry.captureException(err, {
-        extra: { organization_id: currentOrg?.id, context: 'updateBrandingAdmin' }
-      });
+      Sentry.captureException(err);
       throw err;
     }
   };
@@ -2285,9 +2275,7 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
       setOrganizations(prev => prev.map(o => o.id === orgId ? { ...o, status } : o));
     } catch (err: any) {
       console.error('suspendOrganizationAdmin error (non-fatal):', err);
-      Sentry.captureException(err, {
-        extra: { organization_id: currentOrg?.id, context: 'suspendOrganizationAdmin' }
-      });
+      Sentry.captureException(err);
     }
   };
 

@@ -1,18 +1,37 @@
 # Two-tenant staging seed
 
-`npx tsx scripts/seed-two-tenants.ts` validates the target and prints no account data. Add `--apply` to create or refresh two synthetic companies, their Auth users and active `app_members` rows. The script only accepts `STAGING_SUPABASE_URL` whose project ref exactly matches `STAGING_SUPABASE_PROJECT_REF`, and refuses the configured production ref.
+`npx tsx scripts/seed-two-tenants.ts` validates the target and performs no reads or writes beyond target validation. Add `--apply` to create or refresh two synthetic companies, four Auth users, active `app_members` rows, and one synthetic lead assigned to each company's employee. Each lead has a deterministic synthetic identity so rerunning the seed refreshes the same fixture. For non-vacuous isolation controls, it also creates one idempotent synthetic `app_notes` row, invitation row, and audit row for each company. The script accepts only `STAGING_SUPABASE_URL` whose project ref exactly matches `STAGING_SUPABASE_PROJECT_REF`, and refuses the configured production ref.
 
-Set these GitHub repository variables for staging E2E:
+The 2026-10-28 read-only staging audit confirms the live `app_members` contract is `company_id`, `user_id`, `name`, `email`, `role`, and `active`, with `active` defaulting to true. The JWT restrictive policy binds membership to `app_private.jwt_tenant_id()`. No accounts, memberships, or synthetic tenant rows have been seeded yet.
+
+## GitHub repository variables
+
+Set project/deployment identity and non-secret fixture IDs as **Actions variables**:
 
 - `STAGING_SUPABASE_URL`
 - `STAGING_SUPABASE_PROJECT_REF`
 - `PRODUCTION_SUPABASE_PROJECT_REF`
+- `STAGING_PREVIEW_URL`
+- `PRODUCTION_BASE_URL`
 - `STAGING_COMPANY_A_ID`, `STAGING_COMPANY_B_ID`
 - `STAGING_OWNER_A_ID`, `STAGING_EMPLOYEE_A_ID`, `STAGING_OWNER_B_ID`, `STAGING_EMPLOYEE_B_ID`
-- `STAGING_OWNER_A_EMAIL`, `STAGING_EMPLOYEE_A_EMAIL`, `STAGING_OWNER_B_EMAIL`, `STAGING_EMPLOYEE_B_EMAIL`
+- `STAGING_LEAD_A_ID`, `STAGING_LEAD_B_ID`
 
-Set `STAGING_SUPABASE_SERVICE_ROLE_KEY` and the four `STAGING_*_PASSWORD` values as GitHub Actions secrets, never as variables. Do not paste them into issues or source files. The seed output prints IDs and synthetic emails only; copy those values to the matching GitHub variables. It never prints passwords or the service key.
+The seed prints company, user, and lead IDs only after `--apply` succeeds. Copy those non-secret IDs to the matching variables. Never treat the returned IDs as proof of isolation; run the staging E2E suite.
 
-The seed creates these deterministic Auth emails: `owner-a@stavbaflow.example.test`, `employee-a@stavbaflow.example.test`, `owner-b@stavbaflow.example.test`, and `employee-b@stavbaflow.example.test`.
+## GitHub Actions secrets
 
-This is not evidence that the staging login or tenant isolation E2E has passed. Run the staging acceptance after the variables and secrets are configured.
+Set the service-role key, account passwords, and account emails as **Actions secrets** (emails are synthetic and non-routable, but remain in the secret store for consistent handling):
+
+- `STAGING_SUPABASE_SERVICE_ROLE_KEY`
+- `STAGING_OWNER_A_EMAIL`, `STAGING_OWNER_A_PASSWORD`
+- `STAGING_EMPLOYEE_A_EMAIL`, `STAGING_EMPLOYEE_A_PASSWORD`
+- `STAGING_OWNER_B_EMAIL`, `STAGING_OWNER_B_PASSWORD`
+- `STAGING_EMPLOYEE_B_EMAIL`, `STAGING_EMPLOYEE_B_PASSWORD`
+- `STAGING_PUBLIC_TENANT_KEY` (staging public-intake credential; keep it secret)
+
+Do not paste secrets into issues or source files. The seed never prints passwords or the service-role key. GitHub inventory checked 2026-10-28 shows the service-role key, employee B email, and employee B password are missing; the seed cannot be applied until those are configured.
+
+The deterministic Auth emails are `owner-a@stavbaflow.example.test`, `employee-a@stavbaflow.example.test`, `owner-b@stavbaflow.example.test`, and `employee-b@stavbaflow.example.test`. Lead fixtures use synthetic names and `.example.test` emails and are assigned to employees in the matching company.
+
+A seed run is not proof that owner login or tenant isolation passed. Run staging acceptance only after the values above are configured and the target is confirmed as StavbaCore Staging.

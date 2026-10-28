@@ -34,7 +34,8 @@ const LANDING_ENV = ((import.meta as any).env || {}) as Record<string, unknown>;
 const LEGAL_COMPANY_NAME = ((import.meta as any).env?.VITE_COMPANY_NAME || '').trim();
 const COMPANY_NAME = LEGAL_COMPANY_NAME || 'StavbaFlow';
 const COMPANY_ICO = ((import.meta as any).env?.VITE_COMPANY_ICO || '').trim();
-const COMPANY_ADDRESS = ((import.meta as any).env?.VITE_COMPANY_ADDRESS || '').trim() || PUBLIC_CONTACT_ADDRESS;
+const LEGAL_COMPANY_ADDRESS = ((import.meta as any).env?.VITE_COMPANY_ADDRESS || '').trim();
+const COMPANY_ADDRESS = LEGAL_COMPANY_ADDRESS;
 const COMPANY_EMAIL = ((import.meta as any).env?.VITE_COMPANY_EMAIL || '').trim() || PUBLIC_CONTACT_EMAIL;
 const COMPANY_PHONE = ((import.meta as any).env?.VITE_COMPANY_PHONE || '').trim();
 const LEGAL_IDENTITY_READINESS = getLegalIdentityReadiness({
@@ -43,6 +44,7 @@ const LEGAL_IDENTITY_READINESS = getLegalIdentityReadiness({
   VITE_COMPANY_ICO: String(LANDING_ENV.VITE_COMPANY_ICO || ''),
   VITE_COMPANY_ADDRESS: String(LANDING_ENV.VITE_COMPANY_ADDRESS || ''),
   VITE_COMPANY_EMAIL: String(LANDING_ENV.VITE_COMPANY_EMAIL || ''),
+  VITE_COMPANY_VOP_APPROVED: String(LANDING_ENV.VITE_COMPANY_VOP_APPROVED || ''),
 });
 const COMPANY_LEGAL_DETAILS_CONFIGURED = LEGAL_IDENTITY_READINESS.ready;
 const SALES_CONTACT = getSalesContactMode({
@@ -552,11 +554,11 @@ export const LandingPage: React.FC = () => {
           </div>
 
           <p className="text-xs text-blue-100 leading-relaxed">
-            Osobní založení firmy, přihlášení majitele, pozvání zaměstnanců, nasazení webového formuláře a kontrolovaný CSV import kontaktů a poptávek.
+            Plánovaný rozsah scénáře: osobní založení firmy, přihlášení majitele, pozvání zaměstnanců, webový formulář a kontrolovaný CSV import kontaktů a poptávek.
           </p>
 
           <div className="p-3 bg-white/10 rounded-xl text-xs text-blue-200 border border-white/15">
-            <strong>Jasný rozsah:</strong> Pilot ověřuje příjem poptávek, přiřazení, stav zakázky a oddělení dat firmy. Další moduly se zapnou až po samostatném ověření.
+            <strong>Scénář pilotu:</strong> společně ověřit příjem poptávek, přiřazení, změnu stavu a oddělení firem před vložením zákaznických dat.
           </div>
 
           <button
@@ -574,16 +576,16 @@ export const LandingPage: React.FC = () => {
           {/* Start Plan */}
           <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs space-y-4 flex flex-col justify-between">
             <div className="space-y-3">
-              <h4 className="text-base font-black text-slate-900">Součást pilotu</h4>
-              <p className="text-xs text-slate-500">Funkce plánované pro první nasazení; živou přejímku dokončete před zákaznickými daty.</p>
+              <h4 className="text-base font-black text-slate-900">Scénář pilotu</h4>
+              <p className="text-xs text-slate-500">Plánované funkce; živou přejímku dokončete před zákaznickými daty.</p>
               <div className="text-2xl font-black text-slate-900 font-mono">
                 Rozsah pilotu
               </div>
               <ul className="space-y-2 text-xs text-slate-700 pt-2 border-t border-slate-100">
-                <li className="flex items-center gap-2">✓ Přihlášení majitele a zaměstnance</li>
-                <li className="flex items-center gap-2">✓ Webový formulář a Kanban poptávek</li>
-                <li className="flex items-center gap-2">✓ Přiřazení a povolené změny stavu</li>
-                <li className="flex items-center gap-2">✓ CSV import a auditní historie</li>
+                <li className="flex items-center gap-2">K ověření: přihlášení majitele a zaměstnance</li>
+                <li className="flex items-center gap-2">K ověření: webový formulář a Kanban poptávek</li>
+                <li className="flex items-center gap-2">K ověření: přiřazení a povolené změny stavu</li>
+                <li className="flex items-center gap-2">K ověření: CSV import a auditní historie</li>
               </ul>
             </div>
             <button
@@ -606,11 +608,11 @@ export const LandingPage: React.FC = () => {
                 30 dní
               </div>
               <ul className="space-y-2 text-xs text-slate-700 pt-2 border-t border-slate-100">
-                <li className="flex items-center gap-2 font-bold">✓ Přijetí a aktivace pozvánky</li>
-                <li className="flex items-center gap-2">✓ Zaměstnanec vidí jen přidělenou práci</li>
-                <li className="flex items-center gap-2">✓ Formulář vytvoří jedinou poptávku</li>
-                <li className="flex items-center gap-2">✓ Import nevytváří duplicity</li>
-                <li className="flex items-center gap-2">✓ Závěrečná kontrola oddělení firem</li>
+                <li className="flex items-center gap-2">Ověřit: přijetí a aktivaci pozvánky</li>
+                <li className="flex items-center gap-2">Ověřit: zaměstnanec vidí jen přidělenou práci</li>
+                <li className="flex items-center gap-2">Ověřit: opakované odeslání formuláře</li>
+                <li className="flex items-center gap-2">Ověřit: opakovaný import bez duplicit</li>
+                <li className="flex items-center gap-2">Ověřit: oddělení dat dvou firem</li>
               </ul>
             </div>
             <button
@@ -630,10 +632,14 @@ export const LandingPage: React.FC = () => {
                 Roadmapa
               </div>
               <ul className="space-y-2 text-xs text-slate-700 pt-2 border-t border-slate-100">
-                <li className="flex items-center gap-2">Přímé SQL/ERP propojení není součástí pilotu</li>
-                <li className="flex items-center gap-2">Obousměrná synchronizace databází</li>
-                <li className="flex items-center gap-2">Fakturace a účetní exporty</li>
-                <li className="flex items-center gap-2">Klientský portál a automatické follow-upy — Připravujeme, nejsou součástí prvního pilotu</li>
+                <li className="flex items-center gap-2">Kalendář — není součástí prvního pilotu</li>
+                <li className="flex items-center gap-2">Analytika — není součástí prvního pilotu</li>
+                <li className="flex items-center gap-2">Cenové nabídky — nejsou součástí prvního pilotu</li>
+                <li className="flex items-center gap-2">Dokumenty a protokoly — nejsou součástí prvního pilotu</li>
+                <li className="flex items-center gap-2">Komunikační centrum — není součástí prvního pilotu</li>
+                <li className="flex items-center gap-2">Klientský portál — není součástí prvního pilotu</li>
+                <li className="flex items-center gap-2">Automatické follow-upy — nejsou součástí prvního pilotu</li>
+                <li className="flex items-center gap-2">Přímé SQL/ERP propojení, obousměrná synchronizace, fakturace a účetní exporty — nejsou součástí prvního pilotu</li>
               </ul>
             </div>
             <button
@@ -659,14 +665,14 @@ export const LandingPage: React.FC = () => {
             <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 space-y-1.5">
               <h4 className="font-black text-slate-900 text-sm">Jak dostaneme do systému současná data?</h4>
               <p className="text-slate-600 leading-relaxed">
-                První pilot používá kontrolovaný CSV import. Nejdřív uvidíte mapování a chyby, teprve potom se import potvrdí. Do původní databáze nic nezapisujeme.
+                Scénář pilotu počítá s kontrolovaným CSV importem. Před potvrzením je potřeba ověřit mapování, chyby i opakovaný běh. V režimu Managed Cloud se data neukládají do původní firemní databáze.
               </p>
             </div>
 
             <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 space-y-1.5">
               <h4 className="font-black text-slate-900 text-sm">Co zaměstnanec po přihlášení uvidí?</h4>
               <p className="text-slate-600 leading-relaxed">
-                Jen zakázky přiřazené jeho účtu. Nemůže měnit cenu, firmu ani cizí zakázky; omezení vynucuje databáze, ne pouze vzhled aplikace.
+                Přejímka ověřuje, že zaměstnanec vidí jen zakázky přiřazené jeho účtu a databázová pravidla mu nedovolí měnit údaje firmy ani cizí zakázky.
               </p>
             </div>
 
@@ -700,16 +706,24 @@ export const LandingPage: React.FC = () => {
               <button onClick={() => setActiveLegalModal('dpa')} className="hover:text-white transition-colors">Zpracovatelská smlouva (DPA)</button>
             </div>
           </div>
+          {!COMPANY_LEGAL_DETAILS_CONFIGURED && (
+            <section data-testid="legal-identity-placeholder" role="status" className="rounded-xl border border-amber-700/50 bg-amber-950/40 px-4 py-3 text-[11px] leading-5 text-amber-100">
+              <strong className="block text-xs">Právní identita provozovatele není dokončená.</strong>
+              <span>IČO: {COMPANY_ICO || 'nedoplněno'} · Právní adresa: {LEGAL_COMPANY_ADDRESS || 'nedoplněna'} · VOP: {String(LANDING_ENV.VITE_COMPANY_VOP_APPROVED || '').toLowerCase() === 'true' ? 'schválené' : 'připravit a schválit'}.</span>
+              <span className="block">Údaje doplní provozovatel před uzavřením smlouvy a ostrým spuštěním.</span>
+            </section>
+          )}
           <div className="pt-4 border-t border-slate-800/80 flex flex-col sm:flex-row items-center justify-between gap-2 text-[11px] text-slate-500">
             <div>
               <span>
-                {[COMPANY_NAME, COMPANY_ICO ? `IČO: ${COMPANY_ICO}` : null, COMPANY_ADDRESS]
-                  .filter(Boolean)
-                  .join(' · ')}
+                {COMPANY_LEGAL_DETAILS_CONFIGURED
+                  ? [COMPANY_NAME, `IČO: ${COMPANY_ICO}`, LEGAL_COMPANY_ADDRESS].join(' · ')
+                  : COMPANY_NAME}
               </span>
             </div>
             <div>
               <a href={`mailto:${COMPANY_EMAIL}`} className="hover:text-white transition-colors">Kontakt: {COMPANY_EMAIL}</a>
+              <span className="block">Veřejná kontaktní adresa: {PUBLIC_CONTACT_ADDRESS}</span>
               {COMPANY_PHONE && <span> · Tel: {COMPANY_PHONE}</span>}
             </div>
           </div>
@@ -732,7 +746,7 @@ export const LandingPage: React.FC = () => {
               <div className="space-y-3">
                 <h3 className="text-base font-black text-slate-900">Právní dokumenty připravujeme</h3>
                 <p className="text-slate-600 leading-relaxed">
-                  Kontaktní e-mail a adresa jsou zveřejněné. Finální právní identita provozovatele, IČO a znění dokumentů se doplní před podpisem smlouvy a ostrým spuštěním.
+                  Finální právní identita provozovatele, IČO, právní adresa a schválené VOP se doplní před podpisem smlouvy a ostrým spuštěním.
                 </p>
                 <p className="text-slate-500 text-[11px]">
                   Pro obchodní ukázku napište na {COMPANY_EMAIL}. Dokumenty se nezobrazují jako hotové, dokud neproběhne právní kontrola a doplnění identifikačních údajů.

@@ -31,6 +31,11 @@ jobs:
       - run: npm ci
       - run: npm ci
         working-directory: connector
+      - name: Reject schema snapshot and migration drift
+        run: node scripts/verify-schema-snapshot.mjs
+        env:
+          STAGING_SUPABASE_PROJECT_REF: ${{ vars.STAGING_SUPABASE_PROJECT_REF }}
+          PRODUCTION_SUPABASE_PROJECT_REF: ${{ vars.PRODUCTION_SUPABASE_PROJECT_REF }}
       - run: npm test
       - run: npm run lint
       - run: npm run build
@@ -199,6 +204,8 @@ jobs:
           docker exec -i public-intake-postgres psql -v ON_ERROR_STOP=1 -U postgres < supabase/tests/public_intake_security_verify.sql
           docker cp supabase/tests/public_intake_burst.sh public-intake-postgres:/tmp/public_intake_burst.sh
           docker exec public-intake-postgres sh /tmp/public_intake_burst.sh
+          docker cp supabase/tests/public_intake_duplicate.sh public-intake-postgres:/tmp/public_intake_duplicate.sh
+          docker exec public-intake-postgres sh /tmp/public_intake_duplicate.sh
       - name: Stop disposable PostgreSQL
         if: always()
         run: docker rm --force public-intake-postgres

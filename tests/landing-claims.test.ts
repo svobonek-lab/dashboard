@@ -11,7 +11,10 @@ test('landing marks every unavailable pilot capability it mentions as preparing 
   assert.ok(heading >= 0 && roadmapEnd > heading, 'unavailable features need an explicit roadmap section');
   const roadmap = landing.slice(heading, roadmapEnd);
   assert.match(roadmap, /Tyto části zatím nejsou součástí obchodního slibu/);
-  assert.match(roadmap, /Klientský portál[^<]*Připravujeme, nejsou součástí prvního pilotu/);
+  for (const moduleName of ['Kalendář', 'Analytika', 'Cenové nabídky', 'Dokumenty', 'Komunikační centrum', 'Klientský portál']) {
+    const line = roadmap.split(/\r?\n/).find((item) => item.includes(moduleName));
+    assert.ok(line && /(?:není|nejsou) součástí prvního pilotu/i.test(line), `${moduleName} must be clearly excluded from the first pilot`);
+  }
 });
 
 test('ROI calculator identifies its figures as illustrative and approximate', () => {
@@ -29,11 +32,15 @@ test('landing claim changelog records unsupported features and illustrative calc
   assert.match(changelog, /Ověřený firemní pilot/);
 });
 
-test('Founding Pilot promise still names its onboarding and delivery scope', () => {
-  const pilotDescription = landing.slice(landing.indexOf('Osobní založení firmy'), landing.indexOf('</p>', landing.indexOf('Osobní založení firmy')));
-  for (const item of ['přihlášení majitele', 'pozvání zaměstnanců', 'webového formuláře', 'kontrolovaný CSV import']) {
-    assert.ok(pilotDescription.includes(item), `Founding Pilot must continue to include: ${item}`);
+test('pilot scope is labelled as a scenario and planned capabilities, not a delivered promise', () => {
+  const pilotDescription = landing.slice(landing.indexOf('Plánovaný rozsah scénáře'), landing.indexOf('</p>', landing.indexOf('Plánovaný rozsah scénáře')));
+  assert.match(pilotDescription, /Plánovaný rozsah scénáře/);
+  for (const item of ['přihlášení majitele', 'pozvání zaměstnanců', 'webový formulář', 'kontrolovaný CSV import']) {
+    assert.ok(pilotDescription.includes(item), `Planned scenario must continue to identify: ${item}`);
   }
+  assert.match(landing, /SCÉNÁŘ PILOTU/);
+  assert.match(landing, /plánované funkce/i);
+  assert.doesNotMatch(landing, /První pilot používá kontrolovaný CSV import/);
 });
 
 test('sales copy does not describe the current staging flow as accepted until owner acceptance passes', () => {
@@ -45,8 +52,16 @@ test('sales copy does not describe the current staging flow as accepted until ow
   assert.doesNotMatch(landing, /Funkce ověřené ve stagingu a zahrnuté v prvním nasazení/);
   assert.doesNotMatch(landing, /Ověřený základ/);
   assert.doesNotMatch(landing, /ukážeme ověřený tok formulář/);
-  assert.match(landing, /Funkce plánované pro první nasazení/);
+  assert.match(landing, /Plánované funkce/);
   assert.match(landing, /před zákaznickými daty/);
+});
+
+test('landing visibly marks IČO, legal address and VOP incomplete until explicitly supplied and approved', () => {
+  assert.match(landing, /data-testid="legal-identity-placeholder"/);
+  assert.match(landing, /IČO:[^<]*(?:doplnit|nedoplněno)/i);
+  assert.match(landing, /Právní adresa:[^<]*(?:doplnit|nedoplněna)/i);
+  assert.match(landing, /VOP:[^<]*(?:připravit|neschválené)/i);
+  assert.match(landing, /VITE_COMPANY_VOP_APPROVED/);
 });
 
 test('owner login badge does not claim an unverified pilot acceptance', () => {

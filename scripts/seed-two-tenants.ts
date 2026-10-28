@@ -8,6 +8,53 @@ type SeedTenant = {
   employee: { name: string; email: string; passwordVariable: string; role: 'employee' };
 };
 
+export function buildTenantLeadFixture(key: 'A' | 'B', companyId: string, employeeId: string) {
+  return {
+    company_id: companyId,
+    title: `StavbaFlow E2E Isolation Lead ${key}`,
+    customer: `Synthetic Customer ${key}`,
+    email: `e2e-lead-${key.toLowerCase()}@stavbaflow.example.test`,
+    phone: '+420700000000',
+    address: `Synthetic address ${key}`,
+    description: 'Synthetic staging fixture for tenant isolation and Playwright acceptance.',
+    status: 'new',
+    value: 0,
+    source: 'manual',
+    assigned_to: employeeId,
+  };
+}
+
+export function buildTenantIsolationFixtures(
+  key: 'A' | 'B',
+  companyId: string,
+  ownerId: string,
+  employeeId: string,
+  leadId: string,
+  now = Date.now(),
+) {
+  return {
+    note: {
+      company_id: companyId,
+      lead_id: leadId,
+      author: employeeId,
+      body: `Synthetic E2E isolation note ${key}`,
+    },
+    invite: {
+      company_id: companyId,
+      email: `e2e-isolation-invite-${key.toLowerCase()}@stavbaflow.example.test`,
+      name: `Synthetic Isolation Invite ${key}`,
+      role: 'employee',
+      expires_at: new Date(now + 30 * 24 * 60 * 60 * 1000).toISOString(),
+    },
+    audit: {
+      company_id: companyId,
+      actor: ownerId,
+      action: 'E2E_ISOLATION_FIXTURE',
+      entity_id: leadId,
+    },
+  };
+}
+
 const tenants: SeedTenant[] = [
   {
     key: 'A', companyName: 'StavbaFlow Synthetic Company A', companySlug: 'e2e-synthetic-company-a',
@@ -91,6 +138,63 @@ async function ensureMembership(client: SupabaseClient, companyId: string, userI
   if (inserted.error) throw new Error('Unable to create synthetic staging membership.');
 }
 
+async function ensureLeadFixture(client: SupabaseClient, lead: ReturnType<typeof buildTenantLeadFixture>): Promise<string> {
+  const existing = await client.from('app_leads').select('id')
+    .eq('company_id', lead.company_id)
+    .eq('title', lead.title)
+    .eq('email', lead.email)
+    .limit(1)
+    .maybeSingle();
+  if (existing.error) throw new Error('Unable to inspect synthetic staging lead fixture.');
+  if (existing.data?.id) {
+    const updated = await client.from('app_leads').update(lead).eq('id', existing.data.id).eq('company_id', lead.company_id);
+    if (updated.error) throw new Error('Unable to refresh synthetic staging lead fixture.');
+    return existing.data.id;
+  }
+  const inserted = await client.from('app_leads').insert(lead).select('id').single();
+  if (inserted.error || !inserted.data?.id) throw new Error('Unable to create synthetic staging lead fixture.');
+  return inserted.data.id;
+}
+
+async function ensureNoteFixture(client: SupabaseClient, note: ReturnType<typeof buildTenantIsolationFixtures>['note']) {
+  const existing = await client.from('app_notes').select('id')
+    .eq('company_id', note.company_id)
+    .eq('lead_id', note.lead_id)
+    .eq('body', note.body)
+    .maybeSingle();
+  if (existing.error) throw new Error('Unable to inspect synthetic staging note fixture.');
+  if (existing.data?.id) return existing.data.id;
+  const inserted = await client.from('app_notes').insert(note).select('id').single();
+  if (inserted.error || !inserted.data?.id) throw new Error('Unable to create synthetic staging note fixture.');
+  return inserted.data.id;
+}
+
+async function ensureInviteFixture(client: SupabaseClient, invite: ReturnType<typeof buildTenantIsolationFixtures>['invite']) {
+  const existing = await client.from('app_invites').select('id')
+    .eq('company_id', invite.company_id)
+    .eq('email', invite.email)
+    .maybeSingle();
+  if (existing.error) throw new Error('Unable to inspect synthetic staging invitation fixture.');
+  if (existing.data?.id) return existing.data.id;
+  const inserted = await client.from('app_invites').insert(invite).select('id').single();
+  if (inserted.error || !inserted.data?.id) throw new Error('Unable to create synthetic staging invitation fixture.');
+  return inserted.data.id;
+}
+
+async function ensureAuditFixture(client: SupabaseClient, audit: ReturnType<typeof buildTenantIsolationFixtures>['audit']) {
+  const existing = await client.from('app_audit').select('id')
+    .eq('company_id', audit.company_id)
+    .eq('actor', audit.actor)
+    .eq('action', audit.action)
+    .eq('entity_id', audit.entity_id)
+    .maybeSingle();
+  if (existing.error) throw new Error('Unable to inspect synthetic staging audit fixture.');
+  if (existing.data?.id) return existing.data.id;
+  const inserted = await client.from('app_audit').insert(audit).select('id').single();
+  if (inserted.error || !inserted.data?.id) throw new Error('Unable to create synthetic staging audit fixture.');
+  return inserted.data.id;
+}
+
 export async function seedTwoTenants(environment: Record<string, string | undefined>, apply = false) {
   const { url, ref } = assertStagingSeedTarget(environment);
   if (!apply) return { applied: false, stagingProjectRef: ref, tenants: [] };
@@ -105,7 +209,12 @@ export async function seedTwoTenants(environment: Record<string, string | undefi
     const employeeId = await ensureAuthUser(client, tenant.employee.name, tenant.employee.email, tenant.employee.role, passwords.get(tenant.employee.email)!);
     await ensureMembership(client, companyId, ownerId, tenant.owner.name, tenant.owner.email, 'owner');
     await ensureMembership(client, companyId, employeeId, tenant.employee.name, tenant.employee.email, 'employee');
-    result.push({ key: tenant.key, companyId, ownerId, employeeId, ownerEmail: tenant.owner.email, employeeEmail: tenant.employee.email });
+    const leadId = await ensureLeadFixture(client, buildTenantLeadFixture(tenant.key, companyId, employeeId));
+    const isolation = buildTenantIsolationFixtures(tenant.key, companyId, ownerId, employeeId, leadId);
+    await ensureNoteFixture(client, isolation.note);
+    await ensureInviteFixture(client, isolation.invite);
+    await ensureAuditFixture(client, isolation.audit);
+    result.push({ key: tenant.key, companyId, ownerId, employeeId, leadId, ownerEmail: tenant.owner.email, employeeEmail: tenant.employee.email });
   }
   return { applied: apply, stagingProjectRef: ref, tenants: result };
 }
