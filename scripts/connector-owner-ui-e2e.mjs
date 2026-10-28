@@ -1,6 +1,8 @@
 import assert from 'node:assert/strict';
 import { chromium } from 'playwright';
 import { assertIsolatedStagingProject } from './connector-staging-environment.mjs';
+import { assertPreviewSupabaseTarget } from './assert-preview-supabase-target.mjs';
+import { validateStagingPreview } from './validate-staging-preview.mjs';
 
 const { stagingProjectRef, stagingUrl } = assertIsolatedStagingProject(process.env);
 const previewUrl = new URL(process.env.STAGING_PREVIEW_URL || '');
@@ -8,9 +10,9 @@ const email = process.env.STAGING_OWNER_A_EMAIL;
 const password = process.env.STAGING_OWNER_A_PASSWORD;
 const expectedStagingOrigin = new URL(stagingUrl).origin;
 const previewBypassToken = process.env.STAGING_PREVIEW_BYPASS_TOKEN;
-assert.equal(previewUrl.protocol, 'https:');
-assert.ok(previewUrl.hostname.endsWith('.vercel.app'), 'Only a reviewed Vercel Preview is accepted.');
+validateStagingPreview(previewUrl.href, process.env.PRODUCTION_BASE_URL);
 assert.ok(email && password, 'Missing synthetic staging owner credentials.');
+await assertPreviewSupabaseTarget(previewUrl.origin, stagingProjectRef, process.env.PRODUCTION_SUPABASE_PROJECT_REF);
 
 let browser;
 let step = 'launch browser';

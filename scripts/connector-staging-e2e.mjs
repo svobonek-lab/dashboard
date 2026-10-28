@@ -1,14 +1,16 @@
 import assert from 'node:assert/strict';
 import { createClient } from '@supabase/supabase-js';
 import { assertIsolatedStagingProject } from './connector-staging-environment.mjs';
+import { assertPreviewSupabaseTarget } from './assert-preview-supabase-target.mjs';
+import { validateStagingPreview } from './validate-staging-preview.mjs';
 
 const { stagingUrl } = assertIsolatedStagingProject(process.env);
 const publishableKey = process.env.STAGING_SUPABASE_PUBLISHABLE_KEY;
 const previewUrl = process.env.STAGING_PREVIEW_URL;
 assert.ok(publishableKey && previewUrl, 'Missing staging acceptance configuration.');
 const preview = new URL(previewUrl);
-assert.equal(preview.protocol, 'https:');
-assert.ok(preview.hostname.endsWith('.vercel.app'), 'Only a reviewed Vercel Preview is accepted.');
+validateStagingPreview(previewUrl, process.env.PRODUCTION_BASE_URL);
+await assertPreviewSupabaseTarget(preview.origin, process.env.STAGING_SUPABASE_PROJECT_REF, process.env.PRODUCTION_SUPABASE_PROJECT_REF);
 
 function account(prefix) {
   const email = process.env[`${prefix}_EMAIL`];
