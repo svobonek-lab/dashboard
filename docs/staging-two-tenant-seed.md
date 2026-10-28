@@ -35,7 +35,17 @@ Set the service-role key, account passwords, and account emails as **Actions sec
 - `STAGING_EMPLOYEE_B_EMAIL`, `STAGING_EMPLOYEE_B_PASSWORD`
 - `STAGING_PUBLIC_TENANT_KEY` (staging public-intake credential; keep it secret)
 
-Do not paste secrets into issues or source files. The seed never prints passwords or the service-role key. GitHub inventory checked 2026-10-28 shows the service-role key, employee B email, and employee B password are missing; the seed cannot be applied until those are configured.
+Do not paste secrets into issues or source files. The seed never prints passwords or the service-role key.
+
+## Current GitHub Actions configuration audit (2026-10-28)
+
+The read-only name inventory confirms `STAGING_SUPABASE_URL`, both project refs, the publishable key, the staging Preview URL, and the A/owner-B account credentials are configured. The following required entries are missing:
+
+- Actions secrets: `STAGING_SUPABASE_SERVICE_ROLE_KEY`, `STAGING_EMPLOYEE_B_EMAIL`, `STAGING_EMPLOYEE_B_PASSWORD`, `STAGING_PUBLIC_TENANT_KEY`.
+- Actions variables: `PRODUCTION_BASE_URL`, `STAGING_COMPANY_A_ID`, `STAGING_COMPANY_B_ID`, `STAGING_OWNER_A_ID`, `STAGING_EMPLOYEE_A_ID`, `STAGING_OWNER_B_ID`, `STAGING_EMPLOYEE_B_ID`, `STAGING_LEAD_A_ID`, and `STAGING_LEAD_B_ID`.
+- After the notes/files staging migration and verified private bucket are in place: `STAGING_LEAD_B_FILE_PATH`, plus set `STAGING_LEAD_FILES_ENABLED=true` only in the seed invocation that creates the synthetic file fixture.
+
+The 2026-10-28 GitHub Actions run for PR #132 completed each job before any runner step began. Local checks remain the available evidence until GitHub Actions can start jobs again. Never put service keys, account passwords, or the public intake key in Actions variables.
 
 The deterministic Auth emails are `owner-a@stavbaflow.example.test`, `employee-a@stavbaflow.example.test`, `owner-b@stavbaflow.example.test`, and `employee-b@stavbaflow.example.test`. Lead fixtures use synthetic names and `.example.test` emails and are assigned to employees in the matching company.
 

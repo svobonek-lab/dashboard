@@ -79,7 +79,7 @@
 
 - [ ] Compare every `app_*` relation, column, constraint, policy, grant, function signature and storage policy in current metadata with both migration trees.
 - [ ] Record every difference and its source; do not infer production schema from local migrations.
-- [ ] Add the notes/files migration as a proposal only and verify it against disposable PostgreSQL.
+- [x] Keep the notes/files SQL review-only and verify it against disposable PostgreSQL 17. Rerun on 2026-10-28 applied the proposal only to a temporary local container; contract verification passed for note/file RLS, company-bound Storage paths, audit and employee field allowlist. Container was removed; staging remains unchanged.
 - [x] Hide note/attachment actions when the capability flag is off and show “Přílohy budou brzy k dispozici”; the capability only enables for the declared staging project, and tests assert disabled state performs no reads.
 - [x] Add a CI gate comparing readable staging migration history to repository migrations and requiring full schema/RLS/function/Storage metadata. Verified it fails closed on the committed snapshot, which lacks migration history and Storage metadata; fresh staging capture remains required to satisfy the gate.
 - [ ] Confirm no migration command is wired to deployment or production.
@@ -93,7 +93,7 @@
 - Update/add: public-intake Playwright or HTTP acceptance test
 - Update: `docs/staging-contract-runbook.md`
 
-- [x] Extend disposable PostgreSQL acceptance to issue 50 same-IP requests within 10 seconds and assert the configured limit returns rate-limit errors without exceeding the accepted lead count; fresh PostgreSQL 17 run on 2026-10-28: 5 accepted / 45 limited in 484ms.
+- [x] Extend disposable PostgreSQL acceptance to issue 50 same-IP requests within 10 seconds and assert the configured limit returns rate-limit errors without exceeding the accepted lead count; fresh PostgreSQL 17 rerun on 2026-10-28: 5 accepted / 45 limited in 263ms.
 - [x] Add API tests for oversized customer, phone, email, title, description and value; extend disposable SQL validation for oversized customer, email, title, description and value.
 - [x] Add and run a disposable-PostgreSQL script issuing ten concurrent duplicates with one idempotency key; all returned one lead and persisted exactly one event (2026-10-28).
 - [x] Test a filled honeypot is silently acknowledged without creating or exposing a lead; API contract test returns 202 without persistence.

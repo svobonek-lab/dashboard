@@ -1,6 +1,6 @@
 # StavbaCore Staging metadata observation — 2026-10-28
 
-**Source:** read-only SQL Editor metadata query in Supabase project `xwzweltjvreqhjpbjrxa`, captured `2026-10-28T08:01:58.724499Z`; Auth Hooks page read at the same session. No customer rows were selected. No writes or migrations were run.
+**Source:** read-only SQL Editor metadata queries in Supabase project `xwzweltjvreqhjpbjrxa`, first captured `2026-10-28T08:01:58.724499Z`, then count/bucket/history rechecked `2026-10-28T09:29:54.515365Z`; Auth Hooks page read at the first session. No customer rows were selected. No writes or migrations were run.
 
 ## Owner membership contract
 
@@ -43,3 +43,7 @@ The repo's 13 `supabase/migrations/*.sql` files use a different set of version I
 ## Snapshot status
 
 The checked-in `supabase/schema-snapshots/stavbacore-staging-20261027.json` predates this observation and lacks both migration-history and Storage sections. The detailed SQL result was read directly in the dashboard and summarized here; this Markdown is not a substitute for the full machine-readable metadata snapshot. The CI drift gate intentionally fails until a complete, reviewed read-only snapshot is checked in and the migration-history mismatch is resolved.
+
+### 09:29 UTC relation inventory recheck
+
+A second read-only query confirmed the same 28 `public.app_*` relations and 289 columns. It also confirmed 54 `app_*` policies, 53 relevant public/app_private functions, one private `crm-files` bucket with three `storage.objects` policies, and the same 13 staging migration versions listed above. The refreshed relation list still contains `app_notes` only; neither `app_lead_notes` nor `app_lead_files` exists. This confirms the checked-in 2026-10-27 snapshot is incomplete and stale, but does not replace the missing full machine-readable capture of grants, columns, policy definitions, function signatures and Storage metadata.
