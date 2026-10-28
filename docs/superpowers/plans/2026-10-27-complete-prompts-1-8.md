@@ -81,7 +81,7 @@
 - [ ] Record every difference and its source; do not infer production schema from local migrations.
 - [x] Keep the notes/files SQL review-only and verify it against disposable PostgreSQL 17. Rerun on 2026-10-28 applied the proposal only to a temporary local container; contract verification passed for note/file RLS, company-bound Storage paths, audit and employee field allowlist. Container was removed; staging remains unchanged.
 - [x] Hide note/attachment actions when the capability flag is off and show “Přílohy budou brzy k dispozici”; the capability only enables for the declared staging project, and tests assert disabled state performs no reads.
-- [x] Add a CI gate comparing readable staging migration history to repository migrations and requiring full schema/RLS/function/Storage metadata. Verified it fails closed on the committed snapshot, which lacks migration history and Storage metadata; fresh staging capture remains required to satisfy the gate.
+- [x] Add a CI gate comparing readable staging migration history to repository migrations, requiring complete schema/RLS/function/Storage metadata, and checking every migration-declared table, column, policy and function name is present. It deliberately fails on the current stale snapshot. The verifier checks object presence, not policy expressions, grants, or full function signatures; these still need the complete snapshot and reviewed diff.
 - [ ] Confirm no migration command is wired to deployment or production.
 
 ### Task 4: Public intake abuse and retry acceptance
@@ -160,6 +160,6 @@
 
 - [ ] Every prompt 1–8 has implementation evidence and a status based on the required runtime scope.
 - [ ] No production writes occurred.
-- [x] All local test, typecheck and build results are recorded, including the current CI jobs that failed before starting steps due to the account billing/spending restriction.
+- [x] All local test, typecheck and build results are recorded. GitHub Actions run [40687311335](https://github.com/svobonek-lab/dashboard/actions/runs/40687311335) did not start any jobs; GitHub's check annotation says recent account payments failed or the spending limit must be increased. Vercel Preview checks for PR #133 passed. The GitHub result is an account-level blocker, not evidence that the job's code passed or failed.
 - [ ] Staging/Sentry/Stripe/live load gates are supported by current runtime evidence or explicitly remain release blockers.
-- [ ] Open a reviewable PR; do not merge it or enable auto-merge.
+- [x] Open a reviewable draft PR #133; do not merge it or enable auto-merge.
