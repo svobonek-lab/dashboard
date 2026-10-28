@@ -28,7 +28,7 @@ test('owner load profile uses the requested workload and never targets productio
   assert.match(source, /api\/import-leads/);
   assert.match(source, /CSV_DRY_RUN_ROWS = 500/);
   assert.match(source, /body\.rows === CSV_DRY_RUN_ROWS/);
-  assert.match(source, /validateStagingPreview/);
+  assert.match(source, /validateK6StagingEnvironment/);
   assert.match(source, /validateLoadFixtures\(owners, employees, tokenClaims\)/);
   assert.match(source, /verifyMembership\(fixture, 'owner', environment\)/);
   assert.match(source, /verifyMembership\(fixture, 'employee', environment\)/);
@@ -92,7 +92,7 @@ test('public intake load profile sends 200 unique synthetic requests in one minu
   assert.match(source, /429/);
   assert.match(source, /PRODUCTION_SUPABASE_PROJECT_REF/);
   assert.match(source, /STAGING_PUBLIC_TENANT_KEY/);
-  assert.match(source, /validateStagingPreview/);
+  assert.match(source, /validateK6StagingEnvironment/);
 });
 
 test('load report distinguishes unavailable measurements from threshold passes', () => {

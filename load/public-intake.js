@@ -1,7 +1,8 @@
 import http from 'k6/http';
 import { check } from 'k6';
 import { Counter, Rate } from 'k6/metrics';
-import { validateStagingPreview } from '../scripts/validate-staging-preview.mjs';
+import { validateK6StagingEnvironment } from './validate-staging.js';
+import { assertK6StagingPreviewTarget } from './assert-staging-preview.js';
 
 const accepted = new Counter('public_intake_accepted');
 const rateLimited = new Counter('public_intake_rate_limited');
@@ -25,20 +26,15 @@ export const options = {
 };
 
 function validateStaging() {
-  const stagingRef = String(__ENV.STAGING_SUPABASE_PROJECT_REF || '');
-  const productionRef = String(__ENV.PRODUCTION_SUPABASE_PROJECT_REF || '');
-  const stagingUrl = new URL(String(__ENV.STAGING_SUPABASE_URL || ''));
-  const previewOrigin = validateStagingPreview(__ENV.STAGING_PREVIEW_URL || '', __ENV.PRODUCTION_BASE_URL || '');
-  if (!/^[a-z0-9]{20}$/.test(stagingRef) || !/^[a-z0-9]{20}$/.test(productionRef) || stagingRef === productionRef
-      || stagingUrl.protocol !== 'https:' || stagingUrl.hostname !== `${stagingRef}.supabase.co`) {
-    throw new Error('Refusing public intake load: staging Supabase and Preview must be isolated from production.');
-  }
+  const target = validateK6StagingEnvironment(__ENV);
   if (!__ENV.STAGING_PUBLIC_TENANT_KEY) throw new Error('Missing synthetic staging public tenant key.');
-  return { previewUrl: previewOrigin, tenantKey: __ENV.STAGING_PUBLIC_TENANT_KEY };
+  return { previewUrl: target.previewUrl, tenantKey: __ENV.STAGING_PUBLIC_TENANT_KEY };
 }
 
 export function setup() {
-  return validateStaging();
+  const environment = validateStaging();
+  assertK6StagingPreviewTarget(environment.previewUrl, __ENV.STAGING_SUPABASE_PROJECT_REF, __ENV.PRODUCTION_SUPABASE_PROJECT_REF);
+  return environment;
 }
 
 export default function (data) {
