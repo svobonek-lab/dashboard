@@ -47,3 +47,26 @@ The checked-in `supabase/schema-snapshots/stavbacore-staging-20261027.json` pred
 ### 09:29 UTC relation inventory recheck
 
 A second read-only query confirmed the same 28 `public.app_*` relations and 289 columns. It also confirmed 54 `app_*` policies, 53 relevant public/app_private functions, one private `crm-files` bucket with three `storage.objects` policies, and the same 13 staging migration versions listed above. The refreshed relation list still contains `app_notes` only; neither `app_lead_notes` nor `app_lead_files` exists. This confirms the checked-in 2026-10-27 snapshot is incomplete and stale, but does not replace the missing full machine-readable capture of grants, columns, policy definitions, function signatures and Storage metadata.
+
+### Exact inventory delta against the checked-in snapshot
+
+The read-only relation query returned the column names and table definitions. Compared with `stavbacore-staging-20261027.json`, the 20 existing relations have the same 202 column names; staging has eight additional relations (87 columns total):
+
+| Relation | Current columns absent from the older snapshot |
+|---|---|
+| `app_byodb_operations` | `id`, `company_id`, `connector_id`, `actor_user_id`, `actor_email`, `actor_role`, `idempotency_key`, `mapping_version`, `entity_type`, `action`, `external_id`, `expected_source_version`, `payload`, `status`, `source_version`, `error_code`, `attempts`, `lease_expires_at`, `created_at`, `updated_at` |
+| `app_company_database_settings` | `company_id`, `mode`, `driver`, `connector_id`, `write_enabled`, `updated_by`, `updated_at` |
+| `app_connector_commands` | `id`, `company_id`, `connector_id`, `command_type`, `mapping_version`, `created_at`, `expires_at`, `acknowledged_at` |
+| `app_connector_enrollments` | `id`, `company_id`, `code_hash`, `secret_fingerprint`, `secret_ciphertext`, `scopes`, `created_by`, `created_at`, `expires_at`, `consumed_at` |
+| `app_connector_mappings` | `connector_id`, `company_id`, `version`, `definition`, `dry_run_at`, `dry_run_total`, `dry_run_valid`, `dry_run_failed`, `dry_run_issues`, `approved_at`, `approved_by`, `created_at` |
+| `app_connector_records` | `id`, `company_id`, `connector_id`, `mapping_version`, `entity_type`, `external_id`, `fingerprint`, `payload`, `source_updated_at`, `archived_at`, `created_at`, `updated_at` |
+| `app_connector_requests` | `connector_id`, `request_id`, `expires_at`, `response`, `created_at` |
+| `app_connectors` | `id`, `company_id`, `secret_ciphertext`, `scopes`, `status`, `version`, `last_heartbeat_at`, `next_sync_at`, `source_schema`, `last_run`, `pause_reason`, `created_at`, `revoked_at` |
+
+The current 54-policy inventory contains the 36 policy names in the older snapshot plus these 18 tenant-boundary policies: `app_audit.app_jwt_tenant_boundary`, `app_companies.app_jwt_tenant_boundary`, `app_costs.app_jwt_tenant_boundary`, `app_email_outbox.app_jwt_tenant_boundary`, `app_handovers.app_jwt_tenant_boundary`, `app_imports.app_jwt_tenant_boundary`, `app_integrations.app_jwt_tenant_boundary`, `app_invites.app_jwt_tenant_boundary`, `app_invoices.app_jwt_tenant_boundary`, `app_job_budgets.app_jwt_tenant_boundary`, `app_leads.app_jwt_tenant_boundary`, `app_members.app_jwt_tenant_boundary`, `app_notes.app_jwt_tenant_boundary`, `app_quotes.app_jwt_tenant_boundary`, `app_reminders.app_jwt_tenant_boundary`, `app_requests.app_jwt_tenant_boundary`, `app_tasks.app_jwt_tenant_boundary`, and `app_time_entries.app_jwt_tenant_boundary`.
+
+The current 53-function inventory includes 21 function names absent from the older snapshot: `app_ack_byodb_operation`, `app_ack_connector_command`, `app_approve_connector_mapping`, `app_block_cloud_company_writes_for_byodb`, `app_block_cloud_lead_writes_for_byodb`, `app_connector_heartbeat`, `app_create_byodb_operation`, `app_create_connector_enrollment`, `app_get_byodb_context`, `app_get_connector_commands`, `app_ingest_connector_batch`, `app_list_byodb_operations`, `app_list_byodb_records`, `app_owner_connector_command`, `app_owner_connector_status`, `app_poll_byodb_operations`, `app_register_connector`, `app_reserve_connector_request`, `app_save_connector_mapping`, `app_set_company_database_mode`, and `app_tenant_access_token_hook`.
+
+### CI drift verifier coverage update
+
+The verifier now derives declared table/column, policy, and function names from every versioned SQL migration and fails if any required object is missing from the machine-readable snapshot. This complements exact migration-history comparison and prevents a snapshot with a copied version list but stale object inventory from passing. The check compares object presence; it does not certify policy expressions, grants, or function signatures, which still require the full metadata snapshot and security review. The current checked-in snapshot remains intentionally rejected because it lacks migration history and current object inventory.
