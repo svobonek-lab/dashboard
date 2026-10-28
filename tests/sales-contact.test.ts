@@ -41,7 +41,9 @@ test('landing offers the scoped founding pilot and never fakes a booking', () =>
   assert.match(landing, /Formulář → poptávka → přiřazení → stav → historie/);
   assert.match(landing, /Vstupní cena 30denního pilotu/);
   assert.doesNotMatch(landing, /ověřeného 30denního pilotu/i);
-  assert.match(landing, /Přímé SQL\/ERP propojení není součástí pilotu/);
+  assert.match(landing, /Přímé SQL\/ERP propojení[^<]*nejsou součástí prvního pilotu/);
+  assert.match(landing, /Veřejná kontaktní adresa/);
+  assert.match(landing, /legal-identity-placeholder/);
 });
 
 test('landing publishes the owner-approved contact but keeps legal documents gated', () => {

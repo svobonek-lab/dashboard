@@ -13,6 +13,16 @@ test('missing legal identity shows an operator warning only in development', () 
   assert.equal(getLegalIdentityReadiness({ ...missing, DEV: false }).showDevelopmentWarning, false);
 });
 
+test('VOP approval is required before legal documents are presented as complete', () => {
+  const identity = {
+    VITE_COMPANY_NAME: 'StavbaFlow s.r.o.', VITE_COMPANY_ICO: '12345678',
+    VITE_COMPANY_ADDRESS: 'Ulice 1, Praha', VITE_COMPANY_EMAIL: 'legal@example.cz', DEV: false,
+  };
+  assert.equal(getLegalIdentityReadiness({ ...identity, VITE_COMPANY_VOP_APPROVED: 'false' }).ready, false);
+  assert.deepEqual(getLegalIdentityReadiness({ ...identity, VITE_COMPANY_VOP_APPROVED: 'false' }).missing, ['VITE_COMPANY_VOP_APPROVED']);
+  assert.equal(getLegalIdentityReadiness({ ...identity, VITE_COMPANY_VOP_APPROVED: 'true' }).ready, true);
+});
+
 test('public contact fallbacks do not count as configured legal address or identity', () => {
   const result = getLegalIdentityReadiness({
     VITE_COMPANY_NAME: 'StavbaFlow s.r.o.',
@@ -22,20 +32,20 @@ test('public contact fallbacks do not count as configured legal address or ident
     DEV: true,
   });
   assert.equal(result.ready, false);
-  assert.deepEqual(result.missing, ['VITE_COMPANY_ADDRESS', 'VITE_COMPANY_EMAIL']);
+  assert.deepEqual(result.missing, ['VITE_COMPANY_ADDRESS', 'VITE_COMPANY_EMAIL', 'VITE_COMPANY_VOP_APPROVED']);
 });
 
 test('a complete legal identity requires explicit legal name, IČO, address and email', () => {
   assert.equal(getLegalIdentityReadiness({
     VITE_COMPANY_NAME: 'StavbaFlow s.r.o.', VITE_COMPANY_ICO: '12345678',
-    VITE_COMPANY_ADDRESS: 'Ulice 1, Praha', VITE_COMPANY_EMAIL: 'legal@example.invalid', DEV: false,
+    VITE_COMPANY_ADDRESS: 'Ulice 1, Praha', VITE_COMPANY_EMAIL: 'legal@example.invalid', VITE_COMPANY_VOP_APPROVED: 'true', DEV: false,
   }).ready, true);
 });
 
 test('an invalid legal email does not unlock the legal document text', () => {
   const result = getLegalIdentityReadiness({
     VITE_COMPANY_NAME: 'StavbaFlow s.r.o.', VITE_COMPANY_ICO: '12345678',
-    VITE_COMPANY_ADDRESS: 'Ulice 1, Praha', VITE_COMPANY_EMAIL: 'not-an-email', DEV: true,
+    VITE_COMPANY_ADDRESS: 'Ulice 1, Praha', VITE_COMPANY_EMAIL: 'not-an-email', VITE_COMPANY_VOP_APPROVED: 'true', DEV: true,
   });
   assert.equal(result.ready, false);
   assert.deepEqual(result.missing, ['VITE_COMPANY_EMAIL']);

@@ -1,18 +1,52 @@
 # Two-tenant staging seed
 
-`npx tsx scripts/seed-two-tenants.ts` validates the target and prints no account data. Add `--apply` to create or refresh two synthetic companies, their Auth users and active `app_members` rows. The script only accepts `STAGING_SUPABASE_URL` whose project ref exactly matches `STAGING_SUPABASE_PROJECT_REF`, and refuses the configured production ref.
+`npx tsx scripts/seed-two-tenants.ts` validates the target and performs no reads or writes beyond target validation. Add `--apply` to create or refresh two synthetic companies, four Auth users, active `app_members` rows, and one synthetic lead assigned to each company's employee. Each lead has a deterministic synthetic identity so rerunning the seed refreshes the same fixture. For non-vacuous isolation controls, it also creates one idempotent synthetic `app_notes` row, invitation row, and audit row for each company. The script accepts only `STAGING_SUPABASE_URL` whose project ref exactly matches `STAGING_SUPABASE_PROJECT_REF`, and refuses the configured production ref.
 
-Set these GitHub repository variables for staging E2E:
+The 2026-10-28 read-only staging audit confirms the live `app_members` contract is `company_id`, `user_id`, `name`, `email`, `role`, and `active`, with `active` defaulting to true. The JWT restrictive policy binds membership to `app_private.jwt_tenant_id()`. The latest documented check found no seed evidence; recheck the staging project before assuming fixtures exist.
+
+## Owner login failure contract
+
+`NO_ACTIVE_MEMBERSHIP` is the label used by the staging acceptance helper; the application surfaces the underlying state from `src/app/providers/OrganizationProvider.tsx` when `resolveOrAcceptAppIdentity()` returns no identity. `src/app/appSchemaIdentity.ts` first selects `app_members` rows with `user_id = auth.users.id` and `active = true`; if none are visible, it retries with the normalized Auth email and `active = true`. The row must use role `owner` or `employee`, and its `company_id` must resolve to an `app_companies` row whose `active` value is not false. Successful Supabase Auth by itself does not create this membership. The seed creates the required company and active owner/employee rows using those exact fields.
+
+## GitHub repository variables
+
+Set project/deployment identity and non-secret fixture IDs as **Actions variables**:
 
 - `STAGING_SUPABASE_URL`
 - `STAGING_SUPABASE_PROJECT_REF`
 - `PRODUCTION_SUPABASE_PROJECT_REF`
+- `STAGING_PREVIEW_URL`
+- `PRODUCTION_BASE_URL`
 - `STAGING_COMPANY_A_ID`, `STAGING_COMPANY_B_ID`
 - `STAGING_OWNER_A_ID`, `STAGING_EMPLOYEE_A_ID`, `STAGING_OWNER_B_ID`, `STAGING_EMPLOYEE_B_ID`
-- `STAGING_OWNER_A_EMAIL`, `STAGING_EMPLOYEE_A_EMAIL`, `STAGING_OWNER_B_EMAIL`, `STAGING_EMPLOYEE_B_EMAIL`
+- `STAGING_LEAD_A_ID`, `STAGING_LEAD_B_ID`
+- `STAGING_LEAD_B_FILE_PATH` (only after the review-only notes/files SQL is applied to staging and `STAGING_LEAD_FILES_ENABLED=true` was used for the seed)
 
-Set `STAGING_SUPABASE_SERVICE_ROLE_KEY` and the four `STAGING_*_PASSWORD` values as GitHub Actions secrets, never as variables. Do not paste them into issues or source files. The seed output prints IDs and synthetic emails only; copy those values to the matching GitHub variables. It never prints passwords or the service key.
+The seed prints company, user, and lead IDs only after `--apply` succeeds. Copy those non-secret IDs to the matching variables. Never treat the returned IDs as proof of isolation; run the staging E2E suite.
 
-The seed creates these deterministic Auth emails: `owner-a@stavbaflow.example.test`, `employee-a@stavbaflow.example.test`, `owner-b@stavbaflow.example.test`, and `employee-b@stavbaflow.example.test`.
+## GitHub Actions secrets
 
-This is not evidence that the staging login or tenant isolation E2E has passed. Run the staging acceptance after the variables and secrets are configured.
+Set the service-role key, account passwords, and account emails as **Actions secrets** (emails are synthetic and non-routable, but remain in the secret store for consistent handling):
+
+- `STAGING_SUPABASE_SERVICE_ROLE_KEY`
+- `STAGING_OWNER_A_EMAIL`, `STAGING_OWNER_A_PASSWORD`
+- `STAGING_EMPLOYEE_A_EMAIL`, `STAGING_EMPLOYEE_A_PASSWORD`
+- `STAGING_OWNER_B_EMAIL`, `STAGING_OWNER_B_PASSWORD`
+- `STAGING_EMPLOYEE_B_EMAIL`, `STAGING_EMPLOYEE_B_PASSWORD`
+- `STAGING_PUBLIC_TENANT_KEY` (staging public-intake credential; keep it secret)
+
+Do not paste secrets into issues or source files. The seed never prints passwords or the service-role key.
+
+## Current GitHub Actions configuration audit (2026-10-28)
+
+The read-only name inventory confirms `STAGING_SUPABASE_URL`, both project refs, the publishable key, the staging Preview URL, and the A/owner-B account credentials are configured. The following required entries are missing:
+
+- Actions secrets: `STAGING_SUPABASE_SERVICE_ROLE_KEY`, `STAGING_EMPLOYEE_B_EMAIL`, `STAGING_EMPLOYEE_B_PASSWORD`, `STAGING_PUBLIC_TENANT_KEY`.
+- Actions variables: `PRODUCTION_BASE_URL`, `STAGING_COMPANY_A_ID`, `STAGING_COMPANY_B_ID`, `STAGING_OWNER_A_ID`, `STAGING_EMPLOYEE_A_ID`, `STAGING_OWNER_B_ID`, `STAGING_EMPLOYEE_B_ID`, `STAGING_LEAD_A_ID`, and `STAGING_LEAD_B_ID`.
+- After the notes/files staging migration and verified private bucket are in place: `STAGING_LEAD_B_FILE_PATH`, plus set `STAGING_LEAD_FILES_ENABLED=true` only in the seed invocation that creates the synthetic file fixture.
+
+The 2026-10-28 GitHub Actions run for PR #132 completed each job before any runner step began. Local checks remain the available evidence until GitHub Actions can start jobs again. Never put service keys, account passwords, or the public intake key in Actions variables.
+
+The deterministic Auth emails are `owner-a@stavbaflow.example.test`, `employee-a@stavbaflow.example.test`, `owner-b@stavbaflow.example.test`, and `employee-b@stavbaflow.example.test`. Lead fixtures use synthetic names and `.example.test` emails and are assigned to employees in the matching company.
+
+A seed run is not proof that owner login or tenant isolation passed. File fixture creation is fail-closed and opt-in: keep it disabled until the review-only notes/files migration is applied and its Storage bucket/policies are verified. Run staging acceptance only after the values above are configured and the target is confirmed as StavbaCore Staging.

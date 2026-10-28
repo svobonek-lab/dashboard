@@ -19,4 +19,5 @@ playwright-report/
 *.pfx
 secrets/
 .supabase/
+.local-load-fixtures/
 .worktrees/

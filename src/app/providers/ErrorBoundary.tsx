@@ -29,7 +29,7 @@ export class ErrorBoundary extends React.Component<Props, State> {
   public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     console.error('ErrorBoundary zachytil pád komponenty:', error, errorInfo);
     try {
-      Sentry.captureException(error, { extra: { componentStack: errorInfo.componentStack } });
+      Sentry.captureException(error);
     } catch {
       // Ignore sentry report failures
     }
@@ -76,8 +76,8 @@ export class ErrorBoundary extends React.Component<Props, State> {
               </div>
             </div>
 
-            <div className="p-3 bg-slate-50/80 rounded-xl border border-slate-200 font-mono text-xs text-rose-300 max-h-32 overflow-y-auto">
-              {this.state.error?.message || 'Neznámá systémová chyba'}
+            <div role="alert" className="p-3 bg-slate-50/80 rounded-xl border border-slate-200 text-sm text-slate-700">
+              Zkuste stránku obnovit. Pokud potíž přetrvá, zkopírujte diagnostiku a pošlete ji podpoře.
             </div>
 
             <div className="space-y-2">
@@ -107,9 +107,6 @@ export class ErrorBoundary extends React.Component<Props, State> {
               </div>
             </div>
 
-            <p className="text-[11px] text-slate-500 text-center">
-              Chyba byla zaznamenána do telemetrie Sentry pro technický tým.
-            </p>
           </div>
         </div>
       );

@@ -50,6 +50,12 @@ test('public intake never inherits an authenticated dashboard session', () => {
 test('disposable PostgreSQL CI runs the 50-request same-IP burst acceptance', () => {
   assert.match(verifyWorkflow, /docker cp supabase\/tests\/public_intake_burst\.sh public-intake-postgres:/);
   assert.match(verifyWorkflow, /docker exec public-intake-postgres sh \/tmp\/public_intake_burst\.sh/);
+  assert.match(verifyWorkflow, /docker cp supabase\/tests\/public_intake_duplicate\.sh public-intake-postgres:/);
+  assert.match(verifyWorkflow, /docker exec public-intake-postgres sh \/tmp\/public_intake_duplicate\.sh/);
+  const duplicateScript = readFileSync(new URL('../supabase/tests/public_intake_duplicate.sh', import.meta.url), 'utf8');
+  assert.match(duplicateScript, /parallel-idempotency-key/);
+  assert.match(duplicateScript, /-le 10/);
+  assert.match(duplicateScript, /exactly one lead and one idempotency event/);
 });
 
 test('isolated SQL acceptance covers oversized fields and exactly-once retries', () => {

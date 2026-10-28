@@ -9,17 +9,20 @@ const isPublicDemo = isPublicDemoPath(window.location.pathname);
 export async function startApplication() {
   const root = createRoot(document.getElementById('root')!);
 
-  if (isPublicDemo) {
-    root.render(<StrictMode><PublicDemoWorkspace /></StrictMode>);
-    return;
-  }
-
-  const [{ default: App }, { OrganizationProvider }, { ErrorBoundary }, { initSentry }] = await Promise.all([
-    import('./App.tsx'),
-    import('./providers/OrganizationProvider'),
+  const [{ ErrorBoundary }, { initSentry }] = await Promise.all([
     import('./providers/ErrorBoundary'),
     import('../shared/lib/sentry'),
   ]);
   initSentry();
+
+  if (isPublicDemo) {
+    root.render(<StrictMode><ErrorBoundary><PublicDemoWorkspace /></ErrorBoundary></StrictMode>);
+    return;
+  }
+
+  const [{ default: App }, { OrganizationProvider }] = await Promise.all([
+    import('./App.tsx'),
+    import('./providers/OrganizationProvider'),
+  ]);
   root.render(<StrictMode><ErrorBoundary><OrganizationProvider><App /></OrganizationProvider></ErrorBoundary></StrictMode>);
 }

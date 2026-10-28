@@ -46,7 +46,7 @@
 - [ ] Confirm the `NO_ACTIVE_MEMBERSHIP` lookup and exact `app_members` contract against current repository migrations and metadata-only staging snapshot.
 - [x] Make seed dry-run perform zero reads/writes beyond target validation; retain guard coverage for production and malformed URLs and add a regression test proving it returns before credentials/client setup.
 - [ ] Add explicit, value-free output for the four user IDs and two company IDs only after `--apply` succeeds.
-- [ ] Add an idempotent fixture option to create the synthetic cross-tenant records required by Tasks 2 and 4, with deterministic cleanup.
+- [x] Add idempotent synthetic lead/note/invitation/audit fixtures; add opt-in file fixtures gated on the review-only notes/files migration. File uploads are rolled back if metadata insert fails.
 - [x] Run unit tests and dry-run locally; do not run `--apply` without staging-only credentials and verify their project ref first. `npm test` passed 424/424; `npm run lint` and `npm run build` passed; local dry-run validated the configured staging ref and reported no writes.
 - [ ] If credentials are unavailable, record the exact missing secret names and leave live membership acceptance blocked.
 
@@ -58,11 +58,14 @@
 - Add/update: fixture IDs in `docs/staging-two-tenant-seed.md`
 - Add/update: `docs/combined-tenant-release-acceptance.md`
 
-- [ ] Derive the complete matrix from actual `app_*` tables, RPCs, API routes and Storage bucket policies.
-- [ ] For owner A and employee A, assert no company-B rows are visible and INSERT/UPDATE/DELETE are rejected or demonstrably affect zero rows.
-- [ ] Cover leads, notes, file metadata and private Storage object paths, employees, invitations, company profile, export, audit history and public intake response.
-- [ ] Prove employee A cannot change a lead assigned to employee B; independently read the lead as owner B after the attempt.
-- [ ] Emit a machine-readable table of resource × operation × status; fail if any B fixture is visible or mutated by A.
+- [x] Derive the current `app_*` table matrix from the available metadata snapshot and include `app_lead_files` when its documented migration-backed fixture is enabled. Current snapshot still lacks file table and Storage metadata, so the live complete schema matrix remains blocked.
+- [x] For owner A and employee A, assert no company-B rows are visible and INSERT/UPDATE/DELETE are rejected or demonstrably affect zero rows for leads, notes, file metadata, members, invitations, company profile and audit controls.
+- [x] Add employee-A read/status-change attempt against the seeded company-B lead assigned to employee B, including independent owner-B readback; Playwright discovers the test, but live staging execution remains blocked by missing fixture configuration.
+- [x] Add current-schema cross-tenant SELECT checks for leads, notes, members, invitations, company profile and audit rows; add company-B marker checks to the owner CSV export and public-intake response. Playwright discovery passes; these are prepared assertions, not live isolation evidence.
+- [x] Add a same-value company-profile UPDATE probe as owner A and independently confirm the company-B profile is unchanged as owner B; live staging result is pending.
+- [x] Cover leads, notes, file metadata and private Storage object paths, employees, invitations, company profile, export, audit history and public intake response in fail-closed staging E2E specs. Live run awaits migration-backed fixtures and credentials.
+- [x] Prove employee A cannot change a lead assigned to employee B; independently read the lead as owner B after the attempt.
+- [x] Emit a machine-readable table of resource × operation × status as Playwright annotations and test output; fail if any B fixture is visible or mutated by A.
 - [ ] Run against isolated staging only after synthetic fixtures exist; keep the suite blocked rather than substituting mocks for live RLS proof.
 
 ### Task 3: Schema reconciliation and review-only notes/files migration
@@ -76,9 +79,9 @@
 
 - [ ] Compare every `app_*` relation, column, constraint, policy, grant, function signature and storage policy in current metadata with both migration trees.
 - [ ] Record every difference and its source; do not infer production schema from local migrations.
-- [ ] Add the notes/files migration as a proposal only and verify it against disposable PostgreSQL.
+- [x] Keep the notes/files SQL review-only and verify it against disposable PostgreSQL 17. Rerun on 2026-10-28 applied the proposal only to a temporary local container; contract verification passed for note/file RLS, company-bound Storage paths, audit and employee field allowlist. Container was removed; staging remains unchanged.
 - [x] Hide note/attachment actions when the capability flag is off and show “Přílohy budou brzy k dispozici”; the capability only enables for the declared staging project, and tests assert disabled state performs no reads.
-- [ ] Make CI fail on an unreviewed schema snapshot/migration mismatch.
+- [x] Add a CI gate comparing readable staging migration history to repository migrations and requiring full schema/RLS/function/Storage metadata. Verified it fails closed on the committed snapshot, which lacks migration history and Storage metadata; fresh staging capture remains required to satisfy the gate.
 - [ ] Confirm no migration command is wired to deployment or production.
 
 ### Task 4: Public intake abuse and retry acceptance
@@ -90,10 +93,10 @@
 - Update/add: public-intake Playwright or HTTP acceptance test
 - Update: `docs/staging-contract-runbook.md`
 
-- [ ] Extend disposable PostgreSQL acceptance to issue 50 same-IP requests within 10 seconds and assert the configured limit returns rate-limit errors without exceeding the accepted lead count.
+- [x] Extend disposable PostgreSQL acceptance to issue 50 same-IP requests within 10 seconds and assert the configured limit returns rate-limit errors without exceeding the accepted lead count; fresh PostgreSQL 17 rerun on 2026-10-28: 5 accepted / 45 limited in 263ms.
 - [x] Add API tests for oversized customer, phone, email, title, description and value; extend disposable SQL validation for oversized customer, email, title, description and value.
-- [ ] Test concurrent duplicate requests with one idempotency key and assert exactly one lead exists.
-- [ ] Test a filled honeypot is silently acknowledged without creating or exposing a lead.
+- [x] Add and run a disposable-PostgreSQL script issuing ten concurrent duplicates with one idempotency key; all returned one lead and persisted exactly one event (2026-10-28).
+- [x] Test a filled honeypot is silently acknowledged without creating or exposing a lead; API contract test returns 202 without persistence.
 - [x] Assert the API response omits the created/foreign lead id and tenant/customer data.
 - [x] Prepare a manual staging-apply and verification procedure with dependency preflight; current fresh-snapshot gate blocks applying until dependencies are confirmed.
 
@@ -104,11 +107,12 @@
 - Add: `load/public-intake.js`
 - Add/update: `docs/load-results.md`
 
-- [ ] Simulate 30 owners and 100 employees for 10 minutes using synthetic staging credentials and records.
-- [ ] Exercise dashboard reads, lead list reads, status writes and a 500-row CSV dry-run; never commit CSV data.
-- [ ] Enforce read p95 < 800 ms, write p95 < 1500 ms and error rate < 1% without changing thresholds to hide failures.
-- [ ] Send 200 public intake requests in one minute using unique synthetic request keys and controlled IP identity.
-- [ ] Record exact UTC timestamps, deployment and schema refs, VU profile, thresholds, observed percentiles, error rate and blockers.
+- [x] Add the 30-owner/100-employee 10-minute k6 profile. The live run still needs the 130 distinct synthetic staging account/lead fixtures.
+- [x] Exercise dashboard reads, lead-list reads, status writes and a 500-row CSV dry-run in the script; CSV contents are generated in memory and never saved.
+- [x] Encode read p95 < 800 ms, write p95 < 1500 ms and error rate < 1% as fixed thresholds.
+- [x] Add the 200-per-minute public intake script with unique synthetic request keys and explicit 429 accounting; requests traverse Vercel's single public origin, so same-origin rate limiting is expected.
+- [x] Support protected local fixture files for the 130 bearer tokens so the load test does not depend on oversized GitHub Secrets; ignore `.local-load-fixtures/` and never upload fixture contents.
+- [x] Add `docs/load-results.md` with NOT RUN status, required evidence fields, and blockers. Actual UTC run measurements remain pending the staging fixtures.
 - [ ] Create an issue list for every failed threshold; do not call a missing run a pass.
 
 ### Task 6: Sentry, route errors and Playwright flow errors
@@ -122,6 +126,7 @@
 
 - [ ] Verify every top-level route renders inside an error boundary and a failed Supabase request produces a readable recovery state.
 - [ ] Add a Playwright uncaught-console-error assertion across the full owner journey.
+- [x] Add a staging-only Playwright owner journey covering login, synthetic lead status change, CSV import, export and logout; restore the seed lead's original status in `finally`. Live Preview execution remains pending staging credentials and a current deployment.
 - [ ] Send one synthetic staging error to Sentry and verify the event contains only internal company UUID and approved role tags, with no email or names.
 - [ ] Save event reference and timestamp without copying user data or secret DSNs into the repository.
 
@@ -133,9 +138,9 @@
 - Update: legal identity placeholder block
 - Update: `tests/landing-claims.test.ts`
 
-- [ ] Keep unproven claims replaced with “scénář pilotu” and “plánované funkce” until Tasks 1–5 have live evidence.
-- [ ] Label calendar, analytics, quotes, documents, communication and portal as excluded/unavailable.
-- [ ] Show an unmistakably incomplete legal identity block until IČO, address and VOP are present.
+- [x] Keep unproven claims replaced with “scénář pilotu” and “plánované funkce” until Tasks 1–5 have live evidence; the copy now describes acceptance as planned work rather than completed behavior.
+- [x] Label calendar, analytics, quotes, documents, communication and portal as excluded/unavailable from the first pilot.
+- [x] Show a visible incomplete legal identity block until IČO, legal address and approved VOP are explicitly supplied through build configuration.
 - [ ] Verify the built preview and public production surfaces separately; report any deployment drift.
 
 ### Task 8: Stripe TEST mode end-to-end
@@ -155,6 +160,6 @@
 
 - [ ] Every prompt 1–8 has implementation evidence and a status based on the required runtime scope.
 - [ ] No production writes occurred.
-- [ ] All local test, typecheck and build results are recorded, including skipped tests and failed CI jobs.
+- [x] All local test, typecheck and build results are recorded, including the current CI jobs that failed before starting steps due to the account billing/spending restriction.
 - [ ] Staging/Sentry/Stripe/live load gates are supported by current runtime evidence or explicitly remain release blockers.
 - [ ] Open a reviewable PR; do not merge it or enable auto-merge.

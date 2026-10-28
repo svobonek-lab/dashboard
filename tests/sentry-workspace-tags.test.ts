@@ -1,6 +1,10 @@
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import test from 'node:test';
 import { getSentryWorkspaceTags } from '../src/shared/lib/sentry';
+
+const providerSource = readFileSync(new URL('../src/app/providers/OrganizationProvider.tsx', import.meta.url), 'utf8');
+const boundarySource = readFileSync(new URL('../src/app/providers/ErrorBoundary.tsx', import.meta.url), 'utf8');
 
 test('Sentry workspace tags accept only an internal UUID and approved role', () => {
   assert.deepEqual(getSentryWorkspaceTags({
@@ -15,4 +19,10 @@ test('Sentry workspace tags accept only an internal UUID and approved role', () 
     companyId: 'customer-email@example.test',
     role: 'customer-admin',
   }), { company_id: '', role: '' });
+});
+
+test('captured errors attach no additional organization, user, or component metadata', () => {
+  assert.doesNotMatch(providerSource, /Sentry\.captureException\(err,\s*\{\s*extra:/);
+  assert.doesNotMatch(boundarySource, /Sentry\.captureException\(error,\s*\{\s*extra:/);
+  assert.doesNotMatch(providerSource, /Sentry\.setUser/);
 });

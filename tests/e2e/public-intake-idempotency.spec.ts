@@ -24,6 +24,12 @@ test('replaying a synthetic public inquiry with one request key creates one lead
   const replay = await request.post(`${preview}/api/public-intake`, { data: body });
   expect(first.status()).toBe(200);
   expect(replay.status()).toBe(200);
+  const [firstBody, replayBody] = await Promise.all([first.text(), replay.text()]);
+  for (const responseBody of [firstBody, replayBody]) {
+    expect(responseBody).not.toContain('StavbaFlow E2E Isolation Lead B');
+    expect(responseBody).not.toContain('e2e-lead-b@stavbaflow.example.test');
+    expect(responseBody).not.toContain(requiredValue('STAGING_COMPANY_B_ID'));
+  }
 
   const owner = await accessToken(request, 'OWNER_A');
   const params = new URLSearchParams({
@@ -33,4 +39,10 @@ test('replaying a synthetic public inquiry with one request key creates one lead
   });
   const matches = await restGet(request, owner, 'app_leads', params.toString());
   expect(matches).toHaveLength(1);
+  const matrix = [
+    { resource: 'public intake response', operation: 'cross-company B data check', result: 'no company B marker or ID returned' },
+    { resource: 'public intake lead', operation: 'idempotent duplicate submit', result: `${matches.length} synthetic company A lead` },
+  ];
+  test.info().annotations.push({ type: 'tenant-isolation-matrix', description: JSON.stringify(matrix) });
+  console.info('Tenant isolation matrix\n' + matrix.map(row => `${row.resource} | ${row.operation} | ${row.result}`).join('\n'));
 });
