@@ -2,8 +2,9 @@ import http from 'k6/http';
 import { check, sleep } from 'k6';
 import { Rate } from 'k6/metrics';
 import encoding from 'k6/encoding';
-import { validateStagingPreview } from '../scripts/validate-staging-preview.mjs';
+import { validateK6StagingEnvironment } from './validate-staging.js';
 import { validateLoadFixtures } from '../scripts/validate-load-fixtures.mjs';
+import { assertK6StagingPreviewTarget } from './assert-staging-preview.js';
 
 const acceptanceErrors = new Rate('acceptance_errors');
 const REQUIRED_OWNER_VUS = 30;
@@ -56,24 +57,18 @@ function isUuid(value) {
 }
 
 function stagingEnvironment() {
-  const stagingRef = String(__ENV.STAGING_SUPABASE_PROJECT_REF || '');
-  const productionRef = String(__ENV.PRODUCTION_SUPABASE_PROJECT_REF || '');
-  const stagingUrl = new URL(String(__ENV.STAGING_SUPABASE_URL || ''));
-  const previewOrigin = validateStagingPreview(__ENV.STAGING_PREVIEW_URL || '', __ENV.PRODUCTION_BASE_URL || '');
-  if (!/^[a-z0-9]{20}$/.test(stagingRef) || !/^[a-z0-9]{20}$/.test(productionRef) || stagingRef === productionRef
-      || stagingUrl.protocol !== 'https:' || stagingUrl.hostname !== `${stagingRef}.supabase.co`) {
-    throw new Error('Refusing load: staging Supabase and Preview must be HTTPS and distinct from production.');
-  }
+  const target = validateK6StagingEnvironment(__ENV);
   if (!__ENV.STAGING_SUPABASE_PUBLISHABLE_KEY) throw new Error('Missing staging publishable key.');
   return {
-    supabaseUrl: stagingUrl.origin,
-    previewUrl: previewOrigin,
+    supabaseUrl: target.supabaseUrl,
+    previewUrl: target.previewUrl,
     apiKey: __ENV.STAGING_SUPABASE_PUBLISHABLE_KEY,
   };
 }
 
 export function setup() {
   const environment = stagingEnvironment();
+  assertK6StagingPreviewTarget(environment.previewUrl, __ENV.STAGING_SUPABASE_PROJECT_REF, __ENV.PRODUCTION_SUPABASE_PROJECT_REF);
   const owners = parseFixtures(
     fixtureSource('STAGING_OWNER_LOAD_FIXTURES_JSON', 'STAGING_OWNER_LOAD_FIXTURES_FILE'),
     'STAGING_OWNER_LOAD_FIXTURES_FILE',
