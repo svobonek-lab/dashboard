@@ -4,6 +4,10 @@
 
 The 2026-10-28 read-only staging audit confirms the live `app_members` contract is `company_id`, `user_id`, `name`, `email`, `role`, and `active`, with `active` defaulting to true. The JWT restrictive policy binds membership to `app_private.jwt_tenant_id()`. No accounts, memberships, or synthetic tenant rows have been seeded yet.
 
+## Owner login failure contract
+
+`NO_ACTIVE_MEMBERSHIP` is the label used by the staging acceptance helper; the application surfaces the underlying state from `src/app/providers/OrganizationProvider.tsx` when `resolveOrAcceptAppIdentity()` returns no identity. `src/app/appSchemaIdentity.ts` first selects `app_members` rows with `user_id = auth.users.id` and `active = true`; if none are visible, it retries with the normalized Auth email and `active = true`. The row must use role `owner` or `employee`, and its `company_id` must resolve to an `app_companies` row whose `active` value is not false. Successful Supabase Auth by itself does not create this membership. The seed creates the required company and active owner/employee rows using those exact fields.
+
 ## GitHub repository variables
 
 Set project/deployment identity and non-secret fixture IDs as **Actions variables**:
