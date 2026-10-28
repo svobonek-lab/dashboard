@@ -9,6 +9,7 @@ const widget = readFileSync(new URL('../src/features/submit-inquiry/ui/WidgetIfr
 const intakeApi = readFileSync(new URL('../api/public-intake.ts', import.meta.url), 'utf8');
 const app = readFileSync(new URL('../src/app/App.tsx', import.meta.url), 'utf8');
 const protectedRoute = readFileSync(new URL('../src/app/ProtectedRoute.tsx', import.meta.url), 'utf8');
+const verifyWorkflow = readFileSync(new URL('../.github/workflows/verify.yml', import.meta.url), 'utf8');
 
 test('public intake uses tenant slug, stores the resulting lead id, and rate limits unique requests', () => {
   assert.match(sql, /add column if not exists lead_id uuid/i);
@@ -44,4 +45,19 @@ test('public intake never inherits an authenticated dashboard session', () => {
   assert.match(intakeApi, /p_client_ip_hash:\s*input\.clientIpHash/);
   assert.doesNotMatch(widget, /supabase\.rpc\('app_get_public_company'/);
   assert.doesNotMatch(widget, /supabase\.rpc\('app_submit_public_lead'/);
+});
+
+test('disposable PostgreSQL CI runs the 50-request same-IP burst acceptance', () => {
+  assert.match(verifyWorkflow, /docker cp supabase\/tests\/public_intake_burst\.sh public-intake-postgres:/);
+  assert.match(verifyWorkflow, /docker exec public-intake-postgres sh \/tmp\/public_intake_burst\.sh/);
+});
+
+test('isolated SQL acceptance covers oversized fields and exactly-once retries', () => {
+  const verify = readFileSync(new URL('../supabase/tests/public_intake_security_verify.sql', import.meta.url), 'utf8');
+  for (const field of ['customer name', 'email', 'title', 'description']) {
+    assert.match(verify, new RegExp(`oversized ${field} was accepted by SQL`, 'i'));
+  }
+  assert.match(verify, /out-of-range value was accepted by SQL/i);
+  assert.match(verify, /idempotent retry must create exactly one lead/i);
+  assert.match(verify, /request_key = 'rate-request-5'/i);
 });

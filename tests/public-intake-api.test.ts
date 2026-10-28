@@ -53,7 +53,8 @@ test('public intake rejects fields above the documented limits before database w
   const handler = createPublicIntakeHandler({ hashSecret: 'test-secret-012345678901234567890123456789', submit: async () => { writes += 1; return null; } });
   const longCases = [
     { customer: 'x'.repeat(121) }, { phone: 'x'.repeat(31) },
-    { email: `${'x'.repeat(243)}@example.invalid` }, { description: 'x'.repeat(4001) },
+    { email: `${'x'.repeat(243)}@example.invalid` }, { title: 'x'.repeat(121) },
+    { description: 'x'.repeat(4001) }, { value: 1_000_000_001 },
   ];
   for (const override of longCases) {
     const res = responseRecorder();
@@ -87,6 +88,20 @@ test('valid requests preserve the stable request key and pass only the HMAC IP h
   assert.match(saved.clientIpHash, /^[a-f0-9]{64}$/);
   assert.equal(JSON.stringify(saved).includes('203.0.113.8'), false);
   assert.deepEqual(res.body, { status: 'accepted' });
+});
+
+test('public intake response never exposes the created or another company lead', async () => {
+  const foreignLeadId = 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb';
+  const handler = createPublicIntakeHandler({
+    hashSecret: 'test-secret-012345678901234567890123456789',
+    submit: async () => foreignLeadId,
+  });
+  const res = responseRecorder();
+  await handler({ method: 'POST', headers: { 'x-forwarded-for': '203.0.113.8' }, body: validBody }, res);
+  assert.equal(res.code, 200);
+  assert.deepEqual(res.body, { status: 'accepted' });
+  assert.equal(JSON.stringify(res.body).includes(foreignLeadId), false);
+  assert.equal(JSON.stringify(res.body).includes('company'), false);
 });
 
 test('SQL rate-limit responses are returned as HTTP 429 without exposing database errors', async () => {

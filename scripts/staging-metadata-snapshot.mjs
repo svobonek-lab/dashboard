@@ -139,8 +139,32 @@ SELECT jsonb_build_object(
     JOIN pg_catalog.pg_namespace AS fn ON fn.oid = proc.pronamespace
     WHERE n.nspname = 'public' AND left(c.relname, 4) = 'app_'
       AND NOT t.tgisinternal
-  ), '[]'::jsonb)
+  ), '[]'::jsonb),
+  'storage', jsonb_build_object(
+    'buckets', COALESCE((
+      SELECT jsonb_agg(jsonb_build_object('id', id, 'public', public) ORDER BY id)
+      FROM storage.buckets
+    ), '[]'::jsonb),
+    'policies', COALESCE((
+      SELECT jsonb_agg(jsonb_build_object(
+        'name', policyname,
+        'command', cmd,
+        'roles', roles,
+        'using', qual,
+        'with_check', with_check
+      ) ORDER BY policyname)
+      FROM pg_catalog.pg_policies
+      WHERE schemaname = 'storage' AND tablename = 'objects'
+    ), '[]'::jsonb)
+  )
 ) AS metadata;
+`;
+
+export const STAGING_MIGRATION_HISTORY_SQL = `
+SELECT jsonb_build_object(
+  'versions', COALESCE(jsonb_agg(jsonb_build_object('version', version, 'name', name) ORDER BY version), '[]'::jsonb)
+) AS metadata
+FROM supabase_migrations.schema_migrations;
 `;
 
 export function validateProjectIdentity(stagingProjectRef, productionProjectRef) {
@@ -204,16 +228,22 @@ export async function captureStagingMetadata({
     Authorization: `Bearer ${accessToken}`,
     'Content-Type': 'application/json',
   };
-  const [databaseResponse, authResponse] = await Promise.all([
+  const [databaseResponse, historyResponse, authResponse] = await Promise.all([
     fetchImpl(`${baseUrl}/database/query/read-only`, {
       method: 'POST',
       headers,
       body: JSON.stringify({ query: STAGING_METADATA_SQL }),
     }),
+    fetchImpl(`${baseUrl}/database/query/read-only`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({ query: STAGING_MIGRATION_HISTORY_SQL }),
+    }),
     fetchImpl(`${baseUrl}/config/auth`, { method: 'GET', headers }),
   ]);
-  const [databaseResult, authConfigResult] = await Promise.allSettled([
+  const [databaseResult, migrationHistoryResult, authConfigResult] = await Promise.allSettled([
     readJson(databaseResponse, 'Read-only staging database metadata query (database_read)'),
+    readJson(historyResponse, 'Read-only staging migration history query (database_read)'),
     readJson(authResponse, 'Staging Auth hook configuration metadata query'),
   ]);
   if (databaseResult.status === 'rejected') throw databaseResult.reason;
@@ -226,6 +256,9 @@ export async function captureStagingMetadata({
     projectRef: stagingProjectRef,
     productionProjectRef,
     database: databaseResult.value,
+    migrationHistory: migrationHistoryResult.status === 'fulfilled'
+      ? { readable: true, ...migrationHistoryResult.value }
+      : { readable: false, error: migrationHistoryResult.reason instanceof Error ? migrationHistoryResult.reason.message : 'Staging migration history could not be read.' },
     authHook,
   };
 }
