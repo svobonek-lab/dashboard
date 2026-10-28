@@ -25,3 +25,11 @@ test('staging E2E preflight rejects a production or unidentified bundle', async 
   await assert.rejects(assertPreviewSupabaseTarget(origin, stagingRef, productionRef, fakeFetch(`https://${productionRef}.supabase.co`)), /targets production/);
   await assert.rejects(assertPreviewSupabaseTarget(origin, stagingRef, productionRef, fakeFetch('no Supabase target')), /does not identify/);
 });
+
+test('staging preflight accepts the legacy production-only pilot write condition alongside a staging client', async () => {
+  const pilotPolicy = `function canWritePilot(e){return e.VITE_PILOT_WRITES===\`true\`&&e.VITE_SUPABASE_URL===\`https://${productionRef}.supabase.co\`}`;
+  await assert.doesNotReject(assertPreviewSupabaseTarget(origin, stagingRef, productionRef,
+    fakeFetch(`const supabaseUrl="https://${stagingRef}.supabase.co";${pilotPolicy}`)));
+  await assert.rejects(assertPreviewSupabaseTarget(origin, stagingRef, productionRef,
+    fakeFetch(`const supabaseUrl="https://${productionRef}.supabase.co";const stagingLabel="https://${stagingRef}.supabase.co";${pilotPolicy}`)), /targets production/);
+});

@@ -1,3 +1,5 @@
+import { hasUnexpectedProductionTarget } from './preview-bundle-target.mjs';
+
 export async function assertPreviewSupabaseTarget(previewOrigin, stagingRef, productionRef, fetchImpl = fetch) {
   const htmlResponse = await fetchImpl(`${previewOrigin}/login`, { redirect: 'follow' });
   if (!htmlResponse.ok) throw new Error(`Staging Preview returned HTTP ${htmlResponse.status}.`);
@@ -14,7 +16,7 @@ export async function assertPreviewSupabaseTarget(previewOrigin, stagingRef, pro
     if (!response.ok) throw new Error(`Staging Preview JavaScript returned HTTP ${response.status}.`);
     if (new URL(response.url).origin !== previewOrigin) throw new Error('Staging Preview JavaScript redirected outside its own origin.');
     const body = await response.text();
-    if (body.includes(`${productionRef}.supabase.co`)) {
+    if (hasUnexpectedProductionTarget(body, productionRef)) {
       throw new Error('Refusing staging E2E: Preview JavaScript targets production Supabase.');
     }
     if (body.includes(`${stagingRef}.supabase.co`)) foundStaging = true;
