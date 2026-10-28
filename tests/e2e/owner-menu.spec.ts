@@ -7,6 +7,6 @@ test('owner navigation exposes only the verified owner pilot routes', async ({ p
 
   await expect(page).toHaveURL(/\/dashboard$/);
   await expect(page.getByRole('link', { name: 'Poptávky & Kanban' })).toBeVisible();
-  await expect(page.getByRole('link', { name: /Synology NAS/ })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Integrace & Datový Hub' })).toBeVisible();
   await expect(page.getByRole('link', { name: /Prodejní cockpit|Sales/ })).toHaveCount(0);
 });
