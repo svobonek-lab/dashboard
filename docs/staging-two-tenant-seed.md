@@ -45,7 +45,9 @@ The read-only name inventory confirms `STAGING_SUPABASE_URL`, both project refs,
 - Actions variables: `PRODUCTION_BASE_URL`, `STAGING_COMPANY_A_ID`, `STAGING_COMPANY_B_ID`, `STAGING_OWNER_A_ID`, `STAGING_EMPLOYEE_A_ID`, `STAGING_OWNER_B_ID`, `STAGING_EMPLOYEE_B_ID`, `STAGING_LEAD_A_ID`, and `STAGING_LEAD_B_ID`.
 - After the notes/files staging migration and verified private bucket are in place: `STAGING_LEAD_B_FILE_PATH`, plus set `STAGING_LEAD_FILES_ENABLED=true` only in the seed invocation that creates the synthetic file fixture.
 
-The 2026-10-28 GitHub Actions run for PR #132 completed each job before any runner step began. Local checks remain the available evidence until GitHub Actions can start jobs again. Never put service keys, account passwords, or the public intake key in Actions variables.
+The 2026-10-28 read-only Supabase dashboard check found one existing synthetic account, `stavbaflow-owner-test-20261026@example.test` (`dcde4641-9edc-4112-a3c4-bccbd9d4efd0`). It has a confirmed email and one active `owner` membership in active company `87fb05ae-5153-40a1-8b2c-9c97f3bd327a`. This is positive evidence for the owner-membership contract, but it is not the deterministic A/B fixture and does not prove dashboard login or tenant isolation. The four deterministic accounts required for those tests were absent at the time of the exact-email read-only check.
+
+GitHub Actions runs for PR #133 (`40689392033`, `40689729088`) were rejected before runner allocation: every failed job has `runner_id: 0` and no steps. GitHub's account-level annotation says recent account payments failed or the spending limit must be increased. These runs provide no CI test result. Local checks remain available evidence until GitHub Actions can start jobs again. Never put service keys, account passwords, or the public intake key in Actions variables.
 
 The deterministic Auth emails are `owner-a@stavbaflow.example.test`, `employee-a@stavbaflow.example.test`, `owner-b@stavbaflow.example.test`, and `employee-b@stavbaflow.example.test`. Lead fixtures use synthetic names and `.example.test` emails and are assigned to employees in the matching company.
 
