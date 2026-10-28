@@ -70,6 +70,17 @@ test('owner and employee attachment screens reload records from the repository',
   assert.doesNotMatch(app, /EmployeeChecklistPage|\/employee\/checklist/);
 });
 
+test('staging-missing attachment schema keeps owner and employee UI honest and idle', () => {
+  const documents = read('../src/features/manage-leads/ui/lead-tabs/DocumentsTab.tsx');
+  const photos = read('../src/pages/employee/photos/ui/Photos.tsx');
+
+  for (const source of [documents, photos]) {
+    assert.match(source, /isLeadAttachmentsEnabled\(import\.meta\.env\)/);
+    assert.match(source, /Přílohy budou brzy k dispozici/);
+    assert.match(source, /if \(attachmentsEnabled\) void load/);
+  }
+});
+
 test('employee pages stay honest: no fake upload success, schedule text, or checklist persistence', () => {
   const photos = read('../src/pages/employee/photos/ui/Photos.tsx');
   const jobs = read('../src/pages/employee/jobs/ui/Jobs.tsx');
@@ -81,4 +92,18 @@ test('employee pages stay honest: no fake upload success, schedule text, or chec
   assert.match(jobs, /filterEmployeeJobs\(myJobs, filter/);
   assert.doesNotMatch(jobs, /navigate\('\/employee\/checklist'\)/);
   assert.doesNotMatch(readiness, /href: '\/employee\/checklist'/);
+});
+
+test('notes and attachments require an explicit flag and the declared staging project', async () => {
+  const { isLeadAttachmentsEnabled } = await import('../src/features/lead-files/model/availability');
+  const staging = {
+    VITE_LEAD_NOTES_FILES_ENABLED: 'true',
+    VITE_STAGING_SUPABASE_PROJECT_REF: 'xwzweltjvreqhjpbjrxa',
+    VITE_SUPABASE_URL: 'https://xwzweltjvreqhjpbjrxa.supabase.co',
+  };
+  assert.equal(isLeadAttachmentsEnabled({}), false);
+  assert.equal(isLeadAttachmentsEnabled({ ...staging, VITE_LEAD_NOTES_FILES_ENABLED: 'false' }), false);
+  assert.equal(isLeadAttachmentsEnabled({ ...staging, VITE_SUPABASE_URL: 'https://oncmtmrhmjlerbwkrecv.supabase.co' }), false);
+  assert.equal(isLeadAttachmentsEnabled({ ...staging, VITE_STAGING_SUPABASE_PROJECT_REF: 'oncmtmrhmjlerbwkrecv' }), false);
+  assert.equal(isLeadAttachmentsEnabled(staging), true);
 });

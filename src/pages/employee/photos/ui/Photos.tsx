@@ -3,11 +3,12 @@ import { Building, Camera, CheckCircle2, LoaderCircle, Trash2, UploadCloud } fro
 import type { Lead } from '@/entities/lead';
 import type { LeadStoredFile } from '@/shared/api/crm-repository';
 import { crmRepo } from '@/shared/api/crm-repository';
-import { resizeImageForUpload } from '@/features/lead-files';
+import { isLeadAttachmentsEnabled, resizeImageForUpload } from '@/features/lead-files';
 
 interface EmployeePhotosPageProps { leads: Lead[]; }
 
 export const EmployeePhotosPage: React.FC<EmployeePhotosPageProps> = ({ leads = [] }) => {
+  const attachmentsEnabled = isLeadAttachmentsEnabled(import.meta.env);
   const [files, setFiles] = useState<LeadStoredFile[]>([]);
   const [activeLeadId, setActiveLeadId] = useState(leads[0]?.id || '');
   const [loading, setLoading] = useState(false);
@@ -21,18 +22,19 @@ export const EmployeePhotosPage: React.FC<EmployeePhotosPageProps> = ({ leads = 
   }, [activeLeadId, leads]);
 
   const loadFiles = useCallback(async () => {
+    if (!attachmentsEnabled) return;
     if (!activeLead?.organization_id) { setFiles([]); return; }
     setLoading(true); setError('');
     try { setFiles(await crmRepo.getLeadFiles(activeLead.organization_id, activeLead.id)); }
     catch (loadError) { setFiles([]); setError(loadError instanceof Error ? loadError.message : 'Fotky se nepodařilo načíst.'); }
     finally { setLoading(false); }
-  }, [activeLead?.id, activeLead?.organization_id]);
+  }, [activeLead?.id, activeLead?.organization_id, attachmentsEnabled]);
 
-  useEffect(() => { void loadFiles(); }, [loadFiles]);
+  useEffect(() => { if (attachmentsEnabled) void loadFiles(); }, [attachmentsEnabled, loadFiles]);
 
   const handleUploadPhoto = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const selected = event.target.files?.[0]; event.target.value = '';
-    if (!selected || !activeLead?.organization_id) return;
+    if (!selected || !attachmentsEnabled || !activeLead?.organization_id) return;
     setUploading(true); setError(''); setSuccess('');
     try {
       const resized = await resizeImageForUpload(selected, 1600);
@@ -44,6 +46,7 @@ export const EmployeePhotosPage: React.FC<EmployeePhotosPageProps> = ({ leads = 
   };
 
   const deletePhoto = async (file: LeadStoredFile) => {
+    if (!attachmentsEnabled) return;
     if (!activeLead?.organization_id) return;
     setUploading(true); setError(''); setSuccess('');
     try { await crmRepo.deleteLeadFile(activeLead.organization_id, file); await loadFiles(); }
@@ -52,6 +55,12 @@ export const EmployeePhotosPage: React.FC<EmployeePhotosPageProps> = ({ leads = 
   };
 
   const photos = files.filter((file) => file.mimeType.startsWith('image/'));
+  if (!attachmentsEnabled) return <div className="workspace-page pb-12">
+    <header className="workspace-page-header">
+      <div><p className="workspace-kicker">Terénní dokumentace</p><h1 className="workspace-title">Fotky ze stavby</h1><p role="status" className="workspace-subtitle">Přílohy budou brzy k dispozici.</p></div>
+    </header>
+  </div>;
+
   return <div className="workspace-page pb-12">
     <header className="workspace-page-header">
       <div><p className="workspace-kicker">Terénní dokumentace</p><h1 className="workspace-title">Fotky ze stavby</h1><p className="workspace-subtitle">Fotky se ukládají do soukromého prostoru firmy a majitel je ihned uvidí u zakázky.</p></div>

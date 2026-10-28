@@ -197,6 +197,8 @@ jobs:
           docker exec -i public-intake-postgres psql -v ON_ERROR_STOP=1 -U postgres < supabase/staging/20261006_ai_dispatcher_contract.sql
           docker exec -i public-intake-postgres psql -v ON_ERROR_STOP=1 -U postgres < supabase/migrations/20261026000000_public_intake_rate_limit.sql
           docker exec -i public-intake-postgres psql -v ON_ERROR_STOP=1 -U postgres < supabase/tests/public_intake_security_verify.sql
+          docker cp supabase/tests/public_intake_burst.sh public-intake-postgres:/tmp/public_intake_burst.sh
+          docker exec public-intake-postgres sh /tmp/public_intake_burst.sh
       - name: Stop disposable PostgreSQL
         if: always()
         run: docker rm --force public-intake-postgres

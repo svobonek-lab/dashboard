@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { assertStagingSeedTarget } from '../scripts/seed-two-tenants';
+import { assertStagingSeedTarget, seedTwoTenants } from '../scripts/seed-two-tenants';
 
 const env = {
   STAGING_SUPABASE_URL: 'https://bbbbbbbbbbbbbbbbbbbb.supabase.co',
@@ -14,4 +14,9 @@ test('two-tenant seed accepts only the declared non-production Supabase staging 
   assert.throws(() => assertStagingSeedTarget({ ...env, STAGING_SUPABASE_PROJECT_REF: env.PRODUCTION_SUPABASE_PROJECT_REF }), /different/);
   assert.throws(() => assertStagingSeedTarget({ ...env, STAGING_SUPABASE_URL: 'https://evil.example/https://bbbbbbbbbbbbbbbbbbbb.supabase.co' }), /Refusing to seed/);
   assert.throws(() => assertStagingSeedTarget({ ...env, STAGING_SUPABASE_URL: 'http://bbbbbbbbbbbbbbbbbbbb.supabase.co' }), /Refusing to seed/);
+});
+
+test('two-tenant seed dry-run returns before requiring credentials or creating tenant records', async () => {
+  const result = await seedTwoTenants(env, false);
+  assert.deepEqual(result, { applied: false, stagingProjectRef: env.STAGING_SUPABASE_PROJECT_REF, tenants: [] });
 });

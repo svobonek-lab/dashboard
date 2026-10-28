@@ -93,6 +93,7 @@ async function ensureMembership(client: SupabaseClient, companyId: string, userI
 
 export async function seedTwoTenants(environment: Record<string, string | undefined>, apply = false) {
   const { url, ref } = assertStagingSeedTarget(environment);
+  if (!apply) return { applied: false, stagingProjectRef: ref, tenants: [] };
   const serviceRoleKey = required(environment, 'STAGING_SUPABASE_SERVICE_ROLE_KEY');
   const users = tenants.flatMap(tenant => [tenant.owner, tenant.employee]);
   const passwords = new Map(users.map(user => [user.email, required(environment, user.passwordVariable)]));

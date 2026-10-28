@@ -1,0 +1,3552 @@
+{
+  "projectRef": "xwzweltjvreqhjpbjrxa",
+  "productionProjectRef": "oncmtmrhmjlerbwkrecv",
+  "database": [
+    {
+      "metadata": {
+        "columns": [
+          {
+            "name": "id",
+            "table": "app_audit",
+            "schema": "public",
+            "ordinal": 1,
+            "nullable": "NO",
+            "udt_name": "int8",
+            "data_type": "bigint",
+            "has_default": false
+          },
+          {
+            "name": "company_id",
+            "table": "app_audit",
+            "schema": "public",
+            "ordinal": 2,
+            "nullable": "NO",
+            "udt_name": "uuid",
+            "data_type": "uuid",
+            "has_default": false
+          },
+          {
+            "name": "actor",
+            "table": "app_audit",
+            "schema": "public",
+            "ordinal": 3,
+            "nullable": "YES",
+            "udt_name": "uuid",
+            "data_type": "uuid",
+            "has_default": false
+          },
+          {
+            "name": "action",
+            "table": "app_audit",
+            "schema": "public",
+            "ordinal": 4,
+            "nullable": "NO",
+            "udt_name": "text",
+            "data_type": "text",
+            "has_default": false
+          },
+          {
+            "name": "entity_id",
+            "table": "app_audit",
+            "schema": "public",
+            "ordinal": 5,
+            "nullable": "YES",
+            "udt_name": "uuid",
+            "data_type": "uuid",
+            "has_default": false
+          },
+          {
+            "name": "created_at",
+            "table": "app_audit",
+            "schema": "public",
+            "ordinal": 6,
+            "nullable": "NO",
+            "udt_name": "timestamptz",
+            "data_type": "timestamp with time zone",
+            "has_default": true
+          },
+          {
+            "name": "id",
+            "table": "app_companies",
+            "schema": "public",
+            "ordinal": 1,
+            "nullable": "NO",
+            "udt_name": "uuid",
+            "data_type": "uuid",
+            "has_default": true
+          },
+          {
+            "name": "name",
+            "table": "app_companies",
+            "schema": "public",
+            "ordinal": 2,
+            "nullable": "NO",
+            "udt_name": "text",
+            "data_type": "text",
+            "has_default": false
+          },
+          {
+            "name": "slug",
+            "table": "app_companies",
+            "schema": "public",
+            "ordinal": 3,
+            "nullable": "NO",
+            "udt_name": "text",
+            "data_type": "text",
+            "has_default": false
+          },
+          {
+            "name": "email",
+            "table": "app_companies",
+            "schema": "public",
+            "ordinal": 4,
+            "nullable": "NO",
+            "udt_name": "text",
+            "data_type": "text",
+            "has_default": true
+          },
+          {
+            "name": "phone",
+            "table": "app_companies",
+            "schema": "public",
+            "ordinal": 5,
+            "nullable": "NO",
+            "udt_name": "text",
+            "data_type": "text",
+            "has_default": true
+          },
+          {
+            "name": "address",
+            "table": "app_companies",
+            "schema": "public",
+            "ordinal": 6,
+            "nullable": "NO",
+            "udt_name": "text",
+            "data_type": "text",
+            "has_default": true
+          },
+          {
+            "name": "ico",
+            "table": "app_companies",
+            "schema": "public",
+            "ordinal": 7,
+            "nullable": "NO",
+            "udt_name": "text",
+            "data_type": "text",
+            "has_default": true
+          },
+          {
+            "name": "dic",
+            "table": "app_companies",
+            "schema": "public",
+            "ordinal": 8,
+            "nullable": "NO",
+            "udt_name": "text",
+            "data_type": "text",
+            "has_default": true
+          },
+          {
+            "name": "color",
+            "table": "app_companies",
+            "schema": "public",
+            "ordinal": 9,
+            "nullable": "NO",
+            "udt_name": "text",
+            "data_type": "text",
+            "has_default": true
+          },
+          {
+            "name": "privacy_url",
+            "table": "app_companies",
+            "schema": "public",
+            "ordinal": 10,
+            "nullable": "NO",
+            "udt_name": "text",
+            "data_type": "text",
+            "has_default": true
+          },
+          {
+            "name": "public_form",
+            "table": "app_companies",
+            "schema": "public",
+            "ordinal": 11,
+            "nullable": "NO",
+            "udt_name": "bool",
+            "data_type": "boolean",
+            "has_default": true
+          },
+          {
+            "name": "active",
+            "table": "app_companies",
+            "schema": "public",
+            "ordinal": 12,
+            "nullable": "NO",
+            "udt_name": "bool",
+            "data_type": "boolean",
+            "has_default": true
+          },
+          {
+            "name": "created_at",
+            "table": "app_companies",
+            "schema": "public",
+            "ordinal": 13,
+            "nullable": "NO",
+            "udt_name": "timestamptz",
+            "data_type": "timestamp with time zone",
+            "has_default": true
+          },
+          {
+            "name": "logo_url",
+            "table": "app_companies",
+            "schema": "public",
+            "ordinal": 14,
+            "nullable": "NO",
+            "udt_name": "text",
+            "data_type": "text",
+            "has_default": true
+          },
+          {
+            "name": "terms_url",
+            "table": "app_companies",
+            "schema": "public",
+            "ordinal": 15,
+            "nullable": "NO",
+            "udt_name": "text",
+            "data_type": "text",
+            "has_default": true
+          },
+          {
+            "name": "onboarding_completed",
+            "table": "app_companies",
+            "schema": "public",
+            "ordinal": 16,
+            "nullable": "NO",
+            "udt_name": "bool",
+            "data_type": "boolean",
+            "has_default": true
+          },
+          {
+            "name": "email_notifications",
+            "table": "app_companies",
+            "schema": "public",
+            "ordinal": 17,
+            "nullable": "NO",
+            "udt_name": "bool",
+            "data_type": "boolean",
+            "has_default": true
+          },
+          {
+            "name": "plan",
+            "table": "app_companies",
+            "schema": "public",
+            "ordinal": 18,
+            "nullable": "NO",
+            "udt_name": "text",
+            "data_type": "text",
+            "has_default": true
+          },
+          {
+            "name": "trial_ends_at",
+            "table": "app_companies",
+            "schema": "public",
+            "ordinal": 19,
+            "nullable": "NO",
+            "udt_name": "timestamptz",
+            "data_type": "timestamp with time zone",
+            "has_default": true
+          },
+          {
+            "name": "form_heading",
+            "table": "app_companies",
+            "schema": "public",
+            "ordinal": 20,
+            "nullable": "NO",
+            "udt_name": "text",
+            "data_type": "text",
+            "has_default": true
+          },
+          {
+            "name": "form_intro",
+            "table": "app_companies",
+            "schema": "public",
+            "ordinal": 21,
+            "nullable": "NO",
+            "udt_name": "text",
+            "data_type": "text",
+            "has_default": true
+          },
+          {
+            "name": "form_button_label",
+            "table": "app_companies",
+            "schema": "public",
+            "ordinal": 22,
+            "nullable": "NO",
+            "udt_name": "text",
+            "data_type": "text",
+            "has_default": true
+          },
+          {
+            "name": "form_success_title",
+            "table": "app_companies",
+            "schema": "public",
+            "ordinal": 23,
+            "nullable": "NO",
+            "udt_name": "text",
+            "data_type": "text",
+            "has_default": true
+          },
+          {
+            "name": "form_success_text",
+            "table": "app_companies",
+            "schema": "public",
+            "ordinal": 24,
+            "nullable": "NO",
+            "udt_name": "text",
+            "data_type": "text",
+            "has_default": true
+          },
+          {
+            "name": "response_target_minutes",
+            "table": "app_companies",
+            "schema": "public",
+            "ordinal": 25,
+            "nullable": "NO",
+            "udt_name": "int4",
+            "data_type": "integer",
+            "has_default": true
+          },
+          {
+            "name": "id",
+            "table": "app_costs",
+            "schema": "public",
+            "ordinal": 1,
+            "nullable": "NO",
+            "udt_name": "uuid",
+            "data_type": "uuid",
+            "has_default": true
+          },
+          {
+            "name": "company_id",
+            "table": "app_costs",
+            "schema": "public",
+            "ordinal": 2,
+            "nullable": "NO",
+            "udt_name": "uuid",
+            "data_type": "uuid",
+            "has_default": false
+          },
+          {
+            "name": "lead_id",
+            "table": "app_costs",
+            "schema": "public",
+            "ordinal": 3,
+            "nullable": "NO",
+            "udt_name": "uuid",
+            "data_type": "uuid",
+            "has_default": false
+          },
+          {
+            "name": "kind",
+            "table": "app_costs",
+            "schema": "public",
+            "ordinal": 4,
+            "nullable": "NO",
+            "udt_name": "text",
+            "data_type": "text",
+            "has_default": false
+          },
+          {
+            "name": "description",
+            "table": "app_costs",
+            "schema": "public",
+            "ordinal": 5,
+            "nullable": "NO",
+            "udt_name": "text",
+            "data_type": "text",
+            "has_default": false
+          },
+          {
+            "name": "quantity",
+            "table": "app_costs",
+            "schema": "public",
+            "ordinal": 6,
+            "nullable": "NO",
+            "udt_name": "numeric",
+            "data_type": "numeric",
+            "has_default": true
+          },
+          {
+            "name": "unit_cost",
+            "table": "app_costs",
+            "schema": "public",
+            "ordinal": 7,
+            "nullable": "NO",
+            "udt_name": "numeric",
+            "data_type": "numeric",
+            "has_default": false
+          },
+          {
+            "name": "supplier",
+            "table": "app_costs",
+            "schema": "public",
+            "ordinal": 8,
+            "nullable": "NO",
+            "udt_name": "text",
+            "data_type": "text",
+            "has_default": true
+          },
+          {
+            "name": "incurred_on",
+            "table": "app_costs",
+            "schema": "public",
+            "ordinal": 9,
+            "nullable": "NO",
+            "udt_name": "date",
+            "data_type": "date",
+            "has_default": true
+          },
+          {
+            "name": "created_by",
+            "table": "app_costs",
+            "schema": "public",
+            "ordinal": 10,
+            "nullable": "NO",
+            "udt_name": "uuid",
+            "data_type": "uuid",
+            "has_default": true
+          },
+          {
+            "name": "created_at",
+            "table": "app_costs",
+            "schema": "public",
+            "ordinal": 11,
+            "nullable": "NO",
+            "udt_name": "timestamptz",
+            "data_type": "timestamp with time zone",
+            "has_default": true
+          },
+          {
+            "name": "id",
+            "table": "app_demo_requests",
+            "schema": "public",
+            "ordinal": 1,
+            "nullable": "NO",
+            "udt_name": "uuid",
+            "data_type": "uuid",
+            "has_default": false
+          },
+          {
+            "name": "name",
+            "table": "app_demo_requests",
+            "schema": "public",
+            "ordinal": 2,
+            "nullable": "NO",
+            "udt_name": "text",
+            "data_type": "text",
+            "has_default": false
+          },
+          {
+            "name": "company",
+            "table": "app_demo_requests",
+            "schema": "public",
+            "ordinal": 3,
+            "nullable": "NO",
+            "udt_name": "text",
+            "data_type": "text",
+            "has_default": false
+          },
+          {
+            "name": "email",
+            "table": "app_demo_requests",
+            "schema": "public",
+            "ordinal": 4,
+            "nullable": "NO",
+            "udt_name": "text",
+            "data_type": "text",
+            "has_default": false
+          },
+          {
+            "name": "team_size",
+            "table": "app_demo_requests",
+            "schema": "public",
+            "ordinal": 5,
+            "nullable": "NO",
+            "udt_name": "text",
+            "data_type": "text",
+            "has_default": false
+          },
+          {
+            "name": "need",
+            "table": "app_demo_requests",
+            "schema": "public",
+            "ordinal": 6,
+            "nullable": "NO",
+            "udt_name": "text",
+            "data_type": "text",
+            "has_default": true
+          },
+          {
+            "name": "status",
+            "table": "app_demo_requests",
+            "schema": "public",
+            "ordinal": 7,
+            "nullable": "NO",
+            "udt_name": "text",
+            "data_type": "text",
+            "has_default": true
+          },
+          {
+            "name": "created_at",
+            "table": "app_demo_requests",
+            "schema": "public",
+            "ordinal": 8,
+            "nullable": "NO",
+            "udt_name": "timestamptz",
+            "data_type": "timestamp with time zone",
+            "has_default": true
+          },
+          {
+            "name": "id",
+            "table": "app_email_outbox",
+            "schema": "public",
+            "ordinal": 1,
+            "nullable": "NO",
+            "udt_name": "uuid",
+            "data_type": "uuid",
+            "has_default": true
+          },
+          {
+            "name": "company_id",
+            "table": "app_email_outbox",
+            "schema": "public",
+            "ordinal": 2,
+            "nullable": "NO",
+            "udt_name": "uuid",
+            "data_type": "uuid",
+            "has_default": false
+          },
+          {
+            "name": "reminder_id",
+            "table": "app_email_outbox",
+            "schema": "public",
+            "ordinal": 3,
+            "nullable": "YES",
+            "udt_name": "uuid",
+            "data_type": "uuid",
+            "has_default": false
+          },
+          {
+            "name": "recipient",
+            "table": "app_email_outbox",
+            "schema": "public",
+            "ordinal": 4,
+            "nullable": "NO",
+            "udt_name": "text",
+            "data_type": "text",
+            "has_default": false
+          },
+          {
+            "name": "subject",
+            "table": "app_email_outbox",
+            "schema": "public",
+            "ordinal": 5,
+            "nullable": "NO",
+            "udt_name": "text",
+            "data_type": "text",
+            "has_default": false
+          },
+          {
+            "name": "html",
+            "table": "app_email_outbox",
+            "schema": "public",
+            "ordinal": 6,
+            "nullable": "NO",
+            "udt_name": "text",
+            "data_type": "text",
+            "has_default": false
+          },
+          {
+            "name": "status",
+            "table": "app_email_outbox",
+            "schema": "public",
+            "ordinal": 7,
+            "nullable": "NO",
+            "udt_name": "text",
+            "data_type": "text",
+            "has_default": true
+          },
+          {
+            "name": "attempts",
+            "table": "app_email_outbox",
+            "schema": "public",
+            "ordinal": 8,
+            "nullable": "NO",
+            "udt_name": "int4",
+            "data_type": "integer",
+            "has_default": true
+          },
+          {
+            "name": "provider_id",
+            "table": "app_email_outbox",
+            "schema": "public",
+            "ordinal": 9,
+            "nullable": "YES",
+            "udt_name": "text",
+            "data_type": "text",
+            "has_default": false
+          },
+          {
+            "name": "last_error",
+            "table": "app_email_outbox",
+            "schema": "public",
+            "ordinal": 10,
+            "nullable": "YES",
+            "udt_name": "text",
+            "data_type": "text",
+            "has_default": false
+          },
+          {
+            "name": "scheduled_for",
+            "table": "app_email_outbox",
+            "schema": "public",
+            "ordinal": 11,
+            "nullable": "NO",
+            "udt_name": "timestamptz",
+            "data_type": "timestamp with time zone",
+            "has_default": true
+          },
+          {
+            "name": "sent_at",
+            "table": "app_email_outbox",
+            "schema": "public",
+            "ordinal": 12,
+            "nullable": "YES",
+            "udt_name": "timestamptz",
+            "data_type": "timestamp with time zone",
+            "has_default": false
+          },
+          {
+            "name": "created_at",
+            "table": "app_email_outbox",
+            "schema": "public",
+            "ordinal": 13,
+            "nullable": "NO",
+            "udt_name": "timestamptz",
+            "data_type": "timestamp with time zone",
+            "has_default": true
+          },
+          {
+            "name": "quote_id",
+            "table": "app_email_outbox",
+            "schema": "public",
+            "ordinal": 14,
+            "nullable": "YES",
+            "udt_name": "uuid",
+            "data_type": "uuid",
+            "has_default": false
+          },
+          {
+            "name": "claimed_at",
+            "table": "app_email_outbox",
+            "schema": "public",
+            "ordinal": 15,
+            "nullable": "YES",
+            "udt_name": "timestamptz",
+            "data_type": "timestamp with time zone",
+            "has_default": false
+          },
+          {
+            "name": "id",
+            "table": "app_handovers",
+            "schema": "public",
+            "ordinal": 1,
+            "nullable": "NO",
+            "udt_name": "uuid",
+            "data_type": "uuid",
+            "has_default": true
+          },
+          {
+            "name": "company_id",
+            "table": "app_handovers",
+            "schema": "public",
+            "ordinal": 2,
+            "nullable": "NO",
+            "udt_name": "uuid",
+            "data_type": "uuid",
+            "has_default": false
+          },
+          {
+            "name": "lead_id",
+            "table": "app_handovers",
+            "schema": "public",
+            "ordinal": 3,
+            "nullable": "NO",
+            "udt_name": "uuid",
+            "data_type": "uuid",
+            "has_default": false
+          },
+          {
+            "name": "summary",
+            "table": "app_handovers",
+            "schema": "public",
+            "ordinal": 4,
+            "nullable": "NO",
+            "udt_name": "text",
+            "data_type": "text",
+            "has_default": true
+          },
+          {
+            "name": "defects",
+            "table": "app_handovers",
+            "schema": "public",
+            "ordinal": 5,
+            "nullable": "NO",
+            "udt_name": "text",
+            "data_type": "text",
+            "has_default": true
+          },
+          {
+            "name": "signer_name",
+            "table": "app_handovers",
+            "schema": "public",
+            "ordinal": 6,
+            "nullable": "NO",
+            "udt_name": "text",
+            "data_type": "text",
+            "has_default": true
+          },
+          {
+            "name": "signature_data",
+            "table": "app_handovers",
+            "schema": "public",
+            "ordinal": 7,
+            "nullable": "NO",
+            "udt_name": "text",
+            "data_type": "text",
+            "has_default": true
+          },
+          {
+            "name": "signed_at",
+            "table": "app_handovers",
+            "schema": "public",
+            "ordinal": 8,
+            "nullable": "YES",
+            "udt_name": "timestamptz",
+            "data_type": "timestamp with time zone",
+            "has_default": false
+          },
+          {
+            "name": "created_by",
+            "table": "app_handovers",
+            "schema": "public",
+            "ordinal": 9,
+            "nullable": "NO",
+            "udt_name": "uuid",
+            "data_type": "uuid",
+            "has_default": true
+          },
+          {
+            "name": "updated_at",
+            "table": "app_handovers",
+            "schema": "public",
+            "ordinal": 10,
+            "nullable": "NO",
+            "udt_name": "timestamptz",
+            "data_type": "timestamp with time zone",
+            "has_default": true
+          },
+          {
+            "name": "id",
+            "table": "app_imports",
+            "schema": "public",
+            "ordinal": 1,
+            "nullable": "NO",
+            "udt_name": "uuid",
+            "data_type": "uuid",
+            "has_default": true
+          },
+          {
+            "name": "company_id",
+            "table": "app_imports",
+            "schema": "public",
+            "ordinal": 2,
+            "nullable": "NO",
+            "udt_name": "uuid",
+            "data_type": "uuid",
+            "has_default": false
+          },
+          {
+            "name": "actor",
+            "table": "app_imports",
+            "schema": "public",
+            "ordinal": 3,
+            "nullable": "NO",
+            "udt_name": "uuid",
+            "data_type": "uuid",
+            "has_default": true
+          },
+          {
+            "name": "file_name",
+            "table": "app_imports",
+            "schema": "public",
+            "ordinal": 4,
+            "nullable": "NO",
+            "udt_name": "text",
+            "data_type": "text",
+            "has_default": false
+          },
+          {
+            "name": "imported",
+            "table": "app_imports",
+            "schema": "public",
+            "ordinal": 5,
+            "nullable": "NO",
+            "udt_name": "int4",
+            "data_type": "integer",
+            "has_default": false
+          },
+          {
+            "name": "created_at",
+            "table": "app_imports",
+            "schema": "public",
+            "ordinal": 6,
+            "nullable": "NO",
+            "udt_name": "timestamptz",
+            "data_type": "timestamp with time zone",
+            "has_default": true
+          },
+          {
+            "name": "id",
+            "table": "app_integrations",
+            "schema": "public",
+            "ordinal": 1,
+            "nullable": "NO",
+            "udt_name": "uuid",
+            "data_type": "uuid",
+            "has_default": true
+          },
+          {
+            "name": "company_id",
+            "table": "app_integrations",
+            "schema": "public",
+            "ordinal": 2,
+            "nullable": "NO",
+            "udt_name": "uuid",
+            "data_type": "uuid",
+            "has_default": false
+          },
+          {
+            "name": "provider",
+            "table": "app_integrations",
+            "schema": "public",
+            "ordinal": 3,
+            "nullable": "NO",
+            "udt_name": "text",
+            "data_type": "text",
+            "has_default": false
+          },
+          {
+            "name": "label",
+            "table": "app_integrations",
+            "schema": "public",
+            "ordinal": 4,
+            "nullable": "NO",
+            "udt_name": "text",
+            "data_type": "text",
+            "has_default": false
+          },
+          {
+            "name": "mode",
+            "table": "app_integrations",
+            "schema": "public",
+            "ordinal": 5,
+            "nullable": "NO",
+            "udt_name": "text",
+            "data_type": "text",
+            "has_default": true
+          },
+          {
+            "name": "status",
+            "table": "app_integrations",
+            "schema": "public",
+            "ordinal": 6,
+            "nullable": "NO",
+            "udt_name": "text",
+            "data_type": "text",
+            "has_default": true
+          },
+          {
+            "name": "endpoint",
+            "table": "app_integrations",
+            "schema": "public",
+            "ordinal": 7,
+            "nullable": "NO",
+            "udt_name": "text",
+            "data_type": "text",
+            "has_default": true
+          },
+          {
+            "name": "mapping",
+            "table": "app_integrations",
+            "schema": "public",
+            "ordinal": 8,
+            "nullable": "NO",
+            "udt_name": "jsonb",
+            "data_type": "jsonb",
+            "has_default": true
+          },
+          {
+            "name": "last_sync_at",
+            "table": "app_integrations",
+            "schema": "public",
+            "ordinal": 9,
+            "nullable": "YES",
+            "udt_name": "timestamptz",
+            "data_type": "timestamp with time zone",
+            "has_default": false
+          },
+          {
+            "name": "last_error",
+            "table": "app_integrations",
+            "schema": "public",
+            "ordinal": 10,
+            "nullable": "NO",
+            "udt_name": "text",
+            "data_type": "text",
+            "has_default": true
+          },
+          {
+            "name": "created_at",
+            "table": "app_integrations",
+            "schema": "public",
+            "ordinal": 11,
+            "nullable": "NO",
+            "udt_name": "timestamptz",
+            "data_type": "timestamp with time zone",
+            "has_default": true
+          },
+          {
+            "name": "updated_at",
+            "table": "app_integrations",
+            "schema": "public",
+            "ordinal": 12,
+            "nullable": "NO",
+            "udt_name": "timestamptz",
+            "data_type": "timestamp with time zone",
+            "has_default": true
+          },
+          {
+            "name": "id",
+            "table": "app_invites",
+            "schema": "public",
+            "ordinal": 1,
+            "nullable": "NO",
+            "udt_name": "uuid",
+            "data_type": "uuid",
+            "has_default": true
+          },
+          {
+            "name": "company_id",
+            "table": "app_invites",
+            "schema": "public",
+            "ordinal": 2,
+            "nullable": "NO",
+            "udt_name": "uuid",
+            "data_type": "uuid",
+            "has_default": false
+          },
+          {
+            "name": "email",
+            "table": "app_invites",
+            "schema": "public",
+            "ordinal": 3,
+            "nullable": "NO",
+            "udt_name": "text",
+            "data_type": "text",
+            "has_default": false
+          },
+          {
+            "name": "name",
+            "table": "app_invites",
+            "schema": "public",
+            "ordinal": 4,
+            "nullable": "NO",
+            "udt_name": "text",
+            "data_type": "text",
+            "has_default": false
+          },
+          {
+            "name": "expires_at",
+            "table": "app_invites",
+            "schema": "public",
+            "ordinal": 5,
+            "nullable": "NO",
+            "udt_name": "timestamptz",
+            "data_type": "timestamp with time zone",
+            "has_default": true
+          },
+          {
+            "name": "created_at",
+            "table": "app_invites",
+            "schema": "public",
+            "ordinal": 6,
+            "nullable": "NO",
+            "udt_name": "timestamptz",
+            "data_type": "timestamp with time zone",
+            "has_default": true
+          },
+          {
+            "name": "role",
+            "table": "app_invites",
+            "schema": "public",
+            "ordinal": 7,
+            "nullable": "NO",
+            "udt_name": "text",
+            "data_type": "text",
+            "has_default": true
+          },
+          {
+            "name": "id",
+            "table": "app_invoices",
+            "schema": "public",
+            "ordinal": 1,
+            "nullable": "NO",
+            "udt_name": "uuid",
+            "data_type": "uuid",
+            "has_default": true
+          },
+          {
+            "name": "company_id",
+            "table": "app_invoices",
+            "schema": "public",
+            "ordinal": 2,
+            "nullable": "NO",
+            "udt_name": "uuid",
+            "data_type": "uuid",
+            "has_default": false
+          },
+          {
+            "name": "lead_id",
+            "table": "app_invoices",
+            "schema": "public",
+            "ordinal": 3,
+            "nullable": "YES",
+            "udt_name": "uuid",
+            "data_type": "uuid",
+            "has_default": false
+          },
+          {
+            "name": "number",
+            "table": "app_invoices",
+            "schema": "public",
+            "ordinal": 4,
+            "nullable": "NO",
+            "udt_name": "text",
+            "data_type": "text",
+            "has_default": false
+          },
+          {
+            "name": "customer",
+            "table": "app_invoices",
+            "schema": "public",
+            "ordinal": 5,
+            "nullable": "NO",
+            "udt_name": "text",
+            "data_type": "text",
+            "has_default": false
+          },
+          {
+            "name": "amount",
+            "table": "app_invoices",
+            "schema": "public",
+            "ordinal": 6,
+            "nullable": "NO",
+            "udt_name": "numeric",
+            "data_type": "numeric",
+            "has_default": false
+          },
+          {
+            "name": "issued_on",
+            "table": "app_invoices",
+            "schema": "public",
+            "ordinal": 7,
+            "nullable": "NO",
+            "udt_name": "date",
+            "data_type": "date",
+            "has_default": true
+          },
+          {
+            "name": "due_on",
+            "table": "app_invoices",
+            "schema": "public",
+            "ordinal": 8,
+            "nullable": "NO",
+            "udt_name": "date",
+            "data_type": "date",
+            "has_default": false
+          },
+          {
+            "name": "status",
+            "table": "app_invoices",
+            "schema": "public",
+            "ordinal": 9,
+            "nullable": "NO",
+            "udt_name": "text",
+            "data_type": "text",
+            "has_default": true
+          },
+          {
+            "name": "paid_at",
+            "table": "app_invoices",
+            "schema": "public",
+            "ordinal": 10,
+            "nullable": "YES",
+            "udt_name": "timestamptz",
+            "data_type": "timestamp with time zone",
+            "has_default": false
+          },
+          {
+            "name": "note",
+            "table": "app_invoices",
+            "schema": "public",
+            "ordinal": 11,
+            "nullable": "NO",
+            "udt_name": "text",
+            "data_type": "text",
+            "has_default": true
+          },
+          {
+            "name": "created_at",
+            "table": "app_invoices",
+            "schema": "public",
+            "ordinal": 12,
+            "nullable": "NO",
+            "udt_name": "timestamptz",
+            "data_type": "timestamp with time zone",
+            "has_default": true
+          },
+          {
+            "name": "company_id",
+            "table": "app_job_budgets",
+            "schema": "public",
+            "ordinal": 1,
+            "nullable": "NO",
+            "udt_name": "uuid",
+            "data_type": "uuid",
+            "has_default": false
+          },
+          {
+            "name": "lead_id",
+            "table": "app_job_budgets",
+            "schema": "public",
+            "ordinal": 2,
+            "nullable": "NO",
+            "udt_name": "uuid",
+            "data_type": "uuid",
+            "has_default": false
+          },
+          {
+            "name": "revenue",
+            "table": "app_job_budgets",
+            "schema": "public",
+            "ordinal": 3,
+            "nullable": "NO",
+            "udt_name": "numeric",
+            "data_type": "numeric",
+            "has_default": false
+          },
+          {
+            "name": "planned_cost",
+            "table": "app_job_budgets",
+            "schema": "public",
+            "ordinal": 4,
+            "nullable": "NO",
+            "udt_name": "numeric",
+            "data_type": "numeric",
+            "has_default": false
+          },
+          {
+            "name": "note",
+            "table": "app_job_budgets",
+            "schema": "public",
+            "ordinal": 5,
+            "nullable": "NO",
+            "udt_name": "text",
+            "data_type": "text",
+            "has_default": true
+          },
+          {
+            "name": "updated_at",
+            "table": "app_job_budgets",
+            "schema": "public",
+            "ordinal": 6,
+            "nullable": "NO",
+            "udt_name": "timestamptz",
+            "data_type": "timestamp with time zone",
+            "has_default": true
+          },
+          {
+            "name": "id",
+            "table": "app_leads",
+            "schema": "public",
+            "ordinal": 1,
+            "nullable": "NO",
+            "udt_name": "uuid",
+            "data_type": "uuid",
+            "has_default": true
+          },
+          {
+            "name": "company_id",
+            "table": "app_leads",
+            "schema": "public",
+            "ordinal": 2,
+            "nullable": "NO",
+            "udt_name": "uuid",
+            "data_type": "uuid",
+            "has_default": false
+          },
+          {
+            "name": "title",
+            "table": "app_leads",
+            "schema": "public",
+            "ordinal": 3,
+            "nullable": "NO",
+            "udt_name": "text",
+            "data_type": "text",
+            "has_default": false
+          },
+          {
+            "name": "customer",
+            "table": "app_leads",
+            "schema": "public",
+            "ordinal": 4,
+            "nullable": "NO",
+            "udt_name": "text",
+            "data_type": "text",
+            "has_default": false
+          },
+          {
+            "name": "email",
+            "table": "app_leads",
+            "schema": "public",
+            "ordinal": 5,
+            "nullable": "NO",
+            "udt_name": "text",
+            "data_type": "text",
+            "has_default": true
+          },
+          {
+            "name": "phone",
+            "table": "app_leads",
+            "schema": "public",
+            "ordinal": 6,
+            "nullable": "NO",
+            "udt_name": "text",
+            "data_type": "text",
+            "has_default": true
+          },
+          {
+            "name": "address",
+            "table": "app_leads",
+            "schema": "public",
+            "ordinal": 7,
+            "nullable": "NO",
+            "udt_name": "text",
+            "data_type": "text",
+            "has_default": true
+          },
+          {
+            "name": "description",
+            "table": "app_leads",
+            "schema": "public",
+            "ordinal": 8,
+            "nullable": "NO",
+            "udt_name": "text",
+            "data_type": "text",
+            "has_default": true
+          },
+          {
+            "name": "status",
+            "table": "app_leads",
+            "schema": "public",
+            "ordinal": 9,
+            "nullable": "NO",
+            "udt_name": "text",
+            "data_type": "text",
+            "has_default": true
+          },
+          {
+            "name": "priority",
+            "table": "app_leads",
+            "schema": "public",
+            "ordinal": 10,
+            "nullable": "NO",
+            "udt_name": "text",
+            "data_type": "text",
+            "has_default": true
+          },
+          {
+            "name": "assigned_to",
+            "table": "app_leads",
+            "schema": "public",
+            "ordinal": 11,
+            "nullable": "YES",
+            "udt_name": "uuid",
+            "data_type": "uuid",
+            "has_default": false
+          },
+          {
+            "name": "scheduled_at",
+            "table": "app_leads",
+            "schema": "public",
+            "ordinal": 12,
+            "nullable": "YES",
+            "udt_name": "timestamptz",
+            "data_type": "timestamp with time zone",
+            "has_default": false
+          },
+          {
+            "name": "duration_minutes",
+            "table": "app_leads",
+            "schema": "public",
+            "ordinal": 13,
+            "nullable": "NO",
+            "udt_name": "int4",
+            "data_type": "integer",
+            "has_default": true
+          },
+          {
+            "name": "value",
+            "table": "app_leads",
+            "schema": "public",
+            "ordinal": 14,
+            "nullable": "NO",
+            "udt_name": "numeric",
+            "data_type": "numeric",
+            "has_default": true
+          },
+          {
+            "name": "source",
+            "table": "app_leads",
+            "schema": "public",
+            "ordinal": 15,
+            "nullable": "NO",
+            "udt_name": "text",
+            "data_type": "text",
+            "has_default": true
+          },
+          {
+            "name": "created_at",
+            "table": "app_leads",
+            "schema": "public",
+            "ordinal": 16,
+            "nullable": "NO",
+            "udt_name": "timestamptz",
+            "data_type": "timestamp with time zone",
+            "has_default": true
+          },
+          {
+            "name": "updated_at",
+            "table": "app_leads",
+            "schema": "public",
+            "ordinal": 17,
+            "nullable": "NO",
+            "udt_name": "timestamptz",
+            "data_type": "timestamp with time zone",
+            "has_default": true
+          },
+          {
+            "name": "revision",
+            "table": "app_leads",
+            "schema": "public",
+            "ordinal": 18,
+            "nullable": "NO",
+            "udt_name": "int4",
+            "data_type": "integer",
+            "has_default": true
+          },
+          {
+            "name": "first_response_at",
+            "table": "app_leads",
+            "schema": "public",
+            "ordinal": 19,
+            "nullable": "YES",
+            "udt_name": "timestamptz",
+            "data_type": "timestamp with time zone",
+            "has_default": false
+          },
+          {
+            "name": "portal_token_hash",
+            "table": "app_leads",
+            "schema": "public",
+            "ordinal": 20,
+            "nullable": "YES",
+            "udt_name": "text",
+            "data_type": "text",
+            "has_default": false
+          },
+          {
+            "name": "portal_shared_until",
+            "table": "app_leads",
+            "schema": "public",
+            "ordinal": 21,
+            "nullable": "YES",
+            "udt_name": "timestamptz",
+            "data_type": "timestamp with time zone",
+            "has_default": false
+          },
+          {
+            "name": "company_id",
+            "table": "app_members",
+            "schema": "public",
+            "ordinal": 1,
+            "nullable": "NO",
+            "udt_name": "uuid",
+            "data_type": "uuid",
+            "has_default": false
+          },
+          {
+            "name": "user_id",
+            "table": "app_members",
+            "schema": "public",
+            "ordinal": 2,
+            "nullable": "NO",
+            "udt_name": "uuid",
+            "data_type": "uuid",
+            "has_default": false
+          },
+          {
+            "name": "name",
+            "table": "app_members",
+            "schema": "public",
+            "ordinal": 3,
+            "nullable": "NO",
+            "udt_name": "text",
+            "data_type": "text",
+            "has_default": false
+          },
+          {
+            "name": "email",
+            "table": "app_members",
+            "schema": "public",
+            "ordinal": 4,
+            "nullable": "NO",
+            "udt_name": "text",
+            "data_type": "text",
+            "has_default": false
+          },
+          {
+            "name": "role",
+            "table": "app_members",
+            "schema": "public",
+            "ordinal": 5,
+            "nullable": "NO",
+            "udt_name": "text",
+            "data_type": "text",
+            "has_default": false
+          },
+          {
+            "name": "active",
+            "table": "app_members",
+            "schema": "public",
+            "ordinal": 6,
+            "nullable": "NO",
+            "udt_name": "bool",
+            "data_type": "boolean",
+            "has_default": true
+          },
+          {
+            "name": "id",
+            "table": "app_notes",
+            "schema": "public",
+            "ordinal": 1,
+            "nullable": "NO",
+            "udt_name": "uuid",
+            "data_type": "uuid",
+            "has_default": true
+          },
+          {
+            "name": "company_id",
+            "table": "app_notes",
+            "schema": "public",
+            "ordinal": 2,
+            "nullable": "NO",
+            "udt_name": "uuid",
+            "data_type": "uuid",
+            "has_default": false
+          },
+          {
+            "name": "lead_id",
+            "table": "app_notes",
+            "schema": "public",
+            "ordinal": 3,
+            "nullable": "NO",
+            "udt_name": "uuid",
+            "data_type": "uuid",
+            "has_default": false
+          },
+          {
+            "name": "author",
+            "table": "app_notes",
+            "schema": "public",
+            "ordinal": 4,
+            "nullable": "NO",
+            "udt_name": "uuid",
+            "data_type": "uuid",
+            "has_default": true
+          },
+          {
+            "name": "body",
+            "table": "app_notes",
+            "schema": "public",
+            "ordinal": 5,
+            "nullable": "NO",
+            "udt_name": "text",
+            "data_type": "text",
+            "has_default": false
+          },
+          {
+            "name": "created_at",
+            "table": "app_notes",
+            "schema": "public",
+            "ordinal": 6,
+            "nullable": "NO",
+            "udt_name": "timestamptz",
+            "data_type": "timestamp with time zone",
+            "has_default": true
+          },
+          {
+            "name": "id",
+            "table": "app_quotes",
+            "schema": "public",
+            "ordinal": 1,
+            "nullable": "NO",
+            "udt_name": "uuid",
+            "data_type": "uuid",
+            "has_default": true
+          },
+          {
+            "name": "company_id",
+            "table": "app_quotes",
+            "schema": "public",
+            "ordinal": 2,
+            "nullable": "NO",
+            "udt_name": "uuid",
+            "data_type": "uuid",
+            "has_default": false
+          },
+          {
+            "name": "lead_id",
+            "table": "app_quotes",
+            "schema": "public",
+            "ordinal": 3,
+            "nullable": "NO",
+            "udt_name": "uuid",
+            "data_type": "uuid",
+            "has_default": false
+          },
+          {
+            "name": "number",
+            "table": "app_quotes",
+            "schema": "public",
+            "ordinal": 4,
+            "nullable": "NO",
+            "udt_name": "text",
+            "data_type": "text",
+            "has_default": false
+          },
+          {
+            "name": "items",
+            "table": "app_quotes",
+            "schema": "public",
+            "ordinal": 5,
+            "nullable": "NO",
+            "udt_name": "jsonb",
+            "data_type": "jsonb",
+            "has_default": true
+          },
+          {
+            "name": "note",
+            "table": "app_quotes",
+            "schema": "public",
+            "ordinal": 6,
+            "nullable": "NO",
+            "udt_name": "text",
+            "data_type": "text",
+            "has_default": true
+          },
+          {
+            "name": "valid_until",
+            "table": "app_quotes",
+            "schema": "public",
+            "ordinal": 7,
+            "nullable": "NO",
+            "udt_name": "date",
+            "data_type": "date",
+            "has_default": false
+          },
+          {
+            "name": "status",
+            "table": "app_quotes",
+            "schema": "public",
+            "ordinal": 8,
+            "nullable": "NO",
+            "udt_name": "text",
+            "data_type": "text",
+            "has_default": true
+          },
+          {
+            "name": "customer_snapshot",
+            "table": "app_quotes",
+            "schema": "public",
+            "ordinal": 9,
+            "nullable": "NO",
+            "udt_name": "jsonb",
+            "data_type": "jsonb",
+            "has_default": true
+          },
+          {
+            "name": "supplier_snapshot",
+            "table": "app_quotes",
+            "schema": "public",
+            "ordinal": 10,
+            "nullable": "NO",
+            "udt_name": "jsonb",
+            "data_type": "jsonb",
+            "has_default": true
+          },
+          {
+            "name": "token_hash",
+            "table": "app_quotes",
+            "schema": "public",
+            "ordinal": 11,
+            "nullable": "YES",
+            "udt_name": "text",
+            "data_type": "text",
+            "has_default": false
+          },
+          {
+            "name": "shared_until",
+            "table": "app_quotes",
+            "schema": "public",
+            "ordinal": 12,
+            "nullable": "YES",
+            "udt_name": "timestamptz",
+            "data_type": "timestamp with time zone",
+            "has_default": false
+          },
+          {
+            "name": "decided_at",
+            "table": "app_quotes",
+            "schema": "public",
+            "ordinal": 13,
+            "nullable": "YES",
+            "udt_name": "timestamptz",
+            "data_type": "timestamp with time zone",
+            "has_default": false
+          },
+          {
+            "name": "accepted_name",
+            "table": "app_quotes",
+            "schema": "public",
+            "ordinal": 14,
+            "nullable": "YES",
+            "udt_name": "text",
+            "data_type": "text",
+            "has_default": false
+          },
+          {
+            "name": "created_at",
+            "table": "app_quotes",
+            "schema": "public",
+            "ordinal": 15,
+            "nullable": "NO",
+            "udt_name": "timestamptz",
+            "data_type": "timestamp with time zone",
+            "has_default": true
+          },
+          {
+            "name": "revision",
+            "table": "app_quotes",
+            "schema": "public",
+            "ordinal": 16,
+            "nullable": "NO",
+            "udt_name": "int4",
+            "data_type": "integer",
+            "has_default": true
+          },
+          {
+            "name": "key",
+            "table": "app_rate_limits",
+            "schema": "public",
+            "ordinal": 1,
+            "nullable": "NO",
+            "udt_name": "text",
+            "data_type": "text",
+            "has_default": false
+          },
+          {
+            "name": "window_start",
+            "table": "app_rate_limits",
+            "schema": "public",
+            "ordinal": 2,
+            "nullable": "NO",
+            "udt_name": "timestamptz",
+            "data_type": "timestamp with time zone",
+            "has_default": false
+          },
+          {
+            "name": "hits",
+            "table": "app_rate_limits",
+            "schema": "public",
+            "ordinal": 3,
+            "nullable": "NO",
+            "udt_name": "int4",
+            "data_type": "integer",
+            "has_default": false
+          },
+          {
+            "name": "id",
+            "table": "app_reminders",
+            "schema": "public",
+            "ordinal": 1,
+            "nullable": "NO",
+            "udt_name": "uuid",
+            "data_type": "uuid",
+            "has_default": true
+          },
+          {
+            "name": "company_id",
+            "table": "app_reminders",
+            "schema": "public",
+            "ordinal": 2,
+            "nullable": "NO",
+            "udt_name": "uuid",
+            "data_type": "uuid",
+            "has_default": false
+          },
+          {
+            "name": "lead_id",
+            "table": "app_reminders",
+            "schema": "public",
+            "ordinal": 3,
+            "nullable": "YES",
+            "udt_name": "uuid",
+            "data_type": "uuid",
+            "has_default": false
+          },
+          {
+            "name": "due_at",
+            "table": "app_reminders",
+            "schema": "public",
+            "ordinal": 4,
+            "nullable": "NO",
+            "udt_name": "timestamptz",
+            "data_type": "timestamp with time zone",
+            "has_default": false
+          },
+          {
+            "name": "channel",
+            "table": "app_reminders",
+            "schema": "public",
+            "ordinal": 5,
+            "nullable": "NO",
+            "udt_name": "text",
+            "data_type": "text",
+            "has_default": true
+          },
+          {
+            "name": "recipient",
+            "table": "app_reminders",
+            "schema": "public",
+            "ordinal": 6,
+            "nullable": "NO",
+            "udt_name": "text",
+            "data_type": "text",
+            "has_default": true
+          },
+          {
+            "name": "subject",
+            "table": "app_reminders",
+            "schema": "public",
+            "ordinal": 7,
+            "nullable": "NO",
+            "udt_name": "text",
+            "data_type": "text",
+            "has_default": false
+          },
+          {
+            "name": "body",
+            "table": "app_reminders",
+            "schema": "public",
+            "ordinal": 8,
+            "nullable": "NO",
+            "udt_name": "text",
+            "data_type": "text",
+            "has_default": true
+          },
+          {
+            "name": "status",
+            "table": "app_reminders",
+            "schema": "public",
+            "ordinal": 9,
+            "nullable": "NO",
+            "udt_name": "text",
+            "data_type": "text",
+            "has_default": true
+          },
+          {
+            "name": "sent_at",
+            "table": "app_reminders",
+            "schema": "public",
+            "ordinal": 10,
+            "nullable": "YES",
+            "udt_name": "timestamptz",
+            "data_type": "timestamp with time zone",
+            "has_default": false
+          },
+          {
+            "name": "created_at",
+            "table": "app_reminders",
+            "schema": "public",
+            "ordinal": 11,
+            "nullable": "NO",
+            "udt_name": "timestamptz",
+            "data_type": "timestamp with time zone",
+            "has_default": true
+          },
+          {
+            "name": "quote_id",
+            "table": "app_reminders",
+            "schema": "public",
+            "ordinal": 12,
+            "nullable": "YES",
+            "udt_name": "uuid",
+            "data_type": "uuid",
+            "has_default": false
+          },
+          {
+            "name": "key",
+            "table": "app_requests",
+            "schema": "public",
+            "ordinal": 1,
+            "nullable": "NO",
+            "udt_name": "uuid",
+            "data_type": "uuid",
+            "has_default": false
+          },
+          {
+            "name": "company_id",
+            "table": "app_requests",
+            "schema": "public",
+            "ordinal": 2,
+            "nullable": "NO",
+            "udt_name": "uuid",
+            "data_type": "uuid",
+            "has_default": false
+          },
+          {
+            "name": "lead_id",
+            "table": "app_requests",
+            "schema": "public",
+            "ordinal": 3,
+            "nullable": "NO",
+            "udt_name": "uuid",
+            "data_type": "uuid",
+            "has_default": false
+          },
+          {
+            "name": "created_at",
+            "table": "app_requests",
+            "schema": "public",
+            "ordinal": 4,
+            "nullable": "NO",
+            "udt_name": "timestamptz",
+            "data_type": "timestamp with time zone",
+            "has_default": true
+          },
+          {
+            "name": "id",
+            "table": "app_tasks",
+            "schema": "public",
+            "ordinal": 1,
+            "nullable": "NO",
+            "udt_name": "uuid",
+            "data_type": "uuid",
+            "has_default": true
+          },
+          {
+            "name": "company_id",
+            "table": "app_tasks",
+            "schema": "public",
+            "ordinal": 2,
+            "nullable": "NO",
+            "udt_name": "uuid",
+            "data_type": "uuid",
+            "has_default": false
+          },
+          {
+            "name": "lead_id",
+            "table": "app_tasks",
+            "schema": "public",
+            "ordinal": 3,
+            "nullable": "NO",
+            "udt_name": "uuid",
+            "data_type": "uuid",
+            "has_default": false
+          },
+          {
+            "name": "title",
+            "table": "app_tasks",
+            "schema": "public",
+            "ordinal": 4,
+            "nullable": "NO",
+            "udt_name": "text",
+            "data_type": "text",
+            "has_default": false
+          },
+          {
+            "name": "done",
+            "table": "app_tasks",
+            "schema": "public",
+            "ordinal": 5,
+            "nullable": "NO",
+            "udt_name": "bool",
+            "data_type": "boolean",
+            "has_default": true
+          },
+          {
+            "name": "due_at",
+            "table": "app_tasks",
+            "schema": "public",
+            "ordinal": 6,
+            "nullable": "YES",
+            "udt_name": "timestamptz",
+            "data_type": "timestamp with time zone",
+            "has_default": false
+          },
+          {
+            "name": "created_at",
+            "table": "app_tasks",
+            "schema": "public",
+            "ordinal": 7,
+            "nullable": "NO",
+            "udt_name": "timestamptz",
+            "data_type": "timestamp with time zone",
+            "has_default": true
+          },
+          {
+            "name": "id",
+            "table": "app_time_entries",
+            "schema": "public",
+            "ordinal": 1,
+            "nullable": "NO",
+            "udt_name": "uuid",
+            "data_type": "uuid",
+            "has_default": true
+          },
+          {
+            "name": "company_id",
+            "table": "app_time_entries",
+            "schema": "public",
+            "ordinal": 2,
+            "nullable": "NO",
+            "udt_name": "uuid",
+            "data_type": "uuid",
+            "has_default": false
+          },
+          {
+            "name": "lead_id",
+            "table": "app_time_entries",
+            "schema": "public",
+            "ordinal": 3,
+            "nullable": "NO",
+            "udt_name": "uuid",
+            "data_type": "uuid",
+            "has_default": false
+          },
+          {
+            "name": "member_id",
+            "table": "app_time_entries",
+            "schema": "public",
+            "ordinal": 4,
+            "nullable": "NO",
+            "udt_name": "uuid",
+            "data_type": "uuid",
+            "has_default": true
+          },
+          {
+            "name": "work_date",
+            "table": "app_time_entries",
+            "schema": "public",
+            "ordinal": 5,
+            "nullable": "NO",
+            "udt_name": "date",
+            "data_type": "date",
+            "has_default": true
+          },
+          {
+            "name": "minutes",
+            "table": "app_time_entries",
+            "schema": "public",
+            "ordinal": 6,
+            "nullable": "NO",
+            "udt_name": "int4",
+            "data_type": "integer",
+            "has_default": false
+          },
+          {
+            "name": "hourly_cost",
+            "table": "app_time_entries",
+            "schema": "public",
+            "ordinal": 7,
+            "nullable": "NO",
+            "udt_name": "numeric",
+            "data_type": "numeric",
+            "has_default": true
+          },
+          {
+            "name": "note",
+            "table": "app_time_entries",
+            "schema": "public",
+            "ordinal": 8,
+            "nullable": "NO",
+            "udt_name": "text",
+            "data_type": "text",
+            "has_default": true
+          },
+          {
+            "name": "created_at",
+            "table": "app_time_entries",
+            "schema": "public",
+            "ordinal": 9,
+            "nullable": "NO",
+            "udt_name": "timestamptz",
+            "data_type": "timestamp with time zone",
+            "has_default": true
+          }
+        ],
+        "policies": [
+          {
+            "name": "audit_read",
+            "roles": [
+              "authenticated"
+            ],
+            "table": "app_audit",
+            "using": "(app_role(company_id) = 'owner'::text)",
+            "schema": "public",
+            "command": "SELECT",
+            "permissive": "PERMISSIVE",
+            "with_check": null
+          },
+          {
+            "name": "company_read",
+            "roles": [
+              "authenticated"
+            ],
+            "table": "app_companies",
+            "using": "(app_role(id) IS NOT NULL)",
+            "schema": "public",
+            "command": "SELECT",
+            "permissive": "PERMISSIVE",
+            "with_check": null
+          },
+          {
+            "name": "company_update",
+            "roles": [
+              "authenticated"
+            ],
+            "table": "app_companies",
+            "using": "(app_role(id) = 'owner'::text)",
+            "schema": "public",
+            "command": "UPDATE",
+            "permissive": "PERMISSIVE",
+            "with_check": "(app_role(id) = 'owner'::text)"
+          },
+          {
+            "name": "cost_delete",
+            "roles": [
+              "authenticated"
+            ],
+            "table": "app_costs",
+            "using": "((app_role(company_id) = 'owner'::text) OR (created_by = ( SELECT auth.uid() AS uid)))",
+            "schema": "public",
+            "command": "DELETE",
+            "permissive": "PERMISSIVE",
+            "with_check": null
+          },
+          {
+            "name": "cost_insert",
+            "roles": [
+              "authenticated"
+            ],
+            "table": "app_costs",
+            "using": null,
+            "schema": "public",
+            "command": "INSERT",
+            "permissive": "PERMISSIVE",
+            "with_check": "(app_can_lead(company_id, lead_id) AND (created_by = ( SELECT auth.uid() AS uid)))"
+          },
+          {
+            "name": "cost_read",
+            "roles": [
+              "authenticated"
+            ],
+            "table": "app_costs",
+            "using": "app_can_lead(company_id, lead_id)",
+            "schema": "public",
+            "command": "SELECT",
+            "permissive": "PERMISSIVE",
+            "with_check": null
+          },
+          {
+            "name": "platform_read_demo_requests",
+            "roles": [
+              "authenticated"
+            ],
+            "table": "app_demo_requests",
+            "using": "( SELECT app_is_platform_admin() AS app_is_platform_admin)",
+            "schema": "public",
+            "command": "SELECT",
+            "permissive": "PERMISSIVE",
+            "with_check": null
+          },
+          {
+            "name": "platform_update_demo_requests",
+            "roles": [
+              "authenticated"
+            ],
+            "table": "app_demo_requests",
+            "using": "( SELECT app_is_platform_admin() AS app_is_platform_admin)",
+            "schema": "public",
+            "command": "UPDATE",
+            "permissive": "PERMISSIVE",
+            "with_check": "( SELECT app_is_platform_admin() AS app_is_platform_admin)"
+          },
+          {
+            "name": "outbox_read",
+            "roles": [
+              "authenticated"
+            ],
+            "table": "app_email_outbox",
+            "using": "(app_role(company_id) = 'owner'::text)",
+            "schema": "public",
+            "command": "SELECT",
+            "permissive": "PERMISSIVE",
+            "with_check": null
+          },
+          {
+            "name": "handover_read",
+            "roles": [
+              "authenticated"
+            ],
+            "table": "app_handovers",
+            "using": "app_can_lead(company_id, lead_id)",
+            "schema": "public",
+            "command": "SELECT",
+            "permissive": "PERMISSIVE",
+            "with_check": null
+          },
+          {
+            "name": "import_read",
+            "roles": [
+              "authenticated"
+            ],
+            "table": "app_imports",
+            "using": "(app_role(company_id) = 'owner'::text)",
+            "schema": "public",
+            "command": "SELECT",
+            "permissive": "PERMISSIVE",
+            "with_check": null
+          },
+          {
+            "name": "integration_delete",
+            "roles": [
+              "authenticated"
+            ],
+            "table": "app_integrations",
+            "using": "(app_role(company_id) = 'owner'::text)",
+            "schema": "public",
+            "command": "DELETE",
+            "permissive": "PERMISSIVE",
+            "with_check": null
+          },
+          {
+            "name": "integration_insert",
+            "roles": [
+              "authenticated"
+            ],
+            "table": "app_integrations",
+            "using": null,
+            "schema": "public",
+            "command": "INSERT",
+            "permissive": "PERMISSIVE",
+            "with_check": "(app_role(company_id) = 'owner'::text)"
+          },
+          {
+            "name": "integration_read",
+            "roles": [
+              "authenticated"
+            ],
+            "table": "app_integrations",
+            "using": "(app_role(company_id) = 'owner'::text)",
+            "schema": "public",
+            "command": "SELECT",
+            "permissive": "PERMISSIVE",
+            "with_check": null
+          },
+          {
+            "name": "integration_update",
+            "roles": [
+              "authenticated"
+            ],
+            "table": "app_integrations",
+            "using": "(app_role(company_id) = 'owner'::text)",
+            "schema": "public",
+            "command": "UPDATE",
+            "permissive": "PERMISSIVE",
+            "with_check": "(app_role(company_id) = 'owner'::text)"
+          },
+          {
+            "name": "invite_delete",
+            "roles": [
+              "authenticated"
+            ],
+            "table": "app_invites",
+            "using": "(app_role(company_id) = 'owner'::text)",
+            "schema": "public",
+            "command": "DELETE",
+            "permissive": "PERMISSIVE",
+            "with_check": null
+          },
+          {
+            "name": "invite_read",
+            "roles": [
+              "authenticated"
+            ],
+            "table": "app_invites",
+            "using": "(app_role(company_id) = 'owner'::text)",
+            "schema": "public",
+            "command": "SELECT",
+            "permissive": "PERMISSIVE",
+            "with_check": null
+          },
+          {
+            "name": "invoice_all",
+            "roles": [
+              "authenticated"
+            ],
+            "table": "app_invoices",
+            "using": "(app_role(company_id) = 'owner'::text)",
+            "schema": "public",
+            "command": "ALL",
+            "permissive": "PERMISSIVE",
+            "with_check": "(app_role(company_id) = 'owner'::text)"
+          },
+          {
+            "name": "owner_budget_insert",
+            "roles": [
+              "authenticated"
+            ],
+            "table": "app_job_budgets",
+            "using": null,
+            "schema": "public",
+            "command": "INSERT",
+            "permissive": "PERMISSIVE",
+            "with_check": "(app_role(company_id) = 'owner'::text)"
+          },
+          {
+            "name": "owner_budget_select",
+            "roles": [
+              "authenticated"
+            ],
+            "table": "app_job_budgets",
+            "using": "(app_role(company_id) = 'owner'::text)",
+            "schema": "public",
+            "command": "SELECT",
+            "permissive": "PERMISSIVE",
+            "with_check": null
+          },
+          {
+            "name": "owner_budget_update",
+            "roles": [
+              "authenticated"
+            ],
+            "table": "app_job_budgets",
+            "using": "(app_role(company_id) = 'owner'::text)",
+            "schema": "public",
+            "command": "UPDATE",
+            "permissive": "PERMISSIVE",
+            "with_check": "(app_role(company_id) = 'owner'::text)"
+          },
+          {
+            "name": "lead_read",
+            "roles": [
+              "authenticated"
+            ],
+            "table": "app_leads",
+            "using": "((app_role(company_id) = 'owner'::text) OR ((app_role(company_id) = 'employee'::text) AND (assigned_to = ( SELECT auth.uid() AS uid))))",
+            "schema": "public",
+            "command": "SELECT",
+            "permissive": "PERMISSIVE",
+            "with_check": null
+          },
+          {
+            "name": "member_read",
+            "roles": [
+              "authenticated"
+            ],
+            "table": "app_members",
+            "using": "(app_role(company_id) IS NOT NULL)",
+            "schema": "public",
+            "command": "SELECT",
+            "permissive": "PERMISSIVE",
+            "with_check": null
+          },
+          {
+            "name": "note_insert",
+            "roles": [
+              "authenticated"
+            ],
+            "table": "app_notes",
+            "using": null,
+            "schema": "public",
+            "command": "INSERT",
+            "permissive": "PERMISSIVE",
+            "with_check": "(app_can_lead(company_id, lead_id) AND (author = ( SELECT auth.uid() AS uid)))"
+          },
+          {
+            "name": "note_read",
+            "roles": [
+              "authenticated"
+            ],
+            "table": "app_notes",
+            "using": "app_can_lead(company_id, lead_id)",
+            "schema": "public",
+            "command": "SELECT",
+            "permissive": "PERMISSIVE",
+            "with_check": null
+          },
+          {
+            "name": "quote_read",
+            "roles": [
+              "authenticated"
+            ],
+            "table": "app_quotes",
+            "using": "(app_role(company_id) = 'owner'::text)",
+            "schema": "public",
+            "command": "SELECT",
+            "permissive": "PERMISSIVE",
+            "with_check": null
+          },
+          {
+            "name": "rate_server_only",
+            "roles": [
+              "authenticated"
+            ],
+            "table": "app_rate_limits",
+            "using": "false",
+            "schema": "public",
+            "command": "ALL",
+            "permissive": "PERMISSIVE",
+            "with_check": "false"
+          },
+          {
+            "name": "reminder_all",
+            "roles": [
+              "authenticated"
+            ],
+            "table": "app_reminders",
+            "using": "(app_role(company_id) = 'owner'::text)",
+            "schema": "public",
+            "command": "ALL",
+            "permissive": "PERMISSIVE",
+            "with_check": "(app_role(company_id) = 'owner'::text)"
+          },
+          {
+            "name": "request_server_only",
+            "roles": [
+              "authenticated"
+            ],
+            "table": "app_requests",
+            "using": "false",
+            "schema": "public",
+            "command": "ALL",
+            "permissive": "PERMISSIVE",
+            "with_check": "false"
+          },
+          {
+            "name": "task_delete",
+            "roles": [
+              "authenticated"
+            ],
+            "table": "app_tasks",
+            "using": "(app_role(company_id) = 'owner'::text)",
+            "schema": "public",
+            "command": "DELETE",
+            "permissive": "PERMISSIVE",
+            "with_check": null
+          },
+          {
+            "name": "task_insert",
+            "roles": [
+              "authenticated"
+            ],
+            "table": "app_tasks",
+            "using": null,
+            "schema": "public",
+            "command": "INSERT",
+            "permissive": "PERMISSIVE",
+            "with_check": "app_can_lead(company_id, lead_id)"
+          },
+          {
+            "name": "task_read",
+            "roles": [
+              "authenticated"
+            ],
+            "table": "app_tasks",
+            "using": "app_can_lead(company_id, lead_id)",
+            "schema": "public",
+            "command": "SELECT",
+            "permissive": "PERMISSIVE",
+            "with_check": null
+          },
+          {
+            "name": "task_update",
+            "roles": [
+              "authenticated"
+            ],
+            "table": "app_tasks",
+            "using": "app_can_lead(company_id, lead_id)",
+            "schema": "public",
+            "command": "UPDATE",
+            "permissive": "PERMISSIVE",
+            "with_check": "app_can_lead(company_id, lead_id)"
+          },
+          {
+            "name": "time_delete",
+            "roles": [
+              "authenticated"
+            ],
+            "table": "app_time_entries",
+            "using": "((app_role(company_id) = 'owner'::text) OR (member_id = ( SELECT auth.uid() AS uid)))",
+            "schema": "public",
+            "command": "DELETE",
+            "permissive": "PERMISSIVE",
+            "with_check": null
+          },
+          {
+            "name": "time_insert",
+            "roles": [
+              "authenticated"
+            ],
+            "table": "app_time_entries",
+            "using": null,
+            "schema": "public",
+            "command": "INSERT",
+            "permissive": "PERMISSIVE",
+            "with_check": "(app_can_lead(company_id, lead_id) AND (member_id = ( SELECT auth.uid() AS uid)))"
+          },
+          {
+            "name": "time_read",
+            "roles": [
+              "authenticated"
+            ],
+            "table": "app_time_entries",
+            "using": "app_can_lead(company_id, lead_id)",
+            "schema": "public",
+            "command": "SELECT",
+            "permissive": "PERMISSIVE",
+            "with_check": null
+          }
+        ],
+        "triggers": [
+          {
+            "name": "app_leads_first_response",
+            "table": "app_leads",
+            "schema": "public",
+            "enabled": "O",
+            "definition": "CREATE TRIGGER app_leads_first_response BEFORE UPDATE OF status ON app_leads FOR EACH ROW EXECUTE FUNCTION app_track_first_response()",
+            "function_name": "app_track_first_response",
+            "function_schema": "public",
+            "function_arguments": ""
+          },
+          {
+            "name": "app_quote_cancel_reminders",
+            "table": "app_quotes",
+            "schema": "public",
+            "enabled": "O",
+            "definition": "CREATE TRIGGER app_quote_cancel_reminders AFTER UPDATE ON app_quotes FOR EACH ROW EXECUTE FUNCTION private.app_cancel_quote_reminders()",
+            "function_name": "app_cancel_quote_reminders",
+            "function_schema": "private",
+            "function_arguments": ""
+          }
+        ],
+        "functions": [
+          {
+            "name": "app_admin_mail_health",
+            "owner": "postgres",
+            "config": [
+              "search_path=public, private, pg_temp"
+            ],
+            "result": "jsonb",
+            "schema": "public",
+            "language": "plpgsql",
+            "volatility": "s",
+            "execute_grants": [
+              {
+                "grantee": "authenticated",
+                "grantable": false,
+                "privilege": "EXECUTE"
+              },
+              {
+                "grantee": "postgres",
+                "grantable": false,
+                "privilege": "EXECUTE"
+              },
+              {
+                "grantee": "service_role",
+                "grantable": false,
+                "privilege": "EXECUTE"
+              }
+            ],
+            "security_definer": true,
+            "identity_arguments": ""
+          },
+          {
+            "name": "app_admin_provision_company",
+            "owner": "postgres",
+            "config": [
+              "search_path=public, private, pg_temp"
+            ],
+            "result": "uuid",
+            "schema": "public",
+            "language": "plpgsql",
+            "volatility": "v",
+            "execute_grants": [
+              {
+                "grantee": "authenticated",
+                "grantable": false,
+                "privilege": "EXECUTE"
+              },
+              {
+                "grantee": "postgres",
+                "grantable": false,
+                "privilege": "EXECUTE"
+              },
+              {
+                "grantee": "service_role",
+                "grantable": false,
+                "privilege": "EXECUTE"
+              }
+            ],
+            "security_definer": true,
+            "identity_arguments": "n text, s text, e text, person text, p text"
+          },
+          {
+            "name": "app_admin_set_company",
+            "owner": "postgres",
+            "config": [
+              "search_path=public, private, pg_temp"
+            ],
+            "result": "void",
+            "schema": "public",
+            "language": "plpgsql",
+            "volatility": "v",
+            "execute_grants": [
+              {
+                "grantee": "authenticated",
+                "grantable": false,
+                "privilege": "EXECUTE"
+              },
+              {
+                "grantee": "postgres",
+                "grantable": false,
+                "privilege": "EXECUTE"
+              },
+              {
+                "grantee": "service_role",
+                "grantable": false,
+                "privilege": "EXECUTE"
+              }
+            ],
+            "security_definer": true,
+            "identity_arguments": "c uuid, p_active boolean, p_plan text, p_trial_ends_at timestamp with time zone"
+          },
+          {
+            "name": "app_admin_summary",
+            "owner": "postgres",
+            "config": [
+              "search_path=public, private, pg_temp"
+            ],
+            "result": "jsonb",
+            "schema": "public",
+            "language": "plpgsql",
+            "volatility": "s",
+            "execute_grants": [
+              {
+                "grantee": "authenticated",
+                "grantable": false,
+                "privilege": "EXECUTE"
+              },
+              {
+                "grantee": "postgres",
+                "grantable": false,
+                "privilege": "EXECUTE"
+              },
+              {
+                "grantee": "service_role",
+                "grantable": false,
+                "privilege": "EXECUTE"
+              }
+            ],
+            "security_definer": true,
+            "identity_arguments": ""
+          },
+          {
+            "name": "app_can_lead",
+            "owner": "postgres",
+            "config": [
+              "search_path=public, pg_temp"
+            ],
+            "result": "boolean",
+            "schema": "public",
+            "language": "sql",
+            "volatility": "s",
+            "execute_grants": [
+              {
+                "grantee": "authenticated",
+                "grantable": false,
+                "privilege": "EXECUTE"
+              },
+              {
+                "grantee": "postgres",
+                "grantable": false,
+                "privilege": "EXECUTE"
+              },
+              {
+                "grantee": "service_role",
+                "grantable": false,
+                "privilege": "EXECUTE"
+              }
+            ],
+            "security_definer": true,
+            "identity_arguments": "c uuid, l uuid"
+          },
+          {
+            "name": "app_claim_invites",
+            "owner": "postgres",
+            "config": [
+              "search_path=public, pg_temp"
+            ],
+            "result": "integer",
+            "schema": "public",
+            "language": "plpgsql",
+            "volatility": "v",
+            "execute_grants": [
+              {
+                "grantee": "authenticated",
+                "grantable": false,
+                "privilege": "EXECUTE"
+              },
+              {
+                "grantee": "postgres",
+                "grantable": false,
+                "privilege": "EXECUTE"
+              },
+              {
+                "grantee": "service_role",
+                "grantable": false,
+                "privilege": "EXECUTE"
+              }
+            ],
+            "security_definer": true,
+            "identity_arguments": ""
+          },
+          {
+            "name": "app_claim_outbox",
+            "owner": "postgres",
+            "config": [
+              "search_path=public, pg_temp"
+            ],
+            "result": "SETOF app_email_outbox",
+            "schema": "public",
+            "language": "plpgsql",
+            "volatility": "v",
+            "execute_grants": [
+              {
+                "grantee": "authenticated",
+                "grantable": false,
+                "privilege": "EXECUTE"
+              },
+              {
+                "grantee": "postgres",
+                "grantable": false,
+                "privilege": "EXECUTE"
+              },
+              {
+                "grantee": "service_role",
+                "grantable": false,
+                "privilege": "EXECUTE"
+              }
+            ],
+            "security_definer": true,
+            "identity_arguments": "c uuid"
+          },
+          {
+            "name": "app_create_company",
+            "owner": "postgres",
+            "config": [
+              "search_path=public, pg_temp"
+            ],
+            "result": "uuid",
+            "schema": "public",
+            "language": "plpgsql",
+            "volatility": "v",
+            "execute_grants": [
+              {
+                "grantee": "authenticated",
+                "grantable": false,
+                "privilege": "EXECUTE"
+              },
+              {
+                "grantee": "postgres",
+                "grantable": false,
+                "privilege": "EXECUTE"
+              },
+              {
+                "grantee": "service_role",
+                "grantable": false,
+                "privilege": "EXECUTE"
+              }
+            ],
+            "security_definer": true,
+            "identity_arguments": "n text, s text, person text"
+          },
+          {
+            "name": "app_file_allowed",
+            "owner": "postgres",
+            "config": [
+              "search_path=public, pg_temp"
+            ],
+            "result": "boolean",
+            "schema": "public",
+            "language": "plpgsql",
+            "volatility": "s",
+            "execute_grants": [
+              {
+                "grantee": "authenticated",
+                "grantable": false,
+                "privilege": "EXECUTE"
+              },
+              {
+                "grantee": "postgres",
+                "grantable": false,
+                "privilege": "EXECUTE"
+              },
+              {
+                "grantee": "service_role",
+                "grantable": false,
+                "privilege": "EXECUTE"
+              }
+            ],
+            "security_definer": true,
+            "identity_arguments": "path text"
+          },
+          {
+            "name": "app_finish_outbox",
+            "owner": "postgres",
+            "config": [
+              "search_path=public, pg_temp"
+            ],
+            "result": "void",
+            "schema": "public",
+            "language": "plpgsql",
+            "volatility": "v",
+            "execute_grants": [
+              {
+                "grantee": "authenticated",
+                "grantable": false,
+                "privilege": "EXECUTE"
+              },
+              {
+                "grantee": "postgres",
+                "grantable": false,
+                "privilege": "EXECUTE"
+              },
+              {
+                "grantee": "service_role",
+                "grantable": false,
+                "privilege": "EXECUTE"
+              }
+            ],
+            "security_definer": true,
+            "identity_arguments": "c uuid, o uuid, ok boolean, provider text, error_text text"
+          },
+          {
+            "name": "app_import_leads",
+            "owner": "postgres",
+            "config": [
+              "search_path=public, pg_temp"
+            ],
+            "result": "integer",
+            "schema": "public",
+            "language": "plpgsql",
+            "volatility": "v",
+            "execute_grants": [
+              {
+                "grantee": "authenticated",
+                "grantable": false,
+                "privilege": "EXECUTE"
+              },
+              {
+                "grantee": "postgres",
+                "grantable": false,
+                "privilege": "EXECUTE"
+              },
+              {
+                "grantee": "service_role",
+                "grantable": false,
+                "privilege": "EXECUTE"
+              }
+            ],
+            "security_definer": true,
+            "identity_arguments": "c uuid, rows jsonb, file_name text"
+          },
+          {
+            "name": "app_invite",
+            "owner": "postgres",
+            "config": [
+              "search_path=public, pg_temp"
+            ],
+            "result": "void",
+            "schema": "public",
+            "language": "plpgsql",
+            "volatility": "v",
+            "execute_grants": [
+              {
+                "grantee": "authenticated",
+                "grantable": false,
+                "privilege": "EXECUTE"
+              },
+              {
+                "grantee": "postgres",
+                "grantable": false,
+                "privilege": "EXECUTE"
+              },
+              {
+                "grantee": "service_role",
+                "grantable": false,
+                "privilege": "EXECUTE"
+              }
+            ],
+            "security_definer": true,
+            "identity_arguments": "c uuid, e text, n text"
+          },
+          {
+            "name": "app_is_platform_admin",
+            "owner": "postgres",
+            "config": [
+              "search_path=private, pg_temp"
+            ],
+            "result": "boolean",
+            "schema": "public",
+            "language": "sql",
+            "volatility": "s",
+            "execute_grants": [
+              {
+                "grantee": "authenticated",
+                "grantable": false,
+                "privilege": "EXECUTE"
+              },
+              {
+                "grantee": "postgres",
+                "grantable": false,
+                "privilege": "EXECUTE"
+              },
+              {
+                "grantee": "service_role",
+                "grantable": false,
+                "privilege": "EXECUTE"
+              }
+            ],
+            "security_definer": true,
+            "identity_arguments": ""
+          },
+          {
+            "name": "app_member_active",
+            "owner": "postgres",
+            "config": [
+              "search_path=public, pg_temp"
+            ],
+            "result": "void",
+            "schema": "public",
+            "language": "plpgsql",
+            "volatility": "v",
+            "execute_grants": [
+              {
+                "grantee": "authenticated",
+                "grantable": false,
+                "privilege": "EXECUTE"
+              },
+              {
+                "grantee": "postgres",
+                "grantable": false,
+                "privilege": "EXECUTE"
+              },
+              {
+                "grantee": "service_role",
+                "grantable": false,
+                "privilege": "EXECUTE"
+              }
+            ],
+            "security_definer": true,
+            "identity_arguments": "c uuid, u uuid, a boolean"
+          },
+          {
+            "name": "app_public_brand",
+            "owner": "postgres",
+            "config": [
+              "search_path=public, pg_temp"
+            ],
+            "result": "jsonb",
+            "schema": "public",
+            "language": "sql",
+            "volatility": "s",
+            "execute_grants": [
+              {
+                "grantee": "postgres",
+                "grantable": false,
+                "privilege": "EXECUTE"
+              },
+              {
+                "grantee": "service_role",
+                "grantable": false,
+                "privilege": "EXECUTE"
+              }
+            ],
+            "security_definer": true,
+            "identity_arguments": "s text"
+          },
+          {
+            "name": "app_public_lead",
+            "owner": "postgres",
+            "config": [
+              "search_path=public, pg_temp"
+            ],
+            "result": "uuid",
+            "schema": "public",
+            "language": "plpgsql",
+            "volatility": "v",
+            "execute_grants": [
+              {
+                "grantee": "postgres",
+                "grantable": false,
+                "privilege": "EXECUTE"
+              },
+              {
+                "grantee": "service_role",
+                "grantable": false,
+                "privilege": "EXECUTE"
+              }
+            ],
+            "security_definer": true,
+            "identity_arguments": "s text, data jsonb, request_id uuid"
+          },
+          {
+            "name": "app_public_portal",
+            "owner": "postgres",
+            "config": [
+              "search_path=public, pg_temp"
+            ],
+            "result": "jsonb",
+            "schema": "public",
+            "language": "plpgsql",
+            "volatility": "s",
+            "execute_grants": [
+              {
+                "grantee": "postgres",
+                "grantable": false,
+                "privilege": "EXECUTE"
+              },
+              {
+                "grantee": "service_role",
+                "grantable": false,
+                "privilege": "EXECUTE"
+              }
+            ],
+            "security_definer": true,
+            "identity_arguments": "l uuid, h text"
+          },
+          {
+            "name": "app_public_quote",
+            "owner": "postgres",
+            "config": [
+              "search_path=public, pg_temp"
+            ],
+            "result": "jsonb",
+            "schema": "public",
+            "language": "plpgsql",
+            "volatility": "v",
+            "execute_grants": [
+              {
+                "grantee": "postgres",
+                "grantable": false,
+                "privilege": "EXECUTE"
+              },
+              {
+                "grantee": "service_role",
+                "grantable": false,
+                "privilege": "EXECUTE"
+              }
+            ],
+            "security_definer": true,
+            "identity_arguments": "q uuid, h text, decision text, signer text"
+          },
+          {
+            "name": "app_rate",
+            "owner": "postgres",
+            "config": [
+              "search_path=public, pg_temp"
+            ],
+            "result": "boolean",
+            "schema": "public",
+            "language": "plpgsql",
+            "volatility": "v",
+            "execute_grants": [
+              {
+                "grantee": "postgres",
+                "grantable": false,
+                "privilege": "EXECUTE"
+              },
+              {
+                "grantee": "service_role",
+                "grantable": false,
+                "privilege": "EXECUTE"
+              }
+            ],
+            "security_definer": true,
+            "identity_arguments": "key_hash text, max_hits integer"
+          },
+          {
+            "name": "app_revoke_portal",
+            "owner": "postgres",
+            "config": [
+              "search_path=public, pg_temp"
+            ],
+            "result": "void",
+            "schema": "public",
+            "language": "plpgsql",
+            "volatility": "v",
+            "execute_grants": [
+              {
+                "grantee": "authenticated",
+                "grantable": false,
+                "privilege": "EXECUTE"
+              },
+              {
+                "grantee": "postgres",
+                "grantable": false,
+                "privilege": "EXECUTE"
+              },
+              {
+                "grantee": "service_role",
+                "grantable": false,
+                "privilege": "EXECUTE"
+              }
+            ],
+            "security_definer": true,
+            "identity_arguments": "c uuid, l uuid"
+          },
+          {
+            "name": "app_revoke_quote",
+            "owner": "postgres",
+            "config": [
+              "search_path=public, pg_temp"
+            ],
+            "result": "void",
+            "schema": "public",
+            "language": "plpgsql",
+            "volatility": "v",
+            "execute_grants": [
+              {
+                "grantee": "authenticated",
+                "grantable": false,
+                "privilege": "EXECUTE"
+              },
+              {
+                "grantee": "postgres",
+                "grantable": false,
+                "privilege": "EXECUTE"
+              },
+              {
+                "grantee": "service_role",
+                "grantable": false,
+                "privilege": "EXECUTE"
+              }
+            ],
+            "security_definer": true,
+            "identity_arguments": "c uuid, q uuid"
+          },
+          {
+            "name": "app_role",
+            "owner": "postgres",
+            "config": [
+              "search_path=public, pg_temp"
+            ],
+            "result": "text",
+            "schema": "public",
+            "language": "sql",
+            "volatility": "s",
+            "execute_grants": [
+              {
+                "grantee": "authenticated",
+                "grantable": false,
+                "privilege": "EXECUTE"
+              },
+              {
+                "grantee": "postgres",
+                "grantable": false,
+                "privilege": "EXECUTE"
+              },
+              {
+                "grantee": "service_role",
+                "grantable": false,
+                "privilege": "EXECUTE"
+              }
+            ],
+            "security_definer": true,
+            "identity_arguments": "c uuid"
+          },
+          {
+            "name": "app_save_handover",
+            "owner": "postgres",
+            "config": [
+              "search_path=public, pg_temp"
+            ],
+            "result": "uuid",
+            "schema": "public",
+            "language": "plpgsql",
+            "volatility": "v",
+            "execute_grants": [
+              {
+                "grantee": "authenticated",
+                "grantable": false,
+                "privilege": "EXECUTE"
+              },
+              {
+                "grantee": "postgres",
+                "grantable": false,
+                "privilege": "EXECUTE"
+              },
+              {
+                "grantee": "service_role",
+                "grantable": false,
+                "privilege": "EXECUTE"
+              }
+            ],
+            "security_definer": true,
+            "identity_arguments": "c uuid, l uuid, data jsonb"
+          },
+          {
+            "name": "app_save_lead",
+            "owner": "postgres",
+            "config": [
+              "search_path=public, pg_temp"
+            ],
+            "result": "uuid",
+            "schema": "public",
+            "language": "plpgsql",
+            "volatility": "v",
+            "execute_grants": [
+              {
+                "grantee": "authenticated",
+                "grantable": false,
+                "privilege": "EXECUTE"
+              },
+              {
+                "grantee": "postgres",
+                "grantable": false,
+                "privilege": "EXECUTE"
+              },
+              {
+                "grantee": "service_role",
+                "grantable": false,
+                "privilege": "EXECUTE"
+              }
+            ],
+            "security_definer": true,
+            "identity_arguments": "c uuid, data jsonb, l uuid, expected integer"
+          },
+          {
+            "name": "app_save_quote",
+            "owner": "postgres",
+            "config": [
+              "search_path=public, pg_temp"
+            ],
+            "result": "uuid",
+            "schema": "public",
+            "language": "plpgsql",
+            "volatility": "v",
+            "execute_grants": [
+              {
+                "grantee": "authenticated",
+                "grantable": false,
+                "privilege": "EXECUTE"
+              },
+              {
+                "grantee": "postgres",
+                "grantable": false,
+                "privilege": "EXECUTE"
+              },
+              {
+                "grantee": "service_role",
+                "grantable": false,
+                "privilege": "EXECUTE"
+              }
+            ],
+            "security_definer": true,
+            "identity_arguments": "c uuid, l uuid, data jsonb, q uuid, expected integer"
+          },
+          {
+            "name": "app_share_portal",
+            "owner": "postgres",
+            "config": [
+              "search_path=public, pg_temp"
+            ],
+            "result": "timestamp with time zone",
+            "schema": "public",
+            "language": "plpgsql",
+            "volatility": "v",
+            "execute_grants": [
+              {
+                "grantee": "authenticated",
+                "grantable": false,
+                "privilege": "EXECUTE"
+              },
+              {
+                "grantee": "postgres",
+                "grantable": false,
+                "privilege": "EXECUTE"
+              },
+              {
+                "grantee": "service_role",
+                "grantable": false,
+                "privilege": "EXECUTE"
+              }
+            ],
+            "security_definer": true,
+            "identity_arguments": "c uuid, l uuid, h text"
+          },
+          {
+            "name": "app_share_quote",
+            "owner": "postgres",
+            "config": [
+              "search_path=public, pg_temp"
+            ],
+            "result": "void",
+            "schema": "public",
+            "language": "plpgsql",
+            "volatility": "v",
+            "execute_grants": [
+              {
+                "grantee": "authenticated",
+                "grantable": false,
+                "privilege": "EXECUTE"
+              },
+              {
+                "grantee": "postgres",
+                "grantable": false,
+                "privilege": "EXECUTE"
+              },
+              {
+                "grantee": "service_role",
+                "grantable": false,
+                "privilege": "EXECUTE"
+              }
+            ],
+            "security_definer": true,
+            "identity_arguments": "c uuid, q uuid, h text"
+          },
+          {
+            "name": "app_track_first_response",
+            "owner": "postgres",
+            "config": [
+              "search_path=public, pg_temp"
+            ],
+            "result": "trigger",
+            "schema": "public",
+            "language": "plpgsql",
+            "volatility": "v",
+            "execute_grants": [
+              {
+                "grantee": "postgres",
+                "grantable": false,
+                "privilege": "EXECUTE"
+              },
+              {
+                "grantee": "service_role",
+                "grantable": false,
+                "privilege": "EXECUTE"
+              }
+            ],
+            "security_definer": false,
+            "identity_arguments": ""
+          },
+          {
+            "name": "app_worker_authorize",
+            "owner": "postgres",
+            "config": [
+              "search_path=private, pg_temp"
+            ],
+            "result": "boolean",
+            "schema": "public",
+            "language": "sql",
+            "volatility": "s",
+            "execute_grants": [
+              {
+                "grantee": "postgres",
+                "grantable": false,
+                "privilege": "EXECUTE"
+              },
+              {
+                "grantee": "service_role",
+                "grantable": false,
+                "privilege": "EXECUTE"
+              }
+            ],
+            "security_definer": true,
+            "identity_arguments": "token text"
+          },
+          {
+            "name": "app_worker_claim",
+            "owner": "postgres",
+            "config": [
+              "search_path=public, pg_temp"
+            ],
+            "result": "SETOF app_email_outbox",
+            "schema": "public",
+            "language": "plpgsql",
+            "volatility": "v",
+            "execute_grants": [
+              {
+                "grantee": "postgres",
+                "grantable": false,
+                "privilege": "EXECUTE"
+              },
+              {
+                "grantee": "service_role",
+                "grantable": false,
+                "privilege": "EXECUTE"
+              }
+            ],
+            "security_definer": true,
+            "identity_arguments": "c uuid"
+          },
+          {
+            "name": "app_worker_finish",
+            "owner": "postgres",
+            "config": [
+              "search_path=public, pg_temp"
+            ],
+            "result": "void",
+            "schema": "public",
+            "language": "plpgsql",
+            "volatility": "v",
+            "execute_grants": [
+              {
+                "grantee": "postgres",
+                "grantable": false,
+                "privilege": "EXECUTE"
+              },
+              {
+                "grantee": "service_role",
+                "grantable": false,
+                "privilege": "EXECUTE"
+              }
+            ],
+            "security_definer": true,
+            "identity_arguments": "o uuid, ok boolean, provider text, error_text text"
+          },
+          {
+            "name": "app_worker_health",
+            "owner": "postgres",
+            "config": [
+              "search_path=private, pg_temp"
+            ],
+            "result": "void",
+            "schema": "public",
+            "language": "sql",
+            "volatility": "v",
+            "execute_grants": [
+              {
+                "grantee": "postgres",
+                "grantable": false,
+                "privilege": "EXECUTE"
+              },
+              {
+                "grantee": "service_role",
+                "grantable": false,
+                "privilege": "EXECUTE"
+              }
+            ],
+            "security_definer": true,
+            "identity_arguments": "state text, sent_count integer"
+          }
+        ],
+        "relations": [
+          {
+            "name": "app_audit",
+            "schema": "public",
+            "relkind": "r",
+            "rls_forced": false,
+            "rls_enabled": true
+          },
+          {
+            "name": "app_companies",
+            "schema": "public",
+            "relkind": "r",
+            "rls_forced": false,
+            "rls_enabled": true
+          },
+          {
+            "name": "app_costs",
+            "schema": "public",
+            "relkind": "r",
+            "rls_forced": false,
+            "rls_enabled": true
+          },
+          {
+            "name": "app_demo_requests",
+            "schema": "public",
+            "relkind": "r",
+            "rls_forced": false,
+            "rls_enabled": true
+          },
+          {
+            "name": "app_email_outbox",
+            "schema": "public",
+            "relkind": "r",
+            "rls_forced": false,
+            "rls_enabled": true
+          },
+          {
+            "name": "app_handovers",
+            "schema": "public",
+            "relkind": "r",
+            "rls_forced": false,
+            "rls_enabled": true
+          },
+          {
+            "name": "app_imports",
+            "schema": "public",
+            "relkind": "r",
+            "rls_forced": false,
+            "rls_enabled": true
+          },
+          {
+            "name": "app_integrations",
+            "schema": "public",
+            "relkind": "r",
+            "rls_forced": false,
+            "rls_enabled": true
+          },
+          {
+            "name": "app_invites",
+            "schema": "public",
+            "relkind": "r",
+            "rls_forced": false,
+            "rls_enabled": true
+          },
+          {
+            "name": "app_invoices",
+            "schema": "public",
+            "relkind": "r",
+            "rls_forced": false,
+            "rls_enabled": true
+          },
+          {
+            "name": "app_job_budgets",
+            "schema": "public",
+            "relkind": "r",
+            "rls_forced": false,
+            "rls_enabled": true
+          },
+          {
+            "name": "app_leads",
+            "schema": "public",
+            "relkind": "r",
+            "rls_forced": false,
+            "rls_enabled": true
+          },
+          {
+            "name": "app_members",
+            "schema": "public",
+            "relkind": "r",
+            "rls_forced": false,
+            "rls_enabled": true
+          },
+          {
+            "name": "app_notes",
+            "schema": "public",
+            "relkind": "r",
+            "rls_forced": false,
+            "rls_enabled": true
+          },
+          {
+            "name": "app_quotes",
+            "schema": "public",
+            "relkind": "r",
+            "rls_forced": false,
+            "rls_enabled": true
+          },
+          {
+            "name": "app_rate_limits",
+            "schema": "public",
+            "relkind": "r",
+            "rls_forced": false,
+            "rls_enabled": true
+          },
+          {
+            "name": "app_reminders",
+            "schema": "public",
+            "relkind": "r",
+            "rls_forced": false,
+            "rls_enabled": true
+          },
+          {
+            "name": "app_requests",
+            "schema": "public",
+            "relkind": "r",
+            "rls_forced": false,
+            "rls_enabled": true
+          },
+          {
+            "name": "app_tasks",
+            "schema": "public",
+            "relkind": "r",
+            "rls_forced": false,
+            "rls_enabled": true
+          },
+          {
+            "name": "app_time_entries",
+            "schema": "public",
+            "relkind": "r",
+            "rls_forced": false,
+            "rls_enabled": true
+          }
+        ],
+        "table_grants": [],
+        "column_grants": [],
+        "captured_at_utc": "2026-10-27T06:43:33.115945Z"
+      }
+    }
+  ],
+  "authHook": {
+    "readable": true,
+    "customAccessTokenEnabled": false,
+    "customAccessTokenConfigured": false,
+    "customAccessTokenUri": null,
+    "customAccessTokenSecretConfigured": false
+  }
+}

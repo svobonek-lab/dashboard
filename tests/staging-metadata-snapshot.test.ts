@@ -9,6 +9,7 @@ test('staging metadata capture is catalog-only, read-only, and redacts Auth hook
   assert.equal(existsSync(implementationPath), true, 'staging metadata capture script must exist');
   const {
     STAGING_METADATA_SQL,
+    STAGING_MIGRATION_HISTORY_SQL,
     captureStagingMetadata,
     validateProjectIdentity,
   } = await import('../scripts/staging-metadata-snapshot.mjs');
@@ -31,6 +32,11 @@ test('staging metadata capture is catalog-only, read-only, and redacts Auth hook
   assert.match(STAGING_METADATA_SQL, /left\(c\.relname, 4\) = 'app_'/);
   assert.doesNotMatch(STAGING_METADATA_SQL, /column_default\s*,/);
   assert.match(STAGING_METADATA_SQL, /pg_get_function_identity_arguments/);
+  assert.match(STAGING_METADATA_SQL, /storage\.buckets/);
+  assert.match(STAGING_METADATA_SQL, /pg_policies[\s\S]*?schemaname = 'storage'[\s\S]*?tablename = 'objects'/);
+  assert.doesNotMatch(STAGING_METADATA_SQL, /select\s+.+\s+from\s+storage\.objects/i);
+  assert.match(STAGING_MIGRATION_HISTORY_SQL, /supabase_migrations\.schema_migrations/);
+  assert.match(STAGING_MIGRATION_HISTORY_SQL, /jsonb_build_object\('version', version, 'name', name\)/);
   assert.doesNotMatch(
     STAGING_METADATA_SQL,
     /\b(?:INSERT\s+INTO|UPDATE\s+\S+\s+SET|DELETE\s+FROM|ALTER\s+(?:TABLE|FUNCTION|SCHEMA)|DROP\s+(?:TABLE|FUNCTION|SCHEMA)|CREATE\s+(?:TABLE|FUNCTION|SCHEMA)|GRANT\s+\S+\s+ON|REVOKE\s+\S+\s+ON|TRUNCATE\s+\S)/i,
@@ -60,13 +66,18 @@ test('staging metadata capture is catalog-only, read-only, and redacts Auth hook
     },
   });
 
-  assert.equal(calls.length, 2);
+  assert.equal(calls.length, 3);
   const queryRequest = calls.find(({ url }) => url.includes('/database/query/read-only'));
   assert.ok(queryRequest);
   assert.equal(queryRequest.init?.method, 'POST');
   assert.deepEqual(JSON.parse(String(queryRequest.init?.body)), { query: STAGING_METADATA_SQL });
   assert.equal(new Headers(queryRequest.init?.headers).get('authorization'), 'Bearer test-token-not-a-real-secret');
   assert.deepEqual(result.database, metadata);
+  assert.deepEqual(result.migrationHistory, { readable: true, ...metadata });
+  const historyRequest = calls.find(({ init }) => {
+    try { return JSON.parse(String(init?.body)).query === STAGING_MIGRATION_HISTORY_SQL; } catch { return false; }
+  });
+  assert.ok(historyRequest, 'migration history is queried through the read-only SQL endpoint');
   assert.deepEqual(result.authHook, {
     readable: true,
     customAccessTokenEnabled: true,

@@ -27,6 +27,10 @@ set role service_role;
 do $$
 declare i integer; first_lead uuid; retry_lead uuid; sixth_blocked boolean := false;
   oversized_rejected boolean := false;
+  oversized_email_rejected boolean := false;
+  oversized_title_rejected boolean := false;
+  oversized_description_rejected boolean := false;
+  oversized_value_rejected boolean := false;
 begin
   begin
     perform public.app_submit_public_lead(
@@ -37,6 +41,42 @@ begin
     oversized_rejected := true;
   end;
   if not oversized_rejected then raise exception 'oversized customer name was accepted by SQL'; end if;
+
+  begin
+    perform public.app_submit_public_lead(
+      'firma-a', 'oversized-email', 'Synthetic Customer', '+420123456',
+      repeat('e', 255), 'Synthetic project', 'Synthetic description', 0, repeat('c', 64)
+    );
+  exception when sqlstate '22023' then oversized_email_rejected := true;
+  end;
+  if not oversized_email_rejected then raise exception 'oversized email was accepted by SQL'; end if;
+
+  begin
+    perform public.app_submit_public_lead(
+      'firma-a', 'oversized-title', 'Synthetic Customer', '+420123456',
+      '', repeat('t', 121), 'Synthetic description', 0, repeat('c', 64)
+    );
+  exception when sqlstate '22023' then oversized_title_rejected := true;
+  end;
+  if not oversized_title_rejected then raise exception 'oversized title was accepted by SQL'; end if;
+
+  begin
+    perform public.app_submit_public_lead(
+      'firma-a', 'oversized-description', 'Synthetic Customer', '+420123456',
+      '', 'Synthetic project', repeat('d', 4001), 0, repeat('c', 64)
+    );
+  exception when sqlstate '22023' then oversized_description_rejected := true;
+  end;
+  if not oversized_description_rejected then raise exception 'oversized description was accepted by SQL'; end if;
+
+  begin
+    perform public.app_submit_public_lead(
+      'firma-a', 'oversized-value', 'Synthetic Customer', '+420123456',
+      '', 'Synthetic project', 'Synthetic description', 1000000001, repeat('c', 64)
+    );
+  exception when sqlstate '22023' then oversized_value_rejected := true;
+  end;
+  if not oversized_value_rejected then raise exception 'out-of-range value was accepted by SQL'; end if;
 
   for i in 1..5 loop
     first_lead := public.app_submit_public_lead(
@@ -84,6 +124,15 @@ begin
   if (select count(*) from public.app_leads where company_id = '10000000-0000-4000-8000-000000000001' and source = 'public_form') <> 6 then
     raise exception 'expected five limited leads and one lead under another IP';
   end if;
+  if (select count(*) from public.app_public_intake_events
+      where company_id = '10000000-0000-4000-8000-000000000001' and request_key = 'rate-request-5') <> 1
+     or (select count(*) from public.app_leads
+      where company_id = '10000000-0000-4000-8000-000000000001' and id = (
+        select lead_id from public.app_public_intake_events
+        where company_id = '10000000-0000-4000-8000-000000000001' and request_key = 'rate-request-5'
+      )) <> 1 then
+    raise exception 'idempotent retry must create exactly one lead';
+  end if;
   if exists (
     select 1 from pg_catalog.pg_attribute
     where attrelid = 'public.app_public_intake_events'::regclass
@@ -92,4 +141,4 @@ begin
 end;
 $$;
 
-select 'PASS: server-only RPC, 5/10-minute limit, HMAC-only identity, idempotency' as result;
+select 'PASS: server-only RPC, five-per-ten-minute limit, oversized fields, HMAC-only identity, exactly-once idempotency' as result;

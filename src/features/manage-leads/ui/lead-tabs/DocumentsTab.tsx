@@ -3,7 +3,7 @@ import { Camera, FileText, LoaderCircle, MessageSquareText, Paperclip, Trash2, U
 import type { Lead } from '../../../../entities/lead';
 import type { LeadNote, LeadStoredFile } from '../../../../shared/api/crm-repository';
 import { crmRepo } from '../../../../shared/api/crm-repository';
-import { resizeImageForUpload } from '../../../lead-files';
+import { isLeadAttachmentsEnabled, resizeImageForUpload } from '../../../lead-files';
 
 interface DocumentsTabProps { lead: Lead; onNotice?: (message: string) => void; }
 
@@ -11,6 +11,7 @@ const formatDate = (value: string) => new Intl.DateTimeFormat('cs-CZ', { dateSty
 const formatSize = (bytes: number) => bytes < 1024 * 1024 ? `${Math.ceil(bytes / 1024)} kB` : `${(bytes / 1024 / 1024).toFixed(1)} MB`;
 
 export const DocumentsTab: React.FC<DocumentsTabProps> = ({ lead, onNotice = () => {} }) => {
+  const attachmentsEnabled = isLeadAttachmentsEnabled(import.meta.env);
   const companyId = lead.organization_id || '';
   const [notes, setNotes] = useState<LeadNote[]>([]);
   const [files, setFiles] = useState<LeadStoredFile[]>([]);
@@ -20,6 +21,7 @@ export const DocumentsTab: React.FC<DocumentsTabProps> = ({ lead, onNotice = () 
   const [error, setError] = useState('');
 
   const loadAttachments = useCallback(async () => {
+    if (!attachmentsEnabled) return;
     setLoading(true); setError('');
     try {
       const [loadedNotes, loadedFiles] = await Promise.all([
@@ -31,12 +33,13 @@ export const DocumentsTab: React.FC<DocumentsTabProps> = ({ lead, onNotice = () 
       setError(loadError instanceof Error ? loadError.message : 'Poznámky a soubory se nepodařilo načíst.');
       setNotes([]); setFiles([]);
     } finally { setLoading(false); }
-  }, [companyId, lead.id]);
+  }, [attachmentsEnabled, companyId, lead.id]);
 
-  useEffect(() => { void loadAttachments(); }, [loadAttachments]);
+  useEffect(() => { if (attachmentsEnabled) void loadAttachments(); }, [attachmentsEnabled, loadAttachments]);
 
   const addNote = async (event: React.FormEvent) => {
     event.preventDefault(); setBusy(true); setError('');
+    if (!attachmentsEnabled) { setBusy(false); return; }
     try {
       await crmRepo.addLeadNote(companyId, lead.id, noteBody);
       setNoteBody(''); await loadAttachments(); onNotice('Poznámka byla uložena.');
@@ -46,7 +49,7 @@ export const DocumentsTab: React.FC<DocumentsTabProps> = ({ lead, onNotice = () 
 
   const uploadFile = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const selected = event.target.files?.[0]; event.target.value = '';
-    if (!selected) return;
+    if (!selected || !attachmentsEnabled) return;
     setBusy(true); setError('');
     try {
       const prepared = selected.type.startsWith('image/') ? await resizeImageForUpload(selected) : selected;
@@ -57,6 +60,7 @@ export const DocumentsTab: React.FC<DocumentsTabProps> = ({ lead, onNotice = () 
   };
 
   const removeNote = async (note: LeadNote) => {
+    if (!attachmentsEnabled) return;
     setBusy(true);
     try { await crmRepo.deleteLeadNote(companyId, note.id); await loadAttachments(); }
     catch (removeError) { setError(removeError instanceof Error ? removeError.message : 'Poznámku se nepodařilo smazat.'); }
@@ -64,11 +68,18 @@ export const DocumentsTab: React.FC<DocumentsTabProps> = ({ lead, onNotice = () 
   };
 
   const removeFile = async (file: LeadStoredFile) => {
+    if (!attachmentsEnabled) return;
     setBusy(true);
     try { await crmRepo.deleteLeadFile(companyId, file); await loadAttachments(); }
     catch (removeError) { setError(removeError instanceof Error ? removeError.message : 'Soubor se nepodařilo smazat.'); }
     finally { setBusy(false); }
   };
+
+  if (!attachmentsEnabled) return <section className="workspace-panel p-5 sm:p-7" aria-labelledby="lead-attachments-title">
+    <p className="workspace-kicker">Dokumentace zakázky</p>
+    <h2 id="lead-attachments-title" className="mt-1 text-base font-semibold text-slate-950">Poznámky a soubory</h2>
+    <p role="status" className="mt-2 text-sm text-slate-600">Přílohy budou brzy k dispozici.</p>
+  </section>;
 
   return <section className="workspace-panel p-5 sm:p-7" aria-labelledby="lead-attachments-title">
     <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
