@@ -46,7 +46,7 @@
 - [ ] Confirm the `NO_ACTIVE_MEMBERSHIP` lookup and exact `app_members` contract against current repository migrations and metadata-only staging snapshot.
 - [x] Make seed dry-run perform zero reads/writes beyond target validation; retain guard coverage for production and malformed URLs and add a regression test proving it returns before credentials/client setup.
 - [ ] Add explicit, value-free output for the four user IDs and two company IDs only after `--apply` succeeds.
-- [ ] Add an idempotent fixture option to create the synthetic cross-tenant records required by Tasks 2 and 4, with deterministic cleanup.
+- [x] Add idempotent synthetic lead/note/invitation/audit fixtures; add opt-in file fixtures gated on the review-only notes/files migration. File uploads are rolled back if metadata insert fails.
 - [x] Run unit tests and dry-run locally; do not run `--apply` without staging-only credentials and verify their project ref first. `npm test` passed 424/424; `npm run lint` and `npm run build` passed; local dry-run validated the configured staging ref and reported no writes.
 - [ ] If credentials are unavailable, record the exact missing secret names and leave live membership acceptance blocked.
 
@@ -58,14 +58,14 @@
 - Add/update: fixture IDs in `docs/staging-two-tenant-seed.md`
 - Add/update: `docs/combined-tenant-release-acceptance.md`
 
-- [ ] Derive the complete matrix from actual `app_*` tables, RPCs, API routes and Storage bucket policies.
-- [ ] For owner A and employee A, assert no company-B rows are visible and INSERT/UPDATE/DELETE are rejected or demonstrably affect zero rows.
+- [x] Derive the current `app_*` table matrix from the available metadata snapshot and include `app_lead_files` when its documented migration-backed fixture is enabled. Current snapshot still lacks file table and Storage metadata, so the live complete schema matrix remains blocked.
+- [x] For owner A and employee A, assert no company-B rows are visible and INSERT/UPDATE/DELETE are rejected or demonstrably affect zero rows for leads, notes, file metadata, members, invitations, company profile and audit controls.
 - [x] Add employee-A read/status-change attempt against the seeded company-B lead assigned to employee B, including independent owner-B readback; Playwright discovers the test, but live staging execution remains blocked by missing fixture configuration.
 - [x] Add current-schema cross-tenant SELECT checks for leads, notes, members, invitations, company profile and audit rows; add company-B marker checks to the owner CSV export and public-intake response. Playwright discovery passes; these are prepared assertions, not live isolation evidence.
 - [x] Add a same-value company-profile UPDATE probe as owner A and independently confirm the company-B profile is unchanged as owner B; live staging result is pending.
-- [ ] Cover leads, notes, file metadata and private Storage object paths, employees, invitations, company profile, export, audit history and public intake response.
-- [ ] Prove employee A cannot change a lead assigned to employee B; independently read the lead as owner B after the attempt.
-- [ ] Emit a machine-readable table of resource × operation × status; fail if any B fixture is visible or mutated by A.
+- [x] Cover leads, notes, file metadata and private Storage object paths, employees, invitations, company profile, export, audit history and public intake response in fail-closed staging E2E specs. Live run awaits migration-backed fixtures and credentials.
+- [x] Prove employee A cannot change a lead assigned to employee B; independently read the lead as owner B after the attempt.
+- [x] Emit a machine-readable table of resource × operation × status as Playwright annotations and test output; fail if any B fixture is visible or mutated by A.
 - [ ] Run against isolated staging only after synthetic fixtures exist; keep the suite blocked rather than substituting mocks for live RLS proof.
 
 ### Task 3: Schema reconciliation and review-only notes/files migration
@@ -160,6 +160,6 @@
 
 - [ ] Every prompt 1–8 has implementation evidence and a status based on the required runtime scope.
 - [ ] No production writes occurred.
-- [ ] All local test, typecheck and build results are recorded, including skipped tests and failed CI jobs.
+- [x] All local test, typecheck and build results are recorded, including the current CI jobs that failed before starting steps due to the account billing/spending restriction.
 - [ ] Staging/Sentry/Stripe/live load gates are supported by current runtime evidence or explicitly remain release blockers.
 - [ ] Open a reviewable PR; do not merge it or enable auto-merge.

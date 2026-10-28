@@ -39,4 +39,10 @@ test('replaying a synthetic public inquiry with one request key creates one lead
   });
   const matches = await restGet(request, owner, 'app_leads', params.toString());
   expect(matches).toHaveLength(1);
+  const matrix = [
+    { resource: 'public intake response', operation: 'cross-company B data check', result: 'no company B marker or ID returned' },
+    { resource: 'public intake lead', operation: 'idempotent duplicate submit', result: `${matches.length} synthetic company A lead` },
+  ];
+  test.info().annotations.push({ type: 'tenant-isolation-matrix', description: JSON.stringify(matrix) });
+  console.info('Tenant isolation matrix\n' + matrix.map(row => `${row.resource} | ${row.operation} | ${row.result}`).join('\n'));
 });

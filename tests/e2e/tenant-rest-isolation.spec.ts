@@ -1,10 +1,40 @@
 import { expect, test } from 'playwright/test';
-import { accessToken, requiredValue, restGet, restPatch, stagingConfig } from './support';
+import { accessToken, requiredValue, restDelete, restGet, restInsert, restPatch, stagingConfig } from './support';
 
-test('owner JWT cannot read another synthetic company through PostgREST', async ({ request }) => {
+type TenantRow = Record<string, unknown>;
+type TenantResource = {
+  table: string;
+  crossTenantQuery: string;
+  controlQuery: string;
+  rowFilter(row: TenantRow): string;
+  updateField: string;
+  stableFields: string[];
+};
+
+async function assertMutationDeniedOrFiltered(response: Awaited<ReturnType<typeof restInsert>>, label: string): Promise<string> {
+  const status = response.status();
+  const body = await response.text();
+  if ([401, 403, 404].includes(status)) return `HTTP ${status}`;
+  if (response.ok() && body.trim()) {
+    try {
+      const rows = JSON.parse(body) as unknown;
+      if (Array.isArray(rows) && rows.length === 0) return `HTTP ${status}, 0 rows`;
+    } catch { /* An unparseable successful body cannot prove a filtered write. */ }
+  }
+  throw new Error(`${label} was not rejected or filtered: HTTP ${status}, body length ${body.length}.`);
+}
+
+function eq(value: unknown) {
+  return `eq.${encodeURIComponent(String(value))}`;
+}
+
+test('owner A and employee A cannot read or mutate company B synthetic rows through PostgREST', async ({ request }) => {
   stagingConfig();
   const companyA = requiredValue('STAGING_COMPANY_A_ID');
   const companyB = requiredValue('STAGING_COMPANY_B_ID');
+  const ownerBId = requiredValue('STAGING_OWNER_B_ID');
+  const employeeBId = requiredValue('STAGING_EMPLOYEE_B_ID');
+  const leadBId = requiredValue('STAGING_LEAD_B_ID');
   expect(companyA).not.toBe(companyB);
   const [ownerA, employeeA, ownerB] = await Promise.all([
     accessToken(request, 'OWNER_A'),
@@ -12,18 +42,55 @@ test('owner JWT cannot read another synthetic company through PostgREST', async 
     accessToken(request, 'OWNER_B'),
   ]);
 
-  const resources = [
-    { table: 'app_leads', filter: 'company_id', ownerControl: true },
-    { table: 'app_notes', filter: 'company_id', ownerControl: true },
-    { table: 'app_members', filter: 'company_id', ownerControl: true },
-    { table: 'app_invites', filter: 'company_id', ownerControl: true },
-    { table: 'app_companies', filter: 'id', ownerControl: true },
-    { table: 'app_audit', filter: 'company_id', ownerControl: true },
-  ] as const;
+  const companyFilter = `company_id=${eq(companyB)}`;
+  const resources: TenantResource[] = [
+    {
+      table: 'app_leads', crossTenantQuery: companyFilter,
+      controlQuery: `id=${eq(leadBId)}&${companyFilter}`,
+      rowFilter: row => `id=${eq(row.id)}&${companyFilter}`,
+      updateField: 'title', stableFields: ['title', 'status', 'assigned_to'],
+    },
+    {
+      table: 'app_notes', crossTenantQuery: companyFilter,
+      controlQuery: `company_id=${eq(companyB)}&lead_id=${eq(leadBId)}&body=${eq('Synthetic E2E isolation note B')}`,
+      rowFilter: row => `id=${eq(row.id)}&${companyFilter}`,
+      updateField: 'body', stableFields: ['body', 'lead_id', 'author'],
+    },
+    {
+      table: 'app_lead_files', crossTenantQuery: companyFilter,
+      controlQuery: `company_id=${eq(companyB)}&lead_id=${eq(leadBId)}&storage_path=${eq(requiredValue('STAGING_LEAD_B_FILE_PATH'))}`,
+      rowFilter: row => `id=${eq(row.id)}&${companyFilter}`,
+      updateField: 'file_name', stableFields: ['file_name', 'storage_path', 'lead_id', 'author_id'],
+    },
+    {
+      table: 'app_members', crossTenantQuery: companyFilter,
+      controlQuery: `company_id=${eq(companyB)}&user_id=${eq(employeeBId)}`,
+      rowFilter: row => `company_id=${eq(row.company_id)}&user_id=${eq(row.user_id)}`,
+      updateField: 'name', stableFields: ['name', 'email', 'role', 'active'],
+    },
+    {
+      table: 'app_invites', crossTenantQuery: companyFilter,
+      controlQuery: `company_id=${eq(companyB)}&email=${eq('e2e-isolation-invite-b@stavbaflow.example.test')}`,
+      rowFilter: row => `id=${eq(row.id)}&${companyFilter}`,
+      updateField: 'role', stableFields: ['email', 'name', 'role', 'expires_at'],
+    },
+    {
+      table: 'app_companies', crossTenantQuery: `id=${eq(companyB)}`,
+      controlQuery: `id=${eq(companyB)}`,
+      rowFilter: row => `id=${eq(row.id)}`,
+      updateField: 'name', stableFields: ['name', 'slug', 'active'],
+    },
+    {
+      table: 'app_audit', crossTenantQuery: companyFilter,
+      controlQuery: `company_id=${eq(companyB)}&actor=${eq(ownerBId)}&action=${eq('E2E_ISOLATION_FIXTURE')}&entity_id=${eq(leadBId)}`,
+      rowFilter: row => `id=${eq(row.id)}&${companyFilter}`,
+      updateField: 'action', stableFields: ['actor', 'action', 'entity_id'],
+    },
+  ];
   const matrix: Array<{ resource: string; operation: string; result: string }> = [];
 
   for (const resource of resources) {
-    const query = new URLSearchParams({ select: 'id', [resource.filter]: `eq.${companyB}` }).toString();
+    const query = new URLSearchParams({ select: 'id', ...Object.fromEntries(new URLSearchParams(resource.crossTenantQuery)) }).toString();
     const [ownerRows, employeeRows] = await Promise.all([
       restGet(request, ownerA, resource.table, query),
       restGet(request, employeeA, resource.table, query),
@@ -35,32 +102,75 @@ test('owner JWT cannot read another synthetic company through PostgREST', async 
       { resource: resource.table, operation: 'SELECT as employee A', result: '0 rows' },
     );
 
-    if (resource.ownerControl) {
-      const ownerBRows = await restGet(request, ownerB, resource.table, query);
-      expect(ownerBRows.length, `Owner B fixture is missing from ${resource.table}; refusing a vacuous isolation pass.`).toBeGreaterThan(0);
-      matrix.push({ resource: resource.table, operation: 'SELECT as owner B control', result: `${ownerBRows.length} row(s)` });
+    const controls = await restGet(request, ownerB, resource.table, `select=*&${resource.controlQuery}`);
+    expect(controls, `Owner B synthetic control is missing from ${resource.table}; refusing a vacuous isolation pass.`).toHaveLength(1);
+    const control = controls[0];
+    matrix.push({ resource: resource.table, operation: 'SELECT as owner B control', result: '1 synthetic row' });
+
+    const actors = [
+      { name: 'owner A', token: ownerA, id: requiredValue('STAGING_OWNER_A_ID') },
+      { name: 'employee A', token: employeeA, id: requiredValue('STAGING_EMPLOYEE_A_ID') },
+    ];
+    for (const actor of actors) {
+      const insert = await restInsert(request, actor.token, resource.table, control);
+      const insertResult = await assertMutationDeniedOrFiltered(insert, `${actor.name} INSERT into ${resource.table}`);
+      matrix.push({ resource: resource.table, operation: `INSERT as ${actor.name}`, result: insertResult });
+
+      const update = await restPatch(request, actor.token, resource.table, resource.rowFilter(control), {
+        [resource.updateField]: control[resource.updateField],
+      });
+      const updateResult = await assertMutationDeniedOrFiltered(update, `${actor.name} UPDATE of ${resource.table}`);
+      matrix.push({ resource: resource.table, operation: `UPDATE as ${actor.name}`, result: updateResult });
+
+      const deletion = await restDelete(request, actor.token, resource.table, resource.rowFilter(control));
+      const deleteResult = await assertMutationDeniedOrFiltered(deletion, `${actor.name} DELETE of ${resource.table}`);
+      matrix.push({ resource: resource.table, operation: `DELETE as ${actor.name}`, result: deleteResult });
+
+      const after = await restGet(request, ownerB, resource.table, `select=*&${resource.controlQuery}`);
+      expect(after, `${actor.name} changed or deleted the company B ${resource.table} fixture.`).toHaveLength(1);
+      for (const field of resource.stableFields) {
+        expect(after[0][field], `${actor.name} changed ${resource.table}.${field} in company B.`).toEqual(control[field]);
+      }
     }
   }
 
-  const companyQuery = new URLSearchParams({ select: 'id,name', id: `eq.${companyB}` }).toString();
-  const companyBefore = await restGet(request, ownerB, 'app_companies', companyQuery);
-  expect(companyBefore).toHaveLength(1);
-  const profilePatch = await restPatch(
-    request,
-    ownerA,
-    'app_companies',
-    `id=eq.${encodeURIComponent(companyB)}`,
-    { name: companyBefore[0].name },
-  );
-  const profileBody = await profilePatch.text();
-  const profileRejectedOrFiltered = [401, 403, 404].includes(profilePatch.status())
-    || (profilePatch.ok() && (!profileBody.trim() || JSON.parse(profileBody).length === 0));
-  expect(profileRejectedOrFiltered, `Cross-company profile UPDATE unexpectedly returned HTTP ${profilePatch.status()} with a row.`).toBe(true);
-  const companyAfter = await restGet(request, ownerB, 'app_companies', companyQuery);
-  expect(companyAfter).toHaveLength(1);
-  expect(companyAfter[0].name).toBe(companyBefore[0].name);
-  matrix.push({ resource: 'app_companies (company B)', operation: 'UPDATE profile as owner A', result: `unchanged (${profilePatch.status()})` });
+  test.info().annotations.push({ type: 'tenant-isolation-matrix', description: JSON.stringify(matrix) });
+  console.info('Tenant isolation matrix\n' + matrix.map(row => `${row.resource} | ${row.operation} | ${row.result}`).join('\n'));
+});
 
+test('owner A and employee A cannot download a company B lead file from private Storage', async ({ request }) => {
+  const { url, key } = stagingConfig();
+  const companyB = requiredValue('STAGING_COMPANY_B_ID');
+  const leadB = requiredValue('STAGING_LEAD_B_ID');
+  const path = requiredValue('STAGING_LEAD_B_FILE_PATH');
+  expect(path.startsWith(`${companyB}/${leadB}/`), 'File fixture path must be nested under company B and its synthetic lead.').toBe(true);
+
+  const [ownerA, employeeA, ownerB] = await Promise.all([
+    accessToken(request, 'OWNER_A'),
+    accessToken(request, 'EMPLOYEE_A'),
+    accessToken(request, 'OWNER_B'),
+  ]);
+  const fileQuery = `company_id=${eq(companyB)}&lead_id=${eq(leadB)}&storage_path=${eq(path)}`;
+  const ownerRows = await restGet(request, ownerB, 'app_lead_files', `select=id,company_id,lead_id,storage_path&${fileQuery}`);
+  expect(ownerRows, 'Company B file metadata fixture is missing; refusing a vacuous Storage isolation pass.').toHaveLength(1);
+
+  const objectPath = path.split('/').map(encodeURIComponent).join('/');
+  const download = async (token: string) => request.get(`${url}/storage/v1/object/authenticated/lead-files/${objectPath}`, {
+    headers: { apikey: key, Authorization: `Bearer ${token}` },
+  });
+  const [ownerControl, ownerADownload, employeeADownload] = await Promise.all([
+    download(ownerB), download(ownerA), download(employeeA),
+  ]);
+  expect(ownerControl.status(), 'Owner B must be able to read its synthetic private file control.').toBe(200);
+  expect([403, 404], `Owner A unexpectedly downloaded company B file (HTTP ${ownerADownload.status()}).`).toContain(ownerADownload.status());
+  expect([403, 404], `Employee A unexpectedly downloaded company B file (HTTP ${employeeADownload.status()}).`).toContain(employeeADownload.status());
+
+  const matrix = [
+    { resource: 'app_lead_files', operation: 'SELECT as owner A', result: '0 rows (required fixture check)' },
+    { resource: 'Storage lead-files B path', operation: 'download as owner B control', result: 'HTTP 200' },
+    { resource: 'Storage lead-files B path', operation: 'download as owner A', result: `HTTP ${ownerADownload.status()}` },
+    { resource: 'Storage lead-files B path', operation: 'download as employee A', result: `HTTP ${employeeADownload.status()}` },
+  ];
   test.info().annotations.push({ type: 'tenant-isolation-matrix', description: JSON.stringify(matrix) });
   console.info('Tenant isolation matrix\n' + matrix.map(row => `${row.resource} | ${row.operation} | ${row.result}`).join('\n'));
 });

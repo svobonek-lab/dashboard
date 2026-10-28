@@ -56,6 +56,19 @@ export async function restGet(request: APIRequestContext, token: string, table: 
   return await response.json() as Array<Record<string, unknown>>;
 }
 
+export async function restInsert(request: APIRequestContext, token: string, table: string, body: Record<string, unknown>) {
+  const { url, key } = stagingConfig();
+  return request.post(`${url}/rest/v1/${table}`, {
+    headers: {
+      apikey: key,
+      Authorization: `Bearer ${token}`,
+      Prefer: 'return=representation',
+      'Content-Type': 'application/json',
+    },
+    data: body,
+  });
+}
+
 export async function restPatch(request: APIRequestContext, token: string, table: string, query: string, body: Record<string, unknown>) {
   const { url, key } = stagingConfig();
   return request.patch(`${url}/rest/v1/${table}?${query}`, {

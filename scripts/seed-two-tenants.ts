@@ -24,6 +24,25 @@ export function buildTenantLeadFixture(key: 'A' | 'B', companyId: string, employ
   };
 }
 
+const SYNTHETIC_PDF = Buffer.from('%PDF-1.4\n% StavbaFlow synthetic isolation fixture\n1 0 obj<<>>endobj\ntrailer<<>>\n%%EOF\n');
+
+export function buildTenantLeadFileFixture(key: 'A' | 'B', companyId: string, leadId: string, authorId: string) {
+  const id = key === 'A'
+    ? 'f1000000-0000-4000-8000-000000000001'
+    : 'f2000000-0000-4000-8000-000000000002';
+  const fileName = `isolation-${key.toLowerCase()}.pdf`;
+  return {
+    id,
+    company_id: companyId,
+    lead_id: leadId,
+    author_id: authorId,
+    storage_path: `${companyId}/${leadId}/${id}-${fileName}`,
+    file_name: fileName,
+    mime_type: 'application/pdf',
+    size_bytes: SYNTHETIC_PDF.byteLength,
+  };
+}
+
 export function buildTenantIsolationFixtures(
   key: 'A' | 'B',
   companyId: string,
@@ -195,6 +214,28 @@ async function ensureAuditFixture(client: SupabaseClient, audit: ReturnType<type
   return inserted.data.id;
 }
 
+async function ensureLeadFileFixture(client: SupabaseClient, file: ReturnType<typeof buildTenantLeadFileFixture>): Promise<string> {
+  const existing = await client.from('app_lead_files').select('id')
+    .eq('company_id', file.company_id)
+    .eq('storage_path', file.storage_path)
+    .maybeSingle();
+  if (existing.error) throw new Error('Unable to inspect the staging lead-file contract.');
+
+  const uploaded = await client.storage.from('lead-files').upload(file.storage_path, SYNTHETIC_PDF, {
+    contentType: file.mime_type,
+    upsert: true,
+  });
+  if (uploaded.error) throw new Error('Unable to upload the synthetic staging Storage fixture.');
+
+  if (existing.data?.id) return file.storage_path;
+  const inserted = await client.from('app_lead_files').insert(file).select('id').single();
+  if (inserted.error || !inserted.data?.id) {
+    await client.storage.from('lead-files').remove([file.storage_path]);
+    throw new Error('Unable to create the synthetic staging file metadata.');
+  }
+  return file.storage_path;
+}
+
 export async function seedTwoTenants(environment: Record<string, string | undefined>, apply = false) {
   const { url, ref } = assertStagingSeedTarget(environment);
   if (!apply) return { applied: false, stagingProjectRef: ref, tenants: [] };
@@ -202,6 +243,7 @@ export async function seedTwoTenants(environment: Record<string, string | undefi
   const users = tenants.flatMap(tenant => [tenant.owner, tenant.employee]);
   const passwords = new Map(users.map(user => [user.email, required(environment, user.passwordVariable)]));
   const client = createClient(url, serviceRoleKey, { auth: { persistSession: false, autoRefreshToken: false } });
+  const seedLeadFiles = environment.STAGING_LEAD_FILES_ENABLED === 'true';
   const result = [];
   for (const tenant of tenants) {
     const companyId = await ensureCompany(client, tenant.companyName, tenant.companySlug);
@@ -214,7 +256,10 @@ export async function seedTwoTenants(environment: Record<string, string | undefi
     await ensureNoteFixture(client, isolation.note);
     await ensureInviteFixture(client, isolation.invite);
     await ensureAuditFixture(client, isolation.audit);
-    result.push({ key: tenant.key, companyId, ownerId, employeeId, leadId, ownerEmail: tenant.owner.email, employeeEmail: tenant.employee.email });
+    const leadFilePath = seedLeadFiles
+      ? await ensureLeadFileFixture(client, buildTenantLeadFileFixture(tenant.key, companyId, leadId, ownerId))
+      : null;
+    result.push({ key: tenant.key, companyId, ownerId, employeeId, leadId, leadFilePath, ownerEmail: tenant.owner.email, employeeEmail: tenant.employee.email });
   }
   return { applied: apply, stagingProjectRef: ref, tenants: result };
 }
@@ -225,7 +270,7 @@ async function main() {
   const environment = process.env;
   assertStagingSeedTarget(environment);
   if (!apply) {
-    console.log('Staging target validated. No rows written. Set --apply to create or refresh the four synthetic accounts and memberships.');
+    console.log('Staging target validated. No rows written. Set --apply to create or refresh the four synthetic accounts and memberships. File fixtures are opt-in via STAGING_LEAD_FILES_ENABLED=true after the notes/files migration is applied.');
     return;
   }
   const result = await seedTwoTenants(environment, true);

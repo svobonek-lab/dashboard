@@ -93,6 +93,12 @@ test('owner login, status change, CSV import/export and logout have no uncaught 
     const exportedCsv = Buffer.concat(exportChunks).toString('utf8');
     expect(exportedCsv).not.toContain('StavbaFlow E2E Isolation Lead B');
     expect(exportedCsv).not.toContain('e2e-lead-b@stavbaflow.example.test');
+    const exportMatrix = [
+      { resource: 'owner CSV export', operation: 'read as owner A', result: 'company A export downloaded' },
+      { resource: 'owner CSV export', operation: 'cross-company B marker check', result: 'no company B marker visible' },
+    ];
+    test.info().annotations.push({ type: 'tenant-isolation-matrix', description: JSON.stringify(exportMatrix) });
+    console.info('Tenant isolation matrix\n' + exportMatrix.map(row => `${row.resource} | ${row.operation} | ${row.result}`).join('\n'));
   } finally {
     try {
       if (importStarted) await cleanupSyntheticImport(request, ownerToken, companyId);

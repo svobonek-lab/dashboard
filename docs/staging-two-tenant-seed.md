@@ -2,7 +2,7 @@
 
 `npx tsx scripts/seed-two-tenants.ts` validates the target and performs no reads or writes beyond target validation. Add `--apply` to create or refresh two synthetic companies, four Auth users, active `app_members` rows, and one synthetic lead assigned to each company's employee. Each lead has a deterministic synthetic identity so rerunning the seed refreshes the same fixture. For non-vacuous isolation controls, it also creates one idempotent synthetic `app_notes` row, invitation row, and audit row for each company. The script accepts only `STAGING_SUPABASE_URL` whose project ref exactly matches `STAGING_SUPABASE_PROJECT_REF`, and refuses the configured production ref.
 
-The 2026-10-28 read-only staging audit confirms the live `app_members` contract is `company_id`, `user_id`, `name`, `email`, `role`, and `active`, with `active` defaulting to true. The JWT restrictive policy binds membership to `app_private.jwt_tenant_id()`. No accounts, memberships, or synthetic tenant rows have been seeded yet.
+The 2026-10-28 read-only staging audit confirms the live `app_members` contract is `company_id`, `user_id`, `name`, `email`, `role`, and `active`, with `active` defaulting to true. The JWT restrictive policy binds membership to `app_private.jwt_tenant_id()`. The latest documented check found no seed evidence; recheck the staging project before assuming fixtures exist.
 
 ## Owner login failure contract
 
@@ -20,6 +20,7 @@ Set project/deployment identity and non-secret fixture IDs as **Actions variable
 - `STAGING_COMPANY_A_ID`, `STAGING_COMPANY_B_ID`
 - `STAGING_OWNER_A_ID`, `STAGING_EMPLOYEE_A_ID`, `STAGING_OWNER_B_ID`, `STAGING_EMPLOYEE_B_ID`
 - `STAGING_LEAD_A_ID`, `STAGING_LEAD_B_ID`
+- `STAGING_LEAD_B_FILE_PATH` (only after the review-only notes/files SQL is applied to staging and `STAGING_LEAD_FILES_ENABLED=true` was used for the seed)
 
 The seed prints company, user, and lead IDs only after `--apply` succeeds. Copy those non-secret IDs to the matching variables. Never treat the returned IDs as proof of isolation; run the staging E2E suite.
 
@@ -38,4 +39,4 @@ Do not paste secrets into issues or source files. The seed never prints password
 
 The deterministic Auth emails are `owner-a@stavbaflow.example.test`, `employee-a@stavbaflow.example.test`, `owner-b@stavbaflow.example.test`, and `employee-b@stavbaflow.example.test`. Lead fixtures use synthetic names and `.example.test` emails and are assigned to employees in the matching company.
 
-A seed run is not proof that owner login or tenant isolation passed. Run staging acceptance only after the values above are configured and the target is confirmed as StavbaCore Staging.
+A seed run is not proof that owner login or tenant isolation passed. File fixture creation is fail-closed and opt-in: keep it disabled until the review-only notes/files migration is applied and its Storage bucket/policies are verified. Run staging acceptance only after the values above are configured and the target is confirmed as StavbaCore Staging.
