@@ -83,7 +83,15 @@ test('owner login, status change, CSV import/export and logout have no uncaught 
 
   page.on('pageerror', (error) => uncaughtErrors.push(`pageerror: ${safeBrowserDiagnostic(error.message)}`));
   page.on('console', (message) => {
-    if (message.type() === 'error') uncaughtErrors.push(`console.error: ${safeBrowserDiagnostic(message.text())}`);
+    if (message.type() !== 'error') return;
+    const detail = message.text();
+    // Chromium logs handled HTTP failures as resource errors; the response
+    // listener records their exact paths separately. Vercel injects the
+    // feedback script into Preview, outside the application bundle.
+    if (/^Failed to load resource: the server responded with a status of \d{3}/.test(detail)) return;
+    if (detail.includes('https://vercel.live/_next-live/feedback/feedback.js')
+      && detail.includes('Content Security Policy')) return;
+    uncaughtErrors.push(`console.error: ${safeBrowserDiagnostic(detail)}`);
   });
   page.on('response', (response) => {
     if (response.status() < 400) return;
