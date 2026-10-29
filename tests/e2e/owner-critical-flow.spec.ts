@@ -1,18 +1,24 @@
+import { randomUUID } from 'node:crypto';
 import { expect, test } from 'playwright/test';
 import { accessToken, requiredValue, restDelete, restGet, restPatch, signIn, stagingConfig } from './support';
 
-async function cleanupSyntheticImport(request: Parameters<typeof restGet>[0], ownerToken: string, companyId: string) {
+async function cleanupSyntheticImport(
+  request: Parameters<typeof restGet>[0],
+  ownerToken: string,
+  companyId: string,
+  fixture: { email: string; title: string },
+) {
   const query = new URLSearchParams({
     select: 'id,company_id,email,title,customer',
     company_id: `eq.${companyId}`,
-    email: 'eq.playwright-import@stavbaflow.example.test',
-    title: 'eq.StavbaFlow Playwright Import',
+    email: `eq.${fixture.email}`,
+    title: `eq.${fixture.title}`,
   }).toString();
   const rows = await restGet(request, ownerToken, 'app_leads', query);
   for (const row of rows) {
     expect(row.company_id).toBe(companyId);
-    expect(row.email).toBe('playwright-import@stavbaflow.example.test');
-    expect(row.title).toBe('StavbaFlow Playwright Import');
+    expect(row.email).toBe(fixture.email);
+    expect(row.title).toBe(fixture.title);
     expect(row.customer).toBe('Synthetic Playwright Customer');
     const deletion = await restDelete(
       request,
@@ -33,6 +39,11 @@ test('owner login, status change, CSV import/export and logout have no uncaught 
   const companyId = requiredValue('STAGING_COMPANY_A_ID');
   const leadId = requiredValue('STAGING_LEAD_A_ID');
   const ownerToken = await accessToken(browser, 'OWNER_A');
+  const importId = randomUUID();
+  const importTitle = `StavbaFlow Playwright Import ${importId}`;
+  const importEmail = `playwright-import-${importId}@stavbaflow.example.test`;
+  const importFileName = `stavbaflow-playwright-${importId}.csv`;
+  const importFixture = { email: importEmail, title: importTitle };
   const leadQuery = new URLSearchParams({ select: 'id,company_id,title,status', id: `eq.${leadId}`, company_id: `eq.${companyId}` });
   const startingRows = await restGet(request, ownerToken, 'app_leads', leadQuery.toString());
   expect(startingRows).toHaveLength(1);
@@ -41,8 +52,8 @@ test('owner login, status change, CSV import/export and logout have no uncaught 
   const importQuery = new URLSearchParams({
     select: 'id,company_id,email,title,customer',
     company_id: `eq.${companyId}`,
-    email: 'eq.playwright-import@stavbaflow.example.test',
-    title: 'eq.StavbaFlow Playwright Import',
+    email: `eq.${importEmail}`,
+    title: `eq.${importTitle}`,
   }).toString();
   expect(await restGet(request, ownerToken, 'app_leads', importQuery), 'A previous run left the reserved CSV fixture behind.').toHaveLength(0);
   const uncaughtErrors: string[] = [];
@@ -83,16 +94,31 @@ test('owner login, status change, CSV import/export and logout have no uncaught 
     await page.goto('/integrations');
     await page.getByRole('button', { name: /Nahrát CSV/ }).click();
     console.info('Owner E2E checkpoint: CSV dialog opened');
-    const csv = 'customer,title,value,phone,email\nSynthetic Playwright Customer,StavbaFlow Playwright Import,0,+420700000000,playwright-import@stavbaflow.example.test\n';
+    const csv = `customer,title,value,phone,email\nSynthetic Playwright Customer,${importTitle},0,+420700000000,${importEmail}\n`;
     await page.locator('input[type="file"]').setInputFiles({
-      name: 'stavbaflow-playwright-synthetic.csv',
+      name: importFileName,
       mimeType: 'text/csv',
       buffer: Buffer.from(csv),
     });
     await page.getByRole('button', { name: /Potvrdit mapování/ }).click();
     console.info('Owner E2E checkpoint: CSV mapping confirmed');
     importStarted = true;
+    const commitResponsePromise = page.waitForResponse((response) => {
+      if (!response.url().includes('/api/import-leads') || response.request().method() !== 'POST') return false;
+      try {
+        return response.request().postDataJSON()?.mode === 'commit';
+      } catch {
+        return false;
+      }
+    });
     await page.getByRole('button', { name: /Importovat 1 zakázek/ }).click();
+    const commitResponse = await commitResponsePromise;
+    const commitBody = await commitResponse.json().catch(() => null) as { code?: unknown } | null;
+    const commitCode = typeof commitBody?.code === 'string' && /^[A-Z0-9_]{1,80}$/.test(commitBody.code)
+      ? commitBody.code
+      : 'unclassified';
+    console.info(`Owner E2E checkpoint: CSV commit HTTP ${commitResponse.status()} code=${commitCode}`);
+    expect(commitResponse.ok(), `Staging CSV commit rejected: HTTP ${commitResponse.status()} code=${commitCode}`).toBe(true);
     await expect(page.getByText(/Import byl uložen/)).toBeVisible();
     console.info('Owner E2E checkpoint: CSV import persisted');
     await page.getByRole('button', { name: 'Zavřít', exact: true }).click();
@@ -124,7 +150,7 @@ test('owner login, status change, CSV import/export and logout have no uncaught 
   } finally {
     if (importStarted) {
       try {
-        await cleanupSyntheticImport(request, ownerToken, companyId);
+        await cleanupSyntheticImport(request, ownerToken, companyId, importFixture);
       } catch (error) {
         cleanupErrors.push(error);
       }

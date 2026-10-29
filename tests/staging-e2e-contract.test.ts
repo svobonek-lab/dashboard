@@ -56,8 +56,10 @@ test('staging E2E has isolated scenarios and an opt-in same-repository workflow'
   assert.match(support, /export async function accessToken\(browser: Browser/);
   assert.match(support, /await signIn\(page, account\)/);
   assert.match(support, /endsWith\('-auth-token'\)/);
-  assert.match(ownerFlow, /playwright-import@stavbaflow\.example\.test/);
+  assert.match(ownerFlow, /playwright-import-\$\{importId\}@stavbaflow\.example\.test/);
   assert.match(ownerFlow, /cleanupSyntheticImport/);
+  assert.match(ownerFlow, /randomUUID/);
+  assert.match(ownerFlow, /CSV commit rejected: HTTP/);
   assert.match(ownerFlow, /getByRole\('button', \{ name: 'Zavřít', exact: true \}\)/);
   for (const name of ['STAGING_LEAD_A_ID', 'STAGING_LEAD_B_ID', 'STAGING_EMPLOYEE_B_ID']) {
     assert.match(workflow, new RegExp(name));
