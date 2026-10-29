@@ -56,12 +56,15 @@ jobs:
           STAGING_OWNER_B_PASSWORD: ${{ secrets.STAGING_OWNER_B_PASSWORD }}
           STAGING_COMPANY_A_ID: ${{ vars.STAGING_COMPANY_A_ID }}
           STAGING_COMPANY_B_ID: ${{ vars.STAGING_COMPANY_B_ID }}
+          STAGING_OWNER_A_ID: ${{ vars.STAGING_OWNER_A_ID }}
+          STAGING_OWNER_B_ID: ${{ vars.STAGING_OWNER_B_ID }}
           STAGING_EMPLOYEE_A_ID: ${{ vars.STAGING_EMPLOYEE_A_ID }}
           STAGING_EMPLOYEE_B_ID: ${{ vars.STAGING_EMPLOYEE_B_ID }}
           STAGING_LEAD_A_ID: ${{ vars.STAGING_LEAD_A_ID }}
           STAGING_LEAD_B_ID: ${{ vars.STAGING_LEAD_B_ID }}
           STAGING_LEAD_B_FILE_PATH: ${{ vars.STAGING_LEAD_B_FILE_PATH }}
           STAGING_PUBLIC_TENANT_KEY: ${{ vars.STAGING_PUBLIC_TENANT_KEY }}
+          STAGING_PUBLIC_INTAKE_ENABLED: ${{ vars.STAGING_PUBLIC_INTAKE_ENABLED }}
       - run: npm ci
       - name: Install Playwright Chromium
         run: npx playwright install --with-deps chromium
@@ -83,9 +86,12 @@ jobs:
           STAGING_OWNER_B_PASSWORD: ${{ secrets.STAGING_OWNER_B_PASSWORD }}
           STAGING_COMPANY_A_ID: ${{ vars.STAGING_COMPANY_A_ID }}
           STAGING_COMPANY_B_ID: ${{ vars.STAGING_COMPANY_B_ID }}
+          STAGING_OWNER_A_ID: ${{ vars.STAGING_OWNER_A_ID }}
+          STAGING_OWNER_B_ID: ${{ vars.STAGING_OWNER_B_ID }}
           STAGING_EMPLOYEE_A_ID: ${{ vars.STAGING_EMPLOYEE_A_ID }}
           STAGING_EMPLOYEE_B_ID: ${{ vars.STAGING_EMPLOYEE_B_ID }}
           STAGING_LEAD_A_ID: ${{ vars.STAGING_LEAD_A_ID }}
           STAGING_LEAD_B_ID: ${{ vars.STAGING_LEAD_B_ID }}
           STAGING_LEAD_B_FILE_PATH: ${{ vars.STAGING_LEAD_B_FILE_PATH }}
           STAGING_PUBLIC_TENANT_KEY: ${{ vars.STAGING_PUBLIC_TENANT_KEY }}
+          STAGING_PUBLIC_INTAKE_ENABLED: ${{ vars.STAGING_PUBLIC_INTAKE_ENABLED }}

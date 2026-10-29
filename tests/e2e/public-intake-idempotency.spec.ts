@@ -3,6 +3,7 @@ import { expect, test } from 'playwright/test';
 import { accessToken, requiredValue, restGet, stagingConfig } from './support';
 
 test('replaying a synthetic public inquiry with one request key creates one lead', async ({ request }) => {
+  test.skip(!(process.env.STAGING_PUBLIC_INTAKE_ENABLED === 'true'), 'Public intake is awaiting the reviewed staging SQL and synthetic tenant enablement.');
   const { preview } = stagingConfig();
   const companyId = requiredValue('STAGING_COMPANY_A_ID');
   const publicKey = requiredValue('STAGING_PUBLIC_TENANT_KEY');

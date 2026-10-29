@@ -11,6 +11,7 @@ test('staging E2E has isolated scenarios and an opt-in same-repository workflow'
   const support = await readFile(join(root, 'tests/e2e/support.ts'), 'utf8');
   const ownerFlow = await readFile(join(root, 'tests/e2e/owner-critical-flow.spec.ts'), 'utf8');
   const tenantIsolation = await readFile(join(root, 'tests/e2e/tenant-rest-isolation.spec.ts'), 'utf8');
+  const publicIntake = await readFile(join(root, 'tests/e2e/public-intake-idempotency.spec.ts'), 'utf8');
   const stagingDocs = await readFile(join(root, 'docs/staging-e2e.md'), 'utf8');
 
   assert.deepEqual(specs.filter((name) => name.endsWith('.spec.ts')).sort(), [
@@ -32,6 +33,13 @@ test('staging E2E has isolated scenarios and an opt-in same-repository workflow'
   assert.match(safety, /STAGING_SUPABASE_PROJECT_REF/);
   assert.match(safety, /PRODUCTION_SUPABASE_PROJECT_REF/);
   assert.match(safety, /PRODUCTION_BASE_URL/);
+  for (const name of ['STAGING_OWNER_A_ID', 'STAGING_OWNER_B_ID']) {
+    assert.match(workflow, new RegExp(`${name}:\\s*\\$\\{\\{\\s*vars\\.${name}\\s*\\}\\}`));
+    assert.match(safety, new RegExp(name));
+  }
+  assert.equal((workflow.match(/STAGING_PUBLIC_INTAKE_ENABLED:\s*\$\{\{\s*vars\.STAGING_PUBLIC_INTAKE_ENABLED\s*\}\}/g) ?? []).length, 2);
+  assert.match(safety, /STAGING_PUBLIC_INTAKE_ENABLED/);
+  assert.match(publicIntake, /test\.skip\(!\(process\.env\.STAGING_PUBLIC_INTAKE_ENABLED === 'true'\)/);
   assert.match(safety, /STAGING_LEAD_B_FILE_PATH/);
   assert.match(safety, /Notes\/files REST and private Storage isolation.*skipped/i);
   assert.match(tenantIsolation, /test\.skip\(!process\.env\.STAGING_LEAD_B_FILE_PATH/);

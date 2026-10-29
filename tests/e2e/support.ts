@@ -41,7 +41,14 @@ export async function accessToken(request: APIRequestContext, account: 'OWNER_A'
     headers: { apikey: key },
     data: { email, password },
   });
-  assert.equal(response.ok(), true, `Staging Auth rejected ${account} credentials (HTTP ${response.status()}).`);
+  if (!response.ok()) {
+    const error = await response.json().catch(() => ({})) as { code?: unknown; error_code?: unknown; msg?: unknown };
+    const rawCode = error.error_code ?? error.code;
+    const code = typeof rawCode === 'string' && /^[a-z0-9_.-]{1,64}$/i.test(rawCode) ? rawCode : 'unrecognized';
+    const knownMessage = ['Invalid login credentials', 'Invalid API key', 'Email not confirmed', 'Email rate limit exceeded']
+      .find((message) => error.msg === message) ?? 'unrecognized Auth response';
+    assert.fail(`Staging Auth rejected ${account} credentials (${code}; ${knownMessage}; HTTP ${response.status()}).`);
+  }
   const body = await response.json() as { access_token?: string };
   assert.ok(body.access_token, 'Staging Auth did not return an access token.');
   return body.access_token;

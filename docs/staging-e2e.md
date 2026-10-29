@@ -15,6 +15,7 @@ Configure these GitHub Actions **variables** with synthetic staging values:
 - `STAGING_LEAD_A_ID`, `STAGING_LEAD_B_ID`
 - `STAGING_LEAD_B_FILE_PATH` after the reviewed notes/files schema and private Storage bucket are available. Until then, preflight emits a warning and notes/files REST plus private Storage scenarios are reported as skipped; do not provide a placeholder path.
 - `STAGING_PUBLIC_TENANT_KEY` (public tenant slug used by the form; not a credential)
+- `STAGING_PUBLIC_INTAKE_ENABLED=true` only after the reviewed public-intake SQL is applied to staging and the synthetic company A intake is enabled; otherwise its replay test is reported as skipped.
 
 Configure these GitHub Actions **secrets**:
 
