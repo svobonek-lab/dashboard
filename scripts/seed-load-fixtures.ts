@@ -86,9 +86,18 @@ export async function provisionLoadFixtures(environment = process.env, smoke = f
     entry.leadId = lead.data.id;
     await saveManifest(manifestPath, manifest);
 
-    const session = await browser.auth.signInWithPassword({ email: item.email, password });
+    // Supabase Auth applies an IP token bucket to password sign-ins. Pace the
+    // one-shot fixture run so it does not exhaust the burst allowance.
+    await new Promise((resolve) => setTimeout(resolve, 2100));
+    let session = await browser.auth.signInWithPassword({ email: item.email, password });
+    for (let attempt = 0; session.error?.status === 429 && attempt < 5; attempt += 1) {
+      await new Promise((resolve) => setTimeout(resolve, 5000));
+      session = await browser.auth.signInWithPassword({ email: item.email, password });
+    }
     const token = session.data.session?.access_token;
-    if (session.error || !token) throw new Error('Unable to sign in a staging load user.');
+    if (session.error || !token) {
+      throw new Error(`Unable to sign in a staging load user (${session.error?.code || 'UNKNOWN'}, HTTP ${session.error?.status || 0}, fixture ${manifest.entries.length}).`);
+    }
     const claims = JSON.parse(Buffer.from(token.split('.')[1], 'base64url').toString('utf8'));
     if (claims.sub !== entry.userId || claims.app_metadata?.tenant_id !== entry.companyId) {
       throw new Error('Staging load token is missing its exact tenant claim.');
