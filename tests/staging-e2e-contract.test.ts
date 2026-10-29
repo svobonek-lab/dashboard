@@ -25,6 +25,8 @@ test('staging E2E has isolated scenarios and an opt-in same-repository workflow'
   assert.match(workflow, /workflow_dispatch:/);
   assert.match(workflow, /runner_mode:/);
   assert.match(workflow, /local-ephemeral/);
+  assert.match(workflow, /metadata-only/);
+  assert.match(workflow, /staging-metadata-snapshot:/);
   assert.match(workflow, /staging-e2e-local-runner/);
   assert.match(workflow, /fromJSON\('\["self-hosted","linux","x64","staging-e2e"\]'\)/);
   assert.match(workflow, /types: \[labeled\]/);
