@@ -3,8 +3,9 @@ import type { Lead, Employee, CompanyBranding } from './types';
 import { supabase, isSupabaseConfigured, isValidUUID } from '../supabase';
 import { AppInviteRow, AppLeadRow, AppMemberRow, toAppLead, toAppMember, toPendingInvite } from '../productionSchema';
 import { APP_SCHEMA_WRITES_BLOCKED_MESSAGE } from '../productionDataPolicy';
-import { canWritePilot } from '../pilotWritePolicy';
+import { canWritePilot, canWriteStagingLeadStatus } from '../pilotWritePolicy';
 import { toLeadPatch } from './leadWritePatch';
+import { persistStagingLeadStatus } from './leadStatusRpc';
 import { buildLeadFilePath, normalizeLeadNote, validateLeadUpload } from './leadFilePolicy';
 
 const appSchemaReadsEnabled = Boolean((import.meta as any).env?.PROD) || (import.meta as any).env?.VITE_APP_SCHEMA_READS === 'true';
@@ -220,8 +221,11 @@ export class SupabaseRepository implements ICRMRepository {
 
   async updateLeadStatus(orgId: string, leadId: string, status: string): Promise<void> {
     if (appSchemaReadsEnabled) {
-      if (!isValidUUID(leadId)) throw new Error('Neplatná zakázka.');
-      await this.saveLead(orgId, { id: leadId, status: status as Lead['status'] });
+      if (!isSupabaseConfigured || !supabase || !isValidUUID(orgId) || !isValidUUID(leadId)) {
+        throw new Error('Supabase připojení nebo identifikátor zakázky není platný.');
+      }
+      if (!canWriteStagingLeadStatus((import.meta as any).env || {})) throw new Error(APP_SCHEMA_WRITES_BLOCKED_MESSAGE);
+      await persistStagingLeadStatus(supabase, orgId, leadId, status);
       return;
     }
     if (!isSupabaseConfigured || !supabase || !isValidUUID(orgId) || !isValidUUID(leadId)) {
