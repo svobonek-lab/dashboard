@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import { expect, test } from 'playwright/test';
-import { accessToken, requiredValue, restDelete, restGet, restPatch, signIn, stagingConfig } from './support';
+import { accessToken, requiredValue, restDelete, restGet, restRpc, signIn, stagingConfig } from './support';
 
 async function cleanupSyntheticImport(
   request: Parameters<typeof restGet>[0],
@@ -159,8 +159,8 @@ test('owner login, status change, CSV import/export and logout have no uncaught 
     try {
       const currentRows = await restGet(request, ownerToken, 'app_leads', leadQuery.toString());
       if (currentRows[0]?.status !== originalStatus) {
-        const restore = await restPatch(request, ownerToken, 'app_leads', `id=eq.${leadId}&company_id=eq.${companyId}`, { status: originalStatus });
-        expect(restore.ok(), 'Failed to restore the synthetic status fixture after the browser flow.').toBe(true);
+        const restore = await restRpc(request, ownerToken, 'app_change_lead_status', { p_lead_id: leadId, p_status: originalStatus });
+        expect(restore.ok(), 'Failed to restore the synthetic status fixture through the approved status RPC.').toBe(true);
       }
     } catch (error) {
       cleanupErrors.push(error);

@@ -14,11 +14,17 @@ test('staging metadata capture is catalog-only, read-only, and redacts Auth hook
     validateProjectIdentity,
   } = await import('../scripts/staging-metadata-snapshot.mjs');
   const workflow = readFileSync(new URL('../.github/workflows/verify.yml', import.meta.url), 'utf8');
+  const snapshotWorkflow = readFileSync(new URL('../.github/workflows/staging-metadata-snapshot.yml', import.meta.url), 'utf8');
 
   assert.match(workflow, /staging_metadata_snapshot/);
   assert.match(workflow, /github\.event_name == 'workflow_dispatch'/);
   assert.match(workflow, /inputs\.staging_metadata_snapshot == true/);
   assert.match(workflow, /SUPABASE_ACCESS_TOKEN: \$\{\{ secrets\.SUPABASE_ACCESS_TOKEN \}\}/);
+  assert.match(snapshotWorkflow, /workflow_dispatch:/);
+  assert.match(snapshotWorkflow, /refs\/heads\/codex\/staging-e2e-local-runner/);
+  assert.match(snapshotWorkflow, /runs-on: \[self-hosted, linux, x64, staging-e2e\]/);
+  assert.match(snapshotWorkflow, /node scripts\/staging-metadata-snapshot\.mjs > stavbacore-staging-metadata\.json/);
+  assert.match(snapshotWorkflow, /actions\/upload-artifact@v4/);
   assert.match(STAGING_METADATA_SQL, /pg_class/);
   assert.match(STAGING_METADATA_SQL, /pg_policies/);
   assert.match(STAGING_METADATA_SQL, /information_schema\.columns/);

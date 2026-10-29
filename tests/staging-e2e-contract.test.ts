@@ -60,6 +60,9 @@ test('staging E2E has isolated scenarios and an opt-in same-repository workflow'
   assert.match(ownerFlow, /cleanupSyntheticImport/);
   assert.match(ownerFlow, /randomUUID/);
   assert.match(ownerFlow, /CSV commit rejected: HTTP/);
+  assert.match(ownerFlow, /restRpc\(request, ownerToken, 'app_change_lead_status'/);
+  assert.match(support, /rest\/v1\/rpc\/\$\{encodeURIComponent\(functionName\)\}/);
+  assert.doesNotMatch(ownerFlow, /restPatch\(request, ownerToken, 'app_leads'/);
   assert.match(ownerFlow, /getByRole\('button', \{ name: 'Zavřít', exact: true \}\)/);
   for (const name of ['STAGING_LEAD_A_ID', 'STAGING_LEAD_B_ID', 'STAGING_EMPLOYEE_B_ID']) {
     assert.match(workflow, new RegExp(name));

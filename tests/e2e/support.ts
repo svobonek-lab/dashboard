@@ -102,6 +102,18 @@ export async function restPatch(request: APIRequestContext, token: string, table
   });
 }
 
+export async function restRpc(request: APIRequestContext, token: string, functionName: string, body: Record<string, unknown>) {
+  const { url, key } = stagingConfig();
+  return request.post(`${url}/rest/v1/rpc/${encodeURIComponent(functionName)}`, {
+    headers: {
+      apikey: key,
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    },
+    data: body,
+  });
+}
+
 export async function restDelete(request: APIRequestContext, token: string, table: string, query: string) {
   const { url, key } = stagingConfig();
   return request.delete(`${url}/rest/v1/${table}?${query}`, {

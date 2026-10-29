@@ -1,0 +1,34 @@
+name: staging-metadata-snapshot
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  capture:
+    if: >-
+      github.repository == 'svobonek-lab/dashboard' &&
+      github.ref == 'refs/heads/codex/staging-e2e-local-runner'
+    runs-on: [self-hosted, linux, x64, staging-e2e]
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+      - name: Capture staging catalogs and Auth-hook configuration only
+        run: node scripts/staging-metadata-snapshot.mjs > stavbacore-staging-metadata.json
+        env:
+          STAGING_SUPABASE_PROJECT_REF: ${{ vars.STAGING_SUPABASE_PROJECT_REF }}
+          PRODUCTION_SUPABASE_PROJECT_REF: ${{ vars.PRODUCTION_SUPABASE_PROJECT_REF }}
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      - uses: actions/upload-artifact@v4
+        with:
+          name: stavbacore-staging-metadata-${{ github.run_id }}
+          path: stavbacore-staging-metadata.json
+          if-no-files-found: error
+          retention-days: 7
