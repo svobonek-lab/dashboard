@@ -60,6 +60,8 @@ test('staging E2E has isolated scenarios and an opt-in same-repository workflow'
   assert.match(support, /endsWith\('-auth-token'\)/);
   assert.match(ownerFlow, /playwright-import-\$\{importId\}@stavbaflow\.example\.test/);
   assert.match(ownerFlow, /cleanupSyntheticImport/);
+  assert.match(ownerFlow, /function safeBrowserDiagnostic\(value: string\)/);
+  assert.match(ownerFlow, /Browser errors \(sanitized\)/);
   assert.match(ownerFlow, /randomUUID/);
   assert.match(ownerFlow, /CSV commit rejected: HTTP/);
   assert.match(ownerFlow, /CSV error shown to user/);

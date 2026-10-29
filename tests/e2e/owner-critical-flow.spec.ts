@@ -2,6 +2,23 @@ import { randomUUID } from 'node:crypto';
 import { expect, test } from 'playwright/test';
 import { accessToken, requiredValue, restDelete, restGet, restRpc, signIn, stagingConfig } from './support';
 
+function safeBrowserDiagnostic(value: string): string {
+  return value
+    .replace(/Bearer\s+\S+/gi, 'Bearer [redacted]')
+    .replace(/\beyJ[a-zA-Z0-9_-]{10,}\.[a-zA-Z0-9_-]+\.[a-zA-Z0-9_-]+\b/g, '[jwt]')
+    .replace(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/gi, '[email]')
+    .replace(/https?:\/\/[^\s"']+/gi, (value) => {
+      try {
+        const url = new URL(value);
+        return `${url.origin}${url.pathname}`;
+      } catch {
+        return '[url]';
+      }
+    })
+    .replace(/\b[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}\b/gi, '[id]')
+    .slice(0, 300);
+}
+
 async function cleanupSyntheticImport(
   request: Parameters<typeof restGet>[0],
   ownerToken: string,
@@ -63,9 +80,9 @@ test('owner login, status change, CSV import/export and logout have no uncaught 
   let importFailure: string | null = null;
   const cleanupErrors: unknown[] = [];
 
-  page.on('pageerror', () => uncaughtErrors.push('pageerror'));
+  page.on('pageerror', (error) => uncaughtErrors.push(`pageerror: ${safeBrowserDiagnostic(error.message)}`));
   page.on('console', (message) => {
-    if (message.type() === 'error') uncaughtErrors.push('console.error');
+    if (message.type() === 'error') uncaughtErrors.push(`console.error: ${safeBrowserDiagnostic(message.text())}`);
   });
 
   try {
@@ -219,6 +236,7 @@ test('owner login, status change, CSV import/export and logout have no uncaught 
   if (failures.length === 1) throw failures[0];
   if (failures.length > 1) throw new AggregateError(failures, 'Owner browser flow or its cleanup failed.');
 
+  if (uncaughtErrors.length) console.info(`Browser errors (sanitized):\n${uncaughtErrors.join('\n')}`);
   expect(uncaughtErrors).toEqual([]);
   if (importFailure) throw new Error(importFailure);
 });
