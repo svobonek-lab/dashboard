@@ -145,7 +145,9 @@ export async function cleanupLoadFixtures(manifestPath: string, environment = pr
     }
     if (entry.companyId) {
       const company = await service.from('app_companies').select('slug').eq('id', entry.companyId).maybeSingle();
-      if (company.error || (company.data && company.data.slug !== entry.slug)) throw new Error('Load company identity mismatch.');
+      if (company.error || (company.data && company.data.slug !== entry.slug)) {
+        throw new Error(`Load company identity mismatch (${company.error?.code || 'SLUG'}, HTTP ${company.status}).`);
+      }
       if (company.data) {
         for (const table of ['app_audit', 'app_leads', 'app_members'] as const) {
           const deletion = await service.from(table).delete().eq('company_id', entry.companyId);
@@ -161,6 +163,49 @@ export async function cleanupLoadFixtures(manifestPath: string, environment = pr
     }
   }
   return { runId: manifest.runId, count: manifest.entries.length };
+}
+
+export async function recoverLoadFixtures(runId: string, environment = process.env) {
+  const { url, ref } = assertStagingSeedTarget(environment);
+  if (!/^[a-f0-9]{12}$/.test(runId)) throw new Error('Refusing an invalid staging load recovery ID.');
+  const service = createClient(url, required(environment, 'STAGING_SUPABASE_SERVICE_ROLE_KEY'), {
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
+  const prefix = `load-${runId}-`;
+  const companies = await service.from('app_companies').select('id,slug,name').like('slug', `${prefix}%`).limit(200);
+  if (companies.error) throw new Error(`Unable to list staging load companies (${companies.error.code || 'UNKNOWN'}, HTTP ${companies.status}).`);
+  if ((companies.data?.length || 0) > 130) throw new Error('Refusing to recover more than 130 load companies.');
+  const entries = new Map<string, Entry>();
+  for (const company of companies.data || []) {
+    if (!/^load-[a-f0-9]{12}-(owner|employee)-\d{3}$/.test(company.slug)
+      || !company.slug.startsWith(prefix) || company.name !== `Synthetic Load ${company.slug}`) {
+      throw new Error('Refusing a company outside the exact synthetic load run.');
+    }
+    entries.set(company.slug, { slug: company.slug, email: `${company.slug}@stavbaflow.example.test`, companyId: company.id });
+  }
+  for (let page = 1; page <= 100; page += 1) {
+    const response = await service.auth.admin.listUsers({ page, perPage: 1000 });
+    if (response.error) throw new Error(`Unable to list staging load users (${response.error.code || 'UNKNOWN'}, HTTP ${response.error.status || 0}).`);
+    for (const user of response.data.users) {
+      const email = user.email || '';
+      if (!email.startsWith(prefix) || !email.endsWith('@stavbaflow.example.test')) continue;
+      const slug = email.slice(0, -'@stavbaflow.example.test'.length);
+      if (!/^load-[a-f0-9]{12}-(owner|employee)-\d{3}$/.test(slug)
+        || !slug.startsWith(prefix) || entries.size > 130) {
+        throw new Error('Refusing an Auth user outside the exact synthetic load run.');
+      }
+      const entry = entries.get(slug) || { slug, email };
+      entry.userId = user.id;
+      entries.set(slug, entry);
+    }
+    if (response.data.users.length < 1000) break;
+  }
+  if (entries.size > 130) throw new Error('Refusing to recover more than 130 load identities.');
+  const outputRoot = required(environment, 'STAGING_LOAD_OUTPUT_DIR');
+  await mkdir(outputRoot, { recursive: true, mode: 0o700 });
+  const manifestPath = join(outputRoot, 'recovery-manifest.json');
+  await saveManifest(manifestPath, { projectRef: ref, runId, entries: [...entries.values()] });
+  return cleanupLoadFixtures(manifestPath, environment);
 }
 
 async function main() {
@@ -181,8 +226,11 @@ async function main() {
   } else if (command === '--cleanup' && process.argv.length === 3) {
     const result = await cleanupLoadFixtures(required(process.env, 'STAGING_LOAD_MANIFEST_FILE'));
     console.log(`Removed ${result.count} synthetic staging load fixtures for run ${result.runId}.`);
+  } else if (command === '--recover' && process.argv.length === 3) {
+    const result = await recoverLoadFixtures(required(process.env, 'STAGING_LOAD_RUN_ID'));
+    console.log(`Recovered ${result.count} synthetic staging load identities for run ${result.runId}.`);
   } else {
-    throw new Error('Use --smoke, --apply or --cleanup with the declared staging target.');
+    throw new Error('Use --smoke, --apply, --cleanup or --recover with the declared staging target.');
   }
 }
 

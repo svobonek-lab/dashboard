@@ -11,7 +11,12 @@ on:
           - local-ephemeral
           - metadata-only
           - load-acceptance
+          - load-recover
         default: github-hosted
+      load_recover_run_id:
+        description: Exact 12-character synthetic load run ID for staging-only recovery
+        type: string
+        required: false
   pull_request:
     types: [labeled]
 
@@ -27,7 +32,8 @@ jobs:
     if: >-
       github.repository == 'svobonek-lab/dashboard' &&
       ((github.event_name == 'workflow_dispatch' &&
-        inputs.runner_mode != 'metadata-only' && inputs.runner_mode != 'load-acceptance') ||
+        inputs.runner_mode != 'metadata-only' && inputs.runner_mode != 'load-acceptance' &&
+        inputs.runner_mode != 'load-recover') ||
        (github.event.pull_request.head.repo.full_name == github.repository &&
         contains(github.event.pull_request.labels.*.name, 'e2e'))) &&
       (inputs.runner_mode != 'local-ephemeral' ||
@@ -201,3 +207,30 @@ jobs:
             ${{ runner.temp }}/stavbaflow-load-${{ github.run_id }}/public-summary.json
           if-no-files-found: warn
           retention-days: 7
+
+  staging-load-recover:
+    if: >-
+      github.repository == 'svobonek-lab/dashboard' &&
+      github.event_name == 'workflow_dispatch' &&
+      inputs.runner_mode == 'load-recover' &&
+      github.ref == 'refs/heads/codex/staging-e2e-local-runner'
+    runs-on: [self-hosted, linux, x64, staging-e2e]
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+          cache: npm
+      - run: npm ci
+      - name: Recover only exact synthetic staging load identities
+        run: node --import tsx scripts/seed-load-fixtures.ts --recover
+        env:
+          STAGING_SUPABASE_URL: ${{ vars.STAGING_SUPABASE_URL }}
+          STAGING_SUPABASE_PROJECT_REF: ${{ vars.STAGING_SUPABASE_PROJECT_REF }}
+          PRODUCTION_SUPABASE_PROJECT_REF: ${{ vars.PRODUCTION_SUPABASE_PROJECT_REF }}
+          STAGING_SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.STAGING_SUPABASE_SERVICE_ROLE_KEY }}
+          STAGING_LOAD_RUN_ID: ${{ inputs.load_recover_run_id }}
+          STAGING_LOAD_OUTPUT_DIR: ${{ runner.temp }}/stavbaflow-load-recovery-${{ github.run_id }}

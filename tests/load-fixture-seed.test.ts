@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { loadFixturePlan, provisionLoadFixtures } from '../scripts/seed-load-fixtures';
+import { loadFixturePlan, provisionLoadFixtures, recoverLoadFixtures } from '../scripts/seed-load-fixtures';
 import { assertStagingLoadEnvironment } from '../scripts/assert-staging-load-env.mjs';
 
 test('load fixture plan has 30 owners and 100 employees with distinct synthetic identities', () => {
@@ -33,4 +33,12 @@ test('load preflight refuses a production ref without contacting Preview', async
     PRODUCTION_BASE_URL: 'https://stavbaflow.cz',
   }, async () => { contactedPreview = true; throw new Error('Should not contact Preview.'); }), /Refusing load/);
   assert.equal(contactedPreview, false);
+});
+
+test('load recovery refuses an invalid run ID before using staging credentials', async () => {
+  await assert.rejects(() => recoverLoadFixtures('not-a-load-run', {
+    STAGING_SUPABASE_URL: 'https://xwzweltjvreqhjpbjrxa.supabase.co',
+    STAGING_SUPABASE_PROJECT_REF: 'xwzweltjvreqhjpbjrxa',
+    PRODUCTION_SUPABASE_PROJECT_REF: 'oncmtmrhmjlerbwkrecv',
+  }), /invalid staging load recovery ID/);
 });

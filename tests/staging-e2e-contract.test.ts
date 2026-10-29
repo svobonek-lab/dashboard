@@ -55,7 +55,7 @@ test('staging E2E has isolated scenarios and an opt-in same-repository workflow'
   assert.equal((workflow.match(/STAGING_LEAD_B_FILE_PATH:\s*\$\{\{\s*vars\.STAGING_LEAD_B_FILE_PATH\s*\}\}/g) ?? []).length, 2);
   const e2eWorkflow = workflow.split('  staging-load-acceptance:')[0];
   assert.doesNotMatch(e2eWorkflow + support, /SERVICE_ROLE|service_role|SUPABASE_SERVICE_ROLE_KEY/i);
-  const loadWorkflow = workflow.split('  staging-load-acceptance:')[1];
+  const loadWorkflow = workflow.split('  staging-load-acceptance:')[1]?.split('  staging-load-recover:')[0];
   assert.ok(loadWorkflow, 'load acceptance must have its own restricted job');
   assert.match(loadWorkflow, /inputs\.runner_mode == 'load-acceptance'/);
   assert.match(loadWorkflow, /github\.ref == 'refs\/heads\/codex\/staging-e2e-local-runner'/);
@@ -63,6 +63,8 @@ test('staging E2E has isolated scenarios and an opt-in same-repository workflow'
   assert.equal((loadWorkflow.match(/STAGING_SUPABASE_SERVICE_ROLE_KEY:\s*\$\{\{\s*secrets\.STAGING_SUPABASE_SERVICE_ROLE_KEY\s*\}\}/g) ?? []).length, 4);
   assert.match(loadWorkflow, /if: always\(\)/);
   assert.doesNotMatch(loadWorkflow.split('    steps:')[0], /SERVICE_ROLE|service_role/i);
+  assert.match(workflow, /staging-load-recover:/);
+  assert.match(workflow, /inputs\.runner_mode == 'load-recover'/);
   assert.match(support, /export async function restDelete/);
   assert.match(support, /export async function accessToken\(browser: Browser/);
   assert.match(support, /await signIn\(page, account\)/);

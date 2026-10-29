@@ -35,6 +35,13 @@ function fixtureSource(jsonEnvName, fileEnvName) {
   throw new Error(`Set ${fileEnvName} to a private JSON fixture file.`);
 }
 
+// k6 open() is available only while the module is initialized, before setup().
+// Keep the private JSON in memory and pass parsed fixtures from setup to VUs.
+const ownerFixtureRaw = __ENV.STAGING_OWNER_LOAD_FIXTURES_FILE || __ENV.STAGING_OWNER_LOAD_FIXTURES_JSON
+  ? fixtureSource('STAGING_OWNER_LOAD_FIXTURES_JSON', 'STAGING_OWNER_LOAD_FIXTURES_FILE') : null;
+const employeeFixtureRaw = __ENV.STAGING_EMPLOYEE_LOAD_FIXTURES_FILE || __ENV.STAGING_EMPLOYEE_LOAD_FIXTURES_JSON
+  ? fixtureSource('STAGING_EMPLOYEE_LOAD_FIXTURES_JSON', 'STAGING_EMPLOYEE_LOAD_FIXTURES_FILE') : null;
+
 function parseFixtures(raw, name, count) {
   let fixtures;
   try { fixtures = JSON.parse(raw); } catch { throw new Error(`${name} must contain valid JSON.`); }
@@ -70,12 +77,12 @@ export function setup() {
   const environment = stagingEnvironment();
   assertK6StagingPreviewTarget(environment.previewUrl, __ENV.STAGING_SUPABASE_PROJECT_REF, __ENV.PRODUCTION_SUPABASE_PROJECT_REF);
   const owners = parseFixtures(
-    fixtureSource('STAGING_OWNER_LOAD_FIXTURES_JSON', 'STAGING_OWNER_LOAD_FIXTURES_FILE'),
+    ownerFixtureRaw,
     'STAGING_OWNER_LOAD_FIXTURES_FILE',
     REQUIRED_OWNER_VUS,
   );
   const employees = parseFixtures(
-    fixtureSource('STAGING_EMPLOYEE_LOAD_FIXTURES_JSON', 'STAGING_EMPLOYEE_LOAD_FIXTURES_FILE'),
+    employeeFixtureRaw,
     'STAGING_EMPLOYEE_LOAD_FIXTURES_FILE',
     REQUIRED_EMPLOYEE_VUS,
   );
