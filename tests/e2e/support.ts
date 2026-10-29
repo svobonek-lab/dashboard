@@ -38,7 +38,8 @@ export async function accessToken(request: APIRequestContext, account: 'OWNER_A'
   const email = requiredValue(`STAGING_${account}_EMAIL`);
   const password = requiredValue(`STAGING_${account}_PASSWORD`);
   const response = await request.post(`${url}/auth/v1/token?grant_type=password`, {
-    headers: { apikey: key },
+    // Match supabase-js: Auth sends the project key in both headers.
+    headers: { apikey: key, Authorization: `Bearer ${key}` },
     data: { email, password },
   });
   if (!response.ok()) {
