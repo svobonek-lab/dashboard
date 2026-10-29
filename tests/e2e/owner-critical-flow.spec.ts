@@ -28,11 +28,11 @@ async function cleanupSyntheticImport(request: Parameters<typeof restGet>[0], ow
   expect(await restGet(request, ownerToken, 'app_leads', query)).toHaveLength(0);
 }
 
-test('owner login, status change, CSV import/export and logout have no uncaught console errors', async ({ page, request }) => {
+test('owner login, status change, CSV import/export and logout have no uncaught console errors', async ({ browser, page, request }) => {
   stagingConfig();
   const companyId = requiredValue('STAGING_COMPANY_A_ID');
   const leadId = requiredValue('STAGING_LEAD_A_ID');
-  const ownerToken = await accessToken(request, 'OWNER_A');
+  const ownerToken = await accessToken(browser, 'OWNER_A');
   const leadQuery = new URLSearchParams({ select: 'id,company_id,title,status', id: `eq.${leadId}`, company_id: `eq.${companyId}` });
   const startingRows = await restGet(request, ownerToken, 'app_leads', leadQuery.toString());
   expect(startingRows).toHaveLength(1);
@@ -88,6 +88,8 @@ test('owner login, status change, CSV import/export and logout have no uncaught 
     importStarted = true;
     await page.getByRole('button', { name: /Importovat 1 zakázek/ }).click();
     await expect(page.getByText(/Import byl uložen/)).toBeVisible();
+    await page.getByRole('button', { name: 'Zavřít', exact: true }).click();
+    await expect(page.getByRole('heading', { name: 'Kontrolovaný CSV import' })).toBeHidden();
 
     await page.goto('/settings');
     const downloadPromise = page.waitForEvent('download');
@@ -117,6 +119,27 @@ test('owner login, status change, CSV import/export and logout have no uncaught 
         expect(restore.ok(), 'Failed to restore the synthetic status fixture after the browser flow.').toBe(true);
       }
       if (signedIn && await page.getByRole('button', { name: 'Odhlásit' }).count()) {
+        const overlayKinds = await page.locator('div.fixed.inset-0.z-50').evaluateAll((overlays) => overlays
+          .filter((overlay) => {
+            const rect = overlay.getBoundingClientRect();
+            const style = window.getComputedStyle(overlay);
+            return rect.width > 0 && rect.height > 0 && style.visibility !== 'hidden' && style.display !== 'none';
+          })
+          .map((overlay) => {
+            const element = overlay as HTMLDivElement;
+            const classes = element.className;
+            const classKind = classes.includes('bg-slate-900/60') ? 'import-dialog'
+              : classes.includes('bg-white/60') ? 'lead-dialog'
+                : classes.includes('bg-slate-50/60') ? 'command-palette'
+                  : 'other-dialog';
+            const headings = Array.from(element.querySelectorAll('h1,h2,h3')).map((heading) => heading.textContent?.trim() ?? '');
+            const allowedHeadings = [
+              'Kontrolovaný CSV import', 'Mapování sloupců importovaného souboru',
+              'Vytvořit novou zakázku / poptávku', 'Pozvat zaměstnance',
+            ];
+            return `${classKind}:${headings.find((heading) => allowedHeadings.includes(heading)) ?? 'other'}`;
+          }));
+        console.info(`Owner logout visible overlay types: ${overlayKinds.join(',') || 'none'}`);
         await page.getByRole('button', { name: 'Odhlásit' }).click();
         await expect(page).toHaveURL(/\/login(?:\?|$)/);
       }

@@ -13,8 +13,9 @@ Configure these GitHub Actions **variables** with synthetic staging values:
 - `STAGING_COMPANY_A_ID`, `STAGING_COMPANY_B_ID`
 - `STAGING_OWNER_A_ID`, `STAGING_EMPLOYEE_A_ID`, `STAGING_OWNER_B_ID`, `STAGING_EMPLOYEE_B_ID`
 - `STAGING_LEAD_A_ID`, `STAGING_LEAD_B_ID`
-- `STAGING_LEAD_B_FILE_PATH` after the reviewed notes/files schema and private Storage bucket are available
+- `STAGING_LEAD_B_FILE_PATH` after the reviewed notes/files schema and private Storage bucket are available. Until then, preflight emits a warning and notes/files REST plus private Storage scenarios are reported as skipped; do not provide a placeholder path.
 - `STAGING_PUBLIC_TENANT_KEY` (public tenant slug used by the form; not a credential)
+- `STAGING_PUBLIC_INTAKE_ENABLED=true` only after the reviewed public-intake SQL is applied to staging and the synthetic company A intake is enabled; otherwise its replay test is reported as skipped.
 
 Configure these GitHub Actions **secrets**:
 
@@ -38,3 +39,10 @@ synthetic values in the logged-in browser's local storage and does not write to
 the database. The owner critical-flow test removes only the exact synthetic CSV
 row it creates and restores the original lead status. No customer records are
 included in Playwright assertions.
+
+For a private repository that has exhausted its GitHub-hosted Actions allowance,
+`workflow_dispatch` exposes a `local-ephemeral` runner option. It is restricted
+to the `codex/staging-e2e-local-runner` branch and the dedicated
+`self-hosted,linux,x64,staging-e2e` labels. Register only a single-use ephemeral
+runner for this job and remove its container after the run; never attach the
+Docker socket or mount the host filesystem into the runner.

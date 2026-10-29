@@ -19,6 +19,7 @@ Status checked 2026-10-29 against the repository, Actions variable/secret name i
 - Review and manually apply the two staging-only SQL files in `docs/staging-public-intake.md`, then enable the public form only for the synthetic company A. No SQL in PR #140 has been applied to staging.
 - The prompt explicitly says not to apply the notes/files migration yet. That keeps the private-file isolation test blocked until that migration receives a separate review and application.
 - GitHub Actions run `40889398922` failed before runner allocation with zero steps because of the account billing/spending limit. Current repo secrets/variables contain the staging identities and fixture names, but they cannot make that runner start.
+- Fresh checkout check on 2026-10-29 confirmed there is no local staging credential source: only `.env.example` exists, and the `STAGING_*` URL, publishable key, test accounts, service key, Preview URL, and Stripe TEST credentials are absent from the process environment. Do not substitute production values or ask for secrets in chat. This prevents running the remote staging and billing acceptance scripts locally as well.
 - The actual 130-user k6 fixture provisioning and live run, the live public-intake k6 run, signed-token A/B REST tests, the full authenticated Playwright journey, Sentry SDK/UI confirmation, and Stripe TEST purchase/cancellation remain to be done.
 
 ## Verification boundary
