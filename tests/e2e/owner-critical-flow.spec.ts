@@ -48,6 +48,8 @@ test('owner login, status change, CSV import/export and logout have no uncaught 
   const uncaughtErrors: string[] = [];
   let signedIn = false;
   let importStarted = false;
+  let flowError: unknown;
+  const cleanupErrors: unknown[] = [];
 
   page.on('pageerror', () => uncaughtErrors.push('pageerror'));
   page.on('console', (message) => {
@@ -58,6 +60,7 @@ test('owner login, status change, CSV import/export and logout have no uncaught 
     await signIn(page, 'OWNER_A');
     signedIn = true;
     await expect(page).toHaveURL(/\/dashboard(?:\?|$)/);
+    console.info('Owner E2E checkpoint: signed in');
 
     await page.goto('/leads');
     const leadCard = page.locator('[draggable="true"]').filter({ hasText: String(lead.title) });
@@ -75,9 +78,11 @@ test('owner login, status change, CSV import/export and logout have no uncaught 
       const rows = await restGet(request, ownerToken, 'app_leads', leadQuery.toString());
       return rows[0]?.status;
     }, { message: 'Staging did not persist the synthetic lead status change.' }).toBe('contacted');
+    console.info('Owner E2E checkpoint: status persisted');
 
     await page.goto('/integrations');
     await page.getByRole('button', { name: /Nahrát CSV/ }).click();
+    console.info('Owner E2E checkpoint: CSV dialog opened');
     const csv = 'customer,title,value,phone,email\nSynthetic Playwright Customer,StavbaFlow Playwright Import,0,+420700000000,playwright-import@stavbaflow.example.test\n';
     await page.locator('input[type="file"]').setInputFiles({
       name: 'stavbaflow-playwright-synthetic.csv',
@@ -85,16 +90,21 @@ test('owner login, status change, CSV import/export and logout have no uncaught 
       buffer: Buffer.from(csv),
     });
     await page.getByRole('button', { name: /Potvrdit mapování/ }).click();
+    console.info('Owner E2E checkpoint: CSV mapping confirmed');
     importStarted = true;
     await page.getByRole('button', { name: /Importovat 1 zakázek/ }).click();
     await expect(page.getByText(/Import byl uložen/)).toBeVisible();
+    console.info('Owner E2E checkpoint: CSV import persisted');
     await page.getByRole('button', { name: 'Zavřít', exact: true }).click();
     await expect(page.getByRole('heading', { name: 'Kontrolovaný CSV import' })).toBeHidden();
+    console.info('Owner E2E checkpoint: CSV dialog closed');
 
     await page.goto('/settings');
+    console.info(`Owner E2E checkpoint: settings route ${new URL(page.url()).pathname}`);
     const downloadPromise = page.waitForEvent('download');
     await page.getByRole('button', { name: 'Stáhnout CSV' }).click();
     const download = await downloadPromise;
+    console.info('Owner E2E checkpoint: CSV export downloaded');
     expect(download.suggestedFilename()).toMatch(/^stavbaflow-export-\d{4}-\d{2}-\d{2}\.csv$/);
     const exportStream = await download.createReadStream();
     expect(exportStream, 'The synthetic owner export should be readable for a tenant-leak assertion.').not.toBeNull();
@@ -109,42 +119,68 @@ test('owner login, status change, CSV import/export and logout have no uncaught 
     ];
     test.info().annotations.push({ type: 'tenant-isolation-matrix', description: JSON.stringify(exportMatrix) });
     console.info('Tenant isolation matrix\n' + exportMatrix.map(row => `${row.resource} | ${row.operation} | ${row.result}`).join('\n'));
+  } catch (error) {
+    flowError = error;
   } finally {
+    if (importStarted) {
+      try {
+        await cleanupSyntheticImport(request, ownerToken, companyId);
+      } catch (error) {
+        cleanupErrors.push(error);
+      }
+    }
+
     try {
-      if (importStarted) await cleanupSyntheticImport(request, ownerToken, companyId);
-    } finally {
-      const currentRows = await restGet(request, ownerToken, 'app_leads', leadQuery.toString()).catch(() => []);
+      const currentRows = await restGet(request, ownerToken, 'app_leads', leadQuery.toString());
       if (currentRows[0]?.status !== originalStatus) {
         const restore = await restPatch(request, ownerToken, 'app_leads', `id=eq.${leadId}&company_id=eq.${companyId}`, { status: originalStatus });
         expect(restore.ok(), 'Failed to restore the synthetic status fixture after the browser flow.').toBe(true);
       }
-      if (signedIn && await page.getByRole('button', { name: 'Odhlásit' }).count()) {
-        const overlayKinds = await page.locator('div.fixed.inset-0.z-50').evaluateAll((overlays) => overlays
+    } catch (error) {
+      cleanupErrors.push(error);
+    }
+
+    if (signedIn) {
+      try {
+        const mappingHeading = page.getByRole('heading', { name: 'Mapování sloupců importovaného souboru' });
+        if (await mappingHeading.isVisible().catch(() => false)) {
+          const mappingDialog = page.locator('div.fixed.inset-0.z-50').filter({ has: mappingHeading });
+          await mappingDialog.getByRole('button', { name: '✕' }).click({ timeout: 5000 });
+        }
+
+        const importHeading = page.getByRole('heading', { name: 'Kontrolovaný CSV import' });
+        if (await importHeading.isVisible().catch(() => false)) {
+          const importDialog = page.locator('div.fixed.inset-0.z-50').filter({ has: importHeading });
+          await importDialog.getByRole('button', { name: 'Zavřít', exact: true }).click({ timeout: 5000 });
+        }
+
+        const visibleOverlays = await page.locator('div.fixed.inset-0.z-50').evaluateAll((overlays) => overlays
           .filter((overlay) => {
             const rect = overlay.getBoundingClientRect();
             const style = window.getComputedStyle(overlay);
             return rect.width > 0 && rect.height > 0 && style.visibility !== 'hidden' && style.display !== 'none';
           })
           .map((overlay) => {
-            const element = overlay as HTMLDivElement;
-            const classes = element.className;
-            const classKind = classes.includes('bg-slate-900/60') ? 'import-dialog'
-              : classes.includes('bg-white/60') ? 'lead-dialog'
-                : classes.includes('bg-slate-50/60') ? 'command-palette'
-                  : 'other-dialog';
-            const headings = Array.from(element.querySelectorAll('h1,h2,h3')).map((heading) => heading.textContent?.trim() ?? '');
-            const allowedHeadings = [
+            const headings = Array.from(overlay.querySelectorAll('h1,h2,h3')).map((heading) => heading.textContent?.trim() ?? '');
+            return headings.find((heading) => [
               'Kontrolovaný CSV import', 'Mapování sloupců importovaného souboru',
               'Vytvořit novou zakázku / poptávku', 'Pozvat zaměstnance',
-            ];
-            return `${classKind}:${headings.find((heading) => allowedHeadings.includes(heading)) ?? 'other'}`;
+            ].includes(heading)) ?? 'other-dialog';
           }));
-        console.info(`Owner logout visible overlay types: ${overlayKinds.join(',') || 'none'}`);
-        await page.getByRole('button', { name: 'Odhlásit' }).click();
-        await expect(page).toHaveURL(/\/login(?:\?|$)/);
+        console.info(`Owner E2E teardown overlays: ${visibleOverlays.join(',') || 'none'}`);
+        if (await page.getByRole('button', { name: 'Odhlásit' }).count()) {
+          await page.getByRole('button', { name: 'Odhlásit' }).click({ timeout: 10000 });
+          await expect(page).toHaveURL(/\/login(?:\?|$)/);
+        }
+      } catch (error) {
+        cleanupErrors.push(error);
       }
     }
   }
+
+  const failures = [flowError, ...cleanupErrors].filter((error): error is Error => error instanceof Error);
+  if (failures.length === 1) throw failures[0];
+  if (failures.length > 1) throw new AggregateError(failures, 'Owner browser flow or its cleanup failed.');
 
   expect(uncaughtErrors).toEqual([]);
 });
