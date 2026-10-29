@@ -128,10 +128,10 @@ test('owner login, status change, CSV import/export and logout have no uncaught 
       await expect(page.getByText(/^Chyba:/)).toBeVisible();
       console.info(`Owner E2E checkpoint: CSV error shown to user (${commitCode})`);
     }
-    await page.getByRole('button', { name: 'Zavřít', exact: true }).click();
     const importDialogHeading = page.getByRole('heading', { name: 'Kontrolovaný CSV import' });
-    await expect(importDialogHeading).toBeHidden({ timeout: 5000 });
-    await expect(page.locator('div.fixed.inset-0.z-50').filter({ has: importDialogHeading })).toHaveCount(0, { timeout: 5000 });
+    const importDialog = page.locator('div.fixed.inset-0.z-50').filter({ has: importDialogHeading });
+    await importDialog.getByRole('button', { name: 'Zavřít', exact: true }).click();
+    await expect(importDialog).toHaveCount(0, { timeout: 5000 });
     console.info('Owner E2E checkpoint: CSV dialog closed');
 
     await page.goto('/settings');
@@ -185,10 +185,10 @@ test('owner login, status change, CSV import/export and logout have no uncaught 
         }
 
         const importHeading = page.getByRole('heading', { name: 'Kontrolovaný CSV import' });
-        if (await importHeading.isVisible().catch(() => false)) {
-          const importDialog = page.locator('div.fixed.inset-0.z-50').filter({ has: importHeading });
+        const importDialog = page.locator('div.fixed.inset-0.z-50').filter({ has: importHeading });
+        if (await importDialog.count()) {
           await importDialog.getByRole('button', { name: 'Zavřít', exact: true }).click({ timeout: 5000 });
-          await expect(importHeading).toBeHidden({ timeout: 5000 });
+          await expect(importDialog).toHaveCount(0, { timeout: 5000 });
         }
 
         const visibleOverlays = await page.locator('div.fixed.inset-0.z-50').evaluateAll((overlays) => overlays

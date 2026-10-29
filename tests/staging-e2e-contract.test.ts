@@ -64,12 +64,13 @@ test('staging E2E has isolated scenarios and an opt-in same-repository workflow'
   assert.match(ownerFlow, /CSV commit rejected: HTTP/);
   assert.match(ownerFlow, /CSV error shown to user/);
   assert.match(ownerFlow, /CSV export downloaded/);
-  assert.match(ownerFlow, /toHaveCount\(0, \{ timeout: 5000 \}\)/);
+  assert.match(ownerFlow, /const importDialog = page\.locator\('div\.fixed\.inset-0\.z-50'\)\.filter\(\{ has: importDialogHeading \}\)/);
+  assert.match(ownerFlow, /await expect\(importDialog\)\.toHaveCount\(0, \{ timeout: 5000 \}\)/);
   assert.match(ownerFlow, /restRpc\(request, ownerToken, 'app_change_lead_status'/);
   assert.match(support, /rest\/v1\/rpc\/\$\{encodeURIComponent\(functionName\)\}/);
   assert.doesNotMatch(ownerFlow, /restPatch\(request, ownerToken, 'app_leads'/);
   assert.match(ownerFlow, /getByRole\('button', \{ name: 'Zavřít', exact: true \}\)/);
-  assert.match(ownerFlow, /await expect\(importHeading\)\.toBeHidden\(\{ timeout: 5000 \}\)/);
+  assert.match(ownerFlow, /const importDialog = page\.locator\('div\.fixed\.inset-0\.z-50'\)\.filter\(\{ has: importHeading \}\)/);
   for (const name of ['STAGING_LEAD_A_ID', 'STAGING_LEAD_B_ID', 'STAGING_EMPLOYEE_B_ID']) {
     assert.match(workflow, new RegExp(name));
     assert.match(safety, new RegExp(name));
