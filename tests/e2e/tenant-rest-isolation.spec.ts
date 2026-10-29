@@ -4,6 +4,7 @@ import { accessToken, requiredValue, restDelete, restGet, restInsert, restPatch,
 type TenantRow = Record<string, unknown>;
 type TenantResource = {
   table: string;
+  crossTenantSelect?: string;
   crossTenantQuery: string;
   controlQuery: string;
   rowFilter(row: TenantRow): string;
@@ -65,7 +66,7 @@ test('owner A and employee A cannot read or mutate company B synthetic rows thro
       },
     ] : []),
     {
-      table: 'app_members', crossTenantQuery: companyFilter,
+      table: 'app_members', crossTenantQuery: companyFilter, crossTenantSelect: 'company_id,user_id',
       controlQuery: `company_id=${eq(companyB)}&user_id=${eq(employeeBId)}`,
       rowFilter: row => `company_id=${eq(row.company_id)}&user_id=${eq(row.user_id)}`,
       updateField: 'name', stableFields: ['name', 'email', 'role', 'active'],
@@ -92,7 +93,7 @@ test('owner A and employee A cannot read or mutate company B synthetic rows thro
   const matrix: Array<{ resource: string; operation: string; result: string }> = [];
 
   for (const resource of resources) {
-    const query = new URLSearchParams({ select: 'id', ...Object.fromEntries(new URLSearchParams(resource.crossTenantQuery)) }).toString();
+    const query = new URLSearchParams({ select: resource.crossTenantSelect ?? 'id', ...Object.fromEntries(new URLSearchParams(resource.crossTenantQuery)) }).toString();
     const [ownerRows, employeeRows] = await Promise.all([
       restGet(request, ownerA, resource.table, query),
       restGet(request, employeeA, resource.table, query),

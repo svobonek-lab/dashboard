@@ -43,6 +43,7 @@ test('staging E2E has isolated scenarios and an opt-in same-repository workflow'
   assert.match(safety, /STAGING_LEAD_B_FILE_PATH/);
   assert.match(safety, /Notes\/files REST and private Storage isolation.*skipped/i);
   assert.match(tenantIsolation, /test\.skip\(!process\.env\.STAGING_LEAD_B_FILE_PATH/);
+  assert.match(tenantIsolation, /crossTenantSelect: 'company_id,user_id'/);
   assert.match(workflow, /STAGING_PUBLIC_TENANT_KEY:\s*\$\{\{\s*vars\.STAGING_PUBLIC_TENANT_KEY\s*\}\}/);
   assert.doesNotMatch(workflow, /STAGING_PUBLIC_TENANT_KEY:\s*\$\{\{\s*secrets\.STAGING_PUBLIC_TENANT_KEY\s*\}\}/);
   assert.equal((workflow.match(/STAGING_OWNER_B_EMAIL:\s*\$\{\{\s*secrets\.STAGING_OWNER_B_EMAIL\s*\}\}/g) ?? []).length, 2);
@@ -55,6 +56,7 @@ test('staging E2E has isolated scenarios and an opt-in same-repository workflow'
   assert.match(support, /endsWith\('-auth-token'\)/);
   assert.match(ownerFlow, /playwright-import@stavbaflow\.example\.test/);
   assert.match(ownerFlow, /cleanupSyntheticImport/);
+  assert.match(ownerFlow, /getByRole\('button', \{ name: '✕' \}\)/);
   for (const name of ['STAGING_LEAD_A_ID', 'STAGING_LEAD_B_ID', 'STAGING_EMPLOYEE_B_ID']) {
     assert.match(workflow, new RegExp(name));
     assert.match(safety, new RegExp(name));
