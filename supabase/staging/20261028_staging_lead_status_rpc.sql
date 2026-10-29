@@ -4,7 +4,9 @@ DO $preflight$
 DECLARE col record;
 BEGIN
   IF to_regclass('public.app_leads') IS NULL OR to_regclass('public.app_audit') IS NULL
+     OR to_regclass('public.app_company_database_settings') IS NULL
      OR to_regprocedure('public.app_role(uuid)') IS NULL
+     OR to_regprocedure('public.app_block_cloud_lead_writes_for_byodb()') IS NULL
      OR to_regprocedure('app_private.jwt_tenant_id()') IS NULL
      OR to_regprocedure('auth.uid()') IS NULL THEN
     RAISE EXCEPTION 'Lead status RPC preflight: required staging objects missing';
@@ -13,7 +15,9 @@ BEGIN
     ('app_leads','id','uuid'),('app_leads','company_id','uuid'),
     ('app_leads','assigned_to','uuid'),('app_leads','status','text'),
     ('app_audit','company_id','uuid'),('app_audit','actor','uuid'),
-    ('app_audit','action','text'),('app_audit','entity_id','uuid')
+    ('app_audit','action','text'),('app_audit','entity_id','uuid'),
+    ('app_company_database_settings','company_id','uuid'),
+    ('app_company_database_settings','mode','text')
   ) AS required(table_name,column_name,data_type) LOOP
     IF NOT EXISTS (SELECT 1 FROM information_schema.columns c WHERE c.table_schema='public'
       AND c.table_name=col.table_name AND c.column_name=col.column_name AND c.udt_name=col.data_type) THEN
@@ -26,7 +30,9 @@ BEGIN
     RAISE EXCEPTION 'Lead status RPC preflight: audit ID has no generator';
   END IF;
   IF NOT EXISTS (SELECT 1 FROM pg_trigger WHERE tgrelid='public.app_leads'::regclass
-    AND tgname='app_block_cloud_lead_writes_for_byodb' AND NOT tgisinternal) THEN
+    AND tgname='app_block_cloud_lead_writes_for_byodb' AND NOT tgisinternal
+    AND tgenabled IN ('O','A') AND tgfoid='public.app_block_cloud_lead_writes_for_byodb()'::regprocedure
+    AND (tgtype & 16)<>0) THEN
     RAISE EXCEPTION 'Lead status RPC preflight: BYODB guard missing';
   END IF;
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='app_leads'
@@ -66,6 +72,19 @@ BEGIN
   IF v_role IS DISTINCT FROM 'owner'
      AND NOT (v_role='employee' AND v_lead.assigned_to=v_actor) THEN
     RAISE EXCEPTION USING ERRCODE='42501',MESSAGE='Lead unavailable';
+  END IF;
+  IF EXISTS (SELECT 1 FROM public.app_company_database_settings s
+      WHERE s.company_id=v_tenant AND s.mode='byodb') THEN
+    RAISE EXCEPTION USING ERRCODE='55000',MESSAGE='BYODB_SOURCE_OF_TRUTH';
+  END IF;
+  IF v_role='employee' AND v_lead.status IS DISTINCT FROM p_status
+    AND NOT COALESCE(CASE v_lead.status
+      WHEN 'new' THEN p_status IN ('contacted','lost')
+      WHEN 'contacted' THEN p_status IN ('scheduled','in_progress','lost')
+      WHEN 'scheduled' THEN p_status IN ('in_progress','lost')
+      WHEN 'in_progress' THEN p_status IN ('won','lost')
+      ELSE false END,false) THEN
+    RAISE EXCEPTION USING ERRCODE='42501',MESSAGE='Lead transition denied';
   END IF;
   IF v_lead.status IS DISTINCT FROM p_status THEN
     UPDATE public.app_leads l SET status=p_status WHERE l.company_id=v_tenant AND l.id=p_lead_id;
