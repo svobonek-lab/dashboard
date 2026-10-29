@@ -60,6 +60,7 @@ test('owner login, status change, CSV import/export and logout have no uncaught 
   let signedIn = false;
   let importStarted = false;
   let flowError: unknown;
+  let importFailure: string | null = null;
   const cleanupErrors: unknown[] = [];
 
   page.on('pageerror', () => uncaughtErrors.push('pageerror'));
@@ -118,11 +119,19 @@ test('owner login, status change, CSV import/export and logout have no uncaught 
       ? commitBody.code
       : 'unclassified';
     console.info(`Owner E2E checkpoint: CSV commit HTTP ${commitResponse.status()} code=${commitCode}`);
-    expect(commitResponse.ok(), `Staging CSV commit rejected: HTTP ${commitResponse.status()} code=${commitCode}`).toBe(true);
-    await expect(page.getByText(/Import byl uložen/)).toBeVisible();
-    console.info('Owner E2E checkpoint: CSV import persisted');
+    await expect(page.getByRole('button', { name: /Importuji data do CRM/ })).toBeHidden({ timeout: 10000 });
+    if (commitResponse.ok()) {
+      await expect(page.getByText(/Import byl uložen/)).toBeVisible();
+      console.info('Owner E2E checkpoint: CSV import persisted');
+    } else {
+      importFailure = `Staging CSV commit rejected: HTTP ${commitResponse.status()} code=${commitCode}`;
+      await expect(page.getByText(/^Chyba:/)).toBeVisible();
+      console.info(`Owner E2E checkpoint: CSV error shown to user (${commitCode})`);
+    }
     await page.getByRole('button', { name: 'Zavřít', exact: true }).click();
-    await expect(page.getByRole('heading', { name: 'Kontrolovaný CSV import' })).toBeHidden();
+    const importDialogHeading = page.getByRole('heading', { name: 'Kontrolovaný CSV import' });
+    await expect(importDialogHeading).toBeHidden({ timeout: 5000 });
+    await expect(page.locator('div.fixed.inset-0.z-50').filter({ has: importDialogHeading })).toHaveCount(0, { timeout: 5000 });
     console.info('Owner E2E checkpoint: CSV dialog closed');
 
     await page.goto('/settings');
@@ -211,4 +220,5 @@ test('owner login, status change, CSV import/export and logout have no uncaught 
   if (failures.length > 1) throw new AggregateError(failures, 'Owner browser flow or its cleanup failed.');
 
   expect(uncaughtErrors).toEqual([]);
+  if (importFailure) throw new Error(importFailure);
 });
