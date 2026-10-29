@@ -13,6 +13,8 @@ Target: isolated StavbaCore Staging `xwzweltjvreqhjpbjrxa`, Preview branch `code
 
 ## Remaining gates
 
+- The separately reviewed staging lead-status RPC is prepared on `codex/staging-lead-status-rpc` with an isolated PostgreSQL A/B test and a narrow `VITE_STAGING_LEAD_STATUS_WRITES` browser flag. It is **not applied to staging** and the flag remains false until the migration receives its own approval. This slice does not make the general lead editor or assignment writes available.
+
 - A reviewed tenant-bound lead mutation RPC and matching browser integration are needed before the owner status/CSV/export/logout acceptance can pass. Do not enable `VITE_PILOT_WRITES` merely to make the test green.
 - `app_create_invite` and `app_accept_invite` are absent on this staging schema, so invitation delivery/activation remain unverified.
 - `app_lead_files` and private Storage bucket `lead-files` are absent; the full notes/files isolation and Storage tests cannot run. The proposed notes/files migration remains unapplied.
