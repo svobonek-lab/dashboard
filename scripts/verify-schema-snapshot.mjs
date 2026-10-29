@@ -27,7 +27,7 @@ export function verifySchemaSnapshot(snapshot, expectedVersions, { stagingProjec
   }
 
   const databases = snapshot?.database;
-  const metadata = Array.isArray(databases) ? databases[0]?.metadata : null;
+  const metadata = Array.isArray(databases) ? databases[0]?.metadata : databases;
   if (!metadata || typeof metadata.captured_at_utc !== 'string'
     || !Array.isArray(metadata.relations) || !Array.isArray(metadata.columns)
     || !Array.isArray(metadata.policies) || !Array.isArray(metadata.functions)
@@ -175,7 +175,7 @@ async function readRepoMigrationContracts(migrationsDirectory) {
 
 async function main() {
   const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
-  const snapshotPath = process.env.STAGING_SCHEMA_SNAPSHOT || join(root, 'supabase/schema-snapshots/stavbacore-staging-20261027.json');
+  const snapshotPath = process.env.STAGING_SCHEMA_SNAPSHOT || join(root, 'supabase/schema-snapshots/stavbacore-staging-20261029.json');
   const snapshot = JSON.parse(await readFile(snapshotPath, 'utf8'));
   const expectedVersions = await readRepoMigrationVersions(join(root, 'supabase/migrations'));
   const contracts = await readRepoMigrationContracts(join(root, 'supabase/migrations'));
