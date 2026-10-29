@@ -66,6 +66,7 @@ test('staging E2E has isolated scenarios and an opt-in same-repository workflow'
   assert.match(support, /rest\/v1\/rpc\/\$\{encodeURIComponent\(functionName\)\}/);
   assert.doesNotMatch(ownerFlow, /restPatch\(request, ownerToken, 'app_leads'/);
   assert.match(ownerFlow, /getByRole\('button', \{ name: 'Zavřít', exact: true \}\)/);
+  assert.match(ownerFlow, /await expect\(importHeading\)\.toBeHidden\(\{ timeout: 5000 \}\)/);
   for (const name of ['STAGING_LEAD_A_ID', 'STAGING_LEAD_B_ID', 'STAGING_EMPLOYEE_B_ID']) {
     assert.match(workflow, new RegExp(name));
     assert.match(safety, new RegExp(name));

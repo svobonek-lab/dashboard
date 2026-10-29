@@ -172,12 +172,14 @@ test('owner login, status change, CSV import/export and logout have no uncaught 
         if (await mappingHeading.isVisible().catch(() => false)) {
           const mappingDialog = page.locator('div.fixed.inset-0.z-50').filter({ has: mappingHeading });
           await mappingDialog.getByRole('button', { name: '✕' }).click({ timeout: 5000 });
+          await expect(mappingHeading).toBeHidden({ timeout: 5000 });
         }
 
         const importHeading = page.getByRole('heading', { name: 'Kontrolovaný CSV import' });
         if (await importHeading.isVisible().catch(() => false)) {
           const importDialog = page.locator('div.fixed.inset-0.z-50').filter({ has: importHeading });
           await importDialog.getByRole('button', { name: 'Zavřít', exact: true }).click({ timeout: 5000 });
+          await expect(importHeading).toBeHidden({ timeout: 5000 });
         }
 
         const visibleOverlays = await page.locator('div.fixed.inset-0.z-50').evaluateAll((overlays) => overlays
