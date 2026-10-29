@@ -74,6 +74,7 @@ test('owner login, status change, CSV import/export and logout have no uncaught 
   }).toString();
   expect(await restGet(request, ownerToken, 'app_leads', importQuery), 'A previous run left the reserved CSV fixture behind.').toHaveLength(0);
   const uncaughtErrors: string[] = [];
+  const failedHttpResponses = new Set<string>();
   let signedIn = false;
   let importStarted = false;
   let flowError: unknown;
@@ -83,6 +84,15 @@ test('owner login, status change, CSV import/export and logout have no uncaught 
   page.on('pageerror', (error) => uncaughtErrors.push(`pageerror: ${safeBrowserDiagnostic(error.message)}`));
   page.on('console', (message) => {
     if (message.type() === 'error') uncaughtErrors.push(`console.error: ${safeBrowserDiagnostic(message.text())}`);
+  });
+  page.on('response', (response) => {
+    if (response.status() < 400) return;
+    try {
+      const url = new URL(response.url());
+      failedHttpResponses.add(`${response.status()} ${url.origin}${url.pathname}`);
+    } catch {
+      failedHttpResponses.add(`${response.status()} [invalid URL]`);
+    }
   });
 
   try {
@@ -237,6 +247,7 @@ test('owner login, status change, CSV import/export and logout have no uncaught 
   if (failures.length > 1) throw new AggregateError(failures, 'Owner browser flow or its cleanup failed.');
 
   if (uncaughtErrors.length) console.info(`Browser errors (sanitized):\n${uncaughtErrors.join('\n')}`);
+  if (failedHttpResponses.size) console.info(`HTTP error responses (path only):\n${[...failedHttpResponses].sort().join('\n')}`);
   expect(uncaughtErrors).toEqual([]);
   if (importFailure) throw new Error(importFailure);
 });
