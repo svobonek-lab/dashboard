@@ -28,11 +28,11 @@ async function cleanupSyntheticImport(request: Parameters<typeof restGet>[0], ow
   expect(await restGet(request, ownerToken, 'app_leads', query)).toHaveLength(0);
 }
 
-test('owner login, status change, CSV import/export and logout have no uncaught console errors', async ({ page, request }) => {
+test('owner login, status change, CSV import/export and logout have no uncaught console errors', async ({ browser, page, request }) => {
   stagingConfig();
   const companyId = requiredValue('STAGING_COMPANY_A_ID');
   const leadId = requiredValue('STAGING_LEAD_A_ID');
-  const ownerToken = await accessToken(request, 'OWNER_A');
+  const ownerToken = await accessToken(browser, 'OWNER_A');
   const leadQuery = new URLSearchParams({ select: 'id,company_id,title,status', id: `eq.${leadId}`, company_id: `eq.${companyId}` });
   const startingRows = await restGet(request, ownerToken, 'app_leads', leadQuery.toString());
   expect(startingRows).toHaveLength(1);

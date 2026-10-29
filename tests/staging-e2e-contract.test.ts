@@ -50,7 +50,9 @@ test('staging E2E has isolated scenarios and an opt-in same-repository workflow'
   assert.equal((workflow.match(/STAGING_LEAD_B_FILE_PATH:\s*\$\{\{\s*vars\.STAGING_LEAD_B_FILE_PATH\s*\}\}/g) ?? []).length, 2);
   assert.doesNotMatch(workflow + support, /SERVICE_ROLE|service_role|SUPABASE_SERVICE_ROLE_KEY/i);
   assert.match(support, /export async function restDelete/);
-  assert.match(support, /headers:\s*\{\s*apikey:\s*key,\s*Authorization:\s*`Bearer \$\{key\}`\s*\}/);
+  assert.match(support, /export async function accessToken\(browser: Browser/);
+  assert.match(support, /await signIn\(page, account\)/);
+  assert.match(support, /endsWith\('-auth-token'\)/);
   assert.match(ownerFlow, /playwright-import@stavbaflow\.example\.test/);
   assert.match(ownerFlow, /cleanupSyntheticImport/);
   for (const name of ['STAGING_LEAD_A_ID', 'STAGING_LEAD_B_ID', 'STAGING_EMPLOYEE_B_ID']) {

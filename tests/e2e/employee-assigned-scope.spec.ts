@@ -1,11 +1,11 @@
 import { expect, test } from 'playwright/test';
 import { accessToken, requiredValue, restGet, stagingConfig } from './support';
 
-test('employee REST session returns only leads assigned to that synthetic employee', async ({ request }) => {
+test('employee REST session returns only leads assigned to that synthetic employee', async ({ browser, request }) => {
   stagingConfig();
   const companyId = requiredValue('STAGING_COMPANY_A_ID');
   const employeeId = requiredValue('STAGING_EMPLOYEE_A_ID');
-  const token = await accessToken(request, 'EMPLOYEE_A');
+  const token = await accessToken(browser, 'EMPLOYEE_A');
   const params = new URLSearchParams({
     select: 'id,company_id,assigned_to',
     company_id: `eq.${companyId}`,

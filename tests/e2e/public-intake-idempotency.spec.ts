@@ -2,7 +2,7 @@ import { randomUUID } from 'node:crypto';
 import { expect, test } from 'playwright/test';
 import { accessToken, requiredValue, restGet, stagingConfig } from './support';
 
-test('replaying a synthetic public inquiry with one request key creates one lead', async ({ request }) => {
+test('replaying a synthetic public inquiry with one request key creates one lead', async ({ browser, request }) => {
   test.skip(!(process.env.STAGING_PUBLIC_INTAKE_ENABLED === 'true'), 'Public intake is awaiting the reviewed staging SQL and synthetic tenant enablement.');
   const { preview } = stagingConfig();
   const companyId = requiredValue('STAGING_COMPANY_A_ID');
@@ -32,7 +32,7 @@ test('replaying a synthetic public inquiry with one request key creates one lead
     expect(responseBody).not.toContain(requiredValue('STAGING_COMPANY_B_ID'));
   }
 
-  const owner = await accessToken(request, 'OWNER_A');
+  const owner = await accessToken(browser, 'OWNER_A');
   const params = new URLSearchParams({
     select: 'id',
     company_id: `eq.${companyId}`,

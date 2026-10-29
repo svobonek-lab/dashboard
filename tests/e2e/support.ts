@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import type { APIRequestContext, Page } from 'playwright/test';
+import type { APIRequestContext, Browser, Page } from 'playwright/test';
 import { validateStagingPreview } from '../../scripts/validate-staging-preview.mjs';
 
 export function stagingConfig() {
@@ -33,26 +33,28 @@ export async function signIn(page: Page, account: 'OWNER_A' | 'EMPLOYEE_A' | 'OW
   await page.waitForURL((url) => !url.pathname.endsWith('/login'), { timeout: 20_000 });
 }
 
-export async function accessToken(request: APIRequestContext, account: 'OWNER_A' | 'EMPLOYEE_A' | 'OWNER_B') {
-  const { url, key } = stagingConfig();
-  const email = requiredValue(`STAGING_${account}_EMAIL`);
-  const password = requiredValue(`STAGING_${account}_PASSWORD`);
-  const response = await request.post(`${url}/auth/v1/token?grant_type=password`, {
-    // Match supabase-js: Auth sends the project key in both headers.
-    headers: { apikey: key, Authorization: `Bearer ${key}` },
-    data: { email, password },
-  });
-  if (!response.ok()) {
-    const error = await response.json().catch(() => ({})) as { code?: unknown; error_code?: unknown; msg?: unknown };
-    const rawCode = error.error_code ?? error.code;
-    const code = typeof rawCode === 'string' && /^[a-z0-9_.-]{1,64}$/i.test(rawCode) ? rawCode : 'unrecognized';
-    const knownMessage = ['Invalid login credentials', 'Invalid API key', 'Email not confirmed', 'Email rate limit exceeded']
-      .find((message) => error.msg === message) ?? 'unrecognized Auth response';
-    assert.fail(`Staging Auth rejected ${account} credentials (${code}; ${knownMessage}; HTTP ${response.status()}).`);
+export async function accessToken(browser: Browser, account: 'OWNER_A' | 'EMPLOYEE_A' | 'OWNER_B') {
+  const { preview } = stagingConfig();
+  const context = await browser.newContext({ baseURL: preview });
+  try {
+    const page = await context.newPage();
+    await signIn(page, account);
+    const token = await page.evaluate(() => {
+      for (let index = 0; index < localStorage.length; index += 1) {
+        const key = localStorage.key(index);
+        if (!key?.endsWith('-auth-token')) continue;
+        try {
+          const session = JSON.parse(localStorage.getItem(key) ?? 'null') as { access_token?: unknown } | null;
+          if (typeof session?.access_token === 'string') return session.access_token;
+        } catch { /* Ignore unrelated local storage values. */ }
+      }
+      return null;
+    });
+    assert.ok(token, `Staging UI login for ${account} did not establish a Supabase session.`);
+    return token;
+  } finally {
+    await context.close();
   }
-  const body = await response.json() as { access_token?: string };
-  assert.ok(body.access_token, 'Staging Auth did not return an access token.');
-  return body.access_token;
 }
 
 export async function restGet(request: APIRequestContext, token: string, table: string, query: string) {
