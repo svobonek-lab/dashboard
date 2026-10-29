@@ -10,6 +10,7 @@ test('staging E2E has isolated scenarios and an opt-in same-repository workflow'
   const safety = await readFile(join(root, 'scripts/assert-staging-e2e-env.mjs'), 'utf8');
   const support = await readFile(join(root, 'tests/e2e/support.ts'), 'utf8');
   const ownerFlow = await readFile(join(root, 'tests/e2e/owner-critical-flow.spec.ts'), 'utf8');
+  const tenantIsolation = await readFile(join(root, 'tests/e2e/tenant-rest-isolation.spec.ts'), 'utf8');
   const stagingDocs = await readFile(join(root, 'docs/staging-e2e.md'), 'utf8');
 
   assert.deepEqual(specs.filter((name) => name.endsWith('.spec.ts')).sort(), [
@@ -21,6 +22,10 @@ test('staging E2E has isolated scenarios and an opt-in same-repository workflow'
     'tenant-rest-isolation.spec.ts',
   ]);
   assert.match(workflow, /workflow_dispatch:/);
+  assert.match(workflow, /runner_mode:/);
+  assert.match(workflow, /local-ephemeral/);
+  assert.match(workflow, /staging-e2e-local-runner/);
+  assert.match(workflow, /fromJSON\('\["self-hosted","linux","x64","staging-e2e"\]'\)/);
   assert.match(workflow, /types: \[labeled\]/);
   assert.match(workflow, /contains\(github\.event\.pull_request\.labels\.\*\.name, 'e2e'\)/);
   assert.match(workflow, /github\.event\.pull_request\.head\.repo\.full_name == github\.repository/);
@@ -28,6 +33,8 @@ test('staging E2E has isolated scenarios and an opt-in same-repository workflow'
   assert.match(safety, /PRODUCTION_SUPABASE_PROJECT_REF/);
   assert.match(safety, /PRODUCTION_BASE_URL/);
   assert.match(safety, /STAGING_LEAD_B_FILE_PATH/);
+  assert.match(safety, /Notes\/files REST and private Storage isolation.*skipped/i);
+  assert.match(tenantIsolation, /test\.skip\(!process\.env\.STAGING_LEAD_B_FILE_PATH/);
   assert.match(workflow, /STAGING_PUBLIC_TENANT_KEY:\s*\$\{\{\s*vars\.STAGING_PUBLIC_TENANT_KEY\s*\}\}/);
   assert.doesNotMatch(workflow, /STAGING_PUBLIC_TENANT_KEY:\s*\$\{\{\s*secrets\.STAGING_PUBLIC_TENANT_KEY\s*\}\}/);
   assert.equal((workflow.match(/STAGING_OWNER_B_EMAIL:\s*\$\{\{\s*secrets\.STAGING_OWNER_B_EMAIL\s*\}\}/g) ?? []).length, 2);

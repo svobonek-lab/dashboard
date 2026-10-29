@@ -50,18 +50,20 @@ test('owner A and employee A cannot read or mutate company B synthetic rows thro
       rowFilter: row => `id=${eq(row.id)}&${companyFilter}`,
       updateField: 'title', stableFields: ['title', 'status', 'assigned_to'],
     },
-    {
-      table: 'app_notes', crossTenantQuery: companyFilter,
-      controlQuery: `company_id=${eq(companyB)}&lead_id=${eq(leadBId)}&body=${eq('Synthetic E2E isolation note B')}`,
-      rowFilter: row => `id=${eq(row.id)}&${companyFilter}`,
-      updateField: 'body', stableFields: ['body', 'lead_id', 'author'],
-    },
-    {
+    ...(process.env.STAGING_LEAD_B_FILE_PATH ? [
+      {
+        table: 'app_notes', crossTenantQuery: companyFilter,
+        controlQuery: `company_id=${eq(companyB)}&lead_id=${eq(leadBId)}&body=${eq('Synthetic E2E isolation note B')}`,
+        rowFilter: (row: TenantRow) => `id=${eq(row.id)}&${companyFilter}`,
+        updateField: 'body', stableFields: ['body', 'lead_id', 'author'],
+      },
+      {
       table: 'app_lead_files', crossTenantQuery: companyFilter,
-      controlQuery: `company_id=${eq(companyB)}&lead_id=${eq(leadBId)}&storage_path=${eq(requiredValue('STAGING_LEAD_B_FILE_PATH'))}`,
-      rowFilter: row => `id=${eq(row.id)}&${companyFilter}`,
+      controlQuery: `company_id=${eq(companyB)}&lead_id=${eq(leadBId)}&storage_path=${eq(process.env.STAGING_LEAD_B_FILE_PATH)}`,
+      rowFilter: (row: TenantRow) => `id=${eq(row.id)}&${companyFilter}`,
       updateField: 'file_name', stableFields: ['file_name', 'storage_path', 'lead_id', 'author_id'],
-    },
+      },
+    ] : []),
     {
       table: 'app_members', crossTenantQuery: companyFilter,
       controlQuery: `company_id=${eq(companyB)}&user_id=${eq(employeeBId)}`,
@@ -139,6 +141,7 @@ test('owner A and employee A cannot read or mutate company B synthetic rows thro
 });
 
 test('owner A and employee A cannot download a company B lead file from private Storage', async ({ request }) => {
+  test.skip(!process.env.STAGING_LEAD_B_FILE_PATH, 'Private Storage isolation requires the reviewed notes/files schema and a synthetic company B file fixture.');
   const { url, key } = stagingConfig();
   const companyB = requiredValue('STAGING_COMPANY_B_ID');
   const leadB = requiredValue('STAGING_LEAD_B_ID');

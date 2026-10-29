@@ -2,6 +2,14 @@ name: staging-e2e
 
 on:
   workflow_dispatch:
+    inputs:
+      runner_mode:
+        description: Use the one-shot local Linux runner to avoid GitHub-hosted minutes
+        type: choice
+        options:
+          - github-hosted
+          - local-ephemeral
+        default: github-hosted
   pull_request:
     types: [labeled]
 
@@ -18,8 +26,10 @@ jobs:
       github.repository == 'svobonek-lab/dashboard' &&
       (github.event_name == 'workflow_dispatch' ||
        (github.event.pull_request.head.repo.full_name == github.repository &&
-        contains(github.event.pull_request.labels.*.name, 'e2e')))
-    runs-on: ubuntu-latest
+        contains(github.event.pull_request.labels.*.name, 'e2e'))) &&
+      (inputs.runner_mode != 'local-ephemeral' ||
+       (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/codex/staging-e2e-local-runner'))
+    runs-on: ${{ inputs.runner_mode == 'local-ephemeral' && fromJSON('["self-hosted","linux","x64","staging-e2e"]') || 'ubuntu-latest' }}
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v6

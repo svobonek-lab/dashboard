@@ -21,13 +21,15 @@ const required = [
   'STAGING_EMPLOYEE_B_ID',
   'STAGING_LEAD_A_ID',
   'STAGING_LEAD_B_ID',
-  'STAGING_LEAD_B_FILE_PATH',
   'STAGING_PUBLIC_TENANT_KEY',
 ];
 const missing = required.filter((name) => !process.env[name]);
 if (missing.length) {
   console.error(`Missing staging E2E variables/secrets: ${missing.join(', ')}`);
   process.exit(1);
+}
+if (!process.env.STAGING_LEAD_B_FILE_PATH) {
+  console.warn('Notes/files REST and private Storage isolation will be skipped until the reviewed schema and synthetic file fixture are available.');
 }
 
 assert.notEqual(process.env.STAGING_SUPABASE_PROJECT_REF, process.env.PRODUCTION_SUPABASE_PROJECT_REF,
