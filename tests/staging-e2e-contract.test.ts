@@ -27,6 +27,7 @@ test('staging E2E has isolated scenarios and an opt-in same-repository workflow'
   assert.match(safety, /STAGING_SUPABASE_PROJECT_REF/);
   assert.match(safety, /PRODUCTION_SUPABASE_PROJECT_REF/);
   assert.match(safety, /PRODUCTION_BASE_URL/);
+  assert.match(safety, /STAGING_LEAD_B_FILE_PATH/);
   assert.match(workflow, /STAGING_PUBLIC_TENANT_KEY:\s*\$\{\{\s*vars\.STAGING_PUBLIC_TENANT_KEY\s*\}\}/);
   assert.doesNotMatch(workflow, /STAGING_PUBLIC_TENANT_KEY:\s*\$\{\{\s*secrets\.STAGING_PUBLIC_TENANT_KEY\s*\}\}/);
   assert.equal((workflow.match(/STAGING_OWNER_B_EMAIL:\s*\$\{\{\s*secrets\.STAGING_OWNER_B_EMAIL\s*\}\}/g) ?? []).length, 2);

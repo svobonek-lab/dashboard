@@ -21,6 +21,7 @@ const required = [
   'STAGING_EMPLOYEE_B_ID',
   'STAGING_LEAD_A_ID',
   'STAGING_LEAD_B_ID',
+  'STAGING_LEAD_B_FILE_PATH',
   'STAGING_PUBLIC_TENANT_KEY',
 ];
 const missing = required.filter((name) => !process.env[name]);
