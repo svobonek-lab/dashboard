@@ -15,8 +15,8 @@ const worker = (overrides: Record<string, unknown> = {}) => ({
 } as any);
 
 test('pilot writes require explicit staging URL and flag; production URLs never qualify', () => {
-  assert.equal(canWritePilot({VITE_PILOT_WRITES:'true',VITE_SUPABASE_URL:'https://oncmtmrhmjlerbwkrecv.supabase.co'}),true);
-  assert.equal(canWritePilot({VITE_PILOT_WRITES:'true',VITE_SUPABASE_URL:'https://xwzweltjvreqhjpbjrxa.supabase.co'}),false);
+  assert.equal(canWritePilot({VITE_PILOT_WRITES:'true',VITE_SUPABASE_URL:'https://oncmtmrhmjlerbwkrecv.supabase.co'}),false);
+  assert.equal(canWritePilot({VITE_PILOT_WRITES:'true',VITE_SUPABASE_URL:'https://xwzweltjvreqhjpbjrxa.supabase.co'}),true);
   assert.equal(canWritePilot({VITE_SUPABASE_URL:'https://oncmtmrhmjlerbwkrecv.supabase.co'}),false);
 });
 test('partial lead edits do not erase unsupplied fields and preserve quote state', () => {

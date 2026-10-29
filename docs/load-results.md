@@ -4,7 +4,7 @@ Thresholds are fixed by the acceptance prompt: reads p95 `< 800 ms`, writes p95 
 
 ## Current status
 
-**NOT RUN.** No current staging load run has been recorded. There is no evidence here for any percentile or error-rate threshold. On 2026-10-28, both scripts passed `k6 inspect` in the official Docker image. Their real `setup()` runs against the configured Preview stopped after two read-only GET requests because its JavaScript targets production Supabase. No virtual-user iteration, public intake POST, CSV request, or lead write occurred. k6 displays threshold rows with zero samples for this aborted setup; those rows are not load results.
+**NOT RUN.** No current staging load run has been recorded. There is no evidence here for any percentile or error-rate threshold. On 2026-10-28, both scripts passed `k6 inspect` in the official Docker image. An earlier `setup()` run correctly refused a production-backed Preview. A later read-only `setup()` against `codex/staging-preview-safety` passed the staging target check and stopped at the missing private owner/employee fixture files. It made two GET requests, with no virtual-user iteration, public intake POST, CSV request, or lead write. k6's zero-sample threshold rows are not load results.
 
 | Scenario | Target profile | Result | Notes |
 |---|---:|---|---|
@@ -26,4 +26,4 @@ Both scripts accept only a distinct HTTPS deployment matching the known Dashboar
 - **LOAD-1:** Provision 30 synthetic owner identities and 100 synthetic employee identities, with one distinct staging company/lead fixture per virtual user, without reusing production data.
 - **LOAD-2:** Confirm the exact staging Preview supports authenticated `app_leads` status writes for synthetic owners and assigned-lead reads for employees. The load script fails closed on a denied/zero-row owner write and verifies each employee's active membership before read traffic.
 - **LOAD-3:** Run both scripts against the current staging Preview and record observed percentiles/counts. If a threshold fails, record the cause; do not relax the threshold.
-- **LOAD-4:** Deploy a current Preview whose compiled JavaScript uses StavbaCore Staging. The configured `codex/real-company` Preview and PR #133 Preview both compiled the production project ref, so the load preflight correctly rejects them.
+- **LOAD-4 resolved (2026-10-28):** The `codex/staging-preview-safety` Preview now builds with StavbaCore Staging. The stable URL is `https://dashboard-git-codex-staging-prev-1738c7-svobonek-6462s-projects.vercel.app`; `STAGING_PREVIEW_URL` points there. The deployed login request reached the staging Supabase host in a Playwright probe, and the k6 preflight passed. The remaining blocker is the 130 private fixtures, not the Preview target.

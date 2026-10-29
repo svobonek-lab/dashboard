@@ -1,4 +1,5 @@
 import http from 'k6/http';
+import { hasUnexpectedProductionTarget } from '../scripts/preview-bundle-target.mjs';
 
 export function assertK6StagingPreviewTarget(previewOrigin, stagingRef, productionRef) {
   const headers = __ENV.STAGING_PREVIEW_BYPASS_TOKEN
@@ -24,7 +25,7 @@ export function assertK6StagingPreviewTarget(previewOrigin, stagingRef, producti
     const script = http.get(scriptUrl, { headers, redirects: 0 });
     if (script.status !== 200) throw new Error('Refusing load: Preview JavaScript is unavailable.');
     const body = String(script.body || '');
-    if (body.includes(`${productionRef}.supabase.co`)) {
+    if (hasUnexpectedProductionTarget(body, productionRef)) {
       throw new Error('Refusing load: Preview JavaScript targets production Supabase.');
     }
     if (body.includes(`${stagingRef}.supabase.co`)) foundStaging = true;

@@ -62,7 +62,15 @@ test('owner login, status change, CSV import/export and logout have no uncaught 
     await page.goto('/leads');
     const leadCard = page.locator('[draggable="true"]').filter({ hasText: String(lead.title) });
     await expect(leadCard).toHaveCount(1);
-    await leadCard.dragTo(page.locator('#kanban-col-Contacted'));
+    const source = await leadCard.boundingBox();
+    const target = await page.locator('#kanban-col-Contacted').boundingBox();
+    expect(source).not.toBeNull();
+    expect(target).not.toBeNull();
+    await page.mouse.move(source!.x + source!.width / 2, source!.y + source!.height / 2);
+    await page.mouse.down();
+    await page.mouse.move(source!.x + source!.width / 2 + 25, source!.y + source!.height / 2 + 25, { steps: 5 });
+    await page.mouse.move(target!.x + target!.width / 2, target!.y + 120, { steps: 12 });
+    await page.mouse.up();
     await expect.poll(async () => {
       const rows = await restGet(request, ownerToken, 'app_leads', leadQuery.toString());
       return rows[0]?.status;
