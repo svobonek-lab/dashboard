@@ -198,8 +198,8 @@ jobs:
           exit 1
       - name: Verify public intake hardening proposal
         run: |
-          docker exec -i public-intake-postgres psql -v ON_ERROR_STOP=1 -U postgres < supabase/tests/ai_dispatcher_setup.sql
-          docker exec -i public-intake-postgres psql -v ON_ERROR_STOP=1 -U postgres < supabase/staging/20261006_ai_dispatcher_contract.sql
+          docker exec -i public-intake-postgres psql -v ON_ERROR_STOP=1 -U postgres < supabase/tests/public_intake_bridge_setup.sql
+          docker exec -i public-intake-postgres psql -v ON_ERROR_STOP=1 -U postgres < supabase/staging/20261029_public_intake_events.sql
           docker exec -i public-intake-postgres psql -v ON_ERROR_STOP=1 -U postgres < supabase/migrations/20261026000000_public_intake_rate_limit.sql
           docker exec -i public-intake-postgres psql -v ON_ERROR_STOP=1 -U postgres < supabase/tests/public_intake_security_verify.sql
           docker cp supabase/tests/public_intake_burst.sh public-intake-postgres:/tmp/public_intake_burst.sh

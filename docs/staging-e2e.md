@@ -13,6 +13,8 @@ Configure these GitHub Actions **variables** with synthetic staging values:
 - `STAGING_COMPANY_A_ID`, `STAGING_COMPANY_B_ID`
 - `STAGING_OWNER_A_ID`, `STAGING_EMPLOYEE_A_ID`, `STAGING_OWNER_B_ID`, `STAGING_EMPLOYEE_B_ID`
 - `STAGING_LEAD_A_ID`, `STAGING_LEAD_B_ID`
+- `STAGING_LEAD_B_FILE_PATH` after the reviewed notes/files schema and private Storage bucket are available
+- `STAGING_PUBLIC_TENANT_KEY` (public tenant slug used by the form; not a credential)
 
 Configure these GitHub Actions **secrets**:
 
@@ -20,7 +22,6 @@ Configure these GitHub Actions **secrets**:
 - `STAGING_OWNER_A_EMAIL`, `STAGING_OWNER_A_PASSWORD`
 - `STAGING_EMPLOYEE_A_EMAIL`, `STAGING_EMPLOYEE_A_PASSWORD`
 - `STAGING_OWNER_B_EMAIL`, `STAGING_OWNER_B_PASSWORD`
-- `STAGING_PUBLIC_TENANT_KEY`
 
 All four accounts and both companies must be synthetic fixtures in the isolated
 staging project. Company A must have a lead assigned to employee A; company B

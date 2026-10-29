@@ -27,6 +27,11 @@ test('staging E2E has isolated scenarios and an opt-in same-repository workflow'
   assert.match(safety, /STAGING_SUPABASE_PROJECT_REF/);
   assert.match(safety, /PRODUCTION_SUPABASE_PROJECT_REF/);
   assert.match(safety, /PRODUCTION_BASE_URL/);
+  assert.match(workflow, /STAGING_PUBLIC_TENANT_KEY:\s*\$\{\{\s*vars\.STAGING_PUBLIC_TENANT_KEY\s*\}\}/);
+  assert.doesNotMatch(workflow, /STAGING_PUBLIC_TENANT_KEY:\s*\$\{\{\s*secrets\.STAGING_PUBLIC_TENANT_KEY\s*\}\}/);
+  assert.equal((workflow.match(/STAGING_OWNER_B_EMAIL:\s*\$\{\{\s*secrets\.STAGING_OWNER_B_EMAIL\s*\}\}/g) ?? []).length, 2);
+  assert.equal((workflow.match(/STAGING_OWNER_B_PASSWORD:\s*\$\{\{\s*secrets\.STAGING_OWNER_B_PASSWORD\s*\}\}/g) ?? []).length, 2);
+  assert.equal((workflow.match(/STAGING_LEAD_B_FILE_PATH:\s*\$\{\{\s*vars\.STAGING_LEAD_B_FILE_PATH\s*\}\}/g) ?? []).length, 2);
   assert.doesNotMatch(workflow + support, /SERVICE_ROLE|service_role|SUPABASE_SERVICE_ROLE_KEY/i);
   assert.match(support, /export async function restDelete/);
   assert.match(ownerFlow, /playwright-import@stavbaflow\.example\.test/);

@@ -49,6 +49,13 @@ test('employee load VUs do not perform forward-only status writes or attempt to 
   assert.doesNotMatch(teardown, /data\.employees/);
 });
 
+test('owner load status changes use the staging-approved status RPC rather than direct table UPDATE', () => {
+  const source = read('../load/owner-dashboard.js');
+
+  assert.match(source, /\/rest\/v1\/rpc\/app_change_lead_status/);
+  assert.doesNotMatch(source, /http\.patch\s*\(\s*`\$\{data\.supabaseUrl\}\/rest\/v1\/app_leads/);
+});
+
 test('load fixtures require distinct synthetic users and roles bound to their signed JWT identity and tenant', async () => {
   const validator = await import('../scripts/validate-load-fixtures.mjs').catch(() => ({})) as {
     validateLoadFixtures?: (
