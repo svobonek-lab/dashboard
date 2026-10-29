@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto';
 import { expect, test } from 'playwright/test';
 import { accessToken, requiredValue, restDelete, restGet, restInsert, restPatch, stagingConfig } from './support';
 
@@ -51,18 +52,18 @@ test('owner A and employee A cannot read or mutate company B synthetic rows thro
       rowFilter: row => `id=${eq(row.id)}&${companyFilter}`,
       updateField: 'title', stableFields: ['title', 'status', 'assigned_to'],
     },
+    {
+      table: 'app_notes', crossTenantQuery: companyFilter,
+      controlQuery: `company_id=${eq(companyB)}&lead_id=${eq(leadBId)}&body=${eq('Synthetic E2E isolation note B')}`,
+      rowFilter: (row: TenantRow) => `id=${eq(row.id)}&${companyFilter}`,
+      updateField: 'body', stableFields: ['body', 'lead_id', 'author'],
+    },
     ...(process.env.STAGING_LEAD_B_FILE_PATH ? [
       {
-        table: 'app_notes', crossTenantQuery: companyFilter,
-        controlQuery: `company_id=${eq(companyB)}&lead_id=${eq(leadBId)}&body=${eq('Synthetic E2E isolation note B')}`,
+        table: 'app_lead_files', crossTenantQuery: companyFilter,
+        controlQuery: `company_id=${eq(companyB)}&lead_id=${eq(leadBId)}&storage_path=${eq(process.env.STAGING_LEAD_B_FILE_PATH)}`,
         rowFilter: (row: TenantRow) => `id=${eq(row.id)}&${companyFilter}`,
-        updateField: 'body', stableFields: ['body', 'lead_id', 'author'],
-      },
-      {
-      table: 'app_lead_files', crossTenantQuery: companyFilter,
-      controlQuery: `company_id=${eq(companyB)}&lead_id=${eq(leadBId)}&storage_path=${eq(process.env.STAGING_LEAD_B_FILE_PATH)}`,
-      rowFilter: (row: TenantRow) => `id=${eq(row.id)}&${companyFilter}`,
-      updateField: 'file_name', stableFields: ['file_name', 'storage_path', 'lead_id', 'author_id'],
+        updateField: 'file_name', stableFields: ['file_name', 'storage_path', 'lead_id', 'author_id'],
       },
     ] : []),
     {
@@ -115,7 +116,15 @@ test('owner A and employee A cannot read or mutate company B synthetic rows thro
       { name: 'employee A', token: employeeA, id: requiredValue('STAGING_EMPLOYEE_A_ID') },
     ];
     for (const actor of actors) {
-      const insert = await restInsert(request, actor.token, resource.table, control);
+      const insertProbe = { ...control };
+      const probeId = randomUUID();
+      if (resource.table === 'app_audit') delete insertProbe.id;
+      else if ('id' in insertProbe) insertProbe.id = probeId;
+      if (resource.table === 'app_members') insertProbe.user_id = actor.id;
+      if (resource.table === 'app_invites') insertProbe.email = `e2e-isolation-${probeId}@stavbaflow.example.test`;
+      if (resource.table === 'app_lead_files') insertProbe.storage_path = `${companyB}/${leadBId}/e2e-isolation-${probeId}.txt`;
+      if (resource.table === 'app_companies') insertProbe.slug = `e2e-isolation-${probeId}`;
+      const insert = await restInsert(request, actor.token, resource.table, insertProbe);
       const insertResult = await assertMutationDeniedOrFiltered(insert, `${actor.name} INSERT into ${resource.table}`);
       matrix.push({ resource: resource.table, operation: `INSERT as ${actor.name}`, result: insertResult });
 

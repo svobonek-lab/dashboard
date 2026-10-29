@@ -88,7 +88,7 @@ test('owner login, status change, CSV import/export and logout have no uncaught 
     importStarted = true;
     await page.getByRole('button', { name: /Importovat 1 zakázek/ }).click();
     await expect(page.getByText(/Import byl uložen/)).toBeVisible();
-    await page.getByRole('button', { name: '✕' }).click();
+    await page.getByRole('button', { name: 'Zavřít', exact: true }).click();
     await expect(page.getByRole('heading', { name: 'Kontrolovaný CSV import' })).toBeHidden();
 
     await page.goto('/settings');

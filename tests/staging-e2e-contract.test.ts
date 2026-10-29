@@ -42,6 +42,8 @@ test('staging E2E has isolated scenarios and an opt-in same-repository workflow'
   assert.match(publicIntake, /test\.skip\(!\(process\.env\.STAGING_PUBLIC_INTAKE_ENABLED === 'true'\)/);
   assert.match(safety, /STAGING_LEAD_B_FILE_PATH/);
   assert.match(safety, /Notes\/files REST and private Storage isolation.*skipped/i);
+  assert.match(tenantIsolation, /table: 'app_notes', crossTenantQuery: companyFilter/);
+  assert.match(tenantIsolation, /if \(resource\.table === 'app_audit'\) delete insertProbe\.id/);
   assert.match(tenantIsolation, /test\.skip\(!process\.env\.STAGING_LEAD_B_FILE_PATH/);
   assert.match(tenantIsolation, /crossTenantSelect: 'company_id,user_id'/);
   assert.match(workflow, /STAGING_PUBLIC_TENANT_KEY:\s*\$\{\{\s*vars\.STAGING_PUBLIC_TENANT_KEY\s*\}\}/);
@@ -56,7 +58,7 @@ test('staging E2E has isolated scenarios and an opt-in same-repository workflow'
   assert.match(support, /endsWith\('-auth-token'\)/);
   assert.match(ownerFlow, /playwright-import@stavbaflow\.example\.test/);
   assert.match(ownerFlow, /cleanupSyntheticImport/);
-  assert.match(ownerFlow, /getByRole\('button', \{ name: '✕' \}\)/);
+  assert.match(ownerFlow, /getByRole\('button', \{ name: 'Zavřít', exact: true \}\)/);
   for (const name of ['STAGING_LEAD_A_ID', 'STAGING_LEAD_B_ID', 'STAGING_EMPLOYEE_B_ID']) {
     assert.match(workflow, new RegExp(name));
     assert.match(safety, new RegExp(name));
