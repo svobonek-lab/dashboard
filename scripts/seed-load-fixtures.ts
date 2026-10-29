@@ -51,7 +51,9 @@ export async function provisionLoadFixtures(environment = process.env, smoke = f
       name: `Synthetic Load ${item.slug}`, slug: item.slug, active: true,
       subscription_status: 'active', plan: 'start', public_form: false,
     }).select('id').single();
-    if (company.error || !company.data?.id) throw new Error('Unable to create a staging load company.');
+    if (company.error || !company.data?.id) {
+      throw new Error(`Unable to create a staging load company (${company.error?.code || 'UNKNOWN'}, HTTP ${company.status}).`);
+    }
     entry.companyId = company.data.id;
     await saveManifest(manifestPath, manifest);
 
@@ -60,7 +62,9 @@ export async function provisionLoadFixtures(environment = process.env, smoke = f
       email: item.email, password, email_confirm: true,
       user_metadata: { name: `Synthetic Load ${item.role}` },
     });
-    if (user.error || !user.data.user) throw new Error('Unable to create a staging load Auth user.');
+    if (user.error || !user.data.user) {
+      throw new Error(`Unable to create a staging load Auth user (${user.error?.code || 'UNKNOWN'}, HTTP ${user.error?.status || 0}).`);
+    }
     entry.userId = user.data.user.id;
     await saveManifest(manifestPath, manifest);
 
@@ -68,7 +72,7 @@ export async function provisionLoadFixtures(environment = process.env, smoke = f
       company_id: entry.companyId, user_id: entry.userId, name: `Synthetic Load ${item.role}`,
       email: item.email, role: item.role, active: true,
     });
-    if (member.error) throw new Error('Unable to create a staging load membership.');
+    if (member.error) throw new Error(`Unable to create a staging load membership (${member.error.code || 'UNKNOWN'}, HTTP ${member.status}).`);
 
     const lead = await service.from('app_leads').insert({
       company_id: entry.companyId, title: `Synthetic Load Lead ${item.slug}`,
@@ -76,7 +80,9 @@ export async function provisionLoadFixtures(environment = process.env, smoke = f
       status: 'new', source: 'manual', value: 0,
       assigned_to: item.role === 'employee' ? entry.userId : null,
     }).select('id').single();
-    if (lead.error || !lead.data?.id) throw new Error('Unable to create a staging load lead.');
+    if (lead.error || !lead.data?.id) {
+      throw new Error(`Unable to create a staging load lead (${lead.error?.code || 'UNKNOWN'}, HTTP ${lead.status}).`);
+    }
     entry.leadId = lead.data.id;
     await saveManifest(manifestPath, manifest);
 
