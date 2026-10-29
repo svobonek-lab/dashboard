@@ -49,7 +49,7 @@ export async function provisionLoadFixtures(environment = process.env, smoke = f
     manifest.entries.push(entry);
     const company = await service.from('app_companies').insert({
       name: `Synthetic Load ${item.slug}`, slug: item.slug, active: true,
-      subscription_status: 'active', plan: 'start', public_form: false,
+      subscription_status: 'active', plan: 'starter', public_form: false,
     }).select('id').single();
     if (company.error || !company.data?.id) {
       throw new Error(`Unable to create a staging load company (${company.error?.code || 'UNKNOWN'}, HTTP ${company.status}).`);
