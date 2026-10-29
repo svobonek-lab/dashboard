@@ -1,6 +1,6 @@
 # StavbaCore staging Preview acceptance — 2026-10-28
 
-Target: isolated StavbaCore Staging `xwzweltjvreqhjpbjrxa`, Preview branch `codex/staging-preview-safety`. Production `oncmtmrhmjlerbwkrecv` was not written.
+Target: isolated StavbaCore Staging `xwzweltjvreqhjpbjrxa`; initial Preview branch `codex/staging-preview-safety`, status-RPC Preview branch `codex/staging-lead-status-rpc`. Production `oncmtmrhmjlerbwkrecv` was not written.
 
 ## Verified
 
@@ -12,10 +12,12 @@ Target: isolated StavbaCore Staging `xwzweltjvreqhjpbjrxa`, Preview branch `code
 - The pilot write URL guard formerly matched the ref now used as production; its unit test was reversed and the guard now matches the isolated staging ref. The Preview flag remains disabled, and this change alone does not enable writes.
 - On 2026-10-29, after separate owner approval, `supabase/staging/20261028_staging_lead_status_rpc.sql` from draft PR #137 was applied only to StavbaCore Staging through its SQL Editor. The editor reported success. Catalog queries confirmed a `postgres`-owned `SECURITY DEFINER` function with empty `search_path`, `authenticated` EXECUTE, no `anon` EXECUTE, no direct browser lead UPDATE or status-column UPDATE, enabled lead RLS, one restrictive tenant policy, and an enabled BYODB guard trigger bound to the expected function.
 - Four staging SQL transactions impersonated the synthetic owners and assigned employees of companies A and B through local JWT settings and `authenticated` role. Each could change its own lead and was denied access to the other company's lead. Both employees were denied a `new` to `won` jump. The A transactions showed an audit row inside the transaction. Every test ended with `ROLLBACK`; a subsequent query confirmed lead A remained `new` and no test audit row persisted. These database tests do not substitute for signed Auth token REST and Playwright checks.
+- On 2026-10-29, Vercel Preview variables `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, `SUPABASE_URL` and `VITE_STAGING_LEAD_STATUS_WRITES=true` were added only for `codex/staging-lead-status-rpc`. A branch-specific `VITE_PILOT_WRITES=false` overrides an inherited broad write flag. The existing write-only privileged secrets remain scoped to their original branch. Deployment `6V5oyELAQik4M1nRNoKQaEH1N8SE` was superseded after the broad-flag finding; do not use it for acceptance.
+- The final branch Preview deployment `https://dashboard-hj59eie5g-svobonek-6462s-projects.vercel.app` reached Ready. A fresh fetch of its served JS returned the StavbaCore staging URL, no production project ref, `VITE_STAGING_LEAD_STATUS_WRITES=true`, and `VITE_PILOT_WRITES=false`. The public `/login` route loaded. This is build-target evidence, not an authenticated status-write result.
 
 ## Remaining gates
 
-- The narrow `VITE_STAGING_LEAD_STATUS_WRITES` flag is still off. PR #137's automatic Preview is not confirmed as staging-targeted; its bundle resembles a production-backed Preview. Scope the existing staging variables to that exact branch and verify the built target before login, then run signed Auth token REST and Playwright status checks. Do not enable broad `VITE_PILOT_WRITES` merely to make the test green. General lead editor and assignment writes remain unavailable.
+- Run signed Auth token REST and Playwright status checks with owner A, employee A and company B on the verified Preview above. The current browser session has no synthetic owner login; database-role rollback tests alone cannot close this gate. Keep `VITE_PILOT_WRITES=false`; general lead editor and assignment writes remain unavailable.
 - `app_create_invite` and `app_accept_invite` are absent on this staging schema, so invitation delivery/activation remain unverified.
 - `app_lead_files` and private Storage bucket `lead-files` are absent; the full notes/files isolation and Storage tests cannot run. The proposed notes/files migration remains unapplied.
 - The current public intake API calls `app_submit_public_lead`, but staging exposes only the older `app_public_lead(text,jsonb,uuid)`. `app_public_intake_events` is also absent, and both synthetic firms have `public_form=false`. No public intake burst or idempotency request was sent to this mismatched target.
