@@ -197,6 +197,14 @@ jobs:
           fi
         env:
           STAGING_SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.STAGING_SUPABASE_SERVICE_ROLE_KEY }}
+      - name: Verify and recover any remaining synthetic identities
+        if: always() && steps.fixtures.outcome == 'success'
+        run: |
+          node --import tsx scripts/seed-load-fixtures.ts --recover
+          node --import tsx scripts/seed-load-fixtures.ts --recover
+        env:
+          STAGING_SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.STAGING_SUPABASE_SERVICE_ROLE_KEY }}
+          STAGING_LOAD_RUN_ID: ${{ steps.fixtures.outputs.run_id }}
       - name: Upload metric summaries without fixture tokens
         if: always() && steps.fixtures.outcome == 'success'
         uses: actions/upload-artifact@v4

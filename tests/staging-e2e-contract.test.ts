@@ -60,7 +60,7 @@ test('staging E2E has isolated scenarios and an opt-in same-repository workflow'
   assert.match(loadWorkflow, /inputs\.runner_mode == 'load-acceptance'/);
   assert.match(loadWorkflow, /github\.ref == 'refs\/heads\/codex\/staging-e2e-local-runner'/);
   assert.match(loadWorkflow, /runs-on: \[self-hosted, linux, x64, staging-e2e\]/);
-  assert.equal((loadWorkflow.match(/STAGING_SUPABASE_SERVICE_ROLE_KEY:\s*\$\{\{\s*secrets\.STAGING_SUPABASE_SERVICE_ROLE_KEY\s*\}\}/g) ?? []).length, 4);
+  assert.equal((loadWorkflow.match(/STAGING_SUPABASE_SERVICE_ROLE_KEY:\s*\$\{\{\s*secrets\.STAGING_SUPABASE_SERVICE_ROLE_KEY\s*\}\}/g) ?? []).length, 5);
   assert.match(loadWorkflow, /if: always\(\)/);
   assert.doesNotMatch(loadWorkflow.split('    steps:')[0], /SERVICE_ROLE|service_role/i);
   assert.match(workflow, /staging-load-recover:/);

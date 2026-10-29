@@ -136,25 +136,27 @@ export async function cleanupLoadFixtures(manifestPath: string, environment = pr
     auth: { persistSession: false, autoRefreshToken: false },
   });
   for (const entry of [...manifest.entries].reverse()) {
+    await new Promise((resolve) => setTimeout(resolve, 200));
     if (entry.userId) {
       const user = await service.auth.admin.getUserById(entry.userId);
       if ((user.error && user.error.status !== 404)
         || (user.data.user && user.data.user.email !== entry.email)) {
-        throw new Error('Load Auth user identity mismatch.');
+        throw new Error(`Load Auth user identity mismatch (${user.error?.code || 'EMAIL'}, HTTP ${user.error?.status || 0}).`);
       }
     }
     if (entry.companyId) {
-      const company = await service.from('app_companies').select('slug').eq('id', entry.companyId).maybeSingle();
-      if (company.error || (company.data && company.data.slug !== entry.slug)) {
+      const company = await service.from('app_companies').select('slug').eq('id', entry.companyId).limit(1);
+      const companyRow = company.data?.[0];
+      if (company.error || (companyRow && companyRow.slug !== entry.slug)) {
         throw new Error(`Load company identity mismatch (${company.error?.code || 'SLUG'}, HTTP ${company.status}).`);
       }
-      if (company.data) {
+      if (companyRow) {
         for (const table of ['app_audit', 'app_leads', 'app_members'] as const) {
           const deletion = await service.from(table).delete().eq('company_id', entry.companyId);
-          if (deletion.error) throw new Error(`Unable to remove synthetic rows from ${table}.`);
+          if (deletion.error) throw new Error(`Unable to remove synthetic rows from ${table} (${deletion.error.code || 'UNKNOWN'}, HTTP ${deletion.status}).`);
         }
         const deletion = await service.from('app_companies').delete().eq('id', entry.companyId).eq('slug', entry.slug);
-        if (deletion.error) throw new Error('Unable to remove synthetic load company.');
+        if (deletion.error) throw new Error(`Unable to remove synthetic load company (${deletion.error.code || 'UNKNOWN'}, HTTP ${deletion.status}).`);
       }
     }
     if (entry.userId) {
