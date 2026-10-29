@@ -6,6 +6,8 @@ Thresholds are fixed by the acceptance prompt: reads p95 `< 800 ms`, writes p95 
 
 **NOT RUN.** No current staging load run has been recorded. There is no evidence here for any percentile or error-rate threshold. On 2026-10-28, both scripts passed `k6 inspect` in the official Docker image. An earlier `setup()` run correctly refused a production-backed Preview. A later read-only `setup()` against `codex/staging-preview-safety` passed the staging target check and stopped at the missing private owner/employee fixture files. It made two GET requests, with no virtual-user iteration, public intake POST, CSV request, or lead write. k6's zero-sample threshold rows are not load results.
 
+PR #142 now includes a staging-only provisioner for 30 owner and 100 employee identities and an opt-in, one-shot local-runner load job. The job verifies the deployed Preview bundle before any fixture write, creates and cleans two smoke fixtures, creates the private 130-user fixture set, runs k6, and cleans only the run's synthetic IDs even if k6 fails. This is automation preparation; it is not evidence that the live load run passed. The public-intake run remains conditional on the reviewed staging intake contract being enabled.
+
 The owner status-change and teardown requests now use the staging-approved `app_change_lead_status` RPC; they no longer issue direct `PATCH` requests to `app_leads`. A regression test covers this contract. This fixes the script contract only; no load run or percentile result is implied.
 
 | Scenario | Target profile | Result | Notes |
@@ -25,7 +27,7 @@ Both scripts accept only a distinct HTTPS deployment matching the known Dashboar
 
 ## Outstanding issues
 
-- **LOAD-1:** Provision 30 synthetic owner identities and 100 synthetic employee identities, with one distinct staging company/lead fixture per virtual user, without reusing production data.
+- **LOAD-1:** Run the prepared staging-only provisioner and verify that all 130 private fixtures are created and removed; code and local guard tests alone do not prove the live staging lifecycle.
 - **LOAD-2:** Confirm the exact staging Preview supports authenticated `app_leads` status writes for synthetic owners and assigned-lead reads for employees. The load script fails closed on a denied/zero-row owner write and verifies each employee's active membership before read traffic.
 - **LOAD-3:** Run both scripts against the current staging Preview and record observed percentiles/counts. If a threshold fails, record the cause; do not relax the threshold.
 - **LOAD-4 resolved (2026-10-28):** The `codex/staging-preview-safety` Preview now builds with StavbaCore Staging. The stable URL is `https://dashboard-git-codex-staging-prev-1738c7-svobonek-6462s-projects.vercel.app`; `STAGING_PREVIEW_URL` points there. The deployed login request reached the staging Supabase host in a Playwright probe, and the k6 preflight passed. The remaining blocker is the 130 private fixtures, not the Preview target.
