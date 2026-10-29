@@ -62,7 +62,17 @@ export async function restGet(request: APIRequestContext, token: string, table: 
   const response = await request.get(`${url}/rest/v1/${table}?${query}`, {
     headers: { apikey: key, Authorization: `Bearer ${token}` },
   });
-  assert.equal(response.ok(), true, `Staging REST read of ${table} failed (HTTP ${response.status()}).`);
+  if (!response.ok()) {
+    const body = await response.json().catch(() => null) as { code?: unknown; message?: unknown } | null;
+    const rawCode = body?.code;
+    const code = typeof rawCode === 'string' && /^[a-z0-9_.-]{1,64}$/i.test(rawCode) ? rawCode : 'unrecognized';
+    const message = typeof body?.message === 'string' ? body.message.toLowerCase() : '';
+    const reason = /api.?key/.test(message) ? 'API key rejected'
+      : /jwt|token/.test(message) ? 'JWT rejected'
+        : /permission|authorization/.test(message) ? 'authorization rejected'
+          : 'unrecognized REST error';
+    assert.fail(`Staging REST read of ${table} failed (HTTP ${response.status()}, ${code}, ${reason}).`);
+  }
   return await response.json() as Array<Record<string, unknown>>;
 }
 
