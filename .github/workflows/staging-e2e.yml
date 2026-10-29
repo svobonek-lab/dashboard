@@ -50,7 +50,8 @@ jobs:
           STAGING_EMPLOYEE_B_ID: ${{ vars.STAGING_EMPLOYEE_B_ID }}
           STAGING_LEAD_A_ID: ${{ vars.STAGING_LEAD_A_ID }}
           STAGING_LEAD_B_ID: ${{ vars.STAGING_LEAD_B_ID }}
-          STAGING_PUBLIC_TENANT_KEY: ${{ secrets.STAGING_PUBLIC_TENANT_KEY }}
+          STAGING_LEAD_B_FILE_PATH: ${{ vars.STAGING_LEAD_B_FILE_PATH }}
+          STAGING_PUBLIC_TENANT_KEY: ${{ vars.STAGING_PUBLIC_TENANT_KEY }}
       - run: npm ci
       - name: Install Playwright Chromium
         run: npx playwright install --with-deps chromium
@@ -76,4 +77,5 @@ jobs:
           STAGING_EMPLOYEE_B_ID: ${{ vars.STAGING_EMPLOYEE_B_ID }}
           STAGING_LEAD_A_ID: ${{ vars.STAGING_LEAD_A_ID }}
           STAGING_LEAD_B_ID: ${{ vars.STAGING_LEAD_B_ID }}
-          STAGING_PUBLIC_TENANT_KEY: ${{ secrets.STAGING_PUBLIC_TENANT_KEY }}
+          STAGING_LEAD_B_FILE_PATH: ${{ vars.STAGING_LEAD_B_FILE_PATH }}
+          STAGING_PUBLIC_TENANT_KEY: ${{ vars.STAGING_PUBLIC_TENANT_KEY }}

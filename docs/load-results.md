@@ -6,6 +6,8 @@ Thresholds are fixed by the acceptance prompt: reads p95 `< 800 ms`, writes p95 
 
 **NOT RUN.** No current staging load run has been recorded. There is no evidence here for any percentile or error-rate threshold. On 2026-10-28, both scripts passed `k6 inspect` in the official Docker image. An earlier `setup()` run correctly refused a production-backed Preview. A later read-only `setup()` against `codex/staging-preview-safety` passed the staging target check and stopped at the missing private owner/employee fixture files. It made two GET requests, with no virtual-user iteration, public intake POST, CSV request, or lead write. k6's zero-sample threshold rows are not load results.
 
+The owner status-change and teardown requests now use the staging-approved `app_change_lead_status` RPC; they no longer issue direct `PATCH` requests to `app_leads`. A regression test covers this contract. This fixes the script contract only; no load run or percentile result is implied.
+
 | Scenario | Target profile | Result | Notes |
 |---|---:|---|---|
 | Owner and employee workspace | 30 owners + 100 employees, 10 minutes | NOT RUN | Requires 130 separate synthetic identities, distinct company IDs, access tokens and lead IDs. Each fixture includes `userId` and expected `role`; the script matches JWT `sub` and `app_metadata.tenant_id`, rejects duplicate users/tokens/tenants/leads, and confirms an active `app_members` row with the expected role before load begins. Prefer private JSON files outside version control via `STAGING_OWNER_LOAD_FIXTURES_FILE` and `STAGING_EMPLOYEE_LOAD_FIXTURES_FILE`; small local runs may use the JSON env variants. |

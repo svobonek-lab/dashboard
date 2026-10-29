@@ -134,6 +134,20 @@ function runRead(fixture, data, path, expectedId, label) {
   record(response, valid);
 }
 
+function changeLeadStatus(fixture, data, status, operation) {
+  const response = http.post(
+    `${data.supabaseUrl}/rest/v1/rpc/app_change_lead_status`,
+    JSON.stringify({ p_lead_id: fixture.leadId, p_status: status }),
+    { headers: headers(fixture, data.apiKey), tags: { kind: 'write', operation } },
+  );
+  const rows = parseJsonArray(response);
+  return {
+    response,
+    valid: response.status === 200 && rows.length === 1
+      && rows[0].lead_id === fixture.leadId && rows[0].status === status,
+  };
+}
+
 function csvFor(vu, iteration) {
   const rows = ['customer,title,value,phone,email'];
   for (let row = 1; row <= CSV_DRY_RUN_ROWS; row += 1) {
@@ -163,15 +177,8 @@ function runFlow(fixture, data, { includeWrites, includeCsv }) {
     // Employee status transitions are forward-only and cannot be reset by the
     // employee token during teardown, so employee VUs exercise read paths only.
     const nextStatus = __ITER % 2 === 0 ? 'contacted' : 'new';
-    const writeResponse = http.patch(
-      `${data.supabaseUrl}/rest/v1/app_leads?id=eq.${fixture.leadId}&company_id=eq.${fixture.companyId}`,
-      JSON.stringify({ status: nextStatus }),
-      { headers: headers(fixture, data.apiKey), tags: { kind: 'write', operation: 'status_change' } },
-    );
-    const changedRows = parseJsonArray(writeResponse);
-    record(writeResponse, writeResponse.status === 200 && changedRows.length === 1
-      && changedRows[0].id === fixture.leadId && changedRows[0].company_id === fixture.companyId
-      && changedRows[0].status === nextStatus);
+    const write = changeLeadStatus(fixture, data, nextStatus, 'status_change');
+    record(write.response, write.valid);
   }
 
   if (includeCsv) {
@@ -206,11 +213,7 @@ export function employeeFlow(data) {
 
 export function teardown(data) {
   for (const fixture of data.owners) {
-    const response = http.patch(
-      `${data.supabaseUrl}/rest/v1/app_leads?id=eq.${fixture.leadId}&company_id=eq.${fixture.companyId}`,
-      JSON.stringify({ status: fixture.restoreStatus }),
-      { headers: headers(fixture, data.apiKey), tags: { kind: 'write', operation: 'restore_fixture' } },
-    );
-    if (response.status !== 200) throw new Error('Failed to restore one synthetic lead fixture after load.');
+    const write = changeLeadStatus(fixture, data, fixture.restoreStatus, 'restore_fixture');
+    if (!write.valid) throw new Error('Failed to restore one synthetic lead fixture after load.');
   }
 }
