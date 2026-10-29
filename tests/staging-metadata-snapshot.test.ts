@@ -55,6 +55,7 @@ test('staging metadata capture is catalog-only, read-only, and redacts Auth hook
 
   const calls: Array<{ url: string; init?: RequestInit }> = [];
   const metadata = { captured_at_utc: '2026-10-26T00:00:00Z', relations: [{ name: 'app_members' }] };
+  const history = { versions: [{ version: '20261026000000', name: 'public_intake_rate_limit' }] };
   const result = await captureStagingMetadata({
     stagingProjectRef: 'xwzweltjvreqhjpbjrxa',
     productionProjectRef: 'oncmtmrhmjlerbwkrecv',
@@ -62,7 +63,8 @@ test('staging metadata capture is catalog-only, read-only, and redacts Auth hook
     fetchImpl: async (input, init) => {
       calls.push({ url: String(input), init });
       if (String(input).includes('/database/query/read-only')) {
-        return new Response(JSON.stringify(metadata), { status: 201 });
+        const query = JSON.parse(String(init?.body)).query;
+        return new Response(JSON.stringify([{ metadata: query === STAGING_MIGRATION_HISTORY_SQL ? history : metadata }]), { status: 201 });
       }
       return new Response(JSON.stringify({
         hook_custom_access_token_enabled: true,
@@ -80,7 +82,7 @@ test('staging metadata capture is catalog-only, read-only, and redacts Auth hook
   assert.deepEqual(JSON.parse(String(queryRequest.init?.body)), { query: STAGING_METADATA_SQL });
   assert.equal(new Headers(queryRequest.init?.headers).get('authorization'), 'Bearer test-token-not-a-real-secret');
   assert.deepEqual(result.database, metadata);
-  assert.deepEqual(result.migrationHistory, { readable: true, ...metadata });
+  assert.deepEqual(result.migrationHistory, { readable: true, ...history });
   const historyRequest = calls.find(({ init }) => {
     try { return JSON.parse(String(init?.body)).query === STAGING_MIGRATION_HISTORY_SQL; } catch { return false; }
   });
@@ -104,8 +106,8 @@ test('staging metadata capture is catalog-only, read-only, and redacts Auth hook
     stagingProjectRef: 'xwzweltjvreqhjpbjrxa',
     productionProjectRef: 'oncmtmrhmjlerbwkrecv',
     accessToken: 'test-token-not-a-real-secret',
-    fetchImpl: async (input) => String(input).includes('/database/query/read-only')
-      ? new Response(JSON.stringify(metadata), { status: 201 })
+    fetchImpl: async (input, init) => String(input).includes('/database/query/read-only')
+      ? new Response(JSON.stringify([{ metadata: JSON.parse(String(init?.body)).query === STAGING_MIGRATION_HISTORY_SQL ? history : metadata }]), { status: 201 })
       : new Response(JSON.stringify({ message: 'forbidden' }), { status: 403 }),
   });
   assert.deepEqual(partial.database, metadata);

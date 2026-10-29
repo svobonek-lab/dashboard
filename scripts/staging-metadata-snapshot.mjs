@@ -212,6 +212,15 @@ async function readJson(response, label) {
   return body;
 }
 
+function unwrapMetadataQueryResult(value, label) {
+  const row = Array.isArray(value) ? value[0] : value;
+  const metadata = row && typeof row === 'object' && 'metadata' in row ? row.metadata : row;
+  if (!metadata || typeof metadata !== 'object' || Array.isArray(metadata)) {
+    throw new Error(`${label} returned an unexpected metadata-only result shape.`);
+  }
+  return metadata;
+}
+
 export async function captureStagingMetadata({
   stagingProjectRef,
   productionProjectRef,
@@ -247,6 +256,7 @@ export async function captureStagingMetadata({
     readJson(authResponse, 'Staging Auth hook configuration metadata query'),
   ]);
   if (databaseResult.status === 'rejected') throw databaseResult.reason;
+  const database = unwrapMetadataQueryResult(databaseResult.value, 'Staging database metadata query');
 
   const authHook = authConfigResult.status === 'fulfilled'
     ? { readable: true, ...sanitizeAuthHookConfig(authConfigResult.value) }
@@ -255,9 +265,9 @@ export async function captureStagingMetadata({
   return {
     projectRef: stagingProjectRef,
     productionProjectRef,
-    database: databaseResult.value,
+    database,
     migrationHistory: migrationHistoryResult.status === 'fulfilled'
-      ? { readable: true, ...migrationHistoryResult.value }
+      ? { readable: true, ...unwrapMetadataQueryResult(migrationHistoryResult.value, 'Staging migration history query') }
       : { readable: false, error: migrationHistoryResult.reason instanceof Error ? migrationHistoryResult.reason.message : 'Staging migration history could not be read.' },
     authHook,
   };
