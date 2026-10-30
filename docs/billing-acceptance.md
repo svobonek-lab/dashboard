@@ -2,6 +2,18 @@
 
 **Status: NOT RUN.** No Preview purchase, webhook event, cancellation, period-end transition, or `past_due` screen has been verified. Do not treat local billing contract tests as an end-to-end Stripe acceptance result.
 
+## Current Preview configuration check (2026-10-30)
+
+A Vercel metadata-only inventory read environment variable names and branch scopes without revealing values:
+
+| Preview branch | Stripe secret | Billing mode | Starter price | Supabase URL | Assessment |
+|---|---:|---:|---:|---:|---|
+| `codex/staging-e2e-local-runner` | absent | absent | absent | present | Correct staging Preview, not Stripe TEST-ready. |
+| `fix/paid-registration-legal-prerequisite` | present | present | absent | present | Not verified as the isolated staging project; do not use for acceptance. |
+| `feat/stripe-billing-completion` | absent | present | present | absent | Incomplete configuration. |
+
+Stripe TEST acceptance needs the test-mode secret, webhook signing secret, and a TEST-mode Starter Price configured on the exact verified staging Preview branch. Confirm its Supabase bundle still targets `xwzweltjvreqhjpbjrxa` after redeploy. Never copy a secret onto a branch with an unverified database target. The final checkout payment action must be completed by the operator in Stripe TEST mode; then record the safe session/event IDs and continue verifying webhook and cancellation behavior.
+
 Use only the Vercel Preview deployment and Stripe TEST mode. Before starting, record the Preview URL and deployed commit, and verify the server is configured with Stripe test credentials and a TEST-mode Start price. Do not enter production payment details or record card data, secrets, customer names, or email addresses here. Use a Stripe-provided test payment method.
 
 ## Acceptance log
