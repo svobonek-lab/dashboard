@@ -107,9 +107,13 @@ test('public intake load profile sends 200 unique synthetic requests in one minu
   assert.match(source, /validateK6StagingEnvironment/);
 });
 
-test('load report distinguishes unavailable measurements from threshold passes', () => {
+test('load report records staging measurements and separates expected 429s from errors', () => {
   const report = read('../docs/load-results.md');
-  assert.match(report, /NOT RUN/);
+  assert.match(report, /41046254837/);
+  assert.match(report, /243\.48 ms/);
+  assert.match(report, /64\.00 ms/);
+  assert.match(report, /195 rate limited/);
+  assert.match(report, /zero unexpected responses/);
   assert.match(report, /p95 `< 800 ms`/);
   assert.match(report, /p95 `< 1500 ms`/);
   assert.match(report, /`< 1%`/);

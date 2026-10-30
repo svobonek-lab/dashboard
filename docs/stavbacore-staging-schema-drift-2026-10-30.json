@@ -1,17 +1,21 @@
 {
-  "captured_at_utc": "2026-10-30T09:32:08.168557Z",
+  "captured_at_utc": "2026-10-30T19:06:32.276597Z",
   "project_ref": "xwzweltjvreqhjpbjrxa",
   "production_ref": "oncmtmrhmjlerbwkrecv",
   "inventory": {
-    "relations": 30,
-    "columns": 318,
-    "policies": 56,
+    "relations": 33,
+    "columns": 340,
+    "policies": 63,
     "functions": 61,
-    "table_grants": 441,
+    "table_grants": 490,
     "column_grants": 25,
     "storage_buckets": [
       {
         "id": "crm-files",
+        "public": false
+      },
+      {
+        "id": "lead-files",
         "public": false
       }
     ]
@@ -237,6 +241,7 @@
         "20261027_outbox_run_evidence.sql",
         "20261027_stavbacore_jwt_tenant_reconcile.sql",
         "20261028_staging_lead_status_rpc.sql",
+        "20261028_stavbacore_invite_accepted_at.sql",
         "20261029_public_intake_events.sql",
         "pilot_authorization.sql",
         "pilot_helper_isolation.sql",
@@ -258,13 +263,10 @@
           "public.app_platform_audit_events",
           "public.app_ai_inbox_events",
           "public.app_dead_lead_notifications",
-          "public.app_lead_notes",
-          "public.app_lead_files",
           "public.app_company_legal_acceptances",
           "public.app_paid_registration_intents",
           "public.app_workspace_defaults",
-          "public.app_email_outbox_runs",
-          "public.app_lead_events"
+          "public.app_email_outbox_runs"
         ],
         "columns": [
           "public.app_leads.created_by",
@@ -312,21 +314,6 @@
           "public.app_dead_lead_notifications.created_at",
           "public.app_invites.revoked_at",
           "public.app_invites.accepted_by",
-          "public.app_lead_notes.id",
-          "public.app_lead_notes.company_id",
-          "public.app_lead_notes.lead_id",
-          "public.app_lead_notes.author_id",
-          "public.app_lead_notes.body",
-          "public.app_lead_notes.created_at",
-          "public.app_lead_files.id",
-          "public.app_lead_files.company_id",
-          "public.app_lead_files.lead_id",
-          "public.app_lead_files.author_id",
-          "public.app_lead_files.storage_path",
-          "public.app_lead_files.file_name",
-          "public.app_lead_files.mime_type",
-          "public.app_lead_files.size_bytes",
-          "public.app_lead_files.created_at",
           "public.app_company_legal_acceptances.id",
           "public.app_company_legal_acceptances.company_id",
           "public.app_company_legal_acceptances.invite_id",
@@ -365,18 +352,11 @@
           "public.app_email_outbox_runs.failed_count",
           "public.app_email_outbox_runs.skipped_count",
           "public.app_email_outbox_runs.error_code",
-          "public.app_lead_events.id",
-          "public.app_lead_events.company_id",
-          "public.app_lead_events.lead_id",
-          "public.app_lead_events.actor_id",
-          "public.app_lead_events.operation",
           "public.app_lead_events.old_status",
-          "public.app_lead_events.new_status",
           "public.app_lead_events.old_assigned_to",
           "public.app_lead_events.new_assigned_to",
           "public.app_lead_events.old_value",
-          "public.app_lead_events.new_value",
-          "public.app_lead_events.created_at"
+          "public.app_lead_events.new_value"
         ],
         "policies": [
           "public.app_companies.app_companies_select_member",
@@ -388,12 +368,6 @@
           "public.app_leads.app_leads_select_scoped",
           "public.app_leads.app_leads_insert_owner",
           "public.app_leads.app_leads_update_scoped",
-          "public.app_lead_notes.app_lead_notes_select_scoped",
-          "public.app_lead_notes.app_lead_notes_insert_scoped",
-          "public.app_lead_notes.app_lead_notes_delete_scoped",
-          "public.app_lead_files.app_lead_files_select_scoped",
-          "public.app_lead_files.app_lead_files_insert_scoped",
-          "public.app_lead_files.app_lead_files_delete_scoped",
           "storage.objects.app_lead_files_storage_select",
           "storage.objects.app_lead_files_storage_insert",
           "storage.objects.app_lead_files_storage_delete",

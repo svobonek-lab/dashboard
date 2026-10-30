@@ -30,9 +30,6 @@ if (missing.length) {
   console.error(`Missing staging E2E variables/secrets: ${missing.join(', ')}`);
   process.exit(1);
 }
-if (!process.env.STAGING_LEAD_B_FILE_PATH) {
-  console.warn('Notes/files REST and private Storage isolation will be skipped until the reviewed schema and synthetic file fixture are available.');
-}
 if (process.env.STAGING_PUBLIC_INTAKE_ENABLED !== 'true') {
   console.warn('Public intake replay will be skipped until the staging SQL is reviewed/applied and the synthetic company intake is enabled.');
 }

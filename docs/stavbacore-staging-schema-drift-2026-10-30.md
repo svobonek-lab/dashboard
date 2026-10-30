@@ -2,46 +2,44 @@
 
 ## Capture
 
-The metadata-only workflow [41033508835](https://github.com/svobonek-lab/dashboard/actions/runs/41033508835) completed on 2026-10-30 at `2026-10-30T09:32:08Z`, after the approved import-worker and public-intake SQL. PostgreSQL catalog metadata, migration history, Storage metadata, grants, function signatures, and sanitized Auth-hook configuration were captured from StavbaCore Staging. It did not read application rows or modify staging or production.
+The metadata-only workflow [41112184393](https://github.com/svobonek-lab/dashboard/actions/runs/41112184393) completed on 2026-10-30 at `2026-10-30T19:06:32Z`. It captured PostgreSQL catalog metadata, migration history, Storage metadata, grants, function signatures, and sanitized Auth-hook configuration from StavbaCore Staging (`xwzweltjvreqhjpbjrxa`). It did not read application rows or modify staging or production.
 
-The complete snapshot is [stavbacore-staging-20261030.json](../supabase/schema-snapshots/stavbacore-staging-20261030.json). It is the default input for `scripts/verify-schema-snapshot.mjs`.
-
-The machine-readable comparison of the current snapshot with both SQL directories is [stavbacore-staging-schema-drift-2026-10-30.json](stavbacore-staging-schema-drift-2026-10-30.json).
+The complete snapshot is [stavbacore-staging-20261030.json](../supabase/schema-snapshots/stavbacore-staging-20261030.json), the default input to `scripts/verify-schema-snapshot.mjs`. The machine-readable comparison is [stavbacore-staging-schema-drift-2026-10-30.json](stavbacore-staging-schema-drift-2026-10-30.json).
 
 ## Current inventory
 
 | Metadata | Staging |
 |---|---:|
-| Relations | 30 |
-| Columns | 318 |
-| RLS policies | 56 |
+| Relations | 33 |
+| Columns | 340 |
+| RLS policies | 63 |
 | Functions | 61 |
-| Table grants | 441 |
+| Table grants | 490 |
 | Column grants | 25 |
-| Storage buckets | 1 private bucket (`crm-files`) |
+| Storage buckets | 2 private buckets (`crm-files`, `lead-files`) |
 | Custom access-token hook | Enabled and configured as `app_tenant_access_token_hook` |
 | Migration history entries | 13 |
 
-The repository still contains 13 legacy migration versions, and none of those versions matches the 13 versions recorded by this staging project. The two approved SQL applications changed the catalog since the earlier 08:52 capture. This history mismatch does not justify replaying the legacy migrations.
+The 13 version IDs recorded by staging differ from all 13 legacy IDs in `supabase/migrations`. The source-versus-live comparison is also incomplete for `supabase/staging`; neither mismatch justifies replaying migration files as a batch. The comparison counts are conservative name-based checks, not proof that every differing source object is absent in equivalent form or safe to deploy. The JSON enumerates each extracted difference for review.
 
-## Live contract gaps
+## Live contract observations
 
-- `supabase/staging/20260930_import_worker.sql` is applied. The new five-argument `app_import_leads` contract exists and the old four-argument signature is removed. The complete browser import journey still needs to be exercised through a Preview whose bundle targets this staging project.
-- `app_public_intake_events` and the hardened `app_submit_public_lead` RPC now exist. Metadata confirms RLS and the service-only RPC grant; live abuse/retry requests and public-intake load acceptance remain pending. Synthetic A is enabled for the form. `privacy_url=https://example.test/privacy` is a test-only placeholder required by the database constraint, not a legal/company URL.
-- `app_lead_notes` and `app_lead_files` are absent. Keep their schema proposal review-only as required by the acceptance prompt. The existing private bucket is `crm-files`; the application contract and proposal must be reconciled with that name before attempting a file round trip.
-- The migration history and live catalog remain different from the repository's legacy `supabase/migrations` set. The verifier reports this rather than silently treating source SQL as deployed.
+- `supabase/staging/20260930_import_worker.sql` and the public-intake SQL were applied and previously exercised by staging acceptance runs. The five-argument `app_import_leads` contract is present; the old four-argument signature was removed.
+- `app_public_intake_events` and the hardened `app_submit_public_lead` RPC are present. Staging abuse/retry requests and public-intake load acceptance passed. Synthetic company A was enabled for the form. `privacy_url=https://example.test/privacy` is a test-only placeholder required by the database constraint.
+- **Notes and files are already present on staging:** the relation is `app_notes` (not the proposed `app_lead_notes` name), and `app_lead_files` exists with RLS. Both `crm-files` and `lead-files` are private buckets. The snapshot includes tenant-scoped `app_lead_files_storage_{select,insert,delete}` policies. The running UI and storage path contract still need a successful live round trip before describing attachments as accepted.
+- The snapshot contains 13 staging migration-history IDs that differ from the repository's 13 legacy migration IDs. Do not use the legacy source directory as a deployment queue; reconcile individual contracts first.
 
-The fresh comparison reports the following objects declared by source SQL but absent from the live catalog:
+The schema extractor reports these source-declared objects as missing by exact name:
 
 | Source SQL directory | Missing tables | Missing columns | Missing policies | Missing functions |
 |---|---:|---:|---:|---:|
 | `supabase/migrations` | 9 | 75 | 35 | 11 |
-| `supabase/staging` | 12 | 110 | 21 | 39 |
+| `supabase/staging` | 9 | 88 | 15 | 39 |
 
-The historical migration set models `organizations/users/leads`; it is not a safe batch to apply to the current `app_*` project. The staging set also contains unapplied proposal contracts. These counts describe source-versus-live drift, not a deployment recommendation. The JSON file lists every missing object by category.
+The historical migration set models `organizations/users/leads`, unlike the live `app_*` schema; it is not a safe batch to apply. The staging directory includes contracts that may be unapplied or represented under a different name/signature. Treat the report as a reconciliation list, not deployment authorization.
 
-## Next gates
+## Remaining gates
 
-1. Deploy the matching import and public-intake API code to a Preview whose static bundle preflight confirms the staging Supabase ref; rerun owner CSV and public-intake idempotency/isolation acceptance.
-2. Independently review the notes/files migration and reconcile the `crm-files` bucket contract before any staging application.
-3. Keep production strictly read-only.
+1. Run the updated staging E2E Storage scenario against the exact branch Preview. It creates a synthetic company-B file and metadata row, tests owner-A/employee-A denial and owner-B access, and deletes the exact fixture in `finally`.
+2. Review the extracted staging contract differences individually. Preserve the existing migration history and do not apply legacy SQL in bulk.
+3. Production remains strictly read-only.
