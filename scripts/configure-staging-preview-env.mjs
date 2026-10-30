@@ -1,6 +1,5 @@
 import { randomBytes } from 'node:crypto';
 import { resolve } from 'node:path';
-import { spawnSync } from 'node:child_process';
 import { pathToFileURL } from 'node:url';
 
 const allowedBranch = 'codex/staging-e2e-local-runner';
@@ -32,77 +31,77 @@ export function validateStagingPreviewConfig(env) {
   return errors;
 }
 
-function runVercel(args, env, input = '', operation = 'CLI request') {
-  const result = spawnSync('npx', ['--yes', 'vercel@59.25.4', ...args], {
-    cwd: process.cwd(),
-    encoding: 'utf8',
-    input,
-    timeout: 120_000,
-    windowsHide: true,
-    env: { ...process.env, VERCEL_TOKEN: env.VERCEL_TOKEN },
+export function buildPreviewVariables(env, randomBytesImpl = randomBytes) {
+  return [
+    ['VITE_SUPABASE_URL', env.STAGING_SUPABASE_URL],
+    ['VITE_SUPABASE_ANON_KEY', env.STAGING_SUPABASE_PUBLISHABLE_KEY],
+    ['SUPABASE_URL', env.STAGING_SUPABASE_URL],
+    ['SUPABASE_SERVICE_ROLE_KEY', env.STAGING_SUPABASE_SERVICE_ROLE_KEY],
+    ['CONNECTOR_SECRET_ENCRYPTION_KEY', randomBytesImpl(32).toString('base64')],
+    ['INTAKE_HASH_SECRET', randomBytesImpl(32).toString('base64url')],
+  ].map(([key, value]) => ({
+    key,
+    value,
+    type: 'sensitive',
+    target: ['preview'],
+    gitBranch: allowedBranch,
+    comment: 'Staging-only Preview for synthetic acceptance tests',
+  }));
+}
+
+async function vercelApi(url, env, fetchImpl, init) {
+  const response = await fetchImpl(url, {
+    ...init,
+    headers: {
+      Authorization: `Bearer ${env.VERCEL_TOKEN}`,
+      ...(init?.body ? { 'Content-Type': 'application/json' } : {}),
+      ...init?.headers,
+    },
+    signal: AbortSignal.timeout(30_000),
   });
-  if (result.error || result.status !== 0) {
-    const redactions = [
-      env.VERCEL_TOKEN,
-      env.STAGING_SUPABASE_PUBLISHABLE_KEY,
-      env.STAGING_SUPABASE_SERVICE_ROLE_KEY,
-      input.trim(),
-    ].filter(Boolean);
-    const details = `${result.stderr || ''}\n${result.stdout || ''}`
-      .split(/\r?\n/)
-      .map((line) => redactions.reduce((safe, secret) => safe.replaceAll(secret, '[redacted]'), line.trim()))
-      .filter((line) => /error|failed|denied|unauthorized|not found|invalid|already exists/i.test(line))
-      .slice(-2)
-      .join(' ')
-      .slice(0, 300);
-    throw new Error(`Vercel ${operation} failed; exit=${result.status ?? 'spawn-error'}.${details ? ` ${details}` : ''}`);
+  let body;
+  try { body = await response.json(); } catch { body = null; }
+  if (!response.ok) throw new Error(`Vercel environment request failed (HTTP ${response.status}).`);
+  if (Array.isArray(body?.failed) && body.failed.length > 0) {
+    throw new Error(`Vercel rejected ${body.failed.length} branch-scoped environment variable${body.failed.length === 1 ? '' : 's'}.`);
   }
-  return `${result.stdout || ''}\n${result.stderr || ''}`;
+  return body;
 }
 
-function addPreviewSecret(name, value, env, overwrite) {
-  const args = [
-    '--yes', '--non-interactive', '--token', env.VERCEL_TOKEN, '--scope', env.VERCEL_ORG_ID,
-    'env', 'add', name, 'preview', '--project', env.VERCEL_PROJECT_ID,
-    '--git-branch', allowedBranch, '--sensitive',
-  ];
-  if (overwrite) args.push('--force');
-  runVercel(args, env, `${value}\n`, `variable ${name}`);
-  console.log(`Configured sensitive Preview variable: ${name}`);
+export async function createMissingPreviewVariables(env, fetchImpl = fetch, randomBytesImpl = randomBytes) {
+  const baseUrl = `https://api.vercel.com/v10/projects/${encodeURIComponent(env.VERCEL_PROJECT_ID)}/env`;
+  const query = new URLSearchParams({ gitBranch: allowedBranch, teamId: env.VERCEL_ORG_ID, decrypt: 'false' });
+  const inventory = await vercelApi(`${baseUrl}?${query}`, env, fetchImpl);
+  if (!Array.isArray(inventory)) {
+    throw new Error('Vercel environment inventory response was invalid.');
+  }
+
+  const existingNames = new Set(inventory
+    .filter((item) => item.gitBranch === allowedBranch && Array.isArray(item.target) && item.target.includes('preview'))
+    .map((item) => item.key));
+  const missing = buildPreviewVariables(env, randomBytesImpl).filter((item) => !existingNames.has(item.key));
+  if (missing.length) {
+    await vercelApi(`${baseUrl}?teamId=${encodeURIComponent(env.VERCEL_ORG_ID)}`, env, fetchImpl, {
+      method: 'POST',
+      body: JSON.stringify(missing),
+    });
+  }
+  const requestedNames = new Set(buildPreviewVariables(env, () => Buffer.alloc(32)).map((item) => item.key));
+  const kept = [...existingNames].filter((name) => requestedNames.has(name)).length;
+  return { created: missing.length, kept };
 }
 
-function main() {
+async function main() {
   const errors = validateStagingPreviewConfig(process.env);
   if (errors.length) throw new Error(errors.join(' '));
 
-  const environment = process.env;
-  const listing = runVercel([
-    '--non-interactive', '--token', environment.VERCEL_TOKEN, '--scope', environment.VERCEL_ORG_ID,
-    'env', 'ls', 'preview', allowedBranch, '--project', environment.VERCEL_PROJECT_ID,
-  ], environment, '', 'branch variable inventory');
-  const existingNames = new Set([...listing.matchAll(/^\s+([A-Z][A-Z0-9_]+)\s+/gm)].map((match) => match[1]));
-  const variables = [
-    ['VITE_SUPABASE_URL', environment.STAGING_SUPABASE_URL],
-    ['VITE_SUPABASE_ANON_KEY', environment.STAGING_SUPABASE_PUBLISHABLE_KEY],
-    ['SUPABASE_URL', environment.STAGING_SUPABASE_URL],
-    ['SUPABASE_SERVICE_ROLE_KEY', environment.STAGING_SUPABASE_SERVICE_ROLE_KEY],
-    ['CONNECTOR_SECRET_ENCRYPTION_KEY', randomBytes(32).toString('base64')],
-    ['INTAKE_HASH_SECRET', randomBytes(32).toString('base64url')],
-  ];
-
-  for (const [name, value] of variables) {
-    if ((name === 'CONNECTOR_SECRET_ENCRYPTION_KEY' || name === 'INTAKE_HASH_SECRET') && existingNames.has(name)) {
-      console.log(`Kept existing sensitive Preview variable: ${name}`);
-      continue;
-    }
-    addPreviewSecret(name, value, environment, existingNames.has(name));
-  }
-  console.log(`Configured ${variables.length} sensitive variables for Preview branch ${allowedBranch}.`);
+  const result = await createMissingPreviewVariables(process.env);
+  console.log(`Created ${result.created} missing sensitive Preview variables; kept ${result.kept} existing variables for ${allowedBranch}.`);
 }
 
 if (process.argv[1] && pathToFileURL(resolve(process.argv[1])).href === import.meta.url) {
   try {
-    main();
+    await main();
   } catch (error) {
     console.error(error instanceof Error ? error.message : 'Staging Preview configuration failed.');
     process.exitCode = 1;
