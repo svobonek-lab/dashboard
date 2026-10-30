@@ -34,6 +34,46 @@ test('import endpoint keeps commit mode disabled unless the deployment enables t
   assert.equal(response.body.code, 'IMPORT_WORKER_DISABLED');
 });
 
+test('import commit refuses a production Supabase target even when worker flag is enabled', async () => {
+  const previousFlag = process.env.APP_IMPORT_WORKER_ENABLED;
+  const previousUrl = process.env.SUPABASE_URL;
+  try {
+    process.env.APP_IMPORT_WORKER_ENABLED = 'true';
+    process.env.SUPABASE_URL = 'https://oncmtmrhmjlerbwkrecv.supabase.co';
+    const response = responseProbe();
+    await importHandler({ method: 'POST', body: {
+      mode: 'commit', companyId: 'company-a', fileName: 'leads.csv', csv: 'id\nA-1',
+    } }, response);
+    assert.equal(response.statusCode, 503);
+    assert.equal(response.body.code, 'IMPORT_WORKER_DISABLED');
+  } finally {
+    if (previousFlag === undefined) delete process.env.APP_IMPORT_WORKER_ENABLED;
+    else process.env.APP_IMPORT_WORKER_ENABLED = previousFlag;
+    if (previousUrl === undefined) delete process.env.SUPABASE_URL;
+    else process.env.SUPABASE_URL = previousUrl;
+  }
+});
+
+test('import commit reaches input validation for the approved staging target', async () => {
+  const previousFlag = process.env.APP_IMPORT_WORKER_ENABLED;
+  const previousUrl = process.env.SUPABASE_URL;
+  try {
+    process.env.APP_IMPORT_WORKER_ENABLED = 'true';
+    process.env.SUPABASE_URL = 'https://xwzweltjvreqhjpbjrxa.supabase.co';
+    const response = responseProbe();
+    await importHandler({ method: 'POST', body: {
+      mode: 'commit', companyId: 'company-a', fileName: 'leads.csv', csv: 'id\nA-1',
+    } }, response);
+    assert.equal(response.statusCode, 400);
+    assert.match(response.body.error, /přihlášený účet/);
+  } finally {
+    if (previousFlag === undefined) delete process.env.APP_IMPORT_WORKER_ENABLED;
+    else process.env.APP_IMPORT_WORKER_ENABLED = previousFlag;
+    if (previousUrl === undefined) delete process.env.SUPABASE_URL;
+    else process.env.SUPABASE_URL = previousUrl;
+  }
+});
+
 test('dry run binds the reviewed field mapping into its fingerprint', async () => {
   const base = {
     mode: 'dry_run', companyId: 'company-a', fileName: 'leads.csv', csv: 'name\nAlena',

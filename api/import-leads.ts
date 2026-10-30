@@ -3,6 +3,7 @@ import { createServerlessSupabaseClient } from './_shared/supabaseClient.js';
 import type { FieldMappingConfig, TargetFieldType } from '../src/shared/model/integrations.js';
 
 const MAX_CSV_BYTES = 2 * 1024 * 1024;
+const STAGING_IMPORT_SUPABASE_URL = 'https://xwzweltjvreqhjpbjrxa.supabase.co';
 
 const TARGET_FIELDS: Record<TargetFieldType, string> = {
   customerName: 'customer',
@@ -78,7 +79,8 @@ export default async function importLeadsHandler(req: any, res: any) {
   const body = req.body || {};
   const mode = body.mode || 'dry_run';
   if (mode === 'commit') {
-    if (process.env.APP_IMPORT_WORKER_ENABLED !== 'true') {
+    const importTargetUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
+    if (process.env.APP_IMPORT_WORKER_ENABLED !== 'true' || importTargetUrl !== STAGING_IMPORT_SUPABASE_URL) {
       res.status(503).json({
         error: 'Import worker není na tomto deploymentu aktivovaný.',
         code: 'IMPORT_WORKER_DISABLED',
@@ -98,7 +100,7 @@ export default async function importLeadsHandler(req: any, res: any) {
       res.status(413).json({ error: 'CSV soubor je příliš velký. Limit importu je 2 MB.' });
       return;
     }
-    const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
+    const supabaseUrl = importTargetUrl;
     const anonKey = process.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY;
     const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
     if (!supabaseUrl || !anonKey || !serviceKey) {

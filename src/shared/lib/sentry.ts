@@ -14,8 +14,7 @@ export function getSentryWorkspaceTags(identity: { companyId?: string | null; ro
 }
 
 export function setSentryWorkspaceContext(identity: { companyId?: string | null; role?: string | null }): void {
-  const meta = import.meta as any;
-  if (!meta.env?.VITE_SENTRY_DSN) return;
+  if (!import.meta.env.VITE_SENTRY_DSN) return;
 
   const tags = getSentryWorkspaceTags(identity);
   Sentry.setTag('company_id', tags.company_id);
@@ -23,18 +22,17 @@ export function setSentryWorkspaceContext(identity: { companyId?: string | null;
 }
 
 export function initSentry() {
-  const meta = import.meta as any;
-  const dsn = meta.env?.VITE_SENTRY_DSN;
+  const dsn = import.meta.env.VITE_SENTRY_DSN;
 
   if (!dsn) return;
 
   Sentry.init({
     dsn,
-    environment: meta.env?.MODE,
+    environment: import.meta.env.MODE,
     integrations: [
       Sentry.browserTracingIntegration(),
     ],
-    tracesSampleRate: meta.env?.PROD ? 0.2 : 1.0,
+    tracesSampleRate: import.meta.env.PROD ? 0.2 : 1.0,
   });
   
   console.log('Sentry úspěšně inicializováno.');
