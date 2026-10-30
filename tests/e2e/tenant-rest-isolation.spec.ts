@@ -1,4 +1,5 @@
 import { randomUUID } from 'node:crypto';
+import { classifyStorageDownloadDenial } from './storage-download-denial';
 import { expect, test } from 'playwright/test';
 import { accessToken, requiredValue, restDelete, restGet, restInsert, restPatch, stagingConfig } from './support';
 
@@ -217,13 +218,15 @@ test('owner A and employee A cannot download a company B lead file from private 
     download(ownerB), download(ownerA), download(employeeA),
   ]);
   expect(ownerControl.status(), 'Owner B must be able to read its synthetic private file control.').toBe(200);
-  expect([403, 404], `Owner A unexpectedly downloaded company B file (HTTP ${ownerADownload.status()}).`).toContain(ownerADownload.status());
-  expect([403, 404], `Employee A unexpectedly downloaded company B file (HTTP ${employeeADownload.status()}).`).toContain(employeeADownload.status());
+  const ownerADenial = classifyStorageDownloadDenial(ownerADownload.status(), await ownerADownload.text());
+  const employeeADenial = classifyStorageDownloadDenial(employeeADownload.status(), await employeeADownload.text());
+  expect(ownerADenial, `Owner A was not denied access to company B file (HTTP ${ownerADownload.status()}).`).not.toBeNull();
+  expect(employeeADenial, `Employee A was not denied access to company B file (HTTP ${employeeADownload.status()}).`).not.toBeNull();
 
   matrix.push(
     { resource: 'Storage lead-files B path', operation: 'download as owner B control', result: 'HTTP 200' },
-    { resource: 'Storage lead-files B path', operation: 'download as owner A', result: `HTTP ${ownerADownload.status()}` },
-    { resource: 'Storage lead-files B path', operation: 'download as employee A', result: `HTTP ${employeeADownload.status()}` },
+    { resource: 'Storage lead-files B path', operation: 'download as owner A', result: ownerADenial! },
+    { resource: 'Storage lead-files B path', operation: 'download as employee A', result: employeeADenial! },
   );
   } finally {
     const [metadataDelete, objectDelete] = await Promise.all([
