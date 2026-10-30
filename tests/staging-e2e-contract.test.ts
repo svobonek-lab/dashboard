@@ -54,7 +54,13 @@ test('staging E2E has isolated scenarios and an opt-in same-repository workflow'
   assert.equal((workflow.match(/STAGING_OWNER_B_PASSWORD:\s*\$\{\{\s*secrets\.STAGING_OWNER_B_PASSWORD\s*\}\}/g) ?? []).length, 2);
   assert.equal((workflow.match(/STAGING_LEAD_B_FILE_PATH:\s*\$\{\{\s*vars\.STAGING_LEAD_B_FILE_PATH\s*\}\}/g) ?? []).length, 2);
   const e2eWorkflow = workflow.split('  staging-metadata-snapshot:')[0];
-  assert.doesNotMatch(e2eWorkflow + support, /SERVICE_ROLE|service_role|SUPABASE_SERVICE_ROLE_KEY/i);
+  const browserTestStep = e2eWorkflow.split('      - name: Run seven opt-in synthetic tenant acceptance scenarios')[1]?.split('      - name: Roll back only exact synthetic owner CSV imports')[0];
+  const exactCleanupStep = e2eWorkflow.split('      - name: Roll back only exact synthetic owner CSV imports')[1];
+  assert.ok(browserTestStep, 'browser tests must have a separate step without service-role access');
+  assert.ok(exactCleanupStep, 'synthetic CSV cleanup must run after the browser tests');
+  assert.doesNotMatch(browserTestStep + support, /SERVICE_ROLE|service_role|SUPABASE_SERVICE_ROLE_KEY/i);
+  assert.match(exactCleanupStep, /node scripts\/cleanup-staging-e2e-imports\.mjs/);
+  assert.match(exactCleanupStep, /STAGING_SUPABASE_SERVICE_ROLE_KEY:\s*\$\{\{\s*secrets\.STAGING_SUPABASE_SERVICE_ROLE_KEY\s*\}\}/);
   const loadWorkflow = workflow.split('  staging-load-acceptance:')[1]?.split('  staging-load-recover:')[0];
   assert.ok(loadWorkflow, 'load acceptance must have its own restricted job');
   assert.match(loadWorkflow, /inputs\.runner_mode == 'load-acceptance'/);
@@ -70,7 +76,8 @@ test('staging E2E has isolated scenarios and an opt-in same-repository workflow'
   assert.match(support, /await signIn\(page, account\)/);
   assert.match(support, /endsWith\('-auth-token'\)/);
   assert.match(ownerFlow, /playwright-import-\$\{importId\}@stavbaflow\.example\.test/);
-  assert.match(ownerFlow, /cleanupSyntheticImport/);
+  assert.match(ownerFlow, /const importedRows = await restGet/);
+  assert.doesNotMatch(ownerFlow, /restDelete\(request, ownerToken, 'app_leads'/);
   assert.match(ownerFlow, /function safeBrowserDiagnostic\(value: string\)/);
   assert.match(ownerFlow, /Browser errors \(sanitized\)/);
   assert.match(ownerFlow, /HTTP error responses \(path only\)/);

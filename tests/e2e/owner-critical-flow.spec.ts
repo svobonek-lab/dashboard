@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import { expect, test } from 'playwright/test';
-import { accessToken, requiredValue, restDelete, restGet, restRpc, signIn, stagingConfig } from './support';
+import { accessToken, requiredValue, restGet, restRpc, signIn, stagingConfig } from './support';
 
 function safeBrowserDiagnostic(value: string): string {
   return value
@@ -19,38 +19,6 @@ function safeBrowserDiagnostic(value: string): string {
     .slice(0, 300);
 }
 
-async function cleanupSyntheticImport(
-  request: Parameters<typeof restGet>[0],
-  ownerToken: string,
-  companyId: string,
-  fixture: { email: string; title: string },
-) {
-  const query = new URLSearchParams({
-    select: 'id,company_id,email,title,customer',
-    company_id: `eq.${companyId}`,
-    email: `eq.${fixture.email}`,
-    title: `eq.${fixture.title}`,
-  }).toString();
-  const rows = await restGet(request, ownerToken, 'app_leads', query);
-  for (const row of rows) {
-    expect(row.company_id).toBe(companyId);
-    expect(row.email).toBe(fixture.email);
-    expect(row.title).toBe(fixture.title);
-    expect(row.customer).toBe('Synthetic Playwright Customer');
-    const deletion = await restDelete(
-      request,
-      ownerToken,
-      'app_leads',
-      `id=eq.${encodeURIComponent(String(row.id))}&company_id=eq.${encodeURIComponent(companyId)}`,
-    );
-    expect(deletion.ok(), `Failed to delete the exact synthetic CSV import row (HTTP ${deletion.status()}).`).toBe(true);
-    const deletedRows = await deletion.json() as Array<Record<string, unknown>>;
-    expect(deletedRows).toHaveLength(1);
-    expect(deletedRows[0].id).toBe(row.id);
-  }
-  expect(await restGet(request, ownerToken, 'app_leads', query)).toHaveLength(0);
-}
-
 test('owner login, status change, CSV import/export and logout have no uncaught console errors', async ({ browser, page, request }) => {
   stagingConfig();
   const companyId = requiredValue('STAGING_COMPANY_A_ID');
@@ -66,7 +34,6 @@ test('owner login, status change, CSV import/export and logout have no uncaught 
   const importTitle = `StavbaFlow Playwright Import ${importId}`;
   const importEmail = `playwright-import-${importId}@stavbaflow.example.test`;
   const importFileName = `stavbaflow-playwright-${importId}.csv`;
-  const importFixture = { email: importEmail, title: importTitle };
   const leadQuery = new URLSearchParams({ select: 'id,company_id,title,status', id: `eq.${leadId}`, company_id: `eq.${companyId}` });
   const startingRows = await restGet(request, ownerToken, 'app_leads', leadQuery.toString());
   expect(startingRows).toHaveLength(1);
@@ -82,7 +49,6 @@ test('owner login, status change, CSV import/export and logout have no uncaught 
   const uncaughtErrors: string[] = [];
   const failedHttpResponses = new Set<string>();
   let signedIn = false;
-  let importStarted = false;
   let flowError: unknown;
   let importFailure: string | null = null;
   const cleanupErrors: unknown[] = [];
@@ -174,7 +140,6 @@ test('owner login, status change, CSV import/export and logout have no uncaught 
     });
     await page.getByRole('button', { name: /Potvrdit mapování/ }).click();
     console.info('Owner E2E checkpoint: CSV mapping confirmed');
-    importStarted = true;
     const commitResponsePromise = page.waitForResponse((response) => {
       if (!response.url().includes('/api/import-leads') || response.request().method() !== 'POST') return false;
       try {
@@ -193,6 +158,12 @@ test('owner login, status change, CSV import/export and logout have no uncaught 
     await expect(page.getByRole('button', { name: /Importuji data do CRM/ })).toBeHidden({ timeout: 10000 });
     if (commitResponse.ok()) {
       await expect(page.getByText(/Import byl uložen/)).toBeVisible();
+      const importedRows = await restGet(request, ownerToken, 'app_leads', importQuery);
+      expect(importedRows).toHaveLength(1);
+      expect(importedRows[0].company_id).toBe(companyId);
+      expect(importedRows[0].email).toBe(importEmail);
+      expect(importedRows[0].title).toBe(importTitle);
+      expect(importedRows[0].customer).toBe('Synthetic Playwright Customer');
       console.info('Owner E2E checkpoint: CSV import persisted');
     } else {
       importFailure = `Staging CSV commit rejected: HTTP ${commitResponse.status()} code=${commitCode}`;
@@ -228,14 +199,6 @@ test('owner login, status change, CSV import/export and logout have no uncaught 
   } catch (error) {
     flowError = error;
   } finally {
-    if (importStarted) {
-      try {
-        await cleanupSyntheticImport(request, ownerToken, companyId, importFixture);
-      } catch (error) {
-        cleanupErrors.push(error);
-      }
-    }
-
     try {
       const currentRows = await restGet(request, ownerToken, 'app_leads', leadQuery.toString());
       if (currentRows[0]?.status !== originalStatus) {

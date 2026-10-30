@@ -50,6 +50,7 @@ jobs:
           node-version: '24'
           cache: npm
       - name: Check staging isolation and required credentials without printing values
+        id: staging_safety
         run: node scripts/assert-staging-e2e-env.mjs
         env:
           STAGING_PREVIEW_URL: ${{ vars.STAGING_PREVIEW_URL }}
@@ -106,6 +107,16 @@ jobs:
           STAGING_LEAD_B_FILE_PATH: ${{ vars.STAGING_LEAD_B_FILE_PATH }}
           STAGING_PUBLIC_TENANT_KEY: ${{ vars.STAGING_PUBLIC_TENANT_KEY }}
           STAGING_PUBLIC_INTAKE_ENABLED: ${{ vars.STAGING_PUBLIC_INTAKE_ENABLED }}
+
+      - name: Roll back only exact synthetic owner CSV imports
+        if: always() && steps.staging_safety.outcome == 'success'
+        run: node scripts/cleanup-staging-e2e-imports.mjs
+        env:
+          STAGING_SUPABASE_URL: ${{ vars.STAGING_SUPABASE_URL }}
+          STAGING_SUPABASE_PROJECT_REF: ${{ vars.STAGING_SUPABASE_PROJECT_REF }}
+          PRODUCTION_SUPABASE_PROJECT_REF: ${{ vars.PRODUCTION_SUPABASE_PROJECT_REF }}
+          STAGING_COMPANY_A_ID: ${{ vars.STAGING_COMPANY_A_ID }}
+          STAGING_SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.STAGING_SUPABASE_SERVICE_ROLE_KEY }}
 
   staging-metadata-snapshot:
     if: >-
