@@ -97,6 +97,8 @@ test('public intake load profile sends 200 unique synthetic requests in one minu
   assert.match(source, /duration:\s*'1m'/);
   assert.match(source, /request_key/);
   assert.match(source, /429/);
+  assert.match(source, /public_intake_rate_limited:\s*\['count>0'\]/);
+  assert.match(source, /public_intake_accepted:\s*\['count<=5'\]/);
   assert.match(source, /PRODUCTION_SUPABASE_PROJECT_REF/);
   assert.match(source, /STAGING_PUBLIC_TENANT_KEY/);
   assert.match(source, /STAGING_PUBLIC_LOAD_RUN_ID/);

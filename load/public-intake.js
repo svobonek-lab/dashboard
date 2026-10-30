@@ -21,6 +21,8 @@ export const options = {
   },
   thresholds: {
     public_intake_unexpected_responses: ['rate<0.01'],
+    public_intake_rate_limited: ['count>0'],
+    public_intake_accepted: ['count<=5'],
     dropped_iterations: ['count==0'],
   },
 };

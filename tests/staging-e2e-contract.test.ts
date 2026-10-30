@@ -47,6 +47,9 @@ test('staging E2E has isolated scenarios and an opt-in same-repository workflow'
   assert.match(sentrySpec, /company_id: companyId, role: 'owner'/);
   assert.match(sentrySpec, /event\?\.user as Record<string, unknown> \| undefined/);
   assert.match(sentrySpec, /StavbaFlow synthetic Sentry staging acceptance/);
+  assert.match(publicIntake, /oversized\.status\(\)\)\.toBe\(400\)/);
+  assert.match(publicIntake, /honeypot\.status\(\)\)\.toBe\(202\)/);
+  assert.match(publicIntake, /honeypotTitle/);
   assert.match(safety, /STAGING_LEAD_B_FILE_PATH/);
   assert.match(safety, /Notes\/files REST and private Storage isolation.*skipped/i);
   assert.match(tenantIsolation, /table: 'app_notes', crossTenantQuery: companyFilter/);
@@ -59,7 +62,7 @@ test('staging E2E has isolated scenarios and an opt-in same-repository workflow'
   assert.equal((workflow.match(/STAGING_OWNER_B_PASSWORD:\s*\$\{\{\s*secrets\.STAGING_OWNER_B_PASSWORD\s*\}\}/g) ?? []).length, 2);
   assert.equal((workflow.match(/STAGING_LEAD_B_FILE_PATH:\s*\$\{\{\s*vars\.STAGING_LEAD_B_FILE_PATH\s*\}\}/g) ?? []).length, 2);
   const e2eWorkflow = workflow.split('  staging-metadata-snapshot:')[0];
-  const browserTestStep = e2eWorkflow.split('      - name: Run eight opt-in synthetic tenant acceptance scenarios')[1]?.split('      - name: Roll back only exact synthetic owner CSV imports')[0];
+  const browserTestStep = e2eWorkflow.split('      - name: Run opt-in synthetic tenant acceptance scenarios')[1]?.split('      - name: Roll back only exact synthetic owner CSV imports')[0];
   const exactCleanupStep = e2eWorkflow.split('      - name: Roll back only exact synthetic owner CSV imports')[1];
   assert.ok(browserTestStep, 'browser tests must have a separate step without service-role access');
   assert.ok(exactCleanupStep, 'synthetic CSV cleanup must run after the browser tests');
