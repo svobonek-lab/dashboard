@@ -54,7 +54,9 @@ test('staging Sentry receives only synthetic exception with company and role tag
 
   const sentryResponse = page.waitForResponse((response) => {
     const url = new URL(response.url());
-    return /sentry\.io$/i.test(url.hostname) && url.pathname.includes('/envelope/');
+    if (!/sentry\.io$/i.test(url.hostname) || !url.pathname.includes('/envelope/')) return false;
+    const event = readSentryEvent(response.request().postData() || '');
+    return event != null && JSON.stringify(event).includes(syntheticError);
   }, { timeout: 20_000 });
   await page.addScriptTag({ url: new URL('/e2e-sentry-trigger.js', page.url()).href });
   const capturedPageError = await pageError;
