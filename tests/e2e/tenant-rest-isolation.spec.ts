@@ -1,4 +1,5 @@
 import { randomUUID } from 'node:crypto';
+import { classifyStorageDownloadDenial } from './storage-download-denial';
 import { expect, test } from 'playwright/test';
 import { accessToken, requiredValue, restDelete, restGet, restInsert, restPatch, stagingConfig } from './support';
 
@@ -58,14 +59,6 @@ test('owner A and employee A cannot read or mutate company B synthetic rows thro
       rowFilter: (row: TenantRow) => `id=${eq(row.id)}&${companyFilter}`,
       updateField: 'body', stableFields: ['body', 'lead_id', 'author'],
     },
-    ...(process.env.STAGING_LEAD_B_FILE_PATH ? [
-      {
-        table: 'app_lead_files', crossTenantQuery: companyFilter,
-        controlQuery: `company_id=${eq(companyB)}&lead_id=${eq(leadBId)}&storage_path=${eq(process.env.STAGING_LEAD_B_FILE_PATH)}`,
-        rowFilter: (row: TenantRow) => `id=${eq(row.id)}&${companyFilter}`,
-        updateField: 'file_name', stableFields: ['file_name', 'storage_path', 'lead_id', 'author_id'],
-      },
-    ] : []),
     {
       table: 'app_members', crossTenantQuery: companyFilter, crossTenantSelect: 'company_id,user_id',
       controlQuery: `company_id=${eq(companyB)}&user_id=${eq(employeeBId)}`,
@@ -122,7 +115,6 @@ test('owner A and employee A cannot read or mutate company B synthetic rows thro
       else if ('id' in insertProbe) insertProbe.id = probeId;
       if (resource.table === 'app_members') insertProbe.user_id = actor.id;
       if (resource.table === 'app_invites') insertProbe.email = `e2e-isolation-${probeId}@stavbaflow.example.test`;
-      if (resource.table === 'app_lead_files') insertProbe.storage_path = `${companyB}/${leadBId}/e2e-isolation-${probeId}.txt`;
       if (resource.table === 'app_companies') insertProbe.slug = `e2e-isolation-${probeId}`;
       const insert = await restInsert(request, actor.token, resource.table, insertProbe);
       const insertResult = await assertMutationDeniedOrFiltered(insert, `${actor.name} INSERT into ${resource.table}`);
@@ -151,23 +143,74 @@ test('owner A and employee A cannot read or mutate company B synthetic rows thro
 });
 
 test('owner A and employee A cannot download a company B lead file from private Storage', async ({ browser, request }) => {
-  test.skip(!process.env.STAGING_LEAD_B_FILE_PATH, 'Private Storage isolation requires the reviewed notes/files schema and a synthetic company B file fixture.');
   const { url, key } = stagingConfig();
   const companyB = requiredValue('STAGING_COMPANY_B_ID');
   const leadB = requiredValue('STAGING_LEAD_B_ID');
-  const path = requiredValue('STAGING_LEAD_B_FILE_PATH');
-  expect(path.startsWith(`${companyB}/${leadB}/`), 'File fixture path must be nested under company B and its synthetic lead.').toBe(true);
+  const ownerBId = requiredValue('STAGING_OWNER_B_ID');
+  const path = `${companyB}/${leadB}/${randomUUID()}-e2e-isolation.pdf`;
+  const fileId = randomUUID();
+  const fileContent = Buffer.from('%PDF-1.4\n1 0 obj\n<< /Type /Catalog >>\nendobj\ntrailer\n<< /Root 1 0 R >>\n%%EOF\n');
 
   const [ownerA, employeeA, ownerB] = await Promise.all([
     accessToken(browser, 'OWNER_A'),
     accessToken(browser, 'EMPLOYEE_A'),
     accessToken(browser, 'OWNER_B'),
   ]);
-  const fileQuery = `company_id=${eq(companyB)}&lead_id=${eq(leadB)}&storage_path=${eq(path)}`;
-  const ownerRows = await restGet(request, ownerB, 'app_lead_files', `select=id,company_id,lead_id,storage_path&${fileQuery}`);
-  expect(ownerRows, 'Company B file metadata fixture is missing; refusing a vacuous Storage isolation pass.').toHaveLength(1);
-
   const objectPath = path.split('/').map(encodeURIComponent).join('/');
+  const matrix: Array<{ resource: string; operation: string; result: string }> = [];
+  let uploaded = false;
+  let metadataCreated = false;
+  try {
+    const upload = await request.post(`${url}/storage/v1/object/lead-files/${objectPath}`, {
+      headers: { apikey: key, Authorization: `Bearer ${ownerB}`, 'Content-Type': 'application/pdf', 'x-upsert': 'false' },
+      data: fileContent,
+    });
+    uploaded = upload.ok();
+    expect(upload.status(), `Owner B must create the private Storage control (HTTP ${upload.status()}).`).toBe(200);
+
+    const metadata = await restInsert(request, ownerB, 'app_lead_files', {
+      id: fileId,
+      company_id: companyB,
+      lead_id: leadB,
+      storage_path: path,
+      author_id: ownerBId,
+      file_name: 'e2e-isolation.pdf',
+      mime_type: 'application/pdf',
+      size_bytes: fileContent.byteLength,
+    });
+    metadataCreated = metadata.ok();
+    expect(metadata.status(), `Owner B must create the private file metadata control (HTTP ${metadata.status()}).`).toBe(201);
+
+    const fileQuery = `company_id=${eq(companyB)}&lead_id=${eq(leadB)}&storage_path=${eq(path)}`;
+    const ownerRows = await restGet(request, ownerB, 'app_lead_files', `select=id,company_id,lead_id,storage_path&${fileQuery}`);
+    expect(ownerRows, 'Company B file metadata fixture is missing; refusing a vacuous isolation pass.').toHaveLength(1);
+    for (const actor of [
+      { name: 'owner A', token: ownerA, id: requiredValue('STAGING_OWNER_A_ID') },
+      { name: 'employee A', token: employeeA, id: requiredValue('STAGING_EMPLOYEE_A_ID') },
+    ]) {
+      const rows = await restGet(request, actor.token, 'app_lead_files', `select=id&${fileQuery}`);
+      expect(rows, `${actor.name} can read company B file metadata.`).toHaveLength(0);
+      const insert = await restInsert(request, actor.token, 'app_lead_files', {
+        id: randomUUID(), company_id: companyB, lead_id: leadB,
+        storage_path: `${companyB}/${leadB}/${randomUUID()}-forbidden.txt`, author_id: actor.id,
+        file_name: 'forbidden.txt', mime_type: 'text/plain', size_bytes: 1,
+      });
+      const insertResult = await assertMutationDeniedOrFiltered(insert, `${actor.name} INSERT into app_lead_files`);
+      const update = await restPatch(request, actor.token, 'app_lead_files', `id=${eq(fileId)}&company_id=${eq(companyB)}`, { file_name: 'changed.txt' });
+      const updateResult = await assertMutationDeniedOrFiltered(update, `${actor.name} UPDATE of company B app_lead_files`);
+      const deletion = await restDelete(request, actor.token, 'app_lead_files', `id=${eq(fileId)}&company_id=${eq(companyB)}`);
+      const deleteResult = await assertMutationDeniedOrFiltered(deletion, `${actor.name} DELETE of company B app_lead_files`);
+      const control = await restGet(request, ownerB, 'app_lead_files', `select=id,file_name&${fileQuery}`);
+      expect(control, `${actor.name} changed or deleted the company B file metadata fixture.`).toHaveLength(1);
+      expect(control[0].file_name).toBe('e2e-isolation.pdf');
+      matrix.push(
+        { resource: 'app_lead_files', operation: `SELECT as ${actor.name}`, result: '0 rows' },
+        { resource: 'app_lead_files', operation: `INSERT as ${actor.name}`, result: insertResult },
+        { resource: 'app_lead_files', operation: `UPDATE as ${actor.name}`, result: updateResult },
+        { resource: 'app_lead_files', operation: `DELETE as ${actor.name}`, result: deleteResult },
+      );
+    }
+
   const download = async (token: string) => request.get(`${url}/storage/v1/object/authenticated/lead-files/${objectPath}`, {
     headers: { apikey: key, Authorization: `Bearer ${token}` },
   });
@@ -175,15 +218,35 @@ test('owner A and employee A cannot download a company B lead file from private 
     download(ownerB), download(ownerA), download(employeeA),
   ]);
   expect(ownerControl.status(), 'Owner B must be able to read its synthetic private file control.').toBe(200);
-  expect([403, 404], `Owner A unexpectedly downloaded company B file (HTTP ${ownerADownload.status()}).`).toContain(ownerADownload.status());
-  expect([403, 404], `Employee A unexpectedly downloaded company B file (HTTP ${employeeADownload.status()}).`).toContain(employeeADownload.status());
+  const ownerADenial = classifyStorageDownloadDenial(ownerADownload.status(), await ownerADownload.text());
+  const employeeADenial = classifyStorageDownloadDenial(employeeADownload.status(), await employeeADownload.text());
+  expect(ownerADenial, `Owner A was not denied access to company B file (HTTP ${ownerADownload.status()}).`).not.toBeNull();
+  expect(employeeADenial, `Employee A was not denied access to company B file (HTTP ${employeeADownload.status()}).`).not.toBeNull();
 
-  const matrix = [
-    { resource: 'app_lead_files', operation: 'SELECT as owner A', result: '0 rows (required fixture check)' },
+  matrix.push(
     { resource: 'Storage lead-files B path', operation: 'download as owner B control', result: 'HTTP 200' },
-    { resource: 'Storage lead-files B path', operation: 'download as owner A', result: `HTTP ${ownerADownload.status()}` },
-    { resource: 'Storage lead-files B path', operation: 'download as employee A', result: `HTTP ${employeeADownload.status()}` },
-  ];
+    { resource: 'Storage lead-files B path', operation: 'download as owner A', result: ownerADenial! },
+    { resource: 'Storage lead-files B path', operation: 'download as employee A', result: employeeADenial! },
+  );
+  } finally {
+    const [metadataDelete, objectDelete] = await Promise.all([
+      metadataCreated
+        ? restDelete(request, ownerB, 'app_lead_files', `id=${eq(fileId)}&company_id=${eq(companyB)}`)
+        : Promise.resolve(null),
+      uploaded
+        ? request.delete(`${url}/storage/v1/object/lead-files`, {
+          headers: { apikey: key, Authorization: `Bearer ${ownerB}`, 'Content-Type': 'application/json' },
+          data: { prefixes: [path] },
+        })
+        : Promise.resolve(null),
+    ]);
+    if (metadataDelete) {
+      expect([200, 204], `Could not remove exact synthetic app_lead_files fixture (HTTP ${metadataDelete.status()}).`).toContain(metadataDelete.status());
+    }
+    if (objectDelete) {
+      expect([200, 204], `Could not remove exact synthetic Storage object (HTTP ${objectDelete.status()}).`).toContain(objectDelete.status());
+    }
+  }
   test.info().annotations.push({ type: 'tenant-isolation-matrix', description: JSON.stringify(matrix) });
   console.info('Tenant isolation matrix\n' + matrix.map(row => `${row.resource} | ${row.operation} | ${row.result}`).join('\n'));
 });

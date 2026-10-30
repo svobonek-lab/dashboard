@@ -22,6 +22,7 @@ test('staging E2E has isolated scenarios and an opt-in same-repository workflow'
     'owner-menu.spec.ts',
     'public-intake-idempotency.spec.ts',
     'sentry-staging-event.spec.ts',
+    'supabase-read-failure.spec.ts',
     'tenant-rest-isolation.spec.ts',
   ]);
   assert.match(workflow, /workflow_dispatch:/);
@@ -51,17 +52,22 @@ test('staging E2E has isolated scenarios and an opt-in same-repository workflow'
   assert.match(publicIntake, /oversized\.status\(\)\)\.toBe\(400\)/);
   assert.match(publicIntake, /honeypot\.status\(\)\)\.toBe\(202\)/);
   assert.match(publicIntake, /honeypotTitle/);
-  assert.match(safety, /STAGING_LEAD_B_FILE_PATH/);
-  assert.match(safety, /Notes\/files REST and private Storage isolation.*skipped/i);
+  assert.doesNotMatch(safety, /STAGING_LEAD_B_FILE_PATH/);
+  assert.doesNotMatch(safety, /private Storage isolation will be skipped/i);
   assert.match(tenantIsolation, /table: 'app_notes', crossTenantQuery: companyFilter/);
   assert.match(tenantIsolation, /if \(resource\.table === 'app_audit'\) delete insertProbe\.id/);
-  assert.match(tenantIsolation, /test\.skip\(!process\.env\.STAGING_LEAD_B_FILE_PATH/);
+  assert.doesNotMatch(tenantIsolation, /test\.skip\(!process\.env\.STAGING_LEAD_B_FILE_PATH/);
+  assert.match(tenantIsolation, /storage\/v1\/object\/lead-files/);
+  assert.match(tenantIsolation, /finally\s*\{/);
+  assert.match(tenantIsolation, /'Content-Type': 'application\/pdf'/);
+  assert.match(tenantIsolation, /size_bytes: fileContent\.byteLength/);
+  assert.match(tenantIsolation, /STAGING_COMPANY_B_ID.*STAGING_LEAD_B_ID/s);
   assert.match(tenantIsolation, /crossTenantSelect: 'company_id,user_id'/);
   assert.match(workflow, /STAGING_PUBLIC_TENANT_KEY:\s*\$\{\{\s*vars\.STAGING_PUBLIC_TENANT_KEY\s*\}\}/);
   assert.doesNotMatch(workflow, /STAGING_PUBLIC_TENANT_KEY:\s*\$\{\{\s*secrets\.STAGING_PUBLIC_TENANT_KEY\s*\}\}/);
   assert.equal((workflow.match(/STAGING_OWNER_B_EMAIL:\s*\$\{\{\s*secrets\.STAGING_OWNER_B_EMAIL\s*\}\}/g) ?? []).length, 2);
   assert.equal((workflow.match(/STAGING_OWNER_B_PASSWORD:\s*\$\{\{\s*secrets\.STAGING_OWNER_B_PASSWORD\s*\}\}/g) ?? []).length, 2);
-  assert.equal((workflow.match(/STAGING_LEAD_B_FILE_PATH:\s*\$\{\{\s*vars\.STAGING_LEAD_B_FILE_PATH\s*\}\}/g) ?? []).length, 2);
+  assert.doesNotMatch(workflow, /STAGING_LEAD_B_FILE_PATH/);
   const e2eWorkflow = workflow.split('  staging-metadata-snapshot:')[0];
   const browserTestStep = e2eWorkflow.split('      - name: Run opt-in synthetic tenant acceptance scenarios')[1]?.split('      - name: Roll back only exact synthetic owner CSV imports')[0];
   const exactCleanupStep = e2eWorkflow.split('      - name: Roll back only exact synthetic owner CSV imports')[1];

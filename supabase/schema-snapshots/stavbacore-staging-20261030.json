@@ -2195,6 +2195,226 @@
       },
       {
         "name": "id",
+        "table": "app_lead_events",
+        "schema": "public",
+        "ordinal": 1,
+        "nullable": "NO",
+        "udt_name": "uuid",
+        "data_type": "uuid",
+        "has_default": true
+      },
+      {
+        "name": "company_id",
+        "table": "app_lead_events",
+        "schema": "public",
+        "ordinal": 2,
+        "nullable": "NO",
+        "udt_name": "uuid",
+        "data_type": "uuid",
+        "has_default": false
+      },
+      {
+        "name": "lead_id",
+        "table": "app_lead_events",
+        "schema": "public",
+        "ordinal": 3,
+        "nullable": "NO",
+        "udt_name": "uuid",
+        "data_type": "uuid",
+        "has_default": false
+      },
+      {
+        "name": "actor_id",
+        "table": "app_lead_events",
+        "schema": "public",
+        "ordinal": 4,
+        "nullable": "YES",
+        "udt_name": "uuid",
+        "data_type": "uuid",
+        "has_default": false
+      },
+      {
+        "name": "operation",
+        "table": "app_lead_events",
+        "schema": "public",
+        "ordinal": 5,
+        "nullable": "NO",
+        "udt_name": "text",
+        "data_type": "text",
+        "has_default": false
+      },
+      {
+        "name": "new_status",
+        "table": "app_lead_events",
+        "schema": "public",
+        "ordinal": 6,
+        "nullable": "NO",
+        "udt_name": "text",
+        "data_type": "text",
+        "has_default": false
+      },
+      {
+        "name": "created_at",
+        "table": "app_lead_events",
+        "schema": "public",
+        "ordinal": 7,
+        "nullable": "NO",
+        "udt_name": "timestamptz",
+        "data_type": "timestamp with time zone",
+        "has_default": true
+      },
+      {
+        "name": "id",
+        "table": "app_lead_files",
+        "schema": "public",
+        "ordinal": 1,
+        "nullable": "NO",
+        "udt_name": "uuid",
+        "data_type": "uuid",
+        "has_default": true
+      },
+      {
+        "name": "company_id",
+        "table": "app_lead_files",
+        "schema": "public",
+        "ordinal": 2,
+        "nullable": "NO",
+        "udt_name": "uuid",
+        "data_type": "uuid",
+        "has_default": false
+      },
+      {
+        "name": "lead_id",
+        "table": "app_lead_files",
+        "schema": "public",
+        "ordinal": 3,
+        "nullable": "NO",
+        "udt_name": "uuid",
+        "data_type": "uuid",
+        "has_default": false
+      },
+      {
+        "name": "author_id",
+        "table": "app_lead_files",
+        "schema": "public",
+        "ordinal": 4,
+        "nullable": "NO",
+        "udt_name": "uuid",
+        "data_type": "uuid",
+        "has_default": false
+      },
+      {
+        "name": "storage_path",
+        "table": "app_lead_files",
+        "schema": "public",
+        "ordinal": 5,
+        "nullable": "NO",
+        "udt_name": "text",
+        "data_type": "text",
+        "has_default": false
+      },
+      {
+        "name": "file_name",
+        "table": "app_lead_files",
+        "schema": "public",
+        "ordinal": 6,
+        "nullable": "NO",
+        "udt_name": "text",
+        "data_type": "text",
+        "has_default": false
+      },
+      {
+        "name": "mime_type",
+        "table": "app_lead_files",
+        "schema": "public",
+        "ordinal": 7,
+        "nullable": "NO",
+        "udt_name": "text",
+        "data_type": "text",
+        "has_default": false
+      },
+      {
+        "name": "size_bytes",
+        "table": "app_lead_files",
+        "schema": "public",
+        "ordinal": 8,
+        "nullable": "NO",
+        "udt_name": "int8",
+        "data_type": "bigint",
+        "has_default": false
+      },
+      {
+        "name": "created_at",
+        "table": "app_lead_files",
+        "schema": "public",
+        "ordinal": 9,
+        "nullable": "NO",
+        "udt_name": "timestamptz",
+        "data_type": "timestamp with time zone",
+        "has_default": true
+      },
+      {
+        "name": "id",
+        "table": "app_lead_notes",
+        "schema": "public",
+        "ordinal": 1,
+        "nullable": "NO",
+        "udt_name": "uuid",
+        "data_type": "uuid",
+        "has_default": true
+      },
+      {
+        "name": "company_id",
+        "table": "app_lead_notes",
+        "schema": "public",
+        "ordinal": 2,
+        "nullable": "NO",
+        "udt_name": "uuid",
+        "data_type": "uuid",
+        "has_default": false
+      },
+      {
+        "name": "lead_id",
+        "table": "app_lead_notes",
+        "schema": "public",
+        "ordinal": 3,
+        "nullable": "NO",
+        "udt_name": "uuid",
+        "data_type": "uuid",
+        "has_default": false
+      },
+      {
+        "name": "author_id",
+        "table": "app_lead_notes",
+        "schema": "public",
+        "ordinal": 4,
+        "nullable": "NO",
+        "udt_name": "uuid",
+        "data_type": "uuid",
+        "has_default": false
+      },
+      {
+        "name": "body",
+        "table": "app_lead_notes",
+        "schema": "public",
+        "ordinal": 5,
+        "nullable": "NO",
+        "udt_name": "text",
+        "data_type": "text",
+        "has_default": false
+      },
+      {
+        "name": "created_at",
+        "table": "app_lead_notes",
+        "schema": "public",
+        "ordinal": 6,
+        "nullable": "NO",
+        "udt_name": "timestamptz",
+        "data_type": "timestamp with time zone",
+        "has_default": true
+      },
+      {
+        "name": "id",
         "table": "app_leads",
         "schema": "public",
         "ordinal": 1,
@@ -3189,9 +3409,40 @@
         {
           "id": "crm-files",
           "public": false
+        },
+        {
+          "id": "lead-files",
+          "public": false
         }
       ],
       "policies": [
+        {
+          "name": "app_lead_files_storage_delete",
+          "roles": [
+            "authenticated"
+          ],
+          "using": "((bucket_id = 'lead-files'::text) AND app_private.lead_file_path_is_valid(name) AND (EXISTS ( SELECT 1\n   FROM app_leads l\n  WHERE ((l.company_id = app_private.lead_file_path_company_id(objects.name)) AND (l.id = app_private.lead_file_path_lead_id(objects.name)) AND ((app_role(l.company_id) = 'owner'::text) OR (app_can_lead(l.company_id, l.id) AND (objects.owner_id = (auth.uid())::text) AND (objects.created_at >= (clock_timestamp() - '00:15:00'::interval))))))))",
+          "command": "DELETE",
+          "with_check": null
+        },
+        {
+          "name": "app_lead_files_storage_insert",
+          "roles": [
+            "authenticated"
+          ],
+          "using": null,
+          "command": "INSERT",
+          "with_check": "((bucket_id = 'lead-files'::text) AND (owner_id = (auth.uid())::text) AND app_private.lead_file_path_is_valid(name) AND (EXISTS ( SELECT 1\n   FROM app_leads l\n  WHERE ((l.company_id = app_private.lead_file_path_company_id(objects.name)) AND (l.id = app_private.lead_file_path_lead_id(objects.name)) AND ((app_role(l.company_id) = 'owner'::text) OR app_can_lead(l.company_id, l.id))))))"
+        },
+        {
+          "name": "app_lead_files_storage_select",
+          "roles": [
+            "authenticated"
+          ],
+          "using": "((bucket_id = 'lead-files'::text) AND app_private.lead_file_path_is_valid(name) AND (EXISTS ( SELECT 1\n   FROM app_leads l\n  WHERE ((l.company_id = app_private.lead_file_path_company_id(objects.name)) AND (l.id = app_private.lead_file_path_lead_id(objects.name)) AND ((app_role(l.company_id) = 'owner'::text) OR app_can_lead(l.company_id, l.id))))))",
+          "command": "SELECT",
+          "with_check": null
+        },
         {
           "name": "crm_file_delete",
           "roles": [
@@ -3608,6 +3859,90 @@
         "with_check": "(app_role(company_id) = 'owner'::text)"
       },
       {
+        "name": "app_lead_events_select_scoped",
+        "roles": [
+          "authenticated"
+        ],
+        "table": "app_lead_events",
+        "using": "((app_role(company_id) = 'owner'::text) OR app_can_lead(company_id, lead_id))",
+        "schema": "public",
+        "command": "SELECT",
+        "permissive": "PERMISSIVE",
+        "with_check": null
+      },
+      {
+        "name": "app_lead_files_delete_scoped",
+        "roles": [
+          "authenticated"
+        ],
+        "table": "app_lead_files",
+        "using": "((app_role(company_id) = 'owner'::text) OR (app_can_lead(company_id, lead_id) AND (author_id = auth.uid()) AND (created_at >= (clock_timestamp() - '00:15:00'::interval))))",
+        "schema": "public",
+        "command": "DELETE",
+        "permissive": "PERMISSIVE",
+        "with_check": null
+      },
+      {
+        "name": "app_lead_files_insert_scoped",
+        "roles": [
+          "authenticated"
+        ],
+        "table": "app_lead_files",
+        "using": null,
+        "schema": "public",
+        "command": "INSERT",
+        "permissive": "PERMISSIVE",
+        "with_check": "((author_id = auth.uid()) AND ((app_role(company_id) = 'owner'::text) OR app_can_lead(company_id, lead_id)))"
+      },
+      {
+        "name": "app_lead_files_select_scoped",
+        "roles": [
+          "authenticated"
+        ],
+        "table": "app_lead_files",
+        "using": "((app_role(company_id) = 'owner'::text) OR app_can_lead(company_id, lead_id))",
+        "schema": "public",
+        "command": "SELECT",
+        "permissive": "PERMISSIVE",
+        "with_check": null
+      },
+      {
+        "name": "app_lead_notes_delete_scoped",
+        "roles": [
+          "authenticated"
+        ],
+        "table": "app_lead_notes",
+        "using": "((app_role(company_id) = 'owner'::text) OR (app_can_lead(company_id, lead_id) AND (author_id = auth.uid()) AND (created_at >= (clock_timestamp() - '00:15:00'::interval))))",
+        "schema": "public",
+        "command": "DELETE",
+        "permissive": "PERMISSIVE",
+        "with_check": null
+      },
+      {
+        "name": "app_lead_notes_insert_scoped",
+        "roles": [
+          "authenticated"
+        ],
+        "table": "app_lead_notes",
+        "using": null,
+        "schema": "public",
+        "command": "INSERT",
+        "permissive": "PERMISSIVE",
+        "with_check": "((author_id = auth.uid()) AND ((app_role(company_id) = 'owner'::text) OR app_can_lead(company_id, lead_id)))"
+      },
+      {
+        "name": "app_lead_notes_select_scoped",
+        "roles": [
+          "authenticated"
+        ],
+        "table": "app_lead_notes",
+        "using": "((app_role(company_id) = 'owner'::text) OR app_can_lead(company_id, lead_id))",
+        "schema": "public",
+        "command": "SELECT",
+        "permissive": "PERMISSIVE",
+        "with_check": null
+      },
+      {
         "name": "app_jwt_tenant_boundary",
         "roles": [
           "authenticated"
@@ -3906,6 +4241,46 @@
         "definition": "CREATE TRIGGER app_block_cloud_company_writes_for_byodb BEFORE UPDATE OF name, email, phone, address ON app_companies FOR EACH ROW EXECUTE FUNCTION app_block_cloud_company_writes_for_byodb()",
         "function_name": "app_block_cloud_company_writes_for_byodb",
         "function_schema": "public",
+        "function_arguments": ""
+      },
+      {
+        "name": "app_lead_files_record_event",
+        "table": "app_lead_files",
+        "schema": "public",
+        "enabled": "O",
+        "definition": "CREATE TRIGGER app_lead_files_record_event AFTER INSERT ON app_lead_files FOR EACH ROW EXECUTE FUNCTION app_private.record_lead_attachment_event()",
+        "function_name": "record_lead_attachment_event",
+        "function_schema": "app_private",
+        "function_arguments": ""
+      },
+      {
+        "name": "app_lead_files_stamp_author",
+        "table": "app_lead_files",
+        "schema": "public",
+        "enabled": "O",
+        "definition": "CREATE TRIGGER app_lead_files_stamp_author BEFORE INSERT ON app_lead_files FOR EACH ROW EXECUTE FUNCTION app_private.stamp_lead_attachment()",
+        "function_name": "stamp_lead_attachment",
+        "function_schema": "app_private",
+        "function_arguments": ""
+      },
+      {
+        "name": "app_lead_notes_record_event",
+        "table": "app_lead_notes",
+        "schema": "public",
+        "enabled": "O",
+        "definition": "CREATE TRIGGER app_lead_notes_record_event AFTER INSERT ON app_lead_notes FOR EACH ROW EXECUTE FUNCTION app_private.record_lead_attachment_event()",
+        "function_name": "record_lead_attachment_event",
+        "function_schema": "app_private",
+        "function_arguments": ""
+      },
+      {
+        "name": "app_lead_notes_stamp_author",
+        "table": "app_lead_notes",
+        "schema": "public",
+        "enabled": "O",
+        "definition": "CREATE TRIGGER app_lead_notes_stamp_author BEFORE INSERT ON app_lead_notes FOR EACH ROW EXECUTE FUNCTION app_private.stamp_lead_attachment()",
+        "function_name": "stamp_lead_attachment",
+        "function_schema": "app_private",
         "function_arguments": ""
       },
       {
@@ -5992,6 +6367,66 @@
         },
         "authenticated_table_privileges": {
           "delete": false,
+          "insert": true,
+          "select": true,
+          "update": false
+        }
+      },
+      {
+        "name": "app_lead_events",
+        "relacl": "{postgres=arwdDxtm/postgres,service_role=arwdDxtm/postgres,authenticated=r/postgres}",
+        "schema": "public",
+        "relkind": "r",
+        "rls_forced": false,
+        "rls_enabled": true,
+        "anon_table_privileges": {
+          "delete": false,
+          "insert": false,
+          "select": false,
+          "update": false
+        },
+        "authenticated_table_privileges": {
+          "delete": false,
+          "insert": false,
+          "select": true,
+          "update": false
+        }
+      },
+      {
+        "name": "app_lead_files",
+        "relacl": "{postgres=arwdDxtm/postgres,service_role=arwdDxtm/postgres,authenticated=ard/postgres}",
+        "schema": "public",
+        "relkind": "r",
+        "rls_forced": false,
+        "rls_enabled": true,
+        "anon_table_privileges": {
+          "delete": false,
+          "insert": false,
+          "select": false,
+          "update": false
+        },
+        "authenticated_table_privileges": {
+          "delete": true,
+          "insert": true,
+          "select": true,
+          "update": false
+        }
+      },
+      {
+        "name": "app_lead_notes",
+        "relacl": "{postgres=arwdDxtm/postgres,service_role=arwdDxtm/postgres,authenticated=ard/postgres}",
+        "schema": "public",
+        "relkind": "r",
+        "rls_forced": false,
+        "rls_enabled": true,
+        "anon_table_privileges": {
+          "delete": false,
+          "insert": false,
+          "select": false,
+          "update": false
+        },
+        "authenticated_table_privileges": {
+          "delete": true,
           "insert": true,
           "select": true,
           "update": false
@@ -8222,6 +8657,349 @@
         "privilege": "UPDATE"
       },
       {
+        "table": "app_lead_events",
+        "schema": "public",
+        "grantee": "authenticated",
+        "grantable": false,
+        "privilege": "SELECT"
+      },
+      {
+        "table": "app_lead_events",
+        "schema": "public",
+        "grantee": "postgres",
+        "grantable": false,
+        "privilege": "DELETE"
+      },
+      {
+        "table": "app_lead_events",
+        "schema": "public",
+        "grantee": "postgres",
+        "grantable": false,
+        "privilege": "INSERT"
+      },
+      {
+        "table": "app_lead_events",
+        "schema": "public",
+        "grantee": "postgres",
+        "grantable": false,
+        "privilege": "REFERENCES"
+      },
+      {
+        "table": "app_lead_events",
+        "schema": "public",
+        "grantee": "postgres",
+        "grantable": false,
+        "privilege": "SELECT"
+      },
+      {
+        "table": "app_lead_events",
+        "schema": "public",
+        "grantee": "postgres",
+        "grantable": false,
+        "privilege": "TRIGGER"
+      },
+      {
+        "table": "app_lead_events",
+        "schema": "public",
+        "grantee": "postgres",
+        "grantable": false,
+        "privilege": "TRUNCATE"
+      },
+      {
+        "table": "app_lead_events",
+        "schema": "public",
+        "grantee": "postgres",
+        "grantable": false,
+        "privilege": "UPDATE"
+      },
+      {
+        "table": "app_lead_events",
+        "schema": "public",
+        "grantee": "service_role",
+        "grantable": false,
+        "privilege": "DELETE"
+      },
+      {
+        "table": "app_lead_events",
+        "schema": "public",
+        "grantee": "service_role",
+        "grantable": false,
+        "privilege": "INSERT"
+      },
+      {
+        "table": "app_lead_events",
+        "schema": "public",
+        "grantee": "service_role",
+        "grantable": false,
+        "privilege": "REFERENCES"
+      },
+      {
+        "table": "app_lead_events",
+        "schema": "public",
+        "grantee": "service_role",
+        "grantable": false,
+        "privilege": "SELECT"
+      },
+      {
+        "table": "app_lead_events",
+        "schema": "public",
+        "grantee": "service_role",
+        "grantable": false,
+        "privilege": "TRIGGER"
+      },
+      {
+        "table": "app_lead_events",
+        "schema": "public",
+        "grantee": "service_role",
+        "grantable": false,
+        "privilege": "TRUNCATE"
+      },
+      {
+        "table": "app_lead_events",
+        "schema": "public",
+        "grantee": "service_role",
+        "grantable": false,
+        "privilege": "UPDATE"
+      },
+      {
+        "table": "app_lead_files",
+        "schema": "public",
+        "grantee": "authenticated",
+        "grantable": false,
+        "privilege": "DELETE"
+      },
+      {
+        "table": "app_lead_files",
+        "schema": "public",
+        "grantee": "authenticated",
+        "grantable": false,
+        "privilege": "INSERT"
+      },
+      {
+        "table": "app_lead_files",
+        "schema": "public",
+        "grantee": "authenticated",
+        "grantable": false,
+        "privilege": "SELECT"
+      },
+      {
+        "table": "app_lead_files",
+        "schema": "public",
+        "grantee": "postgres",
+        "grantable": false,
+        "privilege": "DELETE"
+      },
+      {
+        "table": "app_lead_files",
+        "schema": "public",
+        "grantee": "postgres",
+        "grantable": false,
+        "privilege": "INSERT"
+      },
+      {
+        "table": "app_lead_files",
+        "schema": "public",
+        "grantee": "postgres",
+        "grantable": false,
+        "privilege": "REFERENCES"
+      },
+      {
+        "table": "app_lead_files",
+        "schema": "public",
+        "grantee": "postgres",
+        "grantable": false,
+        "privilege": "SELECT"
+      },
+      {
+        "table": "app_lead_files",
+        "schema": "public",
+        "grantee": "postgres",
+        "grantable": false,
+        "privilege": "TRIGGER"
+      },
+      {
+        "table": "app_lead_files",
+        "schema": "public",
+        "grantee": "postgres",
+        "grantable": false,
+        "privilege": "TRUNCATE"
+      },
+      {
+        "table": "app_lead_files",
+        "schema": "public",
+        "grantee": "postgres",
+        "grantable": false,
+        "privilege": "UPDATE"
+      },
+      {
+        "table": "app_lead_files",
+        "schema": "public",
+        "grantee": "service_role",
+        "grantable": false,
+        "privilege": "DELETE"
+      },
+      {
+        "table": "app_lead_files",
+        "schema": "public",
+        "grantee": "service_role",
+        "grantable": false,
+        "privilege": "INSERT"
+      },
+      {
+        "table": "app_lead_files",
+        "schema": "public",
+        "grantee": "service_role",
+        "grantable": false,
+        "privilege": "REFERENCES"
+      },
+      {
+        "table": "app_lead_files",
+        "schema": "public",
+        "grantee": "service_role",
+        "grantable": false,
+        "privilege": "SELECT"
+      },
+      {
+        "table": "app_lead_files",
+        "schema": "public",
+        "grantee": "service_role",
+        "grantable": false,
+        "privilege": "TRIGGER"
+      },
+      {
+        "table": "app_lead_files",
+        "schema": "public",
+        "grantee": "service_role",
+        "grantable": false,
+        "privilege": "TRUNCATE"
+      },
+      {
+        "table": "app_lead_files",
+        "schema": "public",
+        "grantee": "service_role",
+        "grantable": false,
+        "privilege": "UPDATE"
+      },
+      {
+        "table": "app_lead_notes",
+        "schema": "public",
+        "grantee": "authenticated",
+        "grantable": false,
+        "privilege": "DELETE"
+      },
+      {
+        "table": "app_lead_notes",
+        "schema": "public",
+        "grantee": "authenticated",
+        "grantable": false,
+        "privilege": "INSERT"
+      },
+      {
+        "table": "app_lead_notes",
+        "schema": "public",
+        "grantee": "authenticated",
+        "grantable": false,
+        "privilege": "SELECT"
+      },
+      {
+        "table": "app_lead_notes",
+        "schema": "public",
+        "grantee": "postgres",
+        "grantable": false,
+        "privilege": "DELETE"
+      },
+      {
+        "table": "app_lead_notes",
+        "schema": "public",
+        "grantee": "postgres",
+        "grantable": false,
+        "privilege": "INSERT"
+      },
+      {
+        "table": "app_lead_notes",
+        "schema": "public",
+        "grantee": "postgres",
+        "grantable": false,
+        "privilege": "REFERENCES"
+      },
+      {
+        "table": "app_lead_notes",
+        "schema": "public",
+        "grantee": "postgres",
+        "grantable": false,
+        "privilege": "SELECT"
+      },
+      {
+        "table": "app_lead_notes",
+        "schema": "public",
+        "grantee": "postgres",
+        "grantable": false,
+        "privilege": "TRIGGER"
+      },
+      {
+        "table": "app_lead_notes",
+        "schema": "public",
+        "grantee": "postgres",
+        "grantable": false,
+        "privilege": "TRUNCATE"
+      },
+      {
+        "table": "app_lead_notes",
+        "schema": "public",
+        "grantee": "postgres",
+        "grantable": false,
+        "privilege": "UPDATE"
+      },
+      {
+        "table": "app_lead_notes",
+        "schema": "public",
+        "grantee": "service_role",
+        "grantable": false,
+        "privilege": "DELETE"
+      },
+      {
+        "table": "app_lead_notes",
+        "schema": "public",
+        "grantee": "service_role",
+        "grantable": false,
+        "privilege": "INSERT"
+      },
+      {
+        "table": "app_lead_notes",
+        "schema": "public",
+        "grantee": "service_role",
+        "grantable": false,
+        "privilege": "REFERENCES"
+      },
+      {
+        "table": "app_lead_notes",
+        "schema": "public",
+        "grantee": "service_role",
+        "grantable": false,
+        "privilege": "SELECT"
+      },
+      {
+        "table": "app_lead_notes",
+        "schema": "public",
+        "grantee": "service_role",
+        "grantable": false,
+        "privilege": "TRIGGER"
+      },
+      {
+        "table": "app_lead_notes",
+        "schema": "public",
+        "grantee": "service_role",
+        "grantable": false,
+        "privilege": "TRUNCATE"
+      },
+      {
+        "table": "app_lead_notes",
+        "schema": "public",
+        "grantee": "service_role",
+        "grantable": false,
+        "privilege": "UPDATE"
+      },
+      {
         "table": "app_leads",
         "schema": "public",
         "grantee": "authenticated",
@@ -9509,7 +10287,7 @@
         "privilege": "UPDATE"
       }
     ],
-    "captured_at_utc": "2026-10-30T09:32:08.168557Z"
+    "captured_at_utc": "2026-10-30T19:06:32.276597Z"
   },
   "migrationHistory": {
     "readable": true,

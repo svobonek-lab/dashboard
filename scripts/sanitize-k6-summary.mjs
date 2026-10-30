@@ -13,12 +13,32 @@ const ALLOWED_METRICS = [
   'public_intake_unexpected_responses',
   'dropped_iterations',
 ];
+const ALLOWED_FIELDS = {
+  'http_req_duration{kind:read}': ['avg', 'min', 'med', 'max', 'p(90)', 'p(95)'],
+  'http_req_duration{kind:write}': ['avg', 'min', 'med', 'max', 'p(90)', 'p(95)'],
+  acceptance_errors: ['value'],
+  http_req_failed: ['value'],
+  iterations: ['count', 'rate'],
+  http_reqs: ['count', 'rate'],
+  checks: ['passes', 'fails', 'value'],
+  public_intake_accepted: ['count', 'rate'],
+  public_intake_rate_limited: ['count', 'rate'],
+  public_intake_unexpected_responses: ['value'],
+  dropped_iterations: ['count', 'rate'],
+};
 
 export function sanitizeK6Summary(summary) {
   const metrics = {};
   for (const name of ALLOWED_METRICS) {
     const value = summary?.metrics?.[name];
-    if (value) metrics[name] = value;
+    if (value) {
+      // Threshold results belong to the authoritative k6 log. Keep only
+      // unambiguous numeric summaries; Rate passes/fails count zero samples.
+      metrics[name] = Object.fromEntries(
+        ALLOWED_FIELDS[name].filter((field) => typeof value[field] === 'number')
+          .map((field) => [field, value[field]]),
+      );
+    }
   }
   return { metrics };
 }
