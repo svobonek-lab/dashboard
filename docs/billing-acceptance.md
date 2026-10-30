@@ -2,6 +2,8 @@
 
 **Status: NOT RUN.** No Preview purchase, webhook event, cancellation, period-end transition, or `past_due` screen has been verified. Do not treat local billing contract tests as an end-to-end Stripe acceptance result.
 
+On 2026-10-30, a read-only Vercel environment inventory showed `STRIPE_SECRET_KEY`, `STRIPE_BILLING_MODE`, and `STRIPE_PRICE_STARTER_ID` scoped to older Preview branches, with no verified values for the staging-tested `codex/staging-e2e-local-runner` deployment. The current Preview therefore cannot be treated as Stripe TEST-ready. Before checkout, verify the secret is a Stripe TEST key, the Start price belongs to TEST mode, the webhook secret matches the Preview endpoint, and all required values are scoped only to the intended staging Preview branch; then redeploy and recheck the exact URL and commit. No billing values were revealed or copied during this inspection.
+
 Use only the Vercel Preview deployment and Stripe TEST mode. Before starting, record the Preview URL and deployed commit, and verify the server is configured with Stripe test credentials and a TEST-mode Start price. Do not enter production payment details or record card data, secrets, customer names, or email addresses here. Use a Stripe-provided test payment method.
 
 ## Acceptance log
