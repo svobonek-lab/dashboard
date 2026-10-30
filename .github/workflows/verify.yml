@@ -82,6 +82,39 @@ jobs:
         if: always()
         run: docker rm --force legacy-migrations-postgres
 
+  staging-import-worker-contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - name: Start disposable PostgreSQL 17
+        run: >-
+          docker run --detach --name staging-import-postgres
+          --env POSTGRES_PASSWORD=postgres
+          --health-cmd="pg_isready -U postgres"
+          --health-interval=2s --health-timeout=2s --health-retries=30
+          postgres:17-alpine
+      - name: Wait for PostgreSQL
+        run: |
+          for attempt in {1..30}; do
+            if [ "$(docker inspect --format='{{.State.Health.Status}}' staging-import-postgres)" = "healthy" ]; then
+              exit 0
+            fi
+            sleep 2
+          done
+          docker logs staging-import-postgres
+          exit 1
+      - name: Apply the worker proposal and verify its service boundary
+        run: |
+          docker exec -i staging-import-postgres psql -v ON_ERROR_STOP=1 -U postgres < supabase/tests/staging_import_worker_setup.sql
+          docker exec -i staging-import-postgres psql -v ON_ERROR_STOP=1 -U postgres < supabase/staging/20260930_import_worker.sql
+          docker exec -i staging-import-postgres psql -v ON_ERROR_STOP=1 -U postgres < supabase/tests/staging_import_worker_verify.sql
+      - name: Stop disposable PostgreSQL
+        if: always()
+        run: docker rm --force staging-import-postgres
+
   staging-metadata-snapshot:
     if: >-
       github.repository == 'svobonek-lab/dashboard' &&

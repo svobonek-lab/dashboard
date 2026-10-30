@@ -9,7 +9,14 @@ on:
         options:
           - github-hosted
           - local-ephemeral
+          - metadata-only
+          - load-acceptance
+          - load-recover
         default: github-hosted
+      load_recover_run_id:
+        description: Exact 12-character synthetic load run ID for staging-only recovery
+        type: string
+        required: false
   pull_request:
     types: [labeled]
 
@@ -24,7 +31,9 @@ jobs:
   staging-e2e:
     if: >-
       github.repository == 'svobonek-lab/dashboard' &&
-      (github.event_name == 'workflow_dispatch' ||
+      ((github.event_name == 'workflow_dispatch' &&
+        inputs.runner_mode != 'metadata-only' && inputs.runner_mode != 'load-acceptance' &&
+        inputs.runner_mode != 'load-recover') ||
        (github.event.pull_request.head.repo.full_name == github.repository &&
         contains(github.event.pull_request.labels.*.name, 'e2e'))) &&
       (inputs.runner_mode != 'local-ephemeral' ||
@@ -65,6 +74,7 @@ jobs:
           STAGING_LEAD_B_FILE_PATH: ${{ vars.STAGING_LEAD_B_FILE_PATH }}
           STAGING_PUBLIC_TENANT_KEY: ${{ vars.STAGING_PUBLIC_TENANT_KEY }}
           STAGING_PUBLIC_INTAKE_ENABLED: ${{ vars.STAGING_PUBLIC_INTAKE_ENABLED }}
+
       - run: npm ci
       - name: Install Playwright Chromium
         run: npx playwright install --with-deps chromium
@@ -95,3 +105,144 @@ jobs:
           STAGING_LEAD_B_FILE_PATH: ${{ vars.STAGING_LEAD_B_FILE_PATH }}
           STAGING_PUBLIC_TENANT_KEY: ${{ vars.STAGING_PUBLIC_TENANT_KEY }}
           STAGING_PUBLIC_INTAKE_ENABLED: ${{ vars.STAGING_PUBLIC_INTAKE_ENABLED }}
+
+  staging-metadata-snapshot:
+    if: >-
+      github.repository == 'svobonek-lab/dashboard' &&
+      github.event_name == 'workflow_dispatch' &&
+      inputs.runner_mode == 'metadata-only' &&
+      github.ref == 'refs/heads/codex/staging-e2e-local-runner'
+    runs-on: [self-hosted, linux, x64, staging-e2e]
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+      - name: Capture staging catalogs and Auth-hook configuration only
+        run: node scripts/staging-metadata-snapshot.mjs > stavbacore-staging-metadata.json
+        env:
+          STAGING_SUPABASE_PROJECT_REF: ${{ vars.STAGING_SUPABASE_PROJECT_REF }}
+          PRODUCTION_SUPABASE_PROJECT_REF: ${{ vars.PRODUCTION_SUPABASE_PROJECT_REF }}
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      - uses: actions/upload-artifact@v4
+        with:
+          name: stavbacore-staging-metadata-${{ github.run_id }}
+          path: stavbacore-staging-metadata.json
+          if-no-files-found: error
+          retention-days: 7
+
+  staging-load-acceptance:
+    if: >-
+      github.repository == 'svobonek-lab/dashboard' &&
+      github.event_name == 'workflow_dispatch' &&
+      inputs.runner_mode == 'load-acceptance' &&
+      github.ref == 'refs/heads/codex/staging-e2e-local-runner'
+    runs-on: [self-hosted, linux, x64, staging-e2e]
+    timeout-minutes: 35
+    env:
+      STAGING_PREVIEW_URL: ${{ vars.STAGING_PREVIEW_URL }}
+      PRODUCTION_BASE_URL: ${{ vars.PRODUCTION_BASE_URL }}
+      STAGING_SUPABASE_URL: ${{ vars.STAGING_SUPABASE_URL }}
+      STAGING_SUPABASE_PROJECT_REF: ${{ vars.STAGING_SUPABASE_PROJECT_REF }}
+      PRODUCTION_SUPABASE_PROJECT_REF: ${{ vars.PRODUCTION_SUPABASE_PROJECT_REF }}
+      STAGING_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.STAGING_SUPABASE_PUBLISHABLE_KEY }}
+      STAGING_PREVIEW_BYPASS_TOKEN: ${{ secrets.STAGING_PREVIEW_BYPASS_TOKEN }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+          cache: npm
+      - run: npm ci
+      - name: Refuse a production target before creating fixtures
+        run: node scripts/assert-staging-load-env.mjs
+        env:
+          STAGING_SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.STAGING_SUPABASE_SERVICE_ROLE_KEY }}
+      - uses: grafana/setup-k6-action@v1
+        with:
+          k6-version: '1.7.1'
+      - name: Set private fixture paths outside the checkout
+        run: |
+          echo "STAGING_LOAD_OUTPUT_DIR=$RUNNER_TEMP/stavbaflow-load-${GITHUB_RUN_ID}" >> "$GITHUB_ENV"
+          echo "STAGING_LOAD_MANIFEST_FILE=$RUNNER_TEMP/stavbaflow-load-${GITHUB_RUN_ID}/manifest.json" >> "$GITHUB_ENV"
+      - name: Prove staged create and cleanup with two synthetic fixtures
+        run: node --import tsx scripts/seed-load-fixtures.ts --smoke
+        env:
+          STAGING_SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.STAGING_SUPABASE_SERVICE_ROLE_KEY }}
+      - name: Create private synthetic load fixtures
+        id: fixtures
+        run: node --import tsx scripts/seed-load-fixtures.ts --apply
+        env:
+          STAGING_SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.STAGING_SUPABASE_SERVICE_ROLE_KEY }}
+      - name: Run owner and employee load acceptance
+        run: |
+          k6 run --summary-export "$RUNNER_TEMP/stavbaflow-load-${GITHUB_RUN_ID}/owner-summary-private.json" load/owner-dashboard.js
+          node scripts/sanitize-k6-summary.mjs "$RUNNER_TEMP/stavbaflow-load-${GITHUB_RUN_ID}/owner-summary-private.json" "$RUNNER_TEMP/stavbaflow-load-${GITHUB_RUN_ID}/owner-summary.json"
+        env:
+          STAGING_OWNER_LOAD_FIXTURES_FILE: ${{ steps.fixtures.outputs.owner_file }}
+          STAGING_EMPLOYEE_LOAD_FIXTURES_FILE: ${{ steps.fixtures.outputs.employee_file }}
+      - name: Run public intake load when staging contract is enabled
+        if: always() && steps.fixtures.outcome == 'success' && vars.STAGING_PUBLIC_INTAKE_ENABLED == 'true'
+        run: |
+          k6 run --summary-export "$RUNNER_TEMP/stavbaflow-load-${GITHUB_RUN_ID}/public-summary-private.json" load/public-intake.js
+          node scripts/sanitize-k6-summary.mjs "$RUNNER_TEMP/stavbaflow-load-${GITHUB_RUN_ID}/public-summary-private.json" "$RUNNER_TEMP/stavbaflow-load-${GITHUB_RUN_ID}/public-summary.json"
+        env:
+          STAGING_PUBLIC_TENANT_KEY: ${{ vars.STAGING_PUBLIC_TENANT_KEY }}
+      - name: Remove only this run's synthetic fixtures
+        if: always()
+        run: |
+          if test -f "$STAGING_LOAD_MANIFEST_FILE"; then
+            node --import tsx scripts/seed-load-fixtures.ts --cleanup
+          fi
+        env:
+          STAGING_SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.STAGING_SUPABASE_SERVICE_ROLE_KEY }}
+      - name: Verify and recover any remaining synthetic identities
+        if: always() && steps.fixtures.outcome == 'success'
+        run: |
+          node --import tsx scripts/seed-load-fixtures.ts --recover
+          node --import tsx scripts/seed-load-fixtures.ts --recover
+        env:
+          STAGING_SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.STAGING_SUPABASE_SERVICE_ROLE_KEY }}
+          STAGING_LOAD_RUN_ID: ${{ steps.fixtures.outputs.run_id }}
+      - name: Upload metric summaries without fixture tokens
+        if: always() && steps.fixtures.outcome == 'success'
+        uses: actions/upload-artifact@v4
+        with:
+          name: staging-load-summary-${{ github.run_id }}
+          path: |
+            ${{ runner.temp }}/stavbaflow-load-${{ github.run_id }}/owner-summary.json
+            ${{ runner.temp }}/stavbaflow-load-${{ github.run_id }}/public-summary.json
+          if-no-files-found: warn
+          retention-days: 7
+
+  staging-load-recover:
+    if: >-
+      github.repository == 'svobonek-lab/dashboard' &&
+      github.event_name == 'workflow_dispatch' &&
+      inputs.runner_mode == 'load-recover' &&
+      github.ref == 'refs/heads/codex/staging-e2e-local-runner'
+    runs-on: [self-hosted, linux, x64, staging-e2e]
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+          cache: npm
+      - run: npm ci
+      - name: Recover only exact synthetic staging load identities
+        run: node --import tsx scripts/seed-load-fixtures.ts --recover
+        env:
+          STAGING_SUPABASE_URL: ${{ vars.STAGING_SUPABASE_URL }}
+          STAGING_SUPABASE_PROJECT_REF: ${{ vars.STAGING_SUPABASE_PROJECT_REF }}
+          PRODUCTION_SUPABASE_PROJECT_REF: ${{ vars.PRODUCTION_SUPABASE_PROJECT_REF }}
+          STAGING_SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.STAGING_SUPABASE_SERVICE_ROLE_KEY }}
+          STAGING_LOAD_RUN_ID: ${{ inputs.load_recover_run_id }}
+          STAGING_LOAD_OUTPUT_DIR: ${{ runner.temp }}/stavbaflow-load-recovery-${{ github.run_id }}

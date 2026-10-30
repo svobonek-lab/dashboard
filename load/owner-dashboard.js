@@ -35,6 +35,13 @@ function fixtureSource(jsonEnvName, fileEnvName) {
   throw new Error(`Set ${fileEnvName} to a private JSON fixture file.`);
 }
 
+// k6 open() is available only while the module is initialized, before setup().
+// Keep the private JSON in memory and pass parsed fixtures from setup to VUs.
+const ownerFixtureRaw = __ENV.STAGING_OWNER_LOAD_FIXTURES_FILE || __ENV.STAGING_OWNER_LOAD_FIXTURES_JSON
+  ? fixtureSource('STAGING_OWNER_LOAD_FIXTURES_JSON', 'STAGING_OWNER_LOAD_FIXTURES_FILE') : null;
+const employeeFixtureRaw = __ENV.STAGING_EMPLOYEE_LOAD_FIXTURES_FILE || __ENV.STAGING_EMPLOYEE_LOAD_FIXTURES_JSON
+  ? fixtureSource('STAGING_EMPLOYEE_LOAD_FIXTURES_JSON', 'STAGING_EMPLOYEE_LOAD_FIXTURES_FILE') : null;
+
 function parseFixtures(raw, name, count) {
   let fixtures;
   try { fixtures = JSON.parse(raw); } catch { throw new Error(`${name} must contain valid JSON.`); }
@@ -70,12 +77,12 @@ export function setup() {
   const environment = stagingEnvironment();
   assertK6StagingPreviewTarget(environment.previewUrl, __ENV.STAGING_SUPABASE_PROJECT_REF, __ENV.PRODUCTION_SUPABASE_PROJECT_REF);
   const owners = parseFixtures(
-    fixtureSource('STAGING_OWNER_LOAD_FIXTURES_JSON', 'STAGING_OWNER_LOAD_FIXTURES_FILE'),
+    ownerFixtureRaw,
     'STAGING_OWNER_LOAD_FIXTURES_FILE',
     REQUIRED_OWNER_VUS,
   );
   const employees = parseFixtures(
-    fixtureSource('STAGING_EMPLOYEE_LOAD_FIXTURES_JSON', 'STAGING_EMPLOYEE_LOAD_FIXTURES_FILE'),
+    employeeFixtureRaw,
     'STAGING_EMPLOYEE_LOAD_FIXTURES_FILE',
     REQUIRED_EMPLOYEE_VUS,
   );
@@ -115,8 +122,9 @@ function headers(fixture, apiKey) {
   };
 }
 
-function record(result, valid) {
+function record(result, valid, operation) {
   acceptanceErrors.add(!valid);
+  if (!valid) console.error(`Staging load check failed: ${operation}; HTTP ${result.status}`);
   check(result, { 'staging acceptance response matches contract': () => valid });
 }
 
@@ -131,7 +139,7 @@ function runRead(fixture, data, path, expectedId, label) {
   });
   const rows = parseJsonArray(response);
   const valid = response.status === 200 && rows.some((row) => row.id === expectedId && row.company_id === fixture.companyId);
-  record(response, valid);
+  record(response, valid, label);
 }
 
 function changeLeadStatus(fixture, data, status, operation) {
@@ -162,7 +170,7 @@ function runFlow(fixture, data, { includeWrites, includeCsv }) {
     headers: headers(fixture, data.apiKey), tags: { kind: 'read', operation: 'dashboard' },
   });
   const companyRows = parseJsonArray(companyResponse);
-  record(companyResponse, companyResponse.status === 200 && companyRows.some((row) => row.id === fixture.companyId));
+  record(companyResponse, companyResponse.status === 200 && companyRows.some((row) => row.id === fixture.companyId), 'dashboard');
 
   runRead(
     fixture,
@@ -178,7 +186,7 @@ function runFlow(fixture, data, { includeWrites, includeCsv }) {
     // employee token during teardown, so employee VUs exercise read paths only.
     const nextStatus = __ITER % 2 === 0 ? 'contacted' : 'new';
     const write = changeLeadStatus(fixture, data, nextStatus, 'status_change');
-    record(write.response, write.valid);
+    record(write.response, write.valid, 'status_change');
   }
 
   if (includeCsv) {
@@ -195,7 +203,7 @@ function runFlow(fixture, data, { includeWrites, includeCsv }) {
     });
     let body = {};
     try { body = importResponse.json(); } catch { /* contract check below records the safe failure */ }
-    record(importResponse, importResponse.status === 200 && body.rows === CSV_DRY_RUN_ROWS && body.companyId === fixture.companyId);
+    record(importResponse, importResponse.status === 200 && body.rows === CSV_DRY_RUN_ROWS && body.companyId === fixture.companyId, 'csv_dry_run');
   }
 }
 
