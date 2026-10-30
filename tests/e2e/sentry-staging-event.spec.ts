@@ -68,7 +68,12 @@ test('staging Sentry receives only synthetic exception with company and role tag
     const body = (await response.text()).toLowerCase();
     const reason = ['invalid origin', 'rate limit', 'quota', 'disabled', 'invalid key', 'forbidden']
       .find((candidate) => body.includes(candidate)) || 'unclassified';
-    throw new Error(`Synthetic Sentry event was rejected: HTTP ${response.status()}, reason ${reason}, body length ${body.length}`);
+    const safeBody = body
+      .replace(/https?:\/\/\S+/g, '[url]')
+      .replace(/[a-z0-9_-]{24,}/g, '[redacted]')
+      .replace(/[^a-z0-9 ._:[\]{}"-]/g, ' ')
+      .slice(0, 120);
+    throw new Error(`Synthetic Sentry event was rejected: HTTP ${response.status()}, reason ${reason}, response ${safeBody}`);
   }
 
   const event = sentryEvents.find((candidate) => JSON.stringify(candidate).includes(syntheticError));
