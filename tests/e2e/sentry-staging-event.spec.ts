@@ -27,6 +27,11 @@ test('staging Sentry receives only synthetic exception with company and role tag
     const event = readSentryEvent(request.postData() || '');
     if (event) sentryEvents.push(event);
   });
+  await page.route('**/e2e-sentry-trigger.js', (route) => route.fulfill({
+    status: 200,
+    contentType: 'application/javascript',
+    body: "setTimeout(() => { throw new Error('StavbaFlow synthetic Sentry staging acceptance'); }, 0);",
+  }));
 
   await signIn(page, 'OWNER_A');
   await expect(page).toHaveURL(/\/dashboard$/);
@@ -36,9 +41,7 @@ test('staging Sentry receives only synthetic exception with company and role tag
     const url = new URL(response.url());
     return /sentry\.io$/i.test(url.hostname) && url.pathname.includes('/envelope/');
   }, { timeout: 20_000 });
-  await page.addScriptTag({
-    content: "setTimeout(() => { throw new Error('StavbaFlow synthetic Sentry staging acceptance'); }, 0);",
-  });
+  await page.addScriptTag({ url: new URL('/e2e-sentry-trigger.js', page.url()).href });
   const response = await sentryResponse;
   expect([200, 202]).toContain(response.status());
 
