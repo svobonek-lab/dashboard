@@ -64,7 +64,12 @@ test('staging Sentry receives only synthetic exception with company and role tag
   const response = await sentryResponse.catch((error) => {
     throw new Error(`${error instanceof Error ? error.message : 'Sentry event timed out'}; request failures: ${sentryRequestFailures.join(', ') || 'none observed'}`);
   });
-  expect([200, 202]).toContain(response.status());
+  if (![200, 202].includes(response.status())) {
+    const body = (await response.text()).toLowerCase();
+    const reason = ['invalid origin', 'rate limit', 'quota', 'disabled', 'invalid key', 'forbidden']
+      .find((candidate) => body.includes(candidate)) || 'unclassified';
+    throw new Error(`Synthetic Sentry event was rejected: HTTP ${response.status()}, reason ${reason}, body length ${body.length}`);
+  }
 
   const event = sentryEvents.find((candidate) => JSON.stringify(candidate).includes(syntheticError));
   expect(event, 'Sentry envelope did not contain the synthetic event.').toBeDefined();
