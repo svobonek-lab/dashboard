@@ -60,21 +60,6 @@ create table public.app_leads (
   source_record_id text
 );
 
-create table public.app_lead_events (
-  id uuid primary key default gen_random_uuid(),
-  company_id uuid not null references public.app_companies(id),
-  lead_id uuid not null references public.app_leads(id) on delete cascade,
-  actor_id uuid,
-  operation text not null,
-  old_status text,
-  new_status text not null,
-  old_assigned_to uuid,
-  new_assigned_to uuid,
-  old_value numeric,
-  new_value numeric,
-  created_at timestamptz not null default clock_timestamp()
-);
-
 create table storage.buckets (
   id text primary key,
   name text not null unique,
@@ -95,12 +80,12 @@ create table storage.objects (
 
 grant usage on schema storage to authenticated;
 
-create or replace function app_private.app_role(p_company_id uuid)
+create or replace function public.app_role(p_company_id uuid)
 returns text
 language sql
 stable
 security definer
-set search_path = ''
+set search_path = public, pg_temp
 as $$
   select m.role
   from public.app_members m
@@ -110,12 +95,12 @@ as $$
   limit 1
 $$;
 
-create or replace function app_private.app_can_lead(p_company_id uuid, p_lead_id uuid)
+create or replace function public.app_can_lead(p_company_id uuid, p_lead_id uuid)
 returns boolean
 language sql
 stable
 security definer
-set search_path = ''
+set search_path = public, pg_temp
 as $$
   select exists (
     select 1
@@ -132,51 +117,42 @@ $$;
 
 revoke all on schema app_private from public, anon;
 grant usage on schema app_private to authenticated;
-revoke all on function app_private.app_role(uuid) from public, anon;
-revoke all on function app_private.app_can_lead(uuid, uuid) from public, anon;
-grant execute on function app_private.app_role(uuid) to authenticated;
-grant execute on function app_private.app_can_lead(uuid, uuid) to authenticated;
+revoke all on function public.app_role(uuid) from public, anon;
+revoke all on function public.app_can_lead(uuid, uuid) from public, anon;
+grant execute on function public.app_role(uuid) to authenticated;
+grant execute on function public.app_can_lead(uuid, uuid) to authenticated;
 
 alter table public.app_companies enable row level security;
 alter table public.app_members enable row level security;
 alter table public.app_leads enable row level security;
-alter table public.app_lead_events enable row level security;
 alter table storage.objects enable row level security;
 
-revoke all on public.app_companies, public.app_members, public.app_leads, public.app_lead_events from public, anon, authenticated;
+revoke all on public.app_companies, public.app_members, public.app_leads from public, anon, authenticated;
 revoke all on storage.objects from public, anon, authenticated;
 grant select on public.app_companies to authenticated;
 grant select, update on public.app_leads to authenticated;
-grant select on public.app_lead_events to authenticated;
 grant select, insert, delete on storage.objects to authenticated;
 
 create policy app_companies_select_member on public.app_companies
 for select to authenticated
-using (app_private.app_role(id) is not null);
+using (public.app_role(id) is not null);
 
 create policy app_leads_select_scoped on public.app_leads
 for select to authenticated
 using (
-  app_private.app_role(company_id) = 'owner'
-  or app_private.app_can_lead(company_id, id)
+  public.app_role(company_id) = 'owner'
+  or public.app_can_lead(company_id, id)
 );
 
 create policy app_leads_update_scoped on public.app_leads
 for update to authenticated
 using (
-  app_private.app_role(company_id) = 'owner'
-  or app_private.app_can_lead(company_id, id)
+  public.app_role(company_id) = 'owner'
+  or public.app_can_lead(company_id, id)
 )
 with check (
-  app_private.app_role(company_id) = 'owner'
-  or app_private.app_can_lead(company_id, id)
-);
-
-create policy app_lead_events_read on public.app_lead_events
-for select to authenticated
-using (
-  app_private.app_role(company_id) = 'owner'
-  or app_private.app_can_lead(company_id, lead_id)
+  public.app_role(company_id) = 'owner'
+  or public.app_can_lead(company_id, id)
 );
 
 create or replace function app_private.guard_lead_mutation()
@@ -187,7 +163,7 @@ set search_path = public, app_private, pg_temp
 as $$
 begin
   if current_user = 'authenticated'
-    and app_private.app_role(new.company_id) = 'employee'
+    and public.app_role(new.company_id) = 'employee'
     and (
       old.assigned_to is distinct from auth.uid()
       or (to_jsonb(new) - 'status') is distinct from (to_jsonb(old) - 'status')
