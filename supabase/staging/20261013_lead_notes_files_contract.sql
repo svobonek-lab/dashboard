@@ -4,6 +4,92 @@
 
 begin;
 
+-- Match the currently deployed StavbaCore staging authorization contract.
+-- Fail before DDL if helper signatures or tenant columns drift.
+do $preflight$
+begin
+  if to_regprocedure('public.app_role(uuid)') is null
+     or to_regprocedure('public.app_can_lead(uuid,uuid)') is null then
+    raise exception 'Staging notes/files migration stopped: public tenant authorization helpers are missing';
+  end if;
+  if (select p.prorettype <> 'text'::regtype from pg_proc p where p.oid = to_regprocedure('public.app_role(uuid)'))
+     or (select p.prorettype <> 'boolean'::regtype from pg_proc p where p.oid = to_regprocedure('public.app_can_lead(uuid,uuid)')) then
+    raise exception 'Staging notes/files migration stopped: authorization helper return types changed';
+  end if;
+  if not exists (
+    select 1 from pg_proc p
+    where p.oid = to_regprocedure('public.app_role(uuid)')
+      and p.prosecdef
+      and p.proconfig @> array['search_path=public, pg_temp']
+  ) or not exists (
+    select 1 from pg_proc p
+    where p.oid = to_regprocedure('public.app_can_lead(uuid,uuid)')
+      and p.prosecdef
+      and p.proconfig @> array['search_path=public, pg_temp']
+  ) then
+    raise exception 'Staging notes/files migration stopped: authorization helper security contract changed';
+  end if;
+  if not has_function_privilege('authenticated', to_regprocedure('public.app_role(uuid)'), 'EXECUTE')
+     or not has_function_privilege('authenticated', to_regprocedure('public.app_can_lead(uuid,uuid)'), 'EXECUTE')
+     or has_function_privilege('anon', to_regprocedure('public.app_role(uuid)'), 'EXECUTE')
+     or has_function_privilege('anon', to_regprocedure('public.app_can_lead(uuid,uuid)'), 'EXECUTE') then
+    raise exception 'Staging notes/files migration stopped: authorization helper grants changed';
+  end if;
+  if to_regclass('public.app_leads') is null
+     or to_regclass('public.app_companies') is null
+     or to_regclass('public.app_members') is null
+     or to_regclass('storage.buckets') is null
+     or to_regclass('storage.objects') is null then
+    raise exception 'Staging notes/files migration stopped: expected app_* tenant contract is missing';
+  end if;
+  if exists (
+    select required.table_name, required.column_name, required.udt_name
+    from (values
+      ('app_companies','active','bool'),
+      ('app_members','company_id','uuid'),('app_members','user_id','uuid'),
+      ('app_members','role','text'),('app_members','active','bool'),
+      ('app_leads','company_id','uuid'),('app_leads','assigned_to','uuid'),
+      ('app_leads','status','text'),('app_leads','created_at','timestamptz'),
+      ('app_leads','updated_at','timestamptz'),('app_leads','revision','int4'),
+      ('app_leads','import_fingerprint','text'),('app_leads','source_record_id','text')
+    ) as required(table_name,column_name,udt_name)
+    left join information_schema.columns actual
+      on actual.table_schema = 'public'
+     and actual.table_name = required.table_name
+     and actual.column_name = required.column_name
+     and actual.udt_name = required.udt_name
+    where actual.column_name is null
+  ) then
+    raise exception 'Staging notes/files migration stopped: required tenant columns changed';
+  end if;
+  if exists (
+    select 1 from storage.buckets b
+    where b.id = 'lead-files'
+      and (b.public is distinct from false
+        or b.file_size_limit is distinct from 15728640
+        or b.allowed_mime_types is distinct from array[
+          'image/jpeg', 'image/png', 'image/webp', 'image/heic', 'application/pdf'
+        ]::text[])
+  ) then
+    raise exception 'Staging notes/files migration stopped: lead-files bucket already exists with an unexpected configuration';
+  end if;
+  if exists (
+    select 1 from pg_policies p
+    where p.schemaname = 'storage'
+      and p.tablename = 'objects'
+      and p.policyname not in (
+        'app_lead_files_storage_select',
+        'app_lead_files_storage_insert',
+        'app_lead_files_storage_delete'
+      )
+      and (position('lead-files' in coalesce(p.qual, '')) > 0
+        or position('lead-files' in coalesce(p.with_check, '')) > 0)
+  ) then
+    raise exception 'Staging notes/files migration stopped: unexpected Storage policy references lead-files';
+  end if;
+end;
+$preflight$;
+
 create unique index if not exists app_leads_company_id_id_unique
   on public.app_leads (company_id, id);
 
@@ -51,6 +137,22 @@ create table if not exists public.app_lead_files (
   constraint app_lead_files_size check (size_bytes between 1 and 15728640)
 );
 
+-- This project has app_audit, but no app_lead_events table. Keep these
+-- append-only attachment events separate instead of assuming a foreign audit
+-- schema or a sequence on app_audit.id.
+create table if not exists public.app_lead_events (
+  id uuid primary key default gen_random_uuid(),
+  company_id uuid not null references public.app_companies(id) on delete cascade,
+  lead_id uuid not null,
+  actor_id uuid references auth.users(id) on delete set null,
+  operation text not null check (operation in ('NOTE_ADDED', 'FILE_ADDED')),
+  new_status text not null,
+  created_at timestamptz not null default clock_timestamp(),
+  constraint app_lead_events_lead_company_fkey
+    foreign key (company_id, lead_id)
+    references public.app_leads(company_id, id) on delete cascade
+);
+
 create index if not exists app_lead_notes_lead_created_idx
   on public.app_lead_notes (company_id, lead_id, created_at desc);
 create index if not exists app_lead_files_lead_created_idx
@@ -62,15 +164,25 @@ create index if not exists app_lead_files_author_created_idx
 
 alter table public.app_lead_notes enable row level security;
 alter table public.app_lead_files enable row level security;
-revoke all on public.app_lead_notes, public.app_lead_files from public, anon, authenticated;
+alter table public.app_lead_events enable row level security;
+revoke all on public.app_lead_notes, public.app_lead_files, public.app_lead_events from public, anon, authenticated;
 grant select, insert, delete on public.app_lead_notes, public.app_lead_files to authenticated;
+grant select on public.app_lead_events to authenticated;
+
+drop policy if exists app_lead_events_select_scoped on public.app_lead_events;
+create policy app_lead_events_select_scoped on public.app_lead_events
+for select to authenticated
+using (
+  public.app_role(company_id) = 'owner'
+  or public.app_can_lead(company_id, lead_id)
+);
 
 drop policy if exists app_lead_notes_select_scoped on public.app_lead_notes;
 create policy app_lead_notes_select_scoped on public.app_lead_notes
 for select to authenticated
 using (
-  app_private.app_role(company_id) = 'owner'
-  or app_private.app_can_lead(company_id, lead_id)
+  public.app_role(company_id) = 'owner'
+  or public.app_can_lead(company_id, lead_id)
 );
 
 drop policy if exists app_lead_notes_insert_scoped on public.app_lead_notes;
@@ -79,8 +191,8 @@ for insert to authenticated
 with check (
   author_id = auth.uid()
   and (
-    app_private.app_role(company_id) = 'owner'
-    or app_private.app_can_lead(company_id, lead_id)
+    public.app_role(company_id) = 'owner'
+    or public.app_can_lead(company_id, lead_id)
   )
 );
 
@@ -88,9 +200,9 @@ drop policy if exists app_lead_notes_delete_scoped on public.app_lead_notes;
 create policy app_lead_notes_delete_scoped on public.app_lead_notes
 for delete to authenticated
 using (
-  app_private.app_role(company_id) = 'owner'
+  public.app_role(company_id) = 'owner'
   or (
-    app_private.app_can_lead(company_id, lead_id)
+    public.app_can_lead(company_id, lead_id)
     and author_id = auth.uid()
     and created_at >= clock_timestamp() - interval '15 minutes'
   )
@@ -100,8 +212,8 @@ drop policy if exists app_lead_files_select_scoped on public.app_lead_files;
 create policy app_lead_files_select_scoped on public.app_lead_files
 for select to authenticated
 using (
-  app_private.app_role(company_id) = 'owner'
-  or app_private.app_can_lead(company_id, lead_id)
+  public.app_role(company_id) = 'owner'
+  or public.app_can_lead(company_id, lead_id)
 );
 
 drop policy if exists app_lead_files_insert_scoped on public.app_lead_files;
@@ -110,8 +222,8 @@ for insert to authenticated
 with check (
   author_id = auth.uid()
   and (
-    app_private.app_role(company_id) = 'owner'
-    or app_private.app_can_lead(company_id, lead_id)
+    public.app_role(company_id) = 'owner'
+    or public.app_can_lead(company_id, lead_id)
   )
 );
 
@@ -119,9 +231,9 @@ drop policy if exists app_lead_files_delete_scoped on public.app_lead_files;
 create policy app_lead_files_delete_scoped on public.app_lead_files
 for delete to authenticated
 using (
-  app_private.app_role(company_id) = 'owner'
+  public.app_role(company_id) = 'owner'
   or (
-    app_private.app_can_lead(company_id, lead_id)
+    public.app_can_lead(company_id, lead_id)
     and author_id = auth.uid()
     and created_at >= clock_timestamp() - interval '15 minutes'
   )
@@ -187,7 +299,7 @@ begin
   end if;
 
   if current_user = 'authenticated' then
-    v_role := app_private.app_role(new.company_id);
+    v_role := public.app_role(new.company_id);
     if auth.uid() is null
       or v_role is null
       or not exists (
@@ -363,8 +475,8 @@ using (
     where l.company_id = app_private.lead_file_path_company_id(name)
       and l.id = app_private.lead_file_path_lead_id(name)
       and (
-        app_private.app_role(l.company_id) = 'owner'
-        or app_private.app_can_lead(l.company_id, l.id)
+        public.app_role(l.company_id) = 'owner'
+        or public.app_can_lead(l.company_id, l.id)
       )
   )
 );
@@ -381,8 +493,8 @@ with check (
     where l.company_id = app_private.lead_file_path_company_id(name)
       and l.id = app_private.lead_file_path_lead_id(name)
       and (
-        app_private.app_role(l.company_id) = 'owner'
-        or app_private.app_can_lead(l.company_id, l.id)
+        public.app_role(l.company_id) = 'owner'
+        or public.app_can_lead(l.company_id, l.id)
       )
   )
 );
@@ -398,9 +510,9 @@ using (
     where l.company_id = app_private.lead_file_path_company_id(name)
       and l.id = app_private.lead_file_path_lead_id(name)
       and (
-        app_private.app_role(l.company_id) = 'owner'
+        public.app_role(l.company_id) = 'owner'
         or (
-          app_private.app_can_lead(l.company_id, l.id)
+          public.app_can_lead(l.company_id, l.id)
           and owner_id = auth.uid()::text
           and storage.objects.created_at >= clock_timestamp() - interval '15 minutes'
         )

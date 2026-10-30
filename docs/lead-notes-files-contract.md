@@ -1,6 +1,10 @@
 # Poznámky a soubory u zakázky
 
-Tento kontrakt je návrh pouze pro izolovaný Supabase staging. Produkční databázi ani Storage automaticky nemění.
+Tento kontrakt je návrh pouze pro izolovaný Supabase staging. Produkční databázi ani Storage automaticky nemění. Před aplikací ověřuje aktuální signatury, návratové typy a bezpečnostní nastavení helperů `public.app_role(uuid)` a `public.app_can_lead(uuid,uuid)`.
+
+Migrace vytváří samostatný `app_lead_events` pro audit událostí poznámek a souborů, protože aktuální staging snapshot toto rozhraní neobsahuje. Vytváří také oddělený soukromý bucket `lead-files`; existující `crm-files` a jeho politiky nechává nedotčené. Ve staging SQL Editoru původní běh skončil chybou, protože návrh volal neexistující `app_private.app_role(uuid)`. Opravený návrh používá skutečné helpery ve schématu `public` a nejdřív kontroluje jejich signatury i `SECURITY DEFINER`/`search_path` kontrakt.
+
+Opravený návrh prošel v disposable PostgreSQL: neplatný helper grant správně zastavil běh před DDL bez částečného vytvoření tabulek; po obnovení grantu prošla aplikace dvakrát po sobě, A/B RLS testy pro poznámky/soubory/Storage, kontrola serverově nastaveného autora a auditní události. To není důkaz staging nasazení. Staging aplikace zůstává odděleným krokem po lidské revizi.
 
 ## Zaměstnanecké změny zakázky
 
