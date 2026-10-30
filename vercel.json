@@ -1,11 +1,6 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "framework": "vite",
-  "git": {
-    "deploymentEnabled": {
-      "codex/staging-e2e-local-runner": false
-    }
-  },
   "crons": [
     {
       "path": "/api/outbox-scheduler",
