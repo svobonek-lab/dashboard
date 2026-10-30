@@ -9,7 +9,7 @@ import {
 } from '../scripts/staging-stripe-checkout-guard.mjs';
 import { createScopedBillingSetupEnv } from '../scripts/run-staging-stripe-checkout.mjs';
 import { billingAcceptanceOperationId } from '../scripts/prepare-staging-stripe-checkout.mjs';
-import { buildStagingStripeEnvLines } from '../scripts/export-staging-stripe-env.mjs';
+import { buildStagingStripeEnvLines, parseVercelStripePreviewConfig } from '../scripts/export-staging-stripe-env.mjs';
 
 const baseEnv = {
   STAGING_SUPABASE_URL: 'https://xwzweltjvreqhjpbjrxa.supabase.co',
@@ -98,17 +98,34 @@ test('runner forwards only the staging billing allowlist and drops other Vercel 
   assert.equal('VERCEL_TOKEN' in scoped, false);
 });
 
-test('billing workflow is exact-branch self-hosted and pulls only that Preview branch', () => {
+test('billing workflow is exact-branch self-hosted and pulls only non-secret config without deployment', () => {
   const workflow = readFileSync(new URL('../.github/workflows/staging-e2e.yml', import.meta.url), 'utf8');
   assert.match(workflow, /- billing-setup/);
   assert.match(workflow, /inputs\.runner_mode == 'billing-setup'/);
   assert.match(workflow, /github\.ref == 'refs\/heads\/codex\/staging-e2e-local-runner'/);
   assert.match(workflow, /runs-on: \[self-hosted, linux, x64, staging-e2e\]/);
-  assert.match(workflow, /env run --environment=preview --git-branch=codex\/staging-e2e-local-runner/);
+  assert.match(workflow, /env pull.*--environment=preview.*--git-branch=codex\/staging-e2e-local-runner/);
+  assert.doesNotMatch(workflow, /env run --environment=preview/);
+  assert.match(workflow, /STAGING_STRIPE_SECRET_KEY/);
   assert.match(workflow, /inputs\.runner_mode != 'billing-setup'/);
-  const exportStep = workflow.match(/- name: Export only Stripe TEST values from the approved Vercel Preview([\s\S]*?)- name: Prepare one Stripe TEST Checkout/)?.[1] || '';
+  const exportStep = workflow.match(/- name: Pull non-secret Stripe TEST config from the approved Vercel Preview([\s\S]*?)- name: Prepare one Stripe TEST Checkout/)?.[1] || '';
   assert.notEqual(exportStep, '');
   assert.doesNotMatch(exportStep, /STAGING_OWNER_A_PASSWORD|STAGING_SUPABASE_SERVICE_ROLE_KEY|STAGING_SUPABASE_PUBLISHABLE_KEY/);
+});
+
+test('Vercel config parser reads only allowlisted settings without executing env contents', () => {
+  const parsed = parseVercelStripePreviewConfig([
+    'STRIPE_BILLING_MODE="test"',
+    'STRIPE_PRICE_STARTER_ID=price_preview',
+    'BILLING_RETURN_URL="https://dashboard-git-codex-staging-e2e-79cdb9-svobonek-6462s-projects.vercel.app"',
+    'STRIPE_SECRET_KEY=should-not-be-read',
+    'OTHER_CONFIG=$(touch /tmp/not-executed)',
+  ].join('\n'));
+  assert.deepEqual(parsed, {
+    STRIPE_BILLING_MODE: 'test',
+    STRIPE_PRICE_STARTER_ID: 'price_preview',
+    BILLING_RETURN_URL: 'https://dashboard-git-codex-staging-e2e-79cdb9-svobonek-6462s-projects.vercel.app',
+  });
 });
 
 test('billing acceptance Checkout idempotency key is stable per company A', () => {
