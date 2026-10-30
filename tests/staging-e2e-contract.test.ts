@@ -22,6 +22,7 @@ test('staging E2E has isolated scenarios and an opt-in same-repository workflow'
     'owner-menu.spec.ts',
     'public-intake-idempotency.spec.ts',
     'sentry-staging-event.spec.ts',
+    'supabase-read-failure.spec.ts',
     'tenant-rest-isolation.spec.ts',
   ]);
   assert.match(workflow, /workflow_dispatch:/);
