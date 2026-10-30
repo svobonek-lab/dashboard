@@ -146,8 +146,9 @@ test('owner A and employee A cannot download a company B lead file from private 
   const companyB = requiredValue('STAGING_COMPANY_B_ID');
   const leadB = requiredValue('STAGING_LEAD_B_ID');
   const ownerBId = requiredValue('STAGING_OWNER_B_ID');
-  const path = `${companyB}/${leadB}/${randomUUID()}-e2e-isolation.txt`;
+  const path = `${companyB}/${leadB}/${randomUUID()}-e2e-isolation.pdf`;
   const fileId = randomUUID();
+  const fileContent = Buffer.from('%PDF-1.4\n1 0 obj\n<< /Type /Catalog >>\nendobj\ntrailer\n<< /Root 1 0 R >>\n%%EOF\n');
 
   const [ownerA, employeeA, ownerB] = await Promise.all([
     accessToken(browser, 'OWNER_A'),
@@ -160,8 +161,8 @@ test('owner A and employee A cannot download a company B lead file from private 
   let metadataCreated = false;
   try {
     const upload = await request.post(`${url}/storage/v1/object/lead-files/${objectPath}`, {
-      headers: { apikey: key, Authorization: `Bearer ${ownerB}`, 'Content-Type': 'text/plain', 'x-upsert': 'false' },
-      data: `Synthetic tenant isolation fixture ${fileId}`,
+      headers: { apikey: key, Authorization: `Bearer ${ownerB}`, 'Content-Type': 'application/pdf', 'x-upsert': 'false' },
+      data: fileContent,
     });
     uploaded = upload.ok();
     expect(upload.status(), `Owner B must create the private Storage control (HTTP ${upload.status()}).`).toBe(200);
@@ -172,9 +173,9 @@ test('owner A and employee A cannot download a company B lead file from private 
       lead_id: leadB,
       storage_path: path,
       author_id: ownerBId,
-      file_name: 'e2e-isolation.txt',
-      mime_type: 'text/plain',
-      size_bytes: Buffer.byteLength(`Synthetic tenant isolation fixture ${fileId}`),
+      file_name: 'e2e-isolation.pdf',
+      mime_type: 'application/pdf',
+      size_bytes: fileContent.byteLength,
     });
     metadataCreated = metadata.ok();
     expect(metadata.status(), `Owner B must create the private file metadata control (HTTP ${metadata.status()}).`).toBe(201);
@@ -200,7 +201,7 @@ test('owner A and employee A cannot download a company B lead file from private 
       const deleteResult = await assertMutationDeniedOrFiltered(deletion, `${actor.name} DELETE of company B app_lead_files`);
       const control = await restGet(request, ownerB, 'app_lead_files', `select=id,file_name&${fileQuery}`);
       expect(control, `${actor.name} changed or deleted the company B file metadata fixture.`).toHaveLength(1);
-      expect(control[0].file_name).toBe('e2e-isolation.txt');
+      expect(control[0].file_name).toBe('e2e-isolation.pdf');
       matrix.push(
         { resource: 'app_lead_files', operation: `SELECT as ${actor.name}`, result: '0 rows' },
         { resource: 'app_lead_files', operation: `INSERT as ${actor.name}`, result: insertResult },

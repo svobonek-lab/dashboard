@@ -59,6 +59,8 @@ test('staging E2E has isolated scenarios and an opt-in same-repository workflow'
   assert.doesNotMatch(tenantIsolation, /test\.skip\(!process\.env\.STAGING_LEAD_B_FILE_PATH/);
   assert.match(tenantIsolation, /storage\/v1\/object\/lead-files/);
   assert.match(tenantIsolation, /finally\s*\{/);
+  assert.match(tenantIsolation, /'Content-Type': 'application\/pdf'/);
+  assert.match(tenantIsolation, /size_bytes: fileContent\.byteLength/);
   assert.match(tenantIsolation, /STAGING_COMPANY_B_ID.*STAGING_LEAD_B_ID/s);
   assert.match(tenantIsolation, /crossTenantSelect: 'company_id,user_id'/);
   assert.match(workflow, /STAGING_PUBLIC_TENANT_KEY:\s*\$\{\{\s*vars\.STAGING_PUBLIC_TENANT_KEY\s*\}\}/);
