@@ -32,7 +32,7 @@ export function validateStagingPreviewConfig(env) {
   return errors;
 }
 
-function runVercel(args, env, input = '') {
+function runVercel(args, env, input = '', operation = 'CLI request') {
   const result = spawnSync('npx', ['--yes', 'vercel@59.25.4', ...args], {
     cwd: process.cwd(),
     encoding: 'utf8',
@@ -42,7 +42,20 @@ function runVercel(args, env, input = '') {
     env: { ...process.env, VERCEL_TOKEN: env.VERCEL_TOKEN },
   });
   if (result.error || result.status !== 0) {
-    throw new Error(`Vercel CLI command failed; exit=${result.status ?? 'spawn-error'}.`);
+    const redactions = [
+      env.VERCEL_TOKEN,
+      env.STAGING_SUPABASE_PUBLISHABLE_KEY,
+      env.STAGING_SUPABASE_SERVICE_ROLE_KEY,
+      input.trim(),
+    ].filter(Boolean);
+    const details = `${result.stderr || ''}\n${result.stdout || ''}`
+      .split(/\r?\n/)
+      .map((line) => redactions.reduce((safe, secret) => safe.replaceAll(secret, '[redacted]'), line.trim()))
+      .filter((line) => /error|failed|denied|unauthorized|not found|invalid|already exists/i.test(line))
+      .slice(-2)
+      .join(' ')
+      .slice(0, 300);
+    throw new Error(`Vercel ${operation} failed; exit=${result.status ?? 'spawn-error'}.${details ? ` ${details}` : ''}`);
   }
   return `${result.stdout || ''}\n${result.stderr || ''}`;
 }
@@ -54,7 +67,7 @@ function addPreviewSecret(name, value, env, overwrite) {
     '--git-branch', allowedBranch, '--sensitive',
   ];
   if (overwrite) args.push('--force');
-  runVercel(args, env, `${value}\n`);
+  runVercel(args, env, `${value}\n`, `variable ${name}`);
   console.log(`Configured sensitive Preview variable: ${name}`);
 }
 
@@ -66,7 +79,7 @@ function main() {
   const listing = runVercel([
     '--non-interactive', '--token', environment.VERCEL_TOKEN, '--scope', environment.VERCEL_ORG_ID,
     'env', 'ls', 'preview', allowedBranch, '--project', environment.VERCEL_PROJECT_ID,
-  ], environment);
+  ], environment, '', 'branch variable inventory');
   const existingNames = new Set([...listing.matchAll(/^\s+([A-Z][A-Z0-9_]+)\s+/gm)].map((match) => match[1]));
   const variables = [
     ['VITE_SUPABASE_URL', environment.STAGING_SUPABASE_URL],
