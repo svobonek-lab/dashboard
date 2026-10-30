@@ -72,11 +72,21 @@ export async function createMissingPreviewVariables(env, fetchImpl = fetch, rand
   const baseUrl = `https://api.vercel.com/v10/projects/${encodeURIComponent(env.VERCEL_PROJECT_ID)}/env`;
   const query = new URLSearchParams({ gitBranch: allowedBranch, teamId: env.VERCEL_ORG_ID, decrypt: 'false' });
   const inventory = await vercelApi(`${baseUrl}?${query}`, env, fetchImpl);
-  if (!Array.isArray(inventory)) {
-    throw new Error('Vercel environment inventory response was invalid.');
+  const variables = Array.isArray(inventory)
+    ? inventory
+    : inventory && typeof inventory === 'object' && Array.isArray(inventory.envs)
+      ? inventory.envs
+      : inventory && typeof inventory === 'object' && Array.isArray(inventory.data)
+        ? inventory.data
+        : null;
+  if (!variables) {
+    const safeShape = inventory && typeof inventory === 'object'
+      ? `type=${Array.isArray(inventory) ? 'array' : 'object'}; keys=${Object.keys(inventory).sort().join(',').slice(0, 160) || 'none'}`
+      : `type=${typeof inventory}`;
+    throw new Error(`Vercel environment inventory response was invalid (${safeShape}).`);
   }
 
-  const existingNames = new Set(inventory
+  const existingNames = new Set(variables
     .filter((item) => item.gitBranch === allowedBranch && Array.isArray(item.target) && item.target.includes('preview'))
     .map((item) => item.key));
   const missing = buildPreviewVariables(env, randomBytesImpl).filter((item) => !existingNames.has(item.key));
