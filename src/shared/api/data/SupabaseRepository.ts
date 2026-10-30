@@ -1,7 +1,7 @@
 import { ICRMRepository, LeadNote, LeadStoredFile, RepositoryHealthStatus } from './types';
 import type { Lead, Employee, CompanyBranding } from './types';
 import { supabase, isSupabaseConfigured, isValidUUID } from '../supabase';
-import { AppInviteRow, AppLeadRow, AppMemberRow, toAppLead, toAppMember, toPendingInvite } from '../productionSchema';
+import { AppInviteRow, AppLeadRow, AppLeadStatusAuditRow, AppMemberRow, toAppAuditLeadHistory, toAppLead, toAppMember, toPendingInvite } from '../productionSchema';
 import { APP_SCHEMA_WRITES_BLOCKED_MESSAGE } from '../productionDataPolicy';
 import { canWritePilot, canWriteStagingLeadStatus } from '../pilotWritePolicy';
 import { toLeadPatch } from './leadWritePatch';
@@ -86,21 +86,19 @@ export class SupabaseRepository implements ICRMRepository {
           throw new Error('Poptávky se nepodařilo načíst. Zkuste obnovit připojení.');
         }
 
-        let events: any[] = [];
+        let events: AppLeadStatusAuditRow[] = [];
         if (canWritePilot((import.meta as any).env || {})) {
-          const historyResult = await supabase.from('app_lead_events')
-            .select('id,lead_id,actor_id,operation,old_status,new_status,created_at')
-            .eq('company_id', orgId).order('created_at', { ascending: false });
+          const historyResult = await supabase.from('app_audit')
+            .select('id,actor,action,entity_id,created_at')
+            .eq('company_id', orgId)
+            .eq('action', 'lead_status_changed')
+            .order('created_at', { ascending: false });
           if (historyResult.error) throw new Error('Historii zakázek se nepodařilo načíst.');
-          events = historyResult.data || [];
+          events = (historyResult.data || []) as AppLeadStatusAuditRow[];
         }
         return ((data || []) as AppLeadRow[]).map((row) => ({
           ...toAppLead(row),
-          history: events.filter(event => event.lead_id === row.id).map(event => ({
-            id: event.id, timestamp: event.created_at,
-            action: event.operation === 'INSERT' ? 'Poptávka vytvořena' : event.old_status !== event.new_status ? `Změna stavu: ${event.old_status} → ${event.new_status}` : 'Zakázka upravena',
-            author: event.actor_id || 'Integrace',
-          })),
+          history: events.filter(event => event.entity_id === row.id).map(toAppAuditLeadHistory),
         }));
       }
 
