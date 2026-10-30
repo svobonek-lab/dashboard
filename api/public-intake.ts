@@ -106,7 +106,7 @@ export function createPublicIntakeHandler(dependencies: Dependencies = {}) {
       return;
     }
 
-    const hashSecret = dependencies.hashSecret ?? process.env.PUBLIC_INTAKE_HASH_SECRET;
+    const hashSecret = dependencies.hashSecret ?? process.env.INTAKE_HASH_SECRET;
     const clientIp = readTrustedClientIp(req.headers);
     if (!hashSecret || hashSecret.length < 32 || !clientIp) {
       res.status(503).json({ error: 'public_intake_unavailable' });

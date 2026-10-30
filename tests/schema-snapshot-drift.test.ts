@@ -41,6 +41,14 @@ test('schema snapshot verification accepts exact migration history and required 
   assert.deepEqual(result, { ok: true, errors: [] });
 });
 
+test('schema snapshot verification accepts the normalized metadata object returned by the read-only capture', () => {
+  const normalized = { ...snapshot, database: snapshot.database[0].metadata };
+  const result = verifySchemaSnapshot(normalized, ['20260901000000'], {
+    stagingProjectRef: 'bbbbbbbbbbbbbbbbbbbb', productionProjectRef: 'aaaaaaaaaaaaaaaaaaaa',
+  });
+  assert.deepEqual(result, { ok: true, errors: [] });
+});
+
 test('schema snapshot verification refuses production or incomplete schema metadata', () => {
   const production = verifySchemaSnapshot(snapshot, ['20260901000000'], {
     stagingProjectRef: 'aaaaaaaaaaaaaaaaaaaa', productionProjectRef: 'aaaaaaaaaaaaaaaaaaaa',

@@ -49,6 +49,13 @@ test('employee load VUs do not perform forward-only status writes or attempt to 
   assert.doesNotMatch(teardown, /data\.employees/);
 });
 
+test('owner load status changes use the staging-approved status RPC rather than direct table UPDATE', () => {
+  const source = read('../load/owner-dashboard.js');
+
+  assert.match(source, /\/rest\/v1\/rpc\/app_change_lead_status/);
+  assert.doesNotMatch(source, /http\.patch\s*\(\s*`\$\{data\.supabaseUrl\}\/rest\/v1\/app_leads/);
+});
+
 test('load fixtures require distinct synthetic users and roles bound to their signed JWT identity and tenant', async () => {
   const validator = await import('../scripts/validate-load-fixtures.mjs').catch(() => ({})) as {
     validateLoadFixtures?: (
@@ -90,14 +97,23 @@ test('public intake load profile sends 200 unique synthetic requests in one minu
   assert.match(source, /duration:\s*'1m'/);
   assert.match(source, /request_key/);
   assert.match(source, /429/);
+  assert.match(source, /public_intake_rate_limited:\s*\['count>0'\]/);
+  assert.match(source, /public_intake_accepted:\s*\['count<=5'\]/);
   assert.match(source, /PRODUCTION_SUPABASE_PROJECT_REF/);
   assert.match(source, /STAGING_PUBLIC_TENANT_KEY/);
+  assert.match(source, /STAGING_PUBLIC_LOAD_RUN_ID/);
+  assert.match(source, /request_key: `k6-\$\{data\.runId\}-\$\{unique\}`/);
+  assert.match(source, /title: `Synthetic public load \$\{data\.runId\} \$\{unique\}`/);
   assert.match(source, /validateK6StagingEnvironment/);
 });
 
-test('load report distinguishes unavailable measurements from threshold passes', () => {
+test('load report records staging measurements and separates expected 429s from errors', () => {
   const report = read('../docs/load-results.md');
-  assert.match(report, /NOT RUN/);
+  assert.match(report, /41046254837/);
+  assert.match(report, /243\.48 ms/);
+  assert.match(report, /64\.00 ms/);
+  assert.match(report, /195 rate limited/);
+  assert.match(report, /zero unexpected responses/);
   assert.match(report, /p95 `< 800 ms`/);
   assert.match(report, /p95 `< 1500 ms`/);
   assert.match(report, /`< 1%`/);

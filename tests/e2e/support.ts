@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import type { APIRequestContext, Page } from 'playwright/test';
+import type { APIRequestContext, Browser, Page } from 'playwright/test';
 import { validateStagingPreview } from '../../scripts/validate-staging-preview.mjs';
 
 export function stagingConfig() {
@@ -33,18 +33,28 @@ export async function signIn(page: Page, account: 'OWNER_A' | 'EMPLOYEE_A' | 'OW
   await page.waitForURL((url) => !url.pathname.endsWith('/login'), { timeout: 20_000 });
 }
 
-export async function accessToken(request: APIRequestContext, account: 'OWNER_A' | 'EMPLOYEE_A' | 'OWNER_B') {
-  const { url, key } = stagingConfig();
-  const email = requiredValue(`STAGING_${account}_EMAIL`);
-  const password = requiredValue(`STAGING_${account}_PASSWORD`);
-  const response = await request.post(`${url}/auth/v1/token?grant_type=password`, {
-    headers: { apikey: key },
-    data: { email, password },
-  });
-  assert.equal(response.ok(), true, `Staging Auth rejected ${account} credentials (HTTP ${response.status()}).`);
-  const body = await response.json() as { access_token?: string };
-  assert.ok(body.access_token, 'Staging Auth did not return an access token.');
-  return body.access_token;
+export async function accessToken(browser: Browser, account: 'OWNER_A' | 'EMPLOYEE_A' | 'OWNER_B') {
+  const { preview } = stagingConfig();
+  const context = await browser.newContext({ baseURL: preview });
+  try {
+    const page = await context.newPage();
+    await signIn(page, account);
+    const token = await page.evaluate(() => {
+      for (let index = 0; index < localStorage.length; index += 1) {
+        const key = localStorage.key(index);
+        if (!key?.endsWith('-auth-token')) continue;
+        try {
+          const session = JSON.parse(localStorage.getItem(key) ?? 'null') as { access_token?: unknown } | null;
+          if (typeof session?.access_token === 'string') return session.access_token;
+        } catch { /* Ignore unrelated local storage values. */ }
+      }
+      return null;
+    });
+    assert.ok(token, `Staging UI login for ${account} did not establish a Supabase session.`);
+    return token;
+  } finally {
+    await context.close();
+  }
 }
 
 export async function restGet(request: APIRequestContext, token: string, table: string, query: string) {
@@ -52,7 +62,17 @@ export async function restGet(request: APIRequestContext, token: string, table: 
   const response = await request.get(`${url}/rest/v1/${table}?${query}`, {
     headers: { apikey: key, Authorization: `Bearer ${token}` },
   });
-  assert.equal(response.ok(), true, `Staging REST read of ${table} failed (HTTP ${response.status()}).`);
+  if (!response.ok()) {
+    const body = await response.json().catch(() => null) as { code?: unknown; message?: unknown } | null;
+    const rawCode = body?.code;
+    const code = typeof rawCode === 'string' && /^[a-z0-9_.-]{1,64}$/i.test(rawCode) ? rawCode : 'unrecognized';
+    const message = typeof body?.message === 'string' ? body.message.toLowerCase() : '';
+    const reason = /api.?key/.test(message) ? 'API key rejected'
+      : /jwt|token/.test(message) ? 'JWT rejected'
+        : /permission|authorization/.test(message) ? 'authorization rejected'
+          : 'unrecognized REST error';
+    assert.fail(`Staging REST read of ${table} failed (HTTP ${response.status()}, ${code}, ${reason}).`);
+  }
   return await response.json() as Array<Record<string, unknown>>;
 }
 
@@ -76,6 +96,18 @@ export async function restPatch(request: APIRequestContext, token: string, table
       apikey: key,
       Authorization: `Bearer ${token}`,
       Prefer: 'return=representation',
+      'Content-Type': 'application/json',
+    },
+    data: body,
+  });
+}
+
+export async function restRpc(request: APIRequestContext, token: string, functionName: string, body: Record<string, unknown>) {
+  const { url, key } = stagingConfig();
+  return request.post(`${url}/rest/v1/rpc/${encodeURIComponent(functionName)}`, {
+    headers: {
+      apikey: key,
+      Authorization: `Bearer ${token}`,
       'Content-Type': 'application/json',
     },
     data: body,

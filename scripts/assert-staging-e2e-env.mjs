@@ -17,6 +17,8 @@ const required = [
   'STAGING_OWNER_B_PASSWORD',
   'STAGING_COMPANY_A_ID',
   'STAGING_COMPANY_B_ID',
+  'STAGING_OWNER_A_ID',
+  'STAGING_OWNER_B_ID',
   'STAGING_EMPLOYEE_A_ID',
   'STAGING_EMPLOYEE_B_ID',
   'STAGING_LEAD_A_ID',
@@ -27,6 +29,12 @@ const missing = required.filter((name) => !process.env[name]);
 if (missing.length) {
   console.error(`Missing staging E2E variables/secrets: ${missing.join(', ')}`);
   process.exit(1);
+}
+if (!process.env.STAGING_LEAD_B_FILE_PATH) {
+  console.warn('Notes/files REST and private Storage isolation will be skipped until the reviewed schema and synthetic file fixture are available.');
+}
+if (process.env.STAGING_PUBLIC_INTAKE_ENABLED !== 'true') {
+  console.warn('Public intake replay will be skipped until the staging SQL is reviewed/applied and the synthetic company intake is enabled.');
 }
 
 assert.notEqual(process.env.STAGING_SUPABASE_PROJECT_REF, process.env.PRODUCTION_SUPABASE_PROJECT_REF,

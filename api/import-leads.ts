@@ -147,6 +147,7 @@ export default async function importLeadsHandler(req: any, res: any) {
     }
     const { data, error } = await serviceClient.rpc('app_import_leads', {
       p_company_id: companyId,
+      p_actor_id: authData.user.id,
       p_rows: normalizedRows,
       p_file_name: fileName,
       p_fingerprint: fingerprint,

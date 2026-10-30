@@ -56,6 +56,14 @@ export interface AppInviteRow {
   accepted_at: string | null;
 }
 
+export interface AppLeadStatusAuditRow {
+  id: string | number;
+  actor: string | null;
+  action: 'lead_status_changed';
+  entity_id: string;
+  created_at: string;
+}
+
 const leadStatus: Record<AppLeadRow['status'], string> = {
   new: 'New',
   contacted: 'Contacted',
@@ -145,6 +153,15 @@ export function toAppLead(row: AppLeadRow, assignedEmployeeName = ''): Lead {
     history: [],
     createdDate: row.created_at,
     projectType: '',
+  };
+}
+
+export function toAppAuditLeadHistory(row: AppLeadStatusAuditRow) {
+  return {
+    id: String(row.id),
+    timestamp: row.created_at,
+    action: 'Stav zakázky změněn',
+    author: row.actor || 'Uživatel firmy',
   };
 }
 

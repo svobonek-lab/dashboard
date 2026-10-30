@@ -14,11 +14,18 @@ test('staging metadata capture is catalog-only, read-only, and redacts Auth hook
     validateProjectIdentity,
   } = await import('../scripts/staging-metadata-snapshot.mjs');
   const workflow = readFileSync(new URL('../.github/workflows/verify.yml', import.meta.url), 'utf8');
+  const snapshotWorkflow = readFileSync(new URL('../.github/workflows/staging-e2e.yml', import.meta.url), 'utf8');
 
   assert.match(workflow, /staging_metadata_snapshot/);
   assert.match(workflow, /github\.event_name == 'workflow_dispatch'/);
   assert.match(workflow, /inputs\.staging_metadata_snapshot == true/);
   assert.match(workflow, /SUPABASE_ACCESS_TOKEN: \$\{\{ secrets\.SUPABASE_ACCESS_TOKEN \}\}/);
+  assert.match(snapshotWorkflow, /- metadata-only/);
+  assert.match(snapshotWorkflow, /inputs\.runner_mode == 'metadata-only'/);
+  assert.match(snapshotWorkflow, /refs\/heads\/codex\/staging-e2e-local-runner/);
+  assert.match(snapshotWorkflow, /runs-on: \[self-hosted, linux, x64, staging-e2e\]/);
+  assert.match(snapshotWorkflow, /node scripts\/staging-metadata-snapshot\.mjs > stavbacore-staging-metadata\.json/);
+  assert.match(snapshotWorkflow, /actions\/upload-artifact@v4/);
   assert.match(STAGING_METADATA_SQL, /pg_class/);
   assert.match(STAGING_METADATA_SQL, /pg_policies/);
   assert.match(STAGING_METADATA_SQL, /information_schema\.columns/);
@@ -48,6 +55,7 @@ test('staging metadata capture is catalog-only, read-only, and redacts Auth hook
 
   const calls: Array<{ url: string; init?: RequestInit }> = [];
   const metadata = { captured_at_utc: '2026-10-26T00:00:00Z', relations: [{ name: 'app_members' }] };
+  const history = { versions: [{ version: '20261026000000', name: 'public_intake_rate_limit' }] };
   const result = await captureStagingMetadata({
     stagingProjectRef: 'xwzweltjvreqhjpbjrxa',
     productionProjectRef: 'oncmtmrhmjlerbwkrecv',
@@ -55,7 +63,8 @@ test('staging metadata capture is catalog-only, read-only, and redacts Auth hook
     fetchImpl: async (input, init) => {
       calls.push({ url: String(input), init });
       if (String(input).includes('/database/query/read-only')) {
-        return new Response(JSON.stringify(metadata), { status: 201 });
+        const query = JSON.parse(String(init?.body)).query;
+        return new Response(JSON.stringify([{ metadata: query === STAGING_MIGRATION_HISTORY_SQL ? history : metadata }]), { status: 201 });
       }
       return new Response(JSON.stringify({
         hook_custom_access_token_enabled: true,
@@ -73,7 +82,7 @@ test('staging metadata capture is catalog-only, read-only, and redacts Auth hook
   assert.deepEqual(JSON.parse(String(queryRequest.init?.body)), { query: STAGING_METADATA_SQL });
   assert.equal(new Headers(queryRequest.init?.headers).get('authorization'), 'Bearer test-token-not-a-real-secret');
   assert.deepEqual(result.database, metadata);
-  assert.deepEqual(result.migrationHistory, { readable: true, ...metadata });
+  assert.deepEqual(result.migrationHistory, { readable: true, ...history });
   const historyRequest = calls.find(({ init }) => {
     try { return JSON.parse(String(init?.body)).query === STAGING_MIGRATION_HISTORY_SQL; } catch { return false; }
   });
@@ -97,8 +106,8 @@ test('staging metadata capture is catalog-only, read-only, and redacts Auth hook
     stagingProjectRef: 'xwzweltjvreqhjpbjrxa',
     productionProjectRef: 'oncmtmrhmjlerbwkrecv',
     accessToken: 'test-token-not-a-real-secret',
-    fetchImpl: async (input) => String(input).includes('/database/query/read-only')
-      ? new Response(JSON.stringify(metadata), { status: 201 })
+    fetchImpl: async (input, init) => String(input).includes('/database/query/read-only')
+      ? new Response(JSON.stringify([{ metadata: JSON.parse(String(init?.body)).query === STAGING_MIGRATION_HISTORY_SQL ? history : metadata }]), { status: 201 })
       : new Response(JSON.stringify({ message: 'forbidden' }), { status: 403 }),
   });
   assert.deepEqual(partial.database, metadata);
