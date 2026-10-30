@@ -50,7 +50,12 @@ assertions.
 For a private repository that has exhausted its GitHub-hosted Actions allowance,
 `workflow_dispatch` exposes local one-shot modes on the
 `codex/staging-e2e-local-runner` branch: `local-ephemeral`, `sentry-only`,
-`metadata-only`, `preview-configure`, `load-acceptance`, and `load-recover`.
+`metadata-only`, `preview-configure`, `load-acceptance`, `load-recover`, and
+`billing-setup`. `billing-setup` prepares a single Stripe TEST Checkout only
+for synthetic company A, creates or reuses its Test Clock customer through the
+approved staging RPC, and uploads a one-day Checkout handoff artifact. It does
+not submit a payment or touch production. The hosted Checkout payment still
+requires confirmation immediately before submission.
 `sentry-only` runs only the Sentry browser scenario and does not receive the
 service-role secret. These modes require the
 dedicated `self-hosted,linux,x64,staging-e2e` labels. Register only a single-use
