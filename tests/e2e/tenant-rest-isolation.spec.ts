@@ -1,9 +1,11 @@
+import { randomUUID } from 'node:crypto';
 import { expect, test } from 'playwright/test';
 import { accessToken, requiredValue, restDelete, restGet, restInsert, restPatch, stagingConfig } from './support';
 
 type TenantRow = Record<string, unknown>;
 type TenantResource = {
   table: string;
+  crossTenantSelect?: string;
   crossTenantQuery: string;
   controlQuery: string;
   rowFilter(row: TenantRow): string;
@@ -28,7 +30,7 @@ function eq(value: unknown) {
   return `eq.${encodeURIComponent(String(value))}`;
 }
 
-test('owner A and employee A cannot read or mutate company B synthetic rows through PostgREST', async ({ request }) => {
+test('owner A and employee A cannot read or mutate company B synthetic rows through PostgREST', async ({ browser, request }) => {
   stagingConfig();
   const companyA = requiredValue('STAGING_COMPANY_A_ID');
   const companyB = requiredValue('STAGING_COMPANY_B_ID');
@@ -37,9 +39,9 @@ test('owner A and employee A cannot read or mutate company B synthetic rows thro
   const leadBId = requiredValue('STAGING_LEAD_B_ID');
   expect(companyA).not.toBe(companyB);
   const [ownerA, employeeA, ownerB] = await Promise.all([
-    accessToken(request, 'OWNER_A'),
-    accessToken(request, 'EMPLOYEE_A'),
-    accessToken(request, 'OWNER_B'),
+    accessToken(browser, 'OWNER_A'),
+    accessToken(browser, 'EMPLOYEE_A'),
+    accessToken(browser, 'OWNER_B'),
   ]);
 
   const companyFilter = `company_id=${eq(companyB)}`;
@@ -53,17 +55,19 @@ test('owner A and employee A cannot read or mutate company B synthetic rows thro
     {
       table: 'app_notes', crossTenantQuery: companyFilter,
       controlQuery: `company_id=${eq(companyB)}&lead_id=${eq(leadBId)}&body=${eq('Synthetic E2E isolation note B')}`,
-      rowFilter: row => `id=${eq(row.id)}&${companyFilter}`,
+      rowFilter: (row: TenantRow) => `id=${eq(row.id)}&${companyFilter}`,
       updateField: 'body', stableFields: ['body', 'lead_id', 'author'],
     },
+    ...(process.env.STAGING_LEAD_B_FILE_PATH ? [
+      {
+        table: 'app_lead_files', crossTenantQuery: companyFilter,
+        controlQuery: `company_id=${eq(companyB)}&lead_id=${eq(leadBId)}&storage_path=${eq(process.env.STAGING_LEAD_B_FILE_PATH)}`,
+        rowFilter: (row: TenantRow) => `id=${eq(row.id)}&${companyFilter}`,
+        updateField: 'file_name', stableFields: ['file_name', 'storage_path', 'lead_id', 'author_id'],
+      },
+    ] : []),
     {
-      table: 'app_lead_files', crossTenantQuery: companyFilter,
-      controlQuery: `company_id=${eq(companyB)}&lead_id=${eq(leadBId)}&storage_path=${eq(requiredValue('STAGING_LEAD_B_FILE_PATH'))}`,
-      rowFilter: row => `id=${eq(row.id)}&${companyFilter}`,
-      updateField: 'file_name', stableFields: ['file_name', 'storage_path', 'lead_id', 'author_id'],
-    },
-    {
-      table: 'app_members', crossTenantQuery: companyFilter,
+      table: 'app_members', crossTenantQuery: companyFilter, crossTenantSelect: 'company_id,user_id',
       controlQuery: `company_id=${eq(companyB)}&user_id=${eq(employeeBId)}`,
       rowFilter: row => `company_id=${eq(row.company_id)}&user_id=${eq(row.user_id)}`,
       updateField: 'name', stableFields: ['name', 'email', 'role', 'active'],
@@ -90,7 +94,7 @@ test('owner A and employee A cannot read or mutate company B synthetic rows thro
   const matrix: Array<{ resource: string; operation: string; result: string }> = [];
 
   for (const resource of resources) {
-    const query = new URLSearchParams({ select: 'id', ...Object.fromEntries(new URLSearchParams(resource.crossTenantQuery)) }).toString();
+    const query = new URLSearchParams({ select: resource.crossTenantSelect ?? 'id', ...Object.fromEntries(new URLSearchParams(resource.crossTenantQuery)) }).toString();
     const [ownerRows, employeeRows] = await Promise.all([
       restGet(request, ownerA, resource.table, query),
       restGet(request, employeeA, resource.table, query),
@@ -112,7 +116,15 @@ test('owner A and employee A cannot read or mutate company B synthetic rows thro
       { name: 'employee A', token: employeeA, id: requiredValue('STAGING_EMPLOYEE_A_ID') },
     ];
     for (const actor of actors) {
-      const insert = await restInsert(request, actor.token, resource.table, control);
+      const insertProbe = { ...control };
+      const probeId = randomUUID();
+      if (resource.table === 'app_audit') delete insertProbe.id;
+      else if ('id' in insertProbe) insertProbe.id = probeId;
+      if (resource.table === 'app_members') insertProbe.user_id = actor.id;
+      if (resource.table === 'app_invites') insertProbe.email = `e2e-isolation-${probeId}@stavbaflow.example.test`;
+      if (resource.table === 'app_lead_files') insertProbe.storage_path = `${companyB}/${leadBId}/e2e-isolation-${probeId}.txt`;
+      if (resource.table === 'app_companies') insertProbe.slug = `e2e-isolation-${probeId}`;
+      const insert = await restInsert(request, actor.token, resource.table, insertProbe);
       const insertResult = await assertMutationDeniedOrFiltered(insert, `${actor.name} INSERT into ${resource.table}`);
       matrix.push({ resource: resource.table, operation: `INSERT as ${actor.name}`, result: insertResult });
 
@@ -138,7 +150,8 @@ test('owner A and employee A cannot read or mutate company B synthetic rows thro
   console.info('Tenant isolation matrix\n' + matrix.map(row => `${row.resource} | ${row.operation} | ${row.result}`).join('\n'));
 });
 
-test('owner A and employee A cannot download a company B lead file from private Storage', async ({ request }) => {
+test('owner A and employee A cannot download a company B lead file from private Storage', async ({ browser, request }) => {
+  test.skip(!process.env.STAGING_LEAD_B_FILE_PATH, 'Private Storage isolation requires the reviewed notes/files schema and a synthetic company B file fixture.');
   const { url, key } = stagingConfig();
   const companyB = requiredValue('STAGING_COMPANY_B_ID');
   const leadB = requiredValue('STAGING_LEAD_B_ID');
@@ -146,9 +159,9 @@ test('owner A and employee A cannot download a company B lead file from private 
   expect(path.startsWith(`${companyB}/${leadB}/`), 'File fixture path must be nested under company B and its synthetic lead.').toBe(true);
 
   const [ownerA, employeeA, ownerB] = await Promise.all([
-    accessToken(request, 'OWNER_A'),
-    accessToken(request, 'EMPLOYEE_A'),
-    accessToken(request, 'OWNER_B'),
+    accessToken(browser, 'OWNER_A'),
+    accessToken(browser, 'EMPLOYEE_A'),
+    accessToken(browser, 'OWNER_B'),
   ]);
   const fileQuery = `company_id=${eq(companyB)}&lead_id=${eq(leadB)}&storage_path=${eq(path)}`;
   const ownerRows = await restGet(request, ownerB, 'app_lead_files', `select=id,company_id,lead_id,storage_path&${fileQuery}`);
@@ -175,7 +188,7 @@ test('owner A and employee A cannot download a company B lead file from private 
   console.info('Tenant isolation matrix\n' + matrix.map(row => `${row.resource} | ${row.operation} | ${row.result}`).join('\n'));
 });
 
-test('employee A cannot read or change the synthetic company B lead assigned to employee B', async ({ request }) => {
+test('employee A cannot read or change the synthetic company B lead assigned to employee B', async ({ browser, request }) => {
   stagingConfig();
   const companyA = requiredValue('STAGING_COMPANY_A_ID');
   const companyB = requiredValue('STAGING_COMPANY_B_ID');
@@ -184,8 +197,8 @@ test('employee A cannot read or change the synthetic company B lead assigned to 
   expect(companyA).not.toBe(companyB);
 
   const [employeeAToken, ownerBToken] = await Promise.all([
-    accessToken(request, 'EMPLOYEE_A'),
-    accessToken(request, 'OWNER_B'),
+    accessToken(browser, 'EMPLOYEE_A'),
+    accessToken(browser, 'OWNER_B'),
   ]);
   const leadBQuery = new URLSearchParams({
     select: 'id,company_id,title,status,assigned_to',

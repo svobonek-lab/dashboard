@@ -35,11 +35,12 @@ Set the service-role key, account passwords, and account emails as **Actions sec
 - `STAGING_EMPLOYEE_A_EMAIL`, `STAGING_EMPLOYEE_A_PASSWORD`
 - `STAGING_OWNER_B_EMAIL`, `STAGING_OWNER_B_PASSWORD`
 - `STAGING_EMPLOYEE_B_EMAIL`, `STAGING_EMPLOYEE_B_PASSWORD`
-- `STAGING_PUBLIC_TENANT_KEY` (staging public-intake credential; keep it secret)
+
+`STAGING_PUBLIC_TENANT_KEY` is the synthetic tenant slug used in a public form URL, so it belongs in Actions **variables**, not secrets. It is not an authentication credential.
 
 Do not paste secrets into issues or source files. The seed never prints passwords or the service-role key.
 
-## Current GitHub Actions configuration audit (2026-10-28)
+## Previous GitHub Actions configuration audit (2026-10-28; superseded below)
 
 The read-only name inventory confirms `STAGING_SUPABASE_URL`, both project refs, the publishable key, the staging Preview URL, and the A/owner-B account credentials are configured. The following required entries are missing:
 
@@ -55,4 +56,16 @@ GitHub Actions runs for PR #133 (`40689392033`, `40689729088`) were rejected bef
 
 The deterministic Auth emails are `owner-a@stavbaflow.example.test`, `employee-a@stavbaflow.example.test`, `owner-b@stavbaflow.example.test`, and `employee-b@stavbaflow.example.test`. Lead fixtures use synthetic names and `.example.test` emails and are assigned to employees in the matching company.
 
-A seed run is not proof that owner login or tenant isolation passed. File fixture creation is fail-closed and opt-in: keep it disabled until the review-only notes/files migration is applied and its Storage bucket/policies are verified. Run staging acceptance only after the values above are configured and the target is confirmed as StavbaCore Staging.
+A seed run is not proof that owner login or tenant isolation passed. File fixture creation is fail-closed and opt-in: keep it disabled until the review-only notes/files migration is applied and its Storage bucket/policies are verified.
+
+## Current acceptance evidence (2026-10-29)
+
+- The GitHub Actions name-only inventory now contains the staging service-role secret and all four synthetic A/B account email/password secrets. Variables contain both company IDs, all four user IDs, both lead IDs, the staging Supabase URL/ref and `STAGING_PREVIEW_URL`. Secret values were not read or printed.
+- The Supabase Auth dashboard lists the four deterministic synthetic A/B users. A metadata/fixture-only SELECT on the isolated staging database confirmed four active memberships in two active companies, with owner and employee roles as expected and one lead assigned to each employee.
+- Owner A is currently signed into the verified StavbaCore staging Preview and sees only the A workspace and its A lead. This is a browser/UI check, not a replacement for owner A and employee A REST isolation tests.
+- `STAGING_PUBLIC_TENANT_KEY` is present as a GitHub Actions variable because it is the public form slug. The current local change fixes the staging Playwright workflow to read it from the variable context; the workflow must be merged or run from this branch to take effect. `PRODUCTION_BASE_URL` is configured as the verified production alias `https://dashboard-svobonek-6462s-projects.vercel.app`.
+- The staging E2E workflow dispatch on 2026-10-29 (run 40889398922) failed before allocating a runner and had zero steps. GitHub account billing/spending limit remains the runner blocker; the run contains no test result.
+- The Vercel Preview branch `codex/staging-preview-safety` has staging Supabase URL/publishable/service-role settings and a branch-scoped sensitive `INTAKE_HASH_SECRET`. Vercel rejects the old `PUBLIC_INTAKE_HASH_SECRET` name because `PUBLIC_` denotes browser exposure; the API and local configuration now use only the server-side name. A new Preview deployment must include the corrected API code before the secret can be exercised. The live schema also lacks `app_public_intake_events` and the hardened `app_submit_public_lead` RPC, so valid intake does not write. OPTIONS and honeypot requests return 204 and 202 respectively. No intake lead was written during this check.
+- `app_lead_files` and `lead-files` Storage remain intentionally absent because their migration is review-only. Do not claim the file/Storage isolation subtest is proven, and do not enable fixture upload.
+
+Run `npm run test:e2e:staging` only after the missing production URL variable is configured, the public tenant slug is passed as a variable, the current staging RPC/schema is reviewed and applied, the Preview's required server settings exist, and a GitHub runner can start. Keep the file/Storage test blocked until its separately reviewed migration and bucket are available.

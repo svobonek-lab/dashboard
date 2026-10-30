@@ -21,6 +21,8 @@ export const options = {
   },
   thresholds: {
     public_intake_unexpected_responses: ['rate<0.01'],
+    public_intake_rate_limited: ['count>0'],
+    public_intake_accepted: ['count<=5'],
     dropped_iterations: ['count==0'],
   },
 };
@@ -28,7 +30,14 @@ export const options = {
 function validateStaging() {
   const target = validateK6StagingEnvironment(__ENV);
   if (!__ENV.STAGING_PUBLIC_TENANT_KEY) throw new Error('Missing synthetic staging public tenant key.');
-  return { previewUrl: target.previewUrl, tenantKey: __ENV.STAGING_PUBLIC_TENANT_KEY };
+  if (!/^[0-9]{1,12}-[0-9]{1,3}$/.test(__ENV.STAGING_PUBLIC_LOAD_RUN_ID || '')) {
+    throw new Error('Missing exact public intake load run identifier for safe cleanup.');
+  }
+  return {
+    previewUrl: target.previewUrl,
+    tenantKey: __ENV.STAGING_PUBLIC_TENANT_KEY,
+    runId: __ENV.STAGING_PUBLIC_LOAD_RUN_ID,
+  };
 }
 
 export function setup() {
@@ -41,11 +50,11 @@ export default function (data) {
   const unique = `${Date.now()}-${__VU}-${__ITER}-${Math.random().toString(36).slice(2, 10)}`;
   const response = http.post(`${data.previewUrl}/api/public-intake`, JSON.stringify({
     public_key: data.tenantKey,
-    request_key: `k6-${unique}`,
+    request_key: `k6-${data.runId}-${unique}`,
     customer: 'Synthetic Load Customer',
     phone: '+420700000000',
-    email: `k6-${unique}@example.invalid`,
-    title: `Synthetic public load ${unique}`,
+    email: `k6-${data.runId}-${unique}@example.invalid`,
+    title: `Synthetic public load ${data.runId} ${unique}`,
     description: 'Synthetic load acceptance request. No customer data.',
     value: 0,
     website: '',

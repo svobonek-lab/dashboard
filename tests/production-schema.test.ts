@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { isAssignedToMember, toAppLead, toAppMember, toPendingInvite } from '../src/shared/api/productionSchema';
+import { isAssignedToMember, toAppAuditLeadHistory, toAppLead, toAppMember, toPendingInvite } from '../src/shared/api/productionSchema';
 
 const member = { company_id: 'company-a', user_id: 'user-a', name: 'Pracovník', email: 'worker@example.com', role: 'employee' as const, active: true };
 const row = {
@@ -25,6 +25,22 @@ test('maps app lead status and preserves unknown values as empty UI fields', () 
   assert.equal(lead.source, 'manual');
   assert.equal(lead.price, 0);
   assert.equal(lead.thumbnail, '');
+});
+
+test('maps verified app_audit lead status records without requiring app_lead_events', () => {
+  const history = toAppAuditLeadHistory({
+    id: 42,
+    actor: 'user-a',
+    action: 'lead_status_changed',
+    entity_id: 'lead-a',
+    created_at: '2026-10-30T10:00:00Z',
+  });
+  assert.deepEqual(history, {
+    id: '42',
+    timestamp: '2026-10-30T10:00:00Z',
+    action: 'Stav zakázky změněn',
+    author: 'user-a',
+  });
 });
 
 test('assignment requires the same company and an active member', () => {

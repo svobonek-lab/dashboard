@@ -1,38 +1,39 @@
+import { randomUUID } from 'node:crypto';
 import { expect, test } from 'playwright/test';
-import { accessToken, requiredValue, restDelete, restGet, restPatch, signIn, stagingConfig } from './support';
+import { accessToken, requiredValue, restGet, restRpc, signIn, stagingConfig } from './support';
 
-async function cleanupSyntheticImport(request: Parameters<typeof restGet>[0], ownerToken: string, companyId: string) {
-  const query = new URLSearchParams({
-    select: 'id,company_id,email,title,customer',
-    company_id: `eq.${companyId}`,
-    email: 'eq.playwright-import@stavbaflow.example.test',
-    title: 'eq.StavbaFlow Playwright Import',
-  }).toString();
-  const rows = await restGet(request, ownerToken, 'app_leads', query);
-  for (const row of rows) {
-    expect(row.company_id).toBe(companyId);
-    expect(row.email).toBe('playwright-import@stavbaflow.example.test');
-    expect(row.title).toBe('StavbaFlow Playwright Import');
-    expect(row.customer).toBe('Synthetic Playwright Customer');
-    const deletion = await restDelete(
-      request,
-      ownerToken,
-      'app_leads',
-      `id=eq.${encodeURIComponent(String(row.id))}&company_id=eq.${encodeURIComponent(companyId)}`,
-    );
-    expect(deletion.ok(), `Failed to delete the exact synthetic CSV import row (HTTP ${deletion.status()}).`).toBe(true);
-    const deletedRows = await deletion.json() as Array<Record<string, unknown>>;
-    expect(deletedRows).toHaveLength(1);
-    expect(deletedRows[0].id).toBe(row.id);
-  }
-  expect(await restGet(request, ownerToken, 'app_leads', query)).toHaveLength(0);
+function safeBrowserDiagnostic(value: string): string {
+  return value
+    .replace(/Bearer\s+\S+/gi, 'Bearer [redacted]')
+    .replace(/\beyJ[a-zA-Z0-9_-]{10,}\.[a-zA-Z0-9_-]+\.[a-zA-Z0-9_-]+\b/g, '[jwt]')
+    .replace(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/gi, '[email]')
+    .replace(/https?:\/\/[^\s"']+/gi, (value) => {
+      try {
+        const url = new URL(value);
+        return `${url.origin}${url.pathname}`;
+      } catch {
+        return '[url]';
+      }
+    })
+    .replace(/\b[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}\b/gi, '[id]')
+    .slice(0, 300);
 }
 
-test('owner login, status change, CSV import/export and logout have no uncaught console errors', async ({ page, request }) => {
+test('owner login, status change, CSV import/export and logout have no uncaught console errors', async ({ browser, page, request }) => {
   stagingConfig();
   const companyId = requiredValue('STAGING_COMPANY_A_ID');
   const leadId = requiredValue('STAGING_LEAD_A_ID');
-  const ownerToken = await accessToken(request, 'OWNER_A');
+  const ownerToken = await accessToken(browser, 'OWNER_A');
+  const companyQuery = new URLSearchParams({
+    select: 'id,active,subscription_status',
+    id: `eq.${companyId}`,
+  }).toString();
+  const companyRows = await restGet(request, ownerToken, 'app_companies', companyQuery);
+  console.info(`Owner fixture readiness: company=${companyRows.length === 1 ? 'visible' : 'missing'}; active=${String(companyRows[0]?.active)}; subscription=${String(companyRows[0]?.subscription_status)}`);
+  const importId = randomUUID();
+  const importTitle = `StavbaFlow Playwright Import ${importId}`;
+  const importEmail = `playwright-import-${importId}@stavbaflow.example.test`;
+  const importFileName = `stavbaflow-playwright-${importId}.csv`;
   const leadQuery = new URLSearchParams({ select: 'id,company_id,title,status', id: `eq.${leadId}`, company_id: `eq.${companyId}` });
   const startingRows = await restGet(request, ownerToken, 'app_leads', leadQuery.toString());
   expect(startingRows).toHaveLength(1);
@@ -41,23 +42,74 @@ test('owner login, status change, CSV import/export and logout have no uncaught 
   const importQuery = new URLSearchParams({
     select: 'id,company_id,email,title,customer',
     company_id: `eq.${companyId}`,
-    email: 'eq.playwright-import@stavbaflow.example.test',
-    title: 'eq.StavbaFlow Playwright Import',
+    email: `eq.${importEmail}`,
+    title: `eq.${importTitle}`,
   }).toString();
   expect(await restGet(request, ownerToken, 'app_leads', importQuery), 'A previous run left the reserved CSV fixture behind.').toHaveLength(0);
   const uncaughtErrors: string[] = [];
+  const failedHttpResponses = new Set<string>();
   let signedIn = false;
-  let importStarted = false;
+  let flowError: unknown;
+  let importFailure: string | null = null;
+  const cleanupErrors: unknown[] = [];
 
-  page.on('pageerror', () => uncaughtErrors.push('pageerror'));
+  page.on('pageerror', (error) => uncaughtErrors.push(`pageerror: ${safeBrowserDiagnostic(error.message)}`));
   page.on('console', (message) => {
-    if (message.type() === 'error') uncaughtErrors.push('console.error');
+    if (message.type() !== 'error') return;
+    const detail = message.text();
+    // Chromium logs handled HTTP failures as resource errors; the response
+    // listener records their exact paths separately. Vercel injects the
+    // feedback script into Preview, outside the application bundle.
+    if (/^Failed to load resource: the server responded with a status of \d{3}/.test(detail)) return;
+    if (detail.includes('https://vercel.live/_next-live/feedback/feedback.js')
+      && detail.includes('Content Security Policy')) return;
+    uncaughtErrors.push(`console.error: ${safeBrowserDiagnostic(detail)}`);
+  });
+  page.on('response', (response) => {
+    if (response.status() < 400) return;
+    try {
+      const url = new URL(response.url());
+      failedHttpResponses.add(`${response.status()} ${url.origin}${url.pathname}`);
+    } catch {
+      failedHttpResponses.add(`${response.status()} [invalid URL]`);
+    }
   });
 
   try {
     await signIn(page, 'OWNER_A');
     signedIn = true;
     await expect(page).toHaveURL(/\/dashboard(?:\?|$)/);
+    const ownerLandingText = await page.locator('body').innerText();
+    const ownerLandingState = ownerLandingText.includes('Předplatné vypršelo') ? 'subscription-blocked'
+      : ownerLandingText.includes('Přístup pozastaven') ? 'company-suspended'
+        : ownerLandingText.includes('nemá aktivní členství') ? 'no-active-membership'
+          : 'workspace';
+    console.info(`Owner landing state: ${ownerLandingState}`);
+    const ownerLandingDiagnostics = await page.evaluate(() => {
+      const body = document.body.innerText;
+      const genericStates = [
+        'Data se nepodařilo načíst',
+        'Systém čeká na připojení produkce',
+        'Načítám StavbaFlow',
+        'Předplatné vypršelo',
+        'Přístup pozastaven',
+        'Účet nemá aktivní členství v žádné firmě.',
+        'Nemáte oprávnění pro přístup do této sekce.',
+      ];
+      return {
+        pathname: window.location.pathname,
+        documentReadyState: document.readyState,
+        titleHasStavbaFlow: document.title.includes('StavbaFlow'),
+        bodyLength: body.length,
+        headingCount: document.querySelectorAll('h1,h2').length,
+        navigationCount: document.querySelectorAll('nav').length,
+        navigationLinkCount: document.querySelectorAll('nav a').length,
+        genericStateMarkers: genericStates.filter((marker) => body.includes(marker)),
+        alertCount: document.querySelectorAll('[role="alert"]').length,
+      };
+    });
+    console.info(`Owner landing diagnostics: ${JSON.stringify(ownerLandingDiagnostics)}`);
+    console.info('Owner E2E checkpoint: signed in');
 
     await page.goto('/leads');
     const leadCard = page.locator('[draggable="true"]').filter({ hasText: String(lead.title) });
@@ -75,24 +127,61 @@ test('owner login, status change, CSV import/export and logout have no uncaught 
       const rows = await restGet(request, ownerToken, 'app_leads', leadQuery.toString());
       return rows[0]?.status;
     }, { message: 'Staging did not persist the synthetic lead status change.' }).toBe('contacted');
+    console.info('Owner E2E checkpoint: status persisted');
 
     await page.goto('/integrations');
     await page.getByRole('button', { name: /Nahrát CSV/ }).click();
-    const csv = 'customer,title,value,phone,email\nSynthetic Playwright Customer,StavbaFlow Playwright Import,0,+420700000000,playwright-import@stavbaflow.example.test\n';
+    console.info('Owner E2E checkpoint: CSV dialog opened');
+    const csv = `customer,title,value,phone,email\nSynthetic Playwright Customer,${importTitle},0,+420700000000,${importEmail}\n`;
     await page.locator('input[type="file"]').setInputFiles({
-      name: 'stavbaflow-playwright-synthetic.csv',
+      name: importFileName,
       mimeType: 'text/csv',
       buffer: Buffer.from(csv),
     });
     await page.getByRole('button', { name: /Potvrdit mapování/ }).click();
-    importStarted = true;
+    console.info('Owner E2E checkpoint: CSV mapping confirmed');
+    const commitResponsePromise = page.waitForResponse((response) => {
+      if (!response.url().includes('/api/import-leads') || response.request().method() !== 'POST') return false;
+      try {
+        return response.request().postDataJSON()?.mode === 'commit';
+      } catch {
+        return false;
+      }
+    });
     await page.getByRole('button', { name: /Importovat 1 zakázek/ }).click();
-    await expect(page.getByText(/Import byl uložen/)).toBeVisible();
+    const commitResponse = await commitResponsePromise;
+    const commitBody = await commitResponse.json().catch(() => null) as { code?: unknown } | null;
+    const commitCode = typeof commitBody?.code === 'string' && /^[A-Z0-9_]{1,80}$/.test(commitBody.code)
+      ? commitBody.code
+      : 'unclassified';
+    console.info(`Owner E2E checkpoint: CSV commit HTTP ${commitResponse.status()} code=${commitCode}`);
+    await expect(page.getByRole('button', { name: /Importuji data do CRM/ })).toBeHidden({ timeout: 10000 });
+    if (commitResponse.ok()) {
+      await expect(page.getByText(/Import byl uložen/)).toBeVisible();
+      const importedRows = await restGet(request, ownerToken, 'app_leads', importQuery);
+      expect(importedRows).toHaveLength(1);
+      expect(importedRows[0].company_id).toBe(companyId);
+      expect(importedRows[0].email).toBe(importEmail);
+      expect(importedRows[0].title).toBe(importTitle);
+      expect(importedRows[0].customer).toBe('Synthetic Playwright Customer');
+      console.info('Owner E2E checkpoint: CSV import persisted');
+    } else {
+      importFailure = `Staging CSV commit rejected: HTTP ${commitResponse.status()} code=${commitCode}`;
+      await expect(page.getByText(/^Chyba:/)).toBeVisible();
+      console.info(`Owner E2E checkpoint: CSV error shown to user (${commitCode})`);
+    }
+    const importDialogHeading = page.getByRole('heading', { name: 'Kontrolovaný CSV import' });
+    const importDialog = page.locator('div.fixed.inset-0.z-50').filter({ has: importDialogHeading });
+    await importDialog.getByRole('button', { name: 'Zavřít', exact: true }).click();
+    await expect(importDialog).toHaveCount(0, { timeout: 5000 });
+    console.info('Owner E2E checkpoint: CSV dialog closed');
 
     await page.goto('/settings');
+    console.info(`Owner E2E checkpoint: settings route ${new URL(page.url()).pathname}`);
     const downloadPromise = page.waitForEvent('download');
     await page.getByRole('button', { name: 'Stáhnout CSV' }).click();
     const download = await downloadPromise;
+    console.info('Owner E2E checkpoint: CSV export downloaded');
     expect(download.suggestedFilename()).toMatch(/^stavbaflow-export-\d{4}-\d{2}-\d{2}\.csv$/);
     const exportStream = await download.createReadStream();
     expect(exportStream, 'The synthetic owner export should be readable for a tenant-leak assertion.').not.toBeNull();
@@ -107,21 +196,65 @@ test('owner login, status change, CSV import/export and logout have no uncaught 
     ];
     test.info().annotations.push({ type: 'tenant-isolation-matrix', description: JSON.stringify(exportMatrix) });
     console.info('Tenant isolation matrix\n' + exportMatrix.map(row => `${row.resource} | ${row.operation} | ${row.result}`).join('\n'));
+  } catch (error) {
+    flowError = error;
   } finally {
     try {
-      if (importStarted) await cleanupSyntheticImport(request, ownerToken, companyId);
-    } finally {
-      const currentRows = await restGet(request, ownerToken, 'app_leads', leadQuery.toString()).catch(() => []);
+      const currentRows = await restGet(request, ownerToken, 'app_leads', leadQuery.toString());
       if (currentRows[0]?.status !== originalStatus) {
-        const restore = await restPatch(request, ownerToken, 'app_leads', `id=eq.${leadId}&company_id=eq.${companyId}`, { status: originalStatus });
-        expect(restore.ok(), 'Failed to restore the synthetic status fixture after the browser flow.').toBe(true);
+        const restore = await restRpc(request, ownerToken, 'app_change_lead_status', { p_lead_id: leadId, p_status: originalStatus });
+        expect(restore.ok(), 'Failed to restore the synthetic status fixture through the approved status RPC.').toBe(true);
       }
-      if (signedIn && await page.getByRole('button', { name: 'Odhlásit' }).count()) {
-        await page.getByRole('button', { name: 'Odhlásit' }).click();
-        await expect(page).toHaveURL(/\/login(?:\?|$)/);
+    } catch (error) {
+      cleanupErrors.push(error);
+    }
+
+    if (signedIn) {
+      try {
+        const mappingHeading = page.getByRole('heading', { name: 'Mapování sloupců importovaného souboru' });
+        if (await mappingHeading.isVisible().catch(() => false)) {
+          const mappingDialog = page.locator('div.fixed.inset-0.z-50').filter({ has: mappingHeading });
+          await mappingDialog.getByRole('button', { name: '✕' }).click({ timeout: 5000 });
+          await expect(mappingHeading).toBeHidden({ timeout: 5000 });
+        }
+
+        const importHeading = page.getByRole('heading', { name: 'Kontrolovaný CSV import' });
+        const importDialog = page.locator('div.fixed.inset-0.z-50').filter({ has: importHeading });
+        if (await importDialog.count()) {
+          await importDialog.getByRole('button', { name: 'Zavřít', exact: true }).click({ timeout: 5000 });
+          await expect(importDialog).toHaveCount(0, { timeout: 5000 });
+        }
+
+        const visibleOverlays = await page.locator('div.fixed.inset-0.z-50').evaluateAll((overlays) => overlays
+          .filter((overlay) => {
+            const rect = overlay.getBoundingClientRect();
+            const style = window.getComputedStyle(overlay);
+            return rect.width > 0 && rect.height > 0 && style.visibility !== 'hidden' && style.display !== 'none';
+          })
+          .map((overlay) => {
+            const headings = Array.from(overlay.querySelectorAll('h1,h2,h3')).map((heading) => heading.textContent?.trim() ?? '');
+            return headings.find((heading) => [
+              'Kontrolovaný CSV import', 'Mapování sloupců importovaného souboru',
+              'Vytvořit novou zakázku / poptávku', 'Pozvat zaměstnance',
+            ].includes(heading)) ?? 'other-dialog';
+          }));
+        console.info(`Owner E2E teardown overlays: ${visibleOverlays.join(',') || 'none'}`);
+        if (await page.getByRole('button', { name: 'Odhlásit' }).count()) {
+          await page.getByRole('button', { name: 'Odhlásit' }).click({ timeout: 10000 });
+          await expect(page).toHaveURL(/\/login(?:\?|$)/);
+        }
+      } catch (error) {
+        cleanupErrors.push(error);
       }
     }
   }
 
+  const failures = [flowError, ...cleanupErrors].filter((error): error is Error => error instanceof Error);
+  if (failures.length === 1) throw failures[0];
+  if (failures.length > 1) throw new AggregateError(failures, 'Owner browser flow or its cleanup failed.');
+
+  if (uncaughtErrors.length) console.info(`Browser errors (sanitized):\n${uncaughtErrors.join('\n')}`);
+  if (failedHttpResponses.size) console.info(`HTTP error responses (path only):\n${[...failedHttpResponses].sort().join('\n')}`);
   expect(uncaughtErrors).toEqual([]);
+  if (importFailure) throw new Error(importFailure);
 });
