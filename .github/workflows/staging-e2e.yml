@@ -10,6 +10,7 @@ on:
           - github-hosted
           - local-ephemeral
           - metadata-only
+          - preview-configure
           - load-acceptance
           - load-recover
         default: github-hosted
@@ -33,7 +34,7 @@ jobs:
       github.repository == 'svobonek-lab/dashboard' &&
       ((github.event_name == 'workflow_dispatch' &&
         inputs.runner_mode != 'metadata-only' && inputs.runner_mode != 'load-acceptance' &&
-        inputs.runner_mode != 'load-recover') ||
+        inputs.runner_mode != 'load-recover' && inputs.runner_mode != 'preview-configure') ||
        (github.event.pull_request.head.repo.full_name == github.repository &&
         contains(github.event.pull_request.labels.*.name, 'e2e'))) &&
       (inputs.runner_mode != 'local-ephemeral' ||
@@ -133,6 +134,35 @@ jobs:
           path: stavbacore-staging-metadata.json
           if-no-files-found: error
           retention-days: 7
+
+  staging-preview-configure:
+    if: >-
+      github.repository == 'svobonek-lab/dashboard' &&
+      github.event_name == 'workflow_dispatch' &&
+      inputs.runner_mode == 'preview-configure' &&
+      github.ref == 'refs/heads/codex/staging-e2e-local-runner'
+    runs-on: [self-hosted, linux, x64, staging-e2e]
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+      - name: Add staging-only variables to the approved Preview branch
+        run: node scripts/configure-staging-preview-env.mjs
+        env:
+          GITHUB_REF: ${{ github.ref }}
+          STAGING_PREVIEW_GIT_BRANCH: codex/staging-e2e-local-runner
+          STAGING_SUPABASE_URL: ${{ vars.STAGING_SUPABASE_URL }}
+          STAGING_SUPABASE_PROJECT_REF: ${{ vars.STAGING_SUPABASE_PROJECT_REF }}
+          PRODUCTION_SUPABASE_PROJECT_REF: ${{ vars.PRODUCTION_SUPABASE_PROJECT_REF }}
+          STAGING_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.STAGING_SUPABASE_PUBLISHABLE_KEY }}
+          STAGING_SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.STAGING_SUPABASE_SERVICE_ROLE_KEY }}
+          VERCEL_ORG_ID: ${{ vars.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ vars.VERCEL_PROJECT_ID }}
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
 
   staging-load-acceptance:
     if: >-

@@ -41,8 +41,18 @@ row it creates and restores the original lead status. No customer records are
 included in Playwright assertions.
 
 For a private repository that has exhausted its GitHub-hosted Actions allowance,
-`workflow_dispatch` exposes a `local-ephemeral` runner option. It is restricted
-to the `codex/staging-e2e-local-runner` branch and the dedicated
-`self-hosted,linux,x64,staging-e2e` labels. Register only a single-use ephemeral
-runner for this job and remove its container after the run; never attach the
-Docker socket or mount the host filesystem into the runner.
+`workflow_dispatch` exposes local one-shot modes on the
+`codex/staging-e2e-local-runner` branch: `local-ephemeral`, `metadata-only`,
+`preview-configure`, `load-acceptance`, and `load-recover`. They require the
+dedicated `self-hosted,linux,x64,staging-e2e` labels. Register only a single-use
+ephemeral runner for each job and remove its container after the run; never
+attach the Docker socket or mount the host filesystem into the runner.
+
+`preview-configure` is restricted to that exact branch and validates the
+StavbaCore Staging and production refs before writing anything. It creates
+branch-scoped Preview variables from the existing staging GitHub secrets. If
+the branch has no connector encryption or intake hash key, it creates random
+keys and stores them as sensitive Vercel variables without printing their
+values. The connector key is specific to this branch, so any connector
+credentials saved through this Preview must remain synthetic staging data and
+cannot be decrypted by a different deployment using another key.

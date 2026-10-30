@@ -1734,6 +1734,86 @@
         "has_default": true
       },
       {
+        "name": "fingerprint",
+        "table": "app_imports",
+        "schema": "public",
+        "ordinal": 7,
+        "nullable": "YES",
+        "udt_name": "text",
+        "data_type": "text",
+        "has_default": false
+      },
+      {
+        "name": "source",
+        "table": "app_imports",
+        "schema": "public",
+        "ordinal": 8,
+        "nullable": "NO",
+        "udt_name": "text",
+        "data_type": "text",
+        "has_default": true
+      },
+      {
+        "name": "row_count",
+        "table": "app_imports",
+        "schema": "public",
+        "ordinal": 9,
+        "nullable": "NO",
+        "udt_name": "int4",
+        "data_type": "integer",
+        "has_default": true
+      },
+      {
+        "name": "status",
+        "table": "app_imports",
+        "schema": "public",
+        "ordinal": 10,
+        "nullable": "NO",
+        "udt_name": "text",
+        "data_type": "text",
+        "has_default": true
+      },
+      {
+        "name": "summary",
+        "table": "app_imports",
+        "schema": "public",
+        "ordinal": 11,
+        "nullable": "NO",
+        "udt_name": "jsonb",
+        "data_type": "jsonb",
+        "has_default": true
+      },
+      {
+        "name": "completed_at",
+        "table": "app_imports",
+        "schema": "public",
+        "ordinal": 12,
+        "nullable": "YES",
+        "udt_name": "timestamptz",
+        "data_type": "timestamp with time zone",
+        "has_default": false
+      },
+      {
+        "name": "rolled_back_at",
+        "table": "app_imports",
+        "schema": "public",
+        "ordinal": 13,
+        "nullable": "YES",
+        "udt_name": "timestamptz",
+        "data_type": "timestamp with time zone",
+        "has_default": false
+      },
+      {
+        "name": "rollback_blocked",
+        "table": "app_imports",
+        "schema": "public",
+        "ordinal": 14,
+        "nullable": "NO",
+        "udt_name": "bool",
+        "data_type": "boolean",
+        "has_default": true
+      },
+      {
         "name": "id",
         "table": "app_integrations",
         "schema": "public",
@@ -2324,6 +2404,26 @@
         "has_default": false
       },
       {
+        "name": "import_fingerprint",
+        "table": "app_leads",
+        "schema": "public",
+        "ordinal": 22,
+        "nullable": "YES",
+        "udt_name": "text",
+        "data_type": "text",
+        "has_default": false
+      },
+      {
+        "name": "source_record_id",
+        "table": "app_leads",
+        "schema": "public",
+        "ordinal": 23,
+        "nullable": "YES",
+        "udt_name": "text",
+        "data_type": "text",
+        "has_default": false
+      },
+      {
         "name": "company_id",
         "table": "app_members",
         "schema": "public",
@@ -2442,6 +2542,66 @@
         "udt_name": "timestamptz",
         "data_type": "timestamp with time zone",
         "has_default": true
+      },
+      {
+        "name": "id",
+        "table": "app_public_intake_events",
+        "schema": "public",
+        "ordinal": 1,
+        "nullable": "NO",
+        "udt_name": "uuid",
+        "data_type": "uuid",
+        "has_default": true
+      },
+      {
+        "name": "company_id",
+        "table": "app_public_intake_events",
+        "schema": "public",
+        "ordinal": 2,
+        "nullable": "NO",
+        "udt_name": "uuid",
+        "data_type": "uuid",
+        "has_default": false
+      },
+      {
+        "name": "request_key",
+        "table": "app_public_intake_events",
+        "schema": "public",
+        "ordinal": 3,
+        "nullable": "NO",
+        "udt_name": "text",
+        "data_type": "text",
+        "has_default": false
+      },
+      {
+        "name": "created_at",
+        "table": "app_public_intake_events",
+        "schema": "public",
+        "ordinal": 4,
+        "nullable": "NO",
+        "udt_name": "timestamptz",
+        "data_type": "timestamp with time zone",
+        "has_default": true
+      },
+      {
+        "name": "lead_id",
+        "table": "app_public_intake_events",
+        "schema": "public",
+        "ordinal": 5,
+        "nullable": "YES",
+        "udt_name": "uuid",
+        "data_type": "uuid",
+        "has_default": false
+      },
+      {
+        "name": "client_ip_hash",
+        "table": "app_public_intake_events",
+        "schema": "public",
+        "ordinal": 6,
+        "nullable": "YES",
+        "udt_name": "text",
+        "data_type": "text",
+        "has_default": false
       },
       {
         "name": "id",
@@ -3243,6 +3403,19 @@
         "with_check": null
       },
       {
+        "name": "app_imports_deny_direct",
+        "roles": [
+          "anon",
+          "authenticated"
+        ],
+        "table": "app_imports",
+        "using": "false",
+        "schema": "public",
+        "command": "ALL",
+        "permissive": "PERMISSIVE",
+        "with_check": "false"
+      },
+      {
         "name": "app_jwt_tenant_boundary",
         "roles": [
           "authenticated"
@@ -3519,6 +3692,19 @@
         "with_check": null
       },
       {
+        "name": "app_public_intake_events_deny_direct",
+        "roles": [
+          "anon",
+          "authenticated"
+        ],
+        "table": "app_public_intake_events",
+        "using": "false",
+        "schema": "public",
+        "command": "ALL",
+        "permissive": "PERMISSIVE",
+        "with_check": "false"
+      },
+      {
         "name": "app_jwt_tenant_boundary",
         "roles": [
           "authenticated"
@@ -3739,6 +3925,16 @@
         "enabled": "O",
         "definition": "CREATE TRIGGER app_leads_first_response BEFORE UPDATE OF status ON app_leads FOR EACH ROW EXECUTE FUNCTION app_track_first_response()",
         "function_name": "app_track_first_response",
+        "function_schema": "public",
+        "function_arguments": ""
+      },
+      {
+        "name": "app_mark_import_lead_changed",
+        "table": "app_leads",
+        "schema": "public",
+        "enabled": "O",
+        "definition": "CREATE TRIGGER app_mark_import_lead_changed AFTER DELETE OR UPDATE ON app_leads FOR EACH ROW EXECUTE FUNCTION app_mark_import_lead_changed()",
+        "function_name": "app_mark_import_lead_changed",
         "function_schema": "public",
         "function_arguments": ""
       },
@@ -4445,6 +4641,31 @@
         "identity_arguments": "c uuid, rows jsonb, file_name text"
       },
       {
+        "name": "app_import_leads",
+        "owner": "postgres",
+        "config": [
+          "search_path=public, pg_temp"
+        ],
+        "result": "jsonb",
+        "schema": "public",
+        "language": "plpgsql",
+        "volatility": "v",
+        "execute_grants": [
+          {
+            "grantee": "postgres",
+            "grantable": false,
+            "privilege": "EXECUTE"
+          },
+          {
+            "grantee": "service_role",
+            "grantable": false,
+            "privilege": "EXECUTE"
+          }
+        ],
+        "security_definer": true,
+        "identity_arguments": "p_company_id uuid, p_actor_id uuid, p_rows jsonb, p_file_name text, p_fingerprint text"
+      },
+      {
         "name": "app_ingest_connector_batch",
         "owner": "postgres",
         "config": [
@@ -4578,6 +4799,26 @@
         ],
         "security_definer": true,
         "identity_arguments": "p_company_id uuid, p_user_id uuid, p_entity_type text"
+      },
+      {
+        "name": "app_mark_import_lead_changed",
+        "owner": "postgres",
+        "config": [
+          "search_path=public, pg_temp"
+        ],
+        "result": "trigger",
+        "schema": "public",
+        "language": "plpgsql",
+        "volatility": "v",
+        "execute_grants": [
+          {
+            "grantee": "postgres",
+            "grantable": false,
+            "privilege": "EXECUTE"
+          }
+        ],
+        "security_definer": true,
+        "identity_arguments": ""
       },
       {
         "name": "app_member_active",
@@ -4975,6 +5216,31 @@
         "identity_arguments": "c uuid"
       },
       {
+        "name": "app_rollback_import",
+        "owner": "postgres",
+        "config": [
+          "search_path=public, pg_temp"
+        ],
+        "result": "jsonb",
+        "schema": "public",
+        "language": "plpgsql",
+        "volatility": "v",
+        "execute_grants": [
+          {
+            "grantee": "postgres",
+            "grantable": false,
+            "privilege": "EXECUTE"
+          },
+          {
+            "grantee": "service_role",
+            "grantable": false,
+            "privilege": "EXECUTE"
+          }
+        ],
+        "security_definer": true,
+        "identity_arguments": "p_company_id uuid, p_fingerprint text"
+      },
+      {
         "name": "app_save_connector_mapping",
         "owner": "postgres",
         "config": [
@@ -5173,6 +5439,31 @@
         ],
         "security_definer": true,
         "identity_arguments": "c uuid, q uuid, h text"
+      },
+      {
+        "name": "app_submit_public_lead",
+        "owner": "postgres",
+        "config": [
+          "search_path=\"\""
+        ],
+        "result": "uuid",
+        "schema": "public",
+        "language": "plpgsql",
+        "volatility": "v",
+        "execute_grants": [
+          {
+            "grantee": "postgres",
+            "grantable": false,
+            "privilege": "EXECUTE"
+          },
+          {
+            "grantee": "service_role",
+            "grantable": false,
+            "privilege": "EXECUTE"
+          }
+        ],
+        "security_definer": true,
+        "identity_arguments": "p_public_key text, p_request_key text, p_customer text, p_phone text, p_email text, p_title text, p_description text, p_value numeric, p_client_ip_hash text"
       },
       {
         "name": "app_tenant_access_token_hook",
@@ -5608,7 +5899,7 @@
       },
       {
         "name": "app_imports",
-        "relacl": "{postgres=arwdDxtm/postgres,service_role=arwdDxtm/postgres,authenticated=r/postgres}",
+        "relacl": "{postgres=arwdDxtm/postgres,service_role=arwdDxtm/postgres}",
         "schema": "public",
         "relkind": "r",
         "rls_forced": false,
@@ -5622,7 +5913,7 @@
         "authenticated_table_privileges": {
           "delete": false,
           "insert": false,
-          "select": true,
+          "select": false,
           "update": false
         }
       },
@@ -5763,6 +6054,26 @@
           "delete": false,
           "insert": true,
           "select": true,
+          "update": false
+        }
+      },
+      {
+        "name": "app_public_intake_events",
+        "relacl": "{postgres=arwdDxtm/postgres}",
+        "schema": "public",
+        "relkind": "r",
+        "rls_forced": false,
+        "rls_enabled": true,
+        "anon_table_privileges": {
+          "delete": false,
+          "insert": false,
+          "select": false,
+          "update": false
+        },
+        "authenticated_table_privileges": {
+          "delete": false,
+          "insert": false,
+          "select": false,
           "update": false
         }
       },
@@ -7339,13 +7650,6 @@
       {
         "table": "app_imports",
         "schema": "public",
-        "grantee": "authenticated",
-        "grantable": false,
-        "privilege": "SELECT"
-      },
-      {
-        "table": "app_imports",
-        "schema": "public",
         "grantee": "postgres",
         "grantable": false,
         "privilege": "DELETE"
@@ -8236,6 +8540,55 @@
         "table": "app_notes",
         "schema": "public",
         "grantee": "service_role",
+        "grantable": false,
+        "privilege": "UPDATE"
+      },
+      {
+        "table": "app_public_intake_events",
+        "schema": "public",
+        "grantee": "postgres",
+        "grantable": false,
+        "privilege": "DELETE"
+      },
+      {
+        "table": "app_public_intake_events",
+        "schema": "public",
+        "grantee": "postgres",
+        "grantable": false,
+        "privilege": "INSERT"
+      },
+      {
+        "table": "app_public_intake_events",
+        "schema": "public",
+        "grantee": "postgres",
+        "grantable": false,
+        "privilege": "REFERENCES"
+      },
+      {
+        "table": "app_public_intake_events",
+        "schema": "public",
+        "grantee": "postgres",
+        "grantable": false,
+        "privilege": "SELECT"
+      },
+      {
+        "table": "app_public_intake_events",
+        "schema": "public",
+        "grantee": "postgres",
+        "grantable": false,
+        "privilege": "TRIGGER"
+      },
+      {
+        "table": "app_public_intake_events",
+        "schema": "public",
+        "grantee": "postgres",
+        "grantable": false,
+        "privilege": "TRUNCATE"
+      },
+      {
+        "table": "app_public_intake_events",
+        "schema": "public",
+        "grantee": "postgres",
         "grantable": false,
         "privilege": "UPDATE"
       },
@@ -9156,7 +9509,7 @@
         "privilege": "UPDATE"
       }
     ],
-    "captured_at_utc": "2026-10-30T08:52:03.800296Z"
+    "captured_at_utc": "2026-10-30T09:32:08.168557Z"
   },
   "migrationHistory": {
     "readable": true,
