@@ -119,6 +119,30 @@ test('owner login, status change, CSV import/export and logout have no uncaught 
         : ownerLandingText.includes('nemá aktivní členství') ? 'no-active-membership'
           : 'workspace';
     console.info(`Owner landing state: ${ownerLandingState}`);
+    const ownerLandingDiagnostics = await page.evaluate(() => {
+      const body = document.body.innerText;
+      const genericStates = [
+        'Data se nepodařilo načíst',
+        'Systém čeká na připojení produkce',
+        'Načítám StavbaFlow',
+        'Předplatné vypršelo',
+        'Přístup pozastaven',
+        'Účet nemá aktivní členství v žádné firmě.',
+        'Nemáte oprávnění pro přístup do této sekce.',
+      ];
+      return {
+        pathname: window.location.pathname,
+        documentReadyState: document.readyState,
+        titleHasStavbaFlow: document.title.includes('StavbaFlow'),
+        bodyLength: body.length,
+        headingCount: document.querySelectorAll('h1,h2').length,
+        navigationCount: document.querySelectorAll('nav').length,
+        navigationLinkCount: document.querySelectorAll('nav a').length,
+        genericStateMarkers: genericStates.filter((marker) => body.includes(marker)),
+        alertCount: document.querySelectorAll('[role="alert"]').length,
+      };
+    });
+    console.info(`Owner landing diagnostics: ${JSON.stringify(ownerLandingDiagnostics)}`);
     console.info('Owner E2E checkpoint: signed in');
 
     await page.goto('/leads');
