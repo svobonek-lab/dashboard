@@ -12,7 +12,7 @@ A Vercel metadata-only inventory read environment variable names and branch scop
 | `fix/paid-registration-legal-prerequisite` | present | present | absent | present | Not verified as the isolated staging project; do not use for acceptance. |
 | `feat/stripe-billing-completion` | absent | present | present | absent | Incomplete configuration. |
 
-The next Stripe acceptance blocker is the missing correctly named `STRIPE_WEBHOOK_SECRET` for this branch. The existing misspelled secret is not used by the application and was not copied or revealed. After the TEST endpoint signing secret is added under the correct name and a branch Preview is redeployed, run the checkout, webhook, owner access and billing-portal cancellation steps below. Never copy a secret onto a branch with an unverified database target.
+The next Stripe acceptance blocker is the missing correctly named `STRIPE_WEBHOOK_SECRET` for this branch. The existing misspelled secret is not used by the application and was not copied or revealed. Add the TEST endpoint signing secret under the exact name `STRIPE_WEBHOOK_SECRET`, scoped only to Preview branch `codex/staging-e2e-local-runner`, then redeploy and run the checkout, webhook, owner access and billing-portal cancellation steps below. Never copy a secret onto a branch with an unverified database target.
 
 Use only the Vercel Preview deployment and Stripe TEST mode. Before starting, record the Preview URL and deployed commit, and verify the server is configured with Stripe test credentials and a TEST-mode Start price. Do not enter production payment details or record card data, secrets, customer names, or email addresses here. Use a Stripe-provided test payment method.
 
