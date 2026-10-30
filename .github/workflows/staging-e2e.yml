@@ -228,12 +228,24 @@ jobs:
           STAGING_OWNER_LOAD_FIXTURES_FILE: ${{ steps.fixtures.outputs.owner_file }}
           STAGING_EMPLOYEE_LOAD_FIXTURES_FILE: ${{ steps.fixtures.outputs.employee_file }}
       - name: Run public intake load when staging contract is enabled
+        id: public_intake_load
         if: always() && steps.fixtures.outcome == 'success' && vars.STAGING_PUBLIC_INTAKE_ENABLED == 'true'
         run: |
           k6 run --summary-export "$RUNNER_TEMP/stavbaflow-load-${GITHUB_RUN_ID}/public-summary-private.json" load/public-intake.js
           node scripts/sanitize-k6-summary.mjs "$RUNNER_TEMP/stavbaflow-load-${GITHUB_RUN_ID}/public-summary-private.json" "$RUNNER_TEMP/stavbaflow-load-${GITHUB_RUN_ID}/public-summary.json"
         env:
           STAGING_PUBLIC_TENANT_KEY: ${{ vars.STAGING_PUBLIC_TENANT_KEY }}
+          STAGING_PUBLIC_LOAD_RUN_ID: ${{ github.run_id }}-${{ github.run_attempt }}
+      - name: Remove only this attempt's synthetic public-intake leads
+        if: always() && steps.public_intake_load.outcome != 'skipped'
+        run: node scripts/cleanup-staging-public-load.mjs
+        env:
+          STAGING_SUPABASE_URL: ${{ vars.STAGING_SUPABASE_URL }}
+          STAGING_SUPABASE_PROJECT_REF: ${{ vars.STAGING_SUPABASE_PROJECT_REF }}
+          PRODUCTION_SUPABASE_PROJECT_REF: ${{ vars.PRODUCTION_SUPABASE_PROJECT_REF }}
+          STAGING_COMPANY_A_ID: ${{ vars.STAGING_COMPANY_A_ID }}
+          STAGING_SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.STAGING_SUPABASE_SERVICE_ROLE_KEY }}
+          STAGING_PUBLIC_LOAD_RUN_ID: ${{ github.run_id }}-${{ github.run_attempt }}
       - name: Remove only this run's synthetic fixtures
         if: always()
         run: |

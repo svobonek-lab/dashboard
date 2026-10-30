@@ -71,9 +71,17 @@ test('staging E2E has isolated scenarios and an opt-in same-repository workflow'
   assert.match(loadWorkflow, /inputs\.runner_mode == 'load-acceptance'/);
   assert.match(loadWorkflow, /github\.ref == 'refs\/heads\/codex\/staging-e2e-local-runner'/);
   assert.match(loadWorkflow, /runs-on: \[self-hosted, linux, x64, staging-e2e\]/);
-  assert.equal((loadWorkflow.match(/STAGING_SUPABASE_SERVICE_ROLE_KEY:\s*\$\{\{\s*secrets\.STAGING_SUPABASE_SERVICE_ROLE_KEY\s*\}\}/g) ?? []).length, 5);
+  assert.equal((loadWorkflow.match(/STAGING_SUPABASE_SERVICE_ROLE_KEY:\s*\$\{\{\s*secrets\.STAGING_SUPABASE_SERVICE_ROLE_KEY\s*\}\}/g) ?? []).length, 6);
   assert.match(loadWorkflow, /if: always\(\)/);
   assert.doesNotMatch(loadWorkflow.split('    steps:')[0], /SERVICE_ROLE|service_role/i);
+  const ownerLoadStep = loadWorkflow.split('      - name: Run owner and employee load acceptance')[1]?.split('      - name: Run public intake load when staging contract is enabled')[0];
+  const publicLoadStep = loadWorkflow.split('      - name: Run public intake load when staging contract is enabled')[1]?.split("      - name: Remove only this attempt's synthetic public-intake leads")[0];
+  const publicLoadCleanupStep = loadWorkflow.split('      - name: Remove only this attempt\'s synthetic public-intake leads')[1]?.split('      - name: Remove only this run\'s synthetic fixtures')[0];
+  assert.ok(ownerLoadStep && publicLoadStep && publicLoadCleanupStep, 'load and cleanup steps must be distinct');
+  assert.doesNotMatch(ownerLoadStep + publicLoadStep, /SERVICE_ROLE|service_role|SUPABASE_SERVICE_ROLE_KEY/i);
+  assert.match(publicLoadStep, /STAGING_PUBLIC_LOAD_RUN_ID:\s*\$\{\{\s*github\.run_id\s*\}\}-\$\{\{\s*github\.run_attempt\s*\}\}/);
+  assert.match(publicLoadCleanupStep, /node scripts\/cleanup-staging-public-load\.mjs/);
+  assert.match(publicLoadCleanupStep, /STAGING_SUPABASE_SERVICE_ROLE_KEY:\s*\$\{\{\s*secrets\.STAGING_SUPABASE_SERVICE_ROLE_KEY\s*\}\}/);
   assert.match(workflow, /staging-load-recover:/);
   assert.match(workflow, /inputs\.runner_mode == 'load-recover'/);
   assert.match(support, /export async function restDelete/);
