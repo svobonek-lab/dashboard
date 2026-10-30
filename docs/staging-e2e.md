@@ -13,7 +13,6 @@ Configure these GitHub Actions **variables** with synthetic staging values:
 - `STAGING_COMPANY_A_ID`, `STAGING_COMPANY_B_ID`
 - `STAGING_OWNER_A_ID`, `STAGING_EMPLOYEE_A_ID`, `STAGING_OWNER_B_ID`, `STAGING_EMPLOYEE_B_ID`
 - `STAGING_LEAD_A_ID`, `STAGING_LEAD_B_ID`
-- `STAGING_LEAD_B_FILE_PATH` after the reviewed notes/files schema and private Storage bucket are available. Until then, preflight emits a warning and notes/files REST plus private Storage scenarios are reported as skipped; do not provide a placeholder path.
 - `STAGING_PUBLIC_TENANT_KEY` (public tenant slug used by the form; not a credential)
 - `STAGING_PUBLIC_INTAKE_ENABLED=true` only after the reviewed public-intake SQL is applied to staging and the synthetic company A intake is enabled; otherwise its replay test is reported as skipped.
 
@@ -28,7 +27,10 @@ All four accounts and both companies must be synthetic fixtures in the isolated
 staging project. Company A must have a lead assigned to employee A; company B
 must have a lead assigned to employee B. Company B must also have synthetic
 notes, invitation, and audit fixtures so the isolation assertion has positive
-controls. The public tenant key must resolve to company A. The public-intake
+controls. The Storage scenario creates one uniquely named text object and
+`app_lead_files` row as owner B, verifies owner A and employee A cannot read or
+mutate it, then removes that exact row and object in a `finally` block. The
+public tenant key must resolve to company A. The public-intake
 rate-limit/idempotency SQL contract must already be present in staging before
 its acceptance case can pass. Browser tests do not receive a service-role key.
 The workflow's separate post-test cleanup step receives the staging key only to

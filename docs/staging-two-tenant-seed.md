@@ -22,7 +22,6 @@ Set project/deployment identity and non-secret fixture IDs as **Actions variable
 - `STAGING_COMPANY_A_ID`, `STAGING_COMPANY_B_ID`
 - `STAGING_OWNER_A_ID`, `STAGING_EMPLOYEE_A_ID`, `STAGING_OWNER_B_ID`, `STAGING_EMPLOYEE_B_ID`
 - `STAGING_LEAD_A_ID`, `STAGING_LEAD_B_ID`
-- `STAGING_LEAD_B_FILE_PATH` (only after the review-only notes/files SQL is applied to staging and `STAGING_LEAD_FILES_ENABLED=true` was used for the seed)
 
 The seed prints company, user, and lead IDs only after `--apply` succeeds. Copy those non-secret IDs to the matching variables. Never treat the returned IDs as proof of isolation; run the staging E2E suite.
 
@@ -48,7 +47,7 @@ The configured `STAGING_PREVIEW_URL` currently points to an older `codex/real-co
 
 - Actions secrets: `STAGING_SUPABASE_SERVICE_ROLE_KEY`, `STAGING_EMPLOYEE_B_EMAIL`, `STAGING_EMPLOYEE_B_PASSWORD`, `STAGING_PUBLIC_TENANT_KEY`.
 - Actions variables: `PRODUCTION_BASE_URL`, `STAGING_COMPANY_A_ID`, `STAGING_COMPANY_B_ID`, `STAGING_OWNER_A_ID`, `STAGING_EMPLOYEE_A_ID`, `STAGING_OWNER_B_ID`, `STAGING_EMPLOYEE_B_ID`, `STAGING_LEAD_A_ID`, and `STAGING_LEAD_B_ID`.
-- After the notes/files staging migration and verified private bucket are in place: `STAGING_LEAD_B_FILE_PATH`, plus set `STAGING_LEAD_FILES_ENABLED=true` only in the seed invocation that creates the synthetic file fixture.
+- The Storage isolation E2E now creates and removes its own exact synthetic file fixture; no persistent Storage path variable is required.
 
 The 2026-10-28 read-only Supabase dashboard check found one existing synthetic account, `stavbaflow-owner-test-20261026@example.test` (`dcde4641-9edc-4112-a3c4-bccbd9d4efd0`). It has a confirmed email and one active `owner` membership in active company `87fb05ae-5153-40a1-8b2c-9c97f3bd327a`. This is positive evidence for the owner-membership contract, but it is not the deterministic A/B fixture and does not prove dashboard login or tenant isolation. The four deterministic accounts required for those tests were absent at the time of the exact-email read-only check.
 
@@ -68,4 +67,8 @@ A seed run is not proof that owner login or tenant isolation passed. File fixtur
 - The Vercel Preview branch `codex/staging-preview-safety` has staging Supabase URL/publishable/service-role settings and a branch-scoped sensitive `INTAKE_HASH_SECRET`. Vercel rejects the old `PUBLIC_INTAKE_HASH_SECRET` name because `PUBLIC_` denotes browser exposure; the API and local configuration now use only the server-side name. A new Preview deployment must include the corrected API code before the secret can be exercised. The live schema also lacks `app_public_intake_events` and the hardened `app_submit_public_lead` RPC, so valid intake does not write. OPTIONS and honeypot requests return 204 and 202 respectively. No intake lead was written during this check.
 - `app_lead_files` and `lead-files` Storage remain intentionally absent because their migration is review-only. Do not claim the file/Storage isolation subtest is proven, and do not enable fixture upload.
 
-Run `npm run test:e2e:staging` only after the missing production URL variable is configured, the public tenant slug is passed as a variable, the current staging RPC/schema is reviewed and applied, the Preview's required server settings exist, and a GitHub runner can start. Keep the file/Storage test blocked until its separately reviewed migration and bucket are available.
+Run `npm run test:e2e:staging` only after the production URL variable is configured, the public tenant slug is passed as a variable, the current staging RPC/schema is reviewed and applied, the Preview's required server settings exist, and a GitHub runner can start.
+
+## Current status — 2026-10-30
+
+The later metadata-only snapshot [41112184393](https://github.com/svobonek-lab/dashboard/actions/runs/41112184393) supersedes the older catalog statements above: staging now has `app_notes`, `app_lead_files`, and private `lead-files` and `crm-files` buckets with scoped Storage policies. The updated Storage test creates a company-B fixture as owner B, checks owner-A and employee-A denial plus the owner-B control, then removes the exact fixture. Its live run is still required; the old run [41106360174](https://github.com/svobonek-lab/dashboard/actions/runs/41106360174) predates this test and skipped Storage.
