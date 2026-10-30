@@ -1,6 +1,6 @@
 # Staging Playwright smoke tests
 
-Run the seven external acceptance scenarios only with the opt-in `staging-e2e`
+Run the eight external acceptance scenarios only with the opt-in `staging-e2e`
 workflow: use `workflow_dispatch`, or add the `e2e` label to a pull request
 whose branch is in this repository. Fork PRs cannot receive staging secrets.
 The workflow refuses to start unless the staging Supabase ref and web origin
@@ -30,15 +30,20 @@ must have a lead assigned to employee B. Company B must also have synthetic
 notes, invitation, and audit fixtures so the isolation assertion has positive
 controls. The public tenant key must resolve to company A. The public-intake
 rate-limit/idempotency SQL contract must already be present in staging before
-its acceptance case can pass. Tests never use a
-service-role key and never target the configured production app or Supabase ref.
+its acceptance case can pass. Browser tests do not receive a service-role key.
+The workflow's separate post-test cleanup step receives the staging key only to
+call the service-only import rollback RPC for exact synthetic CSV marker rows in
+company A. The cleanup refuses any other project, company, or row marker.
 
 The public-intake replay test inserts one uniquely named synthetic lead and
 leaves it in company A to preserve auditability. The cache-clear test seeds only
 synthetic values in the logged-in browser's local storage and does not write to
-the database. The owner critical-flow test removes only the exact synthetic CSV
-row it creates and restores the original lead status. No customer records are
-included in Playwright assertions.
+the database. The owner critical-flow test verifies its synthetic CSV row and
+restores the original lead status; a separate workflow step rolls back only
+synthetic CSV imports bearing the reserved marker. The Sentry scenario sends one
+synthetic exception after owner context loads and checks the event tags and
+absence of email/name fields. No customer records are included in Playwright
+assertions.
 
 For a private repository that has exhausted its GitHub-hosted Actions allowance,
 `workflow_dispatch` exposes local one-shot modes on the

@@ -12,6 +12,7 @@ test('staging E2E has isolated scenarios and an opt-in same-repository workflow'
   const ownerFlow = await readFile(join(root, 'tests/e2e/owner-critical-flow.spec.ts'), 'utf8');
   const tenantIsolation = await readFile(join(root, 'tests/e2e/tenant-rest-isolation.spec.ts'), 'utf8');
   const publicIntake = await readFile(join(root, 'tests/e2e/public-intake-idempotency.spec.ts'), 'utf8');
+  const sentrySpec = await readFile(join(root, 'tests/e2e/sentry-staging-event.spec.ts'), 'utf8');
   const stagingDocs = await readFile(join(root, 'docs/staging-e2e.md'), 'utf8');
 
   assert.deepEqual(specs.filter((name) => name.endsWith('.spec.ts')).sort(), [
@@ -20,6 +21,7 @@ test('staging E2E has isolated scenarios and an opt-in same-repository workflow'
     'owner-critical-flow.spec.ts',
     'owner-menu.spec.ts',
     'public-intake-idempotency.spec.ts',
+    'sentry-staging-event.spec.ts',
     'tenant-rest-isolation.spec.ts',
   ]);
   assert.match(workflow, /workflow_dispatch:/);
@@ -42,6 +44,9 @@ test('staging E2E has isolated scenarios and an opt-in same-repository workflow'
   assert.equal((workflow.match(/STAGING_PUBLIC_INTAKE_ENABLED:\s*\$\{\{\s*vars\.STAGING_PUBLIC_INTAKE_ENABLED\s*\}\}/g) ?? []).length, 2);
   assert.match(safety, /STAGING_PUBLIC_INTAKE_ENABLED/);
   assert.match(publicIntake, /test\.skip\(!\(process\.env\.STAGING_PUBLIC_INTAKE_ENABLED === 'true'\)/);
+  assert.match(sentrySpec, /company_id: companyId, role: 'owner'/);
+  assert.match(sentrySpec, /event\?\.user as Record<string, unknown> \| undefined/);
+  assert.match(sentrySpec, /StavbaFlow synthetic Sentry staging acceptance/);
   assert.match(safety, /STAGING_LEAD_B_FILE_PATH/);
   assert.match(safety, /Notes\/files REST and private Storage isolation.*skipped/i);
   assert.match(tenantIsolation, /table: 'app_notes', crossTenantQuery: companyFilter/);
@@ -54,7 +59,7 @@ test('staging E2E has isolated scenarios and an opt-in same-repository workflow'
   assert.equal((workflow.match(/STAGING_OWNER_B_PASSWORD:\s*\$\{\{\s*secrets\.STAGING_OWNER_B_PASSWORD\s*\}\}/g) ?? []).length, 2);
   assert.equal((workflow.match(/STAGING_LEAD_B_FILE_PATH:\s*\$\{\{\s*vars\.STAGING_LEAD_B_FILE_PATH\s*\}\}/g) ?? []).length, 2);
   const e2eWorkflow = workflow.split('  staging-metadata-snapshot:')[0];
-  const browserTestStep = e2eWorkflow.split('      - name: Run seven opt-in synthetic tenant acceptance scenarios')[1]?.split('      - name: Roll back only exact synthetic owner CSV imports')[0];
+  const browserTestStep = e2eWorkflow.split('      - name: Run eight opt-in synthetic tenant acceptance scenarios')[1]?.split('      - name: Roll back only exact synthetic owner CSV imports')[0];
   const exactCleanupStep = e2eWorkflow.split('      - name: Roll back only exact synthetic owner CSV imports')[1];
   assert.ok(browserTestStep, 'browser tests must have a separate step without service-role access');
   assert.ok(exactCleanupStep, 'synthetic CSV cleanup must run after the browser tests');
@@ -97,5 +102,5 @@ test('staging E2E has isolated scenarios and an opt-in same-repository workflow'
     assert.match(safety, new RegExp(name));
     assert.match(stagingDocs, new RegExp(name));
   }
-  assert.match(stagingDocs, /seven external acceptance scenarios/);
+  assert.match(stagingDocs, /eight external acceptance scenarios/);
 });
