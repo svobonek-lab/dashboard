@@ -1,9 +1,29 @@
 import { appendFile } from 'node:fs/promises';
+import { readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { APPROVED_STAGING_PREVIEW_ORIGIN } from './staging-stripe-checkout-guard.mjs';
 
 const STRIPE_VARIABLES = ['STRIPE_SECRET_KEY', 'STRIPE_BILLING_MODE', 'STRIPE_PRICE_STARTER_ID', 'BILLING_RETURN_URL'];
+
+export function parseVercelStripePreviewConfig(contents) {
+  const allowed = new Set(['STRIPE_BILLING_MODE', 'STRIPE_PRICE_STARTER_ID', 'BILLING_RETURN_URL']);
+  const values = {};
+  for (const line of String(contents).split(/\r?\n/)) {
+    const match = /^\s*(?:export\s+)?([A-Z0-9_]+)\s*=\s*(.*?)\s*$/.exec(line);
+    if (!match || !allowed.has(match[1])) continue;
+    let value = match[2];
+    if (value.startsWith('"') && value.endsWith('"')) {
+      try { value = JSON.parse(value); } catch { throw new Error(`Invalid Vercel Preview config value: ${match[1]}`); }
+    } else if (value.startsWith("'") && value.endsWith("'")) {
+      value = value.slice(1, -1).replace(/\\'/g, "'");
+    } else {
+      value = value.replace(/\s+#.*$/, '');
+    }
+    values[match[1]] = value;
+  }
+  return values;
+}
 
 export function buildStagingStripeEnvLines(env) {
   const required = [...STRIPE_VARIABLES, 'STAGING_PREVIEW_URL', 'PRODUCTION_BASE_URL'];
@@ -34,8 +54,13 @@ if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1]
     }
     const target = String(process.env.GITHUB_ENV || '').trim();
     if (!target) throw new Error('GitHub Actions environment-file path is unavailable.');
-    await appendFile(target, buildStagingStripeEnvLines(process.env), { encoding: 'utf8', mode: 0o600 });
-    process.stdout.write(`::add-mask::${process.env.STRIPE_SECRET_KEY}\n`);
+    const configFile = String(process.env.STAGING_PREVIEW_CONFIG_FILE || '').trim();
+    if (!configFile) throw new Error('Vercel Preview config file path is unavailable.');
+    const config = parseVercelStripePreviewConfig(await readFile(configFile, 'utf8'));
+    const env = { ...config, ...process.env };
+    env.STRIPE_SECRET_KEY = process.env.STAGING_STRIPE_SECRET_KEY || '';
+    await appendFile(target, buildStagingStripeEnvLines(env), { encoding: 'utf8', mode: 0o600 });
+    process.stdout.write(`::add-mask::${env.STRIPE_SECRET_KEY}\n`);
     console.log('Approved Stripe TEST Preview variables are ready for the staging billing setup step.');
   } catch (error) {
     console.error(JSON.stringify({

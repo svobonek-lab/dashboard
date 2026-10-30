@@ -326,11 +326,24 @@ jobs:
 
       - run: npm ci
 
-      - name: Export only Stripe TEST values from the approved Vercel Preview
+      - name: Pull non-secret Stripe TEST config from the approved Vercel Preview
         env:
           VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          STRIPE_CONFIG_FILE: ${{ runner.temp }}/staging-stripe-preview.env
+        run: |
+          set +x
+          if [ "$GITHUB_REF" != 'refs/heads/codex/staging-e2e-local-runner' ] || [ "$GITHUB_REPOSITORY" != 'svobonek-lab/dashboard' ]; then
+            echo 'Refusing Stripe TEST environment export outside the approved staging branch.' >&2
+            exit 1
+          fi
+          npx --yes vercel@65.8.0 env pull "$STRIPE_CONFIG_FILE" --environment=preview --git-branch=codex/staging-e2e-local-runner --token="$VERCEL_TOKEN" --yes
+
+      - name: Export only approved Stripe TEST settings to this job
+        env:
+          STAGING_STRIPE_SECRET_KEY: ${{ secrets.STAGING_STRIPE_SECRET_KEY }}
+          STAGING_PREVIEW_CONFIG_FILE: ${{ runner.temp }}/staging-stripe-preview.env
           STAGING_PREVIEW_URL: ${{ vars.STAGING_PREVIEW_URL }}
           PRODUCTION_BASE_URL: ${{ vars.PRODUCTION_BASE_URL }}
         run: |
@@ -339,7 +352,7 @@ jobs:
             echo 'Refusing Stripe TEST environment export outside the approved staging branch.' >&2
             exit 1
           fi
-          npx --yes vercel@65.8.0 env run --environment=preview --git-branch=codex/staging-e2e-local-runner --token="$VERCEL_TOKEN" -- node scripts/export-staging-stripe-env.mjs
+          node scripts/export-staging-stripe-env.mjs
 
       - name: Prepare one Stripe TEST Checkout for synthetic company A
         env:
@@ -371,6 +384,10 @@ jobs:
             ${{ runner.temp }}/stavbaflow-stripe-billing-${{ github.run_id }}/safe-metadata.json
           if-no-files-found: error
           retention-days: 1
+
+      - name: Remove pulled Preview configuration
+        if: always()
+        run: rm -f "$RUNNER_TEMP/staging-stripe-preview.env"
 
       - name: Remove local Checkout handoff
         if: always()

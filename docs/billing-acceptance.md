@@ -1,6 +1,6 @@
 # Stripe TEST billing acceptance
 
-**Status: PARTIAL — configuration is present; paid Checkout acceptance has not run.** No test purchase, signed subscription webhook, cancellation, period-end transition, or `past_due` screen has been verified. Do not count local contract tests as end-to-end billing acceptance.
+**Status: PARTIAL — Vercel Preview config is present; the first setup run stopped before creating Stripe objects.** No test purchase, signed subscription webhook, cancellation, period-end transition, or `past_due` screen has been verified. Do not count local contract tests as end-to-end billing acceptance.
 
 ## Verified preflight (2026-10-30)
 
@@ -16,7 +16,7 @@ Company A is now on `starter`, and the owner A password is available only throug
 
 Period-end and renewal-failure checks need a Stripe Test Clock. The test customer must be created under that clock and bound to synthetic company A before Checkout. The ordinary app-created customer is not attached to a Test Clock, and a normal customer cannot be retrofitted into one later.
 
-The staging-only setup runner and `billing-setup` mode in the existing manual staging workflow are prepared in the working branch. They check the exact staging project and synthetic company slug, require Stripe TEST mode and a monthly Starter price, create or reuse a clock/customer, bind through `app_bind_stripe_customer`, and request Checkout through the deployed staging endpoint. The runner receives only the allowlisted Preview Stripe values plus staging-specific inputs. The Checkout URL is written only to a private one-day Actions artifact; log output contains only safe IDs. The workflow has not yet run.
+The staging-only setup runner and `billing-setup` mode in the manual staging workflow are prepared on `codex/staging-e2e-local-runner`. The first workflow run (2026-10-30, run `41136059552`) stopped before any Stripe object was created: Vercel CLI does not return the saved `STRIPE_SECRET_KEY` Secret value to Actions, so the runner received none of the four billing settings. The workflow has been changed to use a non-deploying `vercel env pull` for the allowlisted non-secret Preview config and a separate GitHub Actions secret named `STAGING_STRIPE_SECRET_KEY` for the Stripe TEST API key. That GitHub secret is not set yet. After it is set, the runner checks the exact staging project and synthetic company slug, requires Stripe TEST mode and a monthly Starter price, creates or reuses a clock/customer, binds through `app_bind_stripe_customer`, and requests Checkout through the deployed staging endpoint. The Checkout URL is written only to a private one-day Actions artifact; log output contains only safe IDs.
 
 ## Acceptance log
 
@@ -27,7 +27,7 @@ Use UTC timestamps and record only safe Stripe test event/session IDs. Never wri
 | Verify staging Preview config and deployment | 2026-10-30 20:48 | Passed, preflight only | Ready Preview; correct branch scopes; unauthenticated handler returned `401 BILLING_AUTH_REQUIRED` |
 | Confirm Stripe TEST endpoint target and activity | 2026-10-30 20:48 | Passed, read-only | Active TEST destination targets the staging alias; 0 deliveries |
 | Set synthetic company A to Starter through the approved audited staging operation | 2026-10-30 | Passed | Read-only staging query confirmed plan `starter`; A remains active and unbound |
-| Prepare Test Clock, customer and Start-plan Checkout URL | NOT RUN | Prepared, not run | Branch-only setup workflow is ready; no Stripe objects created by this run |
+| Prepare Test Clock, customer and Start-plan Checkout URL | 2026-10-30 | Blocked before Stripe API access | Setup stopped because `STAGING_STRIPE_SECRET_KEY` is not present in GitHub Actions; run `41136059552` created no Stripe objects |
 | Complete Stripe TEST payment in hosted Checkout | NOT RUN | Awaiting action-time confirmation | No payment action submitted |
 | Verify signed webhook sets the correct tenant to `active` | NOT RUN | Blocked | No Checkout event |
 | Verify owner access after activation | NOT RUN | Blocked | No paid test subscription |
@@ -37,7 +37,7 @@ Use UTC timestamps and record only safe Stripe test event/session IDs. Never wri
 
 ## Remaining manual sequence
 
-1. Run the `staging-stripe-billing-setup` workflow on `codex/staging-e2e-local-runner`; download its one-day Checkout handoff artifact. It is restricted to StavbaCore Staging and Stripe TEST.
+1. Create a Stripe TEST API key and save it directly as the GitHub Actions secret `STAGING_STRIPE_SECRET_KEY` in `svobonek-lab/dashboard`. Never paste the key into chat. Then run the `staging-stripe-billing-setup` workflow on `codex/staging-e2e-local-runner` and download its one-day Checkout handoff artifact. It is restricted to StavbaCore Staging and Stripe TEST.
 2. Open the hosted Checkout, verify it is a TEST subscription for company A’s Starter plan, and complete it with Stripe’s test card only after the final confirmation.
 3. Confirm `checkout.session.completed` and `customer.subscription.updated` deliveries in Stripe TEST Workbench and verify company A’s state and owner access in staging. Do not paste credentials, card details, emails, or customer payloads into this document or chat.
 4. Open Billing Portal as owner A and request cancellation at period end. Verify access remains until the clock reaches the period end, then verify the signed deletion/update event and access removal.
