@@ -28,6 +28,7 @@ test('staging E2E has isolated scenarios and an opt-in same-repository workflow'
   assert.match(workflow, /runner_mode:/);
   assert.match(workflow, /local-ephemeral/);
   assert.match(workflow, /metadata-only/);
+  assert.match(workflow, /sentry-only/);
   assert.match(workflow, /staging-metadata-snapshot:/);
   assert.match(workflow, /staging-e2e-local-runner/);
   assert.match(workflow, /fromJSON\('\["self-hosted","linux","x64","staging-e2e"\]'\)/);
@@ -69,6 +70,8 @@ test('staging E2E has isolated scenarios and an opt-in same-repository workflow'
   assert.doesNotMatch(browserTestStep + support, /SERVICE_ROLE|service_role|SUPABASE_SERVICE_ROLE_KEY/i);
   assert.match(exactCleanupStep, /node scripts\/cleanup-staging-e2e-imports\.mjs/);
   assert.match(exactCleanupStep, /STAGING_SUPABASE_SERVICE_ROLE_KEY:\s*\$\{\{\s*secrets\.STAGING_SUPABASE_SERVICE_ROLE_KEY\s*\}\}/);
+  assert.match(browserTestStep, /tests\/e2e\/sentry-staging-event\.spec\.ts/);
+  assert.match(exactCleanupStep, /inputs\.runner_mode != 'sentry-only'/);
   const loadWorkflow = workflow.split('  staging-load-acceptance:')[1]?.split('  staging-load-recover:')[0];
   assert.ok(loadWorkflow, 'load acceptance must have its own restricted job');
   assert.match(loadWorkflow, /inputs\.runner_mode == 'load-acceptance'/);
@@ -113,5 +116,5 @@ test('staging E2E has isolated scenarios and an opt-in same-repository workflow'
     assert.match(safety, new RegExp(name));
     assert.match(stagingDocs, new RegExp(name));
   }
-  assert.match(stagingDocs, /eight external acceptance scenarios/);
+  assert.match(stagingDocs, /external acceptance scenarios/);
 });

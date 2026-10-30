@@ -11,6 +11,7 @@ on:
           - local-ephemeral
           - metadata-only
           - preview-configure
+          - sentry-only
           - load-acceptance
           - load-recover
         default: github-hosted
@@ -37,9 +38,9 @@ jobs:
         inputs.runner_mode != 'load-recover' && inputs.runner_mode != 'preview-configure') ||
        (github.event.pull_request.head.repo.full_name == github.repository &&
         contains(github.event.pull_request.labels.*.name, 'e2e'))) &&
-      (inputs.runner_mode != 'local-ephemeral' ||
+      ((inputs.runner_mode != 'local-ephemeral' && inputs.runner_mode != 'sentry-only') ||
        (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/codex/staging-e2e-local-runner'))
-    runs-on: ${{ inputs.runner_mode == 'local-ephemeral' && fromJSON('["self-hosted","linux","x64","staging-e2e"]') || 'ubuntu-latest' }}
+    runs-on: ${{ (inputs.runner_mode == 'local-ephemeral' || inputs.runner_mode == 'sentry-only') && fromJSON('["self-hosted","linux","x64","staging-e2e"]') || 'ubuntu-latest' }}
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v6
@@ -81,7 +82,12 @@ jobs:
       - name: Install Playwright Chromium
         run: npx playwright install --with-deps chromium
       - name: Run opt-in synthetic tenant acceptance scenarios
-        run: npm run test:e2e:staging
+        run: |
+          if [ "${{ inputs.runner_mode }}" = 'sentry-only' ]; then
+            npx playwright test --config=playwright.staging.config.ts tests/e2e/sentry-staging-event.spec.ts
+          else
+            npm run test:e2e:staging
+          fi
         env:
           CI: 'true'
           STAGING_PREVIEW_URL: ${{ vars.STAGING_PREVIEW_URL }}
@@ -109,7 +115,7 @@ jobs:
           STAGING_PUBLIC_INTAKE_ENABLED: ${{ vars.STAGING_PUBLIC_INTAKE_ENABLED }}
 
       - name: Roll back only exact synthetic owner CSV imports
-        if: always() && steps.staging_safety.outcome == 'success'
+        if: always() && steps.staging_safety.outcome == 'success' && inputs.runner_mode != 'sentry-only'
         run: node scripts/cleanup-staging-e2e-imports.mjs
         env:
           STAGING_SUPABASE_URL: ${{ vars.STAGING_SUPABASE_URL }}

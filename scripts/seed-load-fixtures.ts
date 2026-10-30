@@ -43,8 +43,9 @@ export async function provisionLoadFixtures(environment = process.env, smoke = f
   await mkdir(outputRoot, { recursive: true, mode: 0o700 });
   const manifestPath = join(outputRoot, 'manifest.json');
   await saveManifest(manifestPath, manifest);
+  const fixturePlan = loadFixturePlan(runId, smoke);
 
-  for (const item of loadFixturePlan(runId, smoke)) {
+  for (const item of fixturePlan) {
     const entry: Entry = { slug: item.slug, email: item.email };
     manifest.entries.push(entry);
     const company = await service.from('app_companies').insert({
@@ -105,6 +106,9 @@ export async function provisionLoadFixtures(environment = process.env, smoke = f
     const fixture = { accessToken: token, companyId: entry.companyId, userId: entry.userId,
       role: item.role, leadId: entry.leadId, restoreStatus: 'new' };
     (item.role === 'owner' ? owners : employees).push(fixture);
+    if (manifest.entries.length % 10 === 0 || manifest.entries.length === fixturePlan.length) {
+      console.log(`Prepared ${manifest.entries.length}/${fixturePlan.length} synthetic staging load fixtures.`);
+    }
   }
 
   const ownerPath = join(outputRoot, 'owners.json');

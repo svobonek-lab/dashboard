@@ -1,6 +1,6 @@
 # Staging Playwright smoke tests
 
-Run the eight external acceptance scenarios only with the opt-in `staging-e2e`
+Run the external acceptance scenarios only with the opt-in `staging-e2e`
 workflow: use `workflow_dispatch`, or add the `e2e` label to a pull request
 whose branch is in this repository. Fork PRs cannot receive staging secrets.
 The workflow refuses to start unless the staging Supabase ref and web origin
@@ -47,8 +47,10 @@ assertions.
 
 For a private repository that has exhausted its GitHub-hosted Actions allowance,
 `workflow_dispatch` exposes local one-shot modes on the
-`codex/staging-e2e-local-runner` branch: `local-ephemeral`, `metadata-only`,
-`preview-configure`, `load-acceptance`, and `load-recover`. They require the
+`codex/staging-e2e-local-runner` branch: `local-ephemeral`, `sentry-only`,
+`metadata-only`, `preview-configure`, `load-acceptance`, and `load-recover`.
+`sentry-only` runs only the Sentry browser scenario and does not receive the
+service-role secret. These modes require the
 dedicated `self-hosted,linux,x64,staging-e2e` labels. Register only a single-use
 ephemeral runner for each job and remove its container after the run; never
 attach the Docker socket or mount the host filesystem into the runner.
