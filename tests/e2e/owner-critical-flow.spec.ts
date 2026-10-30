@@ -56,6 +56,12 @@ test('owner login, status change, CSV import/export and logout have no uncaught 
   const companyId = requiredValue('STAGING_COMPANY_A_ID');
   const leadId = requiredValue('STAGING_LEAD_A_ID');
   const ownerToken = await accessToken(browser, 'OWNER_A');
+  const companyQuery = new URLSearchParams({
+    select: 'id,active,subscription_status',
+    id: `eq.${companyId}`,
+  }).toString();
+  const companyRows = await restGet(request, ownerToken, 'app_companies', companyQuery);
+  console.info(`Owner fixture readiness: company=${companyRows.length === 1 ? 'visible' : 'missing'}; active=${String(companyRows[0]?.active)}; subscription=${String(companyRows[0]?.subscription_status)}`);
   const importId = randomUUID();
   const importTitle = `StavbaFlow Playwright Import ${importId}`;
   const importEmail = `playwright-import-${importId}@stavbaflow.example.test`;
@@ -107,6 +113,12 @@ test('owner login, status change, CSV import/export and logout have no uncaught 
     await signIn(page, 'OWNER_A');
     signedIn = true;
     await expect(page).toHaveURL(/\/dashboard(?:\?|$)/);
+    const ownerLandingText = await page.locator('body').innerText();
+    const ownerLandingState = ownerLandingText.includes('Předplatné vypršelo') ? 'subscription-blocked'
+      : ownerLandingText.includes('Přístup pozastaven') ? 'company-suspended'
+        : ownerLandingText.includes('nemá aktivní členství') ? 'no-active-membership'
+          : 'workspace';
+    console.info(`Owner landing state: ${ownerLandingState}`);
     console.info('Owner E2E checkpoint: signed in');
 
     await page.goto('/leads');
