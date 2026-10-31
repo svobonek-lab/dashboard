@@ -22,8 +22,13 @@ function assertTarget(env) {
   if (env.GITHUB_REF && env.GITHUB_REF !== 'refs/heads/codex/staging-e2e-local-runner') {
     throw new Error('Refusing past-due acceptance outside the approved branch.');
   }
+  let supabaseUrl;
+  try { supabaseUrl = new URL(required(env, 'STAGING_SUPABASE_URL')); } catch {
+    throw new Error('Refusing past-due acceptance: staging Supabase URL is invalid.');
+  }
   if (env.STAGING_SUPABASE_PROJECT_REF !== STAGING_REF || env.STAGING_SUPABASE_PROJECT_REF === env.PRODUCTION_SUPABASE_PROJECT_REF ||
-      env.STAGING_SUPABASE_URL !== `https://${STAGING_REF}.supabase.co` || env.STAGING_PREVIEW_URL !== PREVIEW_ORIGIN ||
+      supabaseUrl.protocol !== 'https:' || supabaseUrl.hostname !== `${STAGING_REF}.supabase.co` ||
+      supabaseUrl.pathname !== '/' || supabaseUrl.search || supabaseUrl.hash || env.STAGING_PREVIEW_URL !== PREVIEW_ORIGIN ||
       env.STAGING_OWNER_B_EMAIL?.toLowerCase() !== OWNER_EMAIL || env.STRIPE_BILLING_MODE !== 'test' ||
       !/^sk_test_[A-Za-z0-9]+$/.test(String(env.STRIPE_SECRET_KEY || '')) ||
       !/^price_[A-Za-z0-9]+$/.test(String(env.STRIPE_PRICE_STARTER_ID || ''))) {

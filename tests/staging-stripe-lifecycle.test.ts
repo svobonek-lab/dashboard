@@ -166,3 +166,11 @@ test('past-due renewal workflow is staging-only, synthetic company B, and verifi
   assert.match(job, /STAGING_SUPABASE_SERVICE_ROLE_KEY/);
   assert.doesNotMatch(job, /PRODUCTION_SUPABASE_SERVICE_ROLE_KEY/);
 });
+
+test('past-due target guard accepts the exact staging Supabase URL with a trailing slash', () => {
+  const script = readFileSync(new URL('../scripts/test-staging-stripe-past-due.mjs', import.meta.url), 'utf8');
+  assert.match(script, /new URL\(required\(env, 'STAGING_SUPABASE_URL'\)\)/);
+  assert.match(script, /supabaseUrl\.hostname !== `\$\{STAGING_REF\}\.supabase\.co`/);
+  assert.match(script, /supabaseUrl\.pathname !== '\/'/);
+  assert.doesNotMatch(script, /STAGING_SUPABASE_URL !== `https:\/\/\$\{STAGING_REF\}\.supabase\.co`/);
+});
