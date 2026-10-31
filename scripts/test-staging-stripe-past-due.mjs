@@ -26,13 +26,22 @@ function assertTarget(env) {
   try { supabaseUrl = new URL(required(env, 'STAGING_SUPABASE_URL')); } catch {
     throw new Error('Refusing past-due acceptance: staging Supabase URL is invalid.');
   }
-  if (env.STAGING_SUPABASE_PROJECT_REF !== STAGING_REF || env.STAGING_SUPABASE_PROJECT_REF === env.PRODUCTION_SUPABASE_PROJECT_REF ||
-      supabaseUrl.protocol !== 'https:' || supabaseUrl.hostname !== `${STAGING_REF}.supabase.co` ||
-      supabaseUrl.pathname !== '/' || supabaseUrl.search || supabaseUrl.hash || env.STAGING_PREVIEW_URL !== PREVIEW_ORIGIN ||
-      env.STAGING_OWNER_B_EMAIL?.toLowerCase() !== OWNER_EMAIL || env.STRIPE_BILLING_MODE !== 'test' ||
-      !/^sk_test_[A-Za-z0-9]+$/.test(String(env.STRIPE_SECRET_KEY || '')) ||
+  if (env.STAGING_SUPABASE_PROJECT_REF !== STAGING_REF || env.STAGING_SUPABASE_PROJECT_REF === env.PRODUCTION_SUPABASE_PROJECT_REF) {
+    throw new Error('Refusing past-due acceptance: STAGING_SUPABASE_PROJECT_REF is not the approved separate staging project.');
+  }
+  if (supabaseUrl.protocol !== 'https:' || supabaseUrl.hostname !== `${STAGING_REF}.supabase.co` ||
+      supabaseUrl.pathname !== '/' || supabaseUrl.search || supabaseUrl.hash) {
+    throw new Error('Refusing past-due acceptance: STAGING_SUPABASE_URL does not match the exact staging project.');
+  }
+  if (env.STAGING_PREVIEW_URL !== PREVIEW_ORIGIN) {
+    throw new Error('Refusing past-due acceptance: STAGING_PREVIEW_URL is not the approved staging Preview.');
+  }
+  if (env.STAGING_OWNER_B_EMAIL?.toLowerCase() !== OWNER_EMAIL) {
+    throw new Error('Refusing past-due acceptance: STAGING_OWNER_B_EMAIL is not the synthetic company B fixture.');
+  }
+  if (env.STRIPE_BILLING_MODE !== 'test' || !/^sk_test_[A-Za-z0-9]+$/.test(String(env.STRIPE_SECRET_KEY || '')) ||
       !/^price_[A-Za-z0-9]+$/.test(String(env.STRIPE_PRICE_STARTER_ID || ''))) {
-    throw new Error('Refusing past-due acceptance: exact StavbaCore staging, synthetic company B, Preview, and Stripe TEST are required.');
+    throw new Error('Refusing past-due acceptance: Stripe TEST configuration is missing or invalid.');
   }
   if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(String(env.STAGING_COMPANY_B_ID || ''))) {
     throw new Error('Refusing past-due acceptance: company B ID is invalid.');
