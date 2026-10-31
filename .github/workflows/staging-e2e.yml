@@ -751,7 +751,7 @@ jobs:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
         run: |
           set +x
-          deployment_url="$(npx --yes vercel@65.8.0 deploy --prebuilt --target=preview --yes --token="$VERCEL_TOKEN" --meta githubCommitRef=codex/staging-e2e-local-runner --meta githubCommitSha="$GITHUB_SHA")"
+          deployment_url="$(npx --yes vercel@65.8.0 deploy --prebuilt --environment=preview --yes --token="$VERCEL_TOKEN" --meta githubCommitRef=codex/staging-e2e-local-runner --meta githubCommitSha="$GITHUB_SHA")"
           case "$deployment_url" in
             https://*.vercel.app) ;;
             *) echo 'Vercel did not return a valid Preview deployment URL.' >&2; exit 1 ;;

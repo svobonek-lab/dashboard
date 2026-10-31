@@ -61,7 +61,7 @@ test('Preview redeploy is manually gated to the staging branch and uses prebuilt
   assert.match(stagingWorkflow, /- preview-redeploy/);
   assert.match(stagingWorkflow, /inputs\.runner_mode == 'preview-redeploy'/);
   assert.match(stagingWorkflow, /github\.ref == 'refs\/heads\/codex\/staging-e2e-local-runner'/);
-  assert.match(stagingWorkflow, /vercel@65\.8\.0 deploy --prebuilt --target=preview/);
+  assert.match(stagingWorkflow, /vercel@65\.8\.0 deploy --prebuilt --environment=preview/);
   assert.match(stagingWorkflow, /alias set "\$deployment_url" dashboard-git-codex-staging-e2e-79cdb9-svobonek-6462s-projects\.vercel\.app/);
   assert.match(stagingWorkflow, /preview-redeploy'\) \|\|/);
 });

@@ -162,7 +162,7 @@ test('past-due renewal workflow is staging-only, synthetic company B, and verifi
   assert.match(job, /refs\/heads\/codex\/staging-e2e-local-runner/);
   assert.match(job, /STAGING_COMPANY_B_ID/);
   assert.match(job, /STAGING_OWNER_B_EMAIL/);
-  assert.match(job, /STAGING_STRIPE_PAST_DUE_MUTATE: 'true'/);
+  assert.match(job, /STAGING_STRIPE_PAST_DUE_MUTATE: ["']true["']/);
   assert.match(job, /node scripts\/test-staging-stripe-past-due\.mjs/);
   assert.match(job, /STAGING_SUPABASE_SERVICE_ROLE_KEY/);
   assert.doesNotMatch(job, /PRODUCTION_SUPABASE_SERVICE_ROLE_KEY/);
