@@ -162,6 +162,7 @@ test('past-due renewal workflow is staging-only, synthetic company B, and verifi
   assert.match(job, /refs\/heads\/codex\/staging-e2e-local-runner/);
   assert.match(job, /STAGING_COMPANY_B_ID/);
   assert.match(job, /STAGING_OWNER_B_EMAIL/);
+  assert.match(job, /STAGING_STRIPE_PAST_DUE_MUTATE: 'true'/);
   assert.match(job, /node scripts\/test-staging-stripe-past-due\.mjs/);
   assert.match(job, /STAGING_SUPABASE_SERVICE_ROLE_KEY/);
   assert.doesNotMatch(job, /PRODUCTION_SUPABASE_SERVICE_ROLE_KEY/);
@@ -178,7 +179,7 @@ test('past-due target guard accepts the exact staging Supabase URL with a traili
 test('past-due acceptance inspects an existing company B TEST subscription without mutating it', () => {
   const script = readFileSync(new URL('../scripts/test-staging-stripe-past-due.mjs', import.meta.url), 'utf8');
   assert.match(script, /async function inspectExistingBillingState\(stripe, company\)/);
-  assert.match(script, /if \(company\.stripe_customer_id \|\| company\.stripe_subscription_id\) \{\s*const inspection = await inspectExistingBillingState/);
+  assert.match(script, /const hasStripeBinding = Boolean\(company\.stripe_customer_id \|\| company\.stripe_subscription_id\);\s*const mutateExisting = env\.STAGING_STRIPE_PAST_DUE_MUTATE === 'true';\s*if \(hasStripeBinding\) \{\s*const inspection = await inspectExistingBillingState/);
   assert.match(script, /readOnlyInspection: true/);
   assert.match(script, /lastPaymentErrorCode: paymentIntent\?\.last_payment_error\?\.code/);
 });
@@ -188,4 +189,13 @@ test('past-due acceptance advances its Test Clock past Stripe renewal invoice fi
   assert.match(script, /billing_reason !== 'subscription_cycle'/);
   assert.match(script, /getInvoiceAttemptTime\(renewalInvoice\)/);
   assert.match(script, /testClocks\.advance\(clock\.id, \{ frozen_time: invoiceAttemptClockTarget \}\)/);
+});
+
+test('past-due mutating mode reuses and validates the existing company B TEST subscription', () => {
+  const script = readFileSync(new URL('../scripts/test-staging-stripe-past-due.mjs', import.meta.url), 'utf8');
+  assert.match(script, /STAGING_STRIPE_PAST_DUE_MUTATE === 'true'/);
+  assert.match(script, /if \(!mutateExisting\)[\s\S]*?return;/);
+  assert.match(script, /stripe\.subscriptions\.retrieve\(company\.stripe_subscription_id\)/);
+  assert.match(script, /paymentMethods\.data\.find\(\(method\) => method\.card\?\.last4 === '4242'\)/);
+  assert.match(script, /Mutating past-due acceptance requires the existing company B Stripe TEST fixture/);
 });

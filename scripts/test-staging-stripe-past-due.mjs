@@ -157,54 +157,87 @@ async function main(env = process.env) {
       throw new Error('Synthetic owner B is not the sole active owner of company B.');
     }
 
-    if (company.stripe_customer_id || company.stripe_subscription_id) {
+    const hasStripeBinding = Boolean(company.stripe_customer_id || company.stripe_subscription_id);
+    const mutateExisting = env.STAGING_STRIPE_PAST_DUE_MUTATE === 'true';
+    if (hasStripeBinding) {
       const inspection = await inspectExistingBillingState(stripe, company);
-      console.log(JSON.stringify(inspection));
-      return;
+      if (!mutateExisting) {
+        console.log(JSON.stringify(inspection));
+        return;
+      }
+      if (!company.stripe_customer_id || !company.stripe_subscription_id) {
+        throw new Error('Company B has a partial Stripe TEST binding; refusing the mutating acceptance run.');
+      }
+    } else if (mutateExisting) {
+      throw new Error('Mutating past-due acceptance requires the existing company B Stripe TEST fixture.');
     }
 
     const price = await stripe.prices.retrieve(required(env, 'STRIPE_PRICE_STARTER_ID'));
     if (price.livemode || !price.active || price.type !== 'recurring' || price.recurring?.interval !== 'month') {
       throw new Error('Starter price is not an active monthly Stripe TEST price.');
     }
-    const clockName = 'StavbaFlow synthetic company B past-due acceptance';
-    const clocks = await stripe.testHelpers.testClocks.list({ limit: 100 });
-    if (clocks.data.some((clock) => clock.name === clockName) || clocks.has_more) {
-      throw new Error('A prior company B past-due clock exists or clock inventory is incomplete; refusing to guess which test state to reuse.');
+    let clock;
+    let customer;
+    let goodPaymentMethod;
+    if (hasStripeBinding) {
+      [customer, subscription] = await Promise.all([
+        stripe.customers.retrieve(company.stripe_customer_id),
+        stripe.subscriptions.retrieve(company.stripe_subscription_id),
+      ]);
+      if (customer.deleted || customer.livemode || customer.metadata?.tenant_id !== companyId ||
+          customer.metadata?.purpose !== PURPOSE || !customer.test_clock || subscription.livemode ||
+          subscription.status !== 'active' || subscription.metadata?.tenant_id !== companyId ||
+          subscription.metadata?.purpose !== PURPOSE ||
+          (typeof subscription.customer === 'string' ? subscription.customer : subscription.customer.id) !== customer.id ||
+          subscription.test_clock !== customer.test_clock ||
+          !subscription.items.data.some((item) => item.price.id === price.id)) {
+        throw new Error('Existing company B billing objects are not the expected active monthly Starter TEST fixture.');
+      }
+      clock = await stripe.testHelpers.testClocks.retrieve(customer.test_clock);
+      if (clock.livemode || clock.status !== 'ready') throw new Error('Company B TEST clock is not ready for the mutating acceptance run.');
+      const paymentMethods = await stripe.paymentMethods.list({ customer: customer.id, type: 'card', limit: 100 });
+      goodPaymentMethod = paymentMethods.data.find((method) => method.card?.last4 === '4242');
+      if (!goodPaymentMethod) throw new Error('Could not find the existing successful Visa TEST payment method for safe cleanup.');
+    } else {
+      const clockName = 'StavbaFlow synthetic company B past-due acceptance';
+      const clocks = await stripe.testHelpers.testClocks.list({ limit: 100 });
+      if (clocks.data.some((clock) => clock.name === clockName) || clocks.has_more) {
+        throw new Error('A prior company B past-due clock exists or clock inventory is incomplete; refusing to guess which test state to reuse.');
+      }
+      clock = await stripe.testHelpers.testClocks.create({
+        frozen_time: Math.floor(Date.now() / 60_000) * 60,
+        name: clockName,
+      }, { idempotencyKey: `stavbaflow-past-due-clock:${companyId}` });
+      if (clock.livemode || clock.status !== 'ready') throw new Error('Company B Test Clock was not created ready in Stripe TEST.');
+      customer = await stripe.customers.create({
+        email: OWNER_EMAIL,
+        name: 'StavbaFlow synthetic billing acceptance B',
+        test_clock: clock.id,
+        metadata: { tenant_id: companyId, purpose: PURPOSE },
+      }, { idempotencyKey: `stavbaflow-past-due-customer:${companyId}` });
+      goodPaymentMethod = await stripe.paymentMethods.attach('pm_card_visa', { customer: customer.id });
+      await stripe.customers.update(customer.id, { invoice_settings: { default_payment_method: goodPaymentMethod.id } });
+      subscription = await stripe.subscriptions.create({
+        customer: customer.id,
+        items: [{ price: price.id, quantity: 1 }],
+        default_payment_method: goodPaymentMethod.id,
+        collection_method: 'charge_automatically',
+        payment_behavior: 'error_if_incomplete',
+        metadata: { tenant_id: companyId, purpose: PURPOSE },
+      }, { idempotencyKey: `stavbaflow-past-due-subscription:${companyId}` });
+      if (subscription.livemode || subscription.status !== 'active' || subscription.test_clock !== clock.id) {
+        throw new Error('Company B initial Starter TEST subscription did not activate under its isolated Test Clock.');
+      }
+      const { error: bindError } = await service.rpc('app_bind_stripe_customer', {
+        p_company_id: companyId,
+        p_stripe_customer_id: customer.id,
+      });
+      if (bindError) throw new Error('Could not bind the isolated Stripe TEST customer to synthetic company B.');
+      // The application intentionally consumes subscription.updated, not subscription.created.
+      subscription = await stripe.subscriptions.update(subscription.id, {
+        metadata: { tenant_id: companyId, purpose: PURPOSE, acceptance_state: 'initial-active' },
+      });
     }
-    const clock = await stripe.testHelpers.testClocks.create({
-      frozen_time: Math.floor(Date.now() / 60_000) * 60,
-      name: clockName,
-    }, { idempotencyKey: `stavbaflow-past-due-clock:${companyId}` });
-    if (clock.livemode || clock.status !== 'ready') throw new Error('Company B Test Clock was not created ready in Stripe TEST.');
-    const customer = await stripe.customers.create({
-      email: OWNER_EMAIL,
-      name: 'StavbaFlow synthetic billing acceptance B',
-      test_clock: clock.id,
-      metadata: { tenant_id: companyId, purpose: PURPOSE },
-    }, { idempotencyKey: `stavbaflow-past-due-customer:${companyId}` });
-    const goodPaymentMethod = await stripe.paymentMethods.attach('pm_card_visa', { customer: customer.id });
-    await stripe.customers.update(customer.id, { invoice_settings: { default_payment_method: goodPaymentMethod.id } });
-    subscription = await stripe.subscriptions.create({
-      customer: customer.id,
-      items: [{ price: price.id, quantity: 1 }],
-      default_payment_method: goodPaymentMethod.id,
-      collection_method: 'charge_automatically',
-      payment_behavior: 'error_if_incomplete',
-      metadata: { tenant_id: companyId, purpose: PURPOSE },
-    }, { idempotencyKey: `stavbaflow-past-due-subscription:${companyId}` });
-    if (subscription.livemode || subscription.status !== 'active' || subscription.test_clock !== clock.id) {
-      throw new Error('Company B initial Starter TEST subscription did not activate under its isolated Test Clock.');
-    }
-    const { error: bindError } = await service.rpc('app_bind_stripe_customer', {
-      p_company_id: companyId,
-      p_stripe_customer_id: customer.id,
-    });
-    if (bindError) throw new Error('Could not bind the isolated Stripe TEST customer to synthetic company B.');
-    // The application intentionally consumes subscription.updated, not subscription.created.
-    subscription = await stripe.subscriptions.update(subscription.id, {
-      metadata: { tenant_id: companyId, purpose: PURPOSE, acceptance_state: 'initial-active' },
-    });
 
     const activeDeadline = Date.now() + 120_000;
     let stagingCompany;
