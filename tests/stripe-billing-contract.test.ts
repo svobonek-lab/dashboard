@@ -42,6 +42,8 @@ test('staging workflow exposes a dedicated company B recovery checkout on the is
   assert.match(recoveryScript, /safeCheckoutCode/);
   assert.match(recoveryScript, /e2e-synthetic-company-b/);
   assert.match(recoveryScript, /checkout\.session\.completed/);
+  assert.match(recoveryScript, /STRIPE_TEST_HUMAN_CONFIRMATION_REQUIRED/);
+  assert.match(recoveryScript, /waitingForManualStripeConfirmation \? 20 \* 60_000/);
   assert.doesNotMatch(recoveryScript, /\.from\(['"]app_companies['"]\)[\s\S]{0,500}\.update\(/);
 });
 

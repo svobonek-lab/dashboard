@@ -163,6 +163,7 @@ async function main(env = process.env) {
     } catch {
       manualCardEntry = false;
     }
+    let waitingForManualStripeConfirmation = false;
     if (manualCardEntry) {
       await fillCardField(page, ['input[name="exp-date"]', 'input[autocomplete="cc-exp"]'], '1234');
       await fillCardField(page, ['input[name="cvc"]', 'input[autocomplete="cc-csc"]'], '123');
@@ -175,23 +176,17 @@ async function main(env = process.env) {
         .replace(/\b\d{6,}\b/g, '[number]')
         .replace(/\s+/g, ' ')
         .slice(0, 900);
-      const frameDiagnostics = await Promise.all(page.frames().map(async (frame) => ({
-        host: new URL(frame.url() || '/', 'https://invalid.local').hostname,
-        inputs: await frame.locator('input').evaluateAll((inputs) => inputs.slice(0, 8).map((input) => ({
-          name: input.getAttribute('name'),
-          type: input.getAttribute('type'),
-          autocomplete: input.getAttribute('autocomplete'),
-          placeholder: input.getAttribute('placeholder'),
-          ariaLabel: input.getAttribute('aria-label'),
-        }))).catch(() => []),
-      })));
-      throw new Error(`Stripe TEST Checkout did not show card entry or the synthetic test card (title=${pageTitle.slice(0, 100)}; page=${safePageText}; frames=${JSON.stringify(frameDiagnostics).slice(0, 1200)}).`);
+      console.log(`STRIPE_TEST_HUMAN_CONFIRMATION_REQUIRED title=${pageTitle.slice(0, 100)} page=${safePageText}`);
+      console.log(`Open this one-time Stripe TEST Checkout link and complete the synthetic test payment: ${session.url}`);
+      waitingForManualStripeConfirmation = true;
     }
-    const submit = page.locator('button[type="submit"]:visible').last();
-    if (!await submit.count()) throw new Error('Stripe TEST Checkout submit button was not available.');
-    await submit.click();
+    if (!waitingForManualStripeConfirmation) {
+      const submit = page.locator('button[type="submit"]:visible').last();
+      if (!await submit.count()) throw new Error('Stripe TEST Checkout submit button was not available.');
+      await submit.click();
+    }
 
-    const deadline = Date.now() + 120_000;
+    const deadline = Date.now() + (waitingForManualStripeConfirmation ? 20 * 60_000 : 120_000);
     let completedSession;
     let recoveredCompany;
     let recoveredSubscription;
