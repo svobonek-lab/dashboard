@@ -29,10 +29,11 @@ export function getPilotStripePriceSetup(env, config) {
   const starterPriceId = String(config.STRIPE_PRICE_STARTER_ID || '').trim();
   if (!/^price_[A-Za-z0-9]+$/.test(starterPriceId)) throw new Error('The staging Starter TEST price ID is missing or invalid.');
   const pilotPriceId = String(config.STRIPE_PRICE_PILOT_ID || '').trim();
-  if (pilotPriceId && pilotPriceId !== starterPriceId) {
+  const redactedPilotPrice = /^\*{8,}$/.test(pilotPriceId);
+  if (pilotPriceId && pilotPriceId !== starterPriceId && !redactedPilotPrice) {
     throw new Error('A different branch-only pilot price already exists; leaving it unchanged.');
   }
-  return { starterPriceId, pilotPriceId, shouldAdd: !pilotPriceId };
+  return { starterPriceId, pilotPriceId, shouldAdd: !pilotPriceId || redactedPilotPrice, shouldReplaceRedacted: redactedPilotPrice };
 }
 
 async function main(env = process.env) {
@@ -43,9 +44,19 @@ async function main(env = process.env) {
     return;
   }
 
+  if (setup.shouldReplaceRedacted) {
+    const removal = spawnSync('npx', [
+      '--yes', 'vercel@65.8.0', 'env', 'rm', 'STRIPE_PRICE_PILOT_ID', 'preview',
+      'codex/staging-e2e-local-runner', '--token', required(env, 'VERCEL_TOKEN'), '--yes',
+    ], { cwd: process.cwd(), env, encoding: 'utf8', windowsHide: true });
+    if (removal.error || removal.status !== 0) {
+      throw new Error('Could not remove the unreadable branch-only pilot price; staging configuration needs review.');
+    }
+  }
+
   const result = spawnSync('npx', [
     '--yes', 'vercel@65.8.0', 'env', 'add', 'STRIPE_PRICE_PILOT_ID', 'preview',
-    'codex/staging-e2e-local-runner', '--token', required(env, 'VERCEL_TOKEN'), '--yes',
+    'codex/staging-e2e-local-runner', '--type', 'config', '--token', required(env, 'VERCEL_TOKEN'), '--yes',
   ], {
     cwd: process.cwd(),
     env,
@@ -56,7 +67,7 @@ async function main(env = process.env) {
   if (result.error || result.status !== 0) {
     throw new Error('Vercel refused the branch-only pilot TEST price configuration; existing settings were not overwritten.');
   }
-  console.log('Configured only the staging Preview branch pilot price to reuse its monthly Starter TEST price.');
+  console.log('Configured only the staging Preview branch pilot price as readable Config using its monthly Starter TEST price.');
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1])).href) {

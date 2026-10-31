@@ -52,6 +52,8 @@ test('staging workflow has a guarded branch-only pilot TEST price setup', () => 
   assert.match(pilotPriceSetupScript, /STRIPE_PRICE_STARTER_ID/);
   assert.match(pilotPriceSetupScript, /STRIPE_PRICE_PILOT_ID/);
   assert.match(pilotPriceSetupScript, /'env', 'add', 'STRIPE_PRICE_PILOT_ID', 'preview'/);
+  assert.match(pilotPriceSetupScript, /'--type', 'config'/);
+  assert.match(pilotPriceSetupScript, /'env', 'rm', 'STRIPE_PRICE_PILOT_ID', 'preview'/);
   assert.match(pilotPriceSetupScript, /codex\/staging-e2e-local-runner/);
 });
 
@@ -66,7 +68,13 @@ test('pilot price setup accepts only the existing TEST Starter price and never o
   };
   const starter = { STRIPE_BILLING_MODE: 'test', STRIPE_PRICE_STARTER_ID: 'price_123' };
   assert.deepEqual(getPilotStripePriceSetup(env, starter), {
-    starterPriceId: 'price_123', pilotPriceId: '', shouldAdd: true,
+    starterPriceId: 'price_123', pilotPriceId: '', shouldAdd: true, shouldReplaceRedacted: false,
+  });
+  assert.deepEqual(getPilotStripePriceSetup(env, { ...starter, STRIPE_PRICE_PILOT_ID: '***********' }), {
+    starterPriceId: 'price_123', pilotPriceId: '***********', shouldAdd: true, shouldReplaceRedacted: true,
+  });
+  assert.deepEqual(getPilotStripePriceSetup(env, { ...starter, STRIPE_PRICE_PILOT_ID: 'price_123' }), {
+    starterPriceId: 'price_123', pilotPriceId: 'price_123', shouldAdd: false, shouldReplaceRedacted: false,
   });
   assert.throws(() => getPilotStripePriceSetup({ ...env, GITHUB_REF: 'refs/heads/main' }, starter), /approved staging repository branch/);
   assert.throws(() => getPilotStripePriceSetup(env, { ...starter, STRIPE_PRICE_PILOT_ID: 'price_other' }), /different branch-only pilot price/);
