@@ -20,6 +20,7 @@ on:
           - billing-past-due
           - billing-recover-b
           - billing-recover-b-local
+          - billing-verify-b-purchase
           - billing-configure-pilot-price
           - preview-redeploy
         default: github-hosted
@@ -763,7 +764,7 @@ jobs:
     if: >-
       github.repository == 'svobonek-lab/dashboard' &&
       github.event_name == 'workflow_dispatch' &&
-      inputs.runner_mode == 'billing-recover-b-local' &&
+      (inputs.runner_mode == 'billing-recover-b-local' || inputs.runner_mode == 'billing-verify-b-purchase') &&
       github.ref == 'refs/heads/codex/staging-e2e-local-runner'
     runs-on: [self-hosted, linux, x64, staging-e2e]
     timeout-minutes: 20
@@ -797,6 +798,7 @@ jobs:
           npx --yes vercel@65.8.0 env pull "$STAGING_PREVIEW_CONFIG_FILE" --environment=preview --git-branch=codex/staging-e2e-local-runner --token="$VERCEL_TOKEN" --yes
           node scripts/export-staging-stripe-env.mjs
       - name: Run loopback-only Checkout recovery against the staging database
+        if: inputs.runner_mode == 'billing-recover-b-local'
         env:
           STAGING_RECOVERY_CHECKOUT_ORIGIN: http://127.0.0.1:4173
           STAGING_SUPABASE_URL: ${{ vars.STAGING_SUPABASE_URL }}
@@ -837,3 +839,17 @@ jobs:
             exit 1
           fi
           node scripts/recover-staging-stripe-company-b.mjs
+      - name: Verify completed company B Checkout and owner access without writes
+        if: inputs.runner_mode == 'billing-verify-b-purchase'
+        env:
+          STAGING_SUPABASE_URL: ${{ vars.STAGING_SUPABASE_URL }}
+          STAGING_SUPABASE_PROJECT_REF: ${{ vars.STAGING_SUPABASE_PROJECT_REF }}
+          PRODUCTION_SUPABASE_PROJECT_REF: ${{ vars.PRODUCTION_SUPABASE_PROJECT_REF }}
+          STAGING_PREVIEW_URL: ${{ vars.STAGING_PREVIEW_URL }}
+          PRODUCTION_BASE_URL: ${{ vars.PRODUCTION_BASE_URL }}
+          STAGING_COMPANY_B_ID: ${{ vars.STAGING_COMPANY_B_ID }}
+          STAGING_OWNER_B_EMAIL: ${{ secrets.STAGING_OWNER_B_EMAIL }}
+          STAGING_OWNER_B_PASSWORD: ${{ secrets.STAGING_OWNER_B_PASSWORD }}
+          STAGING_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.STAGING_SUPABASE_PUBLISHABLE_KEY }}
+          STAGING_SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.STAGING_SUPABASE_SERVICE_ROLE_KEY }}
+        run: node scripts/verify-staging-stripe-company-b-purchase.mjs

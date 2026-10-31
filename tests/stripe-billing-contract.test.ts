@@ -9,6 +9,7 @@ const rebind = readFileSync(new URL('../supabase/migrations/20261031185027_allow
 const workflow = readFileSync(new URL('../.github/workflows/verify.yml', import.meta.url), 'utf8');
 const stagingWorkflow = readFileSync(new URL('../.github/workflows/staging-e2e.yml', import.meta.url), 'utf8');
 const recoveryScript = readFileSync(new URL('../scripts/recover-staging-stripe-company-b.mjs', import.meta.url), 'utf8');
+const purchaseVerificationScript = readFileSync(new URL('../scripts/verify-staging-stripe-company-b-purchase.mjs', import.meta.url), 'utf8');
 const pilotPriceSetupScript = readFileSync(new URL('../scripts/configure-staging-pilot-stripe-price.mjs', import.meta.url), 'utf8');
 
 test('Stripe billing contract is service-only, idempotent and rejects cross-tenant customer binding', () => {
@@ -58,6 +59,15 @@ test('local recovery permits only the fixed loopback checkout origin and keeps v
   assert.doesNotMatch(stagingWorkflow, /vercel@65\.8\.0 dev/);
   assert.doesNotMatch(stagingWorkflow, /\.vercel\/\.env\.(?:preview|development)\.local/);
   assert.match(stagingWorkflow, /STAGING_SUPABASE_PROJECT_REF.{0,20}xwzweltjvreqhjpbjrxa/);
+});
+
+test('completed company B purchase verification is a staging-only read-only workflow', () => {
+  assert.match(stagingWorkflow, /- billing-verify-b-purchase/);
+  assert.match(stagingWorkflow, /inputs\.runner_mode == 'billing-verify-b-purchase'/);
+  assert.match(stagingWorkflow, /verify-staging-stripe-company-b-purchase\.mjs/);
+  assert.match(purchaseVerificationScript, /assertCompanyBCheckoutAcceptance/);
+  assert.match(purchaseVerificationScript, /page\.goto\(`\$\{PREVIEW_ORIGIN\}\/login`/);
+  assert.doesNotMatch(purchaseVerificationScript, /\.rpc\(|\.insert\(|\.update\(|\.delete\(/);
 });
 
 test('staging workflow has a guarded branch-only pilot TEST price setup', () => {
