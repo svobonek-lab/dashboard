@@ -167,7 +167,15 @@ async function main(env = process.env) {
       await fillCardField(page, ['input[name="exp-date"]', 'input[autocomplete="cc-exp"]'], '1234');
       await fillCardField(page, ['input[name="cvc"]', 'input[autocomplete="cc-csc"]'], '123');
     } else if (!await page.getByText('4242').count()) {
-      throw new Error('Stripe TEST Checkout showed neither a card entry field nor the preselected synthetic test card.');
+      const pageTitle = await page.title().catch(() => 'unavailable');
+      const pageText = await page.locator('body').innerText().catch(() => 'unavailable');
+      const safePageText = pageText
+        .replace(/[\w.+-]+@[\w.-]+\.[A-Za-z]{2,}/g, '[email]')
+        .replace(/(?:cs_(?:test|live)_)[A-Za-z0-9_]+/g, '[checkout-session]')
+        .replace(/\b\d{6,}\b/g, '[number]')
+        .replace(/\s+/g, ' ')
+        .slice(0, 900);
+      throw new Error(`Stripe TEST Checkout did not show card entry or the synthetic test card (title=${pageTitle.slice(0, 100)}; page=${safePageText}).`);
     }
     const submit = page.locator('button[type="submit"]:visible').last();
     if (!await submit.count()) throw new Error('Stripe TEST Checkout submit button was not available.');
