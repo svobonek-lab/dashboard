@@ -7,7 +7,7 @@ import { APPROVED_STAGING_PREVIEW_ORIGIN } from './staging-stripe-checkout-guard
 const STRIPE_VARIABLES = ['STRIPE_SECRET_KEY', 'STRIPE_BILLING_MODE', 'STRIPE_PRICE_STARTER_ID', 'BILLING_RETURN_URL'];
 
 export function parseVercelStripePreviewConfig(contents) {
-  const allowed = new Set(['STRIPE_BILLING_MODE', 'STRIPE_PRICE_STARTER_ID', 'BILLING_RETURN_URL']);
+  const allowed = new Set(['STRIPE_BILLING_MODE', 'STRIPE_PRICE_STARTER_ID', 'STRIPE_PRICE_PILOT_ID', 'BILLING_RETURN_URL']);
   const values = {};
   for (const line of String(contents).split(/\r?\n/)) {
     const match = /^\s*(?:export\s+)?([A-Z0-9_]+)\s*=\s*(.*?)\s*$/.exec(line);

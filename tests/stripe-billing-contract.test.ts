@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
+import { getPilotStripePriceSetup } from '../scripts/configure-staging-pilot-stripe-price.mjs';
 
 const contract = readFileSync(new URL('../supabase/staging/20261015_stripe_billing_contract.sql', import.meta.url), 'utf8');
 const completion = readFileSync(new URL('../supabase/staging/20261016_stripe_billing_completion.sql', import.meta.url), 'utf8');
@@ -8,6 +9,7 @@ const rebind = readFileSync(new URL('../supabase/migrations/20261031185027_allow
 const workflow = readFileSync(new URL('../.github/workflows/verify.yml', import.meta.url), 'utf8');
 const stagingWorkflow = readFileSync(new URL('../.github/workflows/staging-e2e.yml', import.meta.url), 'utf8');
 const recoveryScript = readFileSync(new URL('../scripts/recover-staging-stripe-company-b.mjs', import.meta.url), 'utf8');
+const pilotPriceSetupScript = readFileSync(new URL('../scripts/configure-staging-pilot-stripe-price.mjs', import.meta.url), 'utf8');
 
 test('Stripe billing contract is service-only, idempotent and rejects cross-tenant customer binding', () => {
   assert.match(contract, /add column if not exists stripe_customer_id text/i);
@@ -41,6 +43,34 @@ test('staging workflow exposes a dedicated company B recovery checkout on the is
   assert.match(recoveryScript, /e2e-synthetic-company-b/);
   assert.match(recoveryScript, /checkout\.session\.completed/);
   assert.doesNotMatch(recoveryScript, /\.from\(['"]app_companies['"]\)[\s\S]{0,500}\.update\(/);
+});
+
+test('staging workflow has a guarded branch-only pilot TEST price setup', () => {
+  assert.match(stagingWorkflow, /- billing-configure-pilot-price/);
+  assert.match(stagingWorkflow, /inputs\.runner_mode == 'billing-configure-pilot-price'/);
+  assert.match(stagingWorkflow, /configure-staging-pilot-stripe-price\.mjs/);
+  assert.match(pilotPriceSetupScript, /STRIPE_PRICE_STARTER_ID/);
+  assert.match(pilotPriceSetupScript, /STRIPE_PRICE_PILOT_ID/);
+  assert.match(pilotPriceSetupScript, /'env', 'add', 'STRIPE_PRICE_PILOT_ID', 'preview'/);
+  assert.match(pilotPriceSetupScript, /codex\/staging-e2e-local-runner/);
+});
+
+test('pilot price setup accepts only the existing TEST Starter price and never overwrites a different mapping', () => {
+  const env = {
+    GITHUB_REPOSITORY: 'svobonek-lab/dashboard',
+    GITHUB_REF: 'refs/heads/codex/staging-e2e-local-runner',
+    VERCEL_GIT_BRANCH: 'codex/staging-e2e-local-runner',
+    STAGING_PREVIEW_URL: 'https://dashboard-git-codex-staging-e2e-79cdb9-svobonek-6462s-projects.vercel.app',
+    PRODUCTION_BASE_URL: 'https://dashboard-svobonek-6462s-projects.vercel.app',
+    STAGING_STRIPE_SECRET_KEY: 'sk_test_synthetictestonly',
+  };
+  const starter = { STRIPE_BILLING_MODE: 'test', STRIPE_PRICE_STARTER_ID: 'price_123' };
+  assert.deepEqual(getPilotStripePriceSetup(env, starter), {
+    starterPriceId: 'price_123', pilotPriceId: '', shouldAdd: true,
+  });
+  assert.throws(() => getPilotStripePriceSetup({ ...env, GITHUB_REF: 'refs/heads/main' }, starter), /approved staging repository branch/);
+  assert.throws(() => getPilotStripePriceSetup(env, { ...starter, STRIPE_PRICE_PILOT_ID: 'price_other' }), /different branch-only pilot price/);
+  assert.throws(() => getPilotStripePriceSetup({ ...env, STAGING_STRIPE_SECRET_KEY: 'sk_live_forbidden' }, starter), /Stripe TEST mode/);
 });
 
 test('Stripe re-subscription replaces only canceled same-customer plans and ignores late old events', () => {

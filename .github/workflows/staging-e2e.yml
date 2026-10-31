@@ -19,6 +19,7 @@ on:
           - billing-cancel-advance
           - billing-past-due
           - billing-recover-b
+          - billing-configure-pilot-price
         default: github-hosted
       load_recover_run_id:
         description: Exact 12-character synthetic load run ID for staging-only recovery
@@ -43,7 +44,7 @@ jobs:
         inputs.runner_mode != 'load-recover' && inputs.runner_mode != 'preview-configure' &&
         inputs.runner_mode != 'billing-setup' && inputs.runner_mode != 'billing-portal-inspect' &&
         inputs.runner_mode != 'billing-cancel-advance' && inputs.runner_mode != 'billing-past-due' &&
-        inputs.runner_mode != 'billing-recover-b') ||
+        inputs.runner_mode != 'billing-recover-b' && inputs.runner_mode != 'billing-configure-pilot-price') ||
        (github.event.pull_request.head.repo.full_name == github.repository &&
         contains(github.event.pull_request.labels.*.name, 'e2e'))) &&
       ((inputs.runner_mode != 'local-ephemeral' && inputs.runner_mode != 'sentry-only' && inputs.runner_mode != 'billing-portal-inspect') ||
@@ -660,6 +661,51 @@ jobs:
           STAGING_OWNER_B_PASSWORD: ${{ secrets.STAGING_OWNER_B_PASSWORD }}
           STAGING_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.STAGING_SUPABASE_PUBLISHABLE_KEY }}
           STAGING_SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.STAGING_SUPABASE_SERVICE_ROLE_KEY }}
+      - name: Remove pulled Preview configuration
+        if: always()
+        run: rm -f "$RUNNER_TEMP/staging-stripe-preview.env"
+
+  staging-stripe-configure-pilot-test-price:
+    if: >-
+      github.repository == 'svobonek-lab/dashboard' &&
+      github.event_name == 'workflow_dispatch' &&
+      inputs.runner_mode == 'billing-configure-pilot-price' &&
+      github.ref == 'refs/heads/codex/staging-e2e-local-runner'
+    runs-on: [self-hosted, linux, x64, staging-e2e]
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+      - name: Pull the exact branch Preview configuration
+        env:
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          STAGING_PREVIEW_CONFIG_FILE: ${{ runner.temp }}/staging-stripe-preview.env
+        run: |
+          set +x
+          if [ "$GITHUB_REF" != 'refs/heads/codex/staging-e2e-local-runner' ] || [ "$GITHUB_REPOSITORY" != 'svobonek-lab/dashboard' ]; then
+            echo 'Refusing Preview configuration outside the approved staging branch.' >&2
+            exit 1
+          fi
+          npx --yes vercel@65.8.0 env pull "$STAGING_PREVIEW_CONFIG_FILE" --environment=preview --git-branch=codex/staging-e2e-local-runner --token="$VERCEL_TOKEN" --yes
+      - name: Set pilot to the existing Starter price only in this branch Preview
+        env:
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_GIT_BRANCH: codex/staging-e2e-local-runner
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          GITHUB_REF: ${{ github.ref }}
+          STAGING_PREVIEW_CONFIG_FILE: ${{ runner.temp }}/staging-stripe-preview.env
+          STAGING_PREVIEW_URL: ${{ vars.STAGING_PREVIEW_URL }}
+          PRODUCTION_BASE_URL: ${{ vars.PRODUCTION_BASE_URL }}
+          STAGING_STRIPE_SECRET_KEY: ${{ secrets.STAGING_STRIPE_SECRET_KEY }}
+        run: node scripts/configure-staging-pilot-stripe-price.mjs
       - name: Remove pulled Preview configuration
         if: always()
         run: rm -f "$RUNNER_TEMP/staging-stripe-preview.env"

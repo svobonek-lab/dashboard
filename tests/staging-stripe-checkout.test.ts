@@ -117,6 +117,7 @@ test('Vercel config parser reads only allowlisted settings without executing env
   const parsed = parseVercelStripePreviewConfig([
     'STRIPE_BILLING_MODE="test"',
     'STRIPE_PRICE_STARTER_ID=price_preview',
+    'STRIPE_PRICE_PILOT_ID=price_pilot_preview',
     'BILLING_RETURN_URL="https://dashboard-git-codex-staging-e2e-79cdb9-svobonek-6462s-projects.vercel.app"',
     'STRIPE_SECRET_KEY=should-not-be-read',
     'OTHER_CONFIG=$(touch /tmp/not-executed)',
@@ -124,6 +125,7 @@ test('Vercel config parser reads only allowlisted settings without executing env
   assert.deepEqual(parsed, {
     STRIPE_BILLING_MODE: 'test',
     STRIPE_PRICE_STARTER_ID: 'price_preview',
+    STRIPE_PRICE_PILOT_ID: 'price_pilot_preview',
     BILLING_RETURN_URL: 'https://dashboard-git-codex-staging-e2e-79cdb9-svobonek-6462s-projects.vercel.app',
   });
 });
