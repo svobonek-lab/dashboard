@@ -5,6 +5,7 @@ import { pathToFileURL } from 'node:url';
 import { APPROVED_STAGING_PREVIEW_ORIGIN } from './staging-stripe-checkout-guard.mjs';
 
 const STRIPE_VARIABLES = ['STRIPE_SECRET_KEY', 'STRIPE_BILLING_MODE', 'STRIPE_PRICE_STARTER_ID', 'BILLING_RETURN_URL'];
+const OPTIONAL_STRIPE_VARIABLES = ['STRIPE_PRICE_PILOT_ID'];
 
 export function parseVercelStripePreviewConfig(contents) {
   const allowed = new Set(['STRIPE_BILLING_MODE', 'STRIPE_PRICE_STARTER_ID', 'STRIPE_PRICE_PILOT_ID', 'BILLING_RETURN_URL']);
@@ -35,6 +36,9 @@ export function buildStagingStripeEnvLines(env) {
   if (!/^price_[A-Za-z0-9]+$/.test(env.STRIPE_PRICE_STARTER_ID)) {
     throw new Error('Refusing to export: Starter Stripe TEST price ID is invalid.');
   }
+  if (env.STRIPE_PRICE_PILOT_ID && !/^price_[A-Za-z0-9]+$/.test(env.STRIPE_PRICE_PILOT_ID)) {
+    throw new Error('Refusing to export: Pilot Stripe TEST price ID is invalid.');
+  }
   const preview = new URL(env.STAGING_PREVIEW_URL);
   const production = new URL(env.PRODUCTION_BASE_URL);
   const returnUrl = new URL(env.BILLING_RETURN_URL);
@@ -43,7 +47,11 @@ export function buildStagingStripeEnvLines(env) {
       STRIPE_VARIABLES.some((name) => /[\r\n]/.test(env[name]))) {
     throw new Error('Refusing to export: billing URL is not isolated to the approved staging Preview.');
   }
-  return STRIPE_VARIABLES.map((name) => `${name}=${env[name]}`).join('\n') + '\n';
+  const variablesToExport = [
+    ...STRIPE_VARIABLES,
+    ...OPTIONAL_STRIPE_VARIABLES.filter((name) => String(env[name] || '').trim()),
+  ];
+  return variablesToExport.map((name) => `${name}=${env[name]}`).join('\n') + '\n';
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1])).href) {

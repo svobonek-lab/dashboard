@@ -142,6 +142,7 @@ test('Vercel Stripe export accepts only TEST prices and the exact staging Previe
     STRIPE_SECRET_KEY: 'sk_test_unitonly',
     STRIPE_BILLING_MODE: 'test',
     STRIPE_PRICE_STARTER_ID: 'price_unitonly',
+    STRIPE_PRICE_PILOT_ID: 'price_pilotunitonly',
     BILLING_RETURN_URL: baseEnv.STAGING_PREVIEW_URL,
     STAGING_PREVIEW_URL: baseEnv.STAGING_PREVIEW_URL,
     PRODUCTION_BASE_URL: baseEnv.PRODUCTION_BASE_URL,
@@ -149,8 +150,10 @@ test('Vercel Stripe export accepts only TEST prices and the exact staging Previe
   const lines = buildStagingStripeEnvLines(env);
   assert.match(lines, /STRIPE_BILLING_MODE=test/);
   assert.match(lines, /STRIPE_PRICE_STARTER_ID=price_unitonly/);
+  assert.match(lines, /STRIPE_PRICE_PILOT_ID=price_pilotunitonly/);
   assert.doesNotMatch(lines, /SUPABASE_SERVICE_ROLE_KEY|OWNER_A_PASSWORD/);
   assert.throws(() => buildStagingStripeEnvLines({ ...env, STRIPE_SECRET_KEY: 'sk_live_never' }), /TEST mode/i);
   assert.throws(() => buildStagingStripeEnvLines({ ...env, BILLING_RETURN_URL: baseEnv.PRODUCTION_BASE_URL }), /staging Preview/i);
   assert.throws(() => buildStagingStripeEnvLines({ ...env, STRIPE_PRICE_STARTER_ID: 'price_unitonly\nSECRET=value' }), /Starter Stripe TEST price ID/i);
+  assert.throws(() => buildStagingStripeEnvLines({ ...env, STRIPE_PRICE_PILOT_ID: 'price_pilot\nSECRET=value' }), /Pilot Stripe TEST price ID/i);
 });
