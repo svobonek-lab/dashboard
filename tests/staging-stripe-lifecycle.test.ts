@@ -152,3 +152,17 @@ test('billing cancellation workflow is restricted to staging and never receives 
   assert.match(job, /node scripts\/cancel-staging-stripe-subscription\.mjs/);
   assert.doesNotMatch(job, /SUPABASE_SERVICE_ROLE_KEY/);
 });
+
+test('past-due renewal workflow is staging-only, synthetic company B, and verifies the owner gate', () => {
+  const workflow = readFileSync(new URL('../.github/workflows/staging-e2e.yml', import.meta.url), 'utf8');
+  assert.match(workflow, /- billing-past-due/);
+  assert.match(workflow, /inputs\.runner_mode != 'billing-past-due'/);
+  const job = workflow.match(/staging-stripe-billing-past-due:([\s\S]*?)(?=\n  [a-z][a-z0-9-]+:|\s*$)/)?.[1] || '';
+  assert.match(job, /inputs\.runner_mode == 'billing-past-due'/);
+  assert.match(job, /refs\/heads\/codex\/staging-e2e-local-runner/);
+  assert.match(job, /STAGING_COMPANY_B_ID/);
+  assert.match(job, /STAGING_OWNER_B_EMAIL/);
+  assert.match(job, /node scripts\/test-staging-stripe-past-due\.mjs/);
+  assert.match(job, /STAGING_SUPABASE_SERVICE_ROLE_KEY/);
+  assert.doesNotMatch(job, /PRODUCTION_SUPABASE_SERVICE_ROLE_KEY/);
+});
