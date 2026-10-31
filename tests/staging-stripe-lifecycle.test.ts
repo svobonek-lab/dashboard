@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import test from 'node:test';
 
-import { getNeutralCancellationReason, getSubscriptionPeriodEnd } from '../scripts/cancel-staging-stripe-subscription.mjs';
+import { getNeutralCancellationReason, getSubscriptionPeriodEnd, isPeriodEndCancellationScheduled } from '../scripts/cancel-staging-stripe-subscription.mjs';
 import { getPortalCancellationSettings, isPortalContentReady, isPortalDocumentReady, redactPortalText, summarizePortalFrames, validateStagingStripeLifecycle, validateStagingStripePortalUrl } from '../scripts/staging-stripe-lifecycle-guard.mjs';
 
 const validEnv = {
@@ -29,6 +29,13 @@ test('Stripe billing period end supports current API item fields and rejects mis
 test('Stripe cancellation survey uses only the neutral Other reason', () => {
   assert.deepEqual(getNeutralCancellationReason([{ label: 'Too expensive', value: 'too_expensive' }, { label: 'Other reason', value: 'other' }]), { label: 'Other reason', value: 'other' });
   assert.equal(getNeutralCancellationReason([{ label: 'Missing features', value: 'missing_features' }]), null);
+});
+
+test('Stripe period-end cancellation recognizes both supported API representations', () => {
+  assert.equal(isPeriodEndCancellationScheduled({ cancel_at_period_end: true, cancel_at: null }, 1796064000), true);
+  assert.equal(isPeriodEndCancellationScheduled({ cancel_at_period_end: false, cancel_at: 1796064000 }, 1796064000), true);
+  assert.equal(isPeriodEndCancellationScheduled({ cancel_at_period_end: false, cancel_at: null }, 1796064000), false);
+  assert.equal(isPeriodEndCancellationScheduled({ cancel_at_period_end: false, cancel_at: 1796000000 }, 1796064000), false);
 });
 
 test('Stripe lifecycle accepts only the exact staging project and Preview in TEST mode', () => {
