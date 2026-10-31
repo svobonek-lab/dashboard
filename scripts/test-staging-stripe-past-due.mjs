@@ -60,7 +60,8 @@ async function inspectExistingBillingState(stripe, company) {
   ]);
   if (customer.deleted || customer.livemode || customer.metadata?.tenant_id !== company.id ||
       customer.metadata?.purpose !== PURPOSE || !customer.test_clock || subscription.livemode ||
-      subscription.metadata?.tenant_id !== company.id || subscription.metadata?.purpose !== PURPOSE ||
+      subscription.metadata?.tenant_id !== company.id ||
+      (subscription.metadata?.purpose !== PURPOSE && subscription.metadata?.plan !== company.plan) ||
       (typeof subscription.customer === 'string' ? subscription.customer : subscription.customer.id) !== customer.id ||
       subscription.test_clock !== customer.test_clock) {
     throw new Error('Existing company B Stripe billing objects do not match the isolated TEST acceptance fixture.');
@@ -196,7 +197,7 @@ async function main(env = process.env) {
       if (customer.deleted || customer.livemode || customer.metadata?.tenant_id !== companyId ||
           customer.metadata?.purpose !== PURPOSE || !customer.test_clock || subscription.livemode ||
           subscription.status !== 'active' || subscription.metadata?.tenant_id !== companyId ||
-          subscription.metadata?.purpose !== PURPOSE ||
+          (subscription.metadata?.purpose !== PURPOSE && subscription.metadata?.plan !== company.plan) ||
           subscription.cancel_at_period_end || subscription.cancel_at !== null ||
           (typeof subscription.customer === 'string' ? subscription.customer : subscription.customer.id) !== customer.id ||
           subscription.test_clock !== customer.test_clock ||

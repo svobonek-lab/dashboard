@@ -26,7 +26,7 @@ const fixture = {
     livemode: false,
     customer: 'cus_test_company_b',
     test_clock: 'clock_test_company_b',
-    metadata: { tenant_id: 'b7f07d92-30b6-4894-9751-2b64e1ed4897', purpose: 'staging-past-due-acceptance' },
+    metadata: { tenant_id: 'b7f07d92-30b6-4894-9751-2b64e1ed4897', plan: 'pilot' },
   },
   checkout: {
     id: 'cs_test_company_b',
@@ -75,9 +75,9 @@ test('reports a safe subscription mismatch field without emitting object values'
   assert.throws(
     () => assertCompanyBCheckoutAcceptance({
       ...fixture,
-      subscription: { ...fixture.subscription, metadata: { ...fixture.subscription.metadata, purpose: 'other' } },
+      subscription: { ...fixture.subscription, metadata: { ...fixture.subscription.metadata, plan: 'other' } },
     }),
     (error: unknown) => error instanceof Error &&
-      error.message === 'Active Stripe TEST subscription mismatch: synthetic purpose metadata.',
+      error.message === 'Active Stripe TEST subscription mismatch: plan metadata.',
   );
 });

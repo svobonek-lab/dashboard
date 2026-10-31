@@ -27,7 +27,7 @@ export function assertCompanyBCheckoutAcceptance({
   if (subscription?.id !== company.stripe_subscription_id) subscriptionMismatches.push('company subscription binding');
   if (idOf(subscription?.customer) !== customer.id) subscriptionMismatches.push('customer binding');
   if (subscription?.metadata?.tenant_id !== companyId) subscriptionMismatches.push('tenant metadata');
-  if (subscription?.metadata?.purpose !== BILLING_PURPOSE) subscriptionMismatches.push('synthetic purpose metadata');
+  if (subscription?.metadata?.plan !== company.plan) subscriptionMismatches.push('plan metadata');
   if (idOf(subscription?.test_clock) !== idOf(customer.test_clock)) subscriptionMismatches.push('test clock binding');
   if (subscriptionMismatches.length) {
     throw new Error(`Active Stripe TEST subscription mismatch: ${subscriptionMismatches.join(', ')}.`);
