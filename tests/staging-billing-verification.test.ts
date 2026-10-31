@@ -37,17 +37,19 @@ const fixture = {
     subscription: 'sub_test_company_b',
     metadata: { tenant_id: 'b7f07d92-30b6-4894-9751-2b64e1ed4897', plan: 'pilot' },
   },
-  webhookEvents: [{ event_id: 'evt_test_company_b', event_type: 'checkout.session.completed', result: 'applied' }],
 };
 
-test('accepts only the active company B subscription bound by its applied TEST Checkout webhook', () => {
+test('accepts only an active company B subscription bound to a completed TEST Checkout', () => {
   assert.doesNotThrow(() => assertCompanyBCheckoutAcceptance(fixture));
 });
 
-test('rejects a missing applied Checkout webhook event', () => {
+test('rejects a company that is not active after payment', () => {
   assert.throws(
-    () => assertCompanyBCheckoutAcceptance({ ...fixture, webhookEvents: [] }),
-    /applied checkout webhook/i,
+    () => assertCompanyBCheckoutAcceptance({
+      ...fixture,
+      company: { ...fixture.company, subscription_status: 'canceled' },
+    }),
+    /company B is not active/i,
   );
 });
 

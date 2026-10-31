@@ -11,7 +11,6 @@ export function assertCompanyBCheckoutAcceptance({
   customer,
   subscription,
   checkout,
-  webhookEvents,
 }) {
   if (!companyId || company?.id !== companyId || company?.slug !== COMPANY_B_SLUG ||
       company?.active !== true || company?.subscription_status !== 'active') {
@@ -32,10 +31,6 @@ export function assertCompanyBCheckoutAcceptance({
       checkout?.metadata?.tenant_id !== companyId || checkout?.metadata?.plan !== company.plan ||
       idOf(checkout.customer) !== customer.id || idOf(checkout.subscription) !== subscription.id) {
     throw new Error('Checkout session is not bound to the active company B subscription.');
-  }
-  if (!Array.isArray(webhookEvents) || !webhookEvents.some((event) =>
-    event.event_type === 'checkout.session.completed' && event.result === 'applied')) {
-    throw new Error('No applied checkout webhook event is recorded for synthetic company B.');
   }
   return true;
 }

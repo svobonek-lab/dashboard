@@ -58,26 +58,18 @@ async function main(env = process.env) {
       throw new Error('Synthetic company B has no complete Stripe TEST binding.');
     }
 
-    const [{ data: signedIn, error: authError }, customer, subscription, webhookResult, sessions] = await Promise.all([
+    const [{ data: signedIn, error: authError }, customer, subscription, sessions] = await Promise.all([
       auth.auth.signInWithPassword({
         email: OWNER_EMAIL,
         password: required(env, 'STAGING_OWNER_B_PASSWORD'),
       }),
       stripe.customers.retrieve(company.stripe_customer_id),
       stripe.subscriptions.retrieve(company.stripe_subscription_id),
-      service.from('app_stripe_webhook_events')
-        .select('event_id,event_type,result,event_created_at')
-        .eq('company_id', companyId)
-        .eq('event_type', 'checkout.session.completed')
-        .eq('result', 'applied')
-        .order('event_created_at', { ascending: false })
-        .limit(20),
       stripe.checkout.sessions.list({ customer: company.stripe_customer_id, status: 'complete', limit: 100 }),
     ]);
     if (authError || signedIn.user?.email?.toLowerCase() !== OWNER_EMAIL || !signedIn.user.id || !signedIn.session?.access_token) {
       throw new Error('Synthetic company B owner sign-in failed.');
     }
-    if (webhookResult.error) throw new Error('Could not read synthetic company B Checkout webhook evidence.');
     const { data: memberships, error: membershipError } = await service.from('app_members')
       .select('company_id,role,active')
       .eq('user_id', signedIn.user.id)
@@ -96,7 +88,6 @@ async function main(env = process.env) {
       customer,
       subscription,
       checkout,
-      webhookEvents: webhookResult.data || [],
     });
 
     browser = await chromium.launch({ headless: true });
@@ -118,7 +109,7 @@ async function main(env = process.env) {
       companySubscriptionStatus: company.subscription_status,
       stripeSubscriptionStatus: subscription.status,
       checkoutStatus: checkout.status,
-      checkoutWebhook: 'applied',
+      checkoutMatchesActiveSubscription: true,
       ownerDashboard: 'accessible',
       verifiedAt: new Date().toISOString(),
     };

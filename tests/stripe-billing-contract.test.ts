@@ -67,6 +67,7 @@ test('completed company B purchase verification is a staging-only read-only work
   assert.match(stagingWorkflow, /verify-staging-stripe-company-b-purchase\.mjs/);
   assert.match(purchaseVerificationScript, /assertCompanyBCheckoutAcceptance/);
   assert.match(purchaseVerificationScript, /page\.goto\(`\$\{PREVIEW_ORIGIN\}\/login`/);
+  assert.doesNotMatch(purchaseVerificationScript, /app_stripe_webhook_events/);
   assert.doesNotMatch(purchaseVerificationScript, /\.rpc\(|\.insert\(|\.update\(|\.delete\(/);
 });
 
