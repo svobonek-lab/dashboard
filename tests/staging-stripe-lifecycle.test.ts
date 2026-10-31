@@ -80,14 +80,18 @@ test('portal cancellation settings report only the enabled flag and configured t
 
 test('portal action discovery includes interactive controls inside Stripe frames', () => {
   assert.deepEqual(summarizePortalFrames([
-    { title: 'VelocityStack sandbox Billing', billingContentVisible: true, visibleActions: [] },
-    { title: '', billingContentVisible: false, visibleActions: ['Cancel subscription'] },
+    { host: 'billing.stripe.com', title: 'VelocityStack sandbox Billing', bodyTextLength: 80, hasSubscriptionWords: true, saysNoSubscription: false, billingContentVisible: true, visibleControlCount: 0, visibleActions: [] },
+    { host: 'billing.stripe.com', title: '', bodyTextLength: 24, hasSubscriptionWords: false, saysNoSubscription: false, billingContentVisible: false, visibleControlCount: 1, visibleActions: ['Cancel subscription'] },
   ]), {
     title: 'VelocityStack sandbox Billing',
     billingContentVisible: true,
     cancellationActionVisible: true,
     visibleActions: ['Cancel subscription'],
     frameCount: 2,
+    frameDiagnostics: [
+      { host: 'billing.stripe.com', bodyTextLength: 80, hasSubscriptionWords: true, saysNoSubscription: false, visibleControlCount: 0 },
+      { host: 'billing.stripe.com', bodyTextLength: 24, hasSubscriptionWords: false, saysNoSubscription: false, visibleControlCount: 1 },
+    ],
   });
 });
 

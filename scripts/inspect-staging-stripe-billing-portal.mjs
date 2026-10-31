@@ -132,20 +132,27 @@ async function inspectPortal(env = process.env) {
       throw new Error(`Stripe portal document did not become visible (HTTP ${browserResponse?.status() ?? 'unknown'}; page errors: ${pageErrors.join(',') || 'none'}; diagnostics: ${JSON.stringify(readiness)}).`);
     }
     const frameStates = await Promise.all(page.frames().map((frame) => frame.evaluate(() => {
-      const labels = [...document.querySelectorAll('button,a,[role=button]')]
+      const controls = [...document.querySelectorAll('button,a,[role=button]')]
         .filter((element) => {
           const style = getComputedStyle(element);
           return element.getClientRects().length > 0 && style.visibility === 'visible' && Number(style.opacity) > 0;
-        })
-        .map((element) => (element.innerText || element.getAttribute('aria-label') || '').trim())
+        });
+      const labels = controls.map((element) => (element.innerText || element.getAttribute('aria-label') || '').trim())
         .filter(Boolean)
         .slice(0, 20);
       const text = document.body?.innerText?.toLowerCase() || '';
       return {
         title: document.title,
+        bodyTextLength: text.length,
+        hasSubscriptionWords: /subscription|předplat|abo/.test(text),
+        saysNoSubscription: /no (active )?subscriptions?|no subscription/i.test(text),
+        visibleControlCount: controls.length,
         billingContentVisible: /subscription|předplat|billing|faktur|payment|platb|abo/.test(text),
         visibleActions: labels,
       };
+    }).then((state) => {
+      try { state.host = new URL(frame.url()).hostname || 'unknown'; } catch { state.host = 'unknown'; }
+      return state;
     }).catch(() => null)));
     const portalState = summarizePortalFrames(frameStates);
     if (!portalState.billingContentVisible) throw new Error('Stripe Billing Portal opened without recognizable billing content.');
@@ -163,6 +170,7 @@ async function inspectPortal(env = process.env) {
       cancellationEnabledInDefaultPortalConfiguration: portalCancellation.enabled,
       cancellationMode: portalCancellation.mode,
       frameCount: portalState.frameCount,
+      frameDiagnostics: portalState.frameDiagnostics,
       inspectedAt: new Date().toISOString(),
     };
   } finally {

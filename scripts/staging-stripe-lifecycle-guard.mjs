@@ -31,6 +31,13 @@ export function summarizePortalFrames(states) {
     cancellationActionVisible: visibleActions.some((label) => /cancel|zruš|kündig|annul/i.test(label)),
     visibleActions,
     frameCount: frames.length,
+    frameDiagnostics: frames.map((frame) => ({
+      host: typeof frame.host === 'string' ? frame.host : 'unknown',
+      bodyTextLength: Number(frame.bodyTextLength) || 0,
+      hasSubscriptionWords: frame.hasSubscriptionWords === true,
+      saysNoSubscription: frame.saysNoSubscription === true,
+      visibleControlCount: Number(frame.visibleControlCount) || 0,
+    })),
   };
 }
 
