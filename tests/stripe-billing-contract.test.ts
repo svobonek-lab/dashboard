@@ -45,6 +45,17 @@ test('staging workflow exposes a dedicated company B recovery checkout on the is
   assert.doesNotMatch(recoveryScript, /\.from\(['"]app_companies['"]\)[\s\S]{0,500}\.update\(/);
 });
 
+test('local recovery permits only the fixed loopback checkout origin and keeps verification on staging', () => {
+  assert.match(recoveryScript, /const LOCAL_CHECKOUT_ORIGIN = 'http:\/\/127\.0\.0\.1:4173'/);
+  assert.match(recoveryScript, /STAGING_RECOVERY_CHECKOUT_ORIGIN !== LOCAL_CHECKOUT_ORIGIN/);
+  assert.match(recoveryScript, /env\.STAGING_RECOVERY_CHECKOUT_ORIGIN \|\| PREVIEW_ORIGIN/);
+  assert.match(recoveryScript, /page\.goto\(`\$\{PREVIEW_ORIGIN\}\/login`/);
+  assert.match(stagingWorkflow, /- billing-recover-b-local/);
+  assert.match(stagingWorkflow, /inputs\.runner_mode == 'billing-recover-b-local'/);
+  assert.match(stagingWorkflow, /npx --yes vercel@65\.8\.0 dev --listen 127\.0\.0\.1:4173/);
+  assert.match(stagingWorkflow, /STAGING_SUPABASE_PROJECT_REF.{0,20}xwzweltjvreqhjpbjrxa/);
+});
+
 test('staging workflow has a guarded branch-only pilot TEST price setup', () => {
   assert.match(stagingWorkflow, /- billing-configure-pilot-price/);
   assert.match(stagingWorkflow, /inputs\.runner_mode == 'billing-configure-pilot-price'/);

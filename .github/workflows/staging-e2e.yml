@@ -19,6 +19,7 @@ on:
           - billing-cancel-advance
           - billing-past-due
           - billing-recover-b
+          - billing-recover-b-local
           - billing-configure-pilot-price
           - preview-redeploy
         default: github-hosted
@@ -45,7 +46,7 @@ jobs:
         inputs.runner_mode != 'load-recover' && inputs.runner_mode != 'preview-configure' &&
         inputs.runner_mode != 'billing-setup' && inputs.runner_mode != 'billing-portal-inspect' &&
         inputs.runner_mode != 'billing-cancel-advance' && inputs.runner_mode != 'billing-past-due' &&
-        inputs.runner_mode != 'billing-recover-b' && inputs.runner_mode != 'billing-configure-pilot-price' && inputs.runner_mode != 'preview-redeploy') ||
+        inputs.runner_mode != 'billing-recover-b' && inputs.runner_mode != 'billing-recover-b-local' && inputs.runner_mode != 'billing-configure-pilot-price' && inputs.runner_mode != 'preview-redeploy') ||
        (github.event.pull_request.head.repo.full_name == github.repository &&
         contains(github.event.pull_request.labels.*.name, 'e2e'))) &&
       ((inputs.runner_mode != 'local-ephemeral' && inputs.runner_mode != 'sentry-only' && inputs.runner_mode != 'billing-portal-inspect') ||
@@ -757,3 +758,84 @@ jobs:
             *) echo 'Vercel did not return a valid Preview deployment URL.' >&2; exit 1 ;;
           esac
           npx --yes vercel@65.8.0 alias set "$deployment_url" dashboard-git-codex-staging-e2e-79cdb9-svobonek-6462s-projects.vercel.app --token="$VERCEL_TOKEN"
+
+  staging-stripe-billing-recover-company-b-local:
+    if: >-
+      github.repository == 'svobonek-lab/dashboard' &&
+      github.event_name == 'workflow_dispatch' &&
+      inputs.runner_mode == 'billing-recover-b-local' &&
+      github.ref == 'refs/heads/codex/staging-e2e-local-runner'
+    runs-on: [self-hosted, linux, x64, staging-e2e]
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "24"
+      - name: Install dependencies and Playwright Chromium
+        run: |
+          npm ci
+          npx playwright install chromium --with-deps
+      - name: Pull exact staging Preview config and bind local test environment to StavbaCore Staging
+        env:
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          STAGING_PREVIEW_CONFIG_FILE: ${{ runner.temp }}/staging-stripe-preview.env
+          STAGING_STRIPE_SECRET_KEY: ${{ secrets.STAGING_STRIPE_SECRET_KEY }}
+          STAGING_PREVIEW_URL: ${{ vars.STAGING_PREVIEW_URL }}
+          PRODUCTION_BASE_URL: ${{ vars.PRODUCTION_BASE_URL }}
+        run: |
+          set +x
+          if [ "$GITHUB_REF" != 'refs/heads/codex/staging-e2e-local-runner' ] || [ "$GITHUB_REPOSITORY" != 'svobonek-lab/dashboard' ]; then
+            echo 'Refusing local recovery outside the approved staging branch.' >&2
+            exit 1
+          fi
+          npx --yes vercel@65.8.0 pull --yes --environment=preview --git-branch=codex/staging-e2e-local-runner --token="$VERCEL_TOKEN"
+          npx --yes vercel@65.8.0 env pull "$STAGING_PREVIEW_CONFIG_FILE" --environment=preview --git-branch=codex/staging-e2e-local-runner --token="$VERCEL_TOKEN" --yes
+          node scripts/export-staging-stripe-env.mjs
+      - name: Run loopback-only Checkout recovery against the staging database
+        env:
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          STAGING_RECOVERY_CHECKOUT_ORIGIN: http://127.0.0.1:4173
+          STAGING_SUPABASE_URL: ${{ vars.STAGING_SUPABASE_URL }}
+          STAGING_SUPABASE_PROJECT_REF: ${{ vars.STAGING_SUPABASE_PROJECT_REF }}
+          PRODUCTION_SUPABASE_PROJECT_REF: ${{ vars.PRODUCTION_SUPABASE_PROJECT_REF }}
+          STAGING_PREVIEW_URL: ${{ vars.STAGING_PREVIEW_URL }}
+          PRODUCTION_BASE_URL: ${{ vars.PRODUCTION_BASE_URL }}
+          STAGING_COMPANY_B_ID: ${{ vars.STAGING_COMPANY_B_ID }}
+          STAGING_OWNER_B_EMAIL: ${{ secrets.STAGING_OWNER_B_EMAIL }}
+          STAGING_OWNER_B_PASSWORD: ${{ secrets.STAGING_OWNER_B_PASSWORD }}
+          STAGING_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.STAGING_SUPABASE_PUBLISHABLE_KEY }}
+          STAGING_SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.STAGING_SUPABASE_SERVICE_ROLE_KEY }}
+          STAGING_DEV_LOG: ${{ runner.temp }}/stavbaflow-staging-vercel-dev.log
+        run: |
+          set +x
+          export SUPABASE_URL="$STAGING_SUPABASE_URL"
+          export VITE_SUPABASE_URL="$STAGING_SUPABASE_URL"
+          export SUPABASE_ANON_KEY="$STAGING_SUPABASE_PUBLISHABLE_KEY"
+          export VITE_SUPABASE_ANON_KEY="$STAGING_SUPABASE_PUBLISHABLE_KEY"
+          export SUPABASE_SERVICE_ROLE_KEY="$STAGING_SUPABASE_SERVICE_ROLE_KEY"
+          export STRIPE_PRICE_PILOT_ID="${STRIPE_PRICE_PILOT_ID:-$STRIPE_PRICE_STARTER_ID}"
+          if [ "$STRIPE_BILLING_MODE" != 'test' ] || [ "$STAGING_SUPABASE_PROJECT_REF" != 'xwzweltjvreqhjpbjrxa' ] || [ "$PRODUCTION_SUPABASE_PROJECT_REF" = "$STAGING_SUPABASE_PROJECT_REF" ]; then
+            echo 'Refusing local recovery without the exact staging project and Stripe TEST mode.' >&2
+            exit 1
+          fi
+          npx --yes vercel@65.8.0 dev --listen 127.0.0.1:4173 --yes --token="$VERCEL_TOKEN" > "$STAGING_DEV_LOG" 2>&1 &
+          dev_pid=$!
+          cleanup() { kill "$dev_pid" 2>/dev/null || true; wait "$dev_pid" 2>/dev/null || true; rm -f "$STAGING_DEV_LOG" "$RUNNER_TEMP/staging-stripe-preview.env" .vercel/.env.preview.local; }
+          trap cleanup EXIT
+          ready=0
+          for _ in $(seq 1 60); do
+            if curl --silent --show-error --max-time 2 --output /dev/null http://127.0.0.1:4173/; then ready=1; break; fi
+            sleep 1
+          done
+          if [ "$ready" != '1' ]; then
+            echo 'Loopback staging test server did not become ready.' >&2
+            exit 1
+          fi
+          node scripts/recover-staging-stripe-company-b.mjs

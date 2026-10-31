@@ -5,6 +5,7 @@ import { randomUUID } from 'node:crypto';
 
 const PROJECT_REF = 'xwzweltjvreqhjpbjrxa';
 const PREVIEW_ORIGIN = 'https://dashboard-git-codex-staging-e2e-79cdb9-svobonek-6462s-projects.vercel.app';
+const LOCAL_CHECKOUT_ORIGIN = 'http://127.0.0.1:4173';
 const COMPANY_SLUG = 'e2e-synthetic-company-b';
 const OWNER_EMAIL = 'owner-b@stavbaflow.example.test';
 const PURPOSE = 'staging-past-due-acceptance';
@@ -34,6 +35,9 @@ function assertTarget(env) {
   if (new URL(required(env, 'STAGING_PREVIEW_URL')).origin !== PREVIEW_ORIGIN ||
       new URL(env.STAGING_PREVIEW_URL).origin === new URL(required(env, 'PRODUCTION_BASE_URL')).origin) {
     throw new Error('Refusing recovery outside the approved staging Preview.');
+  }
+  if (env.STAGING_RECOVERY_CHECKOUT_ORIGIN && env.STAGING_RECOVERY_CHECKOUT_ORIGIN !== LOCAL_CHECKOUT_ORIGIN) {
+    throw new Error('Refusing recovery outside the exact loopback-only local checkout server.');
   }
   if (env.STAGING_OWNER_B_EMAIL?.toLowerCase() !== OWNER_EMAIL) {
     throw new Error('Refusing recovery for a non-synthetic owner account.');
@@ -121,7 +125,8 @@ async function main(env = process.env) {
     });
 
     const operationId = randomUUID();
-    const checkoutResponse = await fetch(`${PREVIEW_ORIGIN}/api/stripe-checkout`, {
+    const checkoutOrigin = env.STAGING_RECOVERY_CHECKOUT_ORIGIN || PREVIEW_ORIGIN;
+    const checkoutResponse = await fetch(`${checkoutOrigin}/api/stripe-checkout`, {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${signedIn.session.access_token}`,
