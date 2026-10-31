@@ -21,16 +21,27 @@ export function assertCompanyBCheckoutAcceptance({
       !customer?.test_clock) {
     throw new Error('Stripe TEST customer does not match synthetic company B.');
   }
-  if (subscription?.livemode !== false || subscription?.status !== 'active' ||
-      subscription?.id !== company.stripe_subscription_id || idOf(subscription.customer) !== customer.id ||
-      subscription?.metadata?.tenant_id !== companyId || subscription?.metadata?.purpose !== BILLING_PURPOSE ||
-      subscription?.test_clock !== customer.test_clock) {
-    throw new Error('Active Stripe TEST subscription does not match the company B binding.');
+  const subscriptionMismatches = [];
+  if (subscription?.livemode !== false) subscriptionMismatches.push('test mode');
+  if (subscription?.status !== 'active') subscriptionMismatches.push('active status');
+  if (subscription?.id !== company.stripe_subscription_id) subscriptionMismatches.push('company subscription binding');
+  if (idOf(subscription?.customer) !== customer.id) subscriptionMismatches.push('customer binding');
+  if (subscription?.metadata?.tenant_id !== companyId) subscriptionMismatches.push('tenant metadata');
+  if (subscription?.metadata?.purpose !== BILLING_PURPOSE) subscriptionMismatches.push('synthetic purpose metadata');
+  if (idOf(subscription?.test_clock) !== idOf(customer.test_clock)) subscriptionMismatches.push('test clock binding');
+  if (subscriptionMismatches.length) {
+    throw new Error(`Active Stripe TEST subscription mismatch: ${subscriptionMismatches.join(', ')}.`);
   }
-  if (checkout?.livemode !== false || checkout?.status !== 'complete' || checkout?.mode !== 'subscription' ||
-      checkout?.metadata?.tenant_id !== companyId || checkout?.metadata?.plan !== company.plan ||
-      idOf(checkout.customer) !== customer.id || idOf(checkout.subscription) !== subscription.id) {
-    throw new Error('Checkout session is not bound to the active company B subscription.');
+  const checkoutMismatches = [];
+  if (checkout?.livemode !== false) checkoutMismatches.push('test mode');
+  if (checkout?.status !== 'complete') checkoutMismatches.push('completed status');
+  if (checkout?.mode !== 'subscription') checkoutMismatches.push('subscription mode');
+  if (checkout?.metadata?.tenant_id !== companyId) checkoutMismatches.push('tenant metadata');
+  if (checkout?.metadata?.plan !== company.plan) checkoutMismatches.push('plan metadata');
+  if (idOf(checkout?.customer) !== customer.id) checkoutMismatches.push('customer binding');
+  if (idOf(checkout?.subscription) !== subscription?.id) checkoutMismatches.push('subscription binding');
+  if (checkoutMismatches.length) {
+    throw new Error(`Checkout session mismatch: ${checkoutMismatches.join(', ')}.`);
   }
   return true;
 }

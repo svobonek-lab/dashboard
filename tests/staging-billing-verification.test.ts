@@ -59,6 +59,25 @@ test('rejects a Checkout session for another company or subscription', () => {
       ...fixture,
       checkout: { ...fixture.checkout, subscription: 'sub_other_tenant' },
     }),
-    /checkout session is not bound/i,
+    /checkout session mismatch: subscription binding/i,
+  );
+});
+
+test('accepts Stripe test-clock expansions when the customer and subscription clock IDs match', () => {
+  assert.doesNotThrow(() => assertCompanyBCheckoutAcceptance({
+    ...fixture,
+    customer: { ...fixture.customer, test_clock: { id: 'clock_test_company_b' } },
+    subscription: { ...fixture.subscription, test_clock: { id: 'clock_test_company_b' } },
+  }));
+});
+
+test('reports a safe subscription mismatch field without emitting object values', () => {
+  assert.throws(
+    () => assertCompanyBCheckoutAcceptance({
+      ...fixture,
+      subscription: { ...fixture.subscription, metadata: { ...fixture.subscription.metadata, purpose: 'other' } },
+    }),
+    (error: unknown) => error instanceof Error &&
+      error.message === 'Active Stripe TEST subscription mismatch: synthetic purpose metadata.',
   );
 });
