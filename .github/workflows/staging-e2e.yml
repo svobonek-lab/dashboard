@@ -20,6 +20,7 @@ on:
           - billing-past-due
           - billing-recover-b
           - billing-configure-pilot-price
+          - preview-redeploy
         default: github-hosted
       load_recover_run_id:
         description: Exact 12-character synthetic load run ID for staging-only recovery
@@ -44,7 +45,7 @@ jobs:
         inputs.runner_mode != 'load-recover' && inputs.runner_mode != 'preview-configure' &&
         inputs.runner_mode != 'billing-setup' && inputs.runner_mode != 'billing-portal-inspect' &&
         inputs.runner_mode != 'billing-cancel-advance' && inputs.runner_mode != 'billing-past-due' &&
-        inputs.runner_mode != 'billing-recover-b' && inputs.runner_mode != 'billing-configure-pilot-price') ||
+        inputs.runner_mode != 'billing-recover-b' && inputs.runner_mode != 'billing-configure-pilot-price' && inputs.runner_mode != 'preview-redeploy') ||
        (github.event.pull_request.head.repo.full_name == github.repository &&
         contains(github.event.pull_request.labels.*.name, 'e2e'))) &&
       ((inputs.runner_mode != 'local-ephemeral' && inputs.runner_mode != 'sentry-only' && inputs.runner_mode != 'billing-portal-inspect') ||
@@ -57,7 +58,7 @@ jobs:
           persist-credentials: false
       - uses: actions/setup-node@v6
         with:
-          node-version: '24'
+          node-version: "24"
           cache: npm
       - name: Check staging isolation and required credentials without printing values
         id: staging_safety
@@ -97,7 +98,7 @@ jobs:
             npm run test:e2e:staging
           fi
         env:
-          CI: 'true'
+          CI: "true"
           STAGING_PREVIEW_URL: ${{ vars.STAGING_PREVIEW_URL }}
           PRODUCTION_BASE_URL: ${{ vars.PRODUCTION_BASE_URL }}
           STAGING_SUPABASE_URL: ${{ vars.STAGING_SUPABASE_URL }}
@@ -145,7 +146,7 @@ jobs:
           persist-credentials: false
       - uses: actions/setup-node@v6
         with:
-          node-version: '24'
+          node-version: "24"
       - name: Capture staging catalogs and Auth-hook configuration only
         run: node scripts/staging-metadata-snapshot.mjs > stavbacore-staging-metadata.json
         env:
@@ -173,7 +174,7 @@ jobs:
           persist-credentials: false
       - uses: actions/setup-node@v6
         with:
-          node-version: '24'
+          node-version: "24"
       - name: Add staging-only variables to the approved Preview branch
         run: node scripts/configure-staging-preview-env.mjs
         env:
@@ -210,7 +211,7 @@ jobs:
           persist-credentials: false
       - uses: actions/setup-node@v6
         with:
-          node-version: '24'
+          node-version: "24"
           cache: npm
       - run: npm ci
       - name: Refuse a production target before creating fixtures
@@ -219,7 +220,7 @@ jobs:
           STAGING_SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.STAGING_SUPABASE_SERVICE_ROLE_KEY }}
       - uses: grafana/setup-k6-action@v1
         with:
-          k6-version: '1.7.1'
+          k6-version: "1.7.1"
       - name: Set private fixture paths outside the checkout
         run: |
           echo "STAGING_LOAD_OUTPUT_DIR=$RUNNER_TEMP/stavbaflow-load-${GITHUB_RUN_ID}" >> "$GITHUB_ENV"
@@ -300,7 +301,7 @@ jobs:
           persist-credentials: false
       - uses: actions/setup-node@v6
         with:
-          node-version: '24'
+          node-version: "24"
           cache: npm
       - run: npm ci
       - name: Recover only exact synthetic staging load identities
@@ -328,7 +329,7 @@ jobs:
 
       - uses: actions/setup-node@v6
         with:
-          node-version: '24'
+          node-version: "24"
           cache: npm
 
       - run: npm ci
@@ -417,7 +418,7 @@ jobs:
 
       - uses: actions/setup-node@v6
         with:
-          node-version: '24'
+          node-version: "24"
           cache: npm
 
       - run: npm ci
@@ -485,7 +486,7 @@ jobs:
 
       - uses: actions/setup-node@v6
         with:
-          node-version: '24'
+          node-version: "24"
           cache: npm
 
       - run: npm ci
@@ -552,7 +553,7 @@ jobs:
           persist-credentials: false
       - uses: actions/setup-node@v6
         with:
-          node-version: '24'
+          node-version: "24"
           cache: npm
       - run: npm ci
       - name: Install Playwright Chromium
@@ -586,7 +587,7 @@ jobs:
       - name: Trigger a synthetic company B renewal failure and verify the owner gate
         run: node scripts/test-staging-stripe-past-due.mjs
         env:
-          STAGING_STRIPE_PAST_DUE_MUTATE: 'true'
+          STAGING_STRIPE_PAST_DUE_MUTATE: "true"
           STAGING_SUPABASE_URL: ${{ vars.STAGING_SUPABASE_URL }}
           STAGING_SUPABASE_PROJECT_REF: ${{ vars.STAGING_SUPABASE_PROJECT_REF }}
           PRODUCTION_SUPABASE_PROJECT_REF: ${{ vars.PRODUCTION_SUPABASE_PROJECT_REF }}
@@ -615,7 +616,7 @@ jobs:
           persist-credentials: false
       - uses: actions/setup-node@v6
         with:
-          node-version: '24'
+          node-version: "24"
           cache: npm
       - run: npm ci
       - name: Install Playwright Chromium
@@ -679,7 +680,7 @@ jobs:
           persist-credentials: false
       - uses: actions/setup-node@v6
         with:
-          node-version: '24'
+          node-version: "24"
       - name: Pull the exact branch Preview configuration
         env:
           VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
@@ -709,3 +710,50 @@ jobs:
       - name: Remove pulled Preview configuration
         if: always()
         run: rm -f "$RUNNER_TEMP/staging-stripe-preview.env"
+
+  staging-preview-redeploy-prebuilt:
+    if: >-
+      github.repository == 'svobonek-lab/dashboard' &&
+      github.event_name == 'workflow_dispatch' &&
+      inputs.runner_mode == 'preview-redeploy' &&
+      github.ref == 'refs/heads/codex/staging-e2e-local-runner'
+    runs-on: [self-hosted, linux, x64, staging-e2e]
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "24"
+      - name: Pull Preview configuration for the exact staging branch
+        env:
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+        run: |
+          set +x
+          if [ "$GITHUB_REF" != 'refs/heads/codex/staging-e2e-local-runner' ] || [ "$GITHUB_REPOSITORY" != 'svobonek-lab/dashboard' ]; then
+            echo 'Refusing deployment outside the approved staging branch.' >&2
+            exit 1
+          fi
+          npx --yes vercel@65.8.0 pull --yes --environment=preview --git-branch=codex/staging-e2e-local-runner --token="$VERCEL_TOKEN"
+      - name: Build Preview artifacts on the self-hosted runner
+        env:
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+        run: npx --yes vercel@65.8.0 build --token="$VERCEL_TOKEN"
+      - name: Deploy prebuilt artifacts and assign only the staging Preview alias
+        env:
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+        run: |
+          set +x
+          deployment_url="$(npx --yes vercel@65.8.0 deploy --prebuilt --target=preview --yes --token="$VERCEL_TOKEN" --meta githubCommitRef=codex/staging-e2e-local-runner --meta githubCommitSha="$GITHUB_SHA")"
+          case "$deployment_url" in
+            https://*.vercel.app) ;;
+            *) echo 'Vercel did not return a valid Preview deployment URL.' >&2; exit 1 ;;
+          esac
+          npx --yes vercel@65.8.0 alias set "$deployment_url" dashboard-git-codex-staging-e2e-79cdb9-svobonek-6462s-projects.vercel.app --token="$VERCEL_TOKEN"
