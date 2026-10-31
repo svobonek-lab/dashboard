@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import test from 'node:test';
 
-import { getPortalCancellationSettings, isPortalDocumentReady, redactPortalText, summarizePortalFrames, validateStagingStripeLifecycle, validateStagingStripePortalUrl } from '../scripts/staging-stripe-lifecycle-guard.mjs';
+import { getPortalCancellationSettings, isPortalContentReady, isPortalDocumentReady, redactPortalText, summarizePortalFrames, validateStagingStripeLifecycle, validateStagingStripePortalUrl } from '../scripts/staging-stripe-lifecycle-guard.mjs';
 
 const validEnv = {
   STAGING_SUPABASE_URL: 'https://xwzweltjvreqhjpbjrxa.supabase.co',
@@ -66,6 +66,12 @@ test('portal document readiness uses loaded visible content, not body locator ge
     bodyVisibility: 'visible',
     bodyOpacity: '1',
   }), false);
+});
+
+test('portal content readiness waits past the generic Stripe landing shell', () => {
+  assert.equal(isPortalContentReady({ readyState: 'complete', bodyTextLength: 153, bodyDisplay: 'block', bodyVisibility: 'visible', bodyOpacity: '1', hasSubscriptionWords: false, cancellationActionVisible: false }), false);
+  assert.equal(isPortalContentReady({ readyState: 'complete', bodyTextLength: 563, bodyDisplay: 'block', bodyVisibility: 'visible', bodyOpacity: '1', hasSubscriptionWords: false, cancellationActionVisible: false }), true);
+  assert.equal(isPortalContentReady({ readyState: 'complete', bodyTextLength: 153, bodyDisplay: 'block', bodyVisibility: 'visible', bodyOpacity: '1', hasSubscriptionWords: true, cancellationActionVisible: false }), true);
 });
 
 test('portal cancellation settings report only the enabled flag and configured timing', () => {

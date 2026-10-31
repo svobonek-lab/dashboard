@@ -13,6 +13,14 @@ export function isPortalDocumentReady(state) {
     state.bodyDisplay !== 'none' && state.bodyVisibility === 'visible' && Number(state.bodyOpacity) > 0;
 }
 
+export function isPortalContentReady(state) {
+  return isPortalDocumentReady(state) && (
+    Number(state.bodyTextLength) >= 250 ||
+    state.hasSubscriptionWords === true ||
+    state.cancellationActionVisible === true
+  );
+}
+
 export function getPortalCancellationSettings(configuration) {
   const feature = configuration?.features?.subscription_cancel;
   return {

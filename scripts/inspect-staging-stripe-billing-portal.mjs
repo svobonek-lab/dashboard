@@ -4,7 +4,7 @@ import { createClient } from '@supabase/supabase-js';
 
 import {
   getPortalCancellationSettings,
-  isPortalDocumentReady,
+  isPortalContentReady,
   summarizePortalFrames,
   validateStagingStripeLifecycle,
   validateStagingStripePortalUrl,
@@ -104,15 +104,26 @@ async function inspectPortal(env = process.env) {
     const readinessHandle = await page.waitForFunction(() => {
       const body = document.body;
       const style = body ? getComputedStyle(body) : null;
+      const text = body?.innerText?.trim().toLowerCase() || '';
+      const cancellationActionVisible = [...document.querySelectorAll('button,a,[role=button]')]
+        .some((element) => {
+          const controlStyle = getComputedStyle(element);
+          const label = (element.innerText || element.getAttribute('aria-label') || '').trim();
+          return element.getClientRects().length > 0 && controlStyle.visibility === 'visible' &&
+            Number(controlStyle.opacity) > 0 && /cancel|zruš|kündig|annul/i.test(label);
+        });
       const state = {
         readyState: document.readyState,
-        bodyTextLength: body?.innerText?.trim().length ?? 0,
+        bodyTextLength: text.length,
         bodyDisplay: style?.display ?? null,
         bodyVisibility: style?.visibility ?? null,
         bodyOpacity: style?.opacity ?? null,
+        hasSubscriptionWords: /subscription|předplat|abo/.test(text),
+        cancellationActionVisible,
       };
       return state.readyState === 'complete' && state.bodyTextLength > 0 &&
-        state.bodyDisplay !== 'none' && state.bodyVisibility === 'visible' && Number(state.bodyOpacity) > 0
+        state.bodyDisplay !== 'none' && state.bodyVisibility === 'visible' && Number(state.bodyOpacity) > 0 &&
+        (state.bodyTextLength >= 250 || state.hasSubscriptionWords || state.cancellationActionVisible)
         ? state
         : false;
     }, null, { timeout: 30000 }).catch(() => null);
@@ -128,8 +139,8 @@ async function inspectPortal(env = process.env) {
           bodyClass: body?.className ?? null,
         };
       });
-    if (!isPortalDocumentReady(readiness)) {
-      throw new Error(`Stripe portal document did not become visible (HTTP ${browserResponse?.status() ?? 'unknown'}; page errors: ${pageErrors.join(',') || 'none'}; diagnostics: ${JSON.stringify(readiness)}).`);
+    if (!isPortalContentReady(readiness)) {
+      throw new Error(`Stripe portal did not show its subscription management content (HTTP ${browserResponse?.status() ?? 'unknown'}; page errors: ${pageErrors.join(',') || 'none'}; diagnostics: ${JSON.stringify(readiness)}).`);
     }
     const frameStates = await Promise.all(page.frames().map((frame) => frame.evaluate(() => {
       const controls = [...document.querySelectorAll('button,a,[role=button]')]
