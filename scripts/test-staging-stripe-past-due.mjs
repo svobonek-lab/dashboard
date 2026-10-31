@@ -39,7 +39,7 @@ function assertTarget(env) {
   if (env.STAGING_OWNER_B_EMAIL?.toLowerCase() !== OWNER_EMAIL) {
     throw new Error('Refusing past-due acceptance: STAGING_OWNER_B_EMAIL is not the synthetic company B fixture.');
   }
-  if (env.STRIPE_BILLING_MODE !== 'test' || !/^sk_test_[A-Za-z0-9]+$/.test(String(env.STRIPE_SECRET_KEY || '')) ||
+  if (env.STRIPE_BILLING_MODE !== 'test' || !/^(?:sk|rk)_test_[A-Za-z0-9]+$/.test(String(env.STRIPE_SECRET_KEY || '')) ||
       !/^price_[A-Za-z0-9]+$/.test(String(env.STRIPE_PRICE_STARTER_ID || ''))) {
     throw new Error('Refusing past-due acceptance: Stripe TEST configuration is missing or invalid.');
   }
