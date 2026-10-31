@@ -1,6 +1,6 @@
 # Stripe TEST billing acceptance
 
-**Status: PARTIAL — staging Checkout is prepared for synthetic company A.** The TEST customer, Test Clock, and Checkout session were prepared successfully. No test payment, signed subscription webhook, cancellation, period-end transition, or `past_due` screen has been verified. Do not count local contract tests as end-to-end billing acceptance.
+**Status: PARTIAL — Stripe TEST purchase and signed webhook passed for synthetic company A.** Hosted Checkout completed in Stripe Sandbox for the monthly Starter plan. The staging webhook recorded and applied `checkout.session.completed`; the company is bound to the resulting TEST subscription and remains `active`. Cancellation through the Billing Portal, period-end access removal, and the `past_due` screen remain unverified. Company A was already `active` before this purchase, so the run does not prove a transition from blocked to granted access.
 
 ## Verified preflight (2026-10-30)
 
@@ -28,19 +28,17 @@ Use UTC timestamps and record only safe Stripe test event/session IDs. Never wri
 | Confirm Stripe TEST endpoint target and activity | 2026-10-30 20:48 | Passed, read-only | Active TEST destination targets the staging alias; 0 deliveries |
 | Set synthetic company A to Starter through the approved audited staging operation | 2026-10-30 | Passed | Read-only staging query confirmed plan `starter`; A remains active and unbound |
 | Prepare Test Clock, customer and Starter Checkout URL | 2026-10-31 11:31 | Passed | Run `41196812974`; `cus_VXfrj58DuUmugs`, `clock_1UWaVVCcWnL6sJWy7rGC7f4S`, session `cs_test_a1Q86HlLosLqcTPTUCXInVZClRlzR0atOpd1GWHCGpj5NIX2hm1p8HboB9`; no payment submitted |
-| Complete Stripe TEST payment in hosted Checkout | NOT RUN | Awaiting owner action | Checkout handoff artifact expires 2026-11-01 11:31 UTC; no payment action submitted |
-| Verify signed webhook sets the correct tenant to `active` | NOT RUN | Blocked | No Checkout event |
-| Verify owner access after activation | NOT RUN | Blocked | No paid test subscription |
-| Cancel through Billing Portal | NOT RUN | Blocked | No paid test subscription |
-| Advance Test Clock to period end and verify access removal | NOT RUN | Blocked | No test-clock customer or subscription |
+| Complete Stripe TEST payment in hosted Checkout | 2026-10-31 11:50 | Passed | Stripe Sandbox displayed Starter, 2,990 Kč/month; public test Visa accepted; redirected back to the staging `/login`; no real payment information used |
+| Verify signed webhook sets the correct tenant to `active` | 2026-10-31 11:50 | Passed | Staging row for `e2e-synthetic-company-a` has the TEST customer/subscription IDs; `app_stripe_webhook_events` recorded `checkout.session.completed` with result `applied` at `11:50:05 UTC` |
+| Verify owner access after activation | 2026-10-31 11:58 | Passed, with starting-state caveat | Post-purchase staging Playwright run `41198728965` passed all 11 scenarios; the owner critical flow observed company visible, active and subscription `active`. Company A was already active before checkout, so the run does not prove a blocked-to-active transition. |
+| Cancel through Billing Portal | NOT RUN | Awaiting confirmation at cancellation step | Subscription is active; no cancellation requested |
+| Advance Test Clock to period end and verify access removal | NOT RUN | Blocked on Billing Portal cancellation | Test-clock customer and subscription now exist |
 | Verify the `past_due` screen after a failed renewal | NOT RUN | Blocked | No test-clock renewal |
 
 ## Remaining manual sequence
 
-1. Open [the successful staging setup run](https://github.com/svobonek-lab/dashboard/actions/runs/41196812974), download artifact `staging-stripe-checkout-41196812974`, and open `checkout-url.txt`. The Checkout is restricted to StavbaCore Staging and Stripe TEST.
-2. Verify the hosted Checkout is for the synthetic company A Starter subscription and complete it with Stripe’s test card. The Checkout URL is a short-lived payment capability; do not paste it into chat or a public issue.
-3. Confirm `checkout.session.completed` and `customer.subscription.updated` deliveries in Stripe TEST Workbench and verify company A’s state and owner access in staging. Do not paste credentials, card details, emails, or customer payloads into this document or chat.
-4. Open Billing Portal as owner A and request cancellation at period end. Verify access remains until the clock reaches the period end, then verify the signed deletion/update event and access removal.
-5. To verify `past_due`, attach Stripe’s documented decline test method before a subsequent renewal, advance the same Test Clock, and verify the webhook state and owner screen. Restore synthetic company A’s original staging state and remove only the test-clock objects after recording evidence.
+1. The hosted TEST purchase and signed `checkout.session.completed` event are recorded above. Never reuse or share the one-day Checkout handoff.
+2. Verify signed-in owner access after payment, then use the owner’s Billing Portal to schedule cancellation at period end. Verify access remains until the clock reaches period end, then check the signed deletion/update event and access removal.
+3. To verify `past_due`, use a separate synthetic company/customer on a Test Clock, attach Stripe’s documented decline test method before renewal, advance the clock, and verify the webhook state and owner screen. Do not turn Company A’s paid-cancellation scenario into a failed-renewal scenario.
 
 Do not use a direct database update to fabricate webhook state. Never use production Stripe, production Supabase, real payment information, or real customer data for this acceptance.

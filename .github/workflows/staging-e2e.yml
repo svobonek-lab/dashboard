@@ -15,6 +15,7 @@ on:
           - load-acceptance
           - load-recover
           - billing-setup
+          - billing-portal-inspect
         default: github-hosted
       load_recover_run_id:
         description: Exact 12-character synthetic load run ID for staging-only recovery
@@ -37,12 +38,12 @@ jobs:
       ((github.event_name == 'workflow_dispatch' &&
         inputs.runner_mode != 'metadata-only' && inputs.runner_mode != 'load-acceptance' &&
         inputs.runner_mode != 'load-recover' && inputs.runner_mode != 'preview-configure' &&
-        inputs.runner_mode != 'billing-setup') ||
+        inputs.runner_mode != 'billing-setup' && inputs.runner_mode != 'billing-portal-inspect') ||
        (github.event.pull_request.head.repo.full_name == github.repository &&
         contains(github.event.pull_request.labels.*.name, 'e2e'))) &&
-      ((inputs.runner_mode != 'local-ephemeral' && inputs.runner_mode != 'sentry-only') ||
+      ((inputs.runner_mode != 'local-ephemeral' && inputs.runner_mode != 'sentry-only' && inputs.runner_mode != 'billing-portal-inspect') ||
        (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/codex/staging-e2e-local-runner'))
-    runs-on: ${{ (inputs.runner_mode == 'local-ephemeral' || inputs.runner_mode == 'sentry-only') && fromJSON('["self-hosted","linux","x64","staging-e2e"]') || 'ubuntu-latest' }}
+    runs-on: ${{ (inputs.runner_mode == 'local-ephemeral' || inputs.runner_mode == 'sentry-only' || inputs.runner_mode == 'billing-portal-inspect') && fromJSON('["self-hosted","linux","x64","staging-e2e"]') || 'ubuntu-latest' }}
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v6
@@ -394,3 +395,71 @@ jobs:
         run: |
           set +x
           rm -rf "$RUNNER_TEMP/stavbaflow-stripe-billing-${GITHUB_RUN_ID}"
+
+  staging-stripe-billing-portal-inspection:
+    if: >-
+      github.repository == 'svobonek-lab/dashboard' &&
+      github.event_name == 'workflow_dispatch' &&
+      inputs.runner_mode == 'billing-portal-inspect' &&
+      github.ref == 'refs/heads/codex/staging-e2e-local-runner'
+    runs-on: [self-hosted, linux, x64, staging-e2e]
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+          cache: npm
+
+      - run: npm ci
+
+      - name: Install Playwright Chromium
+        run: npx playwright install chromium --with-deps
+
+      - name: Pull non-secret Stripe TEST config from the approved Vercel Preview
+        env:
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          STRIPE_CONFIG_FILE: ${{ runner.temp }}/staging-stripe-preview.env
+        run: |
+          set +x
+          if [ "$GITHUB_REF" != 'refs/heads/codex/staging-e2e-local-runner' ] || [ "$GITHUB_REPOSITORY" != 'svobonek-lab/dashboard' ]; then
+            echo 'Refusing Stripe TEST environment export outside the approved staging branch.' >&2
+            exit 1
+          fi
+          npx --yes vercel@65.8.0 env pull "$STRIPE_CONFIG_FILE" --environment=preview --git-branch=codex/staging-e2e-local-runner --token="$VERCEL_TOKEN" --yes
+
+      - name: Export only approved Stripe TEST settings to this job
+        env:
+          STAGING_STRIPE_SECRET_KEY: ${{ secrets.STAGING_STRIPE_SECRET_KEY }}
+          STAGING_PREVIEW_CONFIG_FILE: ${{ runner.temp }}/staging-stripe-preview.env
+          STAGING_PREVIEW_URL: ${{ vars.STAGING_PREVIEW_URL }}
+          PRODUCTION_BASE_URL: ${{ vars.PRODUCTION_BASE_URL }}
+        run: |
+          set +x
+          if [ "$GITHUB_REF" != 'refs/heads/codex/staging-e2e-local-runner' ] || [ "$GITHUB_REPOSITORY" != 'svobonek-lab/dashboard' ]; then
+            echo 'Refusing Stripe TEST environment export outside the approved staging branch.' >&2
+            exit 1
+          fi
+          node scripts/export-staging-stripe-env.mjs
+
+      - name: Verify synthetic owner A access and open the staging Billing Portal
+        run: node scripts/inspect-staging-stripe-billing-portal.mjs
+        env:
+          STAGING_SUPABASE_URL: ${{ vars.STAGING_SUPABASE_URL }}
+          STAGING_SUPABASE_PROJECT_REF: ${{ vars.STAGING_SUPABASE_PROJECT_REF }}
+          PRODUCTION_SUPABASE_PROJECT_REF: ${{ vars.PRODUCTION_SUPABASE_PROJECT_REF }}
+          STAGING_PREVIEW_URL: ${{ vars.STAGING_PREVIEW_URL }}
+          PRODUCTION_BASE_URL: ${{ vars.PRODUCTION_BASE_URL }}
+          STAGING_COMPANY_A_ID: ${{ vars.STAGING_COMPANY_A_ID }}
+          STAGING_OWNER_A_EMAIL: ${{ secrets.STAGING_OWNER_A_EMAIL }}
+          STAGING_OWNER_A_PASSWORD: ${{ secrets.STAGING_OWNER_A_PASSWORD }}
+          STAGING_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.STAGING_SUPABASE_PUBLISHABLE_KEY }}
+
+      - name: Remove pulled Preview configuration
+        if: always()
+        run: rm -f "$RUNNER_TEMP/staging-stripe-preview.env"
