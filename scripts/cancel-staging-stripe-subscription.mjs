@@ -137,7 +137,7 @@ async function cancelAndAdvance(env = process.env) {
       for (let index = (await confirms.count()) - 1; index >= 0; index -= 1) {
         const confirm = confirms.nth(index);
         if (await confirm.isVisible()) {
-          await confirm.click({ timeout: 5000 });
+          await confirm.click({ timeout: 5000, force: true });
           break;
         }
       }
