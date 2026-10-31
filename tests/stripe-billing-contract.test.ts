@@ -37,6 +37,7 @@ test('staging workflow exposes a dedicated company B recovery checkout on the is
   assert.match(stagingWorkflow, /recover-staging-stripe-company-b\.mjs/);
   assert.match(stagingWorkflow, /STAGING_OWNER_B_PASSWORD/);
   assert.match(recoveryScript, /\/api\/stripe-checkout/);
+  assert.match(recoveryScript, /safeCheckoutCode/);
   assert.match(recoveryScript, /e2e-synthetic-company-b/);
   assert.match(recoveryScript, /checkout\.session\.completed/);
   assert.doesNotMatch(recoveryScript, /\.from\(['"]app_companies['"]\)[\s\S]{0,500}\.update\(/);

@@ -16,6 +16,11 @@ function required(env, name) {
   return value;
 }
 
+function safeCheckoutCode(payload) {
+  const code = payload && typeof payload.code === 'string' ? payload.code : '';
+  return /^[A-Z][A-Z0-9_]{0,79}$/.test(code) ? code : 'UNKNOWN';
+}
+
 function assertTarget(env) {
   if (env.GITHUB_REPOSITORY !== 'svobonek-lab/dashboard' ||
       env.GITHUB_REF !== 'refs/heads/codex/staging-e2e-local-runner') {
@@ -126,7 +131,7 @@ async function main(env = process.env) {
     });
     const payload = await checkoutResponse.json().catch(() => null);
     if (!checkoutResponse.ok || typeof payload?.url !== 'string') {
-      throw new Error(`The staging owner Checkout endpoint refused recovery (HTTP ${checkoutResponse.status}).`);
+      throw new Error(`The staging owner Checkout endpoint refused recovery (HTTP ${checkoutResponse.status}, ${safeCheckoutCode(payload)}).`);
     }
     const checkoutUrl = new URL(payload.url);
     const sessionId = /(?:^|\/)(cs_test_[A-Za-z0-9_]+)(?:\/|$|\?)/.exec(checkoutUrl.pathname)?.[1];
