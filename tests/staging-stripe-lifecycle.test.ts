@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import test from 'node:test';
 
+import { getSubscriptionPeriodEnd } from '../scripts/cancel-staging-stripe-subscription.mjs';
 import { getPortalCancellationSettings, isPortalContentReady, isPortalDocumentReady, redactPortalText, summarizePortalFrames, validateStagingStripeLifecycle, validateStagingStripePortalUrl } from '../scripts/staging-stripe-lifecycle-guard.mjs';
 
 const validEnv = {
@@ -17,6 +18,13 @@ const validEnv = {
   STRIPE_SECRET_KEY: 'sk_test_synthetic',
   STRIPE_BILLING_MODE: 'test',
 };
+
+test('Stripe billing period end supports current API item fields and rejects mismatched items', () => {
+  assert.equal(getSubscriptionPeriodEnd({ current_period_end: 1796064000, items: { data: [{ current_period_end: 1796064000 }] } }), 1796064000);
+  assert.equal(getSubscriptionPeriodEnd({ items: { data: [{ current_period_end: 1796064000 }] } }), 1796064000);
+  assert.throws(() => getSubscriptionPeriodEnd({ items: { data: [{ current_period_end: 1796064000 }, { current_period_end: 1796140000 }] } }), /do not share/);
+  assert.throws(() => getSubscriptionPeriodEnd({}), /no verifiable current period end/);
+});
 
 test('Stripe lifecycle accepts only the exact staging project and Preview in TEST mode', () => {
   assert.deepEqual(validateStagingStripeLifecycle(validEnv), {
@@ -118,5 +126,17 @@ test('billing portal inspection runs only on the one-shot staging runner and exa
   assert.match(job, /refs\/heads\/codex\/staging-e2e-local-runner/);
   assert.match(job, /self-hosted, linux, x64, staging-e2e/);
   assert.match(job, /node scripts\/inspect-staging-stripe-billing-portal\.mjs/);
+  assert.doesNotMatch(job, /SUPABASE_SERVICE_ROLE_KEY/);
+});
+
+test('billing cancellation workflow is restricted to staging and never receives a service-role key', () => {
+  const workflow = readFileSync(new URL('../.github/workflows/staging-e2e.yml', import.meta.url), 'utf8');
+  assert.match(workflow, /- billing-cancel-advance/);
+  assert.match(workflow, /inputs\.runner_mode != 'billing-cancel-advance'/);
+  const job = workflow.match(/staging-stripe-billing-cancel-advance:([\s\S]*?)(?=\n  [a-z][a-z0-9-]+:|\s*$)/)?.[1] || '';
+  assert.match(job, /inputs\.runner_mode == 'billing-cancel-advance'/);
+  assert.match(job, /refs\/heads\/codex\/staging-e2e-local-runner/);
+  assert.match(job, /self-hosted, linux, x64, staging-e2e/);
+  assert.match(job, /node scripts\/cancel-staging-stripe-subscription\.mjs/);
   assert.doesNotMatch(job, /SUPABASE_SERVICE_ROLE_KEY/);
 });

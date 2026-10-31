@@ -1,4 +1,6 @@
 import Stripe from 'stripe';
+import { resolve } from 'node:path';
+import { pathToFileURL } from 'node:url';
 import { chromium } from 'playwright';
 import { createClient } from '@supabase/supabase-js';
 import {
@@ -10,6 +12,19 @@ import {
 } from './staging-stripe-lifecycle-guard.mjs';
 
 const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+export function getSubscriptionPeriodEnd(subscription) {
+  const itemPeriodEnds = [...new Set((subscription?.items?.data || [])
+    .map((item) => Number(item.current_period_end)).filter(Number.isSafeInteger))];
+  if (itemPeriodEnds.length > 1) throw new Error('Subscription items do not share one billing period end.');
+  const subscriptionPeriodEnd = Number(subscription?.current_period_end);
+  const periodEnd = Number.isSafeInteger(subscriptionPeriodEnd) ? subscriptionPeriodEnd : itemPeriodEnds[0];
+  if (!Number.isSafeInteger(periodEnd)) throw new Error('Stripe subscription has no verifiable current period end.');
+  if (itemPeriodEnds.length === 1 && itemPeriodEnds[0] !== periodEnd) {
+    throw new Error('Stripe subscription and item billing period ends do not match.');
+  }
+  return periodEnd;
+}
 
 function required(env, key) {
   const value = String(env[key] || '').trim();
@@ -80,9 +95,10 @@ async function cancelAndAdvance(env = process.env) {
         (typeof subscription.customer === 'string' ? subscription.customer : subscription.customer.id) !== customer.id) {
       throw new Error('Stripe TEST customer/subscription failed the synthetic tenant lifecycle checks.');
     }
+    const periodEnd = getSubscriptionPeriodEnd(subscription);
     const clock = await stripe.testHelpers.testClocks.retrieve(customer.test_clock);
-    if (clock.status !== 'ready' || clock.frozen_time >= subscription.current_period_end ||
-        subscription.current_period_end > clock.frozen_time + 62 * 24 * 60 * 60) {
+    if (clock.status !== 'ready' || clock.frozen_time >= periodEnd ||
+        periodEnd > clock.frozen_time + 62 * 24 * 60 * 60) {
       throw new Error('Test Clock or subscription period is outside the safe one-period acceptance window.');
     }
 
@@ -129,13 +145,32 @@ async function cancelAndAdvance(env = process.env) {
 
     const cancelControl = page.getByText('Cancel subscription', { exact: true }).first();
     await cancelControl.click({ timeout: 10000 });
-    for (let step = 0; step < 2 && !updated.cancel_at_period_end; step += 1) {
+    for (let step = 0; step < 4 && !updated.cancel_at_period_end; step += 1) {
       for (let attempt = 0; attempt < 8; attempt += 1) {
         updated = await stripe.subscriptions.retrieve(subscription.id);
         if (updated.cancel_at_period_end) break;
         await wait(1000);
       }
       if (!updated.cancel_at_period_end) {
+        const continueButton = page.getByRole('button', { name: /^continue to cancellation$/i });
+        if (await continueButton.count() && await continueButton.last().isVisible()) {
+          const chooseReason = page.getByText('Choose an option', { exact: true }).last();
+          if (await chooseReason.count() && await chooseReason.isVisible()) {
+            await chooseReason.click({ timeout: 5000 });
+            const otherOption = page.getByRole('option', { name: /^other$/i }).last();
+            if (await otherOption.count() && await otherOption.isVisible()) {
+              await otherOption.click({ timeout: 5000 });
+            } else {
+              const otherText = page.getByText('Other', { exact: true }).last();
+              if (!(await otherText.count()) || !(await otherText.isVisible())) {
+                throw new Error('Stripe TEST cancellation asks for a reason but does not offer the neutral “Other” option.');
+              }
+              await otherText.click({ timeout: 5000 });
+            }
+          }
+          await continueButton.last().click({ timeout: 5000, force: true });
+          continue;
+        }
         const confirms = page.getByRole('button', { name: /^(cancel subscription|confirm cancellation|confirm cancel)$/i });
         for (let index = (await confirms.count()) - 1; index >= 0; index -= 1) {
           const confirm = confirms.nth(index);
@@ -147,7 +182,7 @@ async function cancelAndAdvance(env = process.env) {
       }
     }
     if (!updated.cancel_at_period_end || updated.status !== 'active' ||
-        (updated.cancel_at != null && updated.cancel_at !== subscription.current_period_end)) {
+        (updated.cancel_at != null && updated.cancel_at !== periodEnd)) {
       const diagnostics = await page.evaluate(() => ({
         visibleControls: [...document.querySelectorAll('button,a,[role=button],input[type=radio]')]
           .filter((element) => {
@@ -158,7 +193,7 @@ async function cancelAndAdvance(env = process.env) {
           .filter(Boolean).slice(0, 20),
         text: document.body?.innerText?.slice(0, 900) || '',
       }));
-      throw new Error(`Portal cancellation is not confirmed at period end (status ${updated.status}; scheduled ${updated.cancel_at_period_end}; cancel_at ${updated.cancel_at ?? 'null'}; period_end ${subscription.current_period_end}; portal ${JSON.stringify({ ...diagnostics, text: redactPortalText(diagnostics.text) })}).`);
+      throw new Error(`Portal cancellation is not confirmed at period end (status ${updated.status}; scheduled ${updated.cancel_at_period_end}; cancel_at ${updated.cancel_at ?? 'null'}; period_end ${periodEnd}; portal ${JSON.stringify({ ...diagnostics, text: redactPortalText(diagnostics.text) })}).`);
     }
     }
 
@@ -167,7 +202,7 @@ async function cancelAndAdvance(env = process.env) {
       throw new Error('Access changed before the scheduled billing period end.');
     }
 
-    const targetTime = subscription.current_period_end + 60;
+    const targetTime = periodEnd + 60;
     await stripe.testHelpers.testClocks.advance(clock.id, { frozen_time: targetTime });
     const readyClock = await waitForClockReady(stripe, clock.id);
     const deadline = Date.now() + 120000;
@@ -190,7 +225,7 @@ async function cancelAndAdvance(env = process.env) {
       companySlug: company.slug,
       cancellation: 'submitted through hosted Billing Portal; at_period_end confirmed',
       beforePeriodEnd: { stripeSubscriptionStatus: updated.status, appSubscriptionStatus: beforeEnd.subscription_status },
-      clock: { status: readyClock.status, reachedPeriodEnd: readyClock.frozen_time >= subscription.current_period_end },
+      clock: { status: readyClock.status, reachedPeriodEnd: readyClock.frozen_time >= periodEnd },
       afterPeriodEnd: { stripeSubscriptionStatus: endedSubscription.status, appSubscriptionStatus: afterEnd.subscription_status,
         accessExpected: 'blocked by canceled subscription' },
       verifiedAt: new Date().toISOString(),
@@ -201,7 +236,7 @@ async function cancelAndAdvance(env = process.env) {
   }
 }
 
-if (process.argv[1] && new URL(import.meta.url).pathname.toLowerCase().endsWith('/cancel-staging-stripe-subscription.mjs')) {
+if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1])).href) {
   cancelAndAdvance().then((result) => console.log(JSON.stringify(result)))
     .catch((error) => {
       console.error(JSON.stringify({ code: 'STAGING_STRIPE_CANCEL_TEST_FAILED',
