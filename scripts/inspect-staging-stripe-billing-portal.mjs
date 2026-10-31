@@ -5,6 +5,7 @@ import { createClient } from '@supabase/supabase-js';
 import {
   getPortalCancellationSettings,
   isPortalDocumentReady,
+  summarizePortalFrames,
   validateStagingStripeLifecycle,
   validateStagingStripePortalUrl,
 } from './staging-stripe-lifecycle-guard.mjs';
@@ -130,20 +131,23 @@ async function inspectPortal(env = process.env) {
     if (!isPortalDocumentReady(readiness)) {
       throw new Error(`Stripe portal document did not become visible (HTTP ${browserResponse?.status() ?? 'unknown'}; page errors: ${pageErrors.join(',') || 'none'}; diagnostics: ${JSON.stringify(readiness)}).`);
     }
-    const portalState = await page.evaluate(() => {
+    const frameStates = await Promise.all(page.frames().map((frame) => frame.evaluate(() => {
       const labels = [...document.querySelectorAll('button,a,[role=button]')]
-        .filter((element) => element.getClientRects().length > 0)
+        .filter((element) => {
+          const style = getComputedStyle(element);
+          return element.getClientRects().length > 0 && style.visibility === 'visible' && Number(style.opacity) > 0;
+        })
         .map((element) => (element.innerText || element.getAttribute('aria-label') || '').trim())
-        .filter((label) => /cancel|zruš|subscription|předplat|billing|faktur|payment|platb/i.test(label))
-        .slice(0, 12);
-      const text = document.body.innerText.toLowerCase();
+        .filter(Boolean)
+        .slice(0, 20);
+      const text = document.body?.innerText?.toLowerCase() || '';
       return {
         title: document.title,
-        billingContentVisible: /subscription|předplat|billing|faktur|payment|platb/.test(text),
-        cancellationActionVisible: labels.some((label) => /cancel|zruš/i.test(label)),
+        billingContentVisible: /subscription|předplat|billing|faktur|payment|platb|abo/.test(text),
         visibleActions: labels,
       };
-    });
+    }).catch(() => null)));
+    const portalState = summarizePortalFrames(frameStates);
     if (!portalState.billingContentVisible) throw new Error('Stripe Billing Portal opened without recognizable billing content.');
     return {
       target: 'StavbaCore Staging / Stripe TEST',
@@ -158,6 +162,7 @@ async function inspectPortal(env = process.env) {
       visibleActions: portalState.visibleActions,
       cancellationEnabledInDefaultPortalConfiguration: portalCancellation.enabled,
       cancellationMode: portalCancellation.mode,
+      frameCount: portalState.frameCount,
       inspectedAt: new Date().toISOString(),
     };
   } finally {

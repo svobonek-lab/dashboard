@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import test from 'node:test';
 
-import { getPortalCancellationSettings, isPortalDocumentReady, validateStagingStripeLifecycle, validateStagingStripePortalUrl } from '../scripts/staging-stripe-lifecycle-guard.mjs';
+import { getPortalCancellationSettings, isPortalDocumentReady, summarizePortalFrames, validateStagingStripeLifecycle, validateStagingStripePortalUrl } from '../scripts/staging-stripe-lifecycle-guard.mjs';
 
 const validEnv = {
   STAGING_SUPABASE_URL: 'https://xwzweltjvreqhjpbjrxa.supabase.co',
@@ -76,6 +76,19 @@ test('portal cancellation settings report only the enabled flag and configured t
     features: { subscription_cancel: { enabled: false, mode: 'immediately' } },
   }), { enabled: false, mode: 'immediately' });
   assert.deepEqual(getPortalCancellationSettings(null), { enabled: false, mode: null });
+});
+
+test('portal action discovery includes interactive controls inside Stripe frames', () => {
+  assert.deepEqual(summarizePortalFrames([
+    { title: 'VelocityStack sandbox Billing', billingContentVisible: true, visibleActions: [] },
+    { title: '', billingContentVisible: false, visibleActions: ['Cancel subscription'] },
+  ]), {
+    title: 'VelocityStack sandbox Billing',
+    billingContentVisible: true,
+    cancellationActionVisible: true,
+    visibleActions: ['Cancel subscription'],
+    frameCount: 2,
+  });
 });
 
 test('billing portal inspection runs only on the one-shot staging runner and exact branch', () => {

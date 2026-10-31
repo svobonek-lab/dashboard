@@ -21,6 +21,19 @@ export function getPortalCancellationSettings(configuration) {
   };
 }
 
+export function summarizePortalFrames(states) {
+  const frames = Array.isArray(states) ? states.filter(Boolean) : [];
+  const visibleActions = [...new Set(frames.flatMap((frame) =>
+    Array.isArray(frame.visibleActions) ? frame.visibleActions : []))].slice(0, 12);
+  return {
+    title: frames.find((frame) => typeof frame.title === 'string' && frame.title)?.title || '',
+    billingContentVisible: frames.some((frame) => frame.billingContentVisible === true),
+    cancellationActionVisible: visibleActions.some((label) => /cancel|zruš|kündig|annul/i.test(label)),
+    visibleActions,
+    frameCount: frames.length,
+  };
+}
+
 export function validateStagingStripeLifecycle(env) {
   const missing = REQUIRED.filter((key) => !String(env[key] || '').trim());
   if (missing.length) throw new Error(`Missing staging billing lifecycle configuration: ${missing.join(', ')}`);
