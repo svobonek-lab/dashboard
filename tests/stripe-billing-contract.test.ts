@@ -4,6 +4,7 @@ import { readFileSync } from 'node:fs';
 
 const contract = readFileSync(new URL('../supabase/staging/20261015_stripe_billing_contract.sql', import.meta.url), 'utf8');
 const completion = readFileSync(new URL('../supabase/staging/20261016_stripe_billing_completion.sql', import.meta.url), 'utf8');
+const rebind = readFileSync(new URL('../supabase/migrations/20261031160625_allow_canceled_stripe_subscription_rebind.sql', import.meta.url), 'utf8');
 const workflow = readFileSync(new URL('../.github/workflows/verify.yml', import.meta.url), 'utf8');
 
 test('Stripe billing contract is service-only, idempotent and rejects cross-tenant customer binding', () => {
@@ -23,8 +24,17 @@ test('CI executes the disposable Stripe billing database contract', () => {
   assert.match(workflow, /supabase\/tests\/stripe_billing_setup\.sql/);
   assert.match(workflow, /supabase\/staging\/20261015_stripe_billing_contract\.sql/);
   assert.match(workflow, /supabase\/staging\/20261016_stripe_billing_completion\.sql/);
+  assert.match(workflow, /supabase\/migrations\/20261031160625_allow_canceled_stripe_subscription_rebind\.sql/);
   assert.match(workflow, /supabase\/tests\/stripe_billing_verify\.sql/);
   assert.match(workflow, /supabase\/tests\/stripe_billing_concurrency\.sh/);
+});
+
+test('Stripe re-subscription replaces only canceled same-customer plans and ignores late old events', () => {
+  assert.match(rebind, /v_company\.subscription_status = 'canceled'[\s\S]*?p_event_type = 'checkout\.session\.completed'[\s\S]*?p_subscription_status = 'active'[\s\S]*?v_company\.stripe_customer_id = p_stripe_customer_id/);
+  assert.match(rebind, /p_event_created_at < v_company\.stripe_event_created_at[\s\S]*?v_result <> 'stale'/);
+  assert.match(rebind, /revoke all on function public\.app_apply_stripe_subscription_event/i);
+  assert.match(rebind, /to service_role/i);
+  assert.doesNotMatch(rebind, /to (anon|authenticated)/i);
 });
 
 test('billing completion functions are service-only and plan changes cannot activate access', () => {

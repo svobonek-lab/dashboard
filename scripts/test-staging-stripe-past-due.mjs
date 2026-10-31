@@ -89,6 +89,11 @@ async function inspectExistingBillingState(stripe, company) {
     appPlan: company.plan,
     appSubscriptionStatus: company.subscription_status,
     stripeSubscriptionStatus: subscription.status,
+    subscriptionCancellation: {
+      atPeriodEnd: subscription.cancel_at_period_end,
+      cancelAt: subscription.cancel_at ? new Date(subscription.cancel_at * 1000).toISOString() : null,
+      currentPeriodEnd: new Date(Math.max(...subscription.items.data.map((item) => item.current_period_end)) * 1000).toISOString(),
+    },
     testClock: {
       status: clock.status,
       frozenAt: new Date(clock.frozen_time * 1000).toISOString(),
@@ -141,6 +146,13 @@ async function main(env = process.env) {
       throw new Error('Configured tenant is not the expected synthetic company B.');
     }
     company = data;
+    const hasStripeBinding = Boolean(company.stripe_customer_id || company.stripe_subscription_id);
+    const mutateExisting = env.STAGING_STRIPE_PAST_DUE_MUTATE === 'true';
+    if (hasStripeBinding && !mutateExisting) {
+      const inspection = await inspectExistingBillingState(stripe, company);
+      console.log(JSON.stringify(inspection));
+      return;
+    }
     if (company.active !== true || company.plan !== 'pilot' || company.subscription_status !== 'active') {
       throw new Error('Company B must remain on its existing active pilot plan before the screen-only failed-renewal test.');
     }
@@ -157,14 +169,7 @@ async function main(env = process.env) {
       throw new Error('Synthetic owner B is not the sole active owner of company B.');
     }
 
-    const hasStripeBinding = Boolean(company.stripe_customer_id || company.stripe_subscription_id);
-    const mutateExisting = env.STAGING_STRIPE_PAST_DUE_MUTATE === 'true';
     if (hasStripeBinding) {
-      const inspection = await inspectExistingBillingState(stripe, company);
-      if (!mutateExisting) {
-        console.log(JSON.stringify(inspection));
-        return;
-      }
       if (!company.stripe_customer_id || !company.stripe_subscription_id) {
         throw new Error('Company B has a partial Stripe TEST binding; refusing the mutating acceptance run.');
       }
@@ -188,6 +193,7 @@ async function main(env = process.env) {
           customer.metadata?.purpose !== PURPOSE || !customer.test_clock || subscription.livemode ||
           subscription.status !== 'active' || subscription.metadata?.tenant_id !== companyId ||
           subscription.metadata?.purpose !== PURPOSE ||
+          subscription.cancel_at_period_end || subscription.cancel_at !== null ||
           (typeof subscription.customer === 'string' ? subscription.customer : subscription.customer.id) !== customer.id ||
           subscription.test_clock !== customer.test_clock ||
           !subscription.items.data.some((item) => item.price.id === price.id)) {

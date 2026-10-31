@@ -179,7 +179,7 @@ test('past-due target guard accepts the exact staging Supabase URL with a traili
 test('past-due acceptance inspects an existing company B TEST subscription without mutating it', () => {
   const script = readFileSync(new URL('../scripts/test-staging-stripe-past-due.mjs', import.meta.url), 'utf8');
   assert.match(script, /async function inspectExistingBillingState\(stripe, company\)/);
-  assert.match(script, /const hasStripeBinding = Boolean\(company\.stripe_customer_id \|\| company\.stripe_subscription_id\);\s*const mutateExisting = env\.STAGING_STRIPE_PAST_DUE_MUTATE === 'true';\s*if \(hasStripeBinding\) \{\s*const inspection = await inspectExistingBillingState/);
+  assert.match(script, /const hasStripeBinding = Boolean\(company\.stripe_customer_id \|\| company\.stripe_subscription_id\);\s*const mutateExisting = env\.STAGING_STRIPE_PAST_DUE_MUTATE === 'true';\s*if \(hasStripeBinding && !mutateExisting\) \{\s*const inspection = await inspectExistingBillingState/);
   assert.match(script, /readOnlyInspection: true/);
   assert.match(script, /lastPaymentErrorCode: paymentIntent\?\.last_payment_error\?\.code/);
 });
@@ -194,8 +194,9 @@ test('past-due acceptance advances its Test Clock past Stripe renewal invoice fi
 test('past-due mutating mode reuses and validates the existing company B TEST subscription', () => {
   const script = readFileSync(new URL('../scripts/test-staging-stripe-past-due.mjs', import.meta.url), 'utf8');
   assert.match(script, /STAGING_STRIPE_PAST_DUE_MUTATE === 'true'/);
-  assert.match(script, /if \(!mutateExisting\)[\s\S]*?return;/);
+  assert.match(script, /if \(hasStripeBinding && !mutateExisting\)[\s\S]*?return;/);
   assert.match(script, /stripe\.subscriptions\.retrieve\(company\.stripe_subscription_id\)/);
   assert.match(script, /paymentMethods\.data\.find\(\(method\) => method\.card\?\.last4 === '4242'\)/);
+  assert.match(script, /subscription\.cancel_at_period_end \|\| subscription\.cancel_at !== null/);
   assert.match(script, /Mutating past-due acceptance requires the existing company B Stripe TEST fixture/);
 });
