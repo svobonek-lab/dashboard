@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import test from 'node:test';
 
+import { getNeutralCancellationReason, getSubscriptionPeriodEnd, isPeriodEndCancellationScheduled } from '../scripts/cancel-staging-stripe-subscription.mjs';
 import { getPortalCancellationSettings, isPortalContentReady, isPortalDocumentReady, redactPortalText, summarizePortalFrames, validateStagingStripeLifecycle, validateStagingStripePortalUrl } from '../scripts/staging-stripe-lifecycle-guard.mjs';
 
 const validEnv = {
@@ -17,6 +18,25 @@ const validEnv = {
   STRIPE_SECRET_KEY: 'sk_test_synthetic',
   STRIPE_BILLING_MODE: 'test',
 };
+
+test('Stripe billing period end supports current API item fields and rejects mismatched items', () => {
+  assert.equal(getSubscriptionPeriodEnd({ current_period_end: 1796064000, items: { data: [{ current_period_end: 1796064000 }] } }), 1796064000);
+  assert.equal(getSubscriptionPeriodEnd({ items: { data: [{ current_period_end: 1796064000 }] } }), 1796064000);
+  assert.throws(() => getSubscriptionPeriodEnd({ items: { data: [{ current_period_end: 1796064000 }, { current_period_end: 1796140000 }] } }), /do not share/);
+  assert.throws(() => getSubscriptionPeriodEnd({}), /no verifiable current period end/);
+});
+
+test('Stripe cancellation survey uses only the neutral Other reason', () => {
+  assert.deepEqual(getNeutralCancellationReason([{ label: 'Too expensive', value: 'too_expensive' }, { label: 'Other reason', value: 'other' }]), { label: 'Other reason', value: 'other' });
+  assert.equal(getNeutralCancellationReason([{ label: 'Missing features', value: 'missing_features' }]), null);
+});
+
+test('Stripe period-end cancellation recognizes both supported API representations', () => {
+  assert.equal(isPeriodEndCancellationScheduled({ cancel_at_period_end: true, cancel_at: null }, 1796064000), true);
+  assert.equal(isPeriodEndCancellationScheduled({ cancel_at_period_end: false, cancel_at: 1796064000 }, 1796064000), true);
+  assert.equal(isPeriodEndCancellationScheduled({ cancel_at_period_end: false, cancel_at: null }, 1796064000), false);
+  assert.equal(isPeriodEndCancellationScheduled({ cancel_at_period_end: false, cancel_at: 1796000000 }, 1796064000), false);
+});
 
 test('Stripe lifecycle accepts only the exact staging project and Preview in TEST mode', () => {
   assert.deepEqual(validateStagingStripeLifecycle(validEnv), {
@@ -119,4 +139,64 @@ test('billing portal inspection runs only on the one-shot staging runner and exa
   assert.match(job, /self-hosted, linux, x64, staging-e2e/);
   assert.match(job, /node scripts\/inspect-staging-stripe-billing-portal\.mjs/);
   assert.doesNotMatch(job, /SUPABASE_SERVICE_ROLE_KEY/);
+});
+
+test('billing cancellation workflow is restricted to staging and never receives a service-role key', () => {
+  const workflow = readFileSync(new URL('../.github/workflows/staging-e2e.yml', import.meta.url), 'utf8');
+  assert.match(workflow, /- billing-cancel-advance/);
+  assert.match(workflow, /inputs\.runner_mode != 'billing-cancel-advance'/);
+  const job = workflow.match(/staging-stripe-billing-cancel-advance:([\s\S]*?)(?=\n  [a-z][a-z0-9-]+:|\s*$)/)?.[1] || '';
+  assert.match(job, /inputs\.runner_mode == 'billing-cancel-advance'/);
+  assert.match(job, /refs\/heads\/codex\/staging-e2e-local-runner/);
+  assert.match(job, /self-hosted, linux, x64, staging-e2e/);
+  assert.match(job, /node scripts\/cancel-staging-stripe-subscription\.mjs/);
+  assert.doesNotMatch(job, /SUPABASE_SERVICE_ROLE_KEY/);
+});
+
+test('past-due renewal workflow is staging-only, synthetic company B, and verifies the owner gate', () => {
+  const workflow = readFileSync(new URL('../.github/workflows/staging-e2e.yml', import.meta.url), 'utf8');
+  assert.match(workflow, /- billing-past-due/);
+  assert.match(workflow, /inputs\.runner_mode != 'billing-past-due'/);
+  const job = workflow.match(/staging-stripe-billing-past-due:([\s\S]*?)(?=\n  [a-z][a-z0-9-]+:|\s*$)/)?.[1] || '';
+  assert.match(job, /inputs\.runner_mode == 'billing-past-due'/);
+  assert.match(job, /refs\/heads\/codex\/staging-e2e-local-runner/);
+  assert.match(job, /STAGING_COMPANY_B_ID/);
+  assert.match(job, /STAGING_OWNER_B_EMAIL/);
+  assert.match(job, /STAGING_STRIPE_PAST_DUE_MUTATE: ["']true["']/);
+  assert.match(job, /node scripts\/test-staging-stripe-past-due\.mjs/);
+  assert.match(job, /STAGING_SUPABASE_SERVICE_ROLE_KEY/);
+  assert.doesNotMatch(job, /PRODUCTION_SUPABASE_SERVICE_ROLE_KEY/);
+});
+
+test('past-due target guard accepts the exact staging Supabase URL with a trailing slash', () => {
+  const script = readFileSync(new URL('../scripts/test-staging-stripe-past-due.mjs', import.meta.url), 'utf8');
+  assert.match(script, /new URL\(required\(env, 'STAGING_SUPABASE_URL'\)\)/);
+  assert.match(script, /supabaseUrl\.hostname !== `\$\{STAGING_REF\}\.supabase\.co`/);
+  assert.match(script, /supabaseUrl\.pathname !== '\/'/);
+  assert.doesNotMatch(script, /STAGING_SUPABASE_URL !== `https:\/\/\$\{STAGING_REF\}\.supabase\.co`/);
+});
+
+test('past-due acceptance inspects an existing company B TEST subscription without mutating it', () => {
+  const script = readFileSync(new URL('../scripts/test-staging-stripe-past-due.mjs', import.meta.url), 'utf8');
+  assert.match(script, /async function inspectExistingBillingState\(stripe, company\)/);
+  assert.match(script, /const hasStripeBinding = Boolean\(company\.stripe_customer_id \|\| company\.stripe_subscription_id\);\s*const mutateExisting = env\.STAGING_STRIPE_PAST_DUE_MUTATE === 'true';\s*if \(hasStripeBinding && !mutateExisting\) \{\s*const inspection = await inspectExistingBillingState/);
+  assert.match(script, /readOnlyInspection: true/);
+  assert.match(script, /lastPaymentErrorCode: paymentIntent\?\.last_payment_error\?\.code/);
+});
+
+test('past-due acceptance advances its Test Clock past Stripe renewal invoice finalization', () => {
+  const script = readFileSync(new URL('../scripts/test-staging-stripe-past-due.mjs', import.meta.url), 'utf8');
+  assert.match(script, /billing_reason !== 'subscription_cycle'/);
+  assert.match(script, /getInvoiceAttemptTime\(renewalInvoice\)/);
+  assert.match(script, /testClocks\.advance\(clock\.id, \{ frozen_time: invoiceAttemptClockTarget \}\)/);
+});
+
+test('past-due mutating mode reuses and validates the existing company B TEST subscription', () => {
+  const script = readFileSync(new URL('../scripts/test-staging-stripe-past-due.mjs', import.meta.url), 'utf8');
+  assert.match(script, /STAGING_STRIPE_PAST_DUE_MUTATE === 'true'/);
+  assert.match(script, /if \(hasStripeBinding && !mutateExisting\)[\s\S]*?return;/);
+  assert.match(script, /stripe\.subscriptions\.retrieve\(company\.stripe_subscription_id\)/);
+  assert.match(script, /paymentMethods\.data\.find\(\(method\) => method\.card\?\.last4 === '4242'\)/);
+  assert.match(script, /subscription\.cancel_at_period_end \|\| subscription\.cancel_at !== null/);
+  assert.match(script, /Mutating past-due acceptance requires the existing company B Stripe TEST fixture/);
 });

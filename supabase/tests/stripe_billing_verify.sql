@@ -94,6 +94,19 @@ select public.app_apply_stripe_subscription_event(
   'evt_stale_a', 'customer.subscription.updated', '2026-10-15T10:30:00Z',
   null, 'cus_a', 'sub_a', 'active', '2026-12-15T00:00:00Z'
 );
+do $$
+begin
+  begin
+    perform public.app_apply_stripe_subscription_event(
+      'evt_replace_while_past_due', 'checkout.session.completed', '2026-10-15T12:30:00Z',
+      '10000000-0000-4000-8000-000000000001', 'cus_a', 'sub_a_replacement', 'active', null
+    );
+    raise exception 'active tenant unexpectedly replaced its Stripe subscription';
+  exception when unique_violation then
+    null;
+  end;
+end;
+$$;
 reset role;
 
 do $$
@@ -144,12 +157,26 @@ select public.app_apply_stripe_subscription_event(
   'evt_deleted_a', 'customer.subscription.deleted', '2026-10-15T13:00:00Z',
   null, 'cus_a', 'sub_a', 'canceled', '2026-11-15T00:00:00Z'
 );
+select public.app_apply_stripe_subscription_event(
+  'evt_recheckout_a', 'checkout.session.completed', '2026-10-15T14:00:00Z',
+  '10000000-0000-4000-8000-000000000001', 'cus_a', 'sub_a_replacement', 'active', '2026-11-15T00:00:00Z'
+);
+select public.app_apply_stripe_subscription_event(
+  'evt_late_delete_old_a', 'customer.subscription.deleted', '2026-10-15T13:30:00Z',
+  null, 'cus_a', 'sub_a', 'canceled', '2026-11-15T00:00:00Z'
+);
 reset role;
 
 do $$
 begin
-  if (select subscription_status from public.app_companies where id = '10000000-0000-4000-8000-000000000001') <> 'canceled'
-  then raise exception 'deleted subscription is not canceled'; end if;
+  if not exists (
+    select 1 from public.app_companies
+    where id = '10000000-0000-4000-8000-000000000001'
+      and subscription_status = 'active'
+      and stripe_subscription_id = 'sub_a_replacement'
+  ) then raise exception 'newer checkout did not replace the canceled Stripe subscription'; end if;
+  if (select result from public.app_stripe_webhook_events where event_id = 'evt_late_delete_old_a') <> 'stale'
+  then raise exception 'late event for old subscription was not ignored as stale'; end if;
 end;
 $$;
 

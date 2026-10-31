@@ -342,6 +342,7 @@ jobs:
           docker exec -i stripe-billing-postgres psql -v ON_ERROR_STOP=1 -U postgres < supabase/tests/stripe_billing_setup.sql
           docker exec -i stripe-billing-postgres psql -v ON_ERROR_STOP=1 -U postgres < supabase/staging/20261015_stripe_billing_contract.sql
           docker exec -i stripe-billing-postgres psql -v ON_ERROR_STOP=1 -U postgres < supabase/staging/20261016_stripe_billing_completion.sql
+          docker exec -i stripe-billing-postgres psql -v ON_ERROR_STOP=1 -U postgres < supabase/migrations/20261031185027_allow_canceled_stripe_subscription_rebind.sql
           docker exec -i stripe-billing-postgres psql -v ON_ERROR_STOP=1 -U postgres < supabase/tests/stripe_billing_verify.sql
           bash supabase/tests/stripe_billing_concurrency.sh
       - name: Stop disposable PostgreSQL
