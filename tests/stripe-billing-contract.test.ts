@@ -73,6 +73,9 @@ test('pilot price setup accepts only the existing TEST Starter price and never o
   assert.deepEqual(getPilotStripePriceSetup(env, { ...starter, STRIPE_PRICE_PILOT_ID: '***********' }), {
     starterPriceId: 'price_123', pilotPriceId: '***********', shouldAdd: true, shouldReplaceRedacted: true,
   });
+  assert.deepEqual(getPilotStripePriceSetup(env, { ...starter, STRIPE_PRICE_PILOT_ID: '•••••••••••' }), {
+    starterPriceId: 'price_123', pilotPriceId: '•••••••••••', shouldAdd: true, shouldReplaceRedacted: true,
+  });
   assert.deepEqual(getPilotStripePriceSetup(env, { ...starter, STRIPE_PRICE_PILOT_ID: 'price_123' }), {
     starterPriceId: 'price_123', pilotPriceId: 'price_123', shouldAdd: false, shouldReplaceRedacted: false,
   });

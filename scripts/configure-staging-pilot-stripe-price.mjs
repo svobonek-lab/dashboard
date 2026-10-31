@@ -29,7 +29,7 @@ export function getPilotStripePriceSetup(env, config) {
   const starterPriceId = String(config.STRIPE_PRICE_STARTER_ID || '').trim();
   if (!/^price_[A-Za-z0-9]+$/.test(starterPriceId)) throw new Error('The staging Starter TEST price ID is missing or invalid.');
   const pilotPriceId = String(config.STRIPE_PRICE_PILOT_ID || '').trim();
-  const redactedPilotPrice = /^\*{8,}$/.test(pilotPriceId);
+  const redactedPilotPrice = /^(?:\*|•|●){8,}$/.test(pilotPriceId);
   if (pilotPriceId && pilotPriceId !== starterPriceId && !redactedPilotPrice) {
     throw new Error('A different branch-only pilot price already exists; leaving it unchanged.');
   }
