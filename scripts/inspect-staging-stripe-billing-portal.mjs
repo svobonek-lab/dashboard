@@ -3,6 +3,7 @@ import { chromium } from 'playwright';
 import { createClient } from '@supabase/supabase-js';
 
 import {
+  isPortalDocumentReady,
   validateStagingStripeLifecycle,
   validateStagingStripePortalUrl,
 } from './staging-stripe-lifecycle-guard.mjs';
@@ -92,16 +93,26 @@ async function inspectPortal(env = process.env) {
     const pageErrors = [];
     page.on('pageerror', (error) => pageErrors.push(error.name || 'PageError'));
     const browserResponse = await page.goto(portalUrl, { waitUntil: 'domcontentloaded', timeout: 60000 });
-    try {
-      await page.locator('body').waitFor({ state: 'visible', timeout: 30000 });
-    } catch {
-      const diagnostics = await page.evaluate(() => {
+    const readinessHandle = await page.waitForFunction(() => {
+      const body = document.body;
+      const style = body ? getComputedStyle(body) : null;
+      const state = {
+        readyState: document.readyState,
+        bodyTextLength: body?.innerText?.trim().length ?? 0,
+        bodyDisplay: style?.display ?? null,
+        bodyVisibility: style?.visibility ?? null,
+        bodyOpacity: style?.opacity ?? null,
+      };
+      return state.readyState === 'complete' && state.bodyTextLength > 0 &&
+        state.bodyDisplay !== 'none' && state.bodyVisibility === 'visible' && Number(state.bodyOpacity) > 0
+        ? state
+        : false;
+    }, null, { timeout: 30000 }).catch(() => null);
+    const readiness = readinessHandle ? await readinessHandle.jsonValue() : await page.evaluate(() => {
         const body = document.body;
         const style = body ? getComputedStyle(body) : null;
         return {
           readyState: document.readyState,
-          titlePresent: Boolean(document.title),
-          bodyPresent: Boolean(body),
           bodyTextLength: body?.innerText?.length ?? 0,
           bodyDisplay: style?.display ?? null,
           bodyVisibility: style?.visibility ?? null,
@@ -109,7 +120,8 @@ async function inspectPortal(env = process.env) {
           bodyClass: body?.className ?? null,
         };
       });
-      throw new Error(`Stripe portal document did not become visible (HTTP ${browserResponse?.status() ?? 'unknown'}; page errors: ${pageErrors.join(',') || 'none'}; diagnostics: ${JSON.stringify(diagnostics)}).`);
+    if (!isPortalDocumentReady(readiness)) {
+      throw new Error(`Stripe portal document did not become visible (HTTP ${browserResponse?.status() ?? 'unknown'}; page errors: ${pageErrors.join(',') || 'none'}; diagnostics: ${JSON.stringify(readiness)}).`);
     }
     const portalState = await page.evaluate(() => {
       const labels = [...document.querySelectorAll('button,a,[role=button]')]

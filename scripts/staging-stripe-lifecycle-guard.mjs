@@ -8,6 +8,11 @@ const REQUIRED = [
 export const APPROVED_STAGING_REF = 'xwzweltjvreqhjpbjrxa';
 export const APPROVED_STAGING_PREVIEW_ORIGIN = 'https://dashboard-git-codex-staging-e2e-79cdb9-svobonek-6462s-projects.vercel.app';
 
+export function isPortalDocumentReady(state) {
+  return state?.readyState === 'complete' && Number(state.bodyTextLength) > 0 &&
+    state.bodyDisplay !== 'none' && state.bodyVisibility === 'visible' && Number(state.bodyOpacity) > 0;
+}
+
 export function validateStagingStripeLifecycle(env) {
   const missing = REQUIRED.filter((key) => !String(env[key] || '').trim());
   if (missing.length) throw new Error(`Missing staging billing lifecycle configuration: ${missing.join(', ')}`);

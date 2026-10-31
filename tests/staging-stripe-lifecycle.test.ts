@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import test from 'node:test';
 
-import { validateStagingStripeLifecycle, validateStagingStripePortalUrl } from '../scripts/staging-stripe-lifecycle-guard.mjs';
+import { isPortalDocumentReady, validateStagingStripeLifecycle, validateStagingStripePortalUrl } from '../scripts/staging-stripe-lifecycle-guard.mjs';
 
 const validEnv = {
   STAGING_SUPABASE_URL: 'https://xwzweltjvreqhjpbjrxa.supabase.co',
@@ -42,6 +42,30 @@ test('Stripe lifecycle accepts only the hosted Stripe billing portal URL', () =>
   assert.equal(validateStagingStripePortalUrl('https://billing.stripe.com/p/session_test'), 'https://billing.stripe.com/p/session_test');
   assert.throws(() => validateStagingStripePortalUrl('https://billing.stripe.com.attacker.example/p/session_test'), /hosted billing portal/);
   assert.throws(() => validateStagingStripePortalUrl('http://billing.stripe.com/p/session_test'), /hosted billing portal/);
+});
+
+test('portal document readiness uses loaded visible content, not body locator geometry', () => {
+  assert.equal(isPortalDocumentReady({
+    readyState: 'complete',
+    bodyTextLength: 563,
+    bodyDisplay: 'block',
+    bodyVisibility: 'visible',
+    bodyOpacity: '1',
+  }), true);
+  assert.equal(isPortalDocumentReady({
+    readyState: 'complete',
+    bodyTextLength: 0,
+    bodyDisplay: 'block',
+    bodyVisibility: 'visible',
+    bodyOpacity: '1',
+  }), false);
+  assert.equal(isPortalDocumentReady({
+    readyState: 'complete',
+    bodyTextLength: 563,
+    bodyDisplay: 'none',
+    bodyVisibility: 'visible',
+    bodyOpacity: '1',
+  }), false);
 });
 
 test('billing portal inspection runs only on the one-shot staging runner and exact branch', () => {
