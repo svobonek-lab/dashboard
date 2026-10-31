@@ -26,6 +26,10 @@ export function getSubscriptionPeriodEnd(subscription) {
   return periodEnd;
 }
 
+export function getNeutralCancellationReason(options) {
+  return (Array.isArray(options) ? options : []).find((option) => /^other(?:\b|$)/i.test(String(option?.label || option))) || null;
+}
+
 function required(env, key) {
   const value = String(env[key] || '').trim();
   if (!value) throw new Error(`Missing required configuration: ${key}`);
@@ -154,16 +158,32 @@ async function cancelAndAdvance(env = process.env) {
       if (!updated.cancel_at_period_end) {
         const continueButton = page.getByRole('button', { name: /^continue to cancellation$/i });
         if (await continueButton.count() && await continueButton.last().isVisible()) {
-          const chooseReason = page.getByText('Choose an option', { exact: true }).last();
-          if (await chooseReason.count() && await chooseReason.isVisible()) {
-            await chooseReason.click({ timeout: 5000 });
-            const otherOption = page.getByRole('option', { name: /^other$/i }).last();
-            if (await otherOption.count() && await otherOption.isVisible()) {
-              await otherOption.click({ timeout: 5000 });
+          const selects = page.locator('select');
+          if (await selects.count()) {
+            const select = selects.last();
+            const options = await select.locator('option').evaluateAll((elements) => elements.map((element) => ({
+              label: element.textContent?.trim() || '',
+              value: element.value,
+            })));
+            const neutral = getNeutralCancellationReason(options);
+            if (!neutral) throw new Error('Stripe TEST cancellation asks for a reason but has no neutral “Other” choice.');
+            await select.selectOption(neutral.value, { timeout: 5000 });
+          } else {
+            const chooseReason = page.getByText('Choose an option', { exact: true }).last();
+            if (await chooseReason.count() && await chooseReason.isVisible()) await chooseReason.click({ timeout: 5000 });
+            const options = page.getByRole('option', { name: /^other(?:\b|$)/i });
+            if (await options.count() && await options.last().isVisible()) {
+              await options.last().click({ timeout: 5000 });
             } else {
-              const otherText = page.getByText('Other', { exact: true }).last();
+              const otherText = page.getByText(/^Other(?:\b|$)/i).last();
               if (!(await otherText.count()) || !(await otherText.isVisible())) {
-                throw new Error('Stripe TEST cancellation asks for a reason but does not offer the neutral “Other” option.');
+                const diagnostic = await page.evaluate(() => ({
+                  selects: [...document.querySelectorAll('select')].map((select) => [...select.options].map((o) => o.textContent?.trim() || '')),
+                  controls: [...document.querySelectorAll('[role=option],button,[role=button],label')]
+                    .filter((e) => { const s = getComputedStyle(e); return e.getClientRects().length > 0 && s.visibility === 'visible' && Number(s.opacity) > 0; })
+                    .map((e) => (e.innerText || e.getAttribute('aria-label') || '').trim()).filter(Boolean).slice(0, 25),
+                }));
+                throw new Error(`Stripe TEST cancellation reason choices require inspection before submit: ${JSON.stringify(diagnostic)}.`);
               }
               await otherText.click({ timeout: 5000 });
             }
