@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import test from 'node:test';
 
-import { isPortalDocumentReady, validateStagingStripeLifecycle, validateStagingStripePortalUrl } from '../scripts/staging-stripe-lifecycle-guard.mjs';
+import { getPortalCancellationSettings, isPortalDocumentReady, validateStagingStripeLifecycle, validateStagingStripePortalUrl } from '../scripts/staging-stripe-lifecycle-guard.mjs';
 
 const validEnv = {
   STAGING_SUPABASE_URL: 'https://xwzweltjvreqhjpbjrxa.supabase.co',
@@ -66,6 +66,16 @@ test('portal document readiness uses loaded visible content, not body locator ge
     bodyVisibility: 'visible',
     bodyOpacity: '1',
   }), false);
+});
+
+test('portal cancellation settings report only the enabled flag and configured timing', () => {
+  assert.deepEqual(getPortalCancellationSettings({
+    features: { subscription_cancel: { enabled: true, mode: 'at_period_end' } },
+  }), { enabled: true, mode: 'at_period_end' });
+  assert.deepEqual(getPortalCancellationSettings({
+    features: { subscription_cancel: { enabled: false, mode: 'immediately' } },
+  }), { enabled: false, mode: 'immediately' });
+  assert.deepEqual(getPortalCancellationSettings(null), { enabled: false, mode: null });
 });
 
 test('billing portal inspection runs only on the one-shot staging runner and exact branch', () => {

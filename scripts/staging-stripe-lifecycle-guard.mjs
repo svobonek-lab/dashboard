@@ -13,6 +13,14 @@ export function isPortalDocumentReady(state) {
     state.bodyDisplay !== 'none' && state.bodyVisibility === 'visible' && Number(state.bodyOpacity) > 0;
 }
 
+export function getPortalCancellationSettings(configuration) {
+  const feature = configuration?.features?.subscription_cancel;
+  return {
+    enabled: feature?.enabled === true,
+    mode: typeof feature?.mode === 'string' ? feature.mode : null,
+  };
+}
+
 export function validateStagingStripeLifecycle(env) {
   const missing = REQUIRED.filter((key) => !String(env[key] || '').trim());
   if (missing.length) throw new Error(`Missing staging billing lifecycle configuration: ${missing.join(', ')}`);

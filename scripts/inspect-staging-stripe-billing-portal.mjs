@@ -3,6 +3,7 @@ import { chromium } from 'playwright';
 import { createClient } from '@supabase/supabase-js';
 
 import {
+  getPortalCancellationSettings,
   isPortalDocumentReady,
   validateStagingStripeLifecycle,
   validateStagingStripePortalUrl,
@@ -72,6 +73,12 @@ async function inspectPortal(env = process.env) {
         subscription.cancel_at_period_end) {
       throw new Error('Bound Stripe customer or subscription failed the TEST lifecycle checks.');
     }
+    const portalConfigurations = await stripe.billingPortal.configurations.list({
+      limit: 100,
+      active: true,
+      is_default: true,
+    });
+    const portalCancellation = getPortalCancellationSettings(portalConfigurations.data[0]);
 
     const portalResponse = await fetch(`${target.previewOrigin}/api/stripe-portal`, {
       method: 'POST',
@@ -149,6 +156,8 @@ async function inspectPortal(env = process.env) {
       portalTitle: portalState.title,
       cancellationActionVisible: portalState.cancellationActionVisible,
       visibleActions: portalState.visibleActions,
+      cancellationEnabledInDefaultPortalConfiguration: portalCancellation.enabled,
+      cancellationMode: portalCancellation.mode,
       inspectedAt: new Date().toISOString(),
     };
   } finally {
