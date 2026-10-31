@@ -1,6 +1,7 @@
 import Stripe from 'stripe';
 import { chromium } from 'playwright';
 import { createClient } from '@supabase/supabase-js';
+import { getInvoiceAttemptTime } from './stripe-renewal-clock.mjs';
 
 const STAGING_REF = 'xwzweltjvreqhjpbjrxa';
 const PREVIEW_ORIGIN = 'https://dashboard-git-codex-staging-e2e-79cdb9-svobonek-6462s-projects.vercel.app';
@@ -232,7 +233,24 @@ async function main(env = process.env) {
       throw new Error('Company B billing period is outside the safe one-month Test Clock window.');
     }
     await stripe.testHelpers.testClocks.advance(clock.id, { frozen_time: periodEnd + 60 });
-    const readyClock = await waitForClock(stripe, clock.id);
+    let readyClock = await waitForClock(stripe, clock.id);
+    subscription = await stripe.subscriptions.retrieve(subscription.id);
+    const renewalInvoiceId = typeof subscription.latest_invoice === 'string'
+      ? subscription.latest_invoice
+      : subscription.latest_invoice?.id;
+    const renewalInvoice = renewalInvoiceId
+      ? await stripe.invoices.retrieve(renewalInvoiceId)
+      : null;
+    if (!renewalInvoice || renewalInvoice.billing_reason !== 'subscription_cycle') {
+      throw new Error('Stripe TEST did not create the expected company B renewal invoice after advancing its Test Clock.');
+    }
+    const invoiceAttemptAt = getInvoiceAttemptTime(renewalInvoice);
+    if (!invoiceAttemptAt) throw new Error('Stripe TEST renewal invoice has no valid automatic finalization time.');
+    const invoiceAttemptClockTarget = Math.max(invoiceAttemptAt + 60, readyClock.frozen_time + 60);
+    if (invoiceAttemptClockTarget > readyClock.frozen_time) {
+      await stripe.testHelpers.testClocks.advance(clock.id, { frozen_time: invoiceAttemptClockTarget });
+      readyClock = await waitForClock(stripe, clock.id);
+    }
 
     const pastDueDeadline = Date.now() + 180_000;
     let failedRenewal;

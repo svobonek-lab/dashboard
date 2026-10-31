@@ -182,3 +182,10 @@ test('past-due acceptance inspects an existing company B TEST subscription witho
   assert.match(script, /readOnlyInspection: true/);
   assert.match(script, /lastPaymentErrorCode: paymentIntent\?\.last_payment_error\?\.code/);
 });
+
+test('past-due acceptance advances its Test Clock past Stripe renewal invoice finalization', () => {
+  const script = readFileSync(new URL('../scripts/test-staging-stripe-past-due.mjs', import.meta.url), 'utf8');
+  assert.match(script, /billing_reason !== 'subscription_cycle'/);
+  assert.match(script, /getInvoiceAttemptTime\(renewalInvoice\)/);
+  assert.match(script, /testClocks\.advance\(clock\.id, \{ frozen_time: invoiceAttemptClockTarget \}\)/);
+});
