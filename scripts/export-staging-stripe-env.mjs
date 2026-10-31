@@ -38,7 +38,12 @@ export function buildStagingStripeEnvLines(env) {
   }
   const pilotPriceId = String(env.STRIPE_PRICE_PILOT_ID || '').trim();
   if (pilotPriceId && !/^price_[A-Za-z0-9]+$/.test(pilotPriceId)) {
-    throw new Error('Refusing to export: Pilot Stripe TEST price ID is invalid.');
+    const shape = {
+      length: pilotPriceId.length,
+      startsWithPricePrefix: pilotPriceId.startsWith('price_'),
+      hasControlCharacters: /[\r\n\t]/.test(pilotPriceId),
+    };
+    throw new Error(`Refusing to export: Pilot Stripe TEST price ID is invalid (${JSON.stringify(shape)}).`);
   }
   const preview = new URL(env.STAGING_PREVIEW_URL);
   const production = new URL(env.PRODUCTION_BASE_URL);
