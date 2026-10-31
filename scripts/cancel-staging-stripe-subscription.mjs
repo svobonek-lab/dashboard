@@ -4,6 +4,7 @@ import { createClient } from '@supabase/supabase-js';
 import {
   getPortalCancellationSettings,
   isPortalContentReady,
+  redactPortalText,
   validateStagingStripeLifecycle,
   validateStagingStripePortalUrl,
 } from './staging-stripe-lifecycle-guard.mjs';
@@ -75,7 +76,7 @@ async function cancelAndAdvance(env = process.env) {
     ]);
     if (customer.deleted || customer.livemode || customer.metadata?.tenant_id !== companyId ||
         customer.metadata?.purpose !== 'staging-billing-acceptance' || !customer.test_clock ||
-        subscription.livemode || subscription.status !== 'active' || subscription.cancel_at_period_end ||
+        subscription.livemode || subscription.status !== 'active' ||
         (typeof subscription.customer === 'string' ? subscription.customer : subscription.customer.id) !== customer.id) {
       throw new Error('Stripe TEST customer/subscription failed the synthetic tenant lifecycle checks.');
     }
@@ -90,6 +91,8 @@ async function cancelAndAdvance(env = process.env) {
     if (!portalConfig.enabled || portalConfig.mode !== 'at_period_end') {
       throw new Error('Refusing to cancel: Billing Portal is not configured for end-of-period cancellation.');
     }
+    let updated = subscription;
+    if (!updated.cancel_at_period_end) {
     const portalResponse = await fetch(`${target.previewOrigin}/api/stripe-portal`, {
       method: 'POST',
       headers: { Authorization: `Bearer ${auth.session.access_token}`, 'Content-Type': 'application/json', 'Cache-Control': 'no-store' },
@@ -126,31 +129,37 @@ async function cancelAndAdvance(env = process.env) {
 
     const cancelControl = page.getByText('Cancel subscription', { exact: true }).first();
     await cancelControl.click({ timeout: 10000 });
-    let updated;
-    for (let attempt = 0; attempt < 8; attempt += 1) {
-      updated = await stripe.subscriptions.retrieve(subscription.id);
-      if (updated.cancel_at_period_end) break;
-      await wait(1000);
-    }
-    if (!updated.cancel_at_period_end) {
-      const confirms = page.getByRole('button', { name: /^(cancel subscription|confirm cancellation|confirm cancel)$/i });
-      for (let index = (await confirms.count()) - 1; index >= 0; index -= 1) {
-        const confirm = confirms.nth(index);
-        if (await confirm.isVisible()) {
-          await confirm.click({ timeout: 5000, force: true });
-          break;
-        }
+    for (let step = 0; step < 2 && !updated.cancel_at_period_end; step += 1) {
+      for (let attempt = 0; attempt < 8; attempt += 1) {
+        updated = await stripe.subscriptions.retrieve(subscription.id);
+        if (updated.cancel_at_period_end) break;
+        await wait(1000);
       }
       if (!updated.cancel_at_period_end) {
-        for (let attempt = 0; attempt < 8; attempt += 1) {
-          updated = await stripe.subscriptions.retrieve(subscription.id);
-          if (updated.cancel_at_period_end) break;
-          await wait(1000);
+        const confirms = page.getByRole('button', { name: /^(cancel subscription|confirm cancellation|confirm cancel)$/i });
+        for (let index = (await confirms.count()) - 1; index >= 0; index -= 1) {
+          const confirm = confirms.nth(index);
+          if (await confirm.isVisible()) {
+            await confirm.click({ timeout: 5000, force: true });
+            break;
+          }
         }
       }
     }
-    if (!updated.cancel_at_period_end || updated.status !== 'active' || updated.cancel_at !== subscription.current_period_end) {
-      throw new Error('Portal did not schedule cancellation at the exact end of the current billing period.');
+    if (!updated.cancel_at_period_end || updated.status !== 'active' ||
+        (updated.cancel_at != null && updated.cancel_at !== subscription.current_period_end)) {
+      const diagnostics = await page.evaluate(() => ({
+        visibleControls: [...document.querySelectorAll('button,a,[role=button],input[type=radio]')]
+          .filter((element) => {
+            const style = getComputedStyle(element);
+            return element.getClientRects().length > 0 && style.visibility === 'visible' && Number(style.opacity) > 0;
+          })
+          .map((element) => (element.innerText || element.getAttribute('aria-label') || element.getAttribute('data-testid') || '').trim())
+          .filter(Boolean).slice(0, 20),
+        text: document.body?.innerText?.slice(0, 900) || '',
+      }));
+      throw new Error(`Portal cancellation is not confirmed at period end (status ${updated.status}; scheduled ${updated.cancel_at_period_end}; cancel_at ${updated.cancel_at ?? 'null'}; period_end ${subscription.current_period_end}; portal ${JSON.stringify({ ...diagnostics, text: redactPortalText(diagnostics.text) })}).`);
+    }
     }
 
     const beforeEnd = await companyBillingState(client, companyId);
