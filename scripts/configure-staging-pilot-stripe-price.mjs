@@ -29,12 +29,12 @@ export function getPilotStripePriceSetup(env, config) {
   const starterPriceId = String(config.STRIPE_PRICE_STARTER_ID || '').trim();
   if (!/^price_[A-Za-z0-9]+$/.test(starterPriceId)) throw new Error('The staging Starter TEST price ID is missing or invalid.');
   const pilotPriceId = String(config.STRIPE_PRICE_PILOT_ID || '').trim();
-  const redactedPilotPrice = /^(?:\*|•|●|·|×|x|X){8,}$/.test(pilotPriceId);
+  const redactedPilotPrice = pilotPriceId.length >= 8 && new Set([...pilotPriceId]).size === 1 && !pilotPriceId.startsWith('price_');
   if (pilotPriceId && pilotPriceId !== starterPriceId && !redactedPilotPrice) {
     const shape = {
       length: pilotPriceId.length,
       startsWithPricePrefix: pilotPriceId.startsWith('price_'),
-      allMaskCharacters: /^(?:\*|•|●|·|×|x|X)+$/.test(pilotPriceId),
+      allMaskCharacters: redactedPilotPrice,
       hasOnlyAsciiLettersDigitsOrUnderscore: /^[A-Za-z0-9_]+$/.test(pilotPriceId),
     };
     throw new Error(`A different branch-only pilot price exists; leaving it unchanged (${JSON.stringify(shape)}).`);
