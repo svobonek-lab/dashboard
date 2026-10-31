@@ -89,8 +89,28 @@ async function inspectPortal(env = process.env) {
 
     browser = await chromium.launch({ headless: true });
     const page = await browser.newPage({ viewport: { width: 1280, height: 900 } });
-    await page.goto(portalUrl, { waitUntil: 'domcontentloaded', timeout: 60000 });
-    await page.locator('body').waitFor({ state: 'visible', timeout: 30000 });
+    const pageErrors = [];
+    page.on('pageerror', (error) => pageErrors.push(error.name || 'PageError'));
+    const portalResponse = await page.goto(portalUrl, { waitUntil: 'domcontentloaded', timeout: 60000 });
+    try {
+      await page.locator('body').waitFor({ state: 'visible', timeout: 30000 });
+    } catch {
+      const diagnostics = await page.evaluate(() => {
+        const body = document.body;
+        const style = body ? getComputedStyle(body) : null;
+        return {
+          readyState: document.readyState,
+          titlePresent: Boolean(document.title),
+          bodyPresent: Boolean(body),
+          bodyTextLength: body?.innerText?.length ?? 0,
+          bodyDisplay: style?.display ?? null,
+          bodyVisibility: style?.visibility ?? null,
+          bodyOpacity: style?.opacity ?? null,
+          bodyClass: body?.className ?? null,
+        };
+      });
+      throw new Error(`Stripe portal document did not become visible (HTTP ${portalResponse?.status() ?? 'unknown'}; page errors: ${pageErrors.join(',') || 'none'}; diagnostics: ${JSON.stringify(diagnostics)}).`);
+    }
     const portalState = await page.evaluate(() => {
       const labels = [...document.querySelectorAll('button,a,[role=button]')]
         .filter((element) => element.getClientRects().length > 0)
