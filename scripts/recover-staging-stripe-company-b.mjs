@@ -175,7 +175,17 @@ async function main(env = process.env) {
         .replace(/\b\d{6,}\b/g, '[number]')
         .replace(/\s+/g, ' ')
         .slice(0, 900);
-      throw new Error(`Stripe TEST Checkout did not show card entry or the synthetic test card (title=${pageTitle.slice(0, 100)}; page=${safePageText}).`);
+      const frameDiagnostics = await Promise.all(page.frames().map(async (frame) => ({
+        host: new URL(frame.url() || '/', 'https://invalid.local').hostname,
+        inputs: await frame.locator('input').evaluateAll((inputs) => inputs.slice(0, 8).map((input) => ({
+          name: input.getAttribute('name'),
+          type: input.getAttribute('type'),
+          autocomplete: input.getAttribute('autocomplete'),
+          placeholder: input.getAttribute('placeholder'),
+          ariaLabel: input.getAttribute('aria-label'),
+        }))).catch(() => []),
+      })));
+      throw new Error(`Stripe TEST Checkout did not show card entry or the synthetic test card (title=${pageTitle.slice(0, 100)}; page=${safePageText}; frames=${JSON.stringify(frameDiagnostics).slice(0, 1200)}).`);
     }
     const submit = page.locator('button[type="submit"]:visible').last();
     if (!await submit.count()) throw new Error('Stripe TEST Checkout submit button was not available.');
