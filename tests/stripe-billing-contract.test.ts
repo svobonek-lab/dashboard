@@ -53,6 +53,8 @@ test('local recovery permits only the fixed loopback checkout origin and keeps v
   assert.match(stagingWorkflow, /- billing-recover-b-local/);
   assert.match(stagingWorkflow, /inputs\.runner_mode == 'billing-recover-b-local'/);
   assert.match(stagingWorkflow, /npx --yes vercel@65\.8\.0 dev --listen 127\.0\.0\.1:4173/);
+  assert.match(stagingWorkflow, /rm -f \.vercel\/\.env\.preview\.local/);
+  assert.match(stagingWorkflow, /writeFileSync\("\.vercel\/\.env\.development\.local"/);
   assert.match(stagingWorkflow, /STAGING_SUPABASE_PROJECT_REF.{0,20}xwzweltjvreqhjpbjrxa/);
 });
 

@@ -815,6 +815,7 @@ jobs:
           STAGING_DEV_LOG: ${{ runner.temp }}/stavbaflow-staging-vercel-dev.log
         run: |
           set +x
+          rm -f .vercel/.env.preview.local
           export SUPABASE_URL="$STAGING_SUPABASE_URL"
           export VITE_SUPABASE_URL="$STAGING_SUPABASE_URL"
           export SUPABASE_ANON_KEY="$STAGING_SUPABASE_PUBLISHABLE_KEY"
@@ -825,9 +826,10 @@ jobs:
             echo 'Refusing local recovery without the exact staging project and Stripe TEST mode.' >&2
             exit 1
           fi
+          node -e 'const fs=require("node:fs"); const e=process.env; const keys=["SUPABASE_URL","VITE_SUPABASE_URL","SUPABASE_ANON_KEY","VITE_SUPABASE_ANON_KEY","SUPABASE_SERVICE_ROLE_KEY","STRIPE_SECRET_KEY","STRIPE_BILLING_MODE","STRIPE_PRICE_PILOT_ID","STRIPE_PRICE_STARTER_ID","BILLING_RETURN_URL"]; if(e.SUPABASE_URL!==e.STAGING_SUPABASE_URL || new URL(e.SUPABASE_URL).hostname!=="xwzweltjvreqhjpbjrxa.supabase.co") process.exit(1); if(keys.some(k=>!e[k])) process.exit(1); fs.writeFileSync(".vercel/.env.development.local",keys.map(k=>`${k}=${JSON.stringify(e[k])}`).join("\n")+"\n",{mode:0o600});'
           npx --yes vercel@65.8.0 dev --listen 127.0.0.1:4173 --yes --token="$VERCEL_TOKEN" > "$STAGING_DEV_LOG" 2>&1 &
           dev_pid=$!
-          cleanup() { kill "$dev_pid" 2>/dev/null || true; wait "$dev_pid" 2>/dev/null || true; rm -f "$STAGING_DEV_LOG" "$RUNNER_TEMP/staging-stripe-preview.env" .vercel/.env.preview.local; }
+          cleanup() { kill "$dev_pid" 2>/dev/null || true; wait "$dev_pid" 2>/dev/null || true; rm -f "$STAGING_DEV_LOG" "$RUNNER_TEMP/staging-stripe-preview.env" .vercel/.env.preview.local .vercel/.env.development.local; }
           trap cleanup EXIT
           ready=0
           for _ in $(seq 1 60); do
