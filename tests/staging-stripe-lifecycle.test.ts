@@ -174,3 +174,11 @@ test('past-due target guard accepts the exact staging Supabase URL with a traili
   assert.match(script, /supabaseUrl\.pathname !== '\/'/);
   assert.doesNotMatch(script, /STAGING_SUPABASE_URL !== `https:\/\/\$\{STAGING_REF\}\.supabase\.co`/);
 });
+
+test('past-due acceptance inspects an existing company B TEST subscription without mutating it', () => {
+  const script = readFileSync(new URL('../scripts/test-staging-stripe-past-due.mjs', import.meta.url), 'utf8');
+  assert.match(script, /async function inspectExistingBillingState\(stripe, company\)/);
+  assert.match(script, /if \(company\.stripe_customer_id \|\| company\.stripe_subscription_id\) \{\s*const inspection = await inspectExistingBillingState/);
+  assert.match(script, /readOnlyInspection: true/);
+  assert.match(script, /lastPaymentErrorCode: paymentIntent\?\.last_payment_error\?\.code/);
+});

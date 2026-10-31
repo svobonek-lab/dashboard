@@ -49,6 +49,65 @@ function assertTarget(env) {
   return { projectRef: STAGING_REF, previewOrigin: PREVIEW_ORIGIN };
 }
 
+async function inspectExistingBillingState(stripe, company) {
+  if (!company.stripe_customer_id || !company.stripe_subscription_id) {
+    throw new Error('Company B has a partial Stripe binding; refusing any write while the state is incomplete.');
+  }
+  const [customer, subscription] = await Promise.all([
+    stripe.customers.retrieve(company.stripe_customer_id),
+    stripe.subscriptions.retrieve(company.stripe_subscription_id),
+  ]);
+  if (customer.deleted || customer.livemode || customer.metadata?.tenant_id !== company.id ||
+      customer.metadata?.purpose !== PURPOSE || !customer.test_clock || subscription.livemode ||
+      subscription.metadata?.tenant_id !== company.id || subscription.metadata?.purpose !== PURPOSE ||
+      (typeof subscription.customer === 'string' ? subscription.customer : subscription.customer.id) !== customer.id ||
+      subscription.test_clock !== customer.test_clock) {
+    throw new Error('Existing company B Stripe billing objects do not match the isolated TEST acceptance fixture.');
+  }
+  const clock = await stripe.testHelpers.testClocks.retrieve(customer.test_clock);
+  const invoiceId = typeof subscription.latest_invoice === 'string'
+    ? subscription.latest_invoice
+    : subscription.latest_invoice?.id;
+  const invoice = invoiceId
+    ? await stripe.invoices.retrieve(invoiceId, { expand: ['payment_intent'] })
+    : null;
+  const paymentIntent = invoice?.payment_intent && typeof invoice.payment_intent !== 'string'
+    ? invoice.payment_intent
+    : null;
+  const defaultMethodId = typeof subscription.default_payment_method === 'string'
+    ? subscription.default_payment_method
+    : subscription.default_payment_method?.id || null;
+  const defaultMethod = defaultMethodId ? await stripe.paymentMethods.retrieve(defaultMethodId) : null;
+  const customerMethodId = typeof customer.invoice_settings.default_payment_method === 'string'
+    ? customer.invoice_settings.default_payment_method
+    : customer.invoice_settings.default_payment_method?.id || null;
+  return {
+    target: 'StavbaCore Staging / Stripe TEST',
+    companySlug: COMPANY_SLUG,
+    readOnlyInspection: true,
+    appPlan: company.plan,
+    appSubscriptionStatus: company.subscription_status,
+    stripeSubscriptionStatus: subscription.status,
+    testClock: {
+      status: clock.status,
+      frozenAt: new Date(clock.frozen_time * 1000).toISOString(),
+    },
+    paymentMethod: {
+      subscriptionMatchesCustomerDefault: defaultMethodId !== null && defaultMethodId === customerMethodId,
+      last4: defaultMethod?.type === 'card' ? defaultMethod.card?.last4 || null : null,
+    },
+    latestInvoice: invoice ? {
+      status: invoice.status,
+      paid: invoice.paid,
+      attempted: invoice.attempted,
+      amountDue: invoice.amount_due,
+      paymentIntentStatus: paymentIntent?.status || null,
+      lastPaymentErrorCode: paymentIntent?.last_payment_error?.code || null,
+    } : null,
+    inspectedAt: new Date().toISOString(),
+  };
+}
+
 async function waitForClock(stripe, clockId) {
   const deadline = Date.now() + 180_000;
   while (Date.now() < deadline) {
@@ -84,10 +143,6 @@ async function main(env = process.env) {
     if (company.active !== true || company.plan !== 'pilot' || company.subscription_status !== 'active') {
       throw new Error('Company B must remain on its existing active pilot plan before the screen-only failed-renewal test.');
     }
-    if (company.stripe_customer_id || company.stripe_subscription_id) {
-      throw new Error('Company B already has Stripe billing state; refusing to replace or reuse another billing scenario.');
-    }
-
     const { data: owner, error: authError } = await auth.auth.signInWithPassword({
       email: OWNER_EMAIL,
       password: required(env, 'STAGING_OWNER_B_PASSWORD'),
@@ -99,6 +154,12 @@ async function main(env = process.env) {
       .select('company_id,role,active').eq('user_id', owner.user.id).eq('active', true);
     if (membershipError || memberships?.length !== 1 || memberships[0].company_id !== companyId || memberships[0].role !== 'owner') {
       throw new Error('Synthetic owner B is not the sole active owner of company B.');
+    }
+
+    if (company.stripe_customer_id || company.stripe_subscription_id) {
+      const inspection = await inspectExistingBillingState(stripe, company);
+      console.log(JSON.stringify(inspection));
+      return;
     }
 
     const price = await stripe.prices.retrieve(required(env, 'STRIPE_PRICE_STARTER_ID'));

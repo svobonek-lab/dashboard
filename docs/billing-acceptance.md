@@ -34,12 +34,12 @@ Use UTC timestamps and record only safe Stripe test event/session IDs. Never wri
 | Open Billing Portal and inspect cancellation settings | 2026-10-31 13:03 | Passed, read-only | Staging workflow run `41203553802` verified the active synthetic owner A session, active TEST Starter subscription, visible “Cancel subscription” action, and default `at_period_end` configuration. No portal action was clicked. |
 | Cancel through Billing Portal | 2026-10-31 14:55 | Passed | Portal displayed “Cancels Nov 30” and “Your service will end on November 30, 2026”; Stripe TEST subscription `cancel_at` matched the item period end. No immediate cancellation. |
 | Advance Test Clock to period end and verify access removal | 2026-10-31 15:00 | Passed | Run [`41212431355`](https://github.com/svobonek-lab/dashboard/actions/runs/41212431355): owner/company A was `active` before period end; after clock reached period end, Stripe subscription and staging `app_companies.subscription_status` were both `canceled`. |
-| Verify the `past_due` screen after a failed renewal | NOT RUN | Blocked | No test-clock renewal |
+| Verify the `past_due` screen after a failed renewal | 2026-10-31 15:37 UTC | **Not passed** | Run [`41215131293`](https://github.com/svobonek-lab/dashboard/actions/runs/41215131293) created a TEST customer and subscription for synthetic company B and advanced its Test Clock, but Stripe and the app still reported `active`; the owner screen was not asserted. The guard did not fabricate `past_due`. Company B remains active on its existing `pilot` app plan with a TEST Starter-price subscription bound; do not treat this as verified plan mapping or a failed-renewal acceptance. |
 
 ## Remaining manual sequence
 
 1. The hosted TEST purchase and signed `checkout.session.completed` event are recorded above. Never reuse or share the one-day Checkout handoff.
 2. The hosted TEST cancellation and period-end access removal are complete in run `41212431355`.
-3. To verify `past_due`, use a separate synthetic company/customer on a Test Clock, attach Stripe’s documented recurring-payment decline test method before renewal, advance the clock, and verify the webhook state and owner screen. Do not turn Company A’s paid-cancellation scenario into a failed-renewal scenario.
+3. The separate `past_due` attempt is not accepted: Stripe and staging stayed `active`, and the Playwright owner screen did not run. Diagnose the Stripe TEST invoice/default-payment-method behavior before retrying; use the already bound synthetic company B TEST customer rather than creating a second billing fixture. Company B's app plan remains `pilot`, so this run does not validate Starter plan mapping.
 
 Do not use a direct database update to fabricate webhook state. Never use production Stripe, production Supabase, real payment information, or real customer data for this acceptance.
