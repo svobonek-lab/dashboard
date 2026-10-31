@@ -21,12 +21,20 @@ export function getPortalCancellationSettings(configuration) {
   };
 }
 
+export function redactPortalText(value) {
+  return String(value || '')
+    .replace(/[\w.%+-]+@[\w.-]+\.[A-Za-z]{2,}/g, '[email]')
+    .replace(/\b(?:cus|sub|cs|in|evt|bpc|clock|pm|pi)_[A-Za-z0-9_-]+\b/g, '[stripe-id]')
+    .replace(/\+?\d[\d ()-]{7,}\d/g, '[phone]');
+}
+
 export function summarizePortalFrames(states) {
   const frames = Array.isArray(states) ? states.filter(Boolean) : [];
   const visibleActions = [...new Set(frames.flatMap((frame) =>
     Array.isArray(frame.visibleActions) ? frame.visibleActions : []))].slice(0, 12);
   return {
     title: frames.find((frame) => typeof frame.title === 'string' && frame.title)?.title || '',
+    bodyTextPreview: redactPortalText(frames[0]?.bodyText || '').slice(0, 300),
     billingContentVisible: frames.some((frame) => frame.billingContentVisible === true),
     cancellationActionVisible: visibleActions.some((label) => /cancel|zruš|kündig|annul/i.test(label)),
     visibleActions,

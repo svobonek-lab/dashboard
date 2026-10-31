@@ -141,8 +141,10 @@ async function inspectPortal(env = process.env) {
         .filter(Boolean)
         .slice(0, 20);
       const text = document.body?.innerText?.toLowerCase() || '';
+      const bodyText = document.body?.innerText || '';
       return {
         title: document.title,
+        bodyText,
         bodyTextLength: text.length,
         hasSubscriptionWords: /subscription|předplat|abo/.test(text),
         saysNoSubscription: /no (active )?subscriptions?|no subscription/i.test(text),

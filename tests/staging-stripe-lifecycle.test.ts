@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import test from 'node:test';
 
-import { getPortalCancellationSettings, isPortalDocumentReady, summarizePortalFrames, validateStagingStripeLifecycle, validateStagingStripePortalUrl } from '../scripts/staging-stripe-lifecycle-guard.mjs';
+import { getPortalCancellationSettings, isPortalDocumentReady, redactPortalText, summarizePortalFrames, validateStagingStripeLifecycle, validateStagingStripePortalUrl } from '../scripts/staging-stripe-lifecycle-guard.mjs';
 
 const validEnv = {
   STAGING_SUPABASE_URL: 'https://xwzweltjvreqhjpbjrxa.supabase.co',
@@ -80,10 +80,11 @@ test('portal cancellation settings report only the enabled flag and configured t
 
 test('portal action discovery includes interactive controls inside Stripe frames', () => {
   assert.deepEqual(summarizePortalFrames([
-    { host: 'billing.stripe.com', title: 'VelocityStack sandbox Billing', bodyTextLength: 80, hasSubscriptionWords: true, saysNoSubscription: false, billingContentVisible: true, visibleControlCount: 0, visibleActions: [] },
+    { host: 'billing.stripe.com', title: 'VelocityStack sandbox Billing', bodyText: 'Nothing visible for owner-a@stavbaflow.example.test.', bodyTextLength: 80, hasSubscriptionWords: true, saysNoSubscription: false, billingContentVisible: true, visibleControlCount: 0, visibleActions: [] },
     { host: 'billing.stripe.com', title: '', bodyTextLength: 24, hasSubscriptionWords: false, saysNoSubscription: false, billingContentVisible: false, visibleControlCount: 1, visibleActions: ['Cancel subscription'] },
   ]), {
     title: 'VelocityStack sandbox Billing',
+    bodyTextPreview: 'Nothing visible for [email].',
     billingContentVisible: true,
     cancellationActionVisible: true,
     visibleActions: ['Cancel subscription'],
@@ -93,6 +94,13 @@ test('portal action discovery includes interactive controls inside Stripe frames
       { host: 'billing.stripe.com', bodyTextLength: 24, hasSubscriptionWords: false, saysNoSubscription: false, visibleControlCount: 1 },
     ],
   });
+});
+
+test('portal text diagnostics redact identity and Stripe identifiers', () => {
+  assert.equal(
+    redactPortalText('No subscription for owner-a@stavbaflow.example.test (cus_test123), phone +420 777 123 456.'),
+    'No subscription for [email] ([stripe-id]), phone [phone].',
+  );
 });
 
 test('billing portal inspection runs only on the one-shot staging runner and exact branch', () => {
