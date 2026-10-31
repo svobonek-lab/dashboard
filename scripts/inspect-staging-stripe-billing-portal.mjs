@@ -167,6 +167,7 @@ async function inspectPortal(env = process.env) {
       subscription: 'active TEST Starter; cancellation not requested',
       portalDomain: new URL(portalUrl).hostname,
       portalTitle: portalState.title,
+      portalTextPreview: portalState.bodyTextPreview,
       cancellationActionVisible: portalState.cancellationActionVisible,
       visibleActions: portalState.visibleActions,
       cancellationEnabledInDefaultPortalConfiguration: portalCancellation.enabled,
