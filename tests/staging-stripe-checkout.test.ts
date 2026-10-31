@@ -151,6 +151,7 @@ test('Vercel Stripe export accepts only TEST prices and the exact staging Previe
   assert.match(lines, /STRIPE_BILLING_MODE=test/);
   assert.match(lines, /STRIPE_PRICE_STARTER_ID=price_unitonly/);
   assert.match(lines, /STRIPE_PRICE_PILOT_ID=price_pilotunitonly/);
+  assert.match(buildStagingStripeEnvLines({ ...env, STRIPE_PRICE_PILOT_ID: ' price_pilotunitonly ' }), /STRIPE_PRICE_PILOT_ID=price_pilotunitonly/);
   assert.doesNotMatch(lines, /SUPABASE_SERVICE_ROLE_KEY|OWNER_A_PASSWORD/);
   assert.throws(() => buildStagingStripeEnvLines({ ...env, STRIPE_SECRET_KEY: 'sk_live_never' }), /TEST mode/i);
   assert.throws(() => buildStagingStripeEnvLines({ ...env, BILLING_RETURN_URL: baseEnv.PRODUCTION_BASE_URL }), /staging Preview/i);

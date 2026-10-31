@@ -36,7 +36,8 @@ export function buildStagingStripeEnvLines(env) {
   if (!/^price_[A-Za-z0-9]+$/.test(env.STRIPE_PRICE_STARTER_ID)) {
     throw new Error('Refusing to export: Starter Stripe TEST price ID is invalid.');
   }
-  if (env.STRIPE_PRICE_PILOT_ID && !/^price_[A-Za-z0-9]+$/.test(env.STRIPE_PRICE_PILOT_ID)) {
+  const pilotPriceId = String(env.STRIPE_PRICE_PILOT_ID || '').trim();
+  if (pilotPriceId && !/^price_[A-Za-z0-9]+$/.test(pilotPriceId)) {
     throw new Error('Refusing to export: Pilot Stripe TEST price ID is invalid.');
   }
   const preview = new URL(env.STAGING_PREVIEW_URL);
@@ -51,7 +52,7 @@ export function buildStagingStripeEnvLines(env) {
     ...STRIPE_VARIABLES,
     ...OPTIONAL_STRIPE_VARIABLES.filter((name) => String(env[name] || '').trim()),
   ];
-  return variablesToExport.map((name) => `${name}=${env[name]}`).join('\n') + '\n';
+  return variablesToExport.map((name) => `${name}=${name === 'STRIPE_PRICE_PILOT_ID' ? pilotPriceId : env[name]}`).join('\n') + '\n';
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1])).href) {
