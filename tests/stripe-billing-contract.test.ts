@@ -57,7 +57,7 @@ test('staging workflow has a guarded branch-only pilot TEST price setup', () => 
   assert.match(pilotPriceSetupScript, /codex\/staging-e2e-local-runner/);
 });
 
-test('pilot price setup accepts only the existing TEST Starter price and never overwrites a different mapping', () => {
+test('pilot price setup sets only the approved TEST Starter price on the exact branch', () => {
   const env = {
     GITHUB_REPOSITORY: 'svobonek-lab/dashboard',
     GITHUB_REF: 'refs/heads/codex/staging-e2e-local-runner',
@@ -68,25 +68,27 @@ test('pilot price setup accepts only the existing TEST Starter price and never o
   };
   const starter = { STRIPE_BILLING_MODE: 'test', STRIPE_PRICE_STARTER_ID: 'price_123' };
   assert.deepEqual(getPilotStripePriceSetup(env, starter), {
-    starterPriceId: 'price_123', pilotPriceId: '', shouldAdd: true, shouldReplaceRedacted: false,
+    starterPriceId: 'price_123', pilotPriceId: '', shouldAdd: true, shouldReplaceExisting: false,
   });
   assert.deepEqual(getPilotStripePriceSetup(env, { ...starter, STRIPE_PRICE_PILOT_ID: '***********' }), {
-    starterPriceId: 'price_123', pilotPriceId: '***********', shouldAdd: true, shouldReplaceRedacted: true,
+    starterPriceId: 'price_123', pilotPriceId: '***********', shouldAdd: true, shouldReplaceExisting: true,
   });
   assert.deepEqual(getPilotStripePriceSetup(env, { ...starter, STRIPE_PRICE_PILOT_ID: '•••••••••••' }), {
-    starterPriceId: 'price_123', pilotPriceId: '•••••••••••', shouldAdd: true, shouldReplaceRedacted: true,
+    starterPriceId: 'price_123', pilotPriceId: '•••••••••••', shouldAdd: true, shouldReplaceExisting: true,
   });
   assert.deepEqual(getPilotStripePriceSetup(env, { ...starter, STRIPE_PRICE_PILOT_ID: 'xxxxxxxxxxx' }), {
-    starterPriceId: 'price_123', pilotPriceId: 'xxxxxxxxxxx', shouldAdd: true, shouldReplaceRedacted: true,
+    starterPriceId: 'price_123', pilotPriceId: 'xxxxxxxxxxx', shouldAdd: true, shouldReplaceExisting: true,
   });
   assert.deepEqual(getPilotStripePriceSetup(env, { ...starter, STRIPE_PRICE_PILOT_ID: '???????????' }), {
-    starterPriceId: 'price_123', pilotPriceId: '???????????', shouldAdd: true, shouldReplaceRedacted: true,
+    starterPriceId: 'price_123', pilotPriceId: '???????????', shouldAdd: true, shouldReplaceExisting: true,
   });
   assert.deepEqual(getPilotStripePriceSetup(env, { ...starter, STRIPE_PRICE_PILOT_ID: 'price_123' }), {
-    starterPriceId: 'price_123', pilotPriceId: 'price_123', shouldAdd: false, shouldReplaceRedacted: false,
+    starterPriceId: 'price_123', pilotPriceId: 'price_123', shouldAdd: false, shouldReplaceExisting: false,
   });
   assert.throws(() => getPilotStripePriceSetup({ ...env, GITHUB_REF: 'refs/heads/main' }, starter), /approved staging repository branch/);
-  assert.throws(() => getPilotStripePriceSetup(env, { ...starter, STRIPE_PRICE_PILOT_ID: 'price_other' }), /different branch-only pilot price/);
+  assert.deepEqual(getPilotStripePriceSetup(env, { ...starter, STRIPE_PRICE_PILOT_ID: 'price_other' }), {
+    starterPriceId: 'price_123', pilotPriceId: 'price_other', shouldAdd: true, shouldReplaceExisting: true,
+  });
   assert.throws(() => getPilotStripePriceSetup({ ...env, STAGING_STRIPE_SECRET_KEY: 'sk_live_forbidden' }, starter), /Stripe TEST mode/);
 });
 

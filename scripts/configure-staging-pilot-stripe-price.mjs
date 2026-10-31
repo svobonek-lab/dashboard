@@ -29,17 +29,8 @@ export function getPilotStripePriceSetup(env, config) {
   const starterPriceId = String(config.STRIPE_PRICE_STARTER_ID || '').trim();
   if (!/^price_[A-Za-z0-9]+$/.test(starterPriceId)) throw new Error('The staging Starter TEST price ID is missing or invalid.');
   const pilotPriceId = String(config.STRIPE_PRICE_PILOT_ID || '').trim();
-  const redactedPilotPrice = pilotPriceId.length >= 8 && new Set([...pilotPriceId]).size === 1 && !pilotPriceId.startsWith('price_');
-  if (pilotPriceId && pilotPriceId !== starterPriceId && !redactedPilotPrice) {
-    const shape = {
-      length: pilotPriceId.length,
-      startsWithPricePrefix: pilotPriceId.startsWith('price_'),
-      allMaskCharacters: redactedPilotPrice,
-      hasOnlyAsciiLettersDigitsOrUnderscore: /^[A-Za-z0-9_]+$/.test(pilotPriceId),
-    };
-    throw new Error(`A different branch-only pilot price exists; leaving it unchanged (${JSON.stringify(shape)}).`);
-  }
-  return { starterPriceId, pilotPriceId, shouldAdd: !pilotPriceId || redactedPilotPrice, shouldReplaceRedacted: redactedPilotPrice };
+  const shouldReplaceExisting = Boolean(pilotPriceId) && pilotPriceId !== starterPriceId;
+  return { starterPriceId, pilotPriceId, shouldAdd: !pilotPriceId || shouldReplaceExisting, shouldReplaceExisting };
 }
 
 async function main(env = process.env) {
@@ -50,13 +41,13 @@ async function main(env = process.env) {
     return;
   }
 
-  if (setup.shouldReplaceRedacted) {
+  if (setup.shouldReplaceExisting) {
     const removal = spawnSync('npx', [
       '--yes', 'vercel@65.8.0', 'env', 'rm', 'STRIPE_PRICE_PILOT_ID', 'preview',
       'codex/staging-e2e-local-runner', '--token', required(env, 'VERCEL_TOKEN'), '--yes',
     ], { cwd: process.cwd(), env, encoding: 'utf8', windowsHide: true });
     if (removal.error || removal.status !== 0) {
-      throw new Error('Could not remove the unreadable branch-only pilot price; staging configuration needs review.');
+      throw new Error('Could not remove the previous branch-only pilot price; staging configuration needs review.');
     }
   }
 
