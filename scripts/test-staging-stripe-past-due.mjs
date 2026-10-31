@@ -177,10 +177,11 @@ async function main(env = process.env) {
       throw new Error('Mutating past-due acceptance requires the existing company B Stripe TEST fixture.');
     }
 
-    const price = await stripe.prices.retrieve(required(env, 'STRIPE_PRICE_STARTER_ID'));
-    if (price.livemode || !price.active || price.type !== 'recurring' || price.recurring?.interval !== 'month') {
+    const starterPrice = await stripe.prices.retrieve(required(env, 'STRIPE_PRICE_STARTER_ID'));
+    if (starterPrice.livemode || !starterPrice.active || starterPrice.type !== 'recurring' || starterPrice.recurring?.interval !== 'month') {
       throw new Error('Starter price is not an active monthly Stripe TEST price.');
     }
+    let price = starterPrice;
     let clock;
     let customer;
     let goodPaymentMethod;
@@ -189,6 +190,9 @@ async function main(env = process.env) {
         stripe.customers.retrieve(company.stripe_customer_id),
         stripe.subscriptions.retrieve(company.stripe_subscription_id),
       ]);
+      const existingPriceId = subscription.items.data.length === 1 ? subscription.items.data[0].price.id : '';
+      if (!existingPriceId) throw new Error('Company B renewal acceptance expects exactly one recurring price item.');
+      price = await stripe.prices.retrieve(existingPriceId);
       if (customer.deleted || customer.livemode || customer.metadata?.tenant_id !== companyId ||
           customer.metadata?.purpose !== PURPOSE || !customer.test_clock || subscription.livemode ||
           subscription.status !== 'active' || subscription.metadata?.tenant_id !== companyId ||
@@ -196,8 +200,9 @@ async function main(env = process.env) {
           subscription.cancel_at_period_end || subscription.cancel_at !== null ||
           (typeof subscription.customer === 'string' ? subscription.customer : subscription.customer.id) !== customer.id ||
           subscription.test_clock !== customer.test_clock ||
-          !subscription.items.data.some((item) => item.price.id === price.id)) {
-        throw new Error('Existing company B billing objects are not the expected active monthly Starter TEST fixture.');
+          price.livemode || !price.active || price.type !== 'recurring' || price.recurring?.interval !== 'month' ||
+          subscription.items.data[0].price.id !== price.id) {
+        throw new Error('Existing company B billing objects are not the expected active monthly Stripe TEST fixture.');
       }
       clock = await stripe.testHelpers.testClocks.retrieve(customer.test_clock);
       if (clock.livemode || clock.status !== 'ready') throw new Error('Company B TEST clock is not ready for the mutating acceptance run.');
@@ -356,7 +361,7 @@ async function main(env = process.env) {
       target: 'StavbaCore Staging / Stripe TEST',
       companySlug: COMPANY_SLUG,
       appPlan: company.plan,
-      stripePriceRole: 'monthly Starter TEST price used only to produce a renewal event; company B plan is not changed',
+      stripePriceRole: `monthly TEST price attached to the existing company B ${company.plan} plan`,
       stripeSubscriptionStatus: subscription.status,
       appSubscriptionStatus: stagingCompany.subscription_status,
       ownerScreen: 'Předplatné vypršelo; Přejít k platbě visible',
