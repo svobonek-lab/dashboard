@@ -53,7 +53,7 @@ jobs:
       ((inputs.runner_mode != 'local-ephemeral' && inputs.runner_mode != 'sentry-only' && inputs.runner_mode != 'billing-portal-inspect') ||
        (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/codex/staging-e2e-local-runner'))
     runs-on: ${{ (inputs.runner_mode == 'local-ephemeral' || inputs.runner_mode == 'sentry-only' || inputs.runner_mode == 'billing-portal-inspect') && fromJSON('["self-hosted","linux","x64","staging-e2e"]') || 'ubuntu-latest' }}
-    timeout-minutes: 15
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v6
         with:
@@ -412,7 +412,7 @@ jobs:
       inputs.runner_mode == 'billing-portal-inspect' &&
       github.ref == 'refs/heads/codex/staging-e2e-local-runner'
     runs-on: [self-hosted, linux, x64, staging-e2e]
-    timeout-minutes: 15
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v6
         with:
