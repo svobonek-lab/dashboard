@@ -5,7 +5,7 @@ container="${1:-stripe-billing-postgres}"
 output_dir="$(mktemp -d)"
 trap 'rm -rf "$output_dir"' EXIT
 
-apply_event="select public.app_apply_stripe_subscription_event('evt_parallel_a','customer.subscription.updated','2026-10-15T14:00:00Z',null,'cus_a','sub_a','past_due','2026-11-15T00:00:00Z')"
+apply_event="select public.app_apply_stripe_subscription_event('evt_parallel_a','customer.subscription.updated','2026-10-15T14:00:00Z',null,'cus_a','sub_a_replacement','past_due','2026-11-15T00:00:00Z')"
 printf 'begin;\nset role service_role;\n%s;\nselect pg_sleep(6);\ncommit;\n' "$apply_event" > "$output_dir/first.sql"
 printf 'set role service_role;\n%s;\n' "$apply_event" > "$output_dir/second.sql"
 
