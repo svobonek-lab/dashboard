@@ -40,7 +40,15 @@ Nastavte pouze jako serverové proměnné:
 
 Žádná z těchto hodnot nesmí mít prefix `VITE_` ani být dostupná browseru. Testovací režim odmítne live key a live režim odmítne testovací key. Webhook používá vlastní endpoint signing secret; Checkout klíč ho nenahrazuje.
 
-Nové registrace přijímají pouze tarify `starter`, `growth` a `pro`; volbu i odpovídající cenu ověřuje server. Nasazení nového registračního kontraktu vyžaduje samostatnou revizi a ruční aplikaci navržené staging migrace `20261101131053_three_tier_monthly_plans.sql`. Migration se neaplikuje automaticky a produkční konfigurace zůstává mimo tento postup.
+Nové registrace přijímají pouze tarify `starter`, `growth` a `pro`; volbu i odpovídající cenu ověřuje server. Nasazení nového registračního kontraktu vyžaduje samostatnou revizi a ruční aplikaci SQL pouze na StavbaCore Staging.
+
+Read-only metadata StavbaCore Staging z 2026-11-01 ukázala, že Stripe webhook tabulka a RPC existují, ale tabulky `app_company_legal_acceptances`, `app_workspace_defaults`, `app_paid_registration_intents` a registrační RPC ještě ne. Současný `app_companies_plan_check` povoluje `pilot`, `starter` a historický `business`; historická hodnota `business` musí zůstat validní. Tříúrovňové SQL proto nikdy neaplikujte samostatně. Po samostatné revizi aplikujte v tomto pořadí:
+
+1. `supabase/staging/20261024_paid_tenant_provisioning.sql` — připraví chybějící registrační kontrakt.
+2. `supabase/staging/20261101131053_three_tier_monthly_plans.sql` — povolí výběr `starter`, `growth` a `pro` a odmítne nový recurring Pilot.
+3. `supabase/staging/20261101140813_three_tier_company_plan_check.sql` — doplní `growth` a `pro` do firemního plan checku a zachová historický `business`.
+
+Toto pořadí je ověřeno na disposable PostgreSQL s přísným stagingovým firemním plan checkem. Změny nebyly nasazeny na staging ani produkci. Produkční konfigurace zůstává mimo tento postup.
 
 ## Stripe Workbench
 
