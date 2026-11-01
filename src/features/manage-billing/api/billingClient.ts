@@ -17,9 +17,12 @@ export async function startSubscriptionCheckout(): Promise<void> {
   });
   const payload = await response.json().catch(() => ({}));
   if (!response.ok || typeof payload?.url !== 'string') {
-    throw new Error(payload?.code === 'BILLING_NOT_CONFIGURED'
+    const message = payload?.code === 'BILLING_NOT_CONFIGURED'
       ? 'Platba zatím není nakonfigurovaná. Kontaktujte podporu StavbaFlow.'
-      : 'Platební stránku se nepodařilo otevřít. Zkuste to znovu.');
+      : payload?.code === 'BILLING_PLAN_UNAVAILABLE'
+        ? 'Tento tarif zatím nelze zaplatit. Požádejte správce firmy o nastavení dostupného tarifu.'
+        : 'Platební stránku se nepodařilo otevřít. Zkuste to znovu.';
+    throw new Error(message);
   }
   const target = new URL(payload.url);
   if (target.protocol !== 'https:' || target.hostname !== 'checkout.stripe.com') {

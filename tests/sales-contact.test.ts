@@ -39,7 +39,9 @@ test('landing offers the scoped founding pilot and never fakes a booking', () =>
   assert.doesNotMatch(landing, /Terén zapisuje materiál a hodiny/);
   assert.doesNotMatch(landing, /Cena tarifu Growth/);
   assert.match(landing, /Formulář → poptávka → přiřazení → stav → historie/);
-  assert.match(landing, /Vstupní cena 30denního pilotu/);
+  assert.match(landing, /Tarif Start za 3 měsíce/);
+  assert.match(landing, /1 990 Kč/);
+  assert.doesNotMatch(landing, /7\s*900 Kč/);
   assert.doesNotMatch(landing, /ověřeného 30denního pilotu/i);
   assert.match(landing, /Přímé SQL\/ERP propojení[^<]*nejsou součástí prvního pilotu/);
   assert.match(landing, /Veřejná kontaktní adresa/);

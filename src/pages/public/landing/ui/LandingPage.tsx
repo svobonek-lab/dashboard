@@ -85,8 +85,8 @@ export const LandingPage: React.FC = () => {
   const wonPerQuarter = Math.round((calculatedQuotes * 3) * (winRate / 100));
   const additionalWonQuarter = Math.max(1, Math.round(wonPerQuarter * 0.2)); // +20% conversion or at least 1 lead
   const additionalMarginQuarter = additionalWonQuarter * avgMargin;
-  const foundingPilotCost = 7900;
-  const roiMultiplier = (additionalMarginQuarter / foundingPilotCost).toFixed(1);
+  const starterQuarterCost = 1990 * 3;
+  const roiMultiplier = (additionalMarginQuarter / starterQuarterCost).toFixed(1);
   const adminHoursSavedQuarter = Math.round(adminHoursWeekly * 12 * 0.6); // 60% time saved on paperwork
 
   const handleBookingSubmit = async (e: React.FormEvent) => {
@@ -500,8 +500,8 @@ export const LandingPage: React.FC = () => {
                   <strong className="text-white">{adminHoursSavedQuarter} hodin / kvartál</strong>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-slate-400">Vstupní cena 30denního pilotu:</span>
-                  <strong className="text-slate-300">{foundingPilotCost.toLocaleString('cs-CZ')} Kč (bez DPH)</strong>
+                  <span className="text-slate-400">Tarif Start za 3 měsíce:</span>
+                  <strong className="text-slate-300">{starterQuarterCost.toLocaleString('cs-CZ')} Kč (bez DPH)</strong>
                 </div>
                 <div className="flex justify-between pt-2 border-t border-slate-800 text-emerald-400 font-bold">
                   <span>Návratnost investice (ROI):</span>
@@ -524,133 +524,72 @@ export const LandingPage: React.FC = () => {
         </div>
       </section>
 
-      {/* 6. Pricing & Founding Pilot (Audit Pages 13-14) */}
-      <section id="cenik" className="py-16 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
-        <div className="text-center space-y-2 max-w-2xl mx-auto">
-          <span className="text-xs font-black uppercase tracking-wider text-blue-600">
-            Férový transparentní model
-          </span>
-          <h2 className="text-2xl sm:text-3xl font-black text-slate-900">
-            Začněte Founding Pilotem bez rizika
-          </h2>
-          <p className="text-xs sm:text-sm text-slate-500">
-            Žádné dlouhé smlouvy předem. První měsíc osobně ověříme přínos ve vaší firmě. Všechny ceny jsou uvedeny bez DPH.
+      {/* 6. Monthly plans */}
+      <section id="cenik" className="py-20 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="grid gap-10 lg:grid-cols-[0.8fr_2fr] lg:items-end">
+          <div>
+            <p className="text-sm font-bold text-blue-700">Tarify StavbaFlow</p>
+            <h2 className="mt-3 text-3xl sm:text-4xl font-black tracking-tight text-slate-950">Tarif podle velikosti vašeho týmu.</h2>
+          </div>
+          <p className="max-w-2xl text-sm leading-6 text-slate-600 lg:justify-self-end">
+            Měsíční ceny jsou bez DPH. Vyberte kapacitu podle počtu zaměstnanců.
           </p>
         </div>
 
-        {/* Founding Pilot Highlight Card */}
-        <div className="max-w-3xl mx-auto bg-gradient-to-r from-blue-900 to-indigo-950 text-white p-6 sm:p-8 rounded-3xl shadow-xl border border-blue-800/80 space-y-5">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            <div>
-              <span className="px-3 py-1 rounded-full text-[10px] font-black bg-blue-500 text-white uppercase tracking-wider">
-                Doporučený první krok
-              </span>
-              <h3 className="text-xl font-black text-white mt-1">Founding Pilot na 30 dní</h3>
-            </div>
-            <div className="text-right sm:text-right">
-              <div className="text-2xl sm:text-3xl font-black font-mono text-white">7 900 Kč</div>
-              <span className="text-[11px] text-blue-300">jednorázově za 30 dní (bez DPH)</span>
-            </div>
-          </div>
+        <div className="mt-10 grid gap-4 lg:grid-cols-3">
+          <article className="flex min-h-[340px] flex-col border-t-4 border-slate-300 bg-white p-6 shadow-sm">
+            <h3 className="text-xl font-extrabold text-slate-950">Start</h3>
+            <p className="mt-1 text-sm text-slate-600">Pro menší tým</p>
+            <p className="mt-7 text-4xl font-black tracking-tight text-slate-950">1 990 Kč</p>
+            <p className="mt-1 text-sm text-slate-500">měsíčně bez DPH</p>
+            <p className="mt-6 border-t border-slate-200 pt-4 text-sm font-semibold text-slate-800">Až 5 zaměstnanců</p>
+            <a href="/register-paid?plan=starter" className="mt-auto inline-flex min-h-12 items-center justify-center bg-slate-950 px-5 py-3 text-sm font-bold text-white hover:bg-slate-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-700">
+              Pokračovat s tarifem Start
+            </a>
+          </article>
 
-          <p className="text-xs text-blue-100 leading-relaxed">
-            Plánovaný rozsah scénáře: osobní založení firmy, přihlášení majitele, pozvání zaměstnanců, webový formulář a kontrolovaný CSV import kontaktů a poptávek.
-          </p>
+          <article className="flex min-h-[340px] flex-col border-t-4 border-blue-600 bg-blue-50/60 p-6 shadow-sm">
+            <h3 className="text-xl font-extrabold text-slate-950">Růst</h3>
+            <p className="mt-1 text-sm text-slate-600">Pro rostoucí firmu</p>
+            <p className="mt-7 text-4xl font-black tracking-tight text-slate-950">2 990 Kč</p>
+            <p className="mt-1 text-sm text-slate-500">měsíčně bez DPH</p>
+            <p className="mt-6 border-t border-blue-200 pt-4 text-sm font-semibold text-slate-800">Až 15 zaměstnanců</p>
+            <a href="/register-paid?plan=growth" className="mt-auto inline-flex min-h-12 items-center justify-center bg-blue-700 px-5 py-3 text-sm font-bold text-white hover:bg-blue-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-700">
+              Pokračovat s tarifem Růst
+            </a>
+          </article>
 
-          <div className="p-3 bg-white/10 rounded-xl text-xs text-blue-200 border border-white/15">
-            <strong>Scénář pilotu:</strong> společně ověřit příjem poptávek, přiřazení, změnu stavu a oddělení firem před vložením zákaznických dat.
-          </div>
-
-          <button
-            onClick={() => setIsBookingOpen(true)}
-            className="w-full sm:w-auto px-6 py-3 bg-[#0A84FF] hover:bg-blue-600 text-white rounded-xl text-xs font-black shadow-md transition-all flex items-center justify-center gap-2"
-          >
-            <span>Rezervovat termín zahájení pilotu</span>
-            <ArrowRight className="w-4 h-4" />
-          </button>
+          <article className="flex min-h-[340px] flex-col border-t-4 border-slate-900 bg-slate-950 p-6 text-white">
+            <h3 className="text-xl font-extrabold">Profi</h3>
+            <p className="mt-1 text-sm text-slate-300">Pro větší provoz</p>
+            <p className="mt-7 text-4xl font-black tracking-tight">4 990 Kč</p>
+            <p className="mt-1 text-sm text-slate-300">měsíčně bez DPH</p>
+            <p className="mt-6 border-t border-slate-700 pt-4 text-sm font-semibold">Neomezený počet zaměstnanců</p>
+            <p className="mt-5 text-sm leading-6 text-slate-300">Databázový konektor: připravujeme, únor 2027.</p>
+            <p className="mt-auto pt-6 text-sm font-semibold text-slate-300">Profi zatím nelze objednat.</p>
+          </article>
         </div>
 
-        {/* 3 Standard Plans */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-4">
-          
-          {/* Start Plan */}
-          <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs space-y-4 flex flex-col justify-between">
-            <div className="space-y-3">
-              <h4 className="text-base font-black text-slate-900">Scénář pilotu</h4>
-              <p className="text-xs text-slate-500">Plánované funkce; živou přejímku dokončete před zákaznickými daty.</p>
-              <div className="text-2xl font-black text-slate-900 font-mono">
-                Rozsah pilotu
-              </div>
-              <ul className="space-y-2 text-xs text-slate-700 pt-2 border-t border-slate-100">
-                <li className="flex items-center gap-2">K ověření: přihlášení majitele a zaměstnance</li>
-                <li className="flex items-center gap-2">K ověření: webový formulář a Kanban poptávek</li>
-                <li className="flex items-center gap-2">K ověření: přiřazení a povolené změny stavu</li>
-                <li className="flex items-center gap-2">K ověření: CSV import a auditní historie</li>
-              </ul>
-            </div>
-            <button
-              onClick={() => setIsBookingOpen(true)}
-              className="w-full py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-xl text-xs font-bold transition-colors"
-            >
-              Domluvit pilot
-            </button>
-          </div>
-
-          {/* Acceptance checklist */}
-          <div className="bg-white p-6 rounded-2xl border-2 border-blue-500 shadow-md space-y-4 flex flex-col justify-between relative">
-            <span className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-0.5 rounded-full text-[10px] font-black bg-blue-600 text-white uppercase tracking-wider">
-              Osobní onboarding
-            </span>
-            <div className="space-y-3">
-              <h4 className="text-base font-black text-slate-900">Společně ověříme</h4>
-              <p className="text-xs text-slate-500">Každá pilotní firma projde přejímkou před vložením ostrých dat.</p>
-              <div className="text-2xl font-black text-[#0A84FF] font-mono">
-                30 dní
-              </div>
-              <ul className="space-y-2 text-xs text-slate-700 pt-2 border-t border-slate-100">
-                <li className="flex items-center gap-2">Ověřit: přijetí a aktivaci pozvánky</li>
-                <li className="flex items-center gap-2">Ověřit: zaměstnanec vidí jen přidělenou práci</li>
-                <li className="flex items-center gap-2">Ověřit: opakované odeslání formuláře</li>
-                <li className="flex items-center gap-2">Ověřit: opakovaný import bez duplicit</li>
-                <li className="flex items-center gap-2">Ověřit: oddělení dat dvou firem</li>
-              </ul>
-            </div>
-            <button
-              onClick={() => setIsBookingOpen(true)}
-              className="w-full py-2.5 bg-[#0A84FF] hover:bg-blue-600 text-white rounded-xl text-xs font-black shadow-xs transition-all"
-            >
-              Projít připravenost
-            </button>
-          </div>
-
-          {/* Custom Plan */}
-          <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs space-y-4 flex flex-col justify-between">
-            <div className="space-y-3">
-              <h4 className="text-base font-black text-slate-900">Mimo první pilot</h4>
-              <p className="text-xs text-slate-500">Tyto části zatím nejsou součástí obchodního slibu.</p>
-              <div className="text-2xl font-black text-slate-900 font-mono">
-                Roadmapa
-              </div>
-              <ul className="space-y-2 text-xs text-slate-700 pt-2 border-t border-slate-100">
-                <li className="flex items-center gap-2">Kalendář — není součástí prvního pilotu</li>
-                <li className="flex items-center gap-2">Analytika — není součástí prvního pilotu</li>
-                <li className="flex items-center gap-2">Cenové nabídky — nejsou součástí prvního pilotu</li>
-                <li className="flex items-center gap-2">Dokumenty a protokoly — nejsou součástí prvního pilotu</li>
-                <li className="flex items-center gap-2">Komunikační centrum — není součástí prvního pilotu</li>
-                <li className="flex items-center gap-2">Klientský portál — není součástí prvního pilotu</li>
-                <li className="flex items-center gap-2">Automatické follow-upy — nejsou součástí prvního pilotu</li>
-                <li className="flex items-center gap-2">Přímé SQL/ERP propojení, obousměrná synchronizace, fakturace a účetní exporty — nejsou součástí prvního pilotu</li>
-              </ul>
-            </div>
-            <button
-              onClick={() => setIsBookingOpen(true)}
-              className="w-full py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-xl text-xs font-bold transition-colors"
-            >
-              Probrat roadmapu
-            </button>
-          </div>
-
-        </div>
+        <p className="mt-8 border-l-2 border-blue-600 pl-4 text-sm leading-6 text-slate-600">
+          <strong className="text-slate-900">Founding Pilot:</strong> jednorázový onboardingový poplatek plus první měsíc. Cena potvrzena při nabídce.
+        </p>
+        <p className="mt-3 max-w-4xl text-xs leading-5 text-slate-500">
+          <strong>SCÉNÁŘ PILOTU — Plánovaný rozsah scénáře:</strong> Plánované funkce zahrnují založení firmy, přihlášení majitele, pozvání zaměstnanců, webový formulář a kontrolovaný CSV import. Před zákaznickými daty je třeba dokončit živou přejímku.
+        </p>
+        <details className="mt-5 max-w-4xl text-sm text-slate-600">
+          <summary className="cursor-pointer font-semibold text-slate-800">Mimo první pilot</summary>
+          <p className="mt-2">Tyto části zatím nejsou součástí obchodního slibu:</p>
+          <ul className="mt-2 grid gap-x-8 gap-y-1 sm:grid-cols-2">
+            <li>Kalendář — není součástí prvního pilotu</li>
+            <li>Analytika — není součástí prvního pilotu</li>
+            <li>Cenové nabídky — nejsou součástí prvního pilotu</li>
+            <li>Dokumenty a protokoly — nejsou součástí prvního pilotu</li>
+            <li>Komunikační centrum — není součástí prvního pilotu</li>
+            <li>Klientský portál — není součástí prvního pilotu</li>
+            <li>Automatické follow-upy — nejsou součástí prvního pilotu</li>
+            <li>Přímé SQL/ERP propojení, obousměrná synchronizace a účetní exporty — nejsou součástí prvního pilotu</li>
+          </ul>
+        </details>
       </section>
 
       {/* 7. FAQ Section (Audit Page 14) */}

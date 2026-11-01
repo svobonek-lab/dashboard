@@ -55,6 +55,7 @@ current application contract.
 | `20261026000000_public_intake_rate_limit.sql` | HMAC rate-limit state and hardened server-side public-intake RPC | **Proposal only.** CI applies it only after a disposable synthetic `app_*` baseline; the repo's historical migration chain does not create that baseline. |
 | `20261027000000_app_email_outbox_runs.sql` | `app_email_outbox_runs`; service-role-only durable scheduler run summaries | Operational source migration; CI applies and verifies it in the disposable `outbox-run-evidence-contract`. Not applied to any live database. |
 | `20261031185027_allow_canceled_stripe_subscription_rebind.sql` | Re-subscription through a newer active Checkout after the previous same-customer subscription was canceled; late old-subscription events are stale | Applied to StavbaCore Staging after explicit review; disposable PostgreSQL billing verification and concurrent webhook test pass. Not applied to production. |
+| `20261101131053_three_tier_monthly_plans.sql` | Adds `pro` to platform plan assignment; replaces paid-registration RPC with a server-only `starter`/`growth`/`pro` allowlist and rejects new Founding Pilot subscriptions | **Proposal only.** Executed against disposable PostgreSQL-compatible PGlite fixtures; not applied to staging or production. Requires SQL review and isolated staging approval before application. |
 
 ## Non-destructive consolidation order
 

@@ -45,9 +45,11 @@ test('billing completion is plan-allowlisted, idempotent and keeps browser price
   assert.match(checkout, /idempotencyKey/);
   assert.match(checkout, /STRIPE_PRICE_STARTER_ID/);
   assert.match(checkout, /STRIPE_PRICE_GROWTH_ID/);
+  assert.match(checkout, /STRIPE_PRICE_PRO_ID/);
   assert.doesNotMatch(checkout, /body\.priceId|request\.body\?\.price/);
   assert.match(billingRouter, /route === 'portal'/);
   assert.match(client, /startBillingPortal/);
+  assert.match(client, /BILLING_PLAN_UNAVAILABLE/);
   assert.match(checkout, /billing\/return\?status=success/);
   assert.match(billingReturn, /Platba byla přijata/);
   assert.match(settings, /Spravovat platbu/);

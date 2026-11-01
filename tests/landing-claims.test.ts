@@ -64,6 +64,27 @@ test('landing visibly marks IČO, legal address and VOP incomplete until explici
   assert.match(landing, /VITE_COMPANY_VOP_APPROVED/);
 });
 
+test('landing offers three monthly tiers and keeps the pilot as an unpriced secondary offer', () => {
+  const pricing = landing.slice(landing.indexOf('id="cenik"'), landing.indexOf('{/* 7. FAQ'));
+  assert.match(pricing, /Start/);
+  assert.match(pricing, /1\s*990\s*Kč/);
+  assert.match(pricing, /5 zaměstnanců/);
+  assert.match(pricing, /Růst/);
+  assert.match(pricing, /2\s*990\s*Kč/);
+  assert.match(pricing, /15 zaměstnanců/);
+  assert.match(pricing, /Profi/);
+  assert.match(pricing, /4\s*990\s*Kč/);
+  assert.match(pricing, /neomezený počet zaměstnanců/i);
+  assert.match(pricing, /připravujeme, únor 2027/i);
+  assert.match(pricing, /Founding Pilot/);
+  assert.match(pricing, /jednorázový onboardingový poplatek.*první měsíc/i);
+  assert.match(pricing, /cena potvrzena při nabídce/i);
+  assert.doesNotMatch(pricing, /7\s*900\s*Kč/);
+  assert.doesNotMatch(landing, /foundingPilotCost\s*=\s*7900/);
+  const profi = pricing.slice(pricing.indexOf('Profi'));
+  assert.doesNotMatch(profi, /Pokračovat na platbu|Vybrat tarif|Koupit/i);
+});
+
 test('owner login badge does not claim an unverified pilot acceptance', () => {
   assert.doesNotMatch(loginPage, /Ověřený firemní pilot/);
   assert.match(loginPage, /Firemní pilot StavbaFlow/);
