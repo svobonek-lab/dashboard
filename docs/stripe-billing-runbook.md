@@ -33,11 +33,14 @@ Nastavte pouze jako serverové proměnné:
 - `STRIPE_WEBHOOK_SECRET`: signing secret konkrétního testovacího webhook endpointu;
 - `STRIPE_SECRET_KEY`: testovací restricted nebo secret key pro Customer, Checkout a Portal;
 - `STRIPE_BILLING_MODE=test`;
-- `STRIPE_PRICE_PILOT_ID`, `STRIPE_PRICE_STARTER_ID`, `STRIPE_PRICE_GROWTH_ID`: povolené opakované testovací Stripe Price ID;
+- `STRIPE_PRICE_STARTER_ID`, `STRIPE_PRICE_GROWTH_ID`, `STRIPE_PRICE_PRO_ID`: serverové opakované Stripe Price ID. Profi zůstává nedostupné, dokud jeho ID není nastavené;
+- `STRIPE_PRICE_PILOT_ID` a starší `STRIPE_PRICE_ID` jsou pouze legacy konfigurace. Founding Pilot se jako opakované předplatné neprodává;
 - `BILLING_RETURN_URL`: přesný HTTPS origin Preview dashboardu;
 - `SUPABASE_URL` a `SUPABASE_SERVICE_ROLE_KEY` pro oddělený staging.
 
 Žádná z těchto hodnot nesmí mít prefix `VITE_` ani být dostupná browseru. Testovací režim odmítne live key a live režim odmítne testovací key. Webhook používá vlastní endpoint signing secret; Checkout klíč ho nenahrazuje.
+
+Nové registrace přijímají pouze tarify `starter`, `growth` a `pro`; volbu i odpovídající cenu ověřuje server. Nasazení nového registračního kontraktu vyžaduje samostatnou revizi a ruční aplikaci navržené staging migrace `20261101131053_three_tier_monthly_plans.sql`. Migration se neaplikuje automaticky a produkční konfigurace zůstává mimo tento postup.
 
 ## Stripe Workbench
 

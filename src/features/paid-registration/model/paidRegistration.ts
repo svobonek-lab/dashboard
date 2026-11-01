@@ -1,4 +1,5 @@
-export interface RegistrationFields { companyName:string; slug:string; ownerName:string }
+export type SubscriptionPlan = 'starter' | 'growth' | 'pro';
+export interface RegistrationFields { companyName:string; slug:string; ownerName:string; plan:SubscriptionPlan }
 export interface RegistrationDraft extends RegistrationFields {
  requestId:string;
  legalConsent:{termsAccepted:true;dpaAccepted:true;acceptedAt:string};
@@ -8,7 +9,7 @@ export function registrationPayload(
  uuid:()=>string=()=>crypto.randomUUID(),now:()=>string=()=>new Date().toISOString(),
 ):RegistrationDraft{
  if(previous){
-  if(previous.companyName!==fields.companyName||previous.slug!==fields.slug||previous.ownerName!==fields.ownerName)
+  if(previous.companyName!==fields.companyName||previous.slug!==fields.slug||previous.ownerName!==fields.ownerName||previous.plan!==fields.plan)
    throw new Error('Dokončete rozpracovanou registraci s původními údaji nebo kontaktujte podporu.');
   return previous;
  }

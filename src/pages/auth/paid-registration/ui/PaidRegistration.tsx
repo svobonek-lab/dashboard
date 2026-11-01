@@ -2,13 +2,17 @@ import React,{useCallback,useEffect,useState} from 'react';
 import type {User} from '@supabase/supabase-js';
 import {supabase} from '@/shared/api/supabase';
 import {LegalConsentFields} from '@/shared/ui/LegalConsentFields';
-import {activationReady,registrationPayload,type RegistrationDraft} from '@/features/paid-registration';
+import {activationReady,registrationPayload,type RegistrationDraft,type SubscriptionPlan} from '@/features/paid-registration';
 
 export function PaidRegistrationPage(){
  const [user,setUser]=useState<User|null>(null);
  const [email,setEmail]=useState(''),[password,setPassword]=useState('');
  const [signIn,setSignIn]=useState(false);
  const [companyName,setCompanyName]=useState(''),[slug,setSlug]=useState(''),[ownerName,setOwnerName]=useState('');
+ const [plan,setPlan]=useState<SubscriptionPlan>(()=>{
+  const requested=new URLSearchParams(window.location.search).get('plan');
+  return requested==='growth'||requested==='pro'?requested:'starter';
+ });
  const [terms,setTerms]=useState(false),[dpa,setDpa]=useState(false);
  const [busy,setBusy]=useState(false),[error,setError]=useState(''),[message,setMessage]=useState('');
  const returning=new URLSearchParams(window.location.search).get('paid')==='return';
@@ -24,7 +28,7 @@ export function PaidRegistrationPage(){
   if(!user)return;
   try {
    const draft=JSON.parse(sessionStorage.getItem('sf_registration:'+user.id)||'null') as RegistrationDraft|null;
-   if(draft){setCompanyName(draft.companyName);setSlug(draft.slug);setOwnerName(draft.ownerName);}
+   if(draft){setCompanyName(draft.companyName);setSlug(draft.slug);setOwnerName(draft.ownerName);setPlan(draft.plan);}
   }catch{setError('Rozpracovanou registraci nelze načíst. Kontaktujte podporu.');}
  },[user?.id]);
  const checkActivation=useCallback(async()=>{
@@ -79,7 +83,7 @@ export function PaidRegistrationPage(){
    const key='sf_registration:'+user.id;
    let previous:RegistrationDraft|null=null;
    try{previous=JSON.parse(sessionStorage.getItem(key)||'null');}catch{throw new Error('Rozpracovanou registraci nelze načíst. Kontaktujte podporu.');}
-   const payload=registrationPayload({companyName:companyName.trim(),slug,ownerName:ownerName.trim()},previous);
+   const payload=registrationPayload({companyName:companyName.trim(),slug,ownerName:ownerName.trim(),plan},previous);
    sessionStorage.setItem(key,JSON.stringify(payload));
    const response=await fetch('/api/billing?route=register',{
     method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+data.session.access_token,
@@ -116,11 +120,12 @@ export function PaidRegistrationPage(){
        <button className={button} disabled={busy} onClick={()=>void checkActivation()}>{busy?'Ověřuji…':'Zkontrolovat aktivaci'}</button>
       </div>:<form onSubmit={checkout} className="space-y-5">
        <h2 className="text-xl font-semibold">Připravte svou firmu</h2><p className="break-all text-sm text-slate-500">{user.email}</p>
+       <p className="rounded-xl bg-slate-50 p-4 text-sm text-slate-700">Vybraný tarif: <strong>{plan==='starter'?'Start':plan==='growth'?'Růst':'Profi'}</strong> · {plan==='starter'?'1 990 Kč':plan==='growth'?'2 990 Kč':'4 990 Kč'} měsíčně bez DPH</p>
        <label className="block text-sm">Vaše jméno<input className={input} required maxLength={160} value={ownerName} onChange={e=>setOwnerName(e.target.value)}/></label>
        <label className="block text-sm">Název firmy<input className={input} required maxLength={160} value={companyName} onChange={e=>setCompanyName(e.target.value)}/></label>
        <label className="block text-sm">Adresa firmy ve StavbaFlow<input className={input} required pattern="[a-z0-9][a-z0-9-]{2,79}" placeholder="moje-stavebni-firma" value={slug} onChange={e=>setSlug(e.target.value)}/></label>
        <LegalConsentFields termsAccepted={terms} dpaAccepted={dpa} onTermsAcceptedChange={setTerms} onDpaAcceptedChange={setDpa}/>
-       <button className={button} disabled={busy||!terms||!dpa||!user.email_confirmed_at}>{busy?'Připravuji…':'Pokračovat na Stripe'}</button>
+       <button className={button} disabled={busy||!terms||!dpa||!user.email_confirmed_at||plan==='pro'}>{busy?'Připravuji…':plan==='pro'?'Profi se připravuje':'Pokračovat na platbu'}</button>
        <button type="button" className="text-sm underline" disabled={busy} onClick={()=>void checkActivation()}>Už jsem zaplatil — zkontrolovat aktivaci</button>
       </form>}
      {error&&<p role="alert" className="mt-5 text-sm text-red-700">{error}</p>}

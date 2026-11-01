@@ -26,7 +26,7 @@ export type BillingConfig = {
   secretKey: string;
   returnUrl: string;
   mode: 'test' | 'live';
-  prices: Record<'pilot' | 'starter' | 'growth', string>;
+  prices: Record<'pilot' | 'starter' | 'growth' | 'pro', string>;
 };
 
 type StripeCheckoutInput = Stripe.Checkout.SessionCreateParams;
@@ -103,6 +103,7 @@ export function readBillingConfig(): BillingConfig {
       pilot: String(process.env.STRIPE_PRICE_PILOT_ID || process.env.STRIPE_PRICE_ID || '').trim(),
       starter: String(process.env.STRIPE_PRICE_STARTER_ID || '').trim(),
       growth: String(process.env.STRIPE_PRICE_GROWTH_ID || '').trim(),
+      pro: String(process.env.STRIPE_PRICE_PRO_ID || '').trim(),
     },
   };
 }
@@ -146,7 +147,7 @@ function requestId(headers: CheckoutRequest['headers'] = {}): string {
 }
 
 function priceFor(config: BillingConfig, plan: string): string {
-  if (!['pilot', 'starter', 'growth'].includes(plan)) throw new BillingHttpError('BILLING_PLAN_UNAVAILABLE', 409);
+  if (!['starter', 'growth', 'pro'].includes(plan)) throw new BillingHttpError('BILLING_PLAN_UNAVAILABLE', 409);
   const priceId = config.prices[plan as keyof BillingConfig['prices']];
   if (!/^price_[A-Za-z0-9]+$/.test(priceId)) throw new BillingHttpError('BILLING_PLAN_UNAVAILABLE', 409);
   return priceId;

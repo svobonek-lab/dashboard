@@ -8,11 +8,13 @@ type Request = {
  [Symbol.asyncIterator]?: () => AsyncIterator<unknown>;
 };
 type Response = { setHeader(name:string,value:string):void; status(code:number):Response; json(value:unknown):unknown };
-export type RegistrationInput = { companyName:string; slug:string; ownerName:string; plan:'pilot'; legalConsent:OwnerLegalConsent; requestId:string };
-export type RegistrationIntent = { id:string; company_id:string; owner_email:string; stripe_customer_id?:string|null };
+export type RegistrationPlan = 'starter' | 'growth' | 'pro';
+export type RegistrationInput = { companyName:string; slug:string; ownerName:string; plan:RegistrationPlan; legalConsent:OwnerLegalConsent; requestId:string };
+export type RegistrationIntent = { id:string; company_id:string; owner_email:string; plan:RegistrationPlan; stripe_customer_id?:string|null };
 interface Dependencies {
  enabled():boolean;
  authorize(req:Request):Promise<{id:string}>;
+ assertPlanAvailable(plan:RegistrationPlan):boolean;
  prepare(userId:string,input:RegistrationInput):Promise<RegistrationIntent>;
  customer(intent:RegistrationIntent):Promise<{id:string}>;
  session(intent:RegistrationIntent,customer:string):Promise<{id:string;url:string|null}>;
@@ -29,10 +31,17 @@ function clients() {
 class RegistrationBillingConfigurationError extends Error {
  constructor(readonly checks:Record<string,boolean>){super('REGISTRATION_BILLING_CONFIG_INVALID');}
 }
-function stripe() {
+class RegistrationPlanUnavailableError extends Error {
+ constructor(){super('BILLING_PLAN_UNAVAILABLE');}
+}
+export function registrationPriceConfigured(plan:RegistrationPlan,config:BillingConfig):boolean {
+ return /^price_[A-Za-z0-9]+$/.test(config.prices[plan]);
+}
+function stripe(plan:RegistrationPlan) {
  const config=readBillingConfig();
  let httpsReturn=false;try{httpsReturn=new URL(config.returnUrl).protocol==='https:';}catch{}
- const checks={testKey:/^(sk|rk)_test_[A-Za-z0-9]+$/.test(config.secretKey),testMode:config.mode==='test',pilotPrice:/^price_[A-Za-z0-9]+$/.test(config.prices.pilot),httpsReturn};
+ if(!registrationPriceConfigured(plan,config))throw new RegistrationPlanUnavailableError();
+ const checks={testKey:/^(sk|rk)_test_[A-Za-z0-9]+$/.test(config.secretKey),testMode:config.mode==='test',httpsReturn};
  if(!Object.values(checks).every(Boolean))throw new RegistrationBillingConfigurationError(checks);
  return {client:new Stripe(config.secretKey),config};
 }
@@ -63,12 +72,15 @@ export function createRegistrationCheckoutHandler(deps:Dependencies){
     ||raw.legalConsent?.termsAccepted!==true||raw.legalConsent?.dpaAccepted!==true
     ||!Number.isFinite(Date.parse(raw.legalConsent?.acceptedAt||''))||typeof raw.companyName!=='string'||!raw.companyName.trim()
     ||raw.companyName.length>160||typeof raw.ownerName!=='string'||!raw.ownerName.trim()||raw.ownerName.length>160
-    ||typeof raw.slug!=='string'||!/^[a-z0-9][a-z0-9-]{2,79}$/.test(raw.slug))throw new Error('invalid');
+    ||typeof raw.slug!=='string'||!/^[a-z0-9][a-z0-9-]{2,79}$/.test(raw.slug)
+    ||!['starter','growth','pro'].includes(String(raw.plan||'')))throw new Error('invalid');
    input={companyName:raw.companyName.trim(),ownerName:raw.ownerName.trim(),slug:raw.slug,
-    plan:'pilot',legalConsent:raw.legalConsent,requestId:id};
+    plan:raw.plan as RegistrationPlan,legalConsent:raw.legalConsent,requestId:id};
   }catch{res.status(400).json({code:'REGISTRATION_INPUT_INVALID'});return;}
   let user:{id:string};
   try{user=await deps.authorize(req);}catch{res.status(401).json({code:'REGISTRATION_AUTH_REQUIRED'});return;}
+  try{if(!deps.assertPlanAvailable(input.plan)){res.status(409).json({code:'BILLING_PLAN_UNAVAILABLE'});return;}}
+  catch{res.status(503).json({code:'REGISTRATION_BILLING_CONFIG_INVALID'});return;}
   let stage='prepare';
   try{
    const intent=await deps.prepare(user.id,input);
@@ -92,18 +104,25 @@ export function createRegistrationCheckoutHandler(deps:Dependencies){
  };
 }
 export function registrationSessionInput(intent:RegistrationIntent,customer:string,config:BillingConfig):Stripe.Checkout.SessionCreateParams {
+ if(!/^price_[A-Za-z0-9]+$/.test(config.prices[intent.plan]))throw new RegistrationPlanUnavailableError();
  const origin=new URL(config.returnUrl).origin;
  return {mode:'subscription',customer,
   // Ordinary Stripe Billing; never inherit account-level merchant-of-record defaults.
   managed_payments:{enabled:false},
-  line_items:[{price:config.prices.pilot,quantity:1}],client_reference_id:intent.company_id,
-  metadata:{tenant_id:intent.company_id,onboarding:'paid_registration'},
-  subscription_data:{metadata:{tenant_id:intent.company_id}},
+  line_items:[{price:config.prices[intent.plan],quantity:1}],client_reference_id:intent.company_id,
+  metadata:{tenant_id:intent.company_id,onboarding:'paid_registration',plan:intent.plan},
+  subscription_data:{metadata:{tenant_id:intent.company_id,plan:intent.plan}},
   success_url:origin+'/register-paid?paid=return',cancel_url:origin+'/register-paid?paid=canceled',
  };
 }
 export default createRegistrationCheckoutHandler({
  enabled:()=>process.env.PAID_ONBOARDING_ENABLED==='true',
+ assertPlanAvailable:plan=>{
+  const config=readBillingConfig();
+  if(!registrationPriceConfigured(plan,config))return false;
+  stripe(plan);
+  return true;
+ },
  authorize:async req=>{
   const header=req.headers?.authorization;
   if(typeof header!=='string'||!/^Bearer \S+$/.test(header))throw new Error('auth required');
@@ -114,18 +133,18 @@ export default createRegistrationCheckoutHandler({
  prepare:async(userId,input)=>{
   const {data,error}=await clients().service.rpc('app_prepare_paid_registration',{
    p_user_id:userId,p_request_id:input.requestId,p_name:input.companyName,
-   p_slug:input.slug,p_owner_name:input.ownerName,p_client_accepted_at:input.legalConsent.acceptedAt,
+   p_slug:input.slug,p_owner_name:input.ownerName,p_client_accepted_at:input.legalConsent.acceptedAt,p_plan:input.plan,
   });
   if(error||!data)throw new Error('registration rejected');
   return data as RegistrationIntent;
  },
  customer:async intent=>{
   if(intent.stripe_customer_id)return {id:intent.stripe_customer_id};
-  return stripe().client.customers.create({email:intent.owner_email,metadata:{tenant_id:intent.company_id}},
+  return stripe(intent.plan).client.customers.create({email:intent.owner_email,metadata:{tenant_id:intent.company_id,plan:intent.plan}},
    {idempotencyKey:'registration-customer:'+intent.id});
  },
  session:async(intent,customer)=>{
-  const {client,config}=stripe();
+  const {client,config}=stripe(intent.plan);
   return client.checkout.sessions.create(registrationSessionInput(intent,customer,config),
    // Version the changed request shape; retries within this version stay stable.
    {idempotencyKey:'registration-checkout:billing-v1:'+intent.id});

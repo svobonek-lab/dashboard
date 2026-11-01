@@ -32,7 +32,7 @@ export interface PlatformCompanySummary {
   onboarding_completed: boolean;
   created_at: string;
   member_count: number;
-  plan: 'pilot' | 'starter' | 'growth' | 'not_configured';
+  plan: 'pilot' | 'starter' | 'growth' | 'pro' | 'not_configured';
   subscription_status: 'not_configured' | 'pilot' | 'trial' | 'active' | 'past_due' | 'canceled';
   integration_status: 'not_verified';
   invitation_status: 'not_sent' | 'sent' | 'accepted';
@@ -57,8 +57,8 @@ export async function listPlatformCompanies(service: SupabaseClient, actorUserId
     onboarding_completed: row.onboarding_completed === true,
     created_at: String(row.created_at || ''),
     member_count: Number.isFinite(Number(row.member_count)) ? Number(row.member_count) : 0,
-    plan: ['pilot', 'starter', 'growth'].includes(plans.get(String(row.id)) || '')
-      ? plans.get(String(row.id)) as 'pilot' | 'starter' | 'growth'
+    plan: ['pilot', 'starter', 'growth', 'pro'].includes(plans.get(String(row.id)) || '')
+      ? plans.get(String(row.id)) as 'pilot' | 'starter' | 'growth' | 'pro'
       : 'not_configured',
     subscription_status: ['pilot', 'trial', 'active', 'past_due', 'canceled'].includes(row.subscription_status) ? row.subscription_status : 'not_configured',
     integration_status: 'not_verified' as const,
@@ -72,9 +72,9 @@ export async function setPlatformBillingPlan(
   actorUserId: string,
   companyId: string,
   plan: string,
-): Promise<{ companyId: string; plan: 'pilot' | 'starter' | 'growth' }> {
+): Promise<{ companyId: string; plan: 'pilot' | 'starter' | 'growth' | 'pro' }> {
   if (!companyId) throw new PlatformHttpError('COMPANY_ID_REQUIRED', 400);
-  if (!['pilot', 'starter', 'growth'].includes(plan)) throw new PlatformHttpError('BILLING_PLAN_INVALID', 400);
+  if (!['pilot', 'starter', 'growth', 'pro'].includes(plan)) throw new PlatformHttpError('BILLING_PLAN_INVALID', 400);
   const { data, error } = await service.rpc('app_platform_set_billing_plan', {
     p_actor_user_id: actorUserId,
     p_company_id: companyId,
@@ -85,7 +85,7 @@ export async function setPlatformBillingPlan(
   if (String(row?.company_id || '') !== companyId || String(row?.plan || '') !== plan) {
     throw new PlatformHttpError('BILLING_PLAN_UPDATE_FAILED', 502);
   }
-  return { companyId, plan: plan as 'pilot' | 'starter' | 'growth' };
+  return { companyId, plan: plan as 'pilot' | 'starter' | 'growth' | 'pro' };
 }
 
 function readRpcRow(data: unknown): any {
