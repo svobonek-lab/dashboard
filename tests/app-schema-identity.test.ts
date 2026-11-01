@@ -68,3 +68,24 @@ test('identity resolution does not reuse invitation for an existing member', asy
   assert.equal(result?.member.role, 'owner');
   assert.equal(calls.length, 0);
 });
+
+test('invite activation preserves the seat-limit code and Czech database detail', async () => {
+  const detail = 'Firma dosáhla limitu 5 zaměstnanců v tarifu Starter. Zrušte nevyužitou pozvánku nebo změňte tarif.';
+  const client = {
+    from() {
+      return {
+        select() { return this; }, eq() { return this; },
+        then(resolve: any) { return Promise.resolve({ data: [], error: null }).then(resolve); },
+      };
+    },
+    async rpc() { return { data: null, error: { code: 'P0001', message: 'SEAT_LIMIT_REACHED', details: detail } }; },
+  };
+
+  await assert.rejects(
+    () => resolveOrAcceptAppIdentity(client, {
+      id: 'user-a', email: 'worker@example.com',
+      user_metadata: { invite_id: '11111111-1111-4111-8111-111111111111' },
+    }),
+    (error: any) => error.code === 'SEAT_LIMIT_REACHED' && error.message === detail,
+  );
+});

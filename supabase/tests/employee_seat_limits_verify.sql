@@ -104,6 +104,43 @@ begin
     '11000000-0000-4000-8000-000000000001', 'starter-over-limit-a@example.invalid'
   );
 
+  -- A direct authenticated REST write is guarded by the same database
+  -- trigger, even though browser roles cannot execute the trigger function.
+  execute 'set local role authenticated';
+  begin
+    insert into public.app_invites(company_id, email, name, role, expires_at)
+    values ('11000000-0000-4000-8000-000000000001', 'direct-rest-over-limit-a@example.invalid',
+      'Direct REST A', 'employee', clock_timestamp() + interval '7 days');
+    raise exception 'SEAT_LIMIT_NOT_ENFORCED: authenticated direct invite insert was allowed';
+  exception when others then
+    get stacked diagnostics v_state = returned_sqlstate, v_message = message_text, v_detail = pg_exception_detail;
+    if v_message = 'SEAT_LIMIT_NOT_ENFORCED: authenticated direct invite insert was allowed' then raise; end if;
+    if v_message <> 'SEAT_LIMIT_REACHED' or v_state <> 'P0001' or coalesce(v_detail, '') not ilike '%zaměstnanc%' then
+      raise exception 'Expected authenticated direct-invite seat limit with Czech detail; got state %, message %, detail %',
+        v_state, v_message, coalesce(v_detail, '<none>');
+    end if;
+  end;
+  execute 'reset role';
+
+  -- Reactivating an expired invitation consumes a new reservation and is
+  -- rejected while the Starter/Pilot cap is full.
+  begin
+    update public.app_invites set expires_at = clock_timestamp() + interval '7 days'
+    where id = '91000000-0000-4000-8000-000000000001';
+    raise exception 'SEAT_LIMIT_NOT_ENFORCED: expired invitation was reactivated beyond the cap';
+  exception when others then
+    get stacked diagnostics v_state = returned_sqlstate, v_message = message_text, v_detail = pg_exception_detail;
+    if v_message = 'SEAT_LIMIT_NOT_ENFORCED: expired invitation was reactivated beyond the cap' then raise; end if;
+    if v_message <> 'SEAT_LIMIT_REACHED' or v_state <> 'P0001' or coalesce(v_detail, '') not ilike '%zaměstnanc%' then
+      raise exception 'Expected reactivated-invite seat limit with Czech detail; got state %, message %, detail %',
+        v_state, v_message, coalesce(v_detail, '<none>');
+    end if;
+  end;
+  if not exists (select 1 from public.app_invites where id = '91000000-0000-4000-8000-000000000001'
+      and expires_at < clock_timestamp()) then
+    raise exception 'Rejected expired-invite reactivation did not roll back';
+  end if;
+
   -- Tenant B reaches Growth's exact limit independently, despite Tenant A
   -- being full. Its second invitation is then rejected at 15.
   perform set_config('request.jwt.claim.sub', '20000000-0000-4000-8000-000000000001', true);

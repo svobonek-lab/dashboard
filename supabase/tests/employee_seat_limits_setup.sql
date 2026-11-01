@@ -169,7 +169,8 @@ insert into auth.users(id, email, email_confirmed_at, raw_app_meta_data) values
   ('30000000-0000-4000-8000-000000000001', 'owner-pro@example.invalid', now(), '{"invite_password_set":true}'),
   ('30000000-0000-4000-8000-000000000002', 'pro-accept@example.invalid', now(), '{"invite_password_set":true}'),
   ('40000000-0000-4000-8000-000000000001', 'owner-legacy@example.invalid', now(), '{"invite_password_set":true}'),
-  ('50000000-0000-4000-8000-000000000001', 'pilot-accept@example.invalid', now(), '{"invite_password_set":true}');
+  ('50000000-0000-4000-8000-000000000001', 'pilot-accept@example.invalid', now(), '{"invite_password_set":true}'),
+  ('10000000-0000-4000-8000-000000000006', 'inactive-a@example.invalid', now(), '{"invite_password_set":true}');
 
 do $$
 declare i integer;
@@ -179,6 +180,9 @@ begin
     values (('10000000-0000-4000-8000-' || lpad(i::text, 12, '0'))::uuid,
       'employee-a-' || i || '@example.invalid', now(), '{"invite_password_set":true}');
   end loop;
+  insert into public.app_members(company_id, user_id, name, email, role, active)
+  values ('11000000-0000-4000-8000-000000000001', '10000000-0000-4000-8000-000000000006',
+    'Inactive Employee A', 'inactive-a@example.invalid', 'employee', false);
   for i in 2..15 loop
     insert into auth.users(id, email, email_confirmed_at, raw_app_meta_data)
     values (('20000000-0000-4000-8000-' || lpad(i::text, 12, '0'))::uuid,
@@ -202,3 +206,13 @@ begin
       'Employee B ' || i, 'employee-b-' || i || '@example.invalid', 'employee', true);
   end loop;
 end $$;
+
+insert into public.app_invites(id, company_id, email, name, role, expires_at, accepted_at, revoked_at) values
+  ('91000000-0000-4000-8000-000000000001', '11000000-0000-4000-8000-000000000001', 'expired-a@example.invalid', 'Expired A', 'employee', now() - interval '1 day', null, null),
+  ('91000000-0000-4000-8000-000000000002', '11000000-0000-4000-8000-000000000001', 'revoked-a@example.invalid', 'Revoked A', 'employee', now() + interval '7 days', null, now()),
+  ('91000000-0000-4000-8000-000000000003', '11000000-0000-4000-8000-000000000001', 'accepted-a@example.invalid', 'Accepted A', 'employee', now() + interval '7 days', now(), null);
+
+grant usage on schema public to authenticated;
+grant select, insert, update on public.app_members, public.app_invites to authenticated;
+grant execute on function public.app_create_invite(uuid, text, text) to authenticated;
+grant execute on function public.app_accept_invite(uuid) to authenticated;
