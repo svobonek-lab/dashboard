@@ -60,6 +60,14 @@ begin
   select plan into v_assigned_plan from public.app_platform_set_billing_plan(
     '30000000-0000-4000-8000-000000000003',
     '10000000-0000-4000-8000-000000000001',
+    'growth'
+  );
+  if v_assigned_plan <> 'growth' then
+    raise exception 'platform administrator could not assign Růst';
+  end if;
+  select plan into v_assigned_plan from public.app_platform_set_billing_plan(
+    '30000000-0000-4000-8000-000000000003',
+    '20000000-0000-4000-8000-000000000002',
     'pro'
   );
   if v_assigned_plan <> 'pro' then

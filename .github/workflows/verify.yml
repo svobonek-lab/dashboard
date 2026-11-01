@@ -534,7 +534,9 @@ jobs:
           docker exec -i paid-postgres psql -v ON_ERROR_STOP=1 -U postgres < supabase/tests/paid_provisioning_setup.sql
           docker exec -i paid-postgres psql -v ON_ERROR_STOP=1 -U postgres < supabase/staging/20261024_paid_tenant_provisioning.sql
           docker exec -i paid-postgres psql -v ON_ERROR_STOP=1 -U postgres < supabase/tests/paid_provisioning_verify.sql
+          docker exec -i paid-postgres psql -v ON_ERROR_STOP=1 -U postgres < supabase/tests/three_tier_monthly_plans_setup.sql
           docker exec -i paid-postgres psql -v ON_ERROR_STOP=1 -U postgres < supabase/migrations/20261101131053_three_tier_monthly_plans.sql
+          docker exec -i paid-postgres psql -v ON_ERROR_STOP=1 -U postgres < supabase/migrations/20261101140813_three_tier_company_plan_check.sql
           docker exec -i paid-postgres psql -v ON_ERROR_STOP=1 -U postgres < supabase/tests/three_tier_monthly_plans_verify.sql
       - name: Stop disposable PostgreSQL
         if: always()
