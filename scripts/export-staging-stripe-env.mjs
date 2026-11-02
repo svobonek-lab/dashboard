@@ -6,6 +6,14 @@ import { APPROVED_STAGING_PREVIEW_ORIGIN } from './staging-stripe-checkout-guard
 
 const STRIPE_VARIABLES = ['STRIPE_SECRET_KEY', 'STRIPE_BILLING_MODE', 'STRIPE_PRICE_STARTER_ID', 'BILLING_RETURN_URL'];
 const OPTIONAL_STRIPE_VARIABLES = ['STRIPE_PRICE_PILOT_ID'];
+const APPROVED_EXPORT_BRANCHES = new Set([
+  'refs/heads/codex/staging-e2e-local-runner',
+  'refs/heads/codex/billing-blocked-to-granted',
+]);
+
+export function isApprovedStagingStripeExportBranch(repository, ref) {
+  return repository === 'svobonek-lab/dashboard' && APPROVED_EXPORT_BRANCHES.has(ref);
+}
 
 export function parseVercelStripePreviewConfig(contents) {
   const allowed = new Set(['STRIPE_BILLING_MODE', 'STRIPE_PRICE_STARTER_ID', 'STRIPE_PRICE_PILOT_ID', 'BILLING_RETURN_URL']);
@@ -62,8 +70,7 @@ export function buildStagingStripeEnvLines(env) {
 
 if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1])).href) {
   try {
-    if (process.env.GITHUB_REPOSITORY !== 'svobonek-lab/dashboard' ||
-        process.env.GITHUB_REF !== 'refs/heads/codex/staging-e2e-local-runner') {
+    if (!isApprovedStagingStripeExportBranch(process.env.GITHUB_REPOSITORY, process.env.GITHUB_REF)) {
       throw new Error('Refusing to export staging Stripe variables outside the approved repository branch.');
     }
     const target = String(process.env.GITHUB_ENV || '').trim();

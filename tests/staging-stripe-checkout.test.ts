@@ -9,7 +9,7 @@ import {
 } from '../scripts/staging-stripe-checkout-guard.mjs';
 import { createScopedBillingSetupEnv } from '../scripts/run-staging-stripe-checkout.mjs';
 import { billingAcceptanceOperationId } from '../scripts/prepare-staging-stripe-checkout.mjs';
-import { buildStagingStripeEnvLines, parseVercelStripePreviewConfig } from '../scripts/export-staging-stripe-env.mjs';
+import { buildStagingStripeEnvLines, isApprovedStagingStripeExportBranch, parseVercelStripePreviewConfig } from '../scripts/export-staging-stripe-env.mjs';
 
 const baseEnv = {
   STAGING_SUPABASE_URL: 'https://xwzweltjvreqhjpbjrxa.supabase.co',
@@ -113,6 +113,21 @@ test('billing workflow is exact-branch self-hosted and pulls only non-secret con
   assert.doesNotMatch(exportStep, /STAGING_OWNER_A_PASSWORD|STAGING_SUPABASE_SERVICE_ROLE_KEY|STAGING_SUPABASE_PUBLISHABLE_KEY/);
 });
 
+test('company C acceptance is branch-gated, split for CAPTCHA handoff, and retains only a one-day checkout artifact', () => {
+  const workflow = readFileSync(new URL('../.github/workflows/staging-e2e.yml', import.meta.url), 'utf8');
+  assert.match(workflow, /- billing-blocked-to-granted/);
+  assert.match(workflow, /inputs\.runner_mode != 'billing-blocked-to-granted'/);
+  assert.match(workflow, /staging-stripe-billing-company-c-prepare:[\s\S]*?github\.ref == 'refs\/heads\/codex\/billing-blocked-to-granted'[\s\S]*?runs-on: \[self-hosted, Windows, X64, staging-billing\]/);
+  assert.match(workflow, /staging-stripe-billing-company-c-verify:[\s\S]*?needs: staging-stripe-billing-company-c-prepare/);
+  assert.match(workflow, /name: staging-billing-company-c-checkout[\s\S]*?retention-days: 1/);
+  assert.match(workflow, /env pull.*--environment=preview.*--git-branch=codex\/staging-e2e-local-runner/);
+  assert.match(workflow, /staging-billing-company-c-credentials\.mjs prepare/);
+  assert.match(workflow, /staging-billing-company-c-credentials\.mjs load/);
+  assert.match(workflow, /path: \$\{\{ runner\.temp \}\}\/staging-billing-company-c/);
+  assert.doesNotMatch(workflow, /STAGING_OWNER_C_PASSWORD:\s*\$\{\{\s*secrets\./);
+  assert.doesNotMatch(workflow, /STAGING_OWNER_C_PASSWORD:\s*\$\{\{\s*vars\./);
+});
+
 test('Vercel config parser reads only allowlisted settings without executing env contents', () => {
   const parsed = parseVercelStripePreviewConfig([
     'STRIPE_BILLING_MODE="test"',
@@ -128,6 +143,13 @@ test('Vercel config parser reads only allowlisted settings without executing env
     STRIPE_PRICE_PILOT_ID: 'price_pilot_preview',
     BILLING_RETURN_URL: 'https://dashboard-git-codex-staging-e2e-79cdb9-svobonek-6462s-projects.vercel.app',
   });
+});
+
+test('Stripe config export permits only the original staging runner and this billing test branch', () => {
+  assert.equal(isApprovedStagingStripeExportBranch('svobonek-lab/dashboard', 'refs/heads/codex/staging-e2e-local-runner'), true);
+  assert.equal(isApprovedStagingStripeExportBranch('svobonek-lab/dashboard', 'refs/heads/codex/billing-blocked-to-granted'), true);
+  assert.equal(isApprovedStagingStripeExportBranch('other/repository', 'refs/heads/codex/billing-blocked-to-granted'), false);
+  assert.equal(isApprovedStagingStripeExportBranch('svobonek-lab/dashboard', 'refs/heads/main'), false);
 });
 
 test('billing acceptance Checkout idempotency key is stable per company A', () => {

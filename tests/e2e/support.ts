@@ -23,7 +23,7 @@ export function requiredValue(name: string): string {
   return value;
 }
 
-export async function signIn(page: Page, account: 'OWNER_A' | 'EMPLOYEE_A' | 'OWNER_B') {
+export async function signIn(page: Page, account: 'OWNER_A' | 'EMPLOYEE_A' | 'OWNER_B' | 'OWNER_C') {
   const email = requiredValue(`STAGING_${account}_EMAIL`);
   const password = requiredValue(`STAGING_${account}_PASSWORD`);
   await page.goto('/login');
@@ -33,7 +33,7 @@ export async function signIn(page: Page, account: 'OWNER_A' | 'EMPLOYEE_A' | 'OW
   await page.waitForURL((url) => !url.pathname.endsWith('/login'), { timeout: 20_000 });
 }
 
-export async function accessToken(browser: Browser, account: 'OWNER_A' | 'EMPLOYEE_A' | 'OWNER_B') {
+export async function accessToken(browser: Browser, account: 'OWNER_A' | 'EMPLOYEE_A' | 'OWNER_B' | 'OWNER_C') {
   const { preview } = stagingConfig();
   const context = await browser.newContext({ baseURL: preview });
   try {

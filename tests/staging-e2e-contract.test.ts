@@ -13,9 +13,13 @@ test('staging E2E has isolated scenarios and an opt-in same-repository workflow'
   const tenantIsolation = await readFile(join(root, 'tests/e2e/tenant-rest-isolation.spec.ts'), 'utf8');
   const publicIntake = await readFile(join(root, 'tests/e2e/public-intake-idempotency.spec.ts'), 'utf8');
   const sentrySpec = await readFile(join(root, 'tests/e2e/sentry-staging-event.spec.ts'), 'utf8');
+  const billingSpec = await readFile(join(root, 'tests/e2e/billing-blocked-to-granted.spec.ts'), 'utf8');
+  const stagingConfig = await readFile(join(root, 'playwright.staging.config.ts'), 'utf8');
+  const billingConfig = await readFile(join(root, 'playwright.billing-staging.config.ts'), 'utf8');
   const stagingDocs = await readFile(join(root, 'docs/staging-e2e.md'), 'utf8');
 
   assert.deepEqual(specs.filter((name) => name.endsWith('.spec.ts')).sort(), [
+    'billing-blocked-to-granted.spec.ts',
     'employee-assigned-scope.spec.ts',
     'logout-tenant-cache.spec.ts',
     'owner-critical-flow.spec.ts',
@@ -25,6 +29,12 @@ test('staging E2E has isolated scenarios and an opt-in same-repository workflow'
     'supabase-read-failure.spec.ts',
     'tenant-rest-isolation.spec.ts',
   ]);
+  assert.match(stagingConfig, /testIgnore: \['\*\*\/billing-blocked-to-granted\.spec\.ts'\]/);
+  assert.match(billingConfig, /testMatch: \['\*\*\/billing-blocked-to-granted\.spec\.ts'\]/);
+  assert.match(billingConfig, /testIgnore: \[\]/);
+  assert.match(billingSpec, /Předplatné vypršelo/);
+  assert.match(billingSpec, /checkout\.session\.completed/);
+  assert.match(billingSpec, /Přehled stavby \(Executive\)/);
   assert.match(workflow, /workflow_dispatch:/);
   assert.match(workflow, /runner_mode:/);
   assert.match(workflow, /local-ephemeral/);
@@ -65,8 +75,8 @@ test('staging E2E has isolated scenarios and an opt-in same-repository workflow'
   assert.match(tenantIsolation, /crossTenantSelect: 'company_id,user_id'/);
   assert.match(workflow, /STAGING_PUBLIC_TENANT_KEY:\s*\$\{\{\s*vars\.STAGING_PUBLIC_TENANT_KEY\s*\}\}/);
   assert.doesNotMatch(workflow, /STAGING_PUBLIC_TENANT_KEY:\s*\$\{\{\s*secrets\.STAGING_PUBLIC_TENANT_KEY\s*\}\}/);
-  assert.equal((workflow.match(/STAGING_OWNER_B_EMAIL:\s*\$\{\{\s*secrets\.STAGING_OWNER_B_EMAIL\s*\}\}/g) ?? []).length, 6);
-  assert.equal((workflow.match(/STAGING_OWNER_B_PASSWORD:\s*\$\{\{\s*secrets\.STAGING_OWNER_B_PASSWORD\s*\}\}/g) ?? []).length, 6);
+  assert.equal((workflow.match(/STAGING_OWNER_B_EMAIL:\s*\$\{\{\s*secrets\.STAGING_OWNER_B_EMAIL\s*\}\}/g) ?? []).length, 10);
+  assert.equal((workflow.match(/STAGING_OWNER_B_PASSWORD:\s*\$\{\{\s*secrets\.STAGING_OWNER_B_PASSWORD\s*\}\}/g) ?? []).length, 10);
   assert.doesNotMatch(workflow, /STAGING_LEAD_B_FILE_PATH/);
   const e2eWorkflow = workflow.split('  staging-metadata-snapshot:')[0];
   const browserTestStep = e2eWorkflow.split('      - name: Run opt-in synthetic tenant acceptance scenarios')[1]?.split('      - name: Roll back only exact synthetic owner CSV imports')[0];
