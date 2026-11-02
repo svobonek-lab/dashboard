@@ -570,3 +570,65 @@ jobs:
       - name: Stop disposable PostgreSQL
         if: always()
         run: docker rm --force paid-jwt-postgres
+
+  employee-seat-limit-contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - name: Start disposable PostgreSQL 17
+        run: >-
+          docker run --detach --name employee-seat-postgres
+          --volume "$PWD:/workspace:ro"
+          --env POSTGRES_PASSWORD=postgres
+          --health-cmd="pg_isready -U postgres"
+          --health-interval=2s --health-timeout=2s --health-retries=30
+          postgres:17-alpine
+      - name: Wait for PostgreSQL
+        run: |
+          for attempt in {1..30}; do
+            if docker exec employee-seat-postgres pg_isready -U postgres; then exit 0; fi
+            sleep 2
+          done
+          exit 1
+      - name: Prove the seat-limit contract fails before the proposal
+        run: |
+          docker exec -i employee-seat-postgres psql -v ON_ERROR_STOP=1 -U postgres < supabase/tests/employee_seat_limits_setup.sql
+          set +e
+          docker exec -i employee-seat-postgres psql -v ON_ERROR_STOP=1 -U postgres -f /workspace/supabase/tests/employee_seat_limits_verify.sql > employee-seat-red.log 2>&1
+          status=$?
+          set -e
+          cat employee-seat-red.log
+          test "$status" -ne 0
+          grep -q 'SEAT_LIMIT_NOT_ENFORCED' employee-seat-red.log
+      - name: Apply and verify the seat-limit proposal on the disposable database
+        run: |
+          docker exec -i employee-seat-postgres psql -v ON_ERROR_STOP=1 -U postgres < supabase/migrations/20261101144114_employee_seat_limits.sql
+          docker exec -i employee-seat-postgres psql -v ON_ERROR_STOP=1 -U postgres -f /workspace/supabase/tests/employee_seat_limits_verify.sql
+      - name: Verify concurrent invitation reservations serialize
+        run: |
+          docker exec -d employee-seat-postgres psql -v ON_ERROR_STOP=1 -U postgres -f /workspace/supabase/tests/employee_seat_limits_concurrency_a.sql
+          ready=false
+          for attempt in {1..30}; do
+            active=$(docker exec employee-seat-postgres psql -At -U postgres -c "select count(*) from pg_stat_activity where pid <> pg_backend_pid() and state = 'active' and query like '%pg_sleep(5)%'")
+            if [ "$active" -gt 0 ]; then ready=true; break; fi
+            sleep 0.2
+          done
+          test "$ready" = true
+          set +e
+          docker exec employee-seat-postgres psql -v ON_ERROR_STOP=1 -U postgres -f /workspace/supabase/tests/employee_seat_limits_concurrency_b.sql > employee-seat-concurrency.log 2>&1
+          status=$?
+          set -e
+          cat employee-seat-concurrency.log
+          test "$status" -ne 0
+          grep -q 'SEAT_LIMIT_REACHED' employee-seat-concurrency.log
+          grep -q 'zaměstnanc' employee-seat-concurrency.log
+          remaining=$(docker exec employee-seat-postgres psql -At -U postgres -c "select count(*) from public.app_invites where company_id='11000000-0000-4000-8000-000000000001' and email='concurrent-a@example.invalid'")
+          test "$remaining" = 1
+          rejected=$(docker exec employee-seat-postgres psql -At -U postgres -c "select count(*) from public.app_invites where company_id='11000000-0000-4000-8000-000000000001' and email='concurrent-b@example.invalid'")
+          test "$rejected" = 0
+      - name: Stop disposable PostgreSQL
+        if: always()
+        run: docker rm --force employee-seat-postgres

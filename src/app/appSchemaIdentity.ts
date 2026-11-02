@@ -77,6 +77,20 @@ export async function resolveOrAcceptAppIdentity(
   const inviteId = String(user.user_metadata?.invite_id || '');
   if (!UUID.test(inviteId)) return null;
   const { error } = await client.rpc('app_accept_invite', { p_invite_id: inviteId });
-  if (error) throw new Error(error.message || 'Pozvánku se nepodařilo aktivovat.');
+  if (error) {
+    const message = typeof error.message === 'string' ? error.message : '';
+    const details = typeof error.details === 'string' ? error.details.trim() : '';
+    if (message === 'SEAT_LIMIT_REACHED') {
+      throw Object.assign(new Error(details || 'Firma dosáhla limitu zaměstnanců pro svůj tarif. Zrušte nevyužitou pozvánku nebo změňte tarif.'), {
+        code: 'SEAT_LIMIT_REACHED',
+      });
+    }
+    if (message === 'SEAT_LIMIT_PLAN_UNSUPPORTED') {
+      throw Object.assign(new Error(details || 'Pro tento tarif nelze přidat zaměstnance. Nastavte podporovaný tarif.'), {
+        code: 'SEAT_LIMIT_PLAN_UNSUPPORTED',
+      });
+    }
+    throw new Error(error.message || 'Pozvánku se nepodařilo aktivovat.');
+  }
   return readAppSchemaIdentity(client, user.id, user.email);
 }

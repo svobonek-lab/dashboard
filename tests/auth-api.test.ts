@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import inviteEmployeeHandler from '../api/invite-employee';
+import inviteEmployeeHandler, { mapInviteRpcError } from '../api/invite-employee';
 import resetEmployeePasswordHandler from '../api/reset-employee-password';
 
 function probe() {
@@ -46,6 +46,26 @@ test('invite endpoint rejects a missing absolute HTTPS redirect before database 
     if (previousUrl === undefined) delete process.env.APP_URL;
     else process.env.APP_URL = previousUrl;
   }
+});
+
+test('invite RPC seat-limit failure becomes a Czech HTTP 409 response', () => {
+  assert.deepEqual(mapInviteRpcError({
+    message: 'SEAT_LIMIT_REACHED',
+    details: 'Firma dosáhla limitu 5 zaměstnanců v tarifu Starter. Zrušte nevyužitou pozvánku nebo změňte tarif.',
+  }), {
+    status: 409,
+    body: {
+      code: 'SEAT_LIMIT_REACHED',
+      error: 'Firma dosáhla limitu 5 zaměstnanců v tarifu Starter. Zrušte nevyužitou pozvánku nebo změňte tarif.',
+    },
+  });
+});
+
+test('invite RPC maps unsupported legacy plans without mislabeling them as a seat limit', () => {
+  assert.deepEqual(mapInviteRpcError({ message: 'SEAT_LIMIT_PLAN_UNSUPPORTED', details: 'Nastavte podporovaný tarif.' }), {
+    status: 409,
+    body: { code: 'SEAT_LIMIT_PLAN_UNSUPPORTED', error: 'Nastavte podporovaný tarif.' },
+  });
 });
 
 test('password recovery rejects a non-HTTPS redirect before database access', async () => {

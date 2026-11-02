@@ -1,5 +1,35 @@
 import { createServerlessSupabaseClient } from './_shared/supabaseClient.js';
 
+export function mapInviteRpcError(error: { message?: unknown; details?: unknown } | null | undefined) {
+  const code = typeof error?.message === 'string' ? error.message : '';
+  if (code === 'SEAT_LIMIT_REACHED') {
+    return {
+      status: 409,
+      body: {
+        code,
+        error: typeof error?.details === 'string' && error.details.trim()
+          ? error.details
+          : 'Firma dosáhla limitu zaměstnanců pro svůj tarif. Zrušte nevyužitou pozvánku nebo změňte tarif.',
+      },
+    };
+  }
+  if (code === 'SEAT_LIMIT_PLAN_UNSUPPORTED') {
+    return {
+      status: 409,
+      body: {
+        code,
+        error: typeof error?.details === 'string' && error.details.trim()
+          ? error.details
+          : 'Pro tento tarif nelze přidat zaměstnance. Nastavte podporovaný tarif.',
+      },
+    };
+  }
+  return {
+    status: 502,
+    body: { error: 'Pozvánku se nepodařilo připravit.', code: 'APP_INVITE_CREATE_FAILED' },
+  };
+}
+
 function getAuthRedirectUrl(rawUrl: string | undefined): string | null {
   try {
     const url = new URL(String(rawUrl || ''));
@@ -78,7 +108,8 @@ export default async function inviteEmployeeHandler(req: any, res: any) {
     p_name: name || email,
   });
   if (inviteError || !inviteId) {
-    res.status(502).json({ error: 'Pozvánku se nepodařilo připravit.', code: 'APP_INVITE_CREATE_FAILED' });
+    const mapped = mapInviteRpcError(inviteError);
+    res.status(mapped.status).json(mapped.body);
     return;
   }
   const { error: authInviteError } = await serviceClient.auth.admin.inviteUserByEmail(email, {
