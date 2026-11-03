@@ -62,7 +62,7 @@
 - `/widget-iframe.html` trvale přesměruje na podporovanou extensionless cestu `/widget-iframe` a zachová query parametry tenant klíče, aby zděděný embed nevracel Vercel 404 ani neztratil tenant kontext.
 - Stránka `/register-paid` přestává označovat uživatelskou registraci za testovací a přestává odkazovat na kontrolu testovací ceny Stripe.
 
-Tyto změny jsou zatím pouze v PR větvi; nejsou nasazené a nemají produkční Playwright důkaz.
+Tyto změny jsou pouze v revizní větvi. Vercel Preview je pro tuto větev výslovně vypnutý, protože její prostředí nebylo ověřeno jako oddělené od produkce; změny nejsou nasazené a nemají produkční Playwright důkaz.
 
 ## Doporučené pořadí dalších kroků
 

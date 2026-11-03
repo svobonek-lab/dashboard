@@ -7,6 +7,7 @@ const app = readFileSync(new URL('../src/app/App.tsx', import.meta.url), 'utf8')
 const guard = readFileSync(new URL('../src/app/ProtectedRoute.tsx', import.meta.url), 'utf8');
 const registration = readFileSync(new URL('../src/pages/auth/paid-registration/ui/PaidRegistration.tsx', import.meta.url), 'utf8');
 const deployment = JSON.parse(readFileSync(new URL('../vercel.json', import.meta.url), 'utf8')) as {
+  git?: { deploymentEnabled?: Record<string, boolean> };
   redirects?: Array<{ source: string; destination: string; permanent: boolean; preserveQueryParams: boolean }>;
 };
 const widgetLoader = readFileSync(new URL('../public/widget.js', import.meta.url), 'utf8');
@@ -47,6 +48,11 @@ test('protected route component uses the fail-closed route policy', () => {
 test('legacy widget iframe URL redirects to the SPA route and the embed emits the extensionless URL', () => {
   assert.ok(deployment.redirects?.some((rule) => rule.source === '/widget-iframe.html' && rule.destination === '/widget-iframe' && rule.permanent && rule.preserveQueryParams));
   assert.match(widgetLoader, /rootUrl \+ '\/widget-iframe\?/);
+});
+
+test('pre-sales audit branch does not trigger an unverified Preview deployment', () => {
+  const deploymentConfig = deployment.git?.deploymentEnabled;
+  assert.equal(deploymentConfig?.['codex/pre-sales-readiness-followup'], false);
 });
 
 test('paid registration copy does not claim that the public flow is a test checkout', () => {
