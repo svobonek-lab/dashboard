@@ -3,6 +3,7 @@ import { timingSafeEqual } from 'node:crypto';
 import {
   createResendEmailProvider,
   deliverClaimedOutboxEmail,
+  isRecoverableOutboxClaim,
   MAX_OUTBOX_ATTEMPTS,
   type OutboxDeliveryStore,
 } from './_outbox-worker.js';
@@ -102,7 +103,7 @@ export default async function outboxSchedulerHandler(req: any, res: any) {
     const { data: pendingEmails, error: fetchError } = await service
       .from('app_email_outbox')
       .select('*')
-      .or(`and(status.in.(pending,retry),scheduled_for.lte.${nowIso}),and(status.eq.processing,updated_at.lte.${staleProcessingBefore})`)
+      .or(`and(status.in.(pending,retry),scheduled_for.lte.${nowIso}),and(status.in.(processing,sending),updated_at.lte.${staleProcessingBefore})`)
       .order('created_at', { ascending: true })
       .limit(40);
 
@@ -128,7 +129,7 @@ export default async function outboxSchedulerHandler(req: any, res: any) {
     for (const email of batch) {
       try {
         const attempts = Math.max(0, Number(email.attempts) || 0);
-        const staleProcessing = email.status === 'processing';
+        const staleProcessing = isRecoverableOutboxClaim(email.status, email.updated_at, staleProcessingBefore);
         const processingAgeMs = staleProcessing && email.updated_at
           ? now.getTime() - new Date(email.updated_at).getTime()
           : 0;

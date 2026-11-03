@@ -48,6 +48,13 @@ export function retryDelayMs(attempt: number): number {
   return Math.min(RETRY_BASE_MS * (2 ** exponent), RETRY_MAX_MS);
 }
 
+export function isRecoverableOutboxClaim(status: unknown, updatedAt: string | null | undefined, staleBefore: string): boolean {
+  if (status !== 'processing' && status !== 'sending') return false;
+  const updatedAtMs = Date.parse(updatedAt || '');
+  const staleBeforeMs = Date.parse(staleBefore);
+  return Number.isFinite(updatedAtMs) && Number.isFinite(staleBeforeMs) && updatedAtMs <= staleBeforeMs;
+}
+
 function normalizeProviderError(error: unknown): EmailProviderError {
   if (error instanceof EmailProviderError && SAFE_PROVIDER_ERROR_CODES.has(error.code)) return error;
   return new EmailProviderError('EMAIL_PROVIDER_TEMPORARY', true);

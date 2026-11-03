@@ -13,6 +13,12 @@ Set these server-side variables in the deployment environment where the worker r
 
 The worker refuses to run before database access if either provider variable is missing. Queued rows remain queued and the API does not claim they were delivered.
 
+## Database prerequisites
+
+The worker also requires `public.app_email_outbox_runs`; it fails closed with `OUTBOX_RUN_EVIDENCE_UNAVAILABLE` if that service-only run-evidence table is absent. The isolated StavbaCore Staging snapshot has an older outbox shape (`html`, `provider_id`, `sent_at`, and legacy statuses). The worker compatibility proposal at `supabase/staging/20261103_outbox_worker_legacy_compat.sql` adds its newer payload and delivery fields, keeps the existing columns and status values, and backfills their current data. Review that proposal against a fresh metadata snapshot before applying it. The separate `supabase/migrations/20261027000000_app_email_outbox_runs.sql` is also required. Neither file has been applied to Production; Staging application requires separate approval.
+
+Do not copy staging schema or migration history into Production. The Production schema, grants, RLS policies, and migration history must be verified through the approved read-only metadata process before any Production release.
+
 The code now reads `EMAIL_PROVIDER_API_KEY`. An existing deployment configured only with the older `RESEND_API_KEY` name will report the provider as unconfigured until an operator adds the new name through the deployment's secret manager. This change does not read or alter secret values.
 
 ## DNS records
@@ -39,7 +45,7 @@ Start DMARC with `p=none` while reviewing aggregate reports and confirming that 
 
 The worker makes at most five provider attempts. Retryable failures use exponential delays of 1, 2, 4, and 8 minutes. A worker claim that remains `processing` for 15 minutes becomes eligible for recovery; the claim update is conditional so concurrent invocations do not both send the same row. Resend retains idempotency keys for 24 hours. To avoid an unsafe resend after that window, a `processing` row older than 20 hours is marked `failed` with `OUTBOX_DELIVERY_STATE_UNKNOWN` and needs operator review; do not requeue it blindly because the provider may already have accepted it.
 
-The current Vercel Cron schedule runs once each day to remain compatible with the Hobby plan. A retry becomes eligible at its backoff time, but automatic delivery may wait for the next scheduled invocation (up to roughly a day). More frequent automatic retries require a hosting plan that supports more frequent Cron or another approved worker host. Do not promise minute-level delivery while this schedule is in use.
+The current Vercel Cron schedule runs once each day to remain compatible with the Hobby plan. A retry becomes eligible at its backoff time, but automatic delivery may wait for the next scheduled invocation (up to roughly a day). More frequent automatic retries require another approved scheduler or worker host. Do not promise minute-level delivery while this schedule is in use.
 
 ## Invitation email scope
 
