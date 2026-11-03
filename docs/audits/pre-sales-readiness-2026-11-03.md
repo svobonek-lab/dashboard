@@ -13,7 +13,7 @@
 ## Ověření tohoto checkoutu
 
 - Dashboard po opravách: `npm test` — 581/581 prošlo; `npm run lint` a `npm run build` prošly.
-- Lokální Playwright smoke běžel nad falešnou Supabase URL a blokoval veškeré požadavky mimo localhost. Ověřil českou 404 obrazovku, přesměrování nepřihlášeného `/employee/jobs`, vypnutou registraci a SPA načtení `/widget-iframe`. Nebyly žádné uncaught page errors; auth pokusy šly jen na neexistující host a byly přerušeny. Produkce ani staging nebyly kontaktovány.
+- Lokální Playwright smoke běžel nad falešnou Supabase URL a blokoval veškeré požadavky mimo localhost. Ověřil českou 404 obrazovku, přesměrování nepřihlášeného `/employee/jobs` při nakonfigurovaném testovacím klientu, vypnutou registraci a SPA načtení `/widget-iframe`. Při chybějící Supabase konfiguraci aplikace zobrazí explicitní „čeká na připojení“ stránku ještě před route guardem; v tomto stavu není prokázáno přesměrování na `/login`, ale workspace zůstává uzavřený. Nebyly žádné uncaught page errors; auth pokusy šly jen na neexistující host a byly přerušeny. Produkce ani staging nebyly kontaktovány.
 - Connector: 84 testů prošlo, 11 databázových integračních testů bylo přeskočeno, protože nejsou připojeny izolované databázové fixture. Konektorový lint a build prošly.
 - `npm audit --omit=dev`: žádné runtime zranitelnosti. Celý root dependency strom hlásil 7 moderate nálezů v nástrojích pro vývoj/lint, bez automaticky dostupné opravy. Connector dependency audit: žádné nálezy.
 - Produkční Playwright audit ze stejného dne navštívil 31 tras v čisté nepřihlášené session. Nenastala žádná neblokovaná mutace. Zjištěn jeden 404 na `/widget-iframe.html`; přihlášené produkční toky tím ověřeny nebyly.
@@ -41,7 +41,7 @@
 ### P0 — vyřešit před zákaznickým workspace
 
 1. **Vlastní HTTPS doména:** produkční inventář 3. 11. neobsahuje `PUBLIC_APP_URL` ani `PUBLIC_LANDING_URL`; dřívější kontrola nepotvrdila DNS `stavbaflow.cz`. Bez ověřené domény nelze spolehlivě ověřit pozvánky, reset hesla a návrat z plateb. Audit doménu ani nekupoval.
-2. **Produkční databázový důkaz:** poslední připsatelná produkční metadata/migration snapshot chybí. Inventáře z 2. a 3. 11. si odporují v dostupných informacích o `VITE_PILOT_WRITES`; účinný stav proto zůstává neznámý. Zůstává vypnutý až do autoritativního ověření a samostatného schválení. Produkční Supabase inspection MCP z `AGENTS.md` v této relaci není dostupný.
+2. **Produkční databázový důkaz:** poslední připsatelná produkční metadata/migration snapshot chybí. Inventáře z 2. a 3. 11. si odporují v dostupných informacích o `VITE_PILOT_WRITES`; účinný stav proto zůstává neznámý. Zápisy nepovolovat a netvrdit, že je flag vypnutý, dokud read-only ověření nepotvrdí efektivní produkční hodnotu a člověk samostatně neschválí zápisy. Produkční Supabase inspection MCP z `AGENTS.md` v této relaci není dostupný.
 3. **Produkční billing:** Stripe produkční proměnné/ceny nebyly potvrzeny. Staging TEST není důkazem produkční ceny, webhooku, přístupu po platbě, obnovení ani správného plánu. Produkční konfiguraci neprovádět bez schváleného obchodního nastavení.
 4. **Pozvánky:** PR #161 přidává šifrovaný outbox a SQL návrhy, které nejsou v cílovém prostředí nasazeny. Při současném denním cron rozvrhu může e-mail čekat téměř den. Doručení, odkaz, resend, retry i přijetí je nutné ověřit na stagingu a rozhodnout o bezpečné worker frekvenci.
 5. **Aktuální staging owner acceptance:** připravit aktivní syntetický účet a zopakovat přesný build po změnách; současný owner A účet je zrušený. Neaktivovat `VITE_PILOT_WRITES` ani neměnit subscription řádek ručně kvůli testu.
@@ -57,9 +57,9 @@
 
 ## Opravy provedené v této větvi
 
-- Chráněné cesty nyní fail-closed přesměrují na login, i když Supabase není nakonfigurován; veřejné cesty jsou explicitní allowlist a podobně pojmenované widget URL se nepovažují za veřejné.
+- Route guard chrání chráněné cesty při nakonfigurované aplikaci a veřejné cesty jsou explicitní allowlist; při chybějící Supabase konfiguraci se zobrazí uzavřená setup-required stránka před vyhodnocením tras. Podobně pojmenované widget URL se nepovažují za veřejné.
 - Neznámé cesty dostanou českou stránku „Tahle stránka neexistuje“ místo pádu do dashboardu.
-- `/widget-iframe.html` trvale přesměruje na podporovanou extensionless cestu `/widget-iframe`, aby zděděný embed nevracel Vercel 404.
+- `/widget-iframe.html` trvale přesměruje na podporovanou extensionless cestu `/widget-iframe` a zachová query parametry tenant klíče, aby zděděný embed nevracel Vercel 404 ani neztratil tenant kontext.
 - Stránka `/register-paid` přestává označovat uživatelskou registraci za testovací a přestává odkazovat na kontrolu testovací ceny Stripe.
 
 Tyto změny jsou zatím pouze v PR větvi; nejsou nasazené a nemají produkční Playwright důkaz.

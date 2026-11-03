@@ -16,7 +16,8 @@
     {
       "source": "/widget-iframe.html",
       "destination": "/widget-iframe",
-      "permanent": true
+      "permanent": true,
+      "preserveQueryParams": true
     }
   ],
   "rewrites": [
