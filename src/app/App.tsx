@@ -42,6 +42,7 @@ import { WidgetIframePage } from '../pages/public/iframe';
 // Types
 import type { Lead, LeadStatus } from '@/entities/lead';
 import { buildAppLoginUrl, getDeploymentConfig, shouldShowLandingAtRoot } from './deploymentSurface';
+import { isKnownAppPath } from './routePolicy';
 import { getLeadTransitionError } from '../entities/lead';
 import { readTenantCache, removeTenantCache, writeTenantCache, TENANT_CACHE_NAMES } from '../shared/lib/tenantCache';
 import { canEditLeadDetails, persistBeforeApply } from './pilotWrites';
@@ -89,6 +90,19 @@ function AppSetupRequired() {
         <p className="mt-6 rounded-2xl border border-cyan-300/20 bg-cyan-300/10 p-4 text-sm text-cyan-100">
           Nastavte VITE_SUPABASE_URL a VITE_SUPABASE_ANON_KEY ve Vercelu a znovu nasaďte projekt.
         </p>
+      </section>
+    </main>
+  );
+}
+
+function NotFoundPage() {
+  return (
+    <main className="min-h-screen bg-[#f5f5f7] px-5 py-16 text-slate-950">
+      <section className="mx-auto mt-16 max-w-lg rounded-3xl border border-slate-200 bg-white p-8 text-center shadow-sm">
+        <p className="text-xs font-bold uppercase tracking-[0.18em] text-blue-700">StavbaFlow</p>
+        <h1 className="mt-3 text-2xl font-black tracking-tight">Tahle stránka neexistuje</h1>
+        <p className="mt-3 text-sm leading-6 text-slate-600">Zkontrolujte adresu nebo se vraťte na úvodní stránku.</p>
+        <a href="/" className="mt-6 inline-flex min-h-11 items-center justify-center rounded-xl bg-slate-950 px-5 text-sm font-semibold text-white">Zpět na úvodní stránku</a>
       </section>
     </main>
   );
@@ -365,6 +379,8 @@ function AppContent() {
       </main>
     );
   }
+
+  if (!isKnownAppPath(pathname)) return <NotFoundPage />;
 
   // 1. Standalone / Public / Embed Routes (No Layout, No Auth required, No company data leakage)
   if (pathname === '/') {

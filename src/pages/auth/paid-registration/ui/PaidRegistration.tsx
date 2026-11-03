@@ -107,7 +107,7 @@ export function PaidRegistrationPage(){
    <div className="mt-12 grid gap-10 md:grid-cols-2">
     <section><h1 className="text-4xl font-semibold tracking-tight">Vaše firma.<br/>Jeden přehled.</h1>
      <p className="mt-5 max-w-sm text-base leading-7 text-slate-600">Poptávky, zakázky a tým na jednom místě. Ověřte účet, vyplňte firmu a připravte svůj workspace.</p>
-     <p className="mt-6 text-sm text-slate-500">Testovací registrace. Před pokračováním zkontrolujte tarif a cenu přímo na Stripe.</p>
+     <p className="mt-6 text-sm text-slate-500">{enabled&&supabase?'Po ověření účtu vyberte tarif a před potvrzením objednávky zkontrolujte jeho aktuální cenu.':'Samostatná registrace není dostupná. Přístup do firemního prostoru připravujeme při onboardingu.'}</p>
     </section>
     <section className="rounded-2xl border border-slate-200 bg-white p-6 md:p-8">
      {!enabled||!supabase?<p>Samostatná registrace zatím není dostupná. <a href="/login" className="underline">Přejít k přihlášení</a></p>

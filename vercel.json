@@ -12,6 +12,13 @@
       "schedule": "0 7 * * *"
     }
   ],
+  "redirects": [
+    {
+      "source": "/widget-iframe.html",
+      "destination": "/widget-iframe",
+      "permanent": true
+    }
+  ],
   "rewrites": [
     {
       "source": "/api/stripe-checkout",
