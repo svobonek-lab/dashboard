@@ -12,7 +12,7 @@
 
 ## Ověření tohoto checkoutu
 
-- Dashboard po opravách: `npm test` — 581/581 prošlo; `npm run lint` a `npm run build` prošly.
+- Dashboard po opravách: `npm test` — 582/582 prošlo; `npm run lint` a `npm run build` prošly.
 - Lokální Playwright smoke běžel nad falešnou Supabase URL a blokoval veškeré požadavky mimo localhost. Ověřil českou 404 obrazovku, přesměrování nepřihlášeného `/employee/jobs` při nakonfigurovaném testovacím klientu, vypnutou registraci a SPA načtení `/widget-iframe`. Při chybějící Supabase konfiguraci aplikace zobrazí explicitní „čeká na připojení“ stránku ještě před route guardem; v tomto stavu není prokázáno přesměrování na `/login`, ale workspace zůstává uzavřený. Nebyly žádné uncaught page errors; auth pokusy šly jen na neexistující host a byly přerušeny. Produkce ani staging nebyly kontaktovány.
 - Connector: 84 testů prošlo, 11 databázových integračních testů bylo přeskočeno, protože nejsou připojeny izolované databázové fixture. Konektorový lint a build prošly.
 - `npm audit --omit=dev`: žádné runtime zranitelnosti. Celý root dependency strom hlásil 7 moderate nálezů v nástrojích pro vývoj/lint, bez automaticky dostupné opravy. Connector dependency audit: žádné nálezy.
