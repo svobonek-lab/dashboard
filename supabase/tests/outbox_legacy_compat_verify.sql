@@ -36,8 +36,9 @@ begin
 end;
 $$;
 
-insert into public.app_email_outbox(id, recipient, subject, status)
-select ('20000000-0000-4000-8000-' || lpad(n::text, 12, '0'))::uuid, 'worker@example.test', 'status fixture', status
+insert into public.app_email_outbox(id, company_id, recipient, subject, status)
+select ('20000000-0000-4000-8000-' || lpad(n::text, 12, '0'))::uuid,
+       '30000000-0000-4000-8000-000000000001', 'worker@example.test', 'status fixture', status
 from unnest(array['pending', 'sending', 'sent', 'failed', 'cancelled', 'processing', 'delivered', 'retry'])
   with ordinality as statuses(status, n);
 
