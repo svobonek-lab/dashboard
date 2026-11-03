@@ -2,6 +2,7 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import Stripe from 'stripe';
 
 import { createServerlessSupabaseClient } from '../_shared/supabaseClient.js';
+import { getPublicAppUrl, normalizePublicOrigin } from '../_shared/publicUrls.js';
 
 export type CheckoutRequest = {
   method?: string;
@@ -24,7 +25,7 @@ export type OwnerBillingIdentity = {
 
 export type BillingConfig = {
   secretKey: string;
-  returnUrl: string;
+  publicAppUrl: string;
   mode: 'test' | 'live';
   prices: Record<'pilot' | 'starter' | 'growth' | 'pro', string>;
 };
@@ -97,7 +98,7 @@ export async function authorizeOwner(request: CheckoutRequest): Promise<OwnerBil
 export function readBillingConfig(): BillingConfig {
   return {
     secretKey: String(process.env.STRIPE_SECRET_KEY || '').trim(),
-    returnUrl: String(process.env.BILLING_RETURN_URL || '').trim(),
+    publicAppUrl: getPublicAppUrl() || '',
     mode: process.env.STRIPE_BILLING_MODE === 'live' ? 'live' : 'test',
     prices: {
       pilot: String(process.env.STRIPE_PRICE_PILOT_ID || process.env.STRIPE_PRICE_ID || '').trim(),
@@ -110,11 +111,7 @@ export function readBillingConfig(): BillingConfig {
 
 function validConfig(config: BillingConfig): boolean {
   if (!new RegExp(`^(?:sk|rk)_${config.mode}_[A-Za-z0-9]+$`).test(config.secretKey)) return false;
-  try {
-    return new URL(config.returnUrl).protocol === 'https:';
-  } catch {
-    return false;
-  }
+  return Boolean(normalizePublicOrigin(config.publicAppUrl));
 }
 
 async function createCustomer(input: Stripe.CustomerCreateParams, secretKey: string, idempotencyKey: string): Promise<{ id: string }> {
@@ -168,7 +165,8 @@ export function createStripeCheckoutHandler(dependencies: CheckoutDependencies) 
       const owner = await dependencies.authorizeOwner(request);
       const operationId = requestId(request.headers);
       const priceId = priceFor(config, owner.plan);
-      const baseUrl = new URL(config.returnUrl).origin;
+      const baseUrl = normalizePublicOrigin(config.publicAppUrl);
+      if (!baseUrl) throw new BillingHttpError('BILLING_NOT_CONFIGURED', 503);
       let customerId = owner.customerId;
       if (!customerId) {
         const customer = await dependencies.createCustomer({

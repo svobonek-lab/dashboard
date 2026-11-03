@@ -8,7 +8,7 @@ import {
   type OwnerBillingIdentity,
 } from './stripe-checkout.js';
 
-type PortalConfig = { secretKey: string; returnUrl: string; mode: 'test' | 'live' };
+type PortalConfig = { secretKey: string; publicAppUrl: string; mode: 'test' | 'live' };
 
 export interface PortalDependencies {
   authorizeOwner(request: CheckoutRequest): Promise<OwnerBillingIdentity>;
@@ -25,10 +25,10 @@ class PortalHttpError extends Error {
 function validConfig(config: PortalConfig): boolean {
   if (!new RegExp(`^(?:sk|rk)_${config.mode}_[A-Za-z0-9]+$`).test(config.secretKey)) return false;
   try {
-    return new URL(config.returnUrl).protocol === 'https:';
-  } catch {
-    return false;
-  }
+    const url = new URL(config.publicAppUrl);
+    return url.protocol === 'https:' && !url.hostname.toLowerCase().endsWith('.vercel.app') && url.hostname.toLowerCase() !== 'vercel.app'
+      && !url.username && !url.password && !url.search && !url.hash && (url.pathname === '/' || url.pathname === '');
+  } catch { return false; }
 }
 
 async function createPortalSession(input: Stripe.BillingPortal.SessionCreateParams, secretKey: string) {
@@ -48,7 +48,7 @@ export function createStripePortalHandler(dependencies: PortalDependencies) {
       if (!validConfig(config)) throw new PortalHttpError('BILLING_NOT_CONFIGURED', 503);
       const owner = await dependencies.authorizeOwner(request);
       if (!owner.customerId) throw new PortalHttpError('BILLING_CUSTOMER_MISSING', 409);
-      const returnUrl = new URL('/settings?billing=portal_return', new URL(config.returnUrl).origin).toString();
+      const returnUrl = new URL('/settings?billing=portal_return', config.publicAppUrl).toString();
       const session = await dependencies.createPortalSession({ customer: owner.customerId, return_url: returnUrl }, config.secretKey);
       const target = new URL(session.url);
       if (target.protocol !== 'https:' || target.hostname !== 'billing.stripe.com') {
@@ -76,6 +76,6 @@ export default createStripePortalHandler({
   createPortalSession,
   config: () => {
     const config = readBillingConfig();
-    return { secretKey: config.secretKey, returnUrl: config.returnUrl, mode: config.mode };
+    return { secretKey: config.secretKey, publicAppUrl: config.publicAppUrl, mode: config.mode };
   },
 });

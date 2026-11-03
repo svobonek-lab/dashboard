@@ -1,16 +1,22 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { buildAppLoginUrl, getDeploymentConfig, shouldShowLandingAtRoot } from '../src/app/deploymentSurface';
+import { buildAppLoginUrl, buildAppRouteUrl, getDeploymentConfig, shouldShowLandingAtRoot } from '../src/app/deploymentSurface';
 
 test('unknown deployment surface stays on the safe unified default', () => {
-  assert.deepEqual(getDeploymentConfig({ VITE_DEPLOYMENT_SURFACE: 'preview' }), { surface: 'unified', appUrl: '' });
+  assert.deepEqual(getDeploymentConfig({ VITE_DEPLOYMENT_SURFACE: 'preview' }), { surface: 'unified', appUrl: '', landingUrl: '' });
 });
 
-test('landing surface normalizes the app URL', () => {
-  assert.deepEqual(getDeploymentConfig({ VITE_DEPLOYMENT_SURFACE: 'LANDING', VITE_APP_URL: 'https://app.example.test/' }), {
+test('surface config reads the two canonical public domains', () => {
+  assert.deepEqual(getDeploymentConfig({ VITE_DEPLOYMENT_SURFACE: 'LANDING', PUBLIC_APP_URL: 'https://app.example.test/', PUBLIC_LANDING_URL: 'https://www.example.test/' }), {
     surface: 'landing',
     appUrl: 'https://app.example.test',
+    landingUrl: 'https://www.example.test',
   });
+});
+
+test('deployment URLs reject Vercel domains and preserve relative navigation when unconfigured', () => {
+  assert.equal(getDeploymentConfig({ PUBLIC_APP_URL: 'https://dashboard-preview.vercel.app' }).appUrl, '');
+  assert.equal(buildAppLoginUrl('https://dashboard-preview.vercel.app'), '/login');
 });
 
 test('login redirect preserves invite and email query parameters', () => {
@@ -22,6 +28,7 @@ test('login redirect preserves invite and email query parameters', () => {
 
 test('missing app URL keeps login local instead of creating a broken external link', () => {
   assert.equal(buildAppLoginUrl('', ''), '/login');
+  assert.equal(buildAppRouteUrl('', '/register-paid?plan=starter'), '/register-paid?plan=starter');
 });
 
 test('preview host keeps the two Vercel surfaces separated when env is missing', () => {

@@ -5,14 +5,14 @@ import { readFileSync } from 'node:fs';
 
 test('registration uses ordinary Billing regardless of account Managed Payments defaults',()=>{
  const input=registrationSessionInput({id:'intent',company_id:'tenant-server',owner_email:'verified@example.invalid',plan:'starter'},'cus_test',{
-  secretKey:'sk_test_unitonly',mode:'test',returnUrl:'https://preview.example.invalid/path',prices:{pilot:'price_legacy',starter:'price_allowed',growth:'price_growth',pro:'price_pro'},
+  secretKey:'sk_test_unitonly',mode:'test',publicAppUrl:'https://app.example.invalid',prices:{pilot:'price_legacy',starter:'price_allowed',growth:'price_growth',pro:'price_pro'},
  });
  assert.deepEqual(input.managed_payments,{enabled:false});
  assert.equal(input.mode,'subscription');
  assert.deepEqual(input.line_items,[{price:'price_allowed',quantity:1}]);
  assert.deepEqual(input.metadata,{tenant_id:'tenant-server',onboarding:'paid_registration',plan:'starter'});
  assert.equal(input.client_reference_id,'tenant-server');
- assert.equal(input.success_url,'https://preview.example.invalid/register-paid?paid=return');
+ assert.equal(input.success_url,'https://app.example.invalid/register-paid?paid=return');
 });
 
 const req = (plan = 'starter') => ({ method: 'POST', headers: { authorization: 'Bearer test', 'x-stavbaflow-idempotency-key': '10000000-0000-4000-8000-000000000001' },
@@ -77,7 +77,7 @@ test('registration rejects pilot and unrecognized plans before creating an inten
 });
 
 test('registration accepts only configured monthly price IDs and leaves Profi unavailable without one',()=>{
- const config={secretKey:'sk_test_unitonly',mode:'test' as const,returnUrl:'https://preview.example.invalid',
+ const config={secretKey:'sk_test_unitonly',mode:'test' as const,publicAppUrl:'https://app.example.invalid',
   prices:{pilot:'price_legacy',starter:'price_starter',growth:'price_growth',pro:''}};
  assert.equal(registrationPriceConfigured('starter',config),true);
  assert.equal(registrationPriceConfigured('growth',config),true);

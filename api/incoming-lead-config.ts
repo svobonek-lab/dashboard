@@ -1,5 +1,6 @@
 import { createServerlessSupabaseClient } from './_shared/supabaseClient.js';
 import { createAiInboxToken } from './_shared/aiInboxToken.js';
+import { getPublicAppUrl } from './_shared/publicUrls.js';
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
@@ -39,12 +40,9 @@ export function createIncomingLeadConfigHandler(dependencies: IncomingLeadConfig
 }
 
 function getOrigin(): string {
-  const configured = String(process.env.APP_URL || '').trim().replace(/\/$/, '');
-  const parsed = new URL(configured);
-  if (parsed.protocol !== 'https:' || parsed.pathname !== '/' || parsed.search || parsed.hash) {
-    throw new Error('APP_URL must be an HTTPS origin.');
-  }
-  return parsed.origin;
+  const origin = getPublicAppUrl();
+  if (!origin || origin.startsWith('http://')) throw new Error('PUBLIC_APP_URL must be a public HTTPS origin.');
+  return origin;
 }
 
 async function authorizeOwner(accessToken: string, companyId: string): Promise<boolean> {

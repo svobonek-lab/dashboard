@@ -1,15 +1,5 @@
 import { createServerlessSupabaseClient } from './_shared/supabaseClient.js';
-
-function getAuthRedirectUrl(rawUrl: string | undefined): string | null {
-  try {
-    const url = new URL(String(rawUrl || ''));
-    if (url.protocol !== 'https:' || url.username || url.password || url.search || url.hash || (url.pathname !== '/' && url.pathname !== '')) return null;
-    url.pathname = '/login';
-    return url.toString();
-  } catch {
-    return null;
-  }
-}
+import { buildPublicAppUrl } from './_shared/publicUrls.js';
 
 export default async function resetEmployeePasswordHandler(req: any, res: any) {
   if (req.method !== 'POST') {
@@ -26,7 +16,7 @@ export default async function resetEmployeePasswordHandler(req: any, res: any) {
     res.status(400).json({ error: 'Zadejte platný e-mail.' });
     return;
   }
-  const redirectTo = getAuthRedirectUrl(process.env.APP_URL);
+  const redirectTo = buildPublicAppUrl('/login');
   if (!redirectTo) {
     res.status(503).json({ error: 'Obnova hesla nemá bezpečnou cílovou adresu aplikace.', code: 'AUTH_REDIRECT_CONFIG_MISSING' });
     return;

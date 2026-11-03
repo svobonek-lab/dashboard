@@ -1,4 +1,5 @@
 import { createServerlessSupabaseClient } from './_shared/supabaseClient.js';
+import { buildPublicAppUrl } from './_shared/publicUrls.js';
 
 export function mapInviteRpcError(error: { message?: unknown; details?: unknown } | null | undefined) {
   const code = typeof error?.message === 'string' ? error.message : '';
@@ -30,17 +31,6 @@ export function mapInviteRpcError(error: { message?: unknown; details?: unknown 
   };
 }
 
-function getAuthRedirectUrl(rawUrl: string | undefined): string | null {
-  try {
-    const url = new URL(String(rawUrl || ''));
-    if (url.protocol !== 'https:' || url.username || url.password || url.search || url.hash || (url.pathname !== '/' && url.pathname !== '')) return null;
-    url.pathname = '/login';
-    return url.toString();
-  } catch {
-    return null;
-  }
-}
-
 export default async function inviteEmployeeHandler(req: any, res: any) {
   if (req.method !== 'POST') {
     res.status(405).json({ error: 'Method Not Allowed. Use POST.' });
@@ -60,7 +50,7 @@ export default async function inviteEmployeeHandler(req: any, res: any) {
     res.status(400).json({ error: 'Pozvánka vyžaduje přihlášený účet, firmu a platný e-mail.' });
     return;
   }
-  const redirectTo = getAuthRedirectUrl(process.env.APP_URL);
+  const redirectTo = buildPublicAppUrl('/login');
   if (!redirectTo) {
     res.status(503).json({ error: 'Pozvánky nemají bezpečnou cílovou adresu aplikace.', code: 'AUTH_REDIRECT_CONFIG_MISSING' });
     return;

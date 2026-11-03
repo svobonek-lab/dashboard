@@ -14,6 +14,7 @@ import {
   type OutboxRunItemStatus,
 } from './_outbox-run-evidence.js';
 import { createInviteLinkDependencies, prepareAuthInviteEmail } from './_invite-outbox.js';
+import { buildPublicAppUrl, getPublicAppUrl, replaceEmailAppOrigins } from './_shared/publicUrls.js';
 
 function secretsMatch(provided: string, expected: string): boolean {
   const actualBuffer = Buffer.from(provided);
@@ -228,9 +229,8 @@ export default async function outboxSchedulerHandler(req: any, res: any) {
         let idempotencyKey: string | undefined;
         if (isAuthInvite) {
           try {
-            const appUrl = new URL(String(process.env.APP_URL || ''));
-            if (appUrl.protocol !== 'https:' || appUrl.username || appUrl.password) throw new Error('AUTH_REDIRECT_CONFIG_MISSING');
-            const redirectTo = new URL('/login', appUrl).toString();
+            const redirectTo = buildPublicAppUrl('/login');
+            if (!redirectTo) throw new Error('AUTH_REDIRECT_CONFIG_MISSING');
             const dependencies = await createInviteLinkDependencies({ service, redirectTo });
             const prepared = await prepareAuthInviteEmail({
               row: email,
@@ -260,6 +260,23 @@ export default async function outboxSchedulerHandler(req: any, res: any) {
             itemStatuses.push(retry ? 'retry' : 'failed');
             itemErrorCodes.push(code);
             continue;
+          }
+        } else {
+          try {
+            const html = String(providerEmail.body_html ?? providerEmail.html ?? '');
+            providerEmail = { ...providerEmail, body_html: replaceEmailAppOrigins(html, getPublicAppUrl()) };
+          } catch (error) {
+            const code = error instanceof Error && error.message === 'PUBLIC_APP_URL_NOT_CONFIGURED'
+              ? 'PUBLIC_APP_URL_NOT_CONFIGURED' : 'OUTBOX_EMAIL_TEMPLATE_INVALID';
+            const retry = attempts + 1 < MAX_OUTBOX_ATTEMPTS;
+            const retryAt = new Date(Date.now() + Math.min(60_000 * 2 ** attempts, 60 * 60_000)).toISOString();
+            try {
+              await store.markFailure({ id: String(email.id), status: retry ? 'retry' : 'failed', attempts: attempts + 1,
+                lastError: code, ...(retry ? { scheduledFor: retryAt } : {}) });
+            } catch {
+              itemStatuses.push('claim_failed'); itemErrorCodes.push('OUTBOX_DELIVERY_STATE_WRITE_FAILED'); continue;
+            }
+            itemStatuses.push(retry ? 'retry' : 'failed'); itemErrorCodes.push(code); continue;
           }
         }
         const outcome = await deliverClaimedOutboxEmail(providerEmail, { provider, store, idempotencyKey });

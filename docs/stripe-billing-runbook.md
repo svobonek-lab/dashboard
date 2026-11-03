@@ -35,7 +35,7 @@ Nastavte pouze jako serverové proměnné:
 - `STRIPE_BILLING_MODE=test`;
 - `STRIPE_PRICE_STARTER_ID`, `STRIPE_PRICE_GROWTH_ID`, `STRIPE_PRICE_PRO_ID`: serverové opakované Stripe Price ID. Profi zůstává nedostupné, dokud jeho ID není nastavené;
 - `STRIPE_PRICE_PILOT_ID` a starší `STRIPE_PRICE_ID` jsou pouze legacy konfigurace. Founding Pilot se jako opakované předplatné neprodává;
-- `BILLING_RETURN_URL`: přesný HTTPS origin Preview dashboardu;
+- `PUBLIC_APP_URL`: přesný HTTPS origin aplikace na schválené vlastní doméně; Stripe success, cancel a portal return se odvozují z této hodnoty.
 - `SUPABASE_URL` a `SUPABASE_SERVICE_ROLE_KEY` pro oddělený staging.
 
 Žádná z těchto hodnot nesmí mít prefix `VITE_` ani být dostupná browseru. Testovací režim odmítne live key a live režim odmítne testovací key. Webhook používá vlastní endpoint signing secret; Checkout klíč ho nenahrazuje.

@@ -6,6 +6,9 @@ import { supabase } from '@/shared/api/supabase';
 import { buildRecoveryRequest, parseRecoveryResponse, validateNewPassword } from '@/features/login';
 import { createOwnerLegalConsent } from '@/shared/model/legalConsent';
 import { LegalConsentFields } from '@/shared/ui/LegalConsentFields';
+import { normalizePublicOrigin } from '@/shared/lib/publicUrls';
+
+const PUBLIC_LANDING_URL = normalizePublicOrigin(import.meta.env.PUBLIC_LANDING_URL, Boolean(import.meta.env.DEV));
 
 interface LoginPageProps {
   onSuccess: (user?: any) => void;
@@ -363,6 +366,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onSuccess, expectedRole })
                   Zpět na přihlášení
                 </button>
               )}
+              {PUBLIC_LANDING_URL && <a href={`${PUBLIC_LANDING_URL}/`} className="mt-4 block text-xs font-semibold underline">Web StavbaFlow</a>}
             </div>
          </div>
       </div>

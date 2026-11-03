@@ -56,7 +56,7 @@ begin
     v_subject := 'Nová poptávka ve StavbaFlow';
     v_body := 'Nová poptávka od ' || left(coalesce(nullif(trim(new.customer), ''), 'zákazníka'), 160)
       || ': ' || left(new.title, 160)
-      || '. Otevřít v aplikaci: https://dashboard-svobonek-6462s-projects.vercel.app/?lead=' || new.id::text;
+      || '. Otevřít v aplikaci: {{PUBLIC_APP_URL}}/?lead=' || new.id::text;
   elsif tg_op = 'UPDATE'
     and new.assigned_to is distinct from old.assigned_to
     and new.assigned_to is not null then
@@ -73,7 +73,7 @@ begin
     v_subject := 'Byla vám přiřazena zakázka ve StavbaFlow';
     v_body := left(coalesce(nullif(trim(new.customer), ''), 'Zákazník'), 160)
       || ' · ' || left(new.title, 160)
-      || '. Otevřít v aplikaci: https://dashboard-svobonek-6462s-projects.vercel.app/?lead=' || new.id::text;
+      || '. Otevřít v aplikaci: {{PUBLIC_APP_URL}}/?lead=' || new.id::text;
   else
     return new;
   end if;

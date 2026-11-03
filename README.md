@@ -59,7 +59,8 @@ Copy `.env.example` to a local untracked environment file. Never commit credenti
 Client settings:
 
 - `VITE_DEPLOYMENT_SURFACE`: `landing`, `app` or `unified`.
-- `VITE_APP_URL`: login application URL used by the landing deployment.
+- `PUBLIC_APP_URL`: custom HTTPS origin used by Auth, email, landing and billing links.
+- `PUBLIC_LANDING_URL`: custom HTTPS origin used by the dashboard's public-site link.
 - `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY`: browser-safe Supabase configuration.
 - `VITE_APP_SCHEMA_READS`: enables the reviewed `app_*` read path.
 - `VITE_PILOT_WRITES`: enables writes only for the explicitly allowlisted staging project.

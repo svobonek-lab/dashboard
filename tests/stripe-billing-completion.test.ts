@@ -21,7 +21,7 @@ test('billing portal requires an authenticated owner with a bound Stripe custome
   const handler = createStripePortalHandler({
     authorizeOwner: async () => ({ userId: 'user-a', companyId: 'company-a', customerId: null, plan: 'starter' }),
     createPortalSession: async () => { portalCalls += 1; return { url: 'https://billing.stripe.com/p/session' }; },
-    config: () => ({ secretKey: 'rk_test_unit', returnUrl: 'https://preview.example.com', mode: 'test' }),
+    config: () => ({ secretKey: 'rk_test_unit', publicAppUrl: 'https://app.example.com', mode: 'test' }),
   });
   const response = responseRecorder();
   await handler({ method: 'POST', headers: { authorization: 'Bearer valid' } }, response);

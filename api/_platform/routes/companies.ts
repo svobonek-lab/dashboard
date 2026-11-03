@@ -4,6 +4,7 @@ import { authorizePlatformRequest, recordPlatformAudit } from '../auth.js';
 import { runPlatformHandler } from '../handler.js';
 import { PlatformHttpError } from '../http.js';
 import { hasOwnerLegalConsent, type OwnerLegalConsent } from '../../../src/shared/model/legalConsent.js';
+import { normalizePublicOrigin } from '../../_shared/publicUrls.js';
 
 const SLUG_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -110,10 +111,7 @@ function normalizeInput(input: PlatformCompanyOnboardingInput): Required<Platfor
 }
 
 function assertInviteRedirect(appUrl: string): void {
-  try {
-    const url = new URL(appUrl);
-    if (url.protocol !== 'https:' || url.username || url.password) throw new Error('unsafe URL');
-  } catch {
+  if (!normalizePublicOrigin(appUrl)) {
     throw new PlatformHttpError('COMPANY_INVITE_CONFIG_MISSING', 503);
   }
 }
@@ -238,13 +236,13 @@ export default async function platformCompaniesHandler(request: any, response: a
         return getPlatformCompanyAction(service, userId, String(request.body?.companyId || ''), 'public_form_link');
       }
       if (request.body?.action === 'resend_owner_invite') {
-        return resendPlatformOwnerInvite(service, userId, String(request.body?.companyId || ''), String(process.env.APP_URL || ''));
+        return resendPlatformOwnerInvite(service, userId, String(request.body?.companyId || ''), String(process.env.PUBLIC_APP_URL || ''));
       }
       if (request.body?.action === 'set_billing_plan') {
         return setPlatformBillingPlan(service, userId, String(request.body?.companyId || ''), String(request.body?.plan || ''));
       }
       if (request.body?.action) throw new PlatformHttpError('COMPANY_ACTION_INVALID', 400);
-      return { company: await createPlatformCompanyOnboarding(service, userId, request.body, String(process.env.APP_URL || '')) };
+      return { company: await createPlatformCompanyOnboarding(service, userId, request.body, String(process.env.PUBLIC_APP_URL || '')) };
     }
     if (request.method !== 'GET') throw new PlatformHttpError('METHOD_NOT_ALLOWED', 405);
     const companies = await listPlatformCompanies(service, userId);

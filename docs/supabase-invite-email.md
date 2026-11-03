@@ -19,7 +19,7 @@ Nastavují se v serverovém deployment secret manageru, nikdy jako `VITE_*`:
 - `EMAIL_FROM`: odesílatel na ověřené doméně.
 - `EMAIL_LINK_ENCRYPTION_KEY`: base64 reprezentace 32 náhodných bajtů; generujte například `openssl rand -base64 32`. Uložte ji jako oddělený secret.
 - `AUTH_EMAIL_LINK_TTL_SECONDS`: celé číslo 300–3600 a nejvýše skutečná expirace Auth e-mailového OTP.
-- `APP_URL`: přesná HTTPS adresa dashboardu.
+- `PUBLIC_APP_URL`: přesná HTTPS adresa dashboardu na schválené vlastní doméně; odkazy `*.vercel.app` se odmítají.
 - `CRON_SECRET`, `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`: stávající worker konfigurace. Service-role secret musí zůstat pouze na serveru.
 - `APP_INVITE_WORKER_ENABLED=true`: zapněte až po dokončení staging ověření.
 

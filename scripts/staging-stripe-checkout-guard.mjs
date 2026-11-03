@@ -3,7 +3,7 @@ const REQUIRED = [
   'STAGING_PREVIEW_URL', 'PRODUCTION_BASE_URL', 'STAGING_COMPANY_A_ID',
   'STAGING_OWNER_A_EMAIL', 'STAGING_OWNER_A_PASSWORD', 'STAGING_SUPABASE_PUBLISHABLE_KEY',
   'STAGING_SUPABASE_SERVICE_ROLE_KEY', 'STRIPE_SECRET_KEY', 'STRIPE_BILLING_MODE',
-  'STRIPE_PRICE_STARTER_ID', 'BILLING_RETURN_URL', 'STAGING_BILLING_ARTIFACT_DIR',
+  'STRIPE_PRICE_STARTER_ID', 'PUBLIC_APP_URL', 'STAGING_BILLING_ARTIFACT_DIR',
 ];
 export const APPROVED_STAGING_PREVIEW_ORIGIN = 'https://dashboard-git-codex-staging-e2e-79cdb9-svobonek-6462s-projects.vercel.app';
 
@@ -27,8 +27,11 @@ export function validateStagingBillingSetup(env) {
       preview.origin === production.origin || preview.pathname !== '/' || preview.search || preview.hash) {
     throw new Error('Refusing billing setup: Preview target is not an isolated Vercel staging URL.');
   }
-  const returnUrl = new URL(env.BILLING_RETURN_URL);
-  if (returnUrl.origin !== preview.origin) throw new Error('Refusing billing setup: billing return URL is not the staging Preview.');
+  const publicAppUrl = new URL(env.PUBLIC_APP_URL);
+  if (publicAppUrl.protocol !== 'https:' || publicAppUrl.hostname.toLowerCase().endsWith('.vercel.app') ||
+      publicAppUrl.origin === production.origin || publicAppUrl.pathname !== '/' || publicAppUrl.search || publicAppUrl.hash) {
+    throw new Error('Refusing billing setup: PUBLIC_APP_URL must be a non-production custom HTTPS origin.');
+  }
 
   if (env.STRIPE_BILLING_MODE !== 'test' || !/^(?:sk|rk)_test_[A-Za-z0-9]+$/.test(env.STRIPE_SECRET_KEY)) {
     throw new Error('Refusing billing setup: Stripe must use a TEST secret key and TEST billing mode.');
@@ -45,7 +48,7 @@ export function validateStagingBillingSetup(env) {
   if (String(env.STAGING_OWNER_A_EMAIL).trim().toLowerCase() !== 'owner-a@stavbaflow.example.test') {
     throw new Error('Refusing billing setup: owner email is not the synthetic company A fixture account.');
   }
-  return { projectRef: env.STAGING_SUPABASE_PROJECT_REF, previewOrigin: preview.origin };
+  return { projectRef: env.STAGING_SUPABASE_PROJECT_REF, previewOrigin: preview.origin, publicAppOrigin: publicAppUrl.origin };
 }
 
 export function assertSyntheticCompanyA(company, expectedId) {

@@ -1,7 +1,7 @@
 import tailwindcss from '@tailwindcss/vite';
 import react from '@vitejs/plugin-react';
 import path from 'node:path';
-import { defineConfig, type Plugin, type PluginOption } from 'vite';
+import { defineConfig, loadEnv, type Plugin, type PluginOption } from 'vite';
 import { visualizer } from 'rollup-plugin-visualizer';
 import inviteEmployeeHandler from './api/invite-employee.js';
 import resetEmployeePasswordHandler from './api/reset-employee-password.js';
@@ -144,7 +144,14 @@ function apiMiddlewarePlugin(): Plugin {
 }
 
 export default defineConfig(({ command, mode }) => {
+  const publicEnv = loadEnv(mode, import.meta.dirname, '');
+  const publicAppUrl = process.env.PUBLIC_APP_URL ?? publicEnv.PUBLIC_APP_URL ?? '';
+  const publicLandingUrl = process.env.PUBLIC_LANDING_URL ?? publicEnv.PUBLIC_LANDING_URL ?? '';
   return {
+    define: {
+      'import.meta.env.PUBLIC_APP_URL': JSON.stringify(publicAppUrl),
+      'import.meta.env.PUBLIC_LANDING_URL': JSON.stringify(publicLandingUrl),
+    },
     plugins: [
       react(),
       tailwindcss(),

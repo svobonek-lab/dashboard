@@ -1,6 +1,7 @@
 import { createServerlessSupabaseClient } from '../_shared/supabaseClient.js';
 import Stripe from 'stripe';
 import { type OwnerLegalConsent } from '../../src/shared/model/legalConsent.js';
+import { normalizePublicOrigin } from '../_shared/publicUrls.js';
 import { readBillingConfig, type BillingConfig } from './stripe-checkout.js';
 
 type Request = {
@@ -39,9 +40,9 @@ export function registrationPriceConfigured(plan:RegistrationPlan,config:Billing
 }
 function stripe(plan:RegistrationPlan) {
  const config=readBillingConfig();
- let httpsReturn=false;try{httpsReturn=new URL(config.returnUrl).protocol==='https:';}catch{}
+ const publicAppUrl=normalizePublicOrigin(config.publicAppUrl);
  if(!registrationPriceConfigured(plan,config))throw new RegistrationPlanUnavailableError();
- const checks={testKey:/^(sk|rk)_test_[A-Za-z0-9]+$/.test(config.secretKey),testMode:config.mode==='test',httpsReturn};
+ const checks={testKey:/^(sk|rk)_test_[A-Za-z0-9]+$/.test(config.secretKey),testMode:config.mode==='test',publicAppUrl:Boolean(publicAppUrl)};
  if(!Object.values(checks).every(Boolean))throw new RegistrationBillingConfigurationError(checks);
  return {client:new Stripe(config.secretKey),config};
 }
@@ -105,7 +106,8 @@ export function createRegistrationCheckoutHandler(deps:Dependencies){
 }
 export function registrationSessionInput(intent:RegistrationIntent,customer:string,config:BillingConfig):Stripe.Checkout.SessionCreateParams {
  if(!/^price_[A-Za-z0-9]+$/.test(config.prices[intent.plan]))throw new RegistrationPlanUnavailableError();
- const origin=new URL(config.returnUrl).origin;
+ const origin=normalizePublicOrigin(config.publicAppUrl);
+ if (!origin) throw new RegistrationBillingConfigurationError({ testKey: true, testMode: true, publicAppUrl: false });
  return {mode:'subscription',customer,
   // Ordinary Stripe Billing; never inherit account-level merchant-of-record defaults.
   managed_payments:{enabled:false},

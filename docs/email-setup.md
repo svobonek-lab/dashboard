@@ -8,6 +8,7 @@ Set these server-side variables in the deployment environment where the worker r
 
 - `EMAIL_PROVIDER_API_KEY`: the Resend API key. Keep it server-side; do not use a `VITE_` prefix.
 - `EMAIL_FROM`: a sender in the verified domain, such as `StavbaFlow <notifications@your-domain.example>`.
+- `PUBLIC_APP_URL`: approved custom HTTPS origin for Auth redirects and links embedded in notification email. Vercel deployment aliases are rejected.
 - `EMAIL_LINK_ENCRYPTION_KEY`: server-only base64 for exactly 32 random bytes; required to create or decrypt one-time invitation links. Keep it separate from provider keys and connector encryption keys.
 - `AUTH_EMAIL_LINK_TTL_SECONDS`: integer from 300 through 3600, no greater than the Supabase Auth email OTP expiry configured in the project.
 - `CRON_SECRET`: a random secret used to authorize `/api/outbox-scheduler`.

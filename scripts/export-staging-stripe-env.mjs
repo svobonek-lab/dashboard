@@ -4,11 +4,11 @@ import { resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { APPROVED_STAGING_PREVIEW_ORIGIN } from './staging-stripe-checkout-guard.mjs';
 
-const STRIPE_VARIABLES = ['STRIPE_SECRET_KEY', 'STRIPE_BILLING_MODE', 'STRIPE_PRICE_STARTER_ID', 'BILLING_RETURN_URL'];
+const STRIPE_VARIABLES = ['STRIPE_SECRET_KEY', 'STRIPE_BILLING_MODE', 'STRIPE_PRICE_STARTER_ID', 'PUBLIC_APP_URL'];
 const OPTIONAL_STRIPE_VARIABLES = ['STRIPE_PRICE_PILOT_ID'];
 
 export function parseVercelStripePreviewConfig(contents) {
-  const allowed = new Set(['STRIPE_BILLING_MODE', 'STRIPE_PRICE_STARTER_ID', 'STRIPE_PRICE_PILOT_ID', 'BILLING_RETURN_URL']);
+  const allowed = new Set(['STRIPE_BILLING_MODE', 'STRIPE_PRICE_STARTER_ID', 'STRIPE_PRICE_PILOT_ID', 'PUBLIC_APP_URL']);
   const values = {};
   for (const line of String(contents).split(/\r?\n/)) {
     const match = /^\s*(?:export\s+)?([A-Z0-9_]+)\s*=\s*(.*?)\s*$/.exec(line);
@@ -47,9 +47,10 @@ export function buildStagingStripeEnvLines(env) {
   }
   const preview = new URL(env.STAGING_PREVIEW_URL);
   const production = new URL(env.PRODUCTION_BASE_URL);
-  const returnUrl = new URL(env.BILLING_RETURN_URL);
+  const publicAppUrl = new URL(env.PUBLIC_APP_URL);
   if (preview.protocol !== 'https:' || preview.origin !== APPROVED_STAGING_PREVIEW_ORIGIN ||
-      production.origin === preview.origin || returnUrl.origin !== preview.origin ||
+      production.origin === preview.origin || publicAppUrl.protocol !== 'https:' || publicAppUrl.origin === production.origin ||
+      publicAppUrl.hostname.toLowerCase().endsWith('.vercel.app') || publicAppUrl.pathname !== '/' || publicAppUrl.search || publicAppUrl.hash ||
       STRIPE_VARIABLES.some((name) => /[\r\n]/.test(env[name]))) {
     throw new Error('Refusing to export: billing URL is not isolated to the approved staging Preview.');
   }
