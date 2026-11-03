@@ -86,7 +86,7 @@ The names `RESEND_API_KEY`, `EMAIL_FROM`, `CRON_SECRET`, and `APP_URL` are prese
 ## Required follow-up
 
 1. Obtain a fresh Production migration-history and schema/policy/grant snapshot through the approved project-scoped read-only `supabase-ci` MCP. Include the project identity and capture time; do not query customer rows.
-2. In a separately reviewed Vercel change, turn `VITE_PILOT_WRITES` off. This report did not change it. Then inspect the next Production bundle to verify the flag is false while preserving all production settings otherwise.
+2. Keep `VITE_PILOT_WRITES` false. The new Production bundle verifies this; do not re-enable it until a human approves a specific production write contract and the production schema, RLS, grants, and migration state are reviewed. Vercel reported the setting across Production and Preview; check Preview's effective flag before its next deployment if that environment needs the pilot writer.
 3. Configure Stripe only after human approval of the Production billing and legal release. Email and intake still require synthetic end-to-end acceptance; this report verifies names only.
 
 ## Change and no-database-write attestation
