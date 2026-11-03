@@ -50,6 +50,19 @@ test('marks a successfully sent claimed email as delivered', async () => {
   }]);
 });
 
+test('invitation retries can reuse a payload-generation idempotency key', async () => {
+  let idempotencyKey = '';
+  const h = harness(async () => ({ id: 'provider-invite-1' }));
+  const result = await deliverClaimedOutboxEmail(message, {
+    provider: { async send(_email, key) { idempotencyKey = key; return { id: 'provider-invite-1' }; } },
+    store: h.store,
+    now: () => new Date('2026-11-03T12:00:00.000Z'),
+    idempotencyKey: 'outbox/email-1/generation/2',
+  });
+  assert.equal(result.status, 'delivered');
+  assert.equal(idempotencyKey, 'outbox/email-1/generation/2');
+});
+
 test('schedules a temporary provider failure with exponential backoff then allows success', async () => {
   let sends = 0;
   const h = harness(async () => {

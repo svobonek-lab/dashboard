@@ -8,6 +8,8 @@ Set these server-side variables in the deployment environment where the worker r
 
 - `EMAIL_PROVIDER_API_KEY`: the Resend API key. Keep it server-side; do not use a `VITE_` prefix.
 - `EMAIL_FROM`: a sender in the verified domain, such as `StavbaFlow <notifications@your-domain.example>`.
+- `EMAIL_LINK_ENCRYPTION_KEY`: server-only base64 for exactly 32 random bytes; required to create or decrypt one-time invitation links. Keep it separate from provider keys and connector encryption keys.
+- `AUTH_EMAIL_LINK_TTL_SECONDS`: integer from 300 through 3600, no greater than the Supabase Auth email OTP expiry configured in the project.
 - `CRON_SECRET`: a random secret used to authorize `/api/outbox-scheduler`.
 - `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY`: the worker's database connection. Never expose the service-role key to browser code.
 
@@ -39,14 +41,16 @@ Start DMARC with `p=none` while reviewing aggregate reports and confirming that 
 
 1. Verify the sender domain in Resend and wait for DNS propagation.
 2. Configure the server-side variables in a non-production deployment first.
-3. Trigger one synthetic outbox notification and confirm the provider accepts it and the outbox row becomes `delivered`. Test Auth invitations separately through Supabase Auth SMTP.
+3. Trigger one synthetic outbox notification and confirm the provider accepts it and the outbox row becomes `delivered`. Invitation API success means the invitation was queued; only the worker can later report provider delivery.
 4. Confirm an invalid sender or a temporary provider failure leaves a safe error code and a scheduled retry; a permanent provider rejection becomes `failed`.
 5. Confirm an accepted send uses the same `outbox/<row-id>` idempotency key on retry.
 
 The worker makes at most five provider attempts. Retryable failures use exponential delays of 1, 2, 4, and 8 minutes. A worker claim that remains `processing` for 15 minutes becomes eligible for recovery; the claim update is conditional so concurrent invocations do not both send the same row. Resend retains idempotency keys for 24 hours. To avoid an unsafe resend after that window, a `processing` row older than 20 hours is marked `failed` with `OUTBOX_DELIVERY_STATE_UNKNOWN` and needs operator review; do not requeue it blindly because the provider may already have accepted it.
 
-The current Vercel Cron schedule runs once each day to remain compatible with the Hobby plan. A retry becomes eligible at its backoff time, but automatic delivery may wait for the next scheduled invocation (up to roughly a day). More frequent automatic retries require another approved scheduler or worker host. Do not promise minute-level delivery while this schedule is in use.
+The repository's Vercel Cron schedule runs once each day to remain compatible with the Hobby plan. The proposed `supabase/staging/20261103_outbox_minute_scheduler.sql` replaces that effective interval for the staging worker with Supabase Cron and `pg_net`, using endpoint and bearer secret values stored in Vault. Its rollback is `supabase/staging/20261103_outbox_minute_scheduler_rollback.sql`. Both are review artifacts only: do not apply them until the staging migration and Vault setup receive separate approval. Production scheduling is unchanged. Until the minute schedule is applied and verified in Staging, automatic delivery may wait until the next daily Vercel invocation.
 
 ## Invitation email scope
 
-Employee invitations currently use Supabase Auth `inviteUserByEmail` and the project's Auth SMTP directly. They do not enter `app_email_outbox` and are not retried by this worker. Keep Auth SMTP configured for invitations. Moving one-time Auth links into this queue needs a separate design for link generation, expiry, retries, and the protected outbox payload before changing that flow.
+Employee and platform-owner invitations are queued in `app_email_outbox` and delivered by the server worker using Supabase Auth `generateLink` plus the configured email provider. `generateLink` creates a link but does not send it; the worker encrypts the link before persisting it, sends it through the provider, then clears ciphertext after confirmed delivery. If `EMAIL_LINK_ENCRYPTION_KEY` is missing or invalid, invite delivery stays fail-closed and queued/retryable. Do not fall back to Auth SMTP or store plaintext links. The staging proposal adds the ciphertext and generation columns and removes browser-role table access; it has not been applied. Existing Auth users whose metadata does not match the exact pending invite require operator review; the worker will not infer tenant or invite scope from mismatched metadata.
+
+The TTL setting is an upper bound used for safe link renewal. Supabase's generated-link response does not return an expiry timestamp, so the worker relies on the configured Auth email OTP expiry being at least as long as `AUTH_EMAIL_LINK_TTL_SECONDS`. If it is not, links may expire sooner and retries will need a fresh generation. Resend uses `outbox/<row-id>/generation/<n>` idempotency keys; once the provider's retention window is exceeded, an ambiguous delivery requires operator review rather than blind retry.

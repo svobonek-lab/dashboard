@@ -1,6 +1,6 @@
 -- STAGING-ONLY PROPOSAL. Review against a fresh metadata snapshot before applying.
 -- Adds the columns and states used by the server outbox worker while preserving
--- legacy queued rows, status values, columns, RLS, grants, and worker RPCs.
+-- legacy queued rows, status values and columns. The sensitive queue is service-role-only.
 begin;
 
 do $$
@@ -42,6 +42,17 @@ set body_html = coalesce(body_html, html),
 alter table public.app_email_outbox
   alter column updated_at set default now(),
   alter column updated_at set not null;
+
+do $$
+declare policy_row record;
+begin
+  for policy_row in select policyname from pg_policies where schemaname = 'public' and tablename = 'app_email_outbox' loop
+    execute format('drop policy %I on public.app_email_outbox', policy_row.policyname);
+  end loop;
+end;
+$$;
+revoke all on table public.app_email_outbox from public, anon, authenticated;
+grant select, insert, update on table public.app_email_outbox to service_role;
 
 alter table public.app_email_outbox
   drop constraint if exists app_email_outbox_status_check;

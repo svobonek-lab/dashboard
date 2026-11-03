@@ -34,12 +34,13 @@ test('company onboarding creates one pending owner invite through the actor-boun
       calls.push({ name, args });
       return { data: [{ company_id: 'company-a', invite_id: 'invite-a', slug: 'strechy-novak' }], error: null };
     },
-    auth: { admin: { inviteUserByEmail: async () => ({ data: { user: { id: 'owner-auth-a' } }, error: null }) } },
+    from: () => ({ select: () => ({ eq: () => ({ eq: () => ({ maybeSingle: async () => ({ data: { id: 'outbox-a', status: 'pending', last_error: null }, error: null }) }) }) }) }),
+    auth: { admin: { inviteUserByEmail: async () => { throw new Error('Auth SMTP must not be used'); } } },
   } as any;
   const result = await createPlatformCompanyOnboarding(service, 'admin-a', validInput, 'https://app.example.cz');
   assert.equal(result.companyId, 'company-a');
   assert.equal(result.inviteId, 'invite-a');
-  assert.equal(result.invitationStatus, 'sent');
+  assert.equal(result.invitationStatus, 'queued');
   assert.equal(calls[0].name, 'app_platform_create_company_onboarding');
   assert.deepEqual(calls[0].args, {
     p_actor_user_id: 'admin-a', p_name: 'Střechy Novák', p_slug: 'strechy-novak',
@@ -70,7 +71,7 @@ test('an existing Auth identity is rejected before company creation', async () =
   assert.equal(rpcCalled, false);
 });
 
-test('failed Auth delivery compensates company and invite state', async () => {
+test('missing durable queue row compensates company and invite state', async () => {
   const calls: Array<{ name: string; args: any }> = [];
   const service = {
     rpc: async (name: string, args: any) => {
@@ -80,11 +81,12 @@ test('failed Auth delivery compensates company and invite state', async () => {
       }
       return { data: true, error: null };
     },
-    auth: { admin: { inviteUserByEmail: async () => ({ data: { user: null }, error: new Error('SMTP unavailable') }) } },
+    from: () => ({ select: () => ({ eq: () => ({ eq: () => ({ maybeSingle: async () => ({ data: null, error: new Error('DB unavailable') }) }) }) }) }),
+    auth: { admin: { inviteUserByEmail: async () => { throw new Error('Auth SMTP must not be used'); } } },
   } as any;
   await assert.rejects(
     createPlatformCompanyOnboarding(service, 'admin-a', validInput, 'https://app.example.cz'),
-    /COMPANY_INVITE_DELIVERY_UNAVAILABLE/,
+    /COMPANY_INVITE_QUEUE_FAILED/,
   );
   assert.equal(calls[1].name, 'app_platform_cancel_company_onboarding');
   assert.equal(calls[1].args.p_company_id, 'company-a');

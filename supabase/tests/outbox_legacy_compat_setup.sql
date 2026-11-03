@@ -1,7 +1,7 @@
 \set ON_ERROR_STOP on
 
 create table public.app_email_outbox (
-  id uuid primary key,
+  id uuid primary key default gen_random_uuid(),
   company_id uuid not null,
   reminder_id uuid,
   recipient text not null,

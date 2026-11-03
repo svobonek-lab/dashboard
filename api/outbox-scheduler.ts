@@ -13,6 +13,7 @@ import {
   startOutboxRun,
   type OutboxRunItemStatus,
 } from './_outbox-run-evidence.js';
+import { createInviteLinkDependencies, prepareAuthInviteEmail } from './_invite-outbox.js';
 
 function secretsMatch(provided: string, expected: string): boolean {
   const actualBuffer = Buffer.from(provided);
@@ -136,7 +137,8 @@ export default async function outboxSchedulerHandler(req: any, res: any) {
         if (staleProcessing && processingAgeMs >= 20 * 60 * 60 * 1000) {
           const { data: uncertain, error: uncertainError } = await service
             .from('app_email_outbox')
-            .update({ status: 'failed', last_error: 'OUTBOX_DELIVERY_STATE_UNKNOWN', updated_at: nowIso })
+            .update({ status: 'failed', last_error: 'OUTBOX_DELIVERY_STATE_UNKNOWN', updated_at: nowIso,
+              ...(email.notification_kind === 'auth_invite' ? { invite_link_ciphertext: null, invite_link_expires_at: null, invite_link_lock_id: null, invite_link_lock_until: null } : {}) })
             .eq('id', email.id)
             .eq('status', 'processing')
             .lte('updated_at', deliveryUnknownBefore)
@@ -154,7 +156,8 @@ export default async function outboxSchedulerHandler(req: any, res: any) {
         if (attempts >= MAX_OUTBOX_ATTEMPTS) {
           const { data: exhausted, error: exhaustedError } = await service
             .from('app_email_outbox')
-            .update({ status: 'failed', last_error: 'OUTBOX_ATTEMPTS_EXHAUSTED', updated_at: new Date().toISOString() })
+            .update({ status: 'failed', last_error: 'OUTBOX_ATTEMPTS_EXHAUSTED', updated_at: new Date().toISOString(),
+              ...(email.notification_kind === 'auth_invite' ? { invite_link_ciphertext: null, invite_link_expires_at: null, invite_link_lock_id: null, invite_link_lock_until: null } : {}) })
             .eq('id', email.id)
             .eq('status', email.status)
             .select('id')
@@ -189,11 +192,13 @@ export default async function outboxSchedulerHandler(req: any, res: any) {
           continue;
         }
 
+        const isAuthInvite = email.notification_kind === 'auth_invite';
         const store: OutboxDeliveryStore = {
           async markDelivered(id, providerMessageId, deliveredAt) {
             const { data, error } = await service
               .from('app_email_outbox')
-              .update({ status: 'delivered', delivered_at: deliveredAt, provider_message_id: providerMessageId })
+              .update({ status: 'delivered', delivered_at: deliveredAt, provider_message_id: providerMessageId,
+                ...(isAuthInvite ? { invite_link_ciphertext: null, invite_link_expires_at: null, invite_link_lock_id: null, invite_link_lock_until: null } : {}) })
               .eq('id', id)
               .eq('status', 'processing')
               .select('id')
@@ -207,6 +212,8 @@ export default async function outboxSchedulerHandler(req: any, res: any) {
                 status: update.status,
                 attempts: update.attempts,
                 last_error: update.lastError,
+                ...(isAuthInvite ? { invite_link_lock_id: null, invite_link_lock_until: null } : {}),
+                ...(isAuthInvite && update.status === 'failed' ? { invite_link_ciphertext: null, invite_link_expires_at: null } : {}),
                 ...(update.scheduledFor ? { scheduled_for: update.scheduledFor } : {}),
                 updated_at: new Date().toISOString(),
               })
@@ -217,7 +224,45 @@ export default async function outboxSchedulerHandler(req: any, res: any) {
             if (error || !data) throw new Error('OUTBOX_DELIVERY_STATE_WRITE_FAILED');
           },
         };
-        const outcome = await deliverClaimedOutboxEmail({ ...email, attempts: attempts + 1 }, { provider, store });
+        let providerEmail = { ...email, attempts: attempts + 1 };
+        let idempotencyKey: string | undefined;
+        if (isAuthInvite) {
+          try {
+            const appUrl = new URL(String(process.env.APP_URL || ''));
+            if (appUrl.protocol !== 'https:' || appUrl.username || appUrl.password) throw new Error('AUTH_REDIRECT_CONFIG_MISSING');
+            const redirectTo = new URL('/login', appUrl).toString();
+            const dependencies = await createInviteLinkDependencies({ service, redirectTo });
+            const prepared = await prepareAuthInviteEmail({
+              row: email,
+              ...dependencies,
+              encryptionKey: process.env.EMAIL_LINK_ENCRYPTION_KEY,
+              linkTtlSeconds: process.env.AUTH_EMAIL_LINK_TTL_SECONDS,
+              redirectTo,
+            });
+            providerEmail = { ...providerEmail, recipient: prepared.recipient, subject: prepared.subject, body_html: prepared.body_html };
+            idempotencyKey = prepared.idempotencyKey;
+          } catch (error) {
+            const rawCode = error instanceof Error ? error.message : '';
+            const terminalCodes = new Set(['AUTH_INVITE_NOT_ACTIVE', 'AUTH_INVITE_SCOPE_MISMATCH', 'AUTH_INVITE_USER_REVIEW_REQUIRED', 'AUTH_REDIRECT_CONFIG_MISSING']);
+            const code = terminalCodes.has(rawCode) ? rawCode : rawCode === 'EMAIL_LINK_ENCRYPTION_KEY_INVALID'
+              ? 'EMAIL_LINK_ENCRYPTION_KEY_NOT_CONFIGURED' : 'AUTH_INVITE_PREPARATION_FAILED';
+            const terminal = terminalCodes.has(rawCode);
+            const retry = !terminal && attempts + 1 < MAX_OUTBOX_ATTEMPTS;
+            const retryAt = new Date(Date.now() + Math.min(60_000 * 2 ** attempts, 60 * 60_000)).toISOString();
+            try {
+              await store.markFailure({
+                id: String(email.id), status: retry ? 'retry' : 'failed', attempts: attempts + 1,
+                lastError: code, ...(retry ? { scheduledFor: retryAt } : {}),
+              });
+            } catch {
+              itemStatuses.push('claim_failed'); itemErrorCodes.push('OUTBOX_DELIVERY_STATE_WRITE_FAILED'); continue;
+            }
+            itemStatuses.push(retry ? 'retry' : 'failed');
+            itemErrorCodes.push(code);
+            continue;
+          }
+        }
+        const outcome = await deliverClaimedOutboxEmail(providerEmail, { provider, store, idempotencyKey });
         itemStatuses.push(outcome.status);
         if (outcome.errorCode) itemErrorCodes.push(outcome.errorCode);
       } catch (deliveryError) {

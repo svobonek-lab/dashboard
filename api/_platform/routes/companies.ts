@@ -21,7 +21,7 @@ export interface PlatformCompanyOnboardingResult {
   companyId: string;
   inviteId: string;
   slug: string;
-  invitationStatus: 'sent';
+  invitationStatus: 'queued';
 }
 
 export interface PlatformCompanySummary {
@@ -35,7 +35,7 @@ export interface PlatformCompanySummary {
   plan: 'pilot' | 'starter' | 'growth' | 'pro' | 'not_configured';
   subscription_status: 'not_configured' | 'pilot' | 'trial' | 'active' | 'past_due' | 'canceled';
   integration_status: 'not_verified';
-  invitation_status: 'not_sent' | 'sent' | 'accepted';
+  invitation_status: 'not_sent' | 'queued' | 'sent' | 'failed' | 'review_required' | 'accepted';
   first_lead_at: string | null;
 }
 
@@ -62,7 +62,7 @@ export async function listPlatformCompanies(service: SupabaseClient, actorUserId
       : 'not_configured',
     subscription_status: ['pilot', 'trial', 'active', 'past_due', 'canceled'].includes(row.subscription_status) ? row.subscription_status : 'not_configured',
     integration_status: 'not_verified' as const,
-    invitation_status: ['sent', 'accepted'].includes(row.invitation_status) ? row.invitation_status : 'not_sent',
+    invitation_status: ['queued', 'sent', 'failed', 'review_required', 'accepted'].includes(row.invitation_status) ? row.invitation_status : 'not_sent',
     first_lead_at: row.first_lead_at ? String(row.first_lead_at) : null,
   }));
 }
@@ -109,11 +109,10 @@ function normalizeInput(input: PlatformCompanyOnboardingInput): Required<Platfor
   return normalized;
 }
 
-function inviteRedirect(appUrl: string): string {
+function assertInviteRedirect(appUrl: string): void {
   try {
     const url = new URL(appUrl);
     if (url.protocol !== 'https:' || url.username || url.password) throw new Error('unsafe URL');
-    return new URL('/login', url).toString();
   } catch {
     throw new PlatformHttpError('COMPANY_INVITE_CONFIG_MISSING', 503);
   }
@@ -124,6 +123,16 @@ async function compensateFailedOnboarding(service: SupabaseClient, actorUserId: 
     p_actor_user_id: actorUserId, p_company_id: companyId, p_invite_id: inviteId,
   });
   if (error) throw new PlatformHttpError('COMPANY_ONBOARDING_ROLLBACK_FAILED', 503);
+}
+
+async function assertInvitationQueued(service: SupabaseClient, inviteId: string): Promise<void> {
+  const { data, error } = await service.from('app_email_outbox').select('id,status,last_error')
+    .eq('invite_id', inviteId).eq('notification_kind', 'auth_invite').maybeSingle();
+  if (error || !data) throw new PlatformHttpError('COMPANY_INVITE_QUEUE_FAILED', 503);
+  if (!['pending', 'retry', 'processing', 'sending'].includes(String(data.status))) {
+    const reviewRequired = ['AUTH_INVITE_USER_REVIEW_REQUIRED', 'AUTH_INVITE_SCOPE_MISMATCH'].includes(String(data.last_error));
+    throw new PlatformHttpError(reviewRequired ? 'COMPANY_INVITE_REVIEW_REQUIRED' : 'COMPANY_INVITE_QUEUE_FAILED', reviewRequired ? 409 : 503);
+  }
 }
 
 async function findAuthUser(service: SupabaseClient, email: string): Promise<User | null> {
@@ -146,6 +155,7 @@ export async function createPlatformCompanyOnboarding(
   input: PlatformCompanyOnboardingInput,
   appUrl: string,
 ): Promise<PlatformCompanyOnboardingResult> {
+  assertInviteRedirect(appUrl);
   const value = normalizeInput(input);
   const existingAuthUser = await findAuthUser(service, value.ownerEmail);
   if (existingAuthUser) throw new PlatformHttpError('COMPANY_OWNER_ALREADY_REGISTERED', 409);
@@ -166,28 +176,13 @@ export async function createPlatformCompanyOnboarding(
   const inviteId = String(row?.invite_id || '');
   if (!companyId || !inviteId) throw new PlatformHttpError('COMPANY_ONBOARDING_CREATE_FAILED', 502);
 
-  const invitation = await service.auth.admin.inviteUserByEmail(value.ownerEmail, {
-    redirectTo: inviteRedirect(appUrl),
-    data: {
-      company_id: companyId,
-      invite_id: inviteId,
-      role: 'owner',
-      name: value.ownerName,
-      company_name: value.name,
-    },
-  });
-  if (invitation.error || !invitation.data.user?.id) {
-    const orphanUserId = invitation.data.user?.id || (await findAuthUser(service, value.ownerEmail).catch(() => null))?.id;
-    let authCleanupFailed = false;
-    if (orphanUserId) {
-      const cleanup = await service.auth.admin.deleteUser(orphanUserId).catch(() => ({ error: new Error('cleanup failed') }));
-      authCleanupFailed = Boolean(cleanup.error);
-    }
+  try {
+    await assertInvitationQueued(service, inviteId);
+  } catch {
     await compensateFailedOnboarding(service, actorUserId, companyId, inviteId);
-    if (authCleanupFailed) throw new PlatformHttpError('COMPANY_INVITE_CLEANUP_FAILED', 503);
-    throw new PlatformHttpError('COMPANY_INVITE_DELIVERY_UNAVAILABLE', 502);
+    throw new PlatformHttpError('COMPANY_INVITE_QUEUE_FAILED', 503);
   }
-  return { companyId, inviteId, slug: String(row?.slug || value.slug), invitationStatus: 'sent' };
+  return { companyId, inviteId, slug: String(row?.slug || value.slug), invitationStatus: 'queued' };
 }
 
 export async function getPlatformCompanyAction(
@@ -212,7 +207,8 @@ export async function resendPlatformOwnerInvite(
   actorUserId: string,
   companyId: string,
   appUrl: string,
-): Promise<{ invitationStatus: 'sent' }> {
+): Promise<{ invitationStatus: 'queued' }> {
+  assertInviteRedirect(appUrl);
   if (!companyId) throw new PlatformHttpError('COMPANY_ID_REQUIRED', 400);
   const { data, error } = await service.rpc('app_platform_resend_owner_invite', {
     p_actor_user_id: actorUserId, p_company_id: companyId,
@@ -221,50 +217,17 @@ export async function resendPlatformOwnerInvite(
   const row = readRpcRow(data);
   const inviteId = String(row?.invite_id || '');
   const ownerEmail = String(row?.owner_email || '').toLowerCase();
-  const ownerName = String(row?.owner_name || '');
   if (!inviteId || !EMAIL_PATTERN.test(ownerEmail)) throw new PlatformHttpError('COMPANY_INVITE_RESEND_FAILED', 502);
-  const { data: company, error: companyError } = await service
-    .from('app_companies')
-    .select('name')
-    .eq('id', companyId)
-    .maybeSingle();
-  if (companyError || !company?.name) throw new PlatformHttpError('COMPANY_INVITE_RESEND_FAILED', 502);
-  const previousAuthUser = await findAuthUser(service, ownerEmail);
-  if (previousAuthUser) {
-    const metadata = previousAuthUser.user_metadata || {};
-    const belongsToPendingInvite = !previousAuthUser.email_confirmed_at
-      && metadata.company_id === companyId && metadata.role === 'owner';
-    if (!belongsToPendingInvite) {
-      await service.rpc('app_platform_cancel_owner_invite', {
-        p_actor_user_id: actorUserId, p_company_id: companyId, p_invite_id: inviteId,
-      });
-      throw new PlatformHttpError('COMPANY_OWNER_ALREADY_REGISTERED', 409);
-    }
-    const removed = await service.auth.admin.deleteUser(previousAuthUser.id);
-    if (removed.error) {
-      await service.rpc('app_platform_cancel_owner_invite', {
-        p_actor_user_id: actorUserId, p_company_id: companyId, p_invite_id: inviteId,
-      });
-      throw new PlatformHttpError('COMPANY_INVITE_CLEANUP_FAILED', 503);
-    }
-  }
-  const invitation = await service.auth.admin.inviteUserByEmail(ownerEmail, {
-    redirectTo: inviteRedirect(appUrl),
-    data: { company_id: companyId, invite_id: inviteId, role: 'owner', name: ownerName, company_name: String(company.name) },
-  });
-  if (invitation.error || !invitation.data.user?.id) {
-    let authCleanupFailed = false;
-    if (invitation.data.user?.id) {
-      const cleanup = await service.auth.admin.deleteUser(invitation.data.user.id).catch(() => ({ error: new Error('cleanup failed') }));
-      authCleanupFailed = Boolean(cleanup.error);
-    }
+  try {
+    await assertInvitationQueued(service, inviteId);
+  } catch (error) {
+    if (error instanceof PlatformHttpError && error.code === 'COMPANY_INVITE_REVIEW_REQUIRED') throw error;
     await service.rpc('app_platform_cancel_owner_invite', {
       p_actor_user_id: actorUserId, p_company_id: companyId, p_invite_id: inviteId,
     });
-    if (authCleanupFailed) throw new PlatformHttpError('COMPANY_INVITE_CLEANUP_FAILED', 503);
-    throw new PlatformHttpError('COMPANY_INVITE_DELIVERY_UNAVAILABLE', 502);
+    throw new PlatformHttpError('COMPANY_INVITE_QUEUE_FAILED', 503);
   }
-  return { invitationStatus: 'sent' };
+  return { invitationStatus: 'queued' };
 }
 
 export default async function platformCompaniesHandler(request: any, response: any): Promise<void> {

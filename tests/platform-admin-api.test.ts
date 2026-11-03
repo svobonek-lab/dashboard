@@ -107,7 +107,7 @@ test('company directory uses the admin-scoped RPC and returns only operational f
     return { data: [{
         id: 'company-a', name: 'Firma A', slug: 'firma-a', active: true,
         onboarding_completed: false, created_at: '2026-10-05T00:00:00Z',
-        member_count: 3, subscription_status: 'not_configured',
+        member_count: 3, subscription_status: 'not_configured', invitation_status: 'queued',
         email: 'customer@example.invalid', address: 'private',
       }], error: null };
   }, from: (table: string) => {
@@ -120,9 +120,18 @@ test('company directory uses the admin-scoped RPC and returns only operational f
     id: 'company-a', name: 'Firma A', slug: 'firma-a', active: true,
     onboarding_completed: false, created_at: '2026-10-05T00:00:00Z',
     member_count: 3, plan: 'starter', subscription_status: 'not_configured', integration_status: 'not_verified',
-    invitation_status: 'not_sent', first_lead_at: null,
+    invitation_status: 'queued', first_lead_at: null,
   }]);
   assert.equal('email' in result[0], false);
+});
+
+test('company directory preserves the manual-review invitation state', async () => {
+  const service = {
+    rpc: async () => ({ data: [{ id: 'company-a', invitation_status: 'review_required' }], error: null }),
+    from: () => ({ select: () => ({ in: async () => ({ data: [{ id: 'company-a', plan: 'pilot' }], error: null }) }) }),
+  } as any;
+  const [company] = await listPlatformCompanies(service, 'admin-a');
+  assert.equal(company.invitation_status, 'review_required');
 });
 
 test('platform billing plan uses an actor-bound service RPC and cannot activate a subscription', async () => {

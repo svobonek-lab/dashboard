@@ -14,7 +14,7 @@ export interface PlatformCompany {
   plan: 'pilot' | 'starter' | 'growth' | 'pro' | 'not_configured';
   subscription_status: 'not_configured' | 'pilot' | 'trial' | 'active' | 'past_due' | 'canceled';
   integration_status: 'not_verified';
-  invitation_status: 'not_sent' | 'sent' | 'accepted';
+  invitation_status: 'not_sent' | 'queued' | 'sent' | 'failed' | 'review_required' | 'accepted';
   first_lead_at: string | null;
 }
 
