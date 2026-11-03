@@ -69,10 +69,12 @@ Server-only settings:
 
 - `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY`: Vercel Functions only; never expose the service key through a `VITE_` variable.
 - `APP_INVITE_WORKER_ENABLED`: explicitly enables the invitation endpoint for the reviewed staging deployment.
-- `RESEND_API_KEY`: optional outbox delivery provider. Without it the worker fails before database access and never reports a false delivery.
+- `EMAIL_PROVIDER_API_KEY`: optional Resend API key used by the outbox worker. Without it the worker fails before database access and never reports a false delivery.
 - `GEMINI_API_KEY`: server-side incoming-email lead classification. The model is fixed to the reviewed `gemini-3.8-flash` in `lib/gemini.ts`; `GEMINI_MODEL` is not a runtime setting. Never expose the key through a `VITE_` variable. Before enabling this flow for customer mail, complete the provider and data-minimization gate in `docs/go-live-checklist.md`.
 - `AI_INBOX_SIGNING_SECRET`: at least 32 characters; derives a different webhook token for every company.
 - `CRON_SECRET` and `EMAIL_FROM`: protect the scheduler and identify verified alert delivery.
+
+Configure SPF, DKIM and DMARC using provider-issued DNS values before enabling delivery; see [email setup](docs/email-setup.md). This worker now reads `EMAIL_PROVIDER_API_KEY`; deployments that currently store the older `RESEND_API_KEY` name must configure the new name before deploying this change.
 
 The reviewed staging proposal for these features is `supabase/staging/20261006_ai_dispatcher_contract.sql`. It creates service-only idempotency and notification tables, stores AI e-mail leads with `source = 'ai_inbox'`, stores embedded-form leads with `source = 'widget'`, and enqueues each 24-hour alert once. It is a review artifact and is never applied by CI.
 

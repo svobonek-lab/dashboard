@@ -32,6 +32,12 @@ test('run evidence contains only aggregate counts, timestamps and bounded error 
   });
   assert.equal(untrustedError.error_code, 'OUTBOX_WORKER_FAILED');
   assert.doesNotMatch(JSON.stringify(untrustedError), /customer@example|secret/i);
+
+  const knownOutboxError = buildOutboxRunEvidence({
+    startedAt: '2026-10-26T10:00:00.000Z', completedAt: '2026-10-26T10:00:01.000Z',
+    staleLeadAlertsQueued: 0, selectedCount: 1, itemStatuses: ['failed'], errorCode: 'OUTBOX_DELIVERY_STATE_UNKNOWN',
+  });
+  assert.equal(knownOutboxError.error_code, 'OUTBOX_DELIVERY_STATE_UNKNOWN');
 });
 
 test('run evidence is created before processing and updates only its aggregate record', async () => {

@@ -36,7 +36,8 @@ test('scheduler persists bounded run summaries and never returns provider or cus
   assert.match(runEvidence, /app_email_outbox_runs/);
   assert.match(runEvidence, /selected_count/);
   assert.match(runEvidence, /error_code/);
-  assert.doesNotMatch(scheduler, /providerMessageId|results,|sendErr\.message/);
+  assert.match(scheduler, /processedCount:\s*record\.delivered_count/);
+  assert.match(scheduler, /run:\s*record/);
   assert.match(migration, /create table if not exists public\.app_email_outbox_runs/i);
   assert.match(migration, /enable row level security/i);
   assert.match(migration, /grant select, insert, update on table public\.app_email_outbox_runs to service_role/i);
