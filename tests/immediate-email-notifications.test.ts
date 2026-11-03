@@ -52,18 +52,18 @@ test('client reports a missing provider as queued, never delivered', async () =>
   assert.equal(state, 'provider_not_configured');
 });
 
-test('provider status endpoint is honest when RESEND_API_KEY is missing', async () => {
-  const savedKey = process.env.RESEND_API_KEY;
+test('provider status endpoint is honest when EMAIL_PROVIDER_API_KEY is missing', async () => {
+  const savedKey = process.env.EMAIL_PROVIDER_API_KEY;
   const savedFrom = process.env.EMAIL_FROM;
   try {
-    delete process.env.RESEND_API_KEY;
+    delete process.env.EMAIL_PROVIDER_API_KEY;
     delete process.env.EMAIL_FROM;
     const res = { code: 0, body: null as any, status(code: number) { this.code = code; return this; }, json(body: any) { this.body = body; return this; } };
     await emailNotificationStatusHandler({ method: 'GET' }, res);
     assert.equal(res.code, 200);
     assert.deepEqual(res.body, { providerConfigured: false, state: 'not_configured' });
   } finally {
-    if (savedKey === undefined) delete process.env.RESEND_API_KEY; else process.env.RESEND_API_KEY = savedKey;
+    if (savedKey === undefined) delete process.env.EMAIL_PROVIDER_API_KEY; else process.env.EMAIL_PROVIDER_API_KEY = savedKey;
     if (savedFrom === undefined) delete process.env.EMAIL_FROM; else process.env.EMAIL_FROM = savedFrom;
   }
 });

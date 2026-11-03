@@ -13,11 +13,11 @@ test('unsupported Sheets never returns invented records or partial successful sy
 });
 
 test('outbox fails before database access when no mail provider is configured', async () => {
-  const names = ['CRON_SECRET','RESEND_API_KEY','EMAIL_FROM','SUPABASE_URL','SUPABASE_SERVICE_ROLE_KEY'];
+  const names = ['CRON_SECRET','EMAIL_PROVIDER_API_KEY','EMAIL_FROM','SUPABASE_URL','SUPABASE_SERVICE_ROLE_KEY'];
   const saved = Object.fromEntries(names.map(name => [name,process.env[name]]));
   try {
     process.env.CRON_SECRET='synthetic-cron';
-    delete process.env.RESEND_API_KEY;
+    delete process.env.EMAIL_PROVIDER_API_KEY;
     delete process.env.EMAIL_FROM;
     process.env.SUPABASE_URL='https://invalid.example';
     process.env.SUPABASE_SERVICE_ROLE_KEY='synthetic';
@@ -32,14 +32,14 @@ test('outbox fails before database access when no mail provider is configured', 
 });
 
 test('outbox refuses to send any email until its durable run evidence table is available', async () => {
-  const names = ['CRON_SECRET','RESEND_API_KEY','EMAIL_FROM','SUPABASE_URL','SUPABASE_SERVICE_ROLE_KEY'];
+  const names = ['CRON_SECRET','EMAIL_PROVIDER_API_KEY','EMAIL_FROM','SUPABASE_URL','SUPABASE_SERVICE_ROLE_KEY'];
   const saved = Object.fromEntries(names.map(name => [name,process.env[name]]));
   const originalFetch = globalThis.fetch;
   let providerCalls = 0;
   let databaseCalls = 0;
   try {
     process.env.CRON_SECRET='synthetic-cron';
-    process.env.RESEND_API_KEY='synthetic-resend';
+    process.env.EMAIL_PROVIDER_API_KEY='synthetic-resend';
     process.env.EMAIL_FROM='StavbaFlow <sender@example.test>';
     process.env.SUPABASE_URL='https://synthetic.supabase.test';
     process.env.SUPABASE_SERVICE_ROLE_KEY='synthetic-service-role';
@@ -63,13 +63,13 @@ test('outbox refuses to send any email until its durable run evidence table is a
 });
 
 test('outbox does not send an email when another worker already claimed it', async () => {
-  const names = ['CRON_SECRET','RESEND_API_KEY','EMAIL_FROM','SUPABASE_URL','SUPABASE_SERVICE_ROLE_KEY'];
+  const names = ['CRON_SECRET','EMAIL_PROVIDER_API_KEY','EMAIL_FROM','SUPABASE_URL','SUPABASE_SERVICE_ROLE_KEY'];
   const saved = Object.fromEntries(names.map(name => [name,process.env[name]]));
   const originalFetch = globalThis.fetch;
   let providerCalls = 0;
   try {
     process.env.CRON_SECRET='synthetic-cron';
-    process.env.RESEND_API_KEY='synthetic-resend';
+    process.env.EMAIL_PROVIDER_API_KEY='synthetic-resend';
     process.env.EMAIL_FROM='StavbaFlow <sender@example.test>';
     process.env.SUPABASE_URL='https://synthetic.supabase.test';
     process.env.SUPABASE_SERVICE_ROLE_KEY='synthetic-service-role';
@@ -114,13 +114,13 @@ test('outbox does not send an email when another worker already claimed it', asy
 });
 
 test('outbox sends to the provider with a stable idempotency key', async () => {
-  const names = ['CRON_SECRET','RESEND_API_KEY','EMAIL_FROM','SUPABASE_URL','SUPABASE_SERVICE_ROLE_KEY'];
+  const names = ['CRON_SECRET','EMAIL_PROVIDER_API_KEY','EMAIL_FROM','SUPABASE_URL','SUPABASE_SERVICE_ROLE_KEY'];
   const saved = Object.fromEntries(names.map(name => [name,process.env[name]]));
   const originalFetch = globalThis.fetch;
   let providerIdempotencyKey: string | null = null;
   try {
     process.env.CRON_SECRET='synthetic-cron';
-    process.env.RESEND_API_KEY='synthetic-resend';
+    process.env.EMAIL_PROVIDER_API_KEY='synthetic-resend';
     process.env.EMAIL_FROM='StavbaFlow <sender@example.test>';
     process.env.SUPABASE_URL='https://synthetic.supabase.test';
     process.env.SUPABASE_SERVICE_ROLE_KEY='synthetic-service-role';
@@ -160,13 +160,67 @@ test('outbox sends to the provider with a stable idempotency key', async () => {
   }
 });
 
+test('outbox recovers a stale processing claim and consumes an attempt before sending', async () => {
+  const names = ['CRON_SECRET','EMAIL_PROVIDER_API_KEY','EMAIL_FROM','SUPABASE_URL','SUPABASE_SERVICE_ROLE_KEY'];
+  const saved = Object.fromEntries(names.map(name => [name, process.env[name]]));
+  const originalFetch = globalThis.fetch;
+  let providerCalls = 0;
+  let claimedAttempts = 0;
+  try {
+    process.env.CRON_SECRET = 'synthetic-cron';
+    process.env.EMAIL_PROVIDER_API_KEY = 'synthetic-resend';
+    process.env.EMAIL_FROM = 'StavbaFlow <sender@example.test>';
+    process.env.SUPABASE_URL = 'https://synthetic.supabase.test';
+    process.env.SUPABASE_SERVICE_ROLE_KEY = 'synthetic-service-role';
+    globalThis.fetch = async (input: string | URL | Request, init?: RequestInit) => {
+      const url = String(input instanceof Request ? input.url : input);
+      if (url.includes('/rest/v1/rpc/app_queue_stale_lead_alerts')) return new Response('0', { status: 200 });
+      if (url.includes('/rest/v1/app_email_outbox_runs')) {
+        if (init?.method === 'POST') return new Response(JSON.stringify({ id: 'run-1' }), { status: 201 });
+        if (init?.method === 'PATCH') return new Response(JSON.stringify({ id: 'run-1' }), { status: 200 });
+      }
+      if (url === 'https://api.resend.com/emails') {
+        providerCalls += 1;
+        return new Response(JSON.stringify({ id: 'provider-message-id' }), { status: 200 });
+      }
+      if (url.includes('/rest/v1/app_email_outbox') && (init?.method || 'GET') === 'GET') {
+        return new Response(JSON.stringify([{
+          id: 'email-stale', recipient: 'worker@example.invalid', subject: 'Pilot', body: 'Pilot',
+          status: 'processing', attempts: 2, scheduled_for: '2026-01-01T00:00:00.000Z',
+          created_at: '2026-01-01T00:00:00.000Z', updated_at: new Date(Date.now() - 16 * 60_000).toISOString(),
+        }]), { status: 200 });
+      }
+      if (url.includes('/rest/v1/app_email_outbox') && init?.method === 'PATCH') {
+        const body = JSON.parse(String(init.body || '{}'));
+        if (body.status === 'processing') {
+          claimedAttempts = body.attempts;
+          return new Response(JSON.stringify({ id: 'email-stale' }), { status: 200 });
+        }
+        if (body.status === 'delivered') return new Response(JSON.stringify({ id: 'email-stale' }), { status: 200 });
+        return new Response(null, { status: 204 });
+      }
+      throw new Error(`Unexpected fetch: ${init?.method || 'GET'} ${url}`);
+    };
+    const res = { code: 0, body: null as any, status(code: number) { this.code = code; return this; }, json(body: any) { this.body = body; return this; } };
+    await outbox({ method: 'POST', headers: { authorization: 'Bearer synthetic-cron' } }, res);
+    assert.equal(res.code, 200);
+    assert.equal(providerCalls, 1);
+    assert.equal(claimedAttempts, 3);
+    assert.equal(res.body.run.delivered_count, 1);
+    assert.doesNotMatch(JSON.stringify(res.body), /worker@example|Pilot|provider-message-id/);
+  } finally {
+    globalThis.fetch = originalFetch;
+    for (const name of names) { if (saved[name] === undefined) delete process.env[name]; else process.env[name] = saved[name]; }
+  }
+});
+
 test('outbox does not report delivered when persisting provider acceptance fails', async () => {
-  const names = ['CRON_SECRET','RESEND_API_KEY','EMAIL_FROM','SUPABASE_URL','SUPABASE_SERVICE_ROLE_KEY'];
+  const names = ['CRON_SECRET','EMAIL_PROVIDER_API_KEY','EMAIL_FROM','SUPABASE_URL','SUPABASE_SERVICE_ROLE_KEY'];
   const saved = Object.fromEntries(names.map(name => [name,process.env[name]]));
   const originalFetch = globalThis.fetch;
   try {
     process.env.CRON_SECRET='synthetic-cron';
-    process.env.RESEND_API_KEY='synthetic-resend';
+    process.env.EMAIL_PROVIDER_API_KEY='synthetic-resend';
     process.env.EMAIL_FROM='StavbaFlow <sender@example.test>';
     process.env.SUPABASE_URL='https://synthetic.supabase.test';
     process.env.SUPABASE_SERVICE_ROLE_KEY='synthetic-service-role';
