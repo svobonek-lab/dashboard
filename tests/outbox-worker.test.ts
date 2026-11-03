@@ -4,6 +4,7 @@ import {
   deliverClaimedOutboxEmail,
   createResendEmailProvider,
   EmailProviderError,
+  isRecoverableOutboxClaim,
   retryDelayMs,
 } from '../api/_outbox-worker.js';
 
@@ -119,6 +120,14 @@ test('caps retryable deliveries at five attempts and increases delay exponential
   assert.equal(result.status, 'failed');
   assert.equal(h.updates[0].status, 'failed');
   assert.equal(h.updates[0].attempts, 5);
+});
+
+test('recovers stale legacy sending claims as well as current processing claims', () => {
+  const staleBefore = '2026-11-03T10:00:00.000Z';
+  assert.equal(isRecoverableOutboxClaim('sending', '2026-11-03T09:45:00.000Z', staleBefore), true);
+  assert.equal(isRecoverableOutboxClaim('processing', '2026-11-03T09:45:00.000Z', staleBefore), true);
+  assert.equal(isRecoverableOutboxClaim('sending', '2026-11-03T10:00:01.000Z', staleBefore), false);
+  assert.equal(isRecoverableOutboxClaim('pending', '2026-11-03T09:45:00.000Z', staleBefore), false);
 });
 
 test('Resend transport classifies rate limits as retryable and keeps request idempotent', async () => {
