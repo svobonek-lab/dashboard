@@ -20,7 +20,7 @@ Make employee and platform-owner invitation email delivery durable and retryable
 4. Before provider submission, generate the Supabase link and encrypt it using a dedicated `EMAIL_LINK_ENCRYPTION_KEY`. Persist the encrypted link so retries send identical content and reuse the same Resend idempotency key. Never return, log, or include the plaintext link in run evidence.
 5. If a saved link has expired before delivery, generate a fresh link, atomically replace the encrypted value, and increment a payload generation used in the provider idempotency key. Delivery of older, expired links remains harmless.
 6. Clear encrypted link material after confirmed delivery, terminal failure, revocation, or invite expiry. Keep ordinary outbox rows and aggregate run evidence according to the existing retention behavior.
-7. Retry provider failures with the existing five-attempt exponential backoff and preserve the current manual review state for ambiguous provider outcomes. The daily Hobby cron means automatic attempts can be delayed up to about a day; this must be shown honestly until a more frequent approved scheduler exists.
+7. Retry provider failures with the existing five-attempt exponential backoff and preserve the current manual review state for ambiguous provider outcomes. Replace the effective retry scheduler with a one-minute Supabase Cron job (`pg_cron` + `pg_net`) that invokes the existing authenticated Vercel `/api/outbox-scheduler` endpoint. Store the endpoint and bearer secret in Supabase Vault; do not put the secret in SQL files. Supabase documents scheduled HTTP calls and Vercel documents the Hobby minimum of once per day for Vercel-managed Cron. A once-per-minute external schedule is 43,200 Vercel function invocations per 30-day month, below the published 1,000,000 Hobby invocation allowance; duration and compute still need monitoring, and the worker must fail closed if the configured schedule is absent.
 8. Apply the required schema change only as a reviewable migration proposal. Do not apply it to staging or production in this task without a separate staging approval; never write to production.
 
 ## Failure decisions
@@ -36,6 +36,7 @@ Make employee and platform-owner invitation email delivery durable and retryable
 - Existing Auth invitation acceptance and password setup remain unchanged. No invitation is activated merely because email was queued.
 - The UI must distinguish “queued” from “sent” and provide a safe retry/status path without creating duplicate memberships or invitation rows.
 - Initial scope is employee invitations plus the existing platform-owner invitation/resend routes. Password recovery and other Auth emails remain on Auth SMTP unless separately designed.
+- The staging SQL proposal may enable `pg_cron`/`pg_net` and add the minute schedule only after explicit staging approval; it must be idempotent and have a reviewed unschedule/rollback path. Do not change Production scheduling or secrets.
 
 ## Acceptance criteria
 
@@ -48,4 +49,9 @@ Make employee and platform-owner invitation email delivery durable and retryable
 
 ## Open implementation detail
 
-The current database contract has no encrypted-link or payload-generation columns. The builder should choose the smallest additive migration and a deterministic cleanup strategy; it must preserve existing outbox rows and avoid broadening grants.
+The current database contract has no encrypted-link or payload-generation columns. The builder should choose the smallest additive migration and a deterministic cleanup strategy; it must preserve existing outbox rows and avoid broadening grants. A read-only extension inventory of StavbaCore Staging (`xwzweltjvreqhjpbjrxa`) on 2026-11-03 found `pg_cron` and `pg_net` available but not enabled; Vault is installed at 0.3.1. The staging scheduler proposal therefore needs to enable the two available extensions and use Vault. No staging extension was enabled and no SQL was applied.
+
+## Platform references
+
+- [Supabase Cron can invoke scheduled HTTP requests using `pg_cron` and `pg_net`](https://supabase.com/docs/guides/functions/schedule-functions); its setup guide recommends storing request credentials in Vault.
+- [Vercel Hobby Cron runs at most once daily](https://vercel.com/docs/cron-jobs/usage-and-pricing); [Hobby includes 1,000,000 function invocations](https://vercel.com/docs/plans/hobby).
