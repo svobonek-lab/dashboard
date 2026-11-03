@@ -18,5 +18,7 @@ test('legacy outbox compatibility preserves queued payloads and expands states a
   for (const status of ['pending', 'sending', 'sent', 'failed', 'cancelled', 'processing', 'delivered', 'retry']) {
     assert.match(sql, new RegExp(`'${status}'`, 'i'));
   }
-  assert.doesNotMatch(sql, /drop\s+column|truncate\s+|delete\s+from|revoke\s+/i);
+  assert.doesNotMatch(sql, /drop\s+column|truncate\s+|delete\s+from/i);
+  assert.match(sql, /revoke all on table public\.app_email_outbox from public, anon, authenticated/i);
+  assert.match(sql, /grant select, insert, update on table public\.app_email_outbox to service_role/i);
 });

@@ -434,7 +434,7 @@ function AppContent() {
 
   if (pathname === '/login' || roleLoginRoutes[pathname]) {
     if (deploymentSurface === 'landing' && appUrl) {
-      return <ExternalRedirect url={buildAppLoginUrl(appUrl, window.location.search)} />;
+      return <ExternalRedirect url={buildAppLoginUrl(appUrl, window.location.search, Boolean((import.meta as any).env?.DEV))} />;
     }
     if (roleLoginRoutes[pathname]) {
       return <InternalRedirect url={`/login${window.location.search}`} />;

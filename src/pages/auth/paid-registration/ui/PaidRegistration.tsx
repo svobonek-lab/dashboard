@@ -2,6 +2,7 @@ import React,{useCallback,useEffect,useState} from 'react';
 import type {User} from '@supabase/supabase-js';
 import {supabase} from '@/shared/api/supabase';
 import {LegalConsentFields} from '@/shared/ui/LegalConsentFields';
+import { normalizePublicOrigin } from '@/shared/lib/publicUrls';
 import {activationReady,registrationPayload,type RegistrationDraft,type SubscriptionPlan} from '@/features/paid-registration';
 
 export function PaidRegistrationPage(){
@@ -64,9 +65,11 @@ export function PaidRegistrationPage(){
  const account=async(event:React.FormEvent)=>{
   event.preventDefault();if(!supabase)return;setBusy(true);setError('');
   try{
+   const appOrigin=normalizePublicOrigin(import.meta.env.PUBLIC_APP_URL, Boolean(import.meta.env.DEV));
+   if(!appOrigin)throw new Error('Adresa aplikace není bezpečně nastavena. Zkuste registraci později.');
    const result=signIn
     ?await supabase.auth.signInWithPassword({email,password})
-    :await supabase.auth.signUp({email,password,options:{emailRedirectTo:window.location.origin+'/register-paid'}});
+    :await supabase.auth.signUp({email,password,options:{emailRedirectTo:new URL('/register-paid',appOrigin).toString()}});
    if(result.error)throw new Error('Účet se nepodařilo ověřit. Zkontrolujte údaje nebo potvrzovací e-mail.');
    setPassword('');
    if(!result.data.session)setMessage('Otevřete potvrzovací e-mail. Poté se sem vraťte a přihlaste.');

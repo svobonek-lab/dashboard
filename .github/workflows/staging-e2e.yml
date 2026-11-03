@@ -824,7 +824,7 @@ jobs:
             echo 'Refusing local recovery without the exact staging project and Stripe TEST mode.' >&2
             exit 1
           fi
-          node -e 'const e=process.env; if(e.SUPABASE_URL!==e.STAGING_SUPABASE_URL || new URL(e.SUPABASE_URL).hostname!=="xwzweltjvreqhjpbjrxa.supabase.co") process.exit(1); const keys=["SUPABASE_URL","VITE_SUPABASE_URL","SUPABASE_ANON_KEY","VITE_SUPABASE_ANON_KEY","SUPABASE_SERVICE_ROLE_KEY","STRIPE_SECRET_KEY","STRIPE_BILLING_MODE","STRIPE_PRICE_PILOT_ID","STRIPE_PRICE_STARTER_ID","BILLING_RETURN_URL"]; if(keys.some(k=>!e[k])) process.exit(1);'
+          node -e 'const e=process.env; if(e.SUPABASE_URL!==e.STAGING_SUPABASE_URL || new URL(e.SUPABASE_URL).hostname!=="xwzweltjvreqhjpbjrxa.supabase.co") process.exit(1); const keys=["SUPABASE_URL","VITE_SUPABASE_URL","SUPABASE_ANON_KEY","VITE_SUPABASE_ANON_KEY","SUPABASE_SERVICE_ROLE_KEY","STRIPE_SECRET_KEY","STRIPE_BILLING_MODE","STRIPE_PRICE_PILOT_ID","STRIPE_PRICE_STARTER_ID","PUBLIC_APP_URL"]; if(keys.some(k=>!e[k])) process.exit(1);'
           ./node_modules/.bin/vite --host 127.0.0.1 --port 4173 --strictPort > "$STAGING_DEV_LOG" 2>&1 &
           dev_pid=$!
           cleanup() { kill "$dev_pid" 2>/dev/null || true; wait "$dev_pid" 2>/dev/null || true; rm -f "$STAGING_DEV_LOG" "$RUNNER_TEMP/staging-stripe-preview.env"; }

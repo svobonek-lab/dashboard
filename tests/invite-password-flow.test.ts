@@ -54,24 +54,29 @@ test('application keeps an invited session out of protected dashboards until pas
   assert.match(login, /completeInvitePasswordSetup\(validatedPassword,/);
 });
 
-test('owner and employee invitations include company name for the Czech email template', () => {
+test('owner and employee invitation queue carries company name and never falls back to SMTP', () => {
   const ownerRoute = readFileSync(new URL('../api/_platform/routes/companies.ts', import.meta.url), 'utf8');
   const employeeRoute = readFileSync(new URL('../api/invite-employee.ts', import.meta.url), 'utf8');
-  assert.match(ownerRoute, /company_name:\s*value\.name/);
-  assert.match(employeeRoute, /company_name:\s*company\.name/);
-  assert.match(employeeRoute, /APP_INVITE_DELIVERY_UNAVAILABLE/);
+  const migration = readFileSync(new URL('../supabase/staging/20261103_invitation_outbox.sql', import.meta.url), 'utf8');
+  assert.match(ownerRoute, /assertInvitationQueued/);
+  assert.match(employeeRoute, /notification_kind',\s*'auth_invite/);
+  assert.match(migration, /'company_name',v_company_name/);
+  assert.match(migration, /'company_name',trim\(p_name\)/);
+  assert.match(employeeRoute, /APP_INVITE_QUEUE_FAILED/);
+  assert.doesNotMatch(ownerRoute, /inviteUserByEmail/);
+  assert.doesNotMatch(employeeRoute, /inviteUserByEmail/);
 });
 
-test('repository contains the Czech invite template and SMTP operator runbook', () => {
+test('repository documents secure invitation outbox setup and staging boundary', () => {
   const template = readFileSync(new URL('../supabase/templates/invite.html', import.meta.url), 'utf8');
   const runbook = readFileSync(new URL('../docs/supabase-invite-email.md', import.meta.url), 'utf8');
   assert.match(template, /Přijměte pozvánku/);
   assert.match(template, /Data\.company_name/);
   assert.match(template, /ConfirmationURL/);
-  assert.match(template, /7 dní/);
-  assert.match(runbook, /vlastní SMTP/i);
-  assert.match(runbook, /reálnou schránk/i);
-  assert.match(runbook, /SMTP není/i);
+  assert.match(runbook, /EMAIL_LINK_ENCRYPTION_KEY/);
+  assert.match(runbook, /zařazena k odeslání/);
+  assert.match(runbook, /žádný z těchto SQL souborů nebyl.*aplikován/i);
+  assert.match(runbook, /token není v API výstupu/i);
 });
 
 test('database invitation acceptance requires a server-owned password-change marker', () => {

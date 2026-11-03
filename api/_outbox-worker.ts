@@ -66,12 +66,13 @@ export async function deliverClaimedOutboxEmail(
     provider: EmailProvider;
     store: OutboxDeliveryStore;
     now?: () => Date;
+    idempotencyKey?: string;
   },
 ): Promise<{ status: 'delivered' | 'retry' | 'failed'; errorCode?: string }> {
   const now = dependencies.now || (() => new Date());
   let providerMessageId: string;
   try {
-    const result = await dependencies.provider.send(email, `outbox/${email.id}`);
+    const result = await dependencies.provider.send(email, dependencies.idempotencyKey || `outbox/${email.id}`);
     if (!result || typeof result.id !== 'string' || result.id.length === 0) {
       throw new EmailProviderError('EMAIL_PROVIDER_UNCONFIRMED', true);
     }

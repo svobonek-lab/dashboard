@@ -1705,7 +1705,7 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
         }
         return {
           email: target.email,
-          message: `Nová jednorázová pozvánka pro ${target.name} byla odeslána.`
+          message: `Nová jednorázová pozvánka pro ${target.name} byla zařazena k odeslání.`
         };
       } catch (err: any) {
         throw new Error(`Obnovení pozvánky selhalo: ${err.message}`);

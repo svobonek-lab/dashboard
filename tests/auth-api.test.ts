@@ -28,9 +28,9 @@ test('password recovery endpoint is fail-closed until explicitly enabled', async
 
 test('invite endpoint rejects a missing absolute HTTPS redirect before database access', async () => {
   const previousEnabled = process.env.APP_INVITE_WORKER_ENABLED;
-  const previousUrl = process.env.APP_URL;
+  const previousUrl = process.env.PUBLIC_APP_URL;
   process.env.APP_INVITE_WORKER_ENABLED = 'true';
-  delete process.env.APP_URL;
+  delete process.env.PUBLIC_APP_URL;
   try {
     const response = probe();
     await inviteEmployeeHandler({
@@ -43,8 +43,8 @@ test('invite endpoint rejects a missing absolute HTTPS redirect before database 
   } finally {
     if (previousEnabled === undefined) delete process.env.APP_INVITE_WORKER_ENABLED;
     else process.env.APP_INVITE_WORKER_ENABLED = previousEnabled;
-    if (previousUrl === undefined) delete process.env.APP_URL;
-    else process.env.APP_URL = previousUrl;
+    if (previousUrl === undefined) delete process.env.PUBLIC_APP_URL;
+    else process.env.PUBLIC_APP_URL = previousUrl;
   }
 });
 
@@ -70,9 +70,9 @@ test('invite RPC maps unsupported legacy plans without mislabeling them as a sea
 
 test('password recovery rejects a non-HTTPS redirect before database access', async () => {
   const previousEnabled = process.env.APP_AUTH_RECOVERY_ENABLED;
-  const previousUrl = process.env.APP_URL;
+  const previousUrl = process.env.PUBLIC_APP_URL;
   process.env.APP_AUTH_RECOVERY_ENABLED = 'true';
-  process.env.APP_URL = 'http://localhost:3000';
+  process.env.PUBLIC_APP_URL = 'https://dashboard-preview.vercel.app';
   try {
     const response = probe();
     await resetEmployeePasswordHandler({ method: 'POST', body: { email: 'worker@example.com' } }, response);
@@ -81,7 +81,7 @@ test('password recovery rejects a non-HTTPS redirect before database access', as
   } finally {
     if (previousEnabled === undefined) delete process.env.APP_AUTH_RECOVERY_ENABLED;
     else process.env.APP_AUTH_RECOVERY_ENABLED = previousEnabled;
-    if (previousUrl === undefined) delete process.env.APP_URL;
-    else process.env.APP_URL = previousUrl;
+    if (previousUrl === undefined) delete process.env.PUBLIC_APP_URL;
+    else process.env.PUBLIC_APP_URL = previousUrl;
   }
 });

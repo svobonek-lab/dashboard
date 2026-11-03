@@ -47,9 +47,13 @@ Make employee and platform-owner invitation email delivery durable and retryable
 - Tests cover successful delivery, transient retry, provider permanent failure, expiry renewal, revocation, encryption round trip, and recovery after the worker crashes between link creation and provider acknowledgement.
 - No production migration or environment-variable change occurs.
 
-## Open implementation detail
+## Implementation decisions
 
-The current database contract has no encrypted-link or payload-generation columns. The builder should choose the smallest additive migration and a deterministic cleanup strategy; it must preserve existing outbox rows and avoid broadening grants. A read-only extension inventory of StavbaCore Staging (`xwzweltjvreqhjpbjrxa`) on 2026-11-03 found `pg_cron` and `pg_net` available but not enabled; Vault is installed at 0.3.1. The staging scheduler proposal therefore needs to enable the two available extensions and use Vault. No staging extension was enabled and no SQL was applied.
+- Use an additive staging SQL proposal with encrypted-link, expiry, payload-generation, and lease columns. Preserve ordinary outbox rows. `app_email_outbox` is service-role-only after the proposal; browser policies and grants are removed because the table now holds bearer-link ciphertext.
+- `EMAIL_LINK_ENCRYPTION_KEY` is base64 encoding exactly 32 random bytes. It is separate from Resend credentials. `AUTH_EMAIL_LINK_TTL_SECONDS` is required in the 300–3600 second range and may not exceed the configured Supabase Auth email OTP expiry. Supabase's generated-link response does not establish the exact configured expiry, so this value is a conservative application bound, not an assertion about server-side expiry.
+- Stale claims use a database lease and compare-and-swap before replacing link material. The invite API only returns queued after checking the durable RPC-created outbox row.
+- A read-only extension inventory of StavbaCore Staging (`xwzweltjvreqhjpbjrxa`) on 2026-11-03 found `pg_cron` and `pg_net` available but not enabled; Vault is installed at 0.3.1. The separate minute-scheduler proposal enables these extensions and stores endpoint/authorization in Vault. No staging extension was enabled and no SQL was applied.
+- Existing unknown/mismatched Auth users, expired or revoked invites, and ambiguous delivery after the provider's idempotency window require manual review. Do not recover by sending a plaintext link or deleting/recreating an Auth user.
 
 ## Platform references
 

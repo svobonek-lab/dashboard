@@ -11,18 +11,18 @@ test('only explicit public demo routes bypass the application login', () => {
   assert.equal(isPublicDemoPath('/demo-company'), false);
 });
 
-test('explicit HTTPS demo URL wins and is normalized without query or fragment', () => {
+test('PUBLIC_APP_URL resolves the demo path on the canonical app domain', () => {
   assert.deepEqual(resolveDemoUrl(
-    { VITE_DEMO_URL: 'https://dashboard.example.test/demo/' },
+    { PUBLIC_APP_URL: 'https://dashboard.example.test/' },
     { isDevelopment: false, origin: 'https://sales.example.test', allowRelative: false },
   ), { url: 'https://dashboard.example.test/demo', error: null });
 });
 
-test('app URL fallback points to the real demo workspace', () => {
+test('Vercel deployment origins cannot become user-facing demo links', () => {
   assert.deepEqual(resolveDemoUrl(
-    { VITE_APP_URL: 'https://dashboard.example.test/' },
+    { PUBLIC_APP_URL: 'https://dashboard-preview.vercel.app' },
     { isDevelopment: false, origin: 'https://sales.example.test', allowRelative: false },
-  ), { url: 'https://dashboard.example.test/demo', error: null });
+  ), { url: null, error: 'Odkaz na demo nelze odvodit z adresy aplikace.' });
 });
 
 test('local or deliberately unified deployments may keep demo relative', () => {
@@ -42,7 +42,7 @@ test('unsafe and ambiguous public demo URLs fail closed', () => {
     'not a url',
   ]) {
     const result = resolveDemoUrl(
-      { VITE_DEMO_URL: value },
+      { PUBLIC_APP_URL: value },
       { isDevelopment: false, origin: 'https://sales.example.test', allowRelative: false },
     );
     assert.equal(result.url, null, value);
@@ -52,7 +52,7 @@ test('unsafe and ambiguous public demo URLs fail closed', () => {
 
 test('configured invalid URL never falls through to another destination', () => {
   const result = resolveDemoUrl(
-    { VITE_DEMO_URL: 'http://unsafe.example.test/demo', VITE_APP_URL: 'https://safe.example.test' },
+    { PUBLIC_APP_URL: 'http://unsafe.example.test/demo' },
     { isDevelopment: false, origin: 'https://sales.example.test', allowRelative: false },
   );
   assert.equal(result.url, null);

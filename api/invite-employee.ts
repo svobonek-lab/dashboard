@@ -1,4 +1,5 @@
 import { createServerlessSupabaseClient } from './_shared/supabaseClient.js';
+import { buildPublicAppUrl } from './_shared/publicUrls.js';
 
 export function mapInviteRpcError(error: { message?: unknown; details?: unknown } | null | undefined) {
   const code = typeof error?.message === 'string' ? error.message : '';
@@ -30,17 +31,6 @@ export function mapInviteRpcError(error: { message?: unknown; details?: unknown 
   };
 }
 
-function getAuthRedirectUrl(rawUrl: string | undefined): string | null {
-  try {
-    const url = new URL(String(rawUrl || ''));
-    if (url.protocol !== 'https:' || url.username || url.password || url.search || url.hash || (url.pathname !== '/' && url.pathname !== '')) return null;
-    url.pathname = '/login';
-    return url.toString();
-  } catch {
-    return null;
-  }
-}
-
 export default async function inviteEmployeeHandler(req: any, res: any) {
   if (req.method !== 'POST') {
     res.status(405).json({ error: 'Method Not Allowed. Use POST.' });
@@ -60,7 +50,7 @@ export default async function inviteEmployeeHandler(req: any, res: any) {
     res.status(400).json({ error: 'Pozvánka vyžaduje přihlášený účet, firmu a platný e-mail.' });
     return;
   }
-  const redirectTo = getAuthRedirectUrl(process.env.APP_URL);
+  const redirectTo = buildPublicAppUrl('/login');
   if (!redirectTo) {
     res.status(503).json({ error: 'Pozvánky nemají bezpečnou cílovou adresu aplikace.', code: 'AUTH_REDIRECT_CONFIG_MISSING' });
     return;
@@ -112,17 +102,22 @@ export default async function inviteEmployeeHandler(req: any, res: any) {
     res.status(mapped.status).json(mapped.body);
     return;
   }
-  const { error: authInviteError } = await serviceClient.auth.admin.inviteUserByEmail(email, {
-    data: { company_id: companyId, invite_id: inviteId, role: 'employee', name: name || email, company_name: company.name },
-    redirectTo,
-  });
-  if (authInviteError) {
-    await serviceClient.from('app_invites').delete().eq('id', inviteId).eq('company_id', companyId).is('accepted_at', null);
+  const { data: queuedInvite, error: queueError } = await serviceClient
+    .from('app_email_outbox').select('id,status,last_error').eq('invite_id', inviteId).eq('notification_kind', 'auth_invite').maybeSingle();
+  if (queueError || !queuedInvite) {
     res.status(502).json({
-      error: 'E-mailovou pozvánku nelze odeslat. Ověřte vlastní SMTP v Supabase a zkuste to znovu.',
-      code: 'APP_INVITE_DELIVERY_UNAVAILABLE',
+      error: 'Pozvánku se nepodařilo bezpečně zařadit k odeslání. Zkuste to znovu.',
+      code: 'APP_INVITE_QUEUE_FAILED',
     });
     return;
   }
-  res.status(200).json({ invited: true, inviteId, expiresInDays: 7 });
+  if (!['pending', 'retry', 'processing', 'sending'].includes(String(queuedInvite.status))) {
+    const reviewRequired = ['AUTH_INVITE_USER_REVIEW_REQUIRED', 'AUTH_INVITE_SCOPE_MISMATCH'].includes(String(queuedInvite.last_error));
+    res.status(reviewRequired ? 409 : 503).json({
+      error: reviewRequired ? 'Pozvánka vyžaduje bezpečnostní kontrolu správce.' : 'Pozvánka není připravena k odeslání.',
+      code: reviewRequired ? 'APP_INVITE_REVIEW_REQUIRED' : 'APP_INVITE_NOT_QUEUED',
+    });
+    return;
+  }
+  res.status(200).json({ invited: true, invitationStatus: 'queued', inviteId, expiresInDays: 7 });
 }

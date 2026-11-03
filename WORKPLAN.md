@@ -29,7 +29,7 @@ Deliver the first controlled pilot for a small construction company: owner login
 8. Review and apply the proposed connector contract to isolated staging, run `test:connector:staging` and `test:connector:preview`, and record the tested image digest before enabling `VITE_CONNECTOR_ENABLED`.
 9. Review and manually apply `supabase/staging/20261005_platform_admin_contract.sql` to isolated staging, then run the dry-run-first platform administrator provisioner for the existing operator Auth account.
 10. Verify the platform administrator login and minimal company directory in the exact Preview. Owner and employee sessions must receive `403`, and the administrator must remain unable to read tenant business rows.
-11. Configure `VITE_DEMO_URL` on the landing deployment to the verified dashboard `/demo` URL and repeat browser navigation checks.
+11. Configure `PUBLIC_APP_URL` and `PUBLIC_LANDING_URL` on both surfaces with approved custom HTTPS domains and repeat browser navigation checks.
 
 ## Customer-managed database connector (BYODB)
 

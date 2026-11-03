@@ -25,7 +25,7 @@ function dependencies(overrides: Partial<CheckoutDependencies> = {}): CheckoutDe
     bindCustomer: async () => undefined,
     createSession: async (input) => ({ url: 'https://checkout.stripe.com/c/pay_test', input }),
     config: () => ({
-      secretKey: 'rk_test_unitonly', returnUrl: 'https://preview.example.com', mode: 'test',
+      secretKey: 'rk_test_unitonly', publicAppUrl: 'https://app.example.com', mode: 'test',
       prices: { pilot: 'price_testunitonly', starter: 'price_starter', growth: 'price_growth', pro: 'price_pro' },
     }),
     ...overrides,
@@ -109,7 +109,7 @@ test('checkout reuses an existing Stripe customer without creating or rebinding 
 test('checkout fails closed when server billing configuration is absent', async () => {
   let stripeCalls = 0;
   const handler = createStripeCheckoutHandler(dependencies({
-    config: () => ({ secretKey: '', returnUrl: '', mode: 'test', prices: { pilot: '', starter: '', growth: '', pro: '' } }),
+    config: () => ({ secretKey: '', publicAppUrl: '', mode: 'test', prices: { pilot: '', starter: '', growth: '', pro: '' } }),
     createSession: async () => { stripeCalls += 1; return { url: 'https://checkout.stripe.com/c/never' }; },
   }));
   const response = responseRecorder();
@@ -158,7 +158,7 @@ test('Profi fails closed with BILLING_PLAN_UNAVAILABLE when its Stripe price is 
   let stripeCalls = 0;
   const handler = createStripeCheckoutHandler(dependencies({
     authorizeOwner: async () => ({ userId: 'owner-a', companyId: tenantId, customerId: null, plan: 'pro' }),
-    config: () => ({ secretKey: 'rk_test_unitonly', returnUrl: 'https://preview.example.com', mode: 'test',
+    config: () => ({ secretKey: 'rk_test_unitonly', publicAppUrl: 'https://app.example.com', mode: 'test',
       prices: { pilot: 'price_legacy', starter: 'price_starter', growth: 'price_growth', pro: '' } }),
     createCustomer: async () => { stripeCalls += 1; return { id: 'cus_unexpected' }; },
     createSession: async () => { stripeCalls += 1; return { url: 'https://checkout.stripe.com/c/never' }; },

@@ -8,11 +8,14 @@ begin
   if not (select relrowsecurity from pg_class where oid = 'public.app_email_outbox'::regclass) then
     raise exception 'compatibility migration must preserve RLS';
   end if;
-  if not has_table_privilege('authenticated', 'public.app_email_outbox', 'select')
+  if has_table_privilege('authenticated', 'public.app_email_outbox', 'select')
      or has_table_privilege('authenticated', 'public.app_email_outbox', 'insert')
      or has_table_privilege('authenticated', 'public.app_email_outbox', 'update')
      or has_table_privilege('authenticated', 'public.app_email_outbox', 'delete') then
-    raise exception 'compatibility migration must preserve authenticated read-only grants';
+    raise exception 'outbox must not be readable or writable by browser roles';
+  end if;
+  if exists (select 1 from pg_policies where schemaname='public' and tablename='app_email_outbox') then
+    raise exception 'outbox must have no browser-visible policies';
   end if;
   if not has_table_privilege('service_role', 'public.app_email_outbox', 'select')
      or not has_table_privilege('service_role', 'public.app_email_outbox', 'insert')
