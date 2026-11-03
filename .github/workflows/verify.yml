@@ -165,6 +165,9 @@ jobs:
           docker exec outbox-evidence-postgres psql -v ON_ERROR_STOP=1 -U postgres -c "create role anon nologin; create role authenticated nologin; create role service_role nologin bypassrls;"
           docker exec -i outbox-evidence-postgres psql -v ON_ERROR_STOP=1 -U postgres < supabase/migrations/20261027000000_app_email_outbox_runs.sql
           docker exec -i outbox-evidence-postgres psql -v ON_ERROR_STOP=1 -U postgres < supabase/tests/outbox_run_evidence_verify.sql
+          docker exec -i outbox-evidence-postgres psql -v ON_ERROR_STOP=1 -U postgres < supabase/tests/outbox_legacy_compat_setup.sql
+          docker exec -i outbox-evidence-postgres psql -v ON_ERROR_STOP=1 -U postgres < supabase/staging/20261103_outbox_worker_legacy_compat.sql
+          docker exec -i outbox-evidence-postgres psql -v ON_ERROR_STOP=1 -U postgres < supabase/tests/outbox_legacy_compat_verify.sql
       - name: Stop disposable PostgreSQL
         if: always()
         run: docker rm --force outbox-evidence-postgres
