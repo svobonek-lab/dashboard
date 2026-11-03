@@ -74,7 +74,7 @@ begin
   return query
   select c.id, c.name, c.slug, c.active, c.onboarding_completed, c.created_at,
     count(distinct m.user_id) filter (where m.active=true)::bigint,
-    coalesce(nullif(c.plan,''),'not_configured')::text,
+    coalesce(nullif(c.subscription_status,''),'not_configured')::text,
     case
       when bool_or(i.accepted_at is not null) then 'accepted'::text
       when bool_or(o.last_error in ('AUTH_INVITE_USER_REVIEW_REQUIRED','AUTH_INVITE_SCOPE_MISMATCH')) then 'review_required'::text
@@ -89,7 +89,7 @@ begin
   left join public.app_invites i on i.company_id=c.id and i.role='owner' and i.revoked_at is null
   left join public.app_email_outbox o on o.invite_id=i.id and o.notification_kind='auth_invite'
   left join public.app_leads l on l.company_id=c.id
-  group by c.id,c.name,c.slug,c.active,c.onboarding_completed,c.created_at,c.plan
+  group by c.id,c.name,c.slug,c.active,c.onboarding_completed,c.created_at,c.subscription_status
   order by c.created_at desc;
 end;
 $$;

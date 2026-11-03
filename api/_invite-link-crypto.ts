@@ -6,7 +6,10 @@ function normalizeKey(input: Buffer | string | undefined): Buffer {
   let key: Buffer;
   if (Buffer.isBuffer(input)) key = input;
   else if (typeof input === 'string') {
-    try { key = Buffer.from(input, 'base64'); } catch { throw new Error('EMAIL_LINK_ENCRYPTION_KEY_INVALID'); }
+    try {
+      key = Buffer.from(input, 'base64');
+      if (!input || key.toString('base64') !== input) throw new Error();
+    } catch { throw new Error('EMAIL_LINK_ENCRYPTION_KEY_INVALID'); }
   } else {
     throw new Error('EMAIL_LINK_ENCRYPTION_KEY_INVALID');
   }

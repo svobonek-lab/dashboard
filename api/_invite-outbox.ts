@@ -102,9 +102,11 @@ export async function createInviteLinkDependencies(input: {
     store: {
       async loadInvite(inviteId) {
         const { data: invite, error: inviteError } = await service.from('app_invites').select('id,company_id,email,name,role,accepted_at,revoked_at,expires_at').eq('id', inviteId).maybeSingle();
-        if (inviteError || !invite) return { invite: null, company: null, user: null };
+        if (inviteError) throw new Error('AUTH_INVITE_LOOKUP_FAILED');
+        if (!invite) return { invite: null, company: null, user: null };
         const { data: company, error: companyError } = await service.from('app_companies').select('id,name,active').eq('id', invite.company_id).maybeSingle();
-        if (companyError || !company) return { invite, company: null, user: null };
+        if (companyError) throw new Error('AUTH_COMPANY_LOOKUP_FAILED');
+        if (!company) return { invite, company: null, user: null };
         const admin = service.auth?.admin;
         if (typeof admin?.listUsers !== 'function') throw new Error('AUTH_INVITE_USER_LOOKUP_FAILED');
         let user: any = null;
