@@ -1,11 +1,31 @@
 -- STAGING-ONLY PROPOSAL. Review against a fresh schema snapshot before applying.
 -- Keeps generated one-time Auth links encrypted at rest and out of browser access.
+-- Review the platform write-support, onboarding, invite password, and legal-consent
+-- contracts before rollout. Check the required schema before changing the outbox.
 begin;
 
 do $$
 begin
   if to_regclass('public.app_email_outbox') is null or to_regclass('public.app_invites') is null then
     raise exception 'Expected app_email_outbox and app_invites before adding invitation delivery.';
+  end if;
+  if to_regclass('public.app_company_legal_acceptances') is null
+    or to_regclass('public.app_platform_audit_events') is null
+    or to_regclass('public.app_platform_admins') is null
+    or to_regprocedure('public.app_role(uuid)') is null then
+    raise exception 'Platform onboarding and legal-consent prerequisites are missing; no changes applied.';
+  end if;
+  if not exists (select 1 from information_schema.columns where table_schema='public' and table_name='app_platform_audit_events' and column_name='target_id')
+    or exists (
+      select required.column_name from (values
+        ('company_id'), ('invite_id'), ('actor_user_id'), ('agreement'),
+        ('capture_source'), ('client_accepted_at')
+      ) as required(column_name)
+      except
+      select column_name from information_schema.columns
+      where table_schema='public' and table_name='app_company_legal_acceptances'
+    ) then
+    raise exception 'Platform audit or legal-consent columns differ from the reviewed contract; no changes applied.';
   end if;
   if not exists (select 1 from information_schema.columns where table_schema='public' and table_name='app_invites' and column_name='expires_at')
     or not exists (select 1 from information_schema.columns where table_schema='public' and table_name='app_invites' and column_name='accepted_at')

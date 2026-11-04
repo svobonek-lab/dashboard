@@ -2,7 +2,8 @@
 create table public.app_companies (
   id uuid primary key default gen_random_uuid(), name text not null, slug text not null, email text,
   active boolean not null default true, onboarding_completed boolean not null default false,
-  created_at timestamptz not null default now(), plan text, public_form boolean not null default false
+  created_at timestamptz not null default now(), plan text, subscription_status text,
+  public_form boolean not null default false
 );
 create table public.app_members (company_id uuid not null, user_id uuid not null, active boolean not null default true, role text not null default 'owner');
 create table public.app_invites (
