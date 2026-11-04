@@ -124,7 +124,7 @@ language plpgsql security definer set search_path = ''
 as $$
 declare v_id uuid; v_email text := lower(trim(coalesce(p_email,''))); v_name text := substr(trim(coalesce(p_name,'')),1,160); v_company_name text;
 begin
-  if public.app_role(p_company_id) <> 'owner' then raise exception 'owner membership required' using errcode='42501'; end if;
+  if public.app_role(p_company_id) is distinct from 'owner' then raise exception 'owner membership required' using errcode='42501'; end if;
   if v_email !~ '^[^[:space:]@]+@[^[:space:]@]+\.[^[:space:]@]+$' or v_name='' then raise exception 'invalid invite identity' using errcode='22023'; end if;
   select c.name into v_company_name from public.app_companies c where c.id=p_company_id and c.active=true;
   if v_company_name is null then raise exception 'active company required' using errcode='P0002'; end if;

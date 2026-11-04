@@ -25,8 +25,11 @@ create table public.app_platform_audit_events (
 grant all on public.app_companies, public.app_members, public.app_invites, public.app_platform_admins,
   public.app_leads, public.app_company_legal_acceptances, public.app_platform_audit_events to service_role;
 insert into public.app_companies(id,name,slug) values ('30000000-0000-4000-8000-000000000001','Company A','company-a');
+insert into public.app_companies(id,name,slug) values ('30000000-0000-4000-8000-000000000003','Company C','company-c');
 insert into public.app_platform_admins(user_id,active) values ('40000000-0000-4000-8000-000000000001',true);
 insert into public.app_invites(id,company_id,email,name,role,expires_at)
 values ('50000000-0000-4000-8000-000000000001','30000000-0000-4000-8000-000000000001','owner-a@example.test','Owner A','owner',now()+interval '7 days');
-create function public.app_role(p_company_id uuid) returns text language sql stable as $$ select 'owner'::text $$;
+create function public.app_role(p_company_id uuid) returns text language sql stable as $$
+  select 'owner'::text where p_company_id='30000000-0000-4000-8000-000000000001'
+$$;
 grant execute on function public.app_role(uuid) to authenticated;

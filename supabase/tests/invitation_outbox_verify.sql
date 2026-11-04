@@ -20,6 +20,14 @@ $$;
 insert into public.app_email_outbox(id,company_id,invite_id,notification_kind,recipient,subject,template_data,status)
 values ('60000000-0000-4000-8000-000000000001','30000000-0000-4000-8000-000000000001','50000000-0000-4000-8000-000000000001','auth_invite','owner-a@example.test','Invite','{"name":"Owner A"}','pending');
 set role authenticated;
+do $$ begin
+  begin
+    perform public.app_create_invite('30000000-0000-4000-8000-000000000003','outside@example.test','Outside');
+    raise exception 'caller without membership could create an invitation';
+  exception when insufficient_privilege then
+    if sqlerrm <> 'owner membership required' then raise; end if;
+  end;
+end $$;
 do $$ declare first_id uuid; second_id uuid; begin
   first_id:=public.app_create_invite('30000000-0000-4000-8000-000000000001','worker-a@example.test','Worker A');
   second_id:=public.app_create_invite('30000000-0000-4000-8000-000000000001','worker-a@example.test','Worker A');
