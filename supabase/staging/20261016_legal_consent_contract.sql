@@ -4,6 +4,9 @@
 
 begin;
 
+alter table public.app_invites
+  add column if not exists accepted_by uuid references auth.users(id) on delete set null;
+
 create table if not exists public.app_company_legal_acceptances (
   id uuid primary key default gen_random_uuid(),
   company_id uuid not null references public.app_companies(id) on delete restrict,
@@ -173,6 +176,7 @@ revoke all on function app_private.accept_invite(uuid) from public, anon, authen
 revoke all on function public.app_accept_invite(uuid) from public, anon;
 revoke all on function public.app_platform_create_company_onboarding(uuid, text, text, text, text, text, timestamptz, timestamptz) from public, anon, authenticated;
 grant usage on schema app_private to authenticated;
+grant execute on function app_private.record_owner_legal_consent(uuid, timestamptz) to authenticated;
 grant execute on function public.app_record_owner_legal_consent(uuid, timestamptz) to authenticated;
 grant execute on function app_private.accept_invite(uuid) to authenticated;
 grant execute on function public.app_accept_invite(uuid) to authenticated;
