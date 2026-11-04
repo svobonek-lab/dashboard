@@ -3,13 +3,22 @@
   "framework": "vite",
   "git": {
     "deploymentEnabled": {
-      "codex/pre-release-readiness": false
+      "codex/pre-release-readiness": false,
+      "codex/pre-sales-readiness-followup": false
     }
   },
   "crons": [
     {
       "path": "/api/outbox-scheduler",
       "schedule": "0 7 * * *"
+    }
+  ],
+  "redirects": [
+    {
+      "source": "/widget-iframe.html",
+      "destination": "/widget-iframe",
+      "permanent": true,
+      "preserveQueryParams": true
     }
   ],
   "rewrites": [

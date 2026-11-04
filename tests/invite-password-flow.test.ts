@@ -49,7 +49,7 @@ test('application keeps an invited session out of protected dashboards until pas
   const guard = readFileSync(new URL('../src/app/ProtectedRoute.tsx', import.meta.url), 'utf8');
   const login = readFileSync(new URL('../src/pages/auth/login/ui/LoginPage.tsx', import.meta.url), 'utf8');
   assert.match(context, /requiresInvitePasswordSetup\(session\.user,[\s\S]{0,350}setDbUser\(null\)/);
-  assert.match(guard, /isConfigured && \(!user \|\| !dbUser\)[\s\S]{0,120}Navigate to="\/login"/);
+  assert.match(guard, /shouldRedirectProtectedRoute\(pathname, isConfigured, Boolean\(user\), Boolean\(dbUser\)\)[\s\S]{0,160}Navigate to="\/login"/);
   assert.match(login, /invitePasswordRequired[\s\S]*Nastavte si heslo/);
   assert.match(login, /completeInvitePasswordSetup\(validatedPassword,/);
 });

@@ -2,6 +2,7 @@ import React, { useEffect } from 'react';
 import { useOrganization } from '@/entities/session';
 import { useRouter } from '../shared/lib/router';
 import type { UserRole } from '../shared/model/permissions';
+import { isPublicAppPath, shouldRedirectProtectedRoute } from './routePolicy';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -37,14 +38,11 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, allowe
     );
   }
 
-  // Bypassing logic for public pages wrapped in ProtectedRoute
-  const isPublicRoute = pathname === '/login' || pathname.startsWith('/widget-iframe') || pathname === '/portal' || pathname === '/inquiry' || pathname.startsWith('/inquiry/') || pathname === '/form' || pathname.startsWith('/form/');
-  if (isPublicRoute) {
+  if (isPublicAppPath(pathname)) {
     return <>{children}</>;
   }
 
-  // Exact Requested Logic
-  if (isConfigured && (!user || !dbUser)) {
+  if (shouldRedirectProtectedRoute(pathname, isConfigured, Boolean(user), Boolean(dbUser))) {
     return <Navigate to="/login" replace />;
   }
 

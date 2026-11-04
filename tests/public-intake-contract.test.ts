@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { resolvePublicTenantKey } from '../src/features/submit-inquiry';
+import { isPublicAppPath } from '../src/app/routePolicy';
 import { readFileSync } from 'node:fs';
 
 const sql = readFileSync(new URL('../supabase/staging/pilot_public_intake.sql', import.meta.url), 'utf8');
@@ -29,9 +30,12 @@ test('public intake resolves only an explicit tenant key from query or supported
 });
 
 test('tenant-key intake paths render publicly even when a dashboard session exists', () => {
+  assert.equal(isPublicAppPath('/inquiry/pilot-mail-test'), true);
+  assert.equal(isPublicAppPath('/form/pilot-mail-test'), true);
+  assert.equal(isPublicAppPath('/portal/demo'), true);
+  assert.equal(isPublicAppPath('/inquiry-untrusted/pilot-mail-test'), false);
+  assert.match(protectedRoute, /isPublicAppPath\(pathname\)/);
   assert.match(app, /pathname\.startsWith\('\/inquiry\/'\)/);
-  assert.match(protectedRoute, /pathname\.startsWith\('\/inquiry\/'\)/);
-  assert.match(protectedRoute, /pathname\.startsWith\('\/form\/'\)/);
 });
 
 test('public intake never inherits an authenticated dashboard session', () => {
