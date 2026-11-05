@@ -130,3 +130,19 @@ The Vercel CLI cannot export saved sensitive variables. Its env pull output uses
 placeholder values, which must never be copied as working credentials. Staging
 server credentials must be scoped through the existing secret manager or supplied
 directly there. Provider delivery and hosted acceptance still remain pending.
+
+## PR conflict and approved secret scope
+
+On 5 November the operator approved saving the existing staging service-role
+secret scope move from `codex/staging-e2e-local-runner` to
+`codex/staging-invite-consent-compat`. Vercel confirmed the update and displayed
+the new branch on the saved variable. No secret value was revealed or replaced.
+A new deployment is still required for this configuration to take effect.
+
+GitHub reported PR #167 as CONFLICTING with `main` at `bf473f6`.
+The only conflicting file was `vercel.json`: both branches had added a different
+disabled automatic-deployment branch. The resolution preserves both entries.
+The merge includes the already-reviewed membership hotfix from PR #164.
+After resolution, all 582 dashboard tests, TypeScript/ESLint and the Vite build
+passed locally. No GitHub-hosted runner was started and no production settings
+or database were changed.

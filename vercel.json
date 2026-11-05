@@ -6,7 +6,8 @@
       "codex/pre-release-readiness": false,
       "codex/pre-sales-readiness-followup": false,
       "codex/staging-invite-preflight": false,
-      "codex/staging-invite-consent-compat": false
+      "codex/staging-invite-consent-compat": false,
+      "codex/staging-invite-hotfix": false
     }
   },
   "crons": [
