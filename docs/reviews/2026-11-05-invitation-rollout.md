@@ -226,3 +226,21 @@ PR #167 was merged at 20:56:52 UTC on 5 November, at head `2e60c59`, via main
 commit `1f02d47215bfbd24872dec56bd0751728ac72a39`. The later compatibility and
 deployment fixes were committed afterward and need one follow-up review; the
 merge itself does not complete the hosted rollout.
+
+## Hosted worker smoke test and Auth expiry
+
+Read-only staging Auth UI inspection confirmed Email OTP expiration is 3600
+seconds. The branch worker link TTL of 300 seconds is within that limit. No Auth
+settings were changed; the exact redirect and Resend OAuth confirmations remain
+pending.
+
+The staging outbox had no pending/retry/processing/sending rows immediately before
+the smoke test. An authenticated POST to the immutable Preview worker used the
+immediate-dispatch header to skip stale-lead alert generation. At
+`2026-11-05T21:17:02.451Z` it returned HTTP 200, success, zero selected/delivered
+items, zero queued stale alerts and no error. The identical completed run was
+then read directly from StavbaCore Staging as
+`7b91c22d-6553-4949-a3ca-b8e2efd804e0`, completed at
+`2026-11-05T21:17:03.808Z`. This verifies the deployed worker's staging database
+access and durable run persistence, without sending any email. It does not prove
+provider authentication or actual invitation receipt.
