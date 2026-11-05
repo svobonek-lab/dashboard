@@ -110,3 +110,23 @@ Before a new acceptance deployment, review the branch-scoped configuration,
 select an existing approved custom origin and verified sender, confirm the
 Auth link TTL, and configure the missing secrets through the secret manager.
 The name-only preflight did not copy, reveal or change secret values.
+
+## Operator update after the SQL review
+
+The operator reported applying the review bundle and chose Vercel hosting while
+no custom domain is available. Fresh read-only checks confirmed legal/run tables,
+accepted_by and worker updated_at, both public RPCs, the enabled password proof
+trigger, browser denial on the outbox and anonymous acceptance RPC denial.
+The authenticated private consent helper grant and corrected membership guard
+are present.
+
+The URL policy now accepts an explicitly configured HTTPS Vercel origin.
+Credentials, query strings, fragments and non-root paths remain invalid origins.
+The previous custom-domain prerequisite above records the earlier policy.
+For current acceptance configure the chosen stable Preview alias in
+PUBLIC_APP_URL and allow its exact /login redirect in staging Auth.
+
+The Vercel CLI cannot export saved sensitive variables. Its env pull output uses
+placeholder values, which must never be copied as working credentials. Staging
+server credentials must be scoped through the existing secret manager or supplied
+directly there. Provider delivery and hosted acceptance still remain pending.

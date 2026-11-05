@@ -2,7 +2,7 @@
 
 Pozvánky zaměstnanců a vlastníků se v aplikaci zařazují do `app_email_outbox`. Serverový worker vytvoří jednorázový Supabase Auth odkaz přes `generateLink` a odešle ho přes nakonfigurovaný e-mailový provider. Zařazení do fronty není potvrzení doručení.
 
-**Aktuální stav k 5. 11. 2026:** staging má část šifrované fronty a schválenou opravu kontroly členství. Chybí worker pole, evidence běhů a dokončené přijetí pozvánky se souhlasy. Společný rollout je v PR #167. Přesné SQL k samostatné revizi a výsledky izolované zkoušky jsou v [review protokolu](reviews/2026-11-05-invitation-rollout.md). Zapnutí workeru vyžaduje ověřenou databázi, provider, klíče a přejímku.
+**Aktuální stav k 5. 11. 2026:** po operátorem oznámené aplikaci SQL balíku metadata stagingu potvrzují worker pole, evidenci běhů, právní tabulku, acceptance RPC a password-proof trigger. Skutečné doručení a přijetí v prohlížeči čekají na staging Preview. Společný rollout je v PR #167. Přesné SQL a výsledky izolované zkoušky jsou v [review protokolu](reviews/2026-11-05-invitation-rollout.md). Zapnutí workeru vyžaduje ověřenou databázi, provider, klíče a přejímku.
 
 ## Připravení adresy
 
@@ -19,7 +19,7 @@ Nastavují se v serverovém deployment secret manageru, nikdy jako `VITE_*`:
 - `EMAIL_FROM`: odesílatel na ověřené doméně.
 - `EMAIL_LINK_ENCRYPTION_KEY`: base64 reprezentace 32 náhodných bajtů; generujte například `openssl rand -base64 32`. Uložte ji jako oddělený secret.
 - `AUTH_EMAIL_LINK_TTL_SECONDS`: celé číslo 300–3600 a nejvýše skutečná expirace Auth e-mailového OTP.
-- `PUBLIC_APP_URL`: přesná HTTPS adresa dashboardu na schválené vlastní doméně; odkazy `*.vercel.app` se odmítají.
+- `PUBLIC_APP_URL`: výslovně nastavená HTTPS adresa dashboardu. Pro dočasný staging lze použít stabilní Vercel alias s přesnou Auth redirect URL.
 - `CRON_SECRET`, `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`: stávající worker konfigurace. Service-role secret musí zůstat pouze na serveru.
 - `APP_INVITE_WORKER_ENABLED=true`: zapněte až po dokončení staging ověření.
 

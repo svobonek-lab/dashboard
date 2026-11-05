@@ -14,4 +14,4 @@ Set these non-secret environment variables per Vercel project and redeploy from 
 
 The default remains `unified` for existing previews and local development. The split changes routing only; authentication and tenant isolation remain controlled by Supabase and the existing guards. Do not use demo credentials or local mock authentication in the app deployment.
 
-Set these origins only after the custom domains are approved. Vercel deployment URLs remain internal Preview access addresses; the application rejects them as user-facing destinations. This task does not change Vercel project environment variables or trigger a production deployment.
+Set these origins explicitly to approved HTTPS addresses. A Vercel alias is supported for temporary hosting. Configure the matching exact Auth redirect URL and keep the chosen alias stable while invitations are outstanding.

@@ -33,10 +33,12 @@ test('frontend build receives the two explicit public URL settings', () => {
   assert.match(example, /^PUBLIC_LANDING_URL=/m);
 });
 
-test('server URL settings reject Vercel origins and email links use the canonical app origin', () => {
+test('server URL settings accept explicitly configured HTTPS origins and emails use that origin', () => {
   assert.equal(getPublicAppUrl({ PUBLIC_APP_URL: 'https://app.example.test', NODE_ENV: 'production' }), 'https://app.example.test');
   assert.equal(getPublicLandingUrl({ PUBLIC_LANDING_URL: 'https://www.example.test', NODE_ENV: 'production' }), 'https://www.example.test');
-  assert.equal(getPublicAppUrl({ PUBLIC_APP_URL: 'https://dashboard-preview.vercel.app', NODE_ENV: 'production' }), null);
+  assert.equal(getPublicAppUrl({ PUBLIC_APP_URL: 'https://dashboard-preview.vercel.app', NODE_ENV: 'production' }), 'https://dashboard-preview.vercel.app');
+  assert.equal(getPublicAppUrl({ PUBLIC_APP_URL: 'http://dashboard-preview.vercel.app', NODE_ENV: 'production' }), null);
+  assert.equal(getPublicAppUrl({ PUBLIC_APP_URL: 'https://user:password@dashboard-preview.vercel.app', NODE_ENV: 'production' }), null);
   assert.equal(replaceEmailAppOrigins('<a href="{{PUBLIC_APP_URL}}/?lead=abc">Open</a>', 'https://app.example.test'),
     '<a href="https://app.example.test/?lead=abc">Open</a>');
   assert.throws(() => replaceEmailAppOrigins('<a href="{{PUBLIC_APP_URL}}/">Open</a>', null), /PUBLIC_APP_URL_NOT_CONFIGURED/);
