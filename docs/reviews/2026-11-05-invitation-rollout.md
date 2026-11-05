@@ -170,3 +170,17 @@ prepared for operator approval. An existing Auth account uses the operator's
 email, so it must not be overwritten or rebound as the new synthetic owner.
 Real delivery to a separate controlled mailbox and browser acceptance remain
 unproven.
+
+The first explicit Preview deployment of `82635fd` failed before upload/build:
+Vercel rejected unsupported `redirects[].preserveQueryParams` in `vercel.json`.
+The property was removed; Vercel configuration redirects preserve query strings
+by default (see https://vercel.com/docs/routing/redirects/configuration-redirects).
+The redirect regression failed with the unsupported property and passed after
+removal. Vercel CLI dry-run schema validation and TypeScript/ESLint passed.
+The deployed redirect must still be checked with a synthetic query string.
+
+The subsequent provider configuration check found the existing `RESEND_API_KEY`
+value is empty, despite its presence in the name inventory. No usable provider
+credential was found. A read-only domain inventory could not authenticate.
+Do not describe the provider-status result as proof of delivery. A nonempty
+working provider credential and an authorized test recipient are still required.
