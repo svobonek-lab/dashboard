@@ -1,8 +1,10 @@
 # Staging invitation rollout review
 
 The review target is StavbaCore Staging, project `xwzweltjvreqhjpbjrxa`.
-The application changes remain in PR #167. This record separates local database
-acceptance from hosted delivery and browser acceptance.
+The initial application changes were merged in PR #167. Preview configuration
+fixes and the remaining hosted acceptance continue on the same review branch.
+This record separates local database acceptance from hosted delivery and browser
+acceptance.
 
 ## Read-only staging baseline
 
@@ -179,8 +181,48 @@ The redirect regression failed with the unsupported property and passed after
 removal. Vercel CLI dry-run schema validation and TypeScript/ESLint passed.
 The deployed redirect must still be checked with a synthetic query string.
 
-The subsequent provider configuration check found the existing `RESEND_API_KEY`
-value is empty, despite its presence in the name inventory. No usable provider
-credential was found. A read-only domain inventory could not authenticate.
-Do not describe the provider-status result as proof of delivery. A nonempty
-working provider credential and an authorized test recipient are still required.
+The local env export represents the existing `RESEND_API_KEY` as empty. That
+export is not reliable evidence of the saved runtime value: both explicit
+deployments returned `providerConfigured: true`. The attempted external domain
+inventory used that unusable local export and did not authenticate. Do not infer
+that the saved runtime key is empty, valid or invalid from the export. The status
+endpoint proves configuration presence only, not provider authentication,
+verified sender, recipient eligibility or actual delivery. A Resend dashboard
+sign-in is prepared and requires approval of GitHub `user:email` OAuth access.
+
+## Recorded hosted Preview
+
+- Source: `6d04e485452bb681db29a61781f2aefa16fc4cf8`.
+- Deployment: `dpl_EjsLPHzhS1WhoHwme5JcUN6JRk9K`, READY Preview.
+- Immutable URL: `https://dashboard-53eu9lj5q-svobonek-6462s-projects.vercel.app`.
+- Created through the Vercel deployment API with explicit Git source
+  `github`, repository `1364826182`, branch `codex/staging-invite-consent-compat`.
+  Vercel returned the exact source SHA above.
+- The stable staging alias recorded earlier now points to this deployment.
+- Public `/login` returned 200. The compiled Supabase client URL is staging
+  `https://xwzweltjvreqhjpbjrxa.supabase.co`.
+- `/widget-iframe.html?org=synthetic-rollout&probe=1` returned 308 with Location
+  `/widget-iframe?org=synthetic-rollout&probe=1`.
+- `/api/email-notification-status` returned 200 and configuration present.
+
+The initial CLI upload of the same source created
+`dpl_RmsDWDBbCW9t3JpbsyWfy8pxt5hD` with general Preview configuration rather than
+the expected branch overrides. Its compiled Supabase client URL was production.
+It was never used for login or writes, never assigned the staging alias, and was
+removed. Merely attaching Git branch metadata to a CLI upload did not select the
+branch-scoped configuration. Use an explicit Git-source deployment and inspect
+the compiled client URL before any login or write test.
+
+Fresh staging metadata comparison checked 56 required columns with no missing
+columns. All nine final function bodies match the review bundle after normalizing
+line endings and trimming outer whitespace (MD5 used only for metadata equality).
+The outbox, run evidence and legal tables have RLS enabled, no browser policies,
+no anon/authenticated DML grants, and service SELECT/INSERT grants. Legacy html
+remains NOT NULL with the empty-string default; the password trigger is enabled.
+Both legacy RPCs still grant authenticated EXECUTE; cutover remains pending the
+actual hosted replacement acceptance.
+
+PR #167 was merged at 20:56:52 UTC on 5 November, at head `2e60c59`, via main
+commit `1f02d47215bfbd24872dec56bd0751728ac72a39`. The later compatibility and
+deployment fixes were committed afterward and need one follow-up review; the
+merge itself does not complete the hosted rollout.
