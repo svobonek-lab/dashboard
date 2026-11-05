@@ -71,5 +71,15 @@ dashboard access, resend, replay, expiry and revocation. After passing, review
 and apply legacy retirement and test actual direct RPC denial. Store only
 synthetic IDs, deployment/commit identifiers, times and result codes.
 
-Hosted staging deployment ID and commit remain unrecorded until that acceptance
-is performed. Real email receipt and all hosted scenarios remain pending.
+Read-only Vercel inspection on 5 November found the existing staging alias
+`dashboard-git-codex-staging-e2e-79cdb9-svobonek-6462s-projects.vercel.app`
+points to immutable deployment `dpl_7eV4DmEZxNaEdi2soEE63AYZ65tR`, URL
+`https://dashboard-joil46y6a-svobonek-6462s-projects.vercel.app`.
+Vercel reports READY Preview, created 31 October 2026 at 22:50 Prague time.
+Public entry assets reference only staging Supabase `xwzweltjvreqhjpbjrxa`.
+Vercel inspect JSON did not provide a source SHA in gitSource or the GitHub
+commit metadata. This deployment predates the invitation rollout and cannot
+serve as acceptance of PR #167.
+
+The new acceptance deployment ID and source commit remain pending. Real email
+receipt and all hosted scenarios remain pending.
