@@ -14,9 +14,9 @@ test('surface config reads the two canonical public domains', () => {
   });
 });
 
-test('deployment URLs reject Vercel domains and preserve relative navigation when unconfigured', () => {
-  assert.equal(getDeploymentConfig({ PUBLIC_APP_URL: 'https://dashboard-preview.vercel.app' }).appUrl, '');
-  assert.equal(buildAppLoginUrl('https://dashboard-preview.vercel.app'), '/login');
+test('deployment URLs accept configured HTTPS Vercel origins and preserve relative navigation when unconfigured', () => {
+  assert.equal(getDeploymentConfig({ PUBLIC_APP_URL: 'https://dashboard-preview.vercel.app' }).appUrl, 'https://dashboard-preview.vercel.app');
+  assert.equal(buildAppLoginUrl('https://dashboard-preview.vercel.app'), 'https://dashboard-preview.vercel.app/login');
 });
 
 test('login redirect preserves invite and email query parameters', () => {

@@ -72,7 +72,7 @@ test('password recovery rejects a non-HTTPS redirect before database access', as
   const previousEnabled = process.env.APP_AUTH_RECOVERY_ENABLED;
   const previousUrl = process.env.PUBLIC_APP_URL;
   process.env.APP_AUTH_RECOVERY_ENABLED = 'true';
-  process.env.PUBLIC_APP_URL = 'https://dashboard-preview.vercel.app';
+  process.env.PUBLIC_APP_URL = 'http://dashboard-preview.vercel.app';
   try {
     const response = probe();
     await resetEmployeePasswordHandler({ method: 'POST', body: { email: 'worker@example.com' } }, response);

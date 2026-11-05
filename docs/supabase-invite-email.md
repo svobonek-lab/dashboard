@@ -2,7 +2,7 @@
 
 Pozvánky zaměstnanců a vlastníků se v aplikaci zařazují do `app_email_outbox`. Serverový worker vytvoří jednorázový Supabase Auth odkaz přes `generateLink` a odešle ho přes nakonfigurovaný e-mailový provider. Zařazení do fronty není potvrzení doručení.
 
-**Aktuální stav:** kód a stagingové SQL návrhy jsou v revizi PR #160. SQL se zatím nesmí považovat za aplikované. Dokud nebude stagingový SQL schválen a aplikován, provider a klíče nastaveny a průchod ověřen, nepovolujte `APP_INVITE_WORKER_ENABLED` na zákaznickém nasazení.
+**Aktuální stav k 5. 11. 2026:** po operátorem oznámené aplikaci SQL balíku metadata stagingu potvrzují worker pole, evidenci běhů, právní tabulku, acceptance RPC a password-proof trigger. Skutečné doručení a přijetí v prohlížeči čekají na staging Preview. Společný rollout je v PR #167. Přesné SQL a výsledky izolované zkoušky jsou v [review protokolu](reviews/2026-11-05-invitation-rollout.md). Zapnutí workeru vyžaduje ověřenou databázi, provider, klíče a přejímku.
 
 ## Připravení adresy
 
@@ -19,7 +19,7 @@ Nastavují se v serverovém deployment secret manageru, nikdy jako `VITE_*`:
 - `EMAIL_FROM`: odesílatel na ověřené doméně.
 - `EMAIL_LINK_ENCRYPTION_KEY`: base64 reprezentace 32 náhodných bajtů; generujte například `openssl rand -base64 32`. Uložte ji jako oddělený secret.
 - `AUTH_EMAIL_LINK_TTL_SECONDS`: celé číslo 300–3600 a nejvýše skutečná expirace Auth e-mailového OTP.
-- `PUBLIC_APP_URL`: přesná HTTPS adresa dashboardu na schválené vlastní doméně; odkazy `*.vercel.app` se odmítají.
+- `PUBLIC_APP_URL`: výslovně nastavená HTTPS adresa dashboardu. Pro dočasný staging lze použít stabilní Vercel alias s přesnou Auth redirect URL.
 - `CRON_SECRET`, `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`: stávající worker konfigurace. Service-role secret musí zůstat pouze na serveru.
 - `APP_INVITE_WORKER_ENABLED=true`: zapněte až po dokončení staging ověření.
 
@@ -27,14 +27,14 @@ Chybějící šifrovací klíč, provider nebo worker konfigurace nesmí poslat 
 
 ## Stagingové databázové návrhy
 
-Nejdřív zkontrolujte aktuální metadata. Kód v PR #160 připravuje:
+Nejdřív zkontrolujte aktuální metadata. PR #167 sdružuje následující podklady:
 
 - `supabase/staging/20261103_outbox_worker_legacy_compat.sql` — doplnění worker polí a odstranění čtení outbox tabulky z `anon`/`authenticated`.
 - `supabase/staging/20261103_invitation_outbox.sql` — zašifrovaná payload pole, doručení a pravdivý stav pozvánky v administraci.
 - `supabase/staging/20261103_outbox_minute_scheduler.sql` — volitelný minutový worker přes Supabase Cron a pg_net; endpoint a token musí být nejdřív uloženy v Supabase Vault, nikdy vepsány do SQL.
 - `supabase/staging/20261103_outbox_minute_scheduler_rollback.sql` — odregistrování úlohy.
 
-Jde o návrhy; žádný z těchto SQL souborů nebyl v tomto úkolu aplikován. Produkce se nemění. Scheduler SQL vyžaduje samostatnou revizi a schválení.
+Pro úvodní staging aplikaci použijte celý balík z review protokolu, který zahrnuje i jeho databázové závislosti. Částečná přítomnost polí nepotvrzuje dokončený rollout. Scheduler SQL vyžaduje samostatnou revizi a schválení.
 
 ## DNS a provider
 

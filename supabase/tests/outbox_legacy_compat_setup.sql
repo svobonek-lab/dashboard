@@ -6,7 +6,7 @@ create table public.app_email_outbox (
   reminder_id uuid,
   recipient text not null,
   subject text not null,
-  html text,
+  html text not null,
   status text not null default 'pending'
     constraint app_email_outbox_status_check check (status in ('pending', 'sending', 'sent', 'failed', 'cancelled')),
   attempts integer not null default 0 check (attempts between 0 and 20),

@@ -18,11 +18,11 @@ test('PUBLIC_APP_URL resolves the demo path on the canonical app domain', () => 
   ), { url: 'https://dashboard.example.test/demo', error: null });
 });
 
-test('Vercel deployment origins cannot become user-facing demo links', () => {
+test('explicitly configured HTTPS Vercel origins support demo links', () => {
   assert.deepEqual(resolveDemoUrl(
     { PUBLIC_APP_URL: 'https://dashboard-preview.vercel.app' },
     { isDevelopment: false, origin: 'https://sales.example.test', allowRelative: false },
-  ), { url: null, error: 'Odkaz na demo nelze odvodit z adresy aplikace.' });
+  ), { url: 'https://dashboard-preview.vercel.app/demo', error: null });
 });
 
 test('local or deliberately unified deployments may keep demo relative', () => {

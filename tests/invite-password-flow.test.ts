@@ -75,7 +75,7 @@ test('repository documents secure invitation outbox setup and staging boundary',
   assert.match(template, /ConfirmationURL/);
   assert.match(runbook, /EMAIL_LINK_ENCRYPTION_KEY/);
   assert.match(runbook, /zařazena k odeslání/);
-  assert.match(runbook, /žádný z těchto SQL souborů nebyl.*aplikován/i);
+  assert.match(runbook, /Částečná přítomnost polí nepotvrzuje dokončený rollout/i);
   assert.match(runbook, /token není v API výstupu/i);
 });
 

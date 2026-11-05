@@ -40,6 +40,7 @@ set body_html = coalesce(body_html, html),
     updated_at = coalesce(updated_at, claimed_at, sent_at, created_at, now());
 
 alter table public.app_email_outbox
+  alter column html set default '',
   alter column updated_at set default now(),
   alter column updated_at set not null;
 
