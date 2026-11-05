@@ -146,3 +146,27 @@ The merge includes the already-reviewed membership hotfix from PR #164.
 After resolution, all 582 dashboard tests, TypeScript/ESLint and the Vite build
 passed locally. No GitHub-hosted runner was started and no production settings
 or database were changed.
+
+## Branch Preview configuration and provider compatibility
+
+The review branch now has explicit staging URL and publishable key overrides,
+unified Vercel surface, app-schema reads and pilot writes, invitation and recovery
+endpoints enabled, and imports disabled. These flags apply only to this staging
+Preview branch. Explicit public app/landing origins use the existing stable
+staging Vercel alias recorded above. A new invitation encryption secret and cron
+secret were generated directly into the Vercel secret store. The Auth link TTL
+is 300 seconds; the hosted Auth expiry still needs confirmation.
+
+The worker and provider-status endpoint now accept the existing `RESEND_API_KEY`
+name if `EMAIL_PROVIDER_API_KEY` is absent. The latter retains precedence; no
+retry switches credentials after provider rejection. Both regression tests
+failed before the implementation and passed afterward. All 584 dashboard tests,
+TypeScript/ESLint and Vite build then passed. The configured sender is the Resend
+test sender, which does not prove a verified customer sender domain or receipt.
+
+Staging Auth URL Configuration currently shows Site URL `http://localhost:3000`
+and no allowed redirect URLs. The exact existing staging alias `/login` is
+prepared for operator approval. An existing Auth account uses the operator's
+email, so it must not be overwritten or rebound as the new synthetic owner.
+Real delivery to a separate controlled mailbox and browser acceptance remain
+unproven.
