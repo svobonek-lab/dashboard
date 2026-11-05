@@ -2,7 +2,7 @@
 
 Pozvánky zaměstnanců a vlastníků se v aplikaci zařazují do `app_email_outbox`. Serverový worker vytvoří jednorázový Supabase Auth odkaz přes `generateLink` a odešle ho přes nakonfigurovaný e-mailový provider. Zařazení do fronty není potvrzení doručení.
 
-**Aktuální stav:** kód a stagingové SQL návrhy jsou v revizi PR #160. SQL se zatím nesmí považovat za aplikované. Dokud nebude stagingový SQL schválen a aplikován, provider a klíče nastaveny a průchod ověřen, nepovolujte `APP_INVITE_WORKER_ENABLED` na zákaznickém nasazení.
+**Aktuální stav k 5. 11. 2026:** staging má část šifrované fronty a schválenou opravu kontroly členství. Chybí worker pole, evidence běhů a dokončené přijetí pozvánky se souhlasy. Společný rollout je v PR #167. Přesné SQL k samostatné revizi a výsledky izolované zkoušky jsou v [review protokolu](reviews/2026-11-05-invitation-rollout.md). Zapnutí workeru vyžaduje ověřenou databázi, provider, klíče a přejímku.
 
 ## Připravení adresy
 
@@ -27,14 +27,14 @@ Chybějící šifrovací klíč, provider nebo worker konfigurace nesmí poslat 
 
 ## Stagingové databázové návrhy
 
-Nejdřív zkontrolujte aktuální metadata. Kód v PR #160 připravuje:
+Nejdřív zkontrolujte aktuální metadata. PR #167 sdružuje následující podklady:
 
 - `supabase/staging/20261103_outbox_worker_legacy_compat.sql` — doplnění worker polí a odstranění čtení outbox tabulky z `anon`/`authenticated`.
 - `supabase/staging/20261103_invitation_outbox.sql` — zašifrovaná payload pole, doručení a pravdivý stav pozvánky v administraci.
 - `supabase/staging/20261103_outbox_minute_scheduler.sql` — volitelný minutový worker přes Supabase Cron a pg_net; endpoint a token musí být nejdřív uloženy v Supabase Vault, nikdy vepsány do SQL.
 - `supabase/staging/20261103_outbox_minute_scheduler_rollback.sql` — odregistrování úlohy.
 
-Jde o návrhy; žádný z těchto SQL souborů nebyl v tomto úkolu aplikován. Produkce se nemění. Scheduler SQL vyžaduje samostatnou revizi a schválení.
+Pro úvodní staging aplikaci použijte celý balík z review protokolu, který zahrnuje i jeho databázové závislosti. Částečná přítomnost polí nepotvrzuje dokončený rollout. Scheduler SQL vyžaduje samostatnou revizi a schválení.
 
 ## DNS a provider
 
