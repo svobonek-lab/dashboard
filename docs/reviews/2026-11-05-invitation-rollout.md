@@ -83,3 +83,30 @@ serve as acceptance of PR #167.
 
 The new acceptance deployment ID and source commit remain pending. Real email
 receipt and all hosted scenarios remain pending.
+
+## Preview configuration preflight
+
+Name-only Vercel inventory on 5 November found no variables scoped specifically
+to `codex/staging-invite-consent-compat`. General Preview defaults still exist,
+so an empty branch-specific result does not mean the branch inherits nothing.
+The inventory confirmed these additional prerequisites.
+
+- `EMAIL_PROVIDER_API_KEY`, `EMAIL_LINK_ENCRYPTION_KEY`,
+  `AUTH_EMAIL_LINK_TTL_SECONDS`, and `PUBLIC_APP_URL` are absent from Preview.
+- General Preview has `RESEND_API_KEY` and `EMAIL_FROM`. The current worker
+  reads only `EMAIL_PROVIDER_API_KEY`. The existing sender and key were not
+  inspected or validated with the provider.
+- `CRON_SECRET` is listed only on two older branches. `SUPABASE_URL` and the
+  staging service-role scope must be configured explicitly on the review branch.
+  A general Preview service-role key exists but its project is unverified.
+- `APP_INVITE_WORKER_ENABLED` exists in general Preview. Its effective value
+  was not read.
+- The Vercel team domain inventory returned zero custom domains. This does not
+  exclude domains owned elsewhere. The current public-origin policy requires
+  an approved custom HTTPS origin, so a Vercel Preview hostname is insufficient
+  for the Auth redirect configuration.
+
+Before a new acceptance deployment, review the branch-scoped configuration,
+select an existing approved custom origin and verified sender, confirm the
+Auth link TTL, and configure the missing secrets through the secret manager.
+The name-only preflight did not copy, reveal or change secret values.
