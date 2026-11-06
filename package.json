@@ -12,6 +12,7 @@
     "test:connector:owner-ui": "node scripts/connector-owner-ui-e2e.mjs",
     "test:admin-ui": "node scripts/admin-company-directory-e2e.mjs",
     "test:e2e:staging": "playwright test --config=playwright.staging.config.ts",
+    "test:design": "playwright test --config=playwright.design.config.ts",
     "provision:staging": "node scripts/provision-staging-pilot.mjs",
     "provision:platform-admin": "node scripts/provision-platform-admin.mjs",
     "preview": "vite preview",

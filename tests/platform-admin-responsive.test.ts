@@ -19,9 +19,18 @@ test('admin modals stay within the viewport and scroll internally', () => {
 });
 
 test('admin mobile header hides secondary text and truncates the current route', () => {
-  assert.match(layout, /Control plane[^<]*<\/span>/);
-  assert.match(layout, /hidden[^\"]*sm:inline[^>]*>Control plane/);
-  assert.match(layout, /max-w-\[120px\] truncate/);
+  assert.match(layout, /Správa platformy[^<]*<\/span>/);
+  assert.match(layout, /hidden[^\"]*sm:inline[^>]*>Správa platformy/);
+  assert.match(layout, /max-w-\[160px\] truncate/);
+});
+
+test('admin directory uses the shared light surface and accessible message states', () => {
+  assert.match(companies, /workspace-page admin-companies/);
+  assert.match(companies, /workspace-panel/);
+  assert.match(companies, /bg-white/);
+  assert.match(companies, /role="alert"/);
+  assert.match(companies, /role="status"/);
+  assert.doesNotMatch(companies, /bg-\[#0C111D\]|bg-\[#090D16\]|text-rose-100|text-emerald-100/);
 });
 
 test('Playwright viewport check covers 375px and 1280px without submitting actions', () => {

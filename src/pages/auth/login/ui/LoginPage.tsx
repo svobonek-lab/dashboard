@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import { useOrganization } from '@/entities/session';
-import { Building, Lock, Mail, ArrowRight, CheckCircle2, ShieldAlert, Building2, BriefcaseBusiness, ShieldCheck } from 'lucide-react';
+import { Building, Lock, Mail, ArrowRight, CheckCircle2, ShieldAlert } from 'lucide-react';
 import type { UserRole } from '@/shared/model/permissions';
 import { supabase } from '@/shared/api/supabase';
-import { buildRecoveryRequest, parseRecoveryResponse, validateNewPassword } from '@/features/login';
+import { buildRecoveryRequest, getRecoveryErrorMessage, parseRecoveryResponse, validateNewPassword } from '@/features/login';
 import { createOwnerLegalConsent } from '@/shared/model/legalConsent';
 import { LegalConsentFields } from '@/shared/ui/LegalConsentFields';
 import { normalizePublicOrigin } from '@/shared/lib/publicUrls';
@@ -23,12 +23,12 @@ const ROLE_COPY: Record<UserRole, { title: string; description: string; route: s
   },
   owner: {
     title: 'Přihlášení majitele firmy',
-    description: 'Přehled zakázek, poptávek, týmu a výkonu vaší firmy.',
+    description: 'Přístup k poptávkám, zakázkám a týmu vaší firmy.',
     route: '/owner/login',
   },
   employee: {
     title: 'Přihlášení zaměstnance',
-    description: 'Vaše přiřazené zakázky, termíny, checklisty a komunikace.',
+    description: 'Přístup k vašim přiděleným zakázkám.',
     route: '/employee/login',
   },
 };
@@ -103,13 +103,17 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onSuccess, expectedRole })
 
     try {
       if (mode === 'recover') {
+        const recoveryRequest = buildRecoveryRequest(email);
         const response = await fetch('/api/reset-employee-password', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(buildRecoveryRequest(email)),
+          body: JSON.stringify(recoveryRequest),
         });
-        const result = await response.json();
-        if (!response.ok) throw new Error(result?.error || 'Odkaz pro obnovu se nepodařilo odeslat.');
+        const result = await response.json().catch(() => null);
+        if (!response.ok) {
+          setError(getRecoveryErrorMessage(result));
+          return;
+        }
         setSuccessMessage(parseRecoveryResponse(result));
       } else if (mode === 'new_password') {
         const validatedPassword = validateNewPassword(password);
@@ -141,60 +145,44 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onSuccess, expectedRole })
         }
       }
     } catch (err: any) {
-      setError(err.message || 'Neznámá chyba');
+      if (mode === 'recover') {
+        setError(err?.message === 'Zadejte platný e-mail.' ? err.message : getRecoveryErrorMessage(null));
+      } else {
+        setError(err.message || 'Neznámá chyba');
+      }
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-surface-secondary flex font-sans">
-      <aside className="login-value-panel hidden lg:flex">
-        <div className="relative z-10 max-w-lg">
-          <div className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1.5 text-xs font-semibold text-blue-100"><ShieldCheck className="h-4 w-4" /> Firemní pilot StavbaFlow</div>
-          <p className="mt-8 text-sm font-semibold text-blue-200">StavbaFlow</p>
-          <h1 className="mt-3 text-4xl font-semibold leading-tight tracking-[-0.04em] text-white">Zakázky, tým a další krok. Bez zbytečného chaosu.</h1>
-          <p className="mt-5 max-w-md text-base leading-7 text-slate-300">Jednoduchý pracovní prostor pro menší stavební firmu. Každý vidí jen to, co potřebuje ke své práci.</p>
-          <div className="mt-10 space-y-3">
-            {[
-              { icon: Building2, title: 'Jedno přihlášení, správný dashboard', text: 'Majitele i zaměstnance systém automaticky pošle do jejich pracovního prostoru.' },
-              { icon: BriefcaseBusiness, title: 'Poptávka až po realizaci', text: 'Stav zakázky, přiřazení a historie zůstávají na jednom místě.' },
-              { icon: ShieldCheck, title: 'Data firmy zůstávají oddělená', text: 'Přístup vynucuje role uživatele a příslušnost k firmě.' },
-            ].map(({ icon: Icon, title, text }) => <div key={title} className="flex gap-4 rounded-2xl border border-white/10 bg-white/[0.06] p-4"><span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-500/20 text-blue-200"><Icon className="h-5 w-5" /></span><span><strong className="block text-sm font-semibold text-white">{title}</strong><small className="mt-1 block text-sm leading-5 text-slate-300">{text}</small></span></div>)}
-          </div>
+    <main className="min-h-screen bg-surface-secondary px-4 py-8 font-sans sm:px-8 sm:py-12">
+      <div className="mx-auto w-full max-w-[28rem]">
+        <div className="mb-6 flex items-center gap-3">
+          <span aria-hidden="true" className="grid size-9 place-items-center rounded-lg bg-[#2563EB] text-sm font-bold text-white">SF</span>
+          <span className="text-lg font-semibold tracking-tight text-text">StavbaFlow</span>
         </div>
-      </aside>
-
-      {/* Right Login/Signup Form Area */}
-      <div className="flex-1 flex flex-col justify-center items-center p-5 sm:p-8 bg-surface-secondary">
-         <div className="max-w-md w-full bg-surface border border-border p-7 sm:p-10 rounded-[24px] shadow-app">
-            
-            <div className="text-center mb-8">
-              <div 
-                className="w-16 h-16 rounded-2xl mx-auto mb-4 flex items-center justify-center shadow-md text-white font-black text-2xl transition-colors duration-300"
-                style={{ backgroundColor: displayBrandColor }}
-              >
-                 {displayOrgName.substring(0, 2).toUpperCase()}
-              </div>
-              <h2 className="text-2xl font-black text-text tracking-tight">
+        <div className="auth-card rounded-xl border border-border bg-surface p-5 sm:p-8">
+            <div className="mb-7">
+              <h1 className="text-2xl font-semibold tracking-tight text-text">
                 {mode === 'login'
                   ? (roleCopy?.title || 'Přihlášení do StavbaFlow')
                   : mode === 'signup'
-                    ? 'Vytvořit firemní workspace'
+                    ? 'Založit firemní účet'
                     : mode === 'recover'
                       ? 'Obnovit heslo'
                       : invitePasswordRequired ? 'Nastavte si heslo' : 'Nastavit nové heslo'}
-              </h2>
+              </h1>
               <p className="text-sm text-muted font-medium mt-2">
                 {mode === 'login' 
-                  ? (roleCopy?.description || 'Po přihlášení vás StavbaFlow automaticky pošle do dashboardu podle vaší role.')
+                  ? (roleCopy?.description || 'Použijte e-mail, který máte u svého účtu.')
                   : mode === 'signup'
-                    ? 'Vytvořte si vlastní oddělený prostor (tenant) na platformě.'
+                    ? 'Zadejte údaje pro založení firemního účtu.'
                     : mode === 'recover'
                       ? 'Pošleme vám jednorázový odkaz na ověřený e-mail účtu.'
                       : invitePasswordRequired
-                        ? 'Bez vlastního hesla se pozvánka neaktivuje a dashboard zůstane uzamčený.'
-                        : 'Nové heslo se uloží pouze do vašeho ověřeného účtu.'}
+                        ? 'Nastavením hesla dokončíte přijetí pozvánky.'
+                        : 'Zadejte nové heslo pro svůj účet.'}
               </p>
             </div>
 
@@ -210,14 +198,13 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onSuccess, expectedRole })
                 </div>
               )}
               {error && (
-                <div className="p-4 bg-rose-50 border border-rose-200 text-rose-700 rounded-app text-xs font-bold flex items-start gap-2">
+                <div role="alert" className="auth-message auth-message-error p-4 bg-rose-50 border border-rose-200 text-rose-800 rounded-app text-sm font-semibold flex items-start gap-2">
                   <ShieldAlert className="w-4 h-4 shrink-0 mt-0.5" />
                   <span>{error}</span>
                 </div>
               )}
               {successMessage && (
-                <div className="p-4 bg-green-50 border border-green-200 text-green-700 rounded-app text-xs font-bold leading-relaxed space-y-1">
-                  <p className="flex items-center gap-1.5"><CheckCircle2 className="w-4 h-4" /> Ověřený krok</p>
+                <div role="status" aria-live="polite" className="auth-message auth-message-success p-4 bg-green-50 border border-green-200 text-green-800 rounded-app text-sm font-semibold leading-relaxed space-y-1">
                   <p className="text-green-600 font-medium">{successMessage}</p>
                 </div>
               )}
@@ -263,16 +250,18 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onSuccess, expectedRole })
               <div className="space-y-4">
                 {mode !== 'new_password' && (
                 <div>
-                  <label className="text-xs font-bold uppercase tracking-wider text-muted block mb-1.5">E-mail</label>
+                  <label htmlFor="auth-email" className="text-sm font-semibold text-text block mb-1.5">E-mail</label>
                   <div className="relative">
                     <span className="absolute inset-y-0 left-0 pl-4 flex items-center text-muted">
                       <Mail className="w-4 h-4" />
                     </span>
-                    <input
+                      <input
                       type="email"
+                        id="auth-email"
+                        autoComplete="email"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
-                      className="w-full pl-11 pr-4 py-3 bg-surface-secondary border border-border rounded-app text-sm font-semibold text-text focus:outline-none focus:ring-2 focus:border-transparent transition-all"
+                        className="w-full min-h-12 pl-11 pr-4 py-3 bg-surface-secondary border border-border rounded-control text-base font-medium text-text focus:outline-none focus:ring-2 focus:border-transparent transition-all"
                       style={{ '--tw-ring-color': displayBrandColor } as React.CSSProperties}
                       placeholder="jmeno@firma.cz"
                       required
@@ -282,16 +271,19 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onSuccess, expectedRole })
                 )}
                 {mode !== 'recover' && (
                 <div>
-                  <label className="text-xs font-bold uppercase tracking-wider text-muted block mb-1.5">Heslo</label>
+                  <label htmlFor="auth-password" className="text-sm font-semibold text-text block mb-1.5">{mode === 'new_password' ? 'Nové heslo' : 'Heslo'}</label>
                   <div className="relative">
                     <span className="absolute inset-y-0 left-0 pl-4 flex items-center text-muted">
                       <Lock className="w-4 h-4" />
                     </span>
-                    <input
+                      <input
                       type="password"
+                        id="auth-password"
+                        autoComplete={mode === 'new_password' ? 'new-password' : 'current-password'}
+                        minLength={mode === 'new_password' ? 10 : undefined}
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
-                      className="w-full pl-11 pr-4 py-3 bg-surface-secondary border border-border rounded-app text-sm font-semibold text-text focus:outline-none focus:ring-2 focus:border-transparent transition-all"
+                        className="w-full min-h-12 pl-11 pr-4 py-3 bg-surface-secondary border border-border rounded-control text-base font-medium text-text focus:outline-none focus:ring-2 focus:border-transparent transition-all"
                       style={{ '--tw-ring-color': displayBrandColor } as React.CSSProperties}
                       placeholder="••••••••"
                       required
@@ -303,7 +295,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onSuccess, expectedRole })
 
               {mode === 'login' && (
                 <div className="text-right -mt-2">
-                  <button type="button" onClick={() => { setMode('recover'); setError(null); setSuccessMessage(null); }} className="text-xs font-bold text-brand-primary hover:underline">
+                  <button type="button" onClick={() => { setMode('recover'); setError(null); setSuccessMessage(null); }} className="min-h-11 px-2 text-sm font-semibold text-brand-primary hover:underline">
                     Zapomenuté heslo
                   </button>
                 </div>
@@ -312,7 +304,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onSuccess, expectedRole })
               <button
                 type="submit"
                 disabled={isLoading || !canSubmitLegalConsent}
-                className="w-full py-3.5 rounded-app text-sm font-bold shadow-app transition-all flex items-center justify-center gap-2 hover:opacity-90 active:scale-[0.98] mt-4 cursor-pointer"
+                className="w-full min-h-12 px-4 rounded-control text-sm font-semibold shadow-app transition-all flex items-center justify-center gap-2 hover:opacity-90 active:scale-[0.98] mt-4 cursor-pointer disabled:cursor-wait disabled:opacity-65"
                 style={{
                   backgroundColor: displayBrandColor,
                   color: '#ffffff',
@@ -322,7 +314,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onSuccess, expectedRole })
                   <span className="inline-block w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
                 ) : (
                   <>
-                    <span>{mode === 'login' ? 'Pokračovat do workspace' : mode === 'signup' ? 'Vytvořit firmu & Spustit' : mode === 'recover' ? 'Odeslat bezpečný odkaz' : invitePasswordRequired ? 'Nastavit heslo a pokračovat' : 'Uložit nové heslo'}</span>
+                    <span>{mode === 'login' ? 'Přihlásit se' : mode === 'signup' ? 'Založit firmu' : mode === 'recover' ? 'Odeslat bezpečný odkaz' : invitePasswordRequired ? 'Nastavit heslo a pokračovat' : 'Uložit nové heslo'}</span>
                     <ArrowRight className="w-4 h-4" />
                   </>
                 )}
@@ -338,11 +330,11 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onSuccess, expectedRole })
                     className="font-bold hover:underline transition-colors"
                     style={{ color: displayBrandColor }}
                   >
-                    Založit nový workspace
+                    Založit firemní účet
                   </button>
                 </>
               ) : mode === 'login' ? (
-                <span className="text-xs leading-5">{import.meta.env.VITE_PAID_REGISTRATION_ENABLED === 'true' ? <a href="/register-paid" className="font-semibold underline">Založit firemní workspace</a> : 'Firemní prostor připravujeme při onboardingu. Přístup obdržíte od správce StavbaFlow.'}</span>
+                <span className="text-xs leading-5">{import.meta.env.VITE_PAID_REGISTRATION_ENABLED === 'true' ? <a href="/register-paid" className="font-semibold underline">Založit firemní účet</a> : 'Přístup k firemnímu účtu vám připraví správce StavbaFlow.'}</span>
               ) : mode === 'signup' ? (
                 <>
                   Již máte u nás účet?{' '}
@@ -355,7 +347,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onSuccess, expectedRole })
                   </button>
                 </>
               ) : mode === 'new_password' && invitePasswordRequired ? (
-                <span className="text-xs leading-5">Po nastavení hesla vás automaticky otevřeme ve správném dashboardu.</span>
+                <span className="text-xs leading-5">Po nastavení hesla se otevře přehled vaší práce.</span>
               ) : (
                 <button
                   type="button"
@@ -370,6 +362,6 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onSuccess, expectedRole })
             </div>
          </div>
       </div>
-    </div>
+    </main>
   );
 };

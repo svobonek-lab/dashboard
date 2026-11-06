@@ -34,6 +34,7 @@ export const LeadsKanban: React.FC<LeadsKanbanProps> = ({
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [draggedLead, setDraggedLead] = useState<string | null>(null);
   const [dragOverColumn, setDragOverColumn] = useState<string | null>(null);
+  const [activeMobileStatus, setActiveMobileStatus] = useState<LeadStatus>('New');
 
   // Synchronize internal state with props when parent state changes
   useEffect(() => {
@@ -99,10 +100,10 @@ export const LeadsKanban: React.FC<LeadsKanbanProps> = ({
   return (
     <div className="space-y-6 pb-20 text-slate-800 font-sans">
       {/* Top Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-6 rounded-[24px] border border-slate-200 shadow-sm">
+      <div className="workspace-panel flex flex-col md:flex-row md:items-center justify-between gap-4 p-4 sm:p-6">
         <div>
-          <h2 className="text-2xl font-black text-slate-900 tracking-tight">Kanban zakázek & staveb</h2>
-          <p className="text-xs text-slate-500 mt-0.5">Široké sloupce s podrobnými kartami, rychlými akcemi a přehledem stavu</p>
+          <h2 className="text-xl sm:text-2xl font-semibold text-slate-900 tracking-tight">Poptávky a zakázky</h2>
+          <p className="text-sm text-slate-600 mt-1">Zakázky podle aktuálního stavu.</p>
         </div>
 
         <div className="flex items-center gap-3 w-full md:w-auto">
@@ -236,21 +237,34 @@ export const LeadsKanban: React.FC<LeadsKanbanProps> = ({
       )}
 
       {/* Mobile Quick Status Filter Pills (Sticky horizontal bar on phone) */}
-      <div className="flex md:hidden overflow-x-auto gap-2 pb-2 -mx-3 px-3 scrollbar-none">
+      <div role="tablist" aria-label="Stav zakázek" className="flex md:hidden overflow-x-auto gap-2 pb-2 -mx-3 px-3 scrollbar-none">
         {columns.map(col => {
           const count = leads.filter(l => l.status === col.status).length;
+          const selected = activeMobileStatus === col.status;
           return (
             <button
               key={col.status}
-              onClick={() => {
-                const el = document.getElementById(`kanban-col-${col.status}`);
-                if (el) el.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+              type="button"
+              role="tab"
+              id={`kanban-tab-${col.status}`}
+              aria-controls={`kanban-col-${col.status}`}
+              aria-selected={selected}
+              tabIndex={selected ? 0 : -1}
+              onClick={() => setActiveMobileStatus(col.status)}
+              onKeyDown={(event) => {
+                if (event.key !== 'ArrowRight' && event.key !== 'ArrowLeft') return;
+                event.preventDefault();
+                const currentIndex = columns.findIndex((column) => column.status === col.status);
+                const offset = event.key === 'ArrowRight' ? 1 : -1;
+                const next = columns[(currentIndex + offset + columns.length) % columns.length];
+                setActiveMobileStatus(next.status);
+                requestAnimationFrame(() => document.getElementById(`kanban-tab-${next.status}`)?.focus());
               }}
-              className="flex items-center justify-center gap-1.5 px-3 py-2 min-h-[44px] rounded-xl bg-white border border-slate-200 text-xs font-bold text-slate-700 whitespace-nowrap shadow-2xs shrink-0 active:scale-95 transition-transform"
+              className={`flex items-center justify-center gap-1.5 px-3 py-2 min-h-[44px] rounded-xl border text-xs font-bold whitespace-nowrap shrink-0 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-primary ${selected ? 'border-brand-primary bg-brand-primary text-white' : 'border-slate-200 bg-white text-slate-700'}`}
             >
-              <span className={`w-2 h-2 rounded-full ${col.badgeColor.split(' ')[0]}`}></span>
+              <span aria-hidden="true" className={`w-2 h-2 rounded-full ${selected ? 'bg-white' : col.badgeColor.split(' ')[0]}`}></span>
               <span>{col.label}</span>
-              <span className="text-[10px] bg-slate-100 px-1.5 py-0.2 rounded-full text-slate-500 font-mono">{count}</span>
+              <span className={`text-[11px] px-1.5 py-0.5 rounded-full font-mono ${selected ? 'bg-white/15 text-white' : 'bg-slate-100 text-slate-600'}`} aria-label={`${count} zakázek`}>{count}</span>
             </button>
           );
         })}
@@ -258,10 +272,10 @@ export const LeadsKanban: React.FC<LeadsKanbanProps> = ({
 
       {/* Wide Kanban Board Container with Mobile Snap Scrolling: scroll-snap-type: x mandatory */}
       <div 
-        className="overflow-x-auto pb-6 -mx-3 px-3 sm:-mx-8 sm:px-8 snap-x snap-mandatory scroll-smooth kanban-scroll-container"
+        className="overflow-x-hidden pb-6 -mx-3 px-3 sm:-mx-8 sm:px-8 md:overflow-x-auto snap-x snap-mandatory scroll-smooth kanban-scroll-container"
         style={{ scrollSnapType: 'x mandatory', WebkitOverflowScrolling: 'touch' }}
       >
-        <div className="flex gap-4 sm:gap-6 items-start w-max min-w-full">
+        <div className="flex gap-4 sm:gap-6 items-start w-full min-w-0 md:w-max md:min-w-full">
           {columns.map(col => {
             const columnLeads = leads.filter(l => l.status === col.status);
             return (
@@ -285,8 +299,11 @@ export const LeadsKanban: React.FC<LeadsKanbanProps> = ({
                     setDraggedLead(null);
                   }
                 }}
-                style={{ minWidth: '320px', scrollSnapAlign: 'start' }}
-                className={`w-[320px] min-w-[320px] max-w-[320px] sm:w-[360px] sm:min-w-[340px] sm:max-w-[420px] rounded-[24px] border flex flex-col shadow-sm shrink-0 snap-start kanban-column-snap transition-all duration-200 ${
+                role="tabpanel"
+                aria-labelledby={`kanban-tab-${col.status}`}
+                data-kanban-column
+                style={{ scrollSnapAlign: 'start' }}
+                className={`${activeMobileStatus === col.status ? 'flex' : 'hidden'} md:flex w-[calc(100vw-2rem)] min-w-0 max-w-[calc(100vw-2rem)] md:w-[360px] md:min-w-[340px] md:max-w-[420px] rounded-xl md:rounded-2xl border flex-col shadow-sm md:shrink-0 snap-start kanban-column-snap transition-all duration-200 ${
                   dragOverColumn === col.status
                     ? 'bg-blue-50/60 border-brand-primary ring-2 ring-brand-primary-soft shadow-md'
                     : 'bg-slate-50/80 border-slate-200'
@@ -304,7 +321,7 @@ export const LeadsKanban: React.FC<LeadsKanbanProps> = ({
                 </div>
 
                 {/* Cards Container (Min-height 170-220px per card feel) */}
-                <div className="p-4 space-y-4 min-h-[600px] flex-1">
+                <div className="p-3 sm:p-4 space-y-4 min-h-[240px] md:min-h-[400px] flex-1">
                   {columnLeads.map(lead => {
                     const sourceBadge = getLeadSourceBadge(lead.source);
                     return <div
@@ -319,7 +336,7 @@ export const LeadsKanban: React.FC<LeadsKanbanProps> = ({
                       <div className="absolute left-0 top-0 bottom-0 w-1.5 opacity-0 group-hover:opacity-100 transition-opacity" style={{ backgroundColor: 'var(--brand-primary)' }}></div>
 
                       {/* Top: Priority & Budget */}
-                      <div className="flex items-center justify-between">
+                      <div className="flex min-w-0 items-start justify-between gap-2">
                         <div className="flex flex-wrap items-center gap-1.5">
                           <span className={`text-[10px] font-black px-2.5 py-1 rounded-lg border uppercase tracking-wider ${
                             lead.priority === 'High' ? 'bg-rose-50 border-rose-200 text-rose-700' : 'bg-slate-50 border-slate-200 text-slate-600'
@@ -332,14 +349,14 @@ export const LeadsKanban: React.FC<LeadsKanbanProps> = ({
                             </span>
                           )}
                         </div>
-                        <span className="text-sm font-black font-mono text-slate-900 bg-slate-50 px-2 py-0.5 rounded-md border border-slate-100">
-                          {lead.price ? `${lead.price.toLocaleString()} Kč` : 'Dohodou'}
+                        <span className="max-w-[48%] min-w-0 whitespace-normal break-words text-right text-sm font-black font-mono leading-tight text-slate-900 bg-slate-50 px-2 py-1 rounded-md border border-slate-100">
+                          {lead.price ? `${lead.price.toLocaleString('cs-CZ')} Kč` : 'Dohodou'}
                         </span>
                       </div>
 
                       {/* Title & Customer */}
                       <div className="space-y-1.5 pl-1">
-                        <h4 className="text-[15px] font-black text-slate-900 group-hover:text-brand-primary transition-colors line-clamp-2 leading-tight">
+                        <h4 className="break-words text-[15px] font-black text-slate-900 group-hover:text-brand-primary transition-colors leading-tight">
                           {lead.title}
                         </h4>
                         <div className="flex items-center gap-2 text-xs text-slate-500 font-medium">
@@ -360,8 +377,10 @@ export const LeadsKanban: React.FC<LeadsKanbanProps> = ({
                             Dnes
                           </span>
                           <span className="font-bold text-slate-700 flex items-center gap-1.5">
-                            <img src={`https://api.dicebear.com/7.x/notionists/svg?seed=${lead.assignedEmployeeName}&backgroundColor=f8fafc`} alt="avatar" className="w-4 h-4 rounded-full border border-slate-200" />
-                            {lead.assignedEmployeeName.split(' ')[0]}
+                            <span aria-hidden="true" className="w-6 h-6 rounded-full border border-slate-200 bg-surface-tertiary text-[10px] font-bold text-text-muted flex items-center justify-center">
+                              {lead.assignedEmployeeName.split(/\s+/).filter(Boolean).slice(0, 2).map((part) => part[0]).join('').toLocaleUpperCase('cs-CZ')}
+                            </span>
+                            <span>{lead.assignedEmployeeName.split(' ')[0]}</span>
                           </span>
                         </div>
                       </div>

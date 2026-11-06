@@ -91,12 +91,12 @@ const PublicDemoContent: React.FC = () => {
   const isKanban = pathname === '/demo/leads';
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900" aria-label="Public demo">
+    <div className="public-demo" aria-label="Public demo">
       <p className="sr-only">Veřejné demo je pouze pro čtení a používá výhradně syntetická data.</p>
       <header className="border-b border-slate-200 bg-white">
         <div className="mx-auto flex min-h-16 max-w-7xl flex-wrap items-center justify-between gap-3 px-4 py-3 sm:px-6">
           <a href="/" className="text-base font-bold tracking-tight text-slate-950">StavbaFlow · demo</a>
-          <nav aria-label="Public demo navigation" className="flex items-center gap-2">
+          <nav aria-label="Veřejné demo" className="flex items-center gap-2">
             <button type="button" aria-current={!isKanban ? 'page' : undefined} onClick={() => navigate('/demo')} className="rounded-lg px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100">Přehled</button>
             <button type="button" aria-current={isKanban ? 'page' : undefined} onClick={() => navigate('/demo/leads')} className="rounded-lg px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100">Poptávky</button>
           </nav>

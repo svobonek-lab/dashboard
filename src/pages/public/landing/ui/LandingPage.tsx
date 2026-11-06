@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { 
   ArrowRight, 
   CheckCircle2, 
-  Clock, 
   DollarSign, 
   HardHat, 
   Phone, 
@@ -14,14 +13,13 @@ import {
   Calendar, 
   Building2, 
   AlertCircle, 
-  ChevronRight,
   ExternalLink,
-  PlayCircle,
   HelpCircle,
   Calculator,
   Download,
   Check,
-  X
+  X,
+  LockKeyhole,
 } from 'lucide-react';
 import { useRouter } from '@/shared/lib/router';
 import { buildSalesContact, getSalesContactMode } from '@/pages/public/landing';
@@ -86,7 +84,7 @@ export const LandingPage: React.FC = () => {
   // Calculations
   const calculatedQuotes = Math.round(monthlyLeads * (quotedRate / 100));
   const wonPerQuarter = Math.round((calculatedQuotes * 3) * (winRate / 100));
-  const additionalWonQuarter = Math.max(1, Math.round(wonPerQuarter * 0.2)); // +20% conversion or at least 1 lead
+  const additionalWonQuarter = Math.round(wonPerQuarter * 0.2);
   const additionalMarginQuarter = additionalWonQuarter * avgMargin;
   const starterQuarterCost = 1990 * 3;
   const roiMultiplier = (additionalMarginQuarter / starterQuarterCost).toFixed(1);
@@ -140,40 +138,42 @@ export const LandingPage: React.FC = () => {
   };
 
   return (
-    <div className="workspace-shell min-h-screen bg-[#F7F8FA] text-slate-900 font-sans selection:bg-blue-100">
+    <div className="public-landing workspace-shell min-h-screen bg-[#F2F3F0] text-slate-900 font-sans selection:bg-blue-100">
       
       {/* 1. Header Navigation */}
       <header className="sticky top-0 z-40 bg-white/90 backdrop-blur-md border-b border-slate-200/80">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-[#0A84FF] text-white font-black text-base flex items-center justify-center shadow-xs">
-              SC
+            <div className="w-9 h-9 rounded-xl bg-[#2563EB] text-white font-black text-base flex items-center justify-center shadow-xs">
+              SF
             </div>
             <div>
               <span className="text-base font-black text-slate-900 tracking-tight">StavbaFlow</span>
-              <span className="text-[10px] font-bold text-slate-500 block -mt-1 uppercase tracking-wider">Operační systém stavby</span>
             </div>
           </div>
 
-          <nav className="hidden md:flex items-center gap-6 text-xs font-bold text-slate-600">
+          <nav className="hidden lg:flex items-center gap-4 xl:gap-6 text-sm font-semibold text-slate-700">
             <a href="#jak-to-funguje" className="hover:text-blue-600 transition-colors">Jak to funguje</a>
-            <a href="#problemy" className="hover:text-blue-600 transition-colors">Pro majitele</a>
             <a href="#kalkulacka" className="hover:text-blue-600 transition-colors">Spočítat přínos</a>
-            <a href="#cenik" className="hover:text-blue-600 transition-colors">Pilot</a>
+            <a href="#cenik" className="hover:text-blue-600 transition-colors">Ceník</a>
           </nav>
 
-          <div className="flex items-center gap-3">
+          <div data-testid="landing-header-actions" className="flex shrink-0 items-center gap-2 sm:gap-3">
             <button
               onClick={() => navigate('/login')}
-              className="text-xs font-bold text-slate-700 hover:text-slate-900 px-3 py-2"
+              aria-label="Přihlásit se"
+              className="min-h-11 min-w-11 px-2 sm:px-3 py-2 text-sm font-semibold text-slate-700 hover:text-slate-900"
             >
-              Přihlásit se
+              <span className="hidden sm:inline">Přihlásit se</span>
+              <LockKeyhole aria-hidden="true" className="mx-auto h-4 w-4 sm:hidden" />
             </button>
             <button
               onClick={() => setIsBookingOpen(true)}
-              className="px-4 py-2 bg-[#0A84FF] hover:bg-blue-600 text-white rounded-xl text-xs font-black shadow-xs hover:shadow-md transition-all"
+              aria-label="Domluvit ukázku StavbaFlow"
+              className="min-h-11 min-w-11 px-4 max-[359px]:px-2 py-2 bg-[#2563EB] hover:bg-blue-700 text-white rounded-xl text-sm font-semibold shadow-xs hover:shadow-md transition-all"
             >
-              Domluvit ukázku
+              <span className="max-[359px]:hidden">Domluvit ukázku</span>
+              <Calendar aria-hidden="true" className="mx-auto hidden h-4 w-4 max-[359px]:block" />
             </button>
           </div>
         </div>
@@ -185,198 +185,56 @@ export const LandingPage: React.FC = () => {
         </aside>
       )}
 
-      {/* 2. Outcome Hero Section (Audit Page 11) */}
-      <section className="pt-16 pb-14 px-4 sm:px-6 lg:px-8 max-w-5xl mx-auto text-center space-y-6">
-        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold bg-blue-50 text-blue-700 border border-blue-200">
-          <Building2 className="w-3.5 h-3.5" />
-          <span>Pro majitele menších stavebních firem</span>
-        </div>
 
-        <h1 className="text-3xl sm:text-5xl font-black text-slate-900 tracking-tight leading-tight max-w-4xl mx-auto">
-          Mějte každou zakázku<br />
-          <span className="text-[#2563EB]">pod kontrolou.</span>
-        </h1>
-
-        <p className="text-base sm:text-lg text-slate-600 max-w-2xl mx-auto leading-relaxed font-medium">
-          StavbaFlow je pracovní dashboard pro menší stavební firmy. Zachytí poptávku z webu, majitel ji přiřadí a zaměstnanec vidí jen práci, kterou má udělat.
-        </p>
-
-        <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
-          <button
-            onClick={() => setIsBookingOpen(true)}
-            className="w-full sm:w-auto px-6 py-3.5 bg-[#0A84FF] hover:bg-blue-600 text-white rounded-xl text-xs font-black shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2"
-          >
-            <span>Ukázat mi StavbaFlow</span>
-            <ArrowRight className="w-4 h-4" />
-          </button>
-          <button
-            onClick={() => DEMO_DESTINATION.url && window.location.assign(DEMO_DESTINATION.url)}
-            disabled={!DEMO_DESTINATION.url}
-            title={DEMO_DESTINATION.error || 'Otevřít skutečné demo StavbaFlow'}
-            className="w-full sm:w-auto px-6 py-3.5 bg-white hover:bg-slate-50 text-slate-800 border border-slate-300 rounded-xl text-xs font-black shadow-2xs transition-all flex items-center justify-center gap-2"
-          >
-            <PlayCircle className="w-4 h-4 text-[#0A84FF]" />
-            <span>Prohlédnout živou ukázku</span>
-          </button>
-        </div>
-
-        {/* Horizontal Workflow Chain */}
-        <div id="jak-to-funguje" className="pt-8 border-t border-slate-200/80 max-w-3xl mx-auto">
-          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-3">
-            Pracovní tok Founding Pilotu
-          </span>
-          <div className="flex flex-wrap items-center justify-center gap-2 text-xs font-bold text-slate-700">
-            <span className="px-3 py-1 bg-white border border-slate-200 rounded-lg shadow-2xs">Webový formulář</span>
-            <ChevronRight className="w-3.5 h-3.5 text-slate-400" />
-            <span className="px-3 py-1 bg-white border border-slate-200 rounded-lg shadow-2xs">Poptávka</span>
-            <ChevronRight className="w-3.5 h-3.5 text-slate-400" />
-            <span className="px-3 py-1 bg-white border border-slate-200 rounded-lg shadow-2xs">Přiřazení</span>
-            <ChevronRight className="w-3.5 h-3.5 text-slate-400" />
-            <span className="px-3 py-1 bg-white border border-slate-200 rounded-lg shadow-2xs">Stav zakázky</span>
-            <ChevronRight className="w-3.5 h-3.5 text-slate-400" />
-            <span className="px-3 py-1 bg-blue-50 border border-blue-200 text-blue-700 rounded-lg font-black">Historie změn</span>
+      <section className="mx-auto grid max-w-7xl items-center gap-9 px-4 py-12 sm:px-6 sm:py-16 lg:grid-cols-[0.95fr_1.05fr] lg:gap-12 lg:px-8 lg:py-24">
+        <div className="min-w-0">
+          <h1 className="max-w-xl text-[2.2rem] font-semibold leading-[1.06] tracking-[-0.045em] text-slate-950 sm:text-5xl xl:text-6xl">Přehled stavebních zakázek pro malé firmy</h1>
+          <p className="mt-5 max-w-md text-slate-700">Poptávka z webu má svůj záznam. Vy ji přiřadíte člověku z týmu a v přehledu vidíte, co čeká na odpověď a co už je v realizaci.</p>
+          <p className="mt-3 font-medium text-slate-600">Tarif Start stojí 1 990 Kč měsíčně bez&nbsp;DPH.</p>
+          <div className="mt-6 flex flex-wrap items-center gap-3">
+            {DEMO_DESTINATION.url && <a href={DEMO_DESTINATION.url} className="workspace-primary-action inline-flex items-center justify-center px-5 text-sm font-semibold">Otevřít demo</a>}
+            <button type="button" onClick={() => setIsBookingOpen(true)} className="inline-flex min-h-11 items-center rounded-lg border border-slate-300 px-4 text-sm font-semibold hover:bg-white">Domluvit ukázku</button>
           </div>
         </div>
+
+        <figure aria-label="Ukázka přehledu zakázek" className="min-w-0 overflow-hidden rounded-xl border border-slate-300 bg-white">
+          <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 bg-slate-50 px-4 py-3 sm:px-6">
+            <strong className="text-sm font-semibold text-slate-950">StavbaFlow / Zakázky</strong>
+            <span className="text-xs text-slate-600">Ukázková data</span>
+          </div>
+          <ul className="divide-y divide-slate-200 px-4 sm:px-6">
+            {[
+              ['Výměna střešní krytiny', 'Brno', 'Nová poptávka'],
+              ['Zateplení rodinného domu', 'Kuřim', 'Nabídka'],
+              ['Oprava omítek ve skladu', 'Modřice', 'V realizaci'],
+            ].map(([title, place, status]) => (
+              <li key={title} className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 py-4 sm:py-5">
+                <span><strong className="block text-sm font-semibold text-slate-900">{title}</strong><small className="mt-1 block text-xs text-slate-600">{place}</small></span>
+                <span className="text-xs font-medium text-blue-800">{status}</span>
+              </li>
+            ))}
+          </ul>
+        </figure>
       </section>
 
-      {/* 3. 3 Expensive Problems Section (Audit Page 11) */}
-      <section id="problemy" className="py-16 bg-white border-y border-slate-200">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
-          <div className="text-center max-w-2xl mx-auto space-y-2">
-            <span className="text-xs font-black uppercase tracking-wider text-[#FF453A]">
-              Kde stavební firma reálně přichází o peníze
-            </span>
-            <h2 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
-              Tři momenty, které ničí marži a čas majitele
-            </h2>
+      <section id="jak-to-funguje" className="scroll-mt-20 border-y border-slate-200 bg-white">
+        <div id="problemy" className="mx-auto grid max-w-7xl gap-8 px-4 py-12 sm:px-6 sm:py-16 lg:grid-cols-[0.95fr_1.05fr] lg:gap-12 lg:px-8">
+          <div>
+            <h2 className="text-2xl font-semibold tracking-tight text-slate-950 sm:text-3xl">Jak firma zpracuje poptávku</h2>
+            <p className="mt-3 max-w-sm text-slate-600">Scénář pilotu ukazuje cestu od prvního kontaktu po změnu stavu zakázky. Nasazení ověřujeme před zákaznickými daty.</p>
           </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            
-            {/* Problem 1 */}
-            <div className="p-6 rounded-2xl bg-slate-50 border border-slate-200 space-y-4 flex flex-col justify-between">
-              <div className="space-y-2">
-                <span className="w-8 h-8 rounded-xl bg-red-100 text-[#FF453A] flex items-center justify-center font-bold text-xs">
-                  01
-                </span>
-                <h3 className="text-base font-black text-slate-900">Poptávka bez okamžité reakce</h3>
-                <p className="text-xs text-slate-600 leading-relaxed">
-                  Zákazník odešle poptávku přes web. Zpráva zapadne v e-mailu a nikdo neví, kdo ji má převzít. Mezitím zákazník osloví další firmy a zakázka se ztrácí.
-                </p>
-              </div>
-              <div className="p-3 bg-blue-50/80 border border-blue-200 rounded-xl text-xs text-blue-900 font-medium">
-                <strong className="block text-blue-950 font-bold mb-0.5">Řešení StavbaFlow:</strong>
-                Každá webová poptávka se uloží do správné firmy, má jasný stav a lze ji přiřadit konkrétnímu zaměstnanci.
-              </div>
-            </div>
-
-            {/* Problem 2 */}
-            <div className="p-6 rounded-2xl bg-slate-50 border border-slate-200 space-y-4 flex flex-col justify-between">
-              <div className="space-y-2">
-                <span className="w-8 h-8 rounded-xl bg-amber-100 text-[#FF9F0A] flex items-center justify-center font-bold text-xs">
-                  02
-                </span>
-                <h3 className="text-base font-black text-slate-900">Zakázka bez odpovědnosti</h3>
-                <p className="text-xs text-slate-600 leading-relaxed">
-                  Majitel ví, že zakázka existuje, ale nevidí, kdo ji převzal a v jakém je stavu. Informace zůstávají v telefonech a skupinových chatech.
-                </p>
-              </div>
-              <div className="p-3 bg-blue-50/80 border border-blue-200 rounded-xl text-xs text-blue-900 font-medium">
-                <strong className="block text-blue-950 font-bold mb-0.5">Řešení StavbaFlow:</strong>
-                Majitel vidí společný Kanban, přiřazeného pracovníka a skutečně uložený stav i po novém přihlášení.
-              </div>
-            </div>
-
-            {/* Problem 3 */}
-            <div className="p-6 rounded-2xl bg-slate-50 border border-slate-200 space-y-4 flex flex-col justify-between">
-              <div className="space-y-2">
-                <span className="w-8 h-8 rounded-xl bg-emerald-100 text-[#34C759] flex items-center justify-center font-bold text-xs">
-                  03
-                </span>
-                <h3 className="text-base font-black text-slate-900">Zaměstnanec vidí příliš mnoho</h3>
-                <p className="text-xs text-slate-600 leading-relaxed">
-                  Běžné sdílené tabulky zpřístupní celý seznam klientů každému. To komplikuje práci a zbytečně rozšiřuje přístup k firemním datům.
-                </p>
-              </div>
-              <div className="p-3 bg-blue-50/80 border border-blue-200 rounded-xl text-xs text-blue-900 font-medium">
-                <strong className="block text-blue-950 font-bold mb-0.5">Řešení StavbaFlow:</strong>
-                Zaměstnanec po přihlášení vidí pouze přidělené zakázky a může měnit jen povolené kroky realizace.
-              </div>
-            </div>
-
-          </div>
-        </div>
-      </section>
-
-      {/* 4. Real Story Breakdown (Audit Page 12) */}
-      <section id="pribeh" className="py-16 max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 space-y-10">
-        <div className="text-center space-y-2">
-          <span className="text-xs font-black uppercase tracking-wider text-blue-600">
-            Jeden příběh zakázky
-          </span>
-          <h2 className="text-2xl sm:text-3xl font-black text-slate-900">
-            Formulář → poptávka → přiřazení → stav → historie
-          </h2>
-          <p className="text-xs sm:text-sm text-slate-500 max-w-xl mx-auto">
-            Tento průchod je určen k přejímce v odděleném stagingu před vložením zákaznických dat. Aplikace nevrátí demonstrační úspěch, pokud se zápis nepodaří.
-          </p>
-        </div>
-
-        <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200 shadow-sm space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
-            <div className="space-y-4">
-              <div className="flex items-center gap-3">
-                <span className="w-7 h-7 rounded-lg bg-blue-50 text-blue-600 font-black text-xs flex items-center justify-center">1</span>
-                <div>
-                  <h4 className="text-xs font-bold text-slate-900">1. Webová poptávka</h4>
-                  <p className="text-[11px] text-slate-500">Formulář firmy vytvoří právě jednu poptávku v jejím workspace.</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-3">
-                <span className="w-7 h-7 rounded-lg bg-blue-50 text-blue-600 font-black text-xs flex items-center justify-center">2</span>
-                <div>
-                  <h4 className="text-xs font-bold text-slate-900">2. Kontrola majitelem</h4>
-                  <p className="text-[11px] text-slate-500">Majitel poptávku otevře, zkontroluje údaje a přiřadí odpovědného člověka.</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-3">
-                <span className="w-7 h-7 rounded-lg bg-blue-50 text-blue-600 font-black text-xs flex items-center justify-center">3</span>
-                <div>
-                  <h4 className="text-xs font-bold text-slate-900">3. Práce zaměstnance</h4>
-                  <p className="text-[11px] text-slate-500">Zaměstnanec vidí jen přidělenou zakázku a provede povolený posun stavu.</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-3">
-                <span className="w-7 h-7 rounded-lg bg-emerald-50 text-emerald-600 font-black text-xs flex items-center justify-center">4</span>
-                <div>
-                  <h4 className="text-xs font-bold text-slate-900">4. Trvalá historie</h4>
-                  <p className="text-[11px] text-slate-500">Stav, přiřazení a auditní událost zůstávají uložené po odhlášení i reloadu.</p>
-                </div>
-              </div>
-            </div>
-
-            <div className="p-5 rounded-2xl bg-slate-900 text-white space-y-3 font-mono text-xs">
-              <div className="flex items-center justify-between pb-2 border-b border-slate-800 text-slate-400">
-                <span>SCÉNÁŘ PILOTU</span>
-                <span className="text-emerald-400">TENANT SCOPE</span>
-              </div>
-              <div className="space-y-1 text-slate-200">
-                <p>Zdroj: formulář na webu firmy</p>
-                <p>Role: majitel a přiřazený zaměstnanec</p>
-                <p>Oddělení: před zákaznickými daty ověřit firmu A vs. B</p>
-                <p>Import: kontrolovaný CSV dry-run a commit</p>
-                <p className="text-emerald-400 font-bold pt-1">Cíl: uložená data bez demo fallbacku</p>
-              </div>
-              <button
-                onClick={() => DEMO_DESTINATION.url && window.location.assign(DEMO_DESTINATION.url)}
-                disabled={!DEMO_DESTINATION.url}
-                title={DEMO_DESTINATION.error || 'Otevřít skutečné demo StavbaFlow'}
-                className="w-full mt-3 py-2 bg-[#0A84FF] text-white rounded-xl text-xs font-sans font-bold hover:bg-blue-600 transition-all"
-              >
-                Vyzkoušet tento scénář v demu →
-              </button>
-            </div>
-          </div>
+          <ol className="divide-y divide-slate-200 border-y border-slate-200">
+            {[
+              ['Zákazník odešle poptávku', 'Formulář na webu firmy založí záznam v jejím přehledu.'],
+              ['Majitel ji přidělí', 'Zkontroluje údaje a vybere odpovědného pracovníka.'],
+              ['Pracovník aktualizuje stav', 'Vidí přidělené zakázky. Změny se zapíšou do historie.'],
+            ].map(([title, description], index) => (
+              <li key={title} className="grid grid-cols-[2rem_minmax(0,1fr)] gap-2 py-4">
+                <span aria-hidden="true" className="text-sm font-semibold tabular-nums text-blue-700">{index + 1}.</span>
+                <div><h3 className="font-semibold text-slate-950">{title}</h3><p className="mt-1 text-slate-600">{description}</p></div>
+              </li>
+            ))}
+          </ol>
         </div>
       </section>
 
@@ -389,9 +247,9 @@ export const LandingPage: React.FC = () => {
               Modelová kalkulačka pro vaši firmu
             </span>
             <h2 className="text-2xl sm:text-3xl font-black text-slate-900">
-              Spočítejte si přínos na vašich reálných číslech
+              Odhadněte přínos zakázek podle vlastních čísel
             </h2>
-            <p className="text-xs sm:text-sm text-slate-500 max-w-xl mx-auto">
+            <p className="text-sm text-slate-600 max-w-xl mx-auto">
               Výsledek je orientační scénář založený na vámi zadaných předpokladech. Není příslibem budoucího zisku ani úspory.
             </p>
           </div>
@@ -402,7 +260,7 @@ export const LandingPage: React.FC = () => {
               
               {/* Slider 1: Leads */}
               <div className="space-y-1.5">
-                <div className="flex justify-between text-xs font-bold text-slate-800">
+                <div className="flex justify-between text-sm font-semibold text-slate-800">
                   <span>Kolik poptávek dostáváte měsíčně?</span>
                   <span className="text-blue-600 font-mono text-sm">{monthlyLeads} poptávek</span>
                 </div>
@@ -418,7 +276,7 @@ export const LandingPage: React.FC = () => {
 
               {/* Slider 2: Quoted % */}
               <div className="space-y-1.5">
-                <div className="flex justify-between text-xs font-bold text-slate-800">
+                <div className="flex justify-between text-sm font-semibold text-slate-800">
                   <span>Kolik z nich dostane cenovou nabídku?</span>
                   <span className="text-blue-600 font-mono text-sm">{quotedRate} % ({calculatedQuotes} nabídek)</span>
                 </div>
@@ -434,7 +292,7 @@ export const LandingPage: React.FC = () => {
 
               {/* Slider 3: Win rate % */}
               <div className="space-y-1.5">
-                <div className="flex justify-between text-xs font-bold text-slate-800">
+                <div className="flex justify-between text-sm font-semibold text-slate-800">
                   <span>Kolik odeslaných nabídek reálně vyhrajete?</span>
                   <span className="text-blue-600 font-mono text-sm">{winRate} %</span>
                 </div>
@@ -450,7 +308,7 @@ export const LandingPage: React.FC = () => {
 
               {/* Slider 4: Avg Gross Margin */}
               <div className="space-y-1.5">
-                <div className="flex justify-between text-xs font-bold text-slate-800">
+                <div className="flex justify-between text-sm font-semibold text-slate-800">
                   <span>Průměrná hrubá marže jedné zakázky?</span>
                   <span className="text-blue-600 font-mono text-sm">{avgMargin.toLocaleString('cs-CZ')} Kč</span>
                 </div>
@@ -467,7 +325,7 @@ export const LandingPage: React.FC = () => {
 
               {/* Slider 5: Admin Hours Weekly */}
               <div className="space-y-1.5">
-                <div className="flex justify-between text-xs font-bold text-slate-800">
+                <div className="flex justify-between text-sm font-semibold text-slate-800">
                   <span>Kolik hodin týdně tráví kancelář přepisováním?</span>
                   <span className="text-blue-600 font-mono text-sm">{adminHoursWeekly} h / týdně</span>
                 </div>
@@ -486,18 +344,18 @@ export const LandingPage: React.FC = () => {
             {/* Results Output Box (5 cols) */}
             <div className="lg:col-span-5 bg-slate-900 text-white p-6 rounded-3xl space-y-5 shadow-xl">
               <div>
-                <span className="text-[10px] font-bold text-emerald-400 uppercase tracking-wider">
+                  <span className="text-xs font-semibold text-emerald-300">
                   Modelový kvartální přínos (3 měsíce)
                 </span>
-                <div className="text-3xl font-black text-white mt-1">
+                <div className="text-2xl sm:text-3xl font-black text-white mt-1">
                   +{additionalMarginQuarter.toLocaleString('cs-CZ')} Kč
                 </div>
-                <p className="text-xs text-slate-400 mt-1">
-                  Scénář počítá s {additionalWonQuarter} dodatečně získanou zakázkou. Skutečný výsledek závisí na procesu vaší firmy.
+                <p className="text-sm text-slate-300 mt-1">
+                  Počet zakázek navíc v tomto scénáři: {additionalWonQuarter}
                 </p>
               </div>
 
-              <div className="space-y-2.5 pt-4 border-t border-slate-800 text-xs">
+              <div className="space-y-2.5 pt-4 border-t border-slate-800 text-sm">
                 <div className="flex justify-between">
                   <span className="text-slate-400">Modelovaná úspora času:</span>
                   <strong className="text-white">{adminHoursSavedQuarter} hodin / kvartál</strong>
@@ -507,18 +365,18 @@ export const LandingPage: React.FC = () => {
                   <strong className="text-slate-300">{starterQuarterCost.toLocaleString('cs-CZ')} Kč (bez DPH)</strong>
                 </div>
                 <div className="flex justify-between pt-2 border-t border-slate-800 text-emerald-400 font-bold">
-                  <span>Návratnost investice (ROI):</span>
-                  <span>{roiMultiplier}× vložených nákladů</span>
+                  <span>Modelová marže vůči ceně tarifu:</span>
+                  <span>{roiMultiplier}×</span>
                 </div>
               </div>
 
-              <div className="p-3.5 bg-slate-800/80 rounded-2xl border border-slate-700 text-[11px] text-slate-300 leading-relaxed">
-                Ilustrativní výpočet s orientačními hodnotami. Model používá zadanou průměrnou marži a předpoklad lepšího zpracování poptávek; nejde o příslib výsledku. Skutečný přínos ověříme na datech během pilotu.
+              <div className="p-3.5 bg-slate-800/80 rounded-2xl border border-slate-700 text-sm text-slate-200 leading-relaxed">
+                Ilustrativní výpočet s orientačními hodnotami. Předpokládá o 20 % více získaných zakázek a o 60 % méně času na administrativu.
               </div>
 
               <button
                 onClick={() => setIsBookingOpen(true)}
-                className="w-full py-3 bg-[#0A84FF] hover:bg-blue-600 text-white rounded-xl text-xs font-black transition-all shadow-md"
+                className="w-full min-h-12 px-4 py-3 bg-[#2563EB] hover:bg-blue-700 text-white rounded-xl text-sm font-semibold transition-all shadow-md"
               >
                 Ověřit výpočet na osobní ukázce (20 min)
               </button>
@@ -532,7 +390,7 @@ export const LandingPage: React.FC = () => {
         <div className="grid gap-10 lg:grid-cols-[0.8fr_2fr] lg:items-end">
           <div>
             <p className="text-sm font-bold text-blue-700">Tarify StavbaFlow</p>
-            <h2 className="mt-3 text-3xl sm:text-4xl font-black tracking-tight text-slate-950">Tarif podle velikosti vašeho týmu.</h2>
+            <h2 className="mt-3 text-2xl sm:text-3xl font-black tracking-tight text-slate-950">Tarif podle velikosti vašeho týmu.</h2>
           </div>
           <p className="max-w-2xl text-sm leading-6 text-slate-600 lg:justify-self-end">
             Měsíční ceny jsou bez DPH. Vyberte kapacitu podle počtu zaměstnanců.
@@ -541,34 +399,34 @@ export const LandingPage: React.FC = () => {
 
         <div className="mt-10 grid gap-4 lg:grid-cols-3">
           <article className="flex min-h-[340px] flex-col border-t-4 border-slate-300 bg-white p-6 shadow-sm">
-            <h3 className="text-xl font-extrabold text-slate-950">Start</h3>
+            <h3 className="flex items-center gap-2 text-base font-extrabold text-slate-950"><Building2 aria-hidden="true" className="h-5 w-5 text-blue-700" />Start</h3>
             <p className="mt-1 text-sm text-slate-600">Pro menší tým</p>
             <p className="mt-7 text-4xl font-black tracking-tight text-slate-950">1 990 Kč</p>
-            <p className="mt-1 text-sm text-slate-500">měsíčně bez DPH</p>
+            <p className="mt-1 text-sm text-slate-500">měsíčně bez&nbsp;DPH</p>
             <p className="mt-6 border-t border-slate-200 pt-4 text-sm font-semibold text-slate-800">Až 5 zaměstnanců</p>
-            <a href={START_REGISTRATION_URL} className="mt-auto inline-flex min-h-12 items-center justify-center bg-slate-950 px-5 py-3 text-sm font-bold text-white hover:bg-slate-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-700">
+            <a href={START_REGISTRATION_URL} className="mt-auto inline-flex min-h-12 items-center justify-center rounded-xl bg-blue-600 px-5 py-3 text-sm font-semibold text-white hover:bg-blue-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-700">
               Pokračovat s tarifem Start
             </a>
           </article>
 
           <article className="flex min-h-[340px] flex-col border-t-4 border-blue-600 bg-blue-50/60 p-6 shadow-sm">
-            <h3 className="text-xl font-extrabold text-slate-950">Růst</h3>
+            <h3 className="flex items-center gap-2 text-base font-extrabold text-slate-950"><Users aria-hidden="true" className="h-5 w-5 text-blue-700" />Růst</h3>
             <p className="mt-1 text-sm text-slate-600">Pro rostoucí firmu</p>
             <p className="mt-7 text-4xl font-black tracking-tight text-slate-950">2 990 Kč</p>
-            <p className="mt-1 text-sm text-slate-500">měsíčně bez DPH</p>
+            <p className="mt-1 text-sm text-slate-500">měsíčně bez&nbsp;DPH</p>
             <p className="mt-6 border-t border-blue-200 pt-4 text-sm font-semibold text-slate-800">Až 15 zaměstnanců</p>
-            <a href={GROWTH_REGISTRATION_URL} className="mt-auto inline-flex min-h-12 items-center justify-center bg-blue-700 px-5 py-3 text-sm font-bold text-white hover:bg-blue-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-700">
+            <a href={GROWTH_REGISTRATION_URL} className="mt-auto inline-flex min-h-12 items-center justify-center rounded-xl bg-blue-600 px-5 py-3 text-sm font-semibold text-white hover:bg-blue-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-700">
               Pokračovat s tarifem Růst
             </a>
           </article>
 
-          <article className="flex min-h-[340px] flex-col border-t-4 border-slate-900 bg-slate-950 p-6 text-white">
-            <h3 className="text-xl font-extrabold">Profi</h3>
+          <article className="flex min-h-[340px] flex-col border-t-4 border-slate-700 bg-slate-900 p-6 text-white">
+            <h3 className="flex items-center gap-2 text-base font-extrabold"><HardHat aria-hidden="true" className="h-5 w-5 text-blue-300" />Profi</h3>
             <p className="mt-1 text-sm text-slate-300">Pro větší provoz</p>
             <p className="mt-7 text-4xl font-black tracking-tight">4 990 Kč</p>
-            <p className="mt-1 text-sm text-slate-300">měsíčně bez DPH</p>
+            <p className="mt-1 text-sm text-slate-300">měsíčně bez&nbsp;DPH</p>
             <p className="mt-6 border-t border-slate-700 pt-4 text-sm font-semibold">Neomezený počet zaměstnanců</p>
-            <p className="mt-5 text-sm leading-6 text-slate-300">Databázový konektor: připravujeme, únor 2027.</p>
+            <p className="mt-5 text-sm leading-6 text-slate-300">Přímý databázový konektor připravujeme pro únor&nbsp;2027.</p>
             <p className="mt-auto pt-6 text-sm font-semibold text-slate-300">Profi zatím nelze objednat.</p>
           </article>
         </div>
@@ -599,27 +457,27 @@ export const LandingPage: React.FC = () => {
       <section id="faq" className="py-16 bg-white border-t border-slate-200">
         <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
           <div className="text-center space-y-1">
-            <span className="text-xs font-bold uppercase tracking-wider text-slate-400">Časté otázky</span>
-            <h2 className="text-2xl font-black text-slate-900">Odpovědi na to nejdůležitější</h2>
+            <span className="text-[13px] font-semibold text-slate-600">Časté otázky</span>
+            <h2 className="text-2xl sm:text-3xl font-black text-slate-900">Časté otázky k pilotu StavbaFlow</h2>
           </div>
 
-          <div className="space-y-4 text-xs">
+          <div className="space-y-4 text-sm">
             <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 space-y-1.5">
-              <h4 className="font-black text-slate-900 text-sm">Jak dostaneme do systému současná data?</h4>
+              <h4 className="flex items-start gap-2 font-black text-slate-900 text-sm"><HelpCircle aria-hidden="true" className="mt-0.5 h-4 w-4 shrink-0 text-blue-700" /><span>Jak dostaneme do systému současná data?</span></h4>
               <p className="text-slate-600 leading-relaxed">
                 Scénář pilotu počítá s kontrolovaným CSV importem. Před potvrzením je potřeba ověřit mapování, chyby i opakovaný běh. V režimu Managed Cloud se data neukládají do původní firemní databáze.
               </p>
             </div>
 
             <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 space-y-1.5">
-              <h4 className="font-black text-slate-900 text-sm">Co zaměstnanec po přihlášení uvidí?</h4>
+              <h4 className="flex items-start gap-2 font-black text-slate-900 text-sm"><HelpCircle aria-hidden="true" className="mt-0.5 h-4 w-4 shrink-0 text-blue-700" /><span>Co zaměstnanec po přihlášení uvidí?</span></h4>
               <p className="text-slate-600 leading-relaxed">
                 Přejímka ověřuje, že zaměstnanec vidí jen zakázky přiřazené jeho účtu a databázová pravidla mu nedovolí měnit údaje firmy ani cizí zakázky.
               </p>
             </div>
 
             <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 space-y-1.5">
-              <h4 className="font-black text-slate-900 text-sm">Je systém připravený na přímé propojení s naší SQL databází?</h4>
+              <h4 className="flex items-start gap-2 font-black text-slate-900 text-sm"><HelpCircle aria-hidden="true" className="mt-0.5 h-4 w-4 shrink-0 text-blue-700" /><span>Je systém připravený na přímé propojení s naší SQL databází?</span></h4>
               <p className="text-slate-600 leading-relaxed">
                 V prvním pilotu ne. Začínáme bezpečným CSV importem bez zápisu zpět. Přímé propojení se nacení a ověří samostatně až po úspěšném pilotu.
               </p>
@@ -629,11 +487,11 @@ export const LandingPage: React.FC = () => {
       </section>
 
       {/* 8. Footer */}
-      <footer className="py-12 bg-slate-950 text-white border-t border-slate-800 text-xs">
+      <footer className="py-12 bg-slate-900 text-white border-t border-slate-800 text-xs">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
             <div className="flex items-center gap-2.5">
-              <div className="w-7 h-7 rounded-lg bg-[#0A84FF] text-white font-bold flex items-center justify-center text-xs">
+              <div className="w-7 h-7 rounded-lg bg-[#2563EB] text-white font-bold flex items-center justify-center text-xs">
                 SC
               </div>
               <span className="font-bold">StavbaFlow © 2026</span>
@@ -854,7 +712,7 @@ export const LandingPage: React.FC = () => {
                 <button
                   type="submit"
                   disabled={isBookingLoading}
-                  className="w-full py-3 bg-[#0A84FF] hover:bg-blue-600 disabled:opacity-60 disabled:cursor-not-allowed text-white rounded-xl text-xs font-black shadow-md transition-all flex items-center justify-center gap-2"
+                  className="w-full py-3 bg-[#2563EB] hover:bg-blue-600 disabled:opacity-60 disabled:cursor-not-allowed text-white rounded-xl text-xs font-black shadow-md transition-all flex items-center justify-center gap-2"
                 >
                   {isBookingLoading ? (
                     <>
@@ -871,7 +729,7 @@ export const LandingPage: React.FC = () => {
               </form>
             ) : (
               <div className="py-6 text-center space-y-3">
-                <div className="w-12 h-12 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center mx-auto">
+                <div className="w-12 h-12 rounded-full bg-emerald-100 text-emerald-800 flex items-center justify-center mx-auto">
                   <Check className="w-6 h-6" />
                 </div>
                 <h4 className="text-base font-black text-slate-900">

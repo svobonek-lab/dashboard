@@ -38,7 +38,7 @@ test('pilot scope is labelled as a scenario and planned capabilities, not a deli
   for (const item of ['přihlášení majitele', 'pozvání zaměstnanců', 'webový formulář', 'kontrolovaný CSV import']) {
     assert.ok(pilotDescription.includes(item), `Planned scenario must continue to identify: ${item}`);
   }
-  assert.match(landing, /SCÉNÁŘ PILOTU/);
+  assert.match(landing, /Scénář pilotu/i);
   assert.match(landing, /plánované funkce/i);
   assert.doesNotMatch(landing, /První pilot používá kontrolovaný CSV import/);
 });
@@ -75,7 +75,7 @@ test('landing offers three monthly tiers and keeps the pilot as an unpriced seco
   assert.match(pricing, /Profi/);
   assert.match(pricing, /4\s*990\s*Kč/);
   assert.match(pricing, /neomezený počet zaměstnanců/i);
-  assert.match(pricing, /připravujeme, únor 2027/i);
+  assert.match(pricing, /Přímý databázový konektor připravujeme pro únor(?:&nbsp;|\s)*2027/i);
   assert.match(pricing, /Founding Pilot/);
   assert.match(pricing, /jednorázový onboardingový poplatek.*první měsíc/i);
   assert.match(pricing, /cena potvrzena při nabídce/i);
@@ -85,7 +85,8 @@ test('landing offers three monthly tiers and keeps the pilot as an unpriced seco
   assert.doesNotMatch(profi, /Pokračovat na platbu|Vybrat tarif|Koupit/i);
 });
 
-test('owner login badge does not claim an unverified pilot acceptance', () => {
+test('owner login avoids unverified pilot claims and internal product jargon', () => {
   assert.doesNotMatch(loginPage, /Ověřený firemní pilot/);
-  assert.match(loginPage, /Firemní pilot StavbaFlow/);
+  assert.match(loginPage, /Přihlášení do StavbaFlow/);
+  assert.doesNotMatch(loginPage, /workspace|onboarding/i);
 });

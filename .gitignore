@@ -20,4 +20,5 @@ playwright-report/
 secrets/
 .supabase/
 .local-load-fixtures/
+.taste-skill/
 .worktrees/
