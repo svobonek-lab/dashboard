@@ -46,3 +46,11 @@ Taste `consistency.mjs` byl spuštěn nad landing stránkou. Hlásí také obecn
 ## Stav před předáním
 
 Změny jsou připravené k lidské revizi ve větvi `codex/stavbaflow-design-refresh`. Ověření probíhá lokálně. Vercel Preview je pro tuto větev vypnuté a commit používá `[skip ci]`, aby otevření PR nespustilo placené běhy GitHub Actions.
+
+## Dokončovací kontrola po sloučení PR #169
+
+Ve větvi `codex/design-accessibility-finish` jsou doplněné přístupné názvy všech pěti posuvníků kalkulačky. Zavřené mobilní menu je skryté také před klávesnicí a asistivními technologiemi. Tlačítko oznamuje stav otevření; Escape menu zavře a vrátí fokus na tlačítko.
+
+Playwright nově ověřuje názvy a ovládání posuvníků šipkami i otevření, zavření a návrat fokusu mobilní navigace. Ověření používá místní syntetická data; nepotvrzuje živý backend. Automatický Vercel Preview je vypnutý také pro tuto dokončovací větev.
+
+Čerstvé výsledky: Playwright 16/16 (včetně 42 tras), aplikační testy 586/586, TypeScript, ESLint a produkční build prošly. Mobilní screenshot přihlášeného syntetického majitele byl vizuálně zkontrolovaný.

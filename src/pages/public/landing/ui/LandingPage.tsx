@@ -266,6 +266,7 @@ export const LandingPage: React.FC = () => {
                 </div>
                 <input
                   type="range"
+                  aria-label="Počet měsíčních poptávek"
                   min="5"
                   max="60"
                   value={monthlyLeads}
@@ -282,6 +283,7 @@ export const LandingPage: React.FC = () => {
                 </div>
                 <input
                   type="range"
+                  aria-label="Podíl poptávek s nabídkou"
                   min="20"
                   max="100"
                   value={quotedRate}
@@ -298,6 +300,7 @@ export const LandingPage: React.FC = () => {
                 </div>
                 <input
                   type="range"
+                  aria-label="Podíl získaných nabídek"
                   min="10"
                   max="70"
                   value={winRate}
@@ -314,6 +317,7 @@ export const LandingPage: React.FC = () => {
                 </div>
                 <input
                   type="range"
+                  aria-label="Průměrná marže zakázky v Kč"
                   min="30000"
                   max="300000"
                   step="1000"
@@ -331,6 +335,7 @@ export const LandingPage: React.FC = () => {
                 </div>
                 <input
                   type="range"
+                  aria-label="Hodiny administrativy týdně"
                   min="2"
                   max="30"
                   value={adminHoursWeekly}
