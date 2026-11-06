@@ -15,7 +15,7 @@ Pozvánky zaměstnanců a vlastníků se v aplikaci zařazují do `app_email_out
 
 Nastavují se v serverovém deployment secret manageru, nikdy jako `VITE_*`:
 
-- `EMAIL_PROVIDER_API_KEY`: API key nakonfigurovaného provideru.
+- `EMAIL_PROVIDER_API_KEY`: API key Resend provideru; existující nasazení může použít `RESEND_API_KEY`. Pokud jsou nastavené oba názvy, přednost má `EMAIL_PROVIDER_API_KEY`; po odmítnutí providerem se jiný klíč nezkouší.
 - `EMAIL_FROM`: odesílatel na ověřené doméně.
 - `EMAIL_LINK_ENCRYPTION_KEY`: base64 reprezentace 32 náhodných bajtů; generujte například `openssl rand -base64 32`. Uložte ji jako oddělený secret.
 - `AUTH_EMAIL_LINK_TTL_SECONDS`: celé číslo 300–3600 a nejvýše skutečná expirace Auth e-mailového OTP.

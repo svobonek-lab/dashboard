@@ -50,7 +50,7 @@ export default async function outboxSchedulerHandler(req: any, res: any) {
     return;
   }
 
-  const providerApiKey = process.env.EMAIL_PROVIDER_API_KEY;
+  const providerApiKey = process.env.EMAIL_PROVIDER_API_KEY || process.env.RESEND_API_KEY;
   const emailFrom = process.env.EMAIL_FROM;
   if (!providerApiKey || !emailFrom) {
     res.status(503).json({ success: false, code: 'EMAIL_PROVIDER_NOT_CONFIGURED' });
