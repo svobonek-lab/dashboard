@@ -61,6 +61,37 @@ Supabase Auth link, browser password setup, or hosted deployment behavior.
 
 ## Hosted acceptance still pending
 
+### Follow-up constraint correction (6 November 2026)
+
+A hosted synthetic onboarding attempt failed with staging constraint
+`app_companies_check`: the reviewed onboarding RPC inserts `public_form=true`
+without a privacy URL, while the current staging constraint requires an HTTPS
+privacy URL whenever the public form is enabled. Read-only inspection confirmed
+that the live function still uses `true` and `app_companies.privacy_url` has an
+empty-string default. The failed transaction left no company with the attempted
+synthetic slug.
+
+Proposed correction: [2026-11-06-invitation-private-form.sql](2026-11-06-invitation-private-form.sql),
+SHA256 `8aa5c4754b089d1225d1218bd50b01508ca362904c8d04c4a90cb5a8a76a679c`.
+It changes only the company insert default to `public_form=false`; owners can
+enable intake after configuring a valid privacy URL. It checks the existing
+function definition and is repeat-safe. Separate staging approval is required.
+
+The full disposable PostgreSQL 17 run passed with `html NOT NULL` and the
+pre-`accepted_by` fixture. It reproduced the privacy check failure and proved
+rollback left no company, applied the correction twice, verified onboarding and
+outbox queue, password and legal-consent gates, acceptance and replay denial,
+expiry and revocation, repeat-safe bundle application, and authenticated denial
+of both retired RPCs after simulated cutover.
+
+Fresh staging metadata on 6 November confirms the three sensitive outbox/legal
+tables have RLS enabled and no anon/authenticated DML. The modern onboarding,
+acceptance and legal-consent RPCs are callable by authenticated as intended;
+the legacy `app_claim_invites` and `app_invite` remain executable by
+authenticated and must only be retired after hosted acceptance. No staging
+schema or data changes were made during this check. Actual provider delivery and
+hosted acceptance remain pending.
+
 After separate approval, recheck the baseline, apply the exact reviewed bundle,
 and compare its definitions/grants to the isolated result. Record the applied
 commit and bundle hash. Identify an immutable staging Preview deployment and

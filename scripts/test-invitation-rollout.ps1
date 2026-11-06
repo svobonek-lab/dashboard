@@ -27,6 +27,10 @@ create function public.app_claim_invites() returns integer language sql as $$ se
 create function public.app_invite(uuid,text,text) returns integer language sql as $$ select 1 $$;
 alter table public.app_invites drop column accepted_by;
 alter table public.app_companies add column subscription_status text;
+-- Reproduce the real staging privacy constraint, absent from the old fixture.
+alter table public.app_companies add column privacy_url text not null default '';
+alter table public.app_companies add constraint app_companies_check
+  check ((not public_form) or (privacy_url ~ '^https://[^[:space:]]+$'));
 -- Match the partially deployed directory signature observed in staging.
 drop function public.app_platform_list_companies(uuid);
 create function public.app_platform_list_companies(p_actor_user_id uuid)
@@ -44,8 +48,29 @@ $$;
     $bundle = node scripts/prepare-invitation-rollout.mjs
     if ($LASTEXITCODE) { throw 'Review bundle generation failed' }
     Invoke-FixtureSql ($bundle -join [Environment]::NewLine)
+    Invoke-FixtureSql @'
+do $$ declare violated text; begin
+  begin
+    insert into public.app_platform_admins(user_id,active)
+    values ('90000000-0000-4000-8000-000000000009',true);
+    perform public.app_platform_create_company_onboarding(
+      '90000000-0000-4000-8000-000000000009','Privacy regression','privacy-regression',
+      'Fixture owner','privacy@example.test','pilot',now(),now());
+    raise exception 'Expected legacy onboarding to violate the privacy constraint';
+  exception when check_violation then
+    get stacked diagnostics violated = CONSTRAINT_NAME;
+    if violated <> 'app_companies_check' then raise; end if;
+  end;
+  if exists(select 1 from public.app_companies where slug='privacy-regression') then
+    raise exception 'Failed onboarding left a company behind';
+  end if;
+end $$;
+'@
+    Invoke-FixtureFile 'docs/reviews/2026-11-06-invitation-private-form.sql'
+    Invoke-FixtureFile 'docs/reviews/2026-11-06-invitation-private-form.sql'
     Invoke-FixtureFile 'supabase/tests/invitation_rollout_verify.sql'
     Invoke-FixtureSql ($bundle -join [Environment]::NewLine)
+    Invoke-FixtureFile 'docs/reviews/2026-11-06-invitation-private-form.sql'
     Invoke-FixtureFile 'supabase/staging/20261104_retire_legacy_invitation_rpcs.sql'
     Invoke-FixtureSql @'
 set role authenticated;
