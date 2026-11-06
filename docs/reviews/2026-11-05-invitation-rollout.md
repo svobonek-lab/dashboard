@@ -282,3 +282,32 @@ then read directly from StavbaCore Staging as
 `2026-11-05T21:17:03.808Z`. This verifies the deployed worker's staging database
 access and durable run persistence, without sending any email. It does not prove
 provider authentication or actual invitation receipt.
+
+## Synthetic owner invitation attempt (6 November)
+
+After the operator approved the TOS/DPA form submission, the staging platform
+admin created the synthetic company `e2e-invite-acceptance-20261106` and queued
+one owner invite. Company ID: `75f3061f-f6e1-4303-a847-e5bd4a3d2564`; invite ID:
+`af714fd3-35bf-4bfa-b94d-f7e43f738440`. No production data was touched.
+
+The only due outbox item belonged to this invite. A manual POST to the immutable
+Preview worker at `dashboard-53eu9lj5q-svobonek-6462s-projects.vercel.app` ran at
+`2026-11-06T19:40:24Z`. It selected one message but delivery failed with the
+safe code `EMAIL_PROVIDER_REJECTED`; there is no provider message ID or delivery
+timestamp. The outbox record is failed after one attempt. Resend's Emails and
+Application Logs pages showed no accepted email. The linked API key exists with
+Sending permission but also shows no activity.
+
+The failed deployment was built on `codex/staging-invite-consent-compat` on
+5 November at 21:09 UTC. Vercel metadata shows the branch-scoped
+`EMAIL_PROVIDER_API_KEY` was saved on 6 November at 08:41 UTC, after that build.
+The deployment therefore needs a Preview redeploy to load current branch-scoped
+settings before retrying. The redeploy is blocked on a fresh Vercel identity
+verification; the dialog has sent a code to the account email. No code was
+shared in chat. After verification, redeploy this same Preview branch, use the
+existing admin UI's **Znovu pozvat** action for this synthetic company to enqueue
+a new delivery, then dispatch and verify receipt before attempting acceptance.
+
+The owner invitation has **not** been delivered, accepted or replay-tested.
+Legacy `app_claim_invites` and `app_invite` remain callable; do not retire them
+until hosted acceptance succeeds.
