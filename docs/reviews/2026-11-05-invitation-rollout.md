@@ -313,9 +313,27 @@ endpoint reports the provider is configured. The existing staging admin UI's
 records `delivered`, one attempt, a provider message ID, and no error. Resend's
 Emails page independently shows the invitation as **Delivered**.
 
-The owner invitation has been delivered, but has **not** been accepted or
-replay-tested. The recipient must open the invitation directly from their
-mailbox and finish the one-time password setup. No password or invite URL should
-be shared in chat.
-Legacy `app_claim_invites` and `app_invite` remain callable; do not retire them
-until hosted acceptance succeeds.
+At the time of this dispatch record, the owner invitation had been delivered
+but acceptance had not yet been confirmed. Legacy `app_claim_invites` and
+`app_invite` remained callable; do not retire them until authenticated owner
+and tenant-isolation acceptance completes.
+
+### Acceptance confirmed (6 November)
+
+The operator reported completing the invitation. A targeted read-only check of
+the synthetic staging records confirms `accepted_at` is set, `revoked_at` is
+null, the accepted user has an active `owner` membership in this company, and
+the invitation has both `terms_of_service` and `data_processing_agreement`
+evidence rows. Active membership count is one. No customer rows were queried.
+
+The authenticated page could not be inspected from the fresh Playwright browser
+context because it has no owner session; it correctly redirects `/dashboard` to
+`/login`. The operator must log into the staging Preview with the password just
+set, without sharing it, before we can run the authenticated owner acceptance
+and tenant-isolation checks.
+
+Read-only Playwright smoke on the verified Preview
+`dashboard-o8lyv1rjv-svobonek-6462s-projects.vercel.app` returned HTTP 200 for
+`/`, `/login`, `/register-paid`, `/demo`, and `/widget-iframe.html`; the latter
+redirected to `/widget-iframe`. The browser recorded zero uncaught page or
+console errors. This does not substitute for an authenticated owner test.
