@@ -301,13 +301,21 @@ Sending permission but also shows no activity.
 The failed deployment was built on `codex/staging-invite-consent-compat` on
 5 November at 21:09 UTC. Vercel metadata shows the branch-scoped
 `EMAIL_PROVIDER_API_KEY` was saved on 6 November at 08:41 UTC, after that build.
-The deployment therefore needs a Preview redeploy to load current branch-scoped
-settings before retrying. The redeploy is blocked on a fresh Vercel identity
-verification; the dialog has sent a code to the account email. No code was
-shared in chat. After verification, redeploy this same Preview branch, use the
-existing admin UI's **Znovu pozvat** action for this synthetic company to enqueue
-a new delivery, then dispatch and verify receipt before attempting acceptance.
+The deployment needed a Preview redeploy to load current branch-scoped settings.
+After the account owner completed Vercel's fresh identity verification, the same
+Preview source (`codex/staging-invite-consent-compat`, commit `6d04e48`) was
+redeployed as `dpl_A9wP6xhSmq5kEnMuphDUbSaLzGHM`, URL
+`https://dashboard-o8lyv1rjv-svobonek-6462s-projects.vercel.app`. Its public
+bundle was checked and targets only staging `xwzweltjvreqhjpbjrxa`; the status
+endpoint reports the provider is configured. The existing staging admin UI's
+**Znovu pozvat** action requeued the same synthetic invitation. At
+`2026-11-06T19:55:04Z`, dispatch returned success for exactly one item. Staging
+records `delivered`, one attempt, a provider message ID, and no error. Resend's
+Emails page independently shows the invitation as **Delivered**.
 
-The owner invitation has **not** been delivered, accepted or replay-tested.
+The owner invitation has been delivered, but has **not** been accepted or
+replay-tested. The recipient must open the invitation directly from their
+mailbox and finish the one-time password setup. No password or invite URL should
+be shared in chat.
 Legacy `app_claim_invites` and `app_invite` remain callable; do not retire them
 until hosted acceptance succeeds.
