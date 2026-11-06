@@ -217,9 +217,32 @@ test('synthetic owner signs in through the form and reaches the protected dashbo
   await page.setViewportSize({ width: 390, height: 844 });
   await expect(page.getByRole('button', { name: 'Otevřít menu navigace' })).toBeVisible();
   await expect.poll(() => page.locator('aside.workspace-rail').evaluate((sidebar) => sidebar.getBoundingClientRect().right)).toBeLessThanOrEqual(1);
+  const menuButton = page.getByRole('button', { name: 'Otevřít menu navigace' });
+  const navigation = page.locator('#owner-navigation');
+  await expect(navigation).toBeHidden();
+  await expect(menuButton).toHaveAttribute('aria-expanded', 'false');
+  await menuButton.click();
+  await expect(navigation).toBeVisible();
+  await expect(menuButton).toHaveAttribute('aria-expanded', 'true');
+  await page.keyboard.press('Escape');
+  await expect(navigation).toBeHidden();
+  await expect(menuButton).toBeFocused();
+  await expect(menuButton).toHaveAttribute('aria-expanded', 'false');
   await expect(lead.getByText('Nová poptávka')).toBeVisible();
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(390);
   await page.screenshot({ path: testInfo.outputPath('dashboard-signed-in-390.png'), animations: 'disabled' });
+});
+
+test('calculator sliders have accessible names and keyboard controls', async ({ page }) => {
+  await page.goto('/');
+  for (const name of ['Počet měsíčních poptávek', 'Podíl poptávek s nabídkou', 'Podíl získaných nabídek', 'Průměrná marže zakázky v Kč', 'Hodiny administrativy týdně']) {
+    const slider = page.getByRole('slider', { name, exact: true });
+    await expect(slider).toBeVisible();
+    const before = Number(await slider.inputValue());
+    await slider.focus();
+    await page.keyboard.press('ArrowRight');
+    expect(Number(await slider.inputValue())).toBeGreaterThan(before);
+  }
 });
 
 test('recovery failure gives a safe next step without exposing provider text', async ({ page }) => {

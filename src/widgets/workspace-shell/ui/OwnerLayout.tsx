@@ -65,6 +65,18 @@ export const OwnerLayout: React.FC<OwnerLayoutProps> = ({
   // Modals & popovers
   const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
   const [isMobileDrawerOpen, setIsMobileDrawerOpen] = useState(false);
+  const menuButtonRef = React.useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    if (!isMobileDrawerOpen) return;
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key !== 'Escape') return;
+      setIsMobileDrawerOpen(false);
+      menuButtonRef.current?.focus();
+    };
+    window.addEventListener('keydown', closeOnEscape);
+    return () => window.removeEventListener('keydown', closeOnEscape);
+  }, [isMobileDrawerOpen]);
 
   // Touch handlers for mobile swipe-to-close drawer
   const touchStartXRef = React.useRef<number | null>(null);
@@ -202,11 +214,12 @@ export const OwnerLayout: React.FC<OwnerLayoutProps> = ({
 
         {/* Sidebar - Desktop Fixed / Mobile Slide-in Drawer with Swipe Close */}
         <aside 
+          id="owner-navigation"
           onTouchStart={handleTouchStart}
           onTouchMove={handleTouchMove}
           onTouchEnd={handleTouchEnd}
           className={`workspace-rail w-64 max-w-[calc(100vw-36px)] lg:max-w-none lg:w-64 bg-surface border-r border-border flex flex-col justify-between shrink-0 fixed inset-y-0 left-0 z-50 shadow-app transition-transform duration-300 ease-out font-sans ${
-            isMobileDrawerOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
+            isMobileDrawerOpen ? 'visible translate-x-0' : 'invisible -translate-x-full lg:visible lg:translate-x-0'
           }`} 
           style={{ top: (isSuperAdminUser || readOnlyMode) ? '56px' : '0' }}
         >
@@ -345,6 +358,9 @@ export const OwnerLayout: React.FC<OwnerLayoutProps> = ({
           {/* Left: Mobile Hamburger & Company Name */}
           <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
             <button
+              ref={menuButtonRef}
+              aria-expanded={isMobileDrawerOpen}
+              aria-controls="owner-navigation"
               onClick={() => setIsMobileDrawerOpen(true)}
               className="lg:hidden min-h-[44px] min-w-[44px] rounded-xl border border-border bg-surface flex items-center justify-center text-muted hover:text-text hover:bg-surface-secondary shrink-0"
               aria-label="Otevřít menu navigace"
