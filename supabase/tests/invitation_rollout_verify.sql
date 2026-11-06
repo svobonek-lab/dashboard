@@ -22,6 +22,10 @@ do $$ declare resent record; begin
 end $$;
 reset role;
 do $$ begin
+  if not exists(select 1 from public.app_companies
+    where id=current_setting('fixture.company_id')::uuid and not public_form and privacy_url='') then
+    raise exception 'New company must keep public intake disabled until privacy setup';
+  end if;
   if not exists(select 1 from public.app_email_outbox
     where invite_id=current_setting('fixture.invite_id')::uuid
       and notification_kind='auth_invite' and status='pending' and html='') then
