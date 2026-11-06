@@ -122,21 +122,21 @@ export const OwnerLayout: React.FC<OwnerLayoutProps> = ({
     return path;
   };
   const navItems: Array<{ label: string; path: string; icon: LucideIcon; exact?: boolean; badge?: string }> = [
-    { label: 'Přehled stavby (Executive)', path: '/dashboard', icon: LayoutDashboard, exact: true },
-    { label: 'Poptávky & Kanban', path: '/leads', icon: Kanban },
+    { label: 'Přehled', path: '/dashboard', icon: LayoutDashboard, exact: true },
+    { label: 'Poptávky', path: '/leads', icon: Kanban },
     { label: 'Poptávkový formulář', path: `/inquiry?org=${encodeURIComponent(currentOrg?.slug || '')}`, icon: Sparkles },
-    { label: 'Realizace & Stavby', path: '/projects', icon: HardHat },
+    { label: 'Zakázky v realizaci', path: '/projects', icon: HardHat },
     { label: 'Harmonogram výjezdů', path: '/calendar', icon: Calendar },
-    { label: 'Tým & Řemeslníci', path: '/employees', icon: Users },
+    { label: 'Tým', path: '/employees', icon: Users },
     { label: 'Analytika & Marže', path: '/analytics', icon: BarChart3 },
     { label: 'Cenové nabídky & PDF', path: '/quotes', icon: FileText },
     { label: 'Dokumenty & Protokoly', path: '/documents', icon: FolderArchive },
     { label: 'Komunikační centrum', path: '/communication', icon: MessageSquare },
-    { label: 'Embed Lead Widget', path: '/widget', icon: Code2 },
-    { label: 'Integrace & Datový Hub', path: '/integrations', icon: Zap },
+    { label: 'Formulář pro web', path: '/widget', icon: Code2 },
+    { label: 'Integrace', path: '/integrations', icon: Zap },
     { label: 'Synology NAS', path: '/integrations/synology', icon: HardDrive },
     { label: 'Klientský portál', path: '/portal', icon: Globe },
-    { label: 'Nastavení & Export', path: '/settings', icon: Settings },
+    { label: 'Nastavení a export', path: '/settings', icon: Settings },
   ].filter((item) => {
     if (readOnlyMode === 'support') return ['/dashboard', '/leads', '/projects'].includes(item.path);
     return isPilotOwnerNavigationPath(item.path);
@@ -146,7 +146,7 @@ export const OwnerLayout: React.FC<OwnerLayoutProps> = ({
   const isSuperAdminUser = dbUser?.role === 'super_admin' || Boolean(impersonatingOrgId);
 
   return (
-    <div className="workspace-shell min-h-screen bg-slate-50 text-slate-800 flex flex-col font-sans selection:bg-brand-primary-soft">
+    <div className="workspace-shell min-h-screen bg-surface-secondary text-text flex flex-col font-sans selection:bg-brand-primary-soft">
       
       {/* Super Admin Company Workspace Top Bar */}
       {(isSuperAdminUser || readOnlyMode) && (
@@ -230,7 +230,7 @@ export const OwnerLayout: React.FC<OwnerLayoutProps> = ({
                     {activeCompanyName}
                   </h1>
                   <p className="text-[10px] font-semibold text-muted tracking-wide mt-0.5 uppercase">
-                    Workspace
+                    Firemní účet
                   </p>
                 </div>
               </div>
@@ -260,7 +260,7 @@ export const OwnerLayout: React.FC<OwnerLayoutProps> = ({
                     to={item.path}
                     exact={item.exact}
                     onClick={() => setIsMobileDrawerOpen(false)}
-                    className={`w-full min-h-[44px] flex items-center justify-between px-6 py-2.5 text-xs font-semibold transition-all relative cursor-pointer ${
+                    className={`w-full min-h-[44px] flex items-center justify-between px-6 py-2.5 text-sm font-semibold transition-colors relative cursor-pointer ${
                       active 
                         ? 'bg-brand-primary-soft/40 text-brand-primary font-bold' 
                         : 'text-muted hover:text-text hover:bg-surface-secondary'
@@ -301,7 +301,7 @@ export const OwnerLayout: React.FC<OwnerLayoutProps> = ({
                   {dbUser?.email || user?.email || 'Majitel CRM'}
                 </p>
                 <p className="text-[9px] font-semibold text-muted uppercase tracking-wider">
-                  {dbUser?.role === 'super_admin' ? 'Super Admin' : dbUser?.role || 'owner'}
+                  {dbUser?.role === 'super_admin' || dbUser?.role === 'platform_admin' ? 'Správce platformy' : 'Majitel'}
                 </p>
               </div>
             </div>

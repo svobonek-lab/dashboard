@@ -39,7 +39,7 @@ export const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({ leads, onS
     <div className="workspace-page">
       <header className="workspace-page-header">
         <div><p className="workspace-kicker">Pracovní přehled</p><h1 className="workspace-title">Moje zakázky</h1><p className="workspace-subtitle">Vidíte pouze práci, kterou vám přiřadila vaše firma.</p></div>
-        <div className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-right shadow-sm"><strong className="block text-xl font-semibold text-slate-950">{active.length}</strong><span className="text-xs text-slate-500">aktivní zakázky</span></div>
+        <div className="workspace-panel min-w-32 px-4 py-3 text-right"><strong className="block text-xl font-semibold text-slate-950">{active.length}</strong><span className="text-xs text-slate-500">aktivní zakázky</span></div>
       </header>
       {statusError && <div role="alert" className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-700">{statusError}</div>}
       <section className="grid gap-3 sm:grid-cols-2">
@@ -59,8 +59,8 @@ export const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({ leads, onS
                   <div className="mt-4 flex flex-wrap gap-x-5 gap-y-2 text-sm text-slate-600">{location && <span className="inline-flex items-center gap-1.5"><MapPin className="h-4 w-4 text-slate-400" />{location}</span>}{lead.preferredDate && <span className="inline-flex items-center gap-1.5"><Clock3 className="h-4 w-4 text-slate-400" />{lead.preferredDate}</span>}{(lead.customerPhone || lead.phone) && <a href={`tel:${lead.customerPhone || lead.phone}`} className="inline-flex items-center gap-1.5 font-medium text-blue-600 hover:text-blue-700"><Phone className="h-4 w-4" />Zavolat</a>}</div>
                 </div>
                 <div className="flex shrink-0 flex-col gap-2 sm:w-48">
-                  <button type="button" onClick={() => onSelectLead(lead)} className="inline-flex min-h-10 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 hover:bg-slate-50">Otevřít detail <ArrowRight className="h-4 w-4" /></button>
-                  {next && onUpdateLeadStatus && <button type="button" disabled={updatingId === lead.id} onClick={() => advance(lead)} className="workspace-primary-action inline-flex min-h-10 items-center justify-center px-3 text-sm font-semibold disabled:cursor-wait disabled:opacity-60">{updatingId === lead.id ? 'Ukládám…' : nextStatusLabel[next] || 'Posunout stav'}</button>}
+                  <button type="button" onClick={() => onSelectLead(lead)} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 hover:bg-slate-50">Otevřít detail <ArrowRight className="h-4 w-4" /></button>
+                  {next && onUpdateLeadStatus && <button type="button" disabled={updatingId === lead.id} onClick={() => advance(lead)} className="workspace-primary-action inline-flex min-h-11 items-center justify-center px-3 text-sm font-semibold disabled:cursor-wait disabled:opacity-60">{updatingId === lead.id ? 'Ukládám…' : nextStatusLabel[next] || 'Posunout stav'}</button>}
                 </div>
               </div>
             </article>

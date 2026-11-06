@@ -4,7 +4,7 @@ import { test } from 'node:test';
 
 test('clean workspace visual system defines the shared product language', () => {
   const css = readFileSync(new URL('../src/app/styles/index.css', import.meta.url), 'utf8');
-  assert.match(css, /--workspace-canvas:\s*#f5f5f7/i);
+  assert.match(css, /--workspace-canvas:\s*#f2f3f0/i);
   assert.match(css, /--workspace-primary:\s*#2563eb/i);
   assert.match(css, /\.workspace-shell/);
   assert.match(css, /\.workspace-page/);
@@ -28,8 +28,8 @@ test('pilot dashboards expose only real product actions', () => {
 
 test('configured login is onboarding-led rather than fake self-service provisioning', () => {
   const login = readFileSync(new URL('../src/pages/auth/login/ui/LoginPage.tsx', import.meta.url), 'utf8');
-  assert.match(login, /Firemní prostor připravujeme při onboardingu/);
-  assert.match(login, /Jedno přihlášení, správný dashboard/);
+  assert.match(login, /Přístup k firemnímu účtu vám připraví správce StavbaFlow/);
+  assert.match(login, /VITE_PAID_REGISTRATION_ENABLED === 'true'/);
 });
 
 test('new company onboarding stays inside the verified pilot scope', () => {

@@ -20,7 +20,7 @@ export const EmployeeLayout: React.FC<EmployeeLayoutProps> = ({ children, leads 
   ];
 
   return (
-    <div className="workspace-shell min-h-screen bg-[#f5f5f7] text-slate-950">
+    <div className="workspace-shell min-h-screen bg-surface-secondary text-text">
       <header className="sticky top-0 z-30 border-b border-slate-200/80 bg-white/90 backdrop-blur-xl">
         <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3 sm:px-6">
           <div className="flex min-w-0 items-center gap-3"><CompanyIdentity name={currentOrg?.name || 'StavbaFlow'} logoUrl={currentOrg?.logo_url} primaryColor="#2563eb" subtitle={dbUser?.email || 'Pracovní účet'} /></div>

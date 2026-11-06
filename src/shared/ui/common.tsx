@@ -20,13 +20,13 @@ export const AppButton: React.FC<AppButtonProps> = ({
   ...props
 }) => {
   const sizeClasses = {
-    sm: 'px-3 py-1.5 text-xs rounded-app font-semibold',
-    md: 'px-4 py-2.5 text-xs rounded-app font-semibold',
-    lg: 'px-6 py-3.5 text-sm rounded-app font-bold'
+    sm: 'min-h-10 px-3 py-2 text-sm rounded-control font-semibold',
+    md: 'min-h-11 px-4 py-2.5 text-sm rounded-control font-semibold',
+    lg: 'min-h-12 px-6 py-3 text-base rounded-control font-bold'
   }[size];
 
   const variantClasses = {
-    primary: 'bg-brand-primary text-white hover:opacity-90 shadow-app transition-opacity cursor-pointer',
+    primary: 'bg-brand-primary text-white hover:opacity-90 transition-colors cursor-pointer',
     secondary: 'bg-brand-primary-soft text-brand-primary hover:opacity-90 transition-opacity cursor-pointer',
     outline: 'bg-surface border border-border text-text hover:bg-surface-secondary transition-colors cursor-pointer',
     ghost: 'bg-transparent text-muted hover:bg-surface-secondary hover:text-text transition-colors cursor-pointer',
@@ -57,8 +57,8 @@ export const AppCard: React.FC<AppCardProps> = ({
 }) => {
   return (
     <div
-      className={`bg-surface border border-border rounded-app p-6 shadow-app ${
-        hoverEffect ? 'hover:shadow-md transition-shadow' : ''
+      className={`bg-surface border border-border rounded-panel p-5 sm:p-6 ${
+        hoverEffect ? 'hover:border-slate-300 transition-colors' : ''
       } ${className}`}
       {...props}
     >
@@ -84,7 +84,7 @@ export const AppInput: React.FC<AppInputProps> = ({
   return (
     <div className="space-y-1.5 w-full font-sans">
       {label && (
-        <label className="text-xs font-bold uppercase tracking-wider text-muted block">
+        <label className="text-sm font-semibold text-muted block">
           {label}
         </label>
       )}
@@ -95,7 +95,7 @@ export const AppInput: React.FC<AppInputProps> = ({
           </div>
         )}
         <input
-          className={`w-full bg-surface-secondary border border-border rounded-app ${icon ? 'pl-11' : 'px-4'} pr-4 py-3 text-sm font-medium text-text focus:outline-none focus:ring-2 focus:ring-brand-primary/10 focus:bg-surface transition-all ${
+          className={`w-full min-h-11 bg-surface-secondary border border-border rounded-control ${icon ? 'pl-11' : 'px-4'} pr-4 py-2.5 text-sm font-medium text-text focus:bg-surface transition-colors ${
             error ? 'border-red-400 focus:ring-red-100' : 'focus:border-brand-primary'
           } ${className}`}
           {...props}
@@ -125,12 +125,12 @@ export const AppSelect: React.FC<AppSelectProps> = ({
   return (
     <div className="space-y-1.5 w-full font-sans">
       {label && (
-        <label className="text-xs font-bold uppercase tracking-wider text-muted block">
+        <label className="text-sm font-semibold text-muted block">
           {label}
         </label>
       )}
       <select
-        className={`w-full bg-surface-secondary border border-border rounded-app px-4 py-3 text-sm font-medium text-text focus:outline-none focus:ring-2 focus:ring-brand-primary/10 focus:bg-surface transition-all cursor-pointer ${
+        className={`w-full min-h-11 bg-surface-secondary border border-border rounded-control px-4 py-2.5 text-sm font-medium text-text focus:bg-surface transition-colors cursor-pointer ${
           error ? 'border-red-400 focus:ring-red-100' : 'focus:border-brand-primary'
         } ${className}`}
         {...props}
@@ -166,7 +166,7 @@ export const AppBadge: React.FC<AppBadgeProps> = ({
 
   return (
     <span
-      className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold tracking-wide ${variantClasses} ${className}`}
+      className={`inline-flex min-h-7 items-center gap-1.5 rounded-md px-2 py-1 text-xs font-semibold ${variantClasses} ${className}`}
       {...props}
     >
       {children}
@@ -199,7 +199,7 @@ export const AppModal: React.FC<AppModalProps> = ({
       />
       
       {/* Modal Card */}
-      <div className="relative bg-surface border border-border rounded-app w-full max-w-xl shadow-app z-10 overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+      <div className="relative bg-surface border border-border rounded-dialog w-full max-w-xl shadow-app z-10 overflow-hidden animate-in fade-in zoom-in-95 duration-150">
         {title && (
           <div className="px-6 py-4 border-b border-border flex items-center justify-between">
             <h3 className="text-base font-bold text-text">{title}</h3>

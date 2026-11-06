@@ -13,7 +13,7 @@ test('owner navigation exposes only the verified owner pilot routes', async ({ p
         : 'workspace';
   console.info(`Owner menu precondition: ${state}`);
   console.info(`Owner navigation items rendered: ${await page.locator('nav a').count()}`);
-  await expect(page.getByRole('link', { name: 'Poptávky & Kanban' })).toBeVisible();
-  await expect(page.getByRole('link', { name: 'Integrace & Datový Hub' })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Poptávky', exact: true })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Integrace', exact: true })).toBeVisible();
   await expect(page.getByRole('link', { name: /Prodejní cockpit|Sales/ })).toHaveCount(0);
 });
