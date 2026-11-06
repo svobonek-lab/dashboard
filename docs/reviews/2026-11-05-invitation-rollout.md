@@ -77,6 +77,13 @@ It changes only the company insert default to `public_form=false`; owners can
 enable intake after configuring a valid privacy URL. It checks the existing
 function definition and is repeat-safe. Separate staging approval is required.
 
+The owner approved this exact SQL for StavbaCore Staging on 6 November. It was
+applied through the Supabase migration tool to `xwzweltjvreqhjpbjrxa` under
+migration name `invitation_private_form_default_20261106`. A fresh read-only
+`pg_get_functiondef` confirms the onboarding insert now stores `false`; all
+other function body clauses remain present. No production project was targeted.
+The SQL has not been applied to production.
+
 The full disposable PostgreSQL 17 run passed with `html NOT NULL` and the
 pre-`accepted_by` fixture. It reproduced the privacy check failure and proved
 rollback left no company, applied the correction twice, verified onboarding and
