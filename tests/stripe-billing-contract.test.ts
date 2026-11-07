@@ -11,6 +11,7 @@ const stagingWorkflow = readFileSync(new URL('../.github/workflows/staging-e2e.y
 const recoveryScript = readFileSync(new URL('../scripts/recover-staging-stripe-company-b.mjs', import.meta.url), 'utf8');
 const purchaseVerificationScript = readFileSync(new URL('../scripts/verify-staging-stripe-company-b-purchase.mjs', import.meta.url), 'utf8');
 const pilotPriceSetupScript = readFileSync(new URL('../scripts/configure-staging-pilot-stripe-price.mjs', import.meta.url), 'utf8');
+const vercelConfig = JSON.parse(readFileSync(new URL('../vercel.json', import.meta.url), 'utf8')) as Record<string, unknown>;
 
 test('Stripe billing contract is service-only, idempotent and rejects cross-tenant customer binding', () => {
   assert.match(contract, /add column if not exists stripe_customer_id text/i);
@@ -38,6 +39,10 @@ test('company C billing acceptance refreshes only the fixed staging Preview befo
   assert.match(deployBlock, /vercel@65\.8\.0 deploy --prebuilt --environment=preview/);
   assert.match(deployBlock, /dashboard-git-codex-staging-e2e-79cdb9-svobonek-6462s-projects\.vercel\.app/);
   assert.doesNotMatch(deployBlock, /dashboard-svobonek-6462s-projects\.vercel\.app/);
+});
+
+test('Vercel builds use the repository lockfile install command', () => {
+  assert.equal(vercelConfig.installCommand, 'npm ci');
 });
 
 test('CI executes the disposable Stripe billing database contract', () => {
