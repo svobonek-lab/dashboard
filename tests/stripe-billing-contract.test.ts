@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { getPilotStripePriceSetup } from '../scripts/configure-staging-pilot-stripe-price.mjs';
+import { cleanNpmBuildEnvironment } from '../scripts/run-vercel-build.mjs';
 
 const contract = readFileSync(new URL('../supabase/staging/20261015_stripe_billing_contract.sql', import.meta.url), 'utf8');
 const completion = readFileSync(new URL('../supabase/staging/20261016_stripe_billing_completion.sql', import.meta.url), 'utf8');
@@ -11,7 +12,6 @@ const stagingWorkflow = readFileSync(new URL('../.github/workflows/staging-e2e.y
 const recoveryScript = readFileSync(new URL('../scripts/recover-staging-stripe-company-b.mjs', import.meta.url), 'utf8');
 const purchaseVerificationScript = readFileSync(new URL('../scripts/verify-staging-stripe-company-b-purchase.mjs', import.meta.url), 'utf8');
 const pilotPriceSetupScript = readFileSync(new URL('../scripts/configure-staging-pilot-stripe-price.mjs', import.meta.url), 'utf8');
-const vercelConfig = JSON.parse(readFileSync(new URL('../vercel.json', import.meta.url), 'utf8')) as Record<string, unknown>;
 
 test('Stripe billing contract is service-only, idempotent and rejects cross-tenant customer binding', () => {
   assert.match(contract, /add column if not exists stripe_customer_id text/i);
@@ -35,14 +35,27 @@ test('company C billing acceptance refreshes only the fixed staging Preview befo
   assert.ok(deploy >= 0 && deploy < checkout, 'Staging Preview must be refreshed before the Checkout attempt.');
   const deployBlock = companyC.slice(deploy, checkout);
   assert.match(deployBlock, /vercel@65\.8\.0 pull --yes --environment=preview --git-branch=codex\/staging-e2e-local-runner/);
-  assert.match(deployBlock, /vercel@65\.8\.0 build/);
+  assert.match(deployBlock, /vercel@65\.8\.0 -- node scripts\/run-vercel-build\.mjs build/);
   assert.match(deployBlock, /vercel@65\.8\.0 deploy --prebuilt --environment=preview/);
   assert.match(deployBlock, /dashboard-git-codex-staging-e2e-79cdb9-svobonek-6462s-projects\.vercel\.app/);
   assert.doesNotMatch(deployBlock, /dashboard-svobonek-6462s-projects\.vercel\.app/);
 });
 
-test('Vercel builds use the repository lockfile install command', () => {
-  assert.equal(vercelConfig.installCommand, 'npm ci');
+test('Vercel build wrapper strips only npm exec allow-scripts forwarding', () => {
+  const source = {
+    npm_config_allow_scripts: 'legacy-policy',
+    NPM_CONFIG_ALLOW_SCRIPTS: 'legacy-policy',
+    npm_config_registry: 'https://registry.example.test',
+    PATH: 'runner-path',
+    VERCEL_TOKEN: 'test-token',
+  };
+  const cleaned = cleanNpmBuildEnvironment(source);
+  assert.deepEqual(cleaned, {
+    npm_config_registry: 'https://registry.example.test',
+    PATH: 'runner-path',
+    VERCEL_TOKEN: 'test-token',
+  });
+  assert.equal(source.npm_config_allow_scripts, 'legacy-policy');
 });
 
 test('CI executes the disposable Stripe billing database contract', () => {

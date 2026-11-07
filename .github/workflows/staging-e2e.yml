@@ -935,7 +935,7 @@ jobs:
           }
           npx --yes vercel@65.8.0 pull --yes --environment=preview --git-branch=codex/staging-e2e-local-runner --token=$env:VERCEL_TOKEN
           if ($LASTEXITCODE -ne 0) { throw 'Unable to pull the approved staging Preview configuration.' }
-          npx --yes vercel@65.8.0 build --token=$env:VERCEL_TOKEN
+          npx --yes --package=vercel@65.8.0 -- node scripts/run-vercel-build.mjs build --token=$env:VERCEL_TOKEN
           if ($LASTEXITCODE -ne 0) { throw 'Unable to build the staging Preview.' }
           $deploymentOutput = & npx --yes vercel@65.8.0 deploy --prebuilt --environment=preview --yes --token=$env:VERCEL_TOKEN --meta githubCommitRef=codex/staging-e2e-local-runner --meta githubCommitSha=$env:GITHUB_SHA
           $deployExitCode = $LASTEXITCODE
