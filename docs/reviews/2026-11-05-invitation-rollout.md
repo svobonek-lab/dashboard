@@ -77,6 +77,13 @@ It changes only the company insert default to `public_form=false`; owners can
 enable intake after configuring a valid privacy URL. It checks the existing
 function definition and is repeat-safe. Separate staging approval is required.
 
+The owner approved this exact SQL for StavbaCore Staging on 6 November. It was
+applied through the Supabase migration tool to `xwzweltjvreqhjpbjrxa` under
+migration name `invitation_private_form_default_20261106`. A fresh read-only
+`pg_get_functiondef` confirms the onboarding insert now stores `false`; all
+other function body clauses remain present. No production project was targeted.
+The SQL has not been applied to production.
+
 The full disposable PostgreSQL 17 run passed with `html NOT NULL` and the
 pre-`accepted_by` fixture. It reproduced the privacy check failure and proved
 rollback left no company, applied the correction twice, verified onboarding and
@@ -275,3 +282,97 @@ then read directly from StavbaCore Staging as
 `2026-11-05T21:17:03.808Z`. This verifies the deployed worker's staging database
 access and durable run persistence, without sending any email. It does not prove
 provider authentication or actual invitation receipt.
+
+## Synthetic owner invitation attempt (6 November)
+
+After the operator approved the TOS/DPA form submission, the staging platform
+admin created the synthetic company `e2e-invite-acceptance-20261106` and queued
+one owner invite. Company ID: `75f3061f-f6e1-4303-a847-e5bd4a3d2564`; invite ID:
+`af714fd3-35bf-4bfa-b94d-f7e43f738440`. No production data was touched.
+
+The only due outbox item belonged to this invite. A manual POST to the immutable
+Preview worker at `dashboard-53eu9lj5q-svobonek-6462s-projects.vercel.app` ran at
+`2026-11-06T19:40:24Z`. It selected one message but delivery failed with the
+safe code `EMAIL_PROVIDER_REJECTED`; there is no provider message ID or delivery
+timestamp. The outbox record is failed after one attempt. Resend's Emails and
+Application Logs pages showed no accepted email. The linked API key exists with
+Sending permission but also shows no activity.
+
+The failed deployment was built on `codex/staging-invite-consent-compat` on
+5 November at 21:09 UTC. Vercel metadata shows the branch-scoped
+`EMAIL_PROVIDER_API_KEY` was saved on 6 November at 08:41 UTC, after that build.
+The deployment needed a Preview redeploy to load current branch-scoped settings.
+After the account owner completed Vercel's fresh identity verification, the same
+Preview source (`codex/staging-invite-consent-compat`, commit `6d04e48`) was
+redeployed as `dpl_A9wP6xhSmq5kEnMuphDUbSaLzGHM`, URL
+`https://dashboard-o8lyv1rjv-svobonek-6462s-projects.vercel.app`. Its public
+bundle was checked and targets only staging `xwzweltjvreqhjpbjrxa`; the status
+endpoint reports the provider is configured. The existing staging admin UI's
+**Znovu pozvat** action requeued the same synthetic invitation. At
+`2026-11-06T19:55:04Z`, dispatch returned success for exactly one item. Staging
+records `delivered`, one attempt, a provider message ID, and no error. Resend's
+Emails page independently shows the invitation as **Delivered**.
+
+At the time of this dispatch record, the owner invitation had been delivered
+but acceptance had not yet been confirmed. Legacy `app_claim_invites` and
+`app_invite` remained callable; do not retire them until authenticated owner
+and tenant-isolation acceptance completes.
+
+### Acceptance confirmed (6 November)
+
+The operator reported completing the invitation. A targeted read-only check of
+the synthetic staging records confirms `accepted_at` is set, `revoked_at` is
+null, the accepted user has an active `owner` membership in this company, and
+the invitation has both `terms_of_service` and `data_processing_agreement`
+evidence rows. Active membership count is one. No customer rows were queried.
+
+The authenticated page could not be inspected from the fresh Playwright browser
+context because it has no owner session; it correctly redirects `/dashboard` to
+`/login`. The operator must log into the staging Preview with the password just
+set, without sharing it, before we can run the authenticated owner acceptance
+and tenant-isolation checks.
+
+Read-only Playwright smoke on the verified Preview
+`dashboard-o8lyv1rjv-svobonek-6462s-projects.vercel.app` returned HTTP 200 for
+`/`, `/login`, `/register-paid`, `/demo`, and `/widget-iframe.html`; the latter
+redirected to `/widget-iframe`. The browser recorded zero uncaught page or
+console errors. This does not substitute for an authenticated owner test.
+
+## Owner dashboard and cutover preflight (7 November 2026)
+
+### Consolidated acceptance matrix
+
+| Gate | Result | Evidence |
+| --- | --- | --- |
+| Synthetic company and owner invite | Passed | Staging company `e2e-invite-acceptance-20261106`; invite queued in `app_email_outbox`. |
+| Actual provider delivery | Passed | Resend reported **Delivered**; staging outbox recorded one successful attempt and a provider message ID. |
+| Email verification and password setup | Passed | Accepted synthetic Auth user has a confirmed email and `invite_password_set=true`. |
+| Owner legal acceptance | Passed | Staging has both `terms_of_service` and `data_processing_agreement` evidence for the owner invite. |
+| Invite acceptance and owner membership | Passed | Invite is accepted and unrevoked; exactly one active owner membership exists. |
+| Reuse, expiry and revocation rejection | Passed | Three staging RPC attempts under the `authenticated` database role returned the expected invalid-invitation rejection in a transaction; rollback left zero probe rows. |
+| Authenticated owner workspace | Passed, read-only | The staging Preview deployment below loaded dashboard, leads, projects, employees, integrations and settings. |
+| Legacy invitation RPC retirement | Pending | The reviewed SQL below is not yet applied; staging still grants `authenticated` execution to both legacy functions. |
+
+The accepted owner invite used the immutable Preview deployment
+`dpl_A9wP6xhSmq5kEnMuphDUbSaLzGHM` (source commit `6d04e485452bb681db29a61781f2aefa16fc4cf8`, URL
+`https://dashboard-o8lyv1rjv-svobonek-6462s-projects.vercel.app`). The subsequent metadata capture/test fix is committed on the follow-up review branch as `57b605764dc07be29d3c7e98d3b38604d920e53d`; it changes only the read-only metadata inventory query and its regression test.
+
+The operator approved setting only the synthetic company `e2e-invite-acceptance-20261106` to `subscription_status='active'` in StavbaCore Staging, without a Stripe payment. The guarded update returned exactly that active synthetic company. No production database or Stripe state was changed. This staging entitlement is only to unlock acceptance testing; it is not evidence of a paid subscription flow.
+
+Using the already authenticated owner session on the verified staging Preview `https://dashboard-o8lyv1rjv-svobonek-6462s-projects.vercel.app`, a read-only browser inspection loaded `/dashboard`, `/leads`, `/projects`, `/employees`, `/integrations` and `/settings`. The dashboard and empty states rendered; team showed the single owner; integrations identified Managed Cloud as active and BYODB as unavailable pending its separate acceptance/image digest; settings showed the synthetic company, active pilot status and email sending as ready. No profile, lead, employee, integration or billing action was submitted. This was a manual authenticated browser check; it is not an authenticated Playwright run.
+
+A fresh metadata-only staging check on 7 November confirmed the password-proof trigger is enabled, the legal acceptance, email outbox and outbox-run tables have RLS enabled, and the new invitation RPCs have `authenticated` execution while denying `anon`. Staging still grants `authenticated` execution on legacy `app_claim_invites()` and `app_invite(uuid,text,text)`. The exact cutover SQL is `supabase/staging/20261104_retire_legacy_invitation_rpcs.sql` (SHA-256 `1a6629bab70ec76a97443a10944366014c35bf9c70547c1f508b85880ef7c480`); its preconditions match current metadata. No production query or write was made.
+
+The full metadata-only SQL snapshot captured at `2026-11-07T11:17:29Z` contained 38 relations, 399 columns, 61 policies, 80 functions and 9 triggers. Comparison against the seven exact source files in the generated invitation bundle, the private-form correction and the legacy RPC cutover found all parsed table/column/function contracts present. The first comparison exposed a snapshot-filter defect: unprefixed helper functions in `app_private` were omitted. `scripts/staging-metadata-snapshot.mjs` now includes all functions in that private schema, and `tests/staging-metadata-snapshot.test.ts` guards the query. The focused test passed, and the metadata comparison was repeated with zero missing parsed contracts.
+
+The integrated disposable PostgreSQL 17 run was repeated on 7 November using `powershell -NoProfile -ExecutionPolicy Bypass -File scripts/test-invitation-rollout.ps1`. It passed the legacy `html NOT NULL`/missing-`accepted_by` compatibility fixture, repeat-safe bundle and privacy correction, invitation password and consent gates, acceptance/replay denial, expiry/revocation denial, and final denial of both legacy RPCs after the proposed retirement SQL. Docker Engine 29.9.2 was active; the test container was removed at completion.
+
+The current staging migration inventory contains the reviewed invitation private-form correction but no clearly named entry for the generated invitation-rollout prerequisite bundle. Its resulting tables, trigger and RPC grants are present in metadata, but migration-history provenance for that bundle should be reconciled before any future migration is pushed to staging or production.
+
+### Remaining acceptance gates
+
+- The cutover SQL has not been applied to staging. It still requires a separate review and approval; after approval, re-check the exact migration hash, apply only to StavbaCore Staging, then verify both legacy RPC calls fail as `authenticated` while the modern path remains available.
+- On staging, replay of the accepted invite and acceptance attempts for expired and revoked synthetic invites were exercised through the public RPC as database role `authenticated` with the synthetic owner claim, inside a single transaction. All three returned the expected `42501` invalid-invitation rejection; the transaction rolled back and a follow-up read confirmed no probe rows remained and the accepted invite stayed unchanged. This verifies the staging database function path, but does not substitute for a signed-JWT HTTP/Playwright replay flow.
+- Cross-tenant A/B isolation cannot be claimed from this owner session. The required distinct synthetic A/B Playwright credentials are not available in the local environment; do not repurpose the accepted owner or read customer rows.
+- The owner routes above were inspected in the signed-in browser, but authenticated Playwright automation still needs a safe test-session fixture. The public Playwright smoke recorded earlier remains valid only for public routes.
+- The invitation rollout SQL bundle's migration-history provenance should be resolved before calling the staging migration ledger fully reconciled.

@@ -119,7 +119,7 @@ SELECT jsonb_build_object(
     JOIN pg_catalog.pg_namespace AS n ON n.oid = p.pronamespace
     JOIN pg_catalog.pg_language AS l ON l.oid = p.prolang
     WHERE n.nspname IN ('public', 'app_private')
-      AND (left(p.proname, 4) = 'app_' OR p.proname IN ('app_role', 'app_can_lead'))
+      AND (n.nspname = 'app_private' OR left(p.proname, 4) = 'app_' OR p.proname IN ('app_role', 'app_can_lead'))
   ), '[]'::jsonb),
   'triggers', COALESCE((
     SELECT jsonb_agg(jsonb_build_object(
