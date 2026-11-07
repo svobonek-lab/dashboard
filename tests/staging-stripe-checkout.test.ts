@@ -9,6 +9,7 @@ import {
 } from '../scripts/staging-stripe-checkout-guard.mjs';
 import { createScopedBillingSetupEnv } from '../scripts/run-staging-stripe-checkout.mjs';
 import { billingAcceptanceOperationId } from '../scripts/prepare-staging-stripe-checkout.mjs';
+import { buildStagingPreviewRuntimeArgs, parseStagingWebhookSecret } from '../scripts/deploy-staging-preview-runtime.mjs';
 import { buildStagingStripeEnvLines, isApprovedStagingStripeExportBranch, parseVercelStripePreviewConfig } from '../scripts/export-staging-stripe-env.mjs';
 
 const baseEnv = {
@@ -126,6 +127,12 @@ test('company C acceptance is branch-gated, split for CAPTCHA handoff, and retai
   assert.match(workflow, /path: \$\{\{ runner\.temp \}\}\/staging-billing-company-c/);
   assert.doesNotMatch(workflow, /STAGING_OWNER_C_PASSWORD:\s*\$\{\{\s*secrets\./);
   assert.doesNotMatch(workflow, /STAGING_OWNER_C_PASSWORD:\s*\$\{\{\s*vars\./);
+  const deploy = workflow.match(/- name: Refresh isolated staging Preview with approved TEST configuration([\s\S]*?)- name: Prepare private synthetic owner C credentials/)?.[1] || '';
+  assert.match(deploy, /deploy-staging-preview-runtime\.mjs/);
+  assert.match(deploy, /STAGING_SUPABASE_SERVICE_ROLE_KEY:\s*\$\{\{\s*secrets\.STAGING_SUPABASE_SERVICE_ROLE_KEY\s*\}\}/);
+  assert.match(deploy, /STAGING_STRIPE_SECRET_KEY:\s*\$\{\{\s*secrets\.STAGING_STRIPE_SECRET_KEY\s*\}\}/);
+  assert.match(deploy, /STAGING_VERCEL_PREVIEW_ENV_FILE:\s*\$\{\{\s*github\.workspace\s*\}\}\/\.vercel\/\.env\.preview\.local/);
+  assert.doesNotMatch(deploy, /vercel@65\.8\.0 deploy --prebuilt/);
 });
 
 test('Vercel config parser reads only allowlisted settings without executing env contents', () => {
@@ -179,4 +186,57 @@ test('Vercel Stripe export accepts only TEST prices and the exact staging Previe
   assert.throws(() => buildStagingStripeEnvLines({ ...env, BILLING_RETURN_URL: baseEnv.PRODUCTION_BASE_URL }), /staging Preview/i);
   assert.throws(() => buildStagingStripeEnvLines({ ...env, STRIPE_PRICE_STARTER_ID: 'price_unitonly\nSECRET=value' }), /Starter Stripe TEST price ID/i);
   assert.throws(() => buildStagingStripeEnvLines({ ...env, STRIPE_PRICE_PILOT_ID: 'price_pilot\nSECRET=value' }), /Pilot Stripe TEST price ID/i);
+});
+
+test('staging runtime deployment pins server APIs to StavbaCore and Stripe TEST', () => {
+  const args = buildStagingPreviewRuntimeArgs({
+    GITHUB_REPOSITORY: 'svobonek-lab/dashboard',
+    GITHUB_REF: 'refs/heads/codex/billing-blocked-to-granted',
+    STAGING_SUPABASE_URL: baseEnv.STAGING_SUPABASE_URL,
+    STAGING_PREVIEW_URL: baseEnv.STAGING_PREVIEW_URL,
+    PRODUCTION_BASE_URL: baseEnv.PRODUCTION_BASE_URL,
+    STAGING_SUPABASE_PUBLISHABLE_KEY: 'sb_publishable_test',
+    STAGING_SUPABASE_SERVICE_ROLE_KEY: 'sb_secret_staging',
+    STAGING_STRIPE_SECRET_KEY: 'sk_test_unitonly',
+    STRIPE_BILLING_MODE: 'test',
+    STRIPE_PRICE_STARTER_ID: 'price_startest',
+    STAGING_STRIPE_WEBHOOK_SECRET: 'whsec_stagingtest',
+    BILLING_RETURN_URL: baseEnv.STAGING_PREVIEW_URL,
+  });
+  const runtimePairs = args.filter((_, index) => index % 2 === 1);
+  assert.deepEqual(runtimePairs.map((arg) => arg.split('=')[0]), [
+    'SUPABASE_URL', 'SUPABASE_ANON_KEY', 'SUPABASE_SERVICE_ROLE_KEY', 'STRIPE_SECRET_KEY',
+    'STRIPE_BILLING_MODE', 'STRIPE_PRICE_STARTER_ID', 'STRIPE_WEBHOOK_SECRET', 'BILLING_RETURN_URL',
+  ]);
+  assert.equal(runtimePairs.includes(`SUPABASE_URL=${baseEnv.STAGING_SUPABASE_URL}`), true);
+  assert.equal(runtimePairs.includes('STRIPE_BILLING_MODE=test'), true);
+  assert.equal(runtimePairs.includes(`BILLING_RETURN_URL=${baseEnv.STAGING_PREVIEW_URL}`), true);
+  assert.equal(runtimePairs.some((arg) => arg === 'STRIPE_SECRET_KEY=sk_test_unitonly'), true);
+  assert.equal(runtimePairs.some((arg) => arg === 'SUPABASE_SERVICE_ROLE_KEY=sb_secret_staging'), true);
+});
+
+test('staging deploy extracts only a well-formed webhook signing secret', () => {
+  assert.equal(parseStagingWebhookSecret('STRIPE_WEBHOOK_SECRET=whsec_previewtest\nOTHER_SECRET=private'), 'whsec_previewtest');
+  assert.equal(parseStagingWebhookSecret('OTHER=private\n'), '');
+  assert.throws(() => parseStagingWebhookSecret('STRIPE_WEBHOOK_SECRET=$(echo unsafe)'), /invalid/);
+});
+
+test('staging runtime deployment refuses production endpoints and live Stripe keys', () => {
+  const env = {
+    GITHUB_REPOSITORY: 'svobonek-lab/dashboard',
+    GITHUB_REF: 'refs/heads/codex/billing-blocked-to-granted',
+    STAGING_SUPABASE_URL: baseEnv.STAGING_SUPABASE_URL,
+    STAGING_PREVIEW_URL: baseEnv.STAGING_PREVIEW_URL,
+    PRODUCTION_BASE_URL: baseEnv.PRODUCTION_BASE_URL,
+    STAGING_SUPABASE_PUBLISHABLE_KEY: 'sb_publishable_test',
+    STAGING_SUPABASE_SERVICE_ROLE_KEY: 'sb_secret_staging',
+    STAGING_STRIPE_SECRET_KEY: 'sk_test_unitonly',
+    STRIPE_BILLING_MODE: 'test',
+    STRIPE_PRICE_STARTER_ID: 'price_starter_test',
+    STAGING_STRIPE_WEBHOOK_SECRET: 'whsec_stagingtest',
+    BILLING_RETURN_URL: baseEnv.STAGING_PREVIEW_URL,
+  };
+  assert.throws(() => buildStagingPreviewRuntimeArgs({ ...env, STAGING_SUPABASE_URL: 'https://oncmtmrhmjlerbwkrecv.supabase.co' }), /StavbaCore Staging/);
+  assert.throws(() => buildStagingPreviewRuntimeArgs({ ...env, STAGING_STRIPE_SECRET_KEY: 'sk_live_never' }), /TEST mode/);
+  assert.throws(() => buildStagingPreviewRuntimeArgs({ ...env, BILLING_RETURN_URL: baseEnv.PRODUCTION_BASE_URL }), /staging Preview/);
 });
