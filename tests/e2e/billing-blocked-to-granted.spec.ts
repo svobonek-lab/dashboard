@@ -64,8 +64,10 @@ test('company C owner is blocked before Stripe TEST payment and reaches /dashboa
   if (phase === 'prepare') {
     assert.notEqual(company.subscription_status, 'active', 'Company C was active before payment.');
     assert.notEqual(company.subscription_status, 'trialing', 'Company C was trialing before payment.');
-    assert.equal(company.stripe_customer_id, null, 'Company C already has a Stripe customer binding.');
     assert.equal(company.stripe_subscription_id, null, 'Company C already has a Stripe subscription binding.');
+    if (company.stripe_customer_id !== null) {
+      assert.match(company.stripe_customer_id, /^cus_[A-Za-z0-9]+$/, 'Company C has an invalid Stripe TEST customer binding.');
+    }
 
     await signIn(page, 'OWNER_C');
     await expect(page).toHaveURL(/\/dashboard\/?$/);
@@ -91,6 +93,9 @@ test('company C owner is blocked before Stripe TEST payment and reaches /dashboa
     assert.equal(lineItems.data[0]?.quantity, 1);
     assert.equal(linePriceId, requiredValue('STRIPE_PRICE_STARTER_ID'));
     assert.ok(session.customer, 'Stripe TEST Checkout did not bind a customer.');
+    if (company.stripe_customer_id) {
+      assert.equal(session.customer, company.stripe_customer_id, 'Checkout did not reuse company C’s existing Stripe TEST customer.');
+    }
 
     const handoffFile = requiredValue('STAGING_BILLING_HANDOFF_FILE');
     await mkdir(path.dirname(handoffFile), { recursive: true });

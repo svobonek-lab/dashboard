@@ -57,8 +57,11 @@ export function assertBillingCompanyCCanStart(company) {
   }
   const customerId = String(company.stripe_customer_id || '').trim();
   const subscriptionId = String(company.stripe_subscription_id || '').trim();
-  if (company.subscription_status === 'active' || company.subscription_status === 'trialing' || customerId || subscriptionId) {
-    throw new Error('Refusing company C seed: tenant is already paid or bound to Stripe.');
+  if (company.subscription_status === 'active' || company.subscription_status === 'trialing' || subscriptionId) {
+    throw new Error('Refusing company C seed: tenant is already paid or bound to a subscription.');
+  }
+  if (customerId && !/^cus_[A-Za-z0-9]+$/.test(customerId)) {
+    throw new Error('Refusing company C seed: existing Stripe customer binding is invalid.');
   }
   if (company.active !== true || company.plan !== 'starter') {
     throw new Error('Refusing company C seed: existing synthetic tenant is not an active Starter fixture.');

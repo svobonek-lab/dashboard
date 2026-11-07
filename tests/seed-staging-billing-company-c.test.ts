@@ -45,7 +45,7 @@ test('company C seed is synthetic and starts blocked with no Stripe binding', ()
   assert.throws(() => buildBillingCompanyCFixture('customer@example.com'), /synthetic company C account/i);
 });
 
-test('company C seed refuses a paid or Stripe-bound retry', () => {
+test('company C seed reuses an unpaid customer but refuses an active or subscribed tenant', () => {
   assert.doesNotThrow(() => assertBillingCompanyCCanStart(null));
   assert.doesNotThrow(() => assertBillingCompanyCCanStart({
     id: '10000000-0000-4000-8000-000000000003',
@@ -60,9 +60,14 @@ test('company C seed refuses a paid or Stripe-bound retry', () => {
     slug: 'e2e-synthetic-company-c', subscription_status: 'active',
     stripe_customer_id: 'cus_test', stripe_subscription_id: 'sub_test',
   }), /already paid or bound/i);
-  assert.throws(() => assertBillingCompanyCCanStart({
+  assert.doesNotThrow(() => assertBillingCompanyCCanStart({
+    active: true, plan: 'starter',
     slug: 'e2e-synthetic-company-c', subscription_status: 'not_configured',
     stripe_customer_id: 'cus_test', stripe_subscription_id: null,
+  }));
+  assert.throws(() => assertBillingCompanyCCanStart({
+    slug: 'e2e-synthetic-company-c', subscription_status: 'not_configured',
+    stripe_customer_id: 'cus_test', stripe_subscription_id: 'sub_test',
   }), /already paid or bound/i);
   assert.throws(() => assertBillingCompanyCCanStart({
     slug: 'real-company', subscription_status: 'not_configured',
