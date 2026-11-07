@@ -53,7 +53,7 @@ jobs:
         inputs.runner_mode != 'load-recover' && inputs.runner_mode != 'preview-configure' &&
         inputs.runner_mode != 'billing-setup' && inputs.runner_mode != 'billing-portal-inspect' &&
         inputs.runner_mode != 'billing-cancel-advance' && inputs.runner_mode != 'billing-past-due' &&
-        inputs.runner_mode != 'billing-recover-b' && inputs.runner_mode != 'billing-recover-b-local' && inputs.runner_mode != 'billing-configure-pilot-price' && inputs.runner_mode != 'billing-blocked-to-granted' && inputs.runner_mode != 'preview-redeploy') ||
+        inputs.runner_mode != 'billing-recover-b' && inputs.runner_mode != 'billing-recover-b-local' && inputs.runner_mode != 'billing-configure-pilot-price' && inputs.runner_mode != 'billing-blocked-to-granted' && inputs.runner_mode != 'billing-verify-company-c-existing' && inputs.runner_mode != 'preview-redeploy') ||
        (github.event.pull_request.head.repo.full_name == github.repository &&
         contains(github.event.pull_request.labels.*.name, 'e2e'))) &&
       ((inputs.runner_mode != 'local-ephemeral' && inputs.runner_mode != 'sentry-only' && inputs.runner_mode != 'billing-portal-inspect') ||
@@ -1038,8 +1038,8 @@ jobs:
       always() &&
       github.repository == 'svobonek-lab/dashboard' &&
       github.event_name == 'workflow_dispatch' &&
-      (inputs.runner_mode == 'billing-blocked-to-granted' || inputs.runner_mode == 'billing-verify-company-c-existing') &&
-      github.ref == 'refs/heads/codex/billing-blocked-to-granted'
+      inputs.runner_mode == 'billing-verify-company-c-existing' &&
+      github.ref == 'refs/heads/codex/billing-webhook-receipt-verification'
     runs-on: [self-hosted, Windows, X64, staging-billing]
     timeout-minutes: 40
     permissions:
@@ -1064,7 +1064,7 @@ jobs:
           GITHUB_REF: ${{ github.ref }}
           BILLING_HANDOFF_RUN_ID: ${{ inputs.billing_handoff_run_id }}
         run: |
-          if ($env:GITHUB_REPOSITORY -ne 'svobonek-lab/dashboard' -or $env:GITHUB_REF -ne 'refs/heads/codex/billing-blocked-to-granted') {
+          if ($env:GITHUB_REPOSITORY -ne 'svobonek-lab/dashboard' -or $env:GITHUB_REF -ne 'refs/heads/codex/billing-webhook-receipt-verification') {
             throw 'Refusing prior billing handoff outside the approved staging branch.'
           }
           if ($env:BILLING_HANDOFF_RUN_ID -notmatch '^\d{10,20}$') {
@@ -1147,20 +1147,21 @@ jobs:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
           STAGING_PREVIEW_CONFIG_FILE: ${{ runner.temp }}/staging-stripe-preview.env
         run: |
-          if ($env:GITHUB_REF -ne 'refs/heads/codex/billing-blocked-to-granted' -or $env:GITHUB_REPOSITORY -ne 'svobonek-lab/dashboard') {
+          if ($env:GITHUB_REF -ne 'refs/heads/codex/billing-webhook-receipt-verification' -or $env:GITHUB_REPOSITORY -ne 'svobonek-lab/dashboard') {
             throw 'Refusing company C verification outside its approved feature branch.'
           }
           npx --yes vercel@65.8.0 env pull $env:STAGING_PREVIEW_CONFIG_FILE --environment=preview --git-branch=codex/staging-e2e-local-runner --token=$env:VERCEL_TOKEN --yes
         shell: pwsh
       - name: Export allowlisted Stripe TEST configuration only
         env:
+          STAGING_BILLING_PHASE: verify
           STAGING_STRIPE_SECRET_KEY: ${{ secrets.STAGING_STRIPE_SECRET_KEY }}
           STAGING_PREVIEW_CONFIG_FILE: ${{ runner.temp }}/staging-stripe-preview.env
           STAGING_PREVIEW_URL: ${{ vars.STAGING_PREVIEW_URL }}
           PRODUCTION_BASE_URL: ${{ vars.PRODUCTION_BASE_URL }}
         run: node scripts/export-staging-stripe-env.mjs
         shell: pwsh
-      - name: Verify paid session, signed webhook receipt, and owner dashboard access
+      - name: Verify paid Checkout, webhook binding, and owner dashboard access
         env:
           CI: "true"
           STAGING_BILLING_PHASE: verify

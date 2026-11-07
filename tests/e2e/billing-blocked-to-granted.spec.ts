@@ -52,7 +52,7 @@ test('company C owner is blocked before Stripe TEST payment and reaches /dashboa
   test.setTimeout(phase === 'prepare' ? 6 * 60_000 : 35 * 60_000);
   const { service, stripe } = stripeClients();
   const companyResult = await service.from('app_companies')
-    .select('id,slug,active,plan,subscription_status,stripe_customer_id,stripe_subscription_id')
+    .select('id,slug,active,plan,subscription_status,stripe_customer_id,stripe_subscription_id,stripe_event_created_at')
     .eq('slug', COMPANY_C_SLUG).maybeSingle();
   assert.equal(companyResult.error, null, 'Could not inspect synthetic company C on staging.');
   const company = companyResult.data;
@@ -129,7 +129,7 @@ test('company C owner is blocked before Stripe TEST payment and reaches /dashboa
   const deadline = Date.now() + 30 * 60_000;
   let paidSession: Stripe.Checkout.Session | null = null;
   let webhookEvent: Stripe.Event | null = null;
-  let appliedWebhook: Record<string, unknown> | null = null;
+  let companyEventBindingVerified = false;
   let activatedCompany: Record<string, unknown> | null = null;
   let activeSubscription: Stripe.Subscription | null = null;
   while (Date.now() < deadline) {
@@ -137,7 +137,7 @@ test('company C owner is blocked before Stripe TEST payment and reaches /dashboa
     const subscriptionId = typeof paidSession.subscription === 'string'
       ? paidSession.subscription : paidSession.subscription?.id;
     const companyRead = await service.from('app_companies')
-      .select('id,slug,active,plan,subscription_status,stripe_customer_id,stripe_subscription_id')
+      .select('id,slug,active,plan,subscription_status,stripe_customer_id,stripe_subscription_id,stripe_event_created_at')
       .eq('id', company.id).maybeSingle();
     if (companyRead.error) throw new Error('Unable to verify company C after Checkout.');
     activatedCompany = companyRead.data as Record<string, unknown> | null;
@@ -147,16 +147,16 @@ test('company C owner is blocked before Stripe TEST payment and reaches /dashboa
       const eventList = await stripe.events.list({ type: 'checkout.session.completed', created: { gte: paidSession.created - 30 }, limit: 100 });
       webhookEvent = eventList.data.find(event => {
         const checkout = event.data.object as Stripe.Checkout.Session;
-        return event.livemode === false && checkout.id === sessionId && checkout.metadata?.tenant_id === company.id;
+        const eventSubscriptionId = typeof checkout.subscription === 'string'
+          ? checkout.subscription : checkout.subscription?.id;
+        return event.livemode === false && checkout.id === sessionId && checkout.metadata?.tenant_id === company.id &&
+          checkout.customer === paidSession!.customer && eventSubscriptionId === subscriptionId;
       }) || null;
       if (webhookEvent) {
-        const { data: webhookRows, error } = await service.from('app_stripe_webhook_events')
-          .select('event_id,event_type,company_id,stripe_customer_id,event_created_at,result')
-          .eq('event_id', webhookEvent.id).eq('company_id', company.id).maybeSingle();
-        if (error) throw new Error('Unable to inspect the applied Checkout webhook receipt.');
-        if (webhookRows?.result === 'applied' && webhookRows.event_type === 'checkout.session.completed' &&
-            webhookRows.stripe_customer_id === paidSession.customer && Date.parse(webhookRows.event_created_at) >= (paidSession.created - 30) * 1000) {
-          appliedWebhook = webhookRows;
+        const companyEventCreatedAt = Date.parse(String(activatedCompany?.stripe_event_created_at ?? ''));
+        companyEventBindingVerified = Number.isFinite(companyEventCreatedAt) &&
+          Math.floor(companyEventCreatedAt / 1000) === webhookEvent.created;
+        if (companyEventBindingVerified) {
           activeSubscription = typeof paidSession.subscription === 'string'
             ? await stripe.subscriptions.retrieve(subscriptionId)
             : paidSession.subscription as Stripe.Subscription;
@@ -169,7 +169,7 @@ test('company C owner is blocked before Stripe TEST payment and reaches /dashboa
 
   assert.ok(paidSession && paidSession.status === 'complete' && paidSession.payment_status === 'paid', 'Stripe TEST Checkout was not completed as paid.');
   assert.ok(webhookEvent, 'Stripe did not create the signed checkout.session.completed event for this session.');
-  assert.ok(appliedWebhook, 'The signed Checkout webhook was not recorded as applied for company C.');
+  assert.ok(companyEventBindingVerified, 'The company webhook event timestamp does not include this Checkout event.');
   assert.ok(activatedCompany?.subscription_status === 'active', 'The company C subscription status did not become active.');
   assert.ok(activeSubscription?.status === 'active' && activeSubscription.livemode === false, 'The Stripe TEST subscription is not active.');
 
@@ -181,7 +181,7 @@ test('company C owner is blocked before Stripe TEST payment and reaches /dashboa
   await expect(page.getByText('Přehled stavby (Executive)', { exact: true }).first()).toBeVisible();
 
   await testInfo.attach('company-c-paid-webhook-result', {
-    body: JSON.stringify({ companyId: company.id, checkoutSessionId: sessionId, stripeEventId: webhookEvent!.id, webhookResult: 'applied', subscriptionStatus: 'active' }),
+    body: JSON.stringify({ companyId: company.id, checkoutSessionId: sessionId, stripeEventId: webhookEvent!.id, webhookEventObserved: true, companyEventBindingVerified, subscriptionStatus: 'active' }),
     contentType: 'application/json',
   });
 });

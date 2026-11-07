@@ -157,6 +157,7 @@ test('Vercel config parser reads only allowlisted settings without executing env
 test('Stripe config export permits only the original staging runner and this billing test branch', () => {
   assert.equal(isApprovedStagingStripeExportBranch('svobonek-lab/dashboard', 'refs/heads/codex/staging-e2e-local-runner'), true);
   assert.equal(isApprovedStagingStripeExportBranch('svobonek-lab/dashboard', 'refs/heads/codex/billing-blocked-to-granted'), true);
+  assert.equal(isApprovedStagingStripeExportBranch('svobonek-lab/dashboard', 'refs/heads/codex/billing-webhook-receipt-verification'), true);
   assert.equal(isApprovedStagingStripeExportBranch('other/repository', 'refs/heads/codex/billing-blocked-to-granted'), false);
   assert.equal(isApprovedStagingStripeExportBranch('svobonek-lab/dashboard', 'refs/heads/main'), false);
 });
@@ -189,6 +190,21 @@ test('Vercel Stripe export accepts only TEST prices and the exact staging Previe
   assert.throws(() => buildStagingStripeEnvLines({ ...env, PUBLIC_APP_URL: baseEnv.PRODUCTION_BASE_URL }), /staging Preview/i);
   assert.throws(() => buildStagingStripeEnvLines({ ...env, STRIPE_PRICE_STARTER_ID: 'price_unitonly\nSECRET=value' }), /Starter Stripe TEST price ID/i);
   assert.throws(() => buildStagingStripeEnvLines({ ...env, STRIPE_PRICE_PILOT_ID: 'price_pilot\nSECRET=value' }), /Pilot Stripe TEST price ID/i);
+});
+
+test('verify-only Stripe export does not require or forward the unused public app URL', () => {
+  const env = {
+    STRIPE_SECRET_KEY: 'sk_test_unitonly',
+    STRIPE_BILLING_MODE: 'test',
+    STRIPE_PRICE_STARTER_ID: 'price_unitonly',
+    STAGING_PREVIEW_URL: baseEnv.STAGING_PREVIEW_URL,
+    PRODUCTION_BASE_URL: baseEnv.PRODUCTION_BASE_URL,
+  };
+  const lines = buildStagingStripeEnvLines(env, { verificationOnly: true });
+  assert.match(lines, /STRIPE_PRICE_STARTER_ID=price_unitonly/);
+  assert.doesNotMatch(lines, /PUBLIC_APP_URL/);
+  assert.throws(() => buildStagingStripeEnvLines(env), /PUBLIC_APP_URL/);
+  assert.throws(() => buildStagingStripeEnvLines({ ...env, STAGING_PREVIEW_URL: baseEnv.PRODUCTION_BASE_URL }, { verificationOnly: true }), /staging Preview/i);
 });
 
 test('staging runtime deployment pins server APIs to StavbaCore and Stripe TEST', () => {
