@@ -337,3 +337,23 @@ Read-only Playwright smoke on the verified Preview
 `/`, `/login`, `/register-paid`, `/demo`, and `/widget-iframe.html`; the latter
 redirected to `/widget-iframe`. The browser recorded zero uncaught page or
 console errors. This does not substitute for an authenticated owner test.
+
+## Owner dashboard and cutover preflight (7 November 2026)
+
+The operator approved setting only the synthetic company `e2e-invite-acceptance-20261106` to `subscription_status='active'` in StavbaCore Staging, without a Stripe payment. The guarded update returned exactly that active synthetic company. No production database or Stripe state was changed. This staging entitlement is only to unlock acceptance testing; it is not evidence of a paid subscription flow.
+
+Using the already authenticated owner session on the verified staging Preview `https://dashboard-o8lyv1rjv-svobonek-6462s-projects.vercel.app`, a read-only browser inspection loaded `/dashboard`, `/leads`, `/projects`, `/employees`, `/integrations` and `/settings`. The dashboard and empty states rendered; team showed the single owner; integrations identified Managed Cloud as active and BYODB as unavailable pending its separate acceptance/image digest; settings showed the synthetic company, active pilot status and email sending as ready. No profile, lead, employee, integration or billing action was submitted. This was a manual authenticated browser check; it is not an authenticated Playwright run.
+
+A fresh metadata-only staging check on 7 November confirmed the password-proof trigger is enabled, the legal acceptance, email outbox and outbox-run tables have RLS enabled, and the new invitation RPCs have `authenticated` execution while denying `anon`. Staging still grants `authenticated` execution on legacy `app_claim_invites()` and `app_invite(uuid,text,text)`. The exact cutover SQL is `supabase/staging/20261104_retire_legacy_invitation_rpcs.sql` (SHA-256 `1a6629bab70ec76a97443a10944366014c35bf9c70547c1f508b85880ef7c480`); its preconditions match current metadata. No production query or write was made.
+
+The integrated disposable PostgreSQL 17 run was repeated on 7 November using `powershell -NoProfile -ExecutionPolicy Bypass -File scripts/test-invitation-rollout.ps1`. It passed the legacy `html NOT NULL`/missing-`accepted_by` compatibility fixture, repeat-safe bundle and privacy correction, invitation password and consent gates, acceptance/replay denial, expiry/revocation denial, and final denial of both legacy RPCs after the proposed retirement SQL. Docker Engine 29.9.2 was active; the test container was removed at completion.
+
+The current staging migration inventory contains the reviewed invitation private-form correction but no clearly named entry for the generated invitation-rollout prerequisite bundle. Its resulting tables, trigger and RPC grants are present in metadata, but migration-history provenance for that bundle should be reconciled before any future migration is pushed to staging or production.
+
+### Remaining acceptance gates
+
+- The cutover SQL has not been applied to staging. It still requires a separate review and approval; after approval, re-check the exact migration hash, apply only to StavbaCore Staging, then verify both legacy RPC calls fail as `authenticated` while the modern path remains available.
+- Hosted rejection tests for replay, expiry and revocation were not performed against the accepted invitation; the disposable PostgreSQL fixture proves the state-machine behavior locally, not the hosted Auth/browser integration for those cases.
+- Cross-tenant A/B isolation cannot be claimed from this owner session. The required distinct synthetic A/B Playwright credentials are not available in the local environment; do not repurpose the accepted owner or read customer rows.
+- The owner routes above were inspected in the signed-in browser, but authenticated Playwright automation still needs a safe test-session fixture. The public Playwright smoke recorded earlier remains valid only for public routes.
+- The invitation rollout SQL bundle's migration-history provenance should be resolved before calling the staging migration ledger fully reconciled.
