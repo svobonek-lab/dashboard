@@ -1,5 +1,4 @@
 import { spawnSync } from 'node:child_process';
-import { readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 
@@ -15,24 +14,6 @@ function required(env, key) {
   const value = String(env[key] || '').trim();
   if (!value) throw new Error(`Required staging Preview value is missing: ${key}.`);
   if (/[\r\n\0]/.test(value)) throw new Error(`Invalid staging Preview value: ${key}.`);
-  return value;
-}
-
-export function parseStagingWebhookSecret(contents) {
-  const lines = String(contents).split(/\r?\n/);
-  const matches = lines.filter((line) => /^\s*(?:export\s+)?STRIPE_WEBHOOK_SECRET\s*=/.test(line));
-  if (matches.length === 0) return '';
-  if (matches.length !== 1) throw new Error('The staging Preview has duplicate webhook signing-secret entries.');
-  const raw = matches[0].replace(/^\s*(?:export\s+)?STRIPE_WEBHOOK_SECRET\s*=\s*/, '').trim();
-  let value = raw;
-  if (raw.startsWith('"') && raw.endsWith('"')) {
-    try { value = JSON.parse(raw); } catch { throw new Error('The staging webhook signing secret is invalid.'); }
-  } else if (raw.startsWith("'") && raw.endsWith("'")) {
-    value = raw.slice(1, -1);
-  } else {
-    value = raw.replace(/\s+#.*$/, '').trim();
-  }
-  if (!/^whsec_[A-Za-z0-9]+$/.test(value)) throw new Error('The staging webhook signing secret is invalid.');
   return value;
 }
 
@@ -106,10 +87,10 @@ function runVercel(cliPath, args, env) {
 
 async function deploy() {
   const env = process.env;
-  const webhookFile = required(env, 'STAGING_VERCEL_PREVIEW_ENV_FILE');
-  const webhookSecret = parseStagingWebhookSecret(await readFile(webhookFile, 'utf8'));
-  if (!webhookSecret) throw new Error('The approved staging Preview has no Stripe webhook signing secret.');
-  const runtimeArgs = buildStagingPreviewRuntimeArgs({ ...env, STAGING_STRIPE_WEBHOOK_SECRET: webhookSecret });
+  const runtimeArgs = buildStagingPreviewRuntimeArgs({
+    ...env,
+    STAGING_STRIPE_WEBHOOK_SECRET: required(env, 'STRIPE_WEBHOOK_SECRET'),
+  });
   const cliPath = findVercelCli();
   const deploymentOutput = runVercel(cliPath, [
     'deploy', '--prebuilt', '--environment=preview', '--yes', `--token=${required(env, 'VERCEL_TOKEN')}`,

@@ -9,7 +9,7 @@ import {
 } from '../scripts/staging-stripe-checkout-guard.mjs';
 import { createScopedBillingSetupEnv } from '../scripts/run-staging-stripe-checkout.mjs';
 import { billingAcceptanceOperationId } from '../scripts/prepare-staging-stripe-checkout.mjs';
-import { buildStagingPreviewRuntimeArgs, parseStagingWebhookSecret } from '../scripts/deploy-staging-preview-runtime.mjs';
+import { buildStagingPreviewRuntimeArgs } from '../scripts/deploy-staging-preview-runtime.mjs';
 import { buildStagingStripeEnvLines, isApprovedStagingStripeExportBranch, parseVercelStripePreviewConfig } from '../scripts/export-staging-stripe-env.mjs';
 
 const baseEnv = {
@@ -106,7 +106,6 @@ test('billing workflow is exact-branch self-hosted and pulls only non-secret con
   assert.match(workflow, /github\.ref == 'refs\/heads\/codex\/staging-e2e-local-runner'/);
   assert.match(workflow, /runs-on: \[self-hosted, linux, x64, staging-e2e\]/);
   assert.match(workflow, /env pull.*--environment=preview.*--git-branch=codex\/staging-e2e-local-runner/);
-  assert.doesNotMatch(workflow, /env run --environment=preview/);
   assert.match(workflow, /STAGING_STRIPE_SECRET_KEY/);
   assert.match(workflow, /inputs\.runner_mode != 'billing-setup'/);
   const exportStep = workflow.match(/- name: Pull non-secret Stripe TEST config from the approved Vercel Preview([\s\S]*?)- name: Prepare one Stripe TEST Checkout/)?.[1] || '';
@@ -131,7 +130,8 @@ test('company C acceptance is branch-gated, split for CAPTCHA handoff, and retai
   assert.match(deploy, /deploy-staging-preview-runtime\.mjs/);
   assert.match(deploy, /STAGING_SUPABASE_SERVICE_ROLE_KEY:\s*\$\{\{\s*secrets\.STAGING_SUPABASE_SERVICE_ROLE_KEY\s*\}\}/);
   assert.match(deploy, /STAGING_STRIPE_SECRET_KEY:\s*\$\{\{\s*secrets\.STAGING_STRIPE_SECRET_KEY\s*\}\}/);
-  assert.match(deploy, /STAGING_VERCEL_PREVIEW_ENV_FILE:\s*\$\{\{\s*github\.workspace\s*\}\}\/\.vercel\/\.env\.preview\.local/);
+  assert.match(deploy, /vercel env run --environment=preview --git-branch=codex\/staging-e2e-local-runner/);
+  assert.doesNotMatch(deploy, /STAGING_VERCEL_PREVIEW_ENV_FILE/);
   assert.doesNotMatch(deploy, /vercel@65\.8\.0 deploy --prebuilt/);
 });
 
@@ -213,12 +213,6 @@ test('staging runtime deployment pins server APIs to StavbaCore and Stripe TEST'
   assert.equal(runtimePairs.includes(`BILLING_RETURN_URL=${baseEnv.STAGING_PREVIEW_URL}`), true);
   assert.equal(runtimePairs.some((arg) => arg === 'STRIPE_SECRET_KEY=sk_test_unitonly'), true);
   assert.equal(runtimePairs.some((arg) => arg === 'SUPABASE_SERVICE_ROLE_KEY=sb_secret_staging'), true);
-});
-
-test('staging deploy extracts only a well-formed webhook signing secret', () => {
-  assert.equal(parseStagingWebhookSecret('STRIPE_WEBHOOK_SECRET=whsec_previewtest\nOTHER_SECRET=private'), 'whsec_previewtest');
-  assert.equal(parseStagingWebhookSecret('OTHER=private\n'), '');
-  assert.throws(() => parseStagingWebhookSecret('STRIPE_WEBHOOK_SECRET=$(echo unsafe)'), /invalid/);
 });
 
 test('staging runtime deployment refuses production endpoints and live Stripe keys', () => {
