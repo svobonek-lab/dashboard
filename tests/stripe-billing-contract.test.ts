@@ -10,6 +10,7 @@ const completion = readFileSync(new URL('../supabase/staging/20261016_stripe_bil
 const rebind = readFileSync(new URL('../supabase/migrations/20261031185027_allow_canceled_stripe_subscription_rebind.sql', import.meta.url), 'utf8');
 const workflow = readFileSync(new URL('../.github/workflows/verify.yml', import.meta.url), 'utf8');
 const stagingWorkflow = readFileSync(new URL('../.github/workflows/staging-e2e.yml', import.meta.url), 'utf8');
+const billingAcceptanceSpec = readFileSync(new URL('../tests/e2e/billing-blocked-to-granted.spec.ts', import.meta.url), 'utf8');
 const recoveryScript = readFileSync(new URL('../scripts/recover-staging-stripe-company-b.mjs', import.meta.url), 'utf8');
 const purchaseVerificationScript = readFileSync(new URL('../scripts/verify-staging-stripe-company-b-purchase.mjs', import.meta.url), 'utf8');
 const pilotPriceSetupScript = readFileSync(new URL('../scripts/configure-staging-pilot-stripe-price.mjs', import.meta.url), 'utf8');
@@ -38,8 +39,15 @@ test('company C billing acceptance refreshes only the fixed staging Preview befo
   assert.match(deployBlock, /vercel@65\.8\.0 pull --yes --environment=preview --git-branch=codex\/staging-e2e-local-runner/);
   assert.match(deployBlock, /vercel@65\.8\.0 -- node scripts\/run-vercel-build\.mjs build/);
   assert.match(deployBlock, /vercel@65\.8\.0 deploy --prebuilt --environment=preview/);
+  assert.match(deployBlock, /deploy --prebuilt[\s\S]*?2>&1 \| ForEach-Object/);
   assert.match(deployBlock, /scripts\/extract-vercel-preview-url\.mjs/);
   assert.match(deployBlock, /exactly one valid labeled Preview deployment URL/);
+  assert.match(deployBlock, /STAGING_SUPABASE_URL: \$\{\{ vars\.STAGING_SUPABASE_URL \}\}/);
+  assert.match(deployBlock, /STAGING_SUPABASE_PUBLISHABLE_KEY: \$\{\{ secrets\.STAGING_SUPABASE_PUBLISHABLE_KEY \}\}/);
+  assert.match(deployBlock, /VITE_SUPABASE_URL\s*=\s*\$env:STAGING_SUPABASE_URL/);
+  assert.match(deployBlock, /VITE_SUPABASE_ANON_KEY\s*=\s*\$env:STAGING_SUPABASE_PUBLISHABLE_KEY/);
+  const deployEnvironment = deployBlock.slice(deployBlock.indexOf('        env:'), deployBlock.indexOf('        run: |'));
+  assert.doesNotMatch(deployEnvironment, /SUPABASE_SERVICE_ROLE_KEY/);
   assert.match(deployBlock, /dashboard-git-codex-staging-e2e-79cdb9-svobonek-6462s-projects\.vercel\.app/);
   assert.doesNotMatch(deployBlock, /dashboard-svobonek-6462s-projects\.vercel\.app/);
 });
@@ -72,6 +80,10 @@ test('Vercel deployment output parser extracts only the labeled Preview URL', ()
   );
   assert.throws(() => extractVercelPreviewUrl('Inspect https://vercel.com/deployment/id'), /exactly one labeled Preview URL/);
   assert.throws(() => extractVercelPreviewUrl(`${output}\nPreview https://other.vercel.app`), /exactly one labeled Preview URL/);
+});
+
+test('company C prepare phase has a bounded timeout inside its Actions job budget', () => {
+  assert.match(billingAcceptanceSpec, /test\.setTimeout\(phase === 'prepare' \? 6 \* 60_000 : 35 \* 60_000\)/);
 });
 
 test('CI executes the disposable Stripe billing database contract', () => {

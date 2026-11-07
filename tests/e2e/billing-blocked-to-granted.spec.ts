@@ -47,9 +47,9 @@ async function fillStripeCard(page: import('playwright/test').Page, selectors: s
 }
 
 test('company C owner is blocked before Stripe TEST payment and reaches /dashboard only after the signed webhook', async ({ page }, testInfo) => {
-  test.setTimeout(35 * 60_000);
   const phase = requiredValue('STAGING_BILLING_PHASE');
   assert.ok(phase === 'prepare' || phase === 'verify', 'Billing acceptance phase must be prepare or verify.');
+  test.setTimeout(phase === 'prepare' ? 6 * 60_000 : 35 * 60_000);
   const { service, stripe } = stripeClients();
   const companyResult = await service.from('app_companies')
     .select('id,slug,active,plan,subscription_status,stripe_customer_id,stripe_subscription_id')
