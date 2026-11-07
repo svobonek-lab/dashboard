@@ -13,7 +13,10 @@ function required(env, name) {
 }
 
 export function assertBillingCompanyCCredentialsBranch(repository, ref) {
-  if (repository !== 'svobonek-lab/dashboard' || ref !== 'refs/heads/codex/billing-blocked-to-granted') {
+  if (repository !== 'svobonek-lab/dashboard' || ![
+    'refs/heads/codex/billing-blocked-to-granted',
+    'refs/heads/codex/billing-webhook-receipt-verification',
+  ].includes(ref)) {
     throw new Error('Refusing company C credentials outside the approved staging billing branch.');
   }
 }

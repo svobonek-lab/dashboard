@@ -1038,8 +1038,8 @@ jobs:
       always() &&
       github.repository == 'svobonek-lab/dashboard' &&
       github.event_name == 'workflow_dispatch' &&
-      (inputs.runner_mode == 'billing-blocked-to-granted' || inputs.runner_mode == 'billing-verify-company-c-existing') &&
-      github.ref == 'refs/heads/codex/billing-blocked-to-granted'
+      inputs.runner_mode == 'billing-verify-company-c-existing' &&
+      github.ref == 'refs/heads/codex/billing-webhook-receipt-verification'
     runs-on: [self-hosted, Windows, X64, staging-billing]
     timeout-minutes: 40
     permissions:
@@ -1064,7 +1064,7 @@ jobs:
           GITHUB_REF: ${{ github.ref }}
           BILLING_HANDOFF_RUN_ID: ${{ inputs.billing_handoff_run_id }}
         run: |
-          if ($env:GITHUB_REPOSITORY -ne 'svobonek-lab/dashboard' -or $env:GITHUB_REF -ne 'refs/heads/codex/billing-blocked-to-granted') {
+          if ($env:GITHUB_REPOSITORY -ne 'svobonek-lab/dashboard' -or $env:GITHUB_REF -ne 'refs/heads/codex/billing-webhook-receipt-verification') {
             throw 'Refusing prior billing handoff outside the approved staging branch.'
           }
           if ($env:BILLING_HANDOFF_RUN_ID -notmatch '^\d{10,20}$') {
@@ -1147,7 +1147,7 @@ jobs:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
           STAGING_PREVIEW_CONFIG_FILE: ${{ runner.temp }}/staging-stripe-preview.env
         run: |
-          if ($env:GITHUB_REF -ne 'refs/heads/codex/billing-blocked-to-granted' -or $env:GITHUB_REPOSITORY -ne 'svobonek-lab/dashboard') {
+          if ($env:GITHUB_REF -ne 'refs/heads/codex/billing-webhook-receipt-verification' -or $env:GITHUB_REPOSITORY -ne 'svobonek-lab/dashboard') {
             throw 'Refusing company C verification outside its approved feature branch.'
           }
           npx --yes vercel@65.8.0 env pull $env:STAGING_PREVIEW_CONFIG_FILE --environment=preview --git-branch=codex/staging-e2e-local-runner --token=$env:VERCEL_TOKEN --yes

@@ -5,6 +5,7 @@ import { existsSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { getPilotStripePriceSetup } from '../scripts/configure-staging-pilot-stripe-price.mjs';
+import { assertBillingCompanyCCredentialsBranch } from '../scripts/staging-billing-company-c-credentials.mjs';
 import { cleanNpmBuildEnvironment } from '../scripts/run-vercel-build.mjs';
 import { extractVercelPreviewUrl } from '../scripts/extract-vercel-preview-url.mjs';
 import { buildStagingWebhookEndpointParams, cleanupStagingWebhookEndpoint, createStagingWebhookEndpoint, markStagingWebhookEndpointAliased, markStagingWebhookEndpointMayServe, validateStagingWebhookEndpoint } from '../scripts/staging-stripe-webhook.mjs';
@@ -236,6 +237,29 @@ test('Vercel deployment output parser extracts only the labeled Preview URL', ()
 
 test('company C prepare phase has a bounded timeout inside its Actions job budget', () => {
   assert.match(billingAcceptanceSpec, /test\.setTimeout\(phase === 'prepare' \? 6 \* 60_000 : 35 \* 60_000\)/);
+});
+
+test('company C payment verification respects the private webhook receipt table boundary', () => {
+  assert.doesNotMatch(billingAcceptanceSpec, /\.from\(['"]app_stripe_webhook_events['"]\)/);
+  assert.match(billingAcceptanceSpec, /stripe_event_created_at/);
+  assert.match(billingAcceptanceSpec, /webhookEvent\.created/);
+  assert.match(billingAcceptanceSpec, /checkout\.metadata\?\.tenant_id === company\.id/);
+  assert.match(billingAcceptanceSpec, /webhookEventObserved: true/);
+  assert.doesNotMatch(billingAcceptanceSpec, /webhookResult: 'applied'/);
+});
+
+test('company C verify-only workflow is restricted to its follow-up branch and prior staging artifact', () => {
+  const verifyJob = stagingWorkflow.slice(
+    stagingWorkflow.indexOf('  staging-stripe-billing-company-c-verify:'),
+  );
+  assert.match(verifyJob, /inputs\.runner_mode == 'billing-verify-company-c-existing'/);
+  assert.match(verifyJob, /github\.ref == 'refs\/heads\/codex\/billing-webhook-receipt-verification'/);
+  assert.match(verifyJob, /source\.head_branch -ne 'codex\/billing-blocked-to-granted'/);
+  assert.doesNotMatch(verifyJob, /runs-on: ubuntu-latest/);
+  assert.doesNotMatch(verifyJob, /app_stripe_webhook_events/);
+  assert.doesNotThrow(() => assertBillingCompanyCCredentialsBranch('svobonek-lab/dashboard', 'refs/heads/codex/billing-webhook-receipt-verification'));
+  assert.doesNotThrow(() => assertBillingCompanyCCredentialsBranch('svobonek-lab/dashboard', 'refs/heads/codex/billing-blocked-to-granted'));
+  assert.throws(() => assertBillingCompanyCCredentialsBranch('attacker/fork', 'refs/heads/codex/billing-webhook-receipt-verification'), /approved staging billing branch/);
 });
 
 test('CI executes the disposable Stripe billing database contract', () => {
