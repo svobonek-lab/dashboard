@@ -37,6 +37,7 @@ test('staging metadata capture is catalog-only, read-only, and redacts Auth hook
   assert.match(STAGING_METADATA_SQL, /aclexplode\(a\.attacl\)[\s\S]*?a\.attacl IS NOT NULL/);
   assert.doesNotMatch(STAGING_METADATA_SQL, /aclexplode\(COALESCE\(a\.attacl/);
   assert.match(STAGING_METADATA_SQL, /left\(c\.relname, 4\) = 'app_'/);
+  assert.match(STAGING_METADATA_SQL, /n\.nspname = 'app_private'\s+OR left\(p\.proname, 4\) = 'app_'/);
   assert.doesNotMatch(STAGING_METADATA_SQL, /column_default\s*,/);
   assert.match(STAGING_METADATA_SQL, /pg_get_function_identity_arguments/);
   assert.match(STAGING_METADATA_SQL, /storage\.buckets/);
