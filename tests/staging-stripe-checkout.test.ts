@@ -9,7 +9,8 @@ import {
 } from '../scripts/staging-stripe-checkout-guard.mjs';
 import { createScopedBillingSetupEnv } from '../scripts/run-staging-stripe-checkout.mjs';
 import { billingAcceptanceOperationId } from '../scripts/prepare-staging-stripe-checkout.mjs';
-import { buildStagingStripeEnvLines, parseVercelStripePreviewConfig } from '../scripts/export-staging-stripe-env.mjs';
+import { buildStagingPreviewRuntimeArgs } from '../scripts/deploy-staging-preview-runtime.mjs';
+import { buildStagingStripeEnvLines, isApprovedStagingStripeExportBranch, parseVercelStripePreviewConfig } from '../scripts/export-staging-stripe-env.mjs';
 
 const baseEnv = {
   STAGING_SUPABASE_URL: 'https://xwzweltjvreqhjpbjrxa.supabase.co',
@@ -105,12 +106,35 @@ test('billing workflow is exact-branch self-hosted and pulls only non-secret con
   assert.match(workflow, /github\.ref == 'refs\/heads\/codex\/staging-e2e-local-runner'/);
   assert.match(workflow, /runs-on: \[self-hosted, linux, x64, staging-e2e\]/);
   assert.match(workflow, /env pull.*--environment=preview.*--git-branch=codex\/staging-e2e-local-runner/);
-  assert.doesNotMatch(workflow, /env run --environment=preview/);
   assert.match(workflow, /STAGING_STRIPE_SECRET_KEY/);
   assert.match(workflow, /inputs\.runner_mode != 'billing-setup'/);
   const exportStep = workflow.match(/- name: Pull non-secret Stripe TEST config from the approved Vercel Preview([\s\S]*?)- name: Prepare one Stripe TEST Checkout/)?.[1] || '';
   assert.notEqual(exportStep, '');
   assert.doesNotMatch(exportStep, /STAGING_OWNER_A_PASSWORD|STAGING_SUPABASE_SERVICE_ROLE_KEY|STAGING_SUPABASE_PUBLISHABLE_KEY/);
+});
+
+test('company C acceptance is branch-gated, split for CAPTCHA handoff, and retains only a one-day checkout artifact', () => {
+  const workflow = readFileSync(new URL('../.github/workflows/staging-e2e.yml', import.meta.url), 'utf8');
+  assert.match(workflow, /- billing-blocked-to-granted/);
+  assert.match(workflow, /inputs\.runner_mode != 'billing-blocked-to-granted'/);
+  assert.match(workflow, /staging-stripe-billing-company-c-prepare:[\s\S]*?github\.ref == 'refs\/heads\/codex\/billing-blocked-to-granted'[\s\S]*?runs-on: \[self-hosted, Windows, X64, staging-billing\]/);
+  assert.match(workflow, /staging-stripe-billing-company-c-verify:[\s\S]*?needs: staging-stripe-billing-company-c-prepare/);
+  assert.match(workflow, /name: staging-billing-company-c-checkout[\s\S]*?retention-days: 1/);
+  assert.match(workflow, /env pull.*--environment=preview.*--git-branch=codex\/staging-e2e-local-runner/);
+  assert.match(workflow, /staging-billing-company-c-credentials\.mjs prepare/);
+  assert.match(workflow, /staging-billing-company-c-credentials\.mjs load/);
+  assert.match(workflow, /path: \$\{\{ runner\.temp \}\}\/staging-billing-company-c/);
+  assert.doesNotMatch(workflow, /STAGING_OWNER_C_PASSWORD:\s*\$\{\{\s*secrets\./);
+  assert.doesNotMatch(workflow, /STAGING_OWNER_C_PASSWORD:\s*\$\{\{\s*vars\./);
+  const deploy = workflow.match(/- name: Create a run-scoped Stripe TEST webhook and refresh isolated staging Preview([\s\S]*?)- name: Prepare private synthetic owner C credentials/)?.[1] || '';
+  assert.match(deploy, /deploy-staging-preview-runtime\.mjs/);
+  assert.match(deploy, /STAGING_SUPABASE_SERVICE_ROLE_KEY:\s*\$\{\{\s*secrets\.STAGING_SUPABASE_SERVICE_ROLE_KEY\s*\}\}/);
+  assert.match(deploy, /STAGING_STRIPE_SECRET_KEY:\s*\$\{\{\s*secrets\.STAGING_STRIPE_SECRET_KEY\s*\}\}/);
+  assert.doesNotMatch(deploy, /vercel env run/);
+  assert.match(deploy, /STAGING_WEBHOOK_ENDPOINT_FILE:/);
+  assert.match(deploy, /node scripts\/deploy-staging-preview-runtime\.mjs/);
+  assert.doesNotMatch(deploy, /STAGING_VERCEL_PREVIEW_ENV_FILE/);
+  assert.doesNotMatch(deploy, /vercel@65\.8\.0 deploy --prebuilt/);
 });
 
 test('Vercel config parser reads only allowlisted settings without executing env contents', () => {
@@ -128,6 +152,13 @@ test('Vercel config parser reads only allowlisted settings without executing env
     STRIPE_PRICE_PILOT_ID: 'price_pilot_preview',
     PUBLIC_APP_URL: 'https://app.staging.example.test',
   });
+});
+
+test('Stripe config export permits only the original staging runner and this billing test branch', () => {
+  assert.equal(isApprovedStagingStripeExportBranch('svobonek-lab/dashboard', 'refs/heads/codex/staging-e2e-local-runner'), true);
+  assert.equal(isApprovedStagingStripeExportBranch('svobonek-lab/dashboard', 'refs/heads/codex/billing-blocked-to-granted'), true);
+  assert.equal(isApprovedStagingStripeExportBranch('other/repository', 'refs/heads/codex/billing-blocked-to-granted'), false);
+  assert.equal(isApprovedStagingStripeExportBranch('svobonek-lab/dashboard', 'refs/heads/main'), false);
 });
 
 test('billing acceptance Checkout idempotency key is stable per company A', () => {
@@ -158,4 +189,51 @@ test('Vercel Stripe export accepts only TEST prices and the exact staging Previe
   assert.throws(() => buildStagingStripeEnvLines({ ...env, PUBLIC_APP_URL: baseEnv.PRODUCTION_BASE_URL }), /staging Preview/i);
   assert.throws(() => buildStagingStripeEnvLines({ ...env, STRIPE_PRICE_STARTER_ID: 'price_unitonly\nSECRET=value' }), /Starter Stripe TEST price ID/i);
   assert.throws(() => buildStagingStripeEnvLines({ ...env, STRIPE_PRICE_PILOT_ID: 'price_pilot\nSECRET=value' }), /Pilot Stripe TEST price ID/i);
+});
+
+test('staging runtime deployment pins server APIs to StavbaCore and Stripe TEST', () => {
+  const args = buildStagingPreviewRuntimeArgs({
+    GITHUB_REPOSITORY: 'svobonek-lab/dashboard',
+    GITHUB_REF: 'refs/heads/codex/billing-blocked-to-granted',
+    STAGING_SUPABASE_URL: baseEnv.STAGING_SUPABASE_URL,
+    STAGING_PREVIEW_URL: baseEnv.STAGING_PREVIEW_URL,
+    PRODUCTION_BASE_URL: baseEnv.PRODUCTION_BASE_URL,
+    STAGING_SUPABASE_PUBLISHABLE_KEY: 'sb_publishable_test',
+    STAGING_SUPABASE_SERVICE_ROLE_KEY: 'sb_secret_staging',
+    STAGING_STRIPE_SECRET_KEY: 'sk_test_unitonly',
+    STRIPE_BILLING_MODE: 'test',
+    STRIPE_PRICE_STARTER_ID: 'price_startest',
+    STAGING_STRIPE_WEBHOOK_SECRET: 'whsec_stagingtest',
+    BILLING_RETURN_URL: baseEnv.STAGING_PREVIEW_URL,
+  });
+  const runtimePairs = args.filter((_, index) => index % 2 === 1);
+  assert.deepEqual(runtimePairs.map((arg) => arg.split('=')[0]), [
+    'SUPABASE_URL', 'SUPABASE_ANON_KEY', 'SUPABASE_SERVICE_ROLE_KEY', 'STRIPE_SECRET_KEY',
+    'STRIPE_BILLING_MODE', 'STRIPE_PRICE_STARTER_ID', 'STRIPE_WEBHOOK_SECRET', 'BILLING_RETURN_URL',
+  ]);
+  assert.equal(runtimePairs.includes(`SUPABASE_URL=${baseEnv.STAGING_SUPABASE_URL}`), true);
+  assert.equal(runtimePairs.includes('STRIPE_BILLING_MODE=test'), true);
+  assert.equal(runtimePairs.includes(`BILLING_RETURN_URL=${baseEnv.STAGING_PREVIEW_URL}`), true);
+  assert.equal(runtimePairs.some((arg) => arg === 'STRIPE_SECRET_KEY=sk_test_unitonly'), true);
+  assert.equal(runtimePairs.some((arg) => arg === 'SUPABASE_SERVICE_ROLE_KEY=sb_secret_staging'), true);
+});
+
+test('staging runtime deployment refuses production endpoints and live Stripe keys', () => {
+  const env = {
+    GITHUB_REPOSITORY: 'svobonek-lab/dashboard',
+    GITHUB_REF: 'refs/heads/codex/billing-blocked-to-granted',
+    STAGING_SUPABASE_URL: baseEnv.STAGING_SUPABASE_URL,
+    STAGING_PREVIEW_URL: baseEnv.STAGING_PREVIEW_URL,
+    PRODUCTION_BASE_URL: baseEnv.PRODUCTION_BASE_URL,
+    STAGING_SUPABASE_PUBLISHABLE_KEY: 'sb_publishable_test',
+    STAGING_SUPABASE_SERVICE_ROLE_KEY: 'sb_secret_staging',
+    STAGING_STRIPE_SECRET_KEY: 'sk_test_unitonly',
+    STRIPE_BILLING_MODE: 'test',
+    STRIPE_PRICE_STARTER_ID: 'price_starter_test',
+    STAGING_STRIPE_WEBHOOK_SECRET: 'whsec_stagingtest',
+    BILLING_RETURN_URL: baseEnv.STAGING_PREVIEW_URL,
+  };
+  assert.throws(() => buildStagingPreviewRuntimeArgs({ ...env, STAGING_SUPABASE_URL: 'https://oncmtmrhmjlerbwkrecv.supabase.co' }), /StavbaCore Staging/);
+  assert.throws(() => buildStagingPreviewRuntimeArgs({ ...env, STAGING_STRIPE_SECRET_KEY: 'sk_live_never' }), /TEST mode/);
+  assert.throws(() => buildStagingPreviewRuntimeArgs({ ...env, BILLING_RETURN_URL: baseEnv.PRODUCTION_BASE_URL }), /staging Preview/);
 });

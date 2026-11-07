@@ -22,10 +22,16 @@ on:
           - billing-recover-b-local
           - billing-verify-b-purchase
           - billing-configure-pilot-price
+          - billing-blocked-to-granted
+          - billing-verify-company-c-existing
           - preview-redeploy
         default: github-hosted
       load_recover_run_id:
         description: Exact 12-character synthetic load run ID for staging-only recovery
+        type: string
+        required: false
+      billing_handoff_run_id:
+        description: Exact staging billing run ID whose private Checkout artifact should be verified
         type: string
         required: false
   pull_request:
@@ -47,7 +53,7 @@ jobs:
         inputs.runner_mode != 'load-recover' && inputs.runner_mode != 'preview-configure' &&
         inputs.runner_mode != 'billing-setup' && inputs.runner_mode != 'billing-portal-inspect' &&
         inputs.runner_mode != 'billing-cancel-advance' && inputs.runner_mode != 'billing-past-due' &&
-        inputs.runner_mode != 'billing-recover-b' && inputs.runner_mode != 'billing-recover-b-local' && inputs.runner_mode != 'billing-configure-pilot-price' && inputs.runner_mode != 'preview-redeploy') ||
+        inputs.runner_mode != 'billing-recover-b' && inputs.runner_mode != 'billing-recover-b-local' && inputs.runner_mode != 'billing-configure-pilot-price' && inputs.runner_mode != 'billing-blocked-to-granted' && inputs.runner_mode != 'preview-redeploy') ||
        (github.event.pull_request.head.repo.full_name == github.repository &&
         contains(github.event.pull_request.labels.*.name, 'e2e'))) &&
       ((inputs.runner_mode != 'local-ephemeral' && inputs.runner_mode != 'sentry-only' && inputs.runner_mode != 'billing-portal-inspect') ||
@@ -853,3 +859,351 @@ jobs:
           STAGING_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.STAGING_SUPABASE_PUBLISHABLE_KEY }}
           STAGING_SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.STAGING_SUPABASE_SERVICE_ROLE_KEY }}
         run: node scripts/verify-staging-stripe-company-b-purchase.mjs
+  staging-stripe-billing-company-c-prepare:
+    if: >-
+      github.repository == 'svobonek-lab/dashboard' &&
+      github.event_name == 'workflow_dispatch' &&
+      inputs.runner_mode == 'billing-blocked-to-granted' &&
+      github.ref == 'refs/heads/codex/billing-blocked-to-granted'
+    runs-on: [self-hosted, Windows, X64, staging-billing]
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "24"
+          cache: npm
+      - run: npm ci
+      - name: Install Playwright Chromium
+        run: npx playwright install chromium
+      - name: Check isolated staging target and existing E2E fixtures
+        run: node scripts/assert-staging-e2e-env.mjs
+        env:
+          STAGING_PREVIEW_URL: ${{ vars.STAGING_PREVIEW_URL }}
+          PRODUCTION_BASE_URL: ${{ vars.PRODUCTION_BASE_URL }}
+          STAGING_SUPABASE_URL: ${{ vars.STAGING_SUPABASE_URL }}
+          STAGING_SUPABASE_PROJECT_REF: ${{ vars.STAGING_SUPABASE_PROJECT_REF }}
+          PRODUCTION_SUPABASE_PROJECT_REF: ${{ vars.PRODUCTION_SUPABASE_PROJECT_REF }}
+          STAGING_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.STAGING_SUPABASE_PUBLISHABLE_KEY }}
+          STAGING_OWNER_A_EMAIL: ${{ secrets.STAGING_OWNER_A_EMAIL }}
+          STAGING_OWNER_A_PASSWORD: ${{ secrets.STAGING_OWNER_A_PASSWORD }}
+          STAGING_EMPLOYEE_A_EMAIL: ${{ secrets.STAGING_EMPLOYEE_A_EMAIL }}
+          STAGING_EMPLOYEE_A_PASSWORD: ${{ secrets.STAGING_EMPLOYEE_A_PASSWORD }}
+          STAGING_OWNER_B_EMAIL: ${{ secrets.STAGING_OWNER_B_EMAIL }}
+          STAGING_OWNER_B_PASSWORD: ${{ secrets.STAGING_OWNER_B_PASSWORD }}
+          STAGING_COMPANY_A_ID: ${{ vars.STAGING_COMPANY_A_ID }}
+          STAGING_COMPANY_B_ID: ${{ vars.STAGING_COMPANY_B_ID }}
+          STAGING_OWNER_A_ID: ${{ vars.STAGING_OWNER_A_ID }}
+          STAGING_OWNER_B_ID: ${{ vars.STAGING_OWNER_B_ID }}
+          STAGING_EMPLOYEE_A_ID: ${{ vars.STAGING_EMPLOYEE_A_ID }}
+          STAGING_EMPLOYEE_B_ID: ${{ vars.STAGING_EMPLOYEE_B_ID }}
+          STAGING_LEAD_A_ID: ${{ vars.STAGING_LEAD_A_ID }}
+          STAGING_LEAD_B_ID: ${{ vars.STAGING_LEAD_B_ID }}
+          STAGING_PUBLIC_TENANT_KEY: ${{ vars.STAGING_PUBLIC_TENANT_KEY }}
+      - name: Pull non-secret TEST billing config from the approved staging Preview
+        env:
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          STAGING_PREVIEW_CONFIG_FILE: ${{ runner.temp }}/staging-stripe-preview.env
+        run: |
+          if ($env:GITHUB_REF -ne 'refs/heads/codex/billing-blocked-to-granted' -or $env:GITHUB_REPOSITORY -ne 'svobonek-lab/dashboard') {
+            throw 'Refusing the company C billing test outside its approved feature branch.'
+          }
+          npx --yes vercel@65.8.0 env pull $env:STAGING_PREVIEW_CONFIG_FILE --environment=preview --git-branch=codex/staging-e2e-local-runner --token=$env:VERCEL_TOKEN --yes
+        shell: pwsh
+      - name: Export allowlisted Stripe TEST configuration only
+        env:
+          STAGING_STRIPE_SECRET_KEY: ${{ secrets.STAGING_STRIPE_SECRET_KEY }}
+          STAGING_PREVIEW_CONFIG_FILE: ${{ runner.temp }}/staging-stripe-preview.env
+          STAGING_PREVIEW_URL: ${{ vars.STAGING_PREVIEW_URL }}
+          PRODUCTION_BASE_URL: ${{ vars.PRODUCTION_BASE_URL }}
+        run: node scripts/export-staging-stripe-env.mjs
+        shell: pwsh
+      - name: Create a run-scoped Stripe TEST webhook and refresh isolated staging Preview
+        env:
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          GITHUB_REF: ${{ github.ref }}
+          GITHUB_SHA: ${{ github.sha }}
+          STAGING_PREVIEW_URL: ${{ vars.STAGING_PREVIEW_URL }}
+          PRODUCTION_BASE_URL: ${{ vars.PRODUCTION_BASE_URL }}
+          STAGING_SUPABASE_URL: ${{ vars.STAGING_SUPABASE_URL }}
+          STAGING_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.STAGING_SUPABASE_PUBLISHABLE_KEY }}
+          STAGING_SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.STAGING_SUPABASE_SERVICE_ROLE_KEY }}
+          STAGING_STRIPE_SECRET_KEY: ${{ secrets.STAGING_STRIPE_SECRET_KEY }}
+          STAGING_WEBHOOK_ENDPOINT_FILE: ${{ runner.temp }}/staging-billing-company-c/stripe-webhook.json
+        run: |
+          if ($env:GITHUB_REF -ne 'refs/heads/codex/billing-blocked-to-granted' -or $env:GITHUB_REPOSITORY -ne 'svobonek-lab/dashboard') {
+            throw 'Refusing to deploy the billing acceptance build outside its approved branch.'
+          }
+          $staging = [uri]$env:STAGING_PREVIEW_URL
+          $production = [uri]$env:PRODUCTION_BASE_URL
+          if ($staging.Scheme -ne 'https' -or $staging.Host -ne 'dashboard-git-codex-staging-e2e-79cdb9-svobonek-6462s-projects.vercel.app' -or $staging.Host -eq $production.Host) {
+            throw 'Refusing to deploy outside the exact isolated staging Preview alias.'
+          }
+          $supabase = [uri]$env:STAGING_SUPABASE_URL
+          if ($supabase.Scheme -ne 'https' -or $supabase.Host -ne 'xwzweltjvreqhjpbjrxa.supabase.co' -or [string]::IsNullOrWhiteSpace($env:STAGING_SUPABASE_PUBLISHABLE_KEY)) {
+            throw 'Refusing to build the staging Preview without the approved StavbaCore staging Supabase client configuration.'
+          }
+          $env:VITE_SUPABASE_URL = $env:STAGING_SUPABASE_URL
+          $env:VITE_SUPABASE_ANON_KEY = $env:STAGING_SUPABASE_PUBLISHABLE_KEY
+          npx --yes vercel@65.8.0 pull --yes --environment=preview --git-branch=codex/staging-e2e-local-runner --token=$env:VERCEL_TOKEN
+          if ($LASTEXITCODE -ne 0) { throw 'Unable to pull the approved staging Preview configuration.' }
+          npx --yes --package=vercel@65.8.0 -- node scripts/run-vercel-build.mjs build --token=$env:VERCEL_TOKEN
+          if ($LASTEXITCODE -ne 0) { throw 'Unable to build the staging Preview.' }
+          npx --yes --package=vercel@65.8.0 -- node scripts/deploy-staging-preview-runtime.mjs
+          if ($LASTEXITCODE -ne 0) { throw 'Unable to deploy the exact StavbaCore and Stripe TEST runtime configuration.' }
+        shell: pwsh
+      - name: Prepare private synthetic owner C credentials for this one-day run
+        env:
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          GITHUB_REF: ${{ github.ref }}
+          STAGING_BILLING_CREDENTIALS_FILE: ${{ runner.temp }}/staging-billing-company-c/credentials.json
+        run: node scripts/staging-billing-company-c-credentials.mjs prepare
+        shell: pwsh
+      - name: Create company C and owner in StavbaCore Staging only
+        env:
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          GITHUB_REF: ${{ github.ref }}
+          STAGING_SUPABASE_URL: ${{ vars.STAGING_SUPABASE_URL }}
+          STAGING_SUPABASE_PROJECT_REF: ${{ vars.STAGING_SUPABASE_PROJECT_REF }}
+          PRODUCTION_SUPABASE_PROJECT_REF: ${{ vars.PRODUCTION_SUPABASE_PROJECT_REF }}
+          STAGING_OWNER_C_EMAIL: billing-owner-c@stavbaflow.example.test
+          STAGING_SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.STAGING_SUPABASE_SERVICE_ROLE_KEY }}
+        run: node scripts/seed-staging-billing-company-c.mjs --apply
+        shell: pwsh
+      - name: Verify blocked owner and start one Stripe TEST Checkout
+        env:
+          CI: "true"
+          STAGING_BILLING_PHASE: prepare
+          STAGING_BILLING_HANDOFF_FILE: ${{ runner.temp }}/staging-billing-company-c/checkout.json
+          STAGING_PREVIEW_URL: ${{ vars.STAGING_PREVIEW_URL }}
+          PRODUCTION_BASE_URL: ${{ vars.PRODUCTION_BASE_URL }}
+          STAGING_SUPABASE_URL: ${{ vars.STAGING_SUPABASE_URL }}
+          STAGING_SUPABASE_PROJECT_REF: ${{ vars.STAGING_SUPABASE_PROJECT_REF }}
+          PRODUCTION_SUPABASE_PROJECT_REF: ${{ vars.PRODUCTION_SUPABASE_PROJECT_REF }}
+          STAGING_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.STAGING_SUPABASE_PUBLISHABLE_KEY }}
+          STAGING_SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.STAGING_SUPABASE_SERVICE_ROLE_KEY }}
+          STAGING_OWNER_A_EMAIL: ${{ secrets.STAGING_OWNER_A_EMAIL }}
+          STAGING_OWNER_A_PASSWORD: ${{ secrets.STAGING_OWNER_A_PASSWORD }}
+          STAGING_EMPLOYEE_A_EMAIL: ${{ secrets.STAGING_EMPLOYEE_A_EMAIL }}
+          STAGING_EMPLOYEE_A_PASSWORD: ${{ secrets.STAGING_EMPLOYEE_A_PASSWORD }}
+          STAGING_OWNER_B_EMAIL: ${{ secrets.STAGING_OWNER_B_EMAIL }}
+          STAGING_OWNER_B_PASSWORD: ${{ secrets.STAGING_OWNER_B_PASSWORD }}
+          STAGING_OWNER_C_EMAIL: billing-owner-c@stavbaflow.example.test
+          STAGING_COMPANY_A_ID: ${{ vars.STAGING_COMPANY_A_ID }}
+          STAGING_COMPANY_B_ID: ${{ vars.STAGING_COMPANY_B_ID }}
+          STAGING_OWNER_A_ID: ${{ vars.STAGING_OWNER_A_ID }}
+          STAGING_OWNER_B_ID: ${{ vars.STAGING_OWNER_B_ID }}
+          STAGING_EMPLOYEE_A_ID: ${{ vars.STAGING_EMPLOYEE_A_ID }}
+          STAGING_EMPLOYEE_B_ID: ${{ vars.STAGING_EMPLOYEE_B_ID }}
+          STAGING_LEAD_A_ID: ${{ vars.STAGING_LEAD_A_ID }}
+          STAGING_LEAD_B_ID: ${{ vars.STAGING_LEAD_B_ID }}
+          STAGING_PUBLIC_TENANT_KEY: ${{ vars.STAGING_PUBLIC_TENANT_KEY }}
+        run: npx playwright test --config=playwright.billing-staging.config.ts
+        shell: pwsh
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: staging-billing-company-c-checkout
+          path: ${{ runner.temp }}/staging-billing-company-c
+          if-no-files-found: ignore
+          retention-days: 1
+      - name: Remove the unused Stripe TEST webhook after a failed prepare
+        if: failure()
+        env:
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          GITHUB_REF: ${{ github.ref }}
+          STAGING_PREVIEW_URL: ${{ vars.STAGING_PREVIEW_URL }}
+          PRODUCTION_BASE_URL: ${{ vars.PRODUCTION_BASE_URL }}
+          STAGING_STRIPE_SECRET_KEY: ${{ secrets.STAGING_STRIPE_SECRET_KEY }}
+          STAGING_WEBHOOK_ENDPOINT_FILE: ${{ runner.temp }}/staging-billing-company-c/stripe-webhook.json
+        run: node scripts/staging-stripe-webhook.mjs cleanup
+        shell: pwsh
+      - name: Remove pulled Preview config and checkout handoff file
+        if: always()
+        run: |
+          @((Join-Path $env:RUNNER_TEMP 'staging-stripe-preview.env'), (Join-Path $env:RUNNER_TEMP 'staging-billing-company-c'), (Join-Path $PWD '.vercel/.env.preview.local')) |
+            ForEach-Object { if (Test-Path -LiteralPath $_) { Remove-Item -LiteralPath $_ -Recurse -Force } }
+        shell: pwsh
+
+  staging-stripe-billing-company-c-verify:
+    needs: staging-stripe-billing-company-c-prepare
+    if: >-
+      always() &&
+      github.repository == 'svobonek-lab/dashboard' &&
+      github.event_name == 'workflow_dispatch' &&
+      (inputs.runner_mode == 'billing-blocked-to-granted' || inputs.runner_mode == 'billing-verify-company-c-existing') &&
+      github.ref == 'refs/heads/codex/billing-blocked-to-granted'
+    runs-on: [self-hosted, Windows, X64, staging-billing]
+    timeout-minutes: 40
+    permissions:
+      actions: read
+      contents: read
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "24"
+          cache: npm
+      - run: npm ci
+      - name: Install Playwright Chromium
+        run: npx playwright install chromium
+      - name: Validate the prior company C run before reading its private artifact
+        if: inputs.runner_mode == 'billing-verify-company-c-existing'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          GITHUB_REF: ${{ github.ref }}
+          BILLING_HANDOFF_RUN_ID: ${{ inputs.billing_handoff_run_id }}
+        run: |
+          if ($env:GITHUB_REPOSITORY -ne 'svobonek-lab/dashboard' -or $env:GITHUB_REF -ne 'refs/heads/codex/billing-blocked-to-granted') {
+            throw 'Refusing prior billing handoff outside the approved staging branch.'
+          }
+          if ($env:BILLING_HANDOFF_RUN_ID -notmatch '^\d{10,20}$') {
+            throw 'A valid prior staging billing run ID is required.'
+          }
+          $headers = @{
+            Authorization = "Bearer $env:GH_TOKEN"
+            Accept = 'application/vnd.github+json'
+            'X-GitHub-Api-Version' = '2022-11-28'
+          }
+          $api = "https://api.github.com/repos/$env:GITHUB_REPOSITORY"
+          try {
+            $source = Invoke-RestMethod -Method Get -Uri "$api/actions/runs/$env:BILLING_HANDOFF_RUN_ID" -Headers $headers
+            $workflow = Invoke-RestMethod -Method Get -Uri "$api/actions/workflows/staging-e2e.yml" -Headers $headers
+            $sourceJobs = Invoke-RestMethod -Method Get -Uri "$api/actions/runs/$env:BILLING_HANDOFF_RUN_ID/jobs?per_page=100" -Headers $headers
+          } catch {
+            throw 'The prior staging billing run could not be validated through GitHub metadata.'
+          }
+          if ($source.id.ToString() -ne $env:BILLING_HANDOFF_RUN_ID -or $source.workflow_id -ne $workflow.id -or
+              $source.event -ne 'workflow_dispatch' -or $source.head_branch -ne 'codex/billing-blocked-to-granted') {
+            throw 'The requested prior run is not a staging billing workflow from the approved branch.'
+          }
+          $prepare = $sourceJobs.jobs | Where-Object { $_.name -eq 'staging-stripe-billing-company-c-prepare' } | Select-Object -First 1
+          $verify = $sourceJobs.jobs | Where-Object { $_.name -eq 'staging-stripe-billing-company-c-verify' } | Select-Object -First 1
+          if ($prepare.conclusion -ne 'success' -or $verify.conclusion -ne 'failure') {
+            throw 'The prior billing run must have prepared the Checkout artifact and failed its verification job.'
+          }
+          Write-Output 'Prior staging Checkout artifact source is valid.'
+        shell: pwsh
+      - name: Download this run company C Checkout handoff
+        if: inputs.runner_mode == 'billing-blocked-to-granted'
+        uses: actions/download-artifact@v4
+        with:
+          name: staging-billing-company-c-checkout
+          path: ${{ runner.temp }}/staging-billing-company-c
+      - name: Download the prior company C Checkout handoff
+        if: inputs.runner_mode == 'billing-verify-company-c-existing'
+        uses: actions/download-artifact@v4
+        with:
+          name: staging-billing-company-c-checkout
+          path: ${{ runner.temp }}/staging-billing-company-c
+          repository: ${{ github.repository }}
+          run-id: ${{ inputs.billing_handoff_run_id }}
+          github-token: ${{ github.token }}
+      - name: Load private synthetic owner C credentials from this run's artifact
+        env:
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          GITHUB_REF: ${{ github.ref }}
+          STAGING_BILLING_CREDENTIALS_FILE: ${{ runner.temp }}/staging-billing-company-c/credentials.json
+        run: node scripts/staging-billing-company-c-credentials.mjs load
+        shell: pwsh
+      - name: Check isolated staging target and existing E2E fixtures
+        run: node scripts/assert-staging-e2e-env.mjs
+        env:
+          STAGING_PREVIEW_URL: ${{ vars.STAGING_PREVIEW_URL }}
+          PRODUCTION_BASE_URL: ${{ vars.PRODUCTION_BASE_URL }}
+          STAGING_SUPABASE_URL: ${{ vars.STAGING_SUPABASE_URL }}
+          STAGING_SUPABASE_PROJECT_REF: ${{ vars.STAGING_SUPABASE_PROJECT_REF }}
+          PRODUCTION_SUPABASE_PROJECT_REF: ${{ vars.PRODUCTION_SUPABASE_PROJECT_REF }}
+          STAGING_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.STAGING_SUPABASE_PUBLISHABLE_KEY }}
+          STAGING_OWNER_A_EMAIL: ${{ secrets.STAGING_OWNER_A_EMAIL }}
+          STAGING_OWNER_A_PASSWORD: ${{ secrets.STAGING_OWNER_A_PASSWORD }}
+          STAGING_EMPLOYEE_A_EMAIL: ${{ secrets.STAGING_EMPLOYEE_A_EMAIL }}
+          STAGING_EMPLOYEE_A_PASSWORD: ${{ secrets.STAGING_EMPLOYEE_A_PASSWORD }}
+          STAGING_OWNER_B_EMAIL: ${{ secrets.STAGING_OWNER_B_EMAIL }}
+          STAGING_OWNER_B_PASSWORD: ${{ secrets.STAGING_OWNER_B_PASSWORD }}
+          STAGING_COMPANY_A_ID: ${{ vars.STAGING_COMPANY_A_ID }}
+          STAGING_COMPANY_B_ID: ${{ vars.STAGING_COMPANY_B_ID }}
+          STAGING_OWNER_A_ID: ${{ vars.STAGING_OWNER_A_ID }}
+          STAGING_OWNER_B_ID: ${{ vars.STAGING_OWNER_B_ID }}
+          STAGING_EMPLOYEE_A_ID: ${{ vars.STAGING_EMPLOYEE_A_ID }}
+          STAGING_EMPLOYEE_B_ID: ${{ vars.STAGING_EMPLOYEE_B_ID }}
+          STAGING_LEAD_A_ID: ${{ vars.STAGING_LEAD_A_ID }}
+          STAGING_LEAD_B_ID: ${{ vars.STAGING_LEAD_B_ID }}
+          STAGING_PUBLIC_TENANT_KEY: ${{ vars.STAGING_PUBLIC_TENANT_KEY }}
+      - name: Pull non-secret TEST billing config from the approved staging Preview
+        env:
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          STAGING_PREVIEW_CONFIG_FILE: ${{ runner.temp }}/staging-stripe-preview.env
+        run: |
+          if ($env:GITHUB_REF -ne 'refs/heads/codex/billing-blocked-to-granted' -or $env:GITHUB_REPOSITORY -ne 'svobonek-lab/dashboard') {
+            throw 'Refusing company C verification outside its approved feature branch.'
+          }
+          npx --yes vercel@65.8.0 env pull $env:STAGING_PREVIEW_CONFIG_FILE --environment=preview --git-branch=codex/staging-e2e-local-runner --token=$env:VERCEL_TOKEN --yes
+        shell: pwsh
+      - name: Export allowlisted Stripe TEST configuration only
+        env:
+          STAGING_STRIPE_SECRET_KEY: ${{ secrets.STAGING_STRIPE_SECRET_KEY }}
+          STAGING_PREVIEW_CONFIG_FILE: ${{ runner.temp }}/staging-stripe-preview.env
+          STAGING_PREVIEW_URL: ${{ vars.STAGING_PREVIEW_URL }}
+          PRODUCTION_BASE_URL: ${{ vars.PRODUCTION_BASE_URL }}
+        run: node scripts/export-staging-stripe-env.mjs
+        shell: pwsh
+      - name: Verify paid session, signed webhook receipt, and owner dashboard access
+        env:
+          CI: "true"
+          STAGING_BILLING_PHASE: verify
+          STAGING_BILLING_HANDOFF_FILE: ${{ runner.temp }}/staging-billing-company-c/checkout.json
+          STAGING_PREVIEW_URL: ${{ vars.STAGING_PREVIEW_URL }}
+          PRODUCTION_BASE_URL: ${{ vars.PRODUCTION_BASE_URL }}
+          STAGING_SUPABASE_URL: ${{ vars.STAGING_SUPABASE_URL }}
+          STAGING_SUPABASE_PROJECT_REF: ${{ vars.STAGING_SUPABASE_PROJECT_REF }}
+          PRODUCTION_SUPABASE_PROJECT_REF: ${{ vars.PRODUCTION_SUPABASE_PROJECT_REF }}
+          STAGING_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.STAGING_SUPABASE_PUBLISHABLE_KEY }}
+          STAGING_SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.STAGING_SUPABASE_SERVICE_ROLE_KEY }}
+          STAGING_OWNER_A_EMAIL: ${{ secrets.STAGING_OWNER_A_EMAIL }}
+          STAGING_OWNER_A_PASSWORD: ${{ secrets.STAGING_OWNER_A_PASSWORD }}
+          STAGING_EMPLOYEE_A_EMAIL: ${{ secrets.STAGING_EMPLOYEE_A_EMAIL }}
+          STAGING_EMPLOYEE_A_PASSWORD: ${{ secrets.STAGING_EMPLOYEE_A_PASSWORD }}
+          STAGING_OWNER_B_EMAIL: ${{ secrets.STAGING_OWNER_B_EMAIL }}
+          STAGING_OWNER_B_PASSWORD: ${{ secrets.STAGING_OWNER_B_PASSWORD }}
+          STAGING_OWNER_C_EMAIL: billing-owner-c@stavbaflow.example.test
+          STAGING_COMPANY_A_ID: ${{ vars.STAGING_COMPANY_A_ID }}
+          STAGING_COMPANY_B_ID: ${{ vars.STAGING_COMPANY_B_ID }}
+          STAGING_OWNER_A_ID: ${{ vars.STAGING_OWNER_A_ID }}
+          STAGING_OWNER_B_ID: ${{ vars.STAGING_OWNER_B_ID }}
+          STAGING_EMPLOYEE_A_ID: ${{ vars.STAGING_EMPLOYEE_A_ID }}
+          STAGING_EMPLOYEE_B_ID: ${{ vars.STAGING_EMPLOYEE_B_ID }}
+          STAGING_LEAD_A_ID: ${{ vars.STAGING_LEAD_A_ID }}
+          STAGING_LEAD_B_ID: ${{ vars.STAGING_LEAD_B_ID }}
+          STAGING_PUBLIC_TENANT_KEY: ${{ vars.STAGING_PUBLIC_TENANT_KEY }}
+        run: npx playwright test --config=playwright.billing-staging.config.ts
+        shell: pwsh
+      - name: Keep the active staging webhook and retire stale TEST endpoints
+        if: always() && inputs.runner_mode == 'billing-blocked-to-granted'
+        env:
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          GITHUB_REF: ${{ github.ref }}
+          STAGING_PREVIEW_URL: ${{ vars.STAGING_PREVIEW_URL }}
+          PRODUCTION_BASE_URL: ${{ vars.PRODUCTION_BASE_URL }}
+          STAGING_STRIPE_SECRET_KEY: ${{ secrets.STAGING_STRIPE_SECRET_KEY }}
+          STAGING_WEBHOOK_ENDPOINT_FILE: ${{ runner.temp }}/staging-billing-company-c/stripe-webhook.json
+        run: node scripts/staging-stripe-webhook.mjs cleanup
+        shell: pwsh
+      - name: Remove pulled Preview config and handoff file
+        if: always()
+        run: |
+          @((Join-Path $env:RUNNER_TEMP 'staging-stripe-preview.env'), (Join-Path $env:RUNNER_TEMP 'staging-billing-company-c')) |
+            ForEach-Object { if (Test-Path -LiteralPath $_) { Remove-Item -LiteralPath $_ -Recurse -Force } }
+        shell: pwsh
