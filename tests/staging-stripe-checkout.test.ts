@@ -192,6 +192,21 @@ test('Vercel Stripe export accepts only TEST prices and the exact staging Previe
   assert.throws(() => buildStagingStripeEnvLines({ ...env, STRIPE_PRICE_PILOT_ID: 'price_pilot\nSECRET=value' }), /Pilot Stripe TEST price ID/i);
 });
 
+test('verify-only Stripe export does not require or forward the unused public app URL', () => {
+  const env = {
+    STRIPE_SECRET_KEY: 'sk_test_unitonly',
+    STRIPE_BILLING_MODE: 'test',
+    STRIPE_PRICE_STARTER_ID: 'price_unitonly',
+    STAGING_PREVIEW_URL: baseEnv.STAGING_PREVIEW_URL,
+    PRODUCTION_BASE_URL: baseEnv.PRODUCTION_BASE_URL,
+  };
+  const lines = buildStagingStripeEnvLines(env, { verificationOnly: true });
+  assert.match(lines, /STRIPE_PRICE_STARTER_ID=price_unitonly/);
+  assert.doesNotMatch(lines, /PUBLIC_APP_URL/);
+  assert.throws(() => buildStagingStripeEnvLines(env), /PUBLIC_APP_URL/);
+  assert.throws(() => buildStagingStripeEnvLines({ ...env, STAGING_PREVIEW_URL: baseEnv.PRODUCTION_BASE_URL }, { verificationOnly: true }), /staging Preview/i);
+});
+
 test('staging runtime deployment pins server APIs to StavbaCore and Stripe TEST', () => {
   const args = buildStagingPreviewRuntimeArgs({
     GITHUB_REPOSITORY: 'svobonek-lab/dashboard',

@@ -916,6 +916,7 @@ jobs:
         shell: pwsh
       - name: Export allowlisted Stripe TEST configuration only
         env:
+          STAGING_BILLING_PHASE: verify
           STAGING_STRIPE_SECRET_KEY: ${{ secrets.STAGING_STRIPE_SECRET_KEY }}
           STAGING_PREVIEW_CONFIG_FILE: ${{ runner.temp }}/staging-stripe-preview.env
           STAGING_PREVIEW_URL: ${{ vars.STAGING_PREVIEW_URL }}
@@ -1160,7 +1161,7 @@ jobs:
           PRODUCTION_BASE_URL: ${{ vars.PRODUCTION_BASE_URL }}
         run: node scripts/export-staging-stripe-env.mjs
         shell: pwsh
-      - name: Verify paid session, signed webhook receipt, and owner dashboard access
+      - name: Verify paid Checkout, webhook binding, and owner dashboard access
         env:
           CI: "true"
           STAGING_BILLING_PHASE: verify

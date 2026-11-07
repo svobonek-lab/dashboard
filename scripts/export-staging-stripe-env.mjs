@@ -4,7 +4,8 @@ import { resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { APPROVED_STAGING_PREVIEW_ORIGIN } from './staging-stripe-checkout-guard.mjs';
 
-const STRIPE_VARIABLES = ['STRIPE_SECRET_KEY', 'STRIPE_BILLING_MODE', 'STRIPE_PRICE_STARTER_ID', 'PUBLIC_APP_URL'];
+const STRIPE_VARIABLES = ['STRIPE_SECRET_KEY', 'STRIPE_BILLING_MODE', 'STRIPE_PRICE_STARTER_ID'];
+const PUBLIC_APP_VARIABLE = 'PUBLIC_APP_URL';
 const OPTIONAL_STRIPE_VARIABLES = ['STRIPE_PRICE_PILOT_ID'];
 const APPROVED_EXPORT_BRANCHES = new Set([
   'refs/heads/codex/staging-e2e-local-runner',
@@ -35,8 +36,8 @@ export function parseVercelStripePreviewConfig(contents) {
   return values;
 }
 
-export function buildStagingStripeEnvLines(env) {
-  const required = [...STRIPE_VARIABLES, 'STAGING_PREVIEW_URL', 'PRODUCTION_BASE_URL'];
+export function buildStagingStripeEnvLines(env, { verificationOnly = false } = {}) {
+  const required = [...STRIPE_VARIABLES, 'STAGING_PREVIEW_URL', 'PRODUCTION_BASE_URL', ...(verificationOnly ? [] : [PUBLIC_APP_VARIABLE])];
   const missing = required.filter((name) => !String(env[name] || '').trim());
   if (missing.length) throw new Error(`Missing required Stripe TEST Preview variables: ${missing.join(', ')}`);
   if (env.STRIPE_BILLING_MODE !== 'test' || !/^(?:sk|rk)_test_[A-Za-z0-9]+$/.test(env.STRIPE_SECRET_KEY)) {
@@ -56,16 +57,18 @@ export function buildStagingStripeEnvLines(env) {
   }
   const preview = new URL(env.STAGING_PREVIEW_URL);
   const production = new URL(env.PRODUCTION_BASE_URL);
-  const publicAppUrl = new URL(env.PUBLIC_APP_URL);
+  const publicAppUrl = String(env.PUBLIC_APP_URL || '').trim() ? new URL(env.PUBLIC_APP_URL) : null;
   if (preview.protocol !== 'https:' || preview.origin !== APPROVED_STAGING_PREVIEW_ORIGIN ||
-      production.origin === preview.origin || publicAppUrl.protocol !== 'https:' || publicAppUrl.origin === production.origin ||
-      publicAppUrl.hostname.toLowerCase().endsWith('.vercel.app') || publicAppUrl.pathname !== '/' || publicAppUrl.search || publicAppUrl.hash ||
-      STRIPE_VARIABLES.some((name) => /[\r\n]/.test(env[name]))) {
+      production.origin === preview.origin ||
+      (publicAppUrl && (publicAppUrl.protocol !== 'https:' || publicAppUrl.origin === production.origin ||
+        publicAppUrl.hostname.toLowerCase().endsWith('.vercel.app') || publicAppUrl.pathname !== '/' || publicAppUrl.search || publicAppUrl.hash)) ||
+      [...STRIPE_VARIABLES, ...(publicAppUrl ? [PUBLIC_APP_VARIABLE] : [])].some((name) => /[\r\n]/.test(env[name]))) {
     throw new Error('Refusing to export: billing URL is not isolated to the approved staging Preview.');
   }
   const variablesToExport = [
     ...STRIPE_VARIABLES,
     ...OPTIONAL_STRIPE_VARIABLES.filter((name) => String(env[name] || '').trim()),
+    ...(publicAppUrl ? [PUBLIC_APP_VARIABLE] : []),
   ];
   return variablesToExport.map((name) => `${name}=${name === 'STRIPE_PRICE_PILOT_ID' ? pilotPriceId : env[name]}`).join('\n') + '\n';
 }
@@ -82,9 +85,11 @@ if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1]
     const config = parseVercelStripePreviewConfig(await readFile(configFile, 'utf8'));
     const env = { ...config, ...process.env };
     env.STRIPE_SECRET_KEY = process.env.STAGING_STRIPE_SECRET_KEY || '';
-    await appendFile(target, buildStagingStripeEnvLines(env), { encoding: 'utf8', mode: 0o600 });
+    await appendFile(target, buildStagingStripeEnvLines(env, { verificationOnly: process.env.STAGING_BILLING_PHASE === 'verify' }), { encoding: 'utf8', mode: 0o600 });
     process.stdout.write(`::add-mask::${env.STRIPE_SECRET_KEY}\n`);
-    console.log('Approved Stripe TEST Preview variables are ready for the staging billing setup step.');
+    console.log(process.env.STAGING_BILLING_PHASE === 'verify'
+      ? 'Approved Stripe TEST values are ready for read-only staging verification.'
+      : 'Approved Stripe TEST Preview variables are ready for the staging billing setup step.');
   } catch (error) {
     console.error(JSON.stringify({
       code: 'STAGING_STRIPE_ENV_EXPORT_FAILED',
