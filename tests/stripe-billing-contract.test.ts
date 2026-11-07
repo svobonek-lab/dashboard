@@ -76,6 +76,14 @@ test('company C can verify a completed prior Checkout without reseeding or redep
   assert.match(stagingWorkflow, /Keep the active staging webhook and retire stale TEST endpoints[\s\S]*?inputs\.runner_mode == 'billing-blocked-to-granted'/);
 });
 
+test('company C existing-checkout verification skips the general staging E2E job', () => {
+  const generalE2eJob = stagingWorkflow.slice(
+    stagingWorkflow.indexOf('  staging-e2e:'),
+    stagingWorkflow.indexOf('  staging-load-acceptance:'),
+  );
+  assert.match(generalE2eJob, /inputs\.runner_mode != 'billing-verify-company-c-existing'/);
+});
+
 test('staging billing provisions a run-specific Stripe TEST webhook and keeps the active alias working', () => {
   assert.equal(existsSync(stagingWebhookScriptPath), true, 'The staging-only webhook lifecycle helper must exist.');
   const webhookScript = readFileSync(stagingWebhookScriptPath, 'utf8');
