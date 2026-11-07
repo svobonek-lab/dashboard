@@ -9,6 +9,7 @@ const OPTIONAL_STRIPE_VARIABLES = ['STRIPE_PRICE_PILOT_ID'];
 const APPROVED_EXPORT_BRANCHES = new Set([
   'refs/heads/codex/staging-e2e-local-runner',
   'refs/heads/codex/billing-blocked-to-granted',
+  'refs/heads/codex/billing-webhook-receipt-verification',
 ]);
 
 export function isApprovedStagingStripeExportBranch(repository, ref) {

@@ -157,6 +157,7 @@ test('Vercel config parser reads only allowlisted settings without executing env
 test('Stripe config export permits only the original staging runner and this billing test branch', () => {
   assert.equal(isApprovedStagingStripeExportBranch('svobonek-lab/dashboard', 'refs/heads/codex/staging-e2e-local-runner'), true);
   assert.equal(isApprovedStagingStripeExportBranch('svobonek-lab/dashboard', 'refs/heads/codex/billing-blocked-to-granted'), true);
+  assert.equal(isApprovedStagingStripeExportBranch('svobonek-lab/dashboard', 'refs/heads/codex/billing-webhook-receipt-verification'), true);
   assert.equal(isApprovedStagingStripeExportBranch('other/repository', 'refs/heads/codex/billing-blocked-to-granted'), false);
   assert.equal(isApprovedStagingStripeExportBranch('svobonek-lab/dashboard', 'refs/heads/main'), false);
 });
