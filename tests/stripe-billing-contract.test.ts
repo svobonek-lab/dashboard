@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { getPilotStripePriceSetup } from '../scripts/configure-staging-pilot-stripe-price.mjs';
 import { cleanNpmBuildEnvironment } from '../scripts/run-vercel-build.mjs';
+import { extractVercelPreviewUrl } from '../scripts/extract-vercel-preview-url.mjs';
 
 const contract = readFileSync(new URL('../supabase/staging/20261015_stripe_billing_contract.sql', import.meta.url), 'utf8');
 const completion = readFileSync(new URL('../supabase/staging/20261016_stripe_billing_completion.sql', import.meta.url), 'utf8');
@@ -37,6 +38,8 @@ test('company C billing acceptance refreshes only the fixed staging Preview befo
   assert.match(deployBlock, /vercel@65\.8\.0 pull --yes --environment=preview --git-branch=codex\/staging-e2e-local-runner/);
   assert.match(deployBlock, /vercel@65\.8\.0 -- node scripts\/run-vercel-build\.mjs build/);
   assert.match(deployBlock, /vercel@65\.8\.0 deploy --prebuilt --environment=preview/);
+  assert.match(deployBlock, /scripts\/extract-vercel-preview-url\.mjs/);
+  assert.match(deployBlock, /exactly one valid labeled Preview deployment URL/);
   assert.match(deployBlock, /dashboard-git-codex-staging-e2e-79cdb9-svobonek-6462s-projects\.vercel\.app/);
   assert.doesNotMatch(deployBlock, /dashboard-svobonek-6462s-projects\.vercel\.app/);
 });
@@ -56,6 +59,19 @@ test('Vercel build wrapper strips only npm exec allow-scripts forwarding', () =>
     VERCEL_TOKEN: 'test-token',
   });
   assert.equal(source.npm_config_allow_scripts, 'legacy-policy');
+});
+
+test('Vercel deployment output parser extracts only the labeled Preview URL', () => {
+  const output = [
+    'Inspect https://vercel.com/svobonek-6462s-projects/dashboard/abc123',
+    'Preview https://dashboard-138gopqbz-svobonek-6462s-projects.vercel.app',
+  ].join('\n');
+  assert.equal(
+    extractVercelPreviewUrl(output),
+    'https://dashboard-138gopqbz-svobonek-6462s-projects.vercel.app',
+  );
+  assert.throws(() => extractVercelPreviewUrl('Inspect https://vercel.com/deployment/id'), /exactly one labeled Preview URL/);
+  assert.throws(() => extractVercelPreviewUrl(`${output}\nPreview https://other.vercel.app`), /exactly one labeled Preview URL/);
 });
 
 test('CI executes the disposable Stripe billing database contract', () => {

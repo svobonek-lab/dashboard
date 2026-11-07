@@ -939,8 +939,9 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw 'Unable to build the staging Preview.' }
           $deploymentOutput = & npx --yes vercel@65.8.0 deploy --prebuilt --environment=preview --yes --token=$env:VERCEL_TOKEN --meta githubCommitRef=codex/staging-e2e-local-runner --meta githubCommitSha=$env:GITHUB_SHA
           $deployExitCode = $LASTEXITCODE
-          $deploymentUrl = ($deploymentOutput | Select-Object -Last 1).ToString().Trim()
-          if ($deployExitCode -ne 0 -or $deploymentUrl -notmatch '^https://[a-z0-9-]+\.vercel\.app$') { throw 'Vercel did not return a valid Preview deployment URL.' }
+          if ($deployExitCode -ne 0) { throw 'Vercel deployment failed.' }
+          $deploymentUrl = ($deploymentOutput -join "`n") | node scripts/extract-vercel-preview-url.mjs
+          if ($LASTEXITCODE -ne 0 -or $deploymentUrl -notmatch '^https://[a-z0-9-]+\.vercel\.app$') { throw 'Vercel did not return exactly one valid labeled Preview deployment URL.' }
           npx --yes vercel@65.8.0 alias set $deploymentUrl dashboard-git-codex-staging-e2e-79cdb9-svobonek-6462s-projects.vercel.app --token=$env:VERCEL_TOKEN
           if ($LASTEXITCODE -ne 0) { throw 'Unable to assign the verified staging Preview alias.' }
         shell: pwsh
