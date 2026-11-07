@@ -340,6 +340,23 @@ console errors. This does not substitute for an authenticated owner test.
 
 ## Owner dashboard and cutover preflight (7 November 2026)
 
+### Consolidated acceptance matrix
+
+| Gate | Result | Evidence |
+| --- | --- | --- |
+| Synthetic company and owner invite | Passed | Staging company `e2e-invite-acceptance-20261106`; invite queued in `app_email_outbox`. |
+| Actual provider delivery | Passed | Resend reported **Delivered**; staging outbox recorded one successful attempt and a provider message ID. |
+| Email verification and password setup | Passed | Accepted synthetic Auth user has a confirmed email and `invite_password_set=true`. |
+| Owner legal acceptance | Passed | Staging has both `terms_of_service` and `data_processing_agreement` evidence for the owner invite. |
+| Invite acceptance and owner membership | Passed | Invite is accepted and unrevoked; exactly one active owner membership exists. |
+| Reuse, expiry and revocation rejection | Passed | Three staging RPC attempts under the `authenticated` database role returned the expected invalid-invitation rejection in a transaction; rollback left zero probe rows. |
+| Authenticated owner workspace | Passed, read-only | The staging Preview deployment below loaded dashboard, leads, projects, employees, integrations and settings. |
+| Legacy invitation RPC retirement | Pending | The reviewed SQL below is not yet applied; staging still grants `authenticated` execution to both legacy functions. |
+
+The accepted owner invite used the immutable Preview deployment
+`dpl_A9wP6xhSmq5kEnMuphDUbSaLzGHM` (source commit `6d04e485452bb681db29a61781f2aefa16fc4cf8`, URL
+`https://dashboard-o8lyv1rjv-svobonek-6462s-projects.vercel.app`). The subsequent metadata capture/test fix is committed on the follow-up review branch as `57b605764dc07be29d3c7e98d3b38604d920e53d`; it changes only the read-only metadata inventory query and its regression test.
+
 The operator approved setting only the synthetic company `e2e-invite-acceptance-20261106` to `subscription_status='active'` in StavbaCore Staging, without a Stripe payment. The guarded update returned exactly that active synthetic company. No production database or Stripe state was changed. This staging entitlement is only to unlock acceptance testing; it is not evidence of a paid subscription flow.
 
 Using the already authenticated owner session on the verified staging Preview `https://dashboard-o8lyv1rjv-svobonek-6462s-projects.vercel.app`, a read-only browser inspection loaded `/dashboard`, `/leads`, `/projects`, `/employees`, `/integrations` and `/settings`. The dashboard and empty states rendered; team showed the single owner; integrations identified Managed Cloud as active and BYODB as unavailable pending its separate acceptance/image digest; settings showed the synthetic company, active pilot status and email sending as ready. No profile, lead, employee, integration or billing action was submitted. This was a manual authenticated browser check; it is not an authenticated Playwright run.
