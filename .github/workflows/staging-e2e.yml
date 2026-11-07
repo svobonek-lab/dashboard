@@ -23,10 +23,15 @@ on:
           - billing-verify-b-purchase
           - billing-configure-pilot-price
           - billing-blocked-to-granted
+          - billing-verify-company-c-existing
           - preview-redeploy
         default: github-hosted
       load_recover_run_id:
         description: Exact 12-character synthetic load run ID for staging-only recovery
+        type: string
+        required: false
+      billing_handoff_run_id:
+        description: Exact staging billing run ID whose private Checkout artifact should be verified
         type: string
         required: false
   pull_request:
@@ -1030,12 +1035,16 @@ jobs:
   staging-stripe-billing-company-c-verify:
     needs: staging-stripe-billing-company-c-prepare
     if: >-
+      always() &&
       github.repository == 'svobonek-lab/dashboard' &&
       github.event_name == 'workflow_dispatch' &&
-      inputs.runner_mode == 'billing-blocked-to-granted' &&
+      (inputs.runner_mode == 'billing-blocked-to-granted' || inputs.runner_mode == 'billing-verify-company-c-existing') &&
       github.ref == 'refs/heads/codex/billing-blocked-to-granted'
     runs-on: [self-hosted, Windows, X64, staging-billing]
     timeout-minutes: 40
+    permissions:
+      actions: read
+      contents: read
     steps:
       - uses: actions/checkout@v6
         with:
@@ -1047,10 +1056,59 @@ jobs:
       - run: npm ci
       - name: Install Playwright Chromium
         run: npx playwright install chromium
-      - uses: actions/download-artifact@v4
+      - name: Validate the prior company C run before reading its private artifact
+        if: inputs.runner_mode == 'billing-verify-company-c-existing'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          GITHUB_REF: ${{ github.ref }}
+          BILLING_HANDOFF_RUN_ID: ${{ inputs.billing_handoff_run_id }}
+        run: |
+          if ($env:GITHUB_REPOSITORY -ne 'svobonek-lab/dashboard' -or $env:GITHUB_REF -ne 'refs/heads/codex/billing-blocked-to-granted') {
+            throw 'Refusing prior billing handoff outside the approved staging branch.'
+          }
+          if ($env:BILLING_HANDOFF_RUN_ID -notmatch '^\d{10,20}$') {
+            throw 'A valid prior staging billing run ID is required.'
+          }
+          $headers = @{
+            Authorization = "Bearer $env:GH_TOKEN"
+            Accept = 'application/vnd.github+json'
+            'X-GitHub-Api-Version' = '2022-11-28'
+          }
+          $api = "https://api.github.com/repos/$env:GITHUB_REPOSITORY"
+          try {
+            $source = Invoke-RestMethod -Method Get -Uri "$api/actions/runs/$env:BILLING_HANDOFF_RUN_ID" -Headers $headers
+            $workflow = Invoke-RestMethod -Method Get -Uri "$api/actions/workflows/staging-e2e.yml" -Headers $headers
+            $sourceJobs = Invoke-RestMethod -Method Get -Uri "$api/actions/runs/$env:BILLING_HANDOFF_RUN_ID/jobs?per_page=100" -Headers $headers
+          } catch {
+            throw 'The prior staging billing run could not be validated through GitHub metadata.'
+          }
+          if ($source.id.ToString() -ne $env:BILLING_HANDOFF_RUN_ID -or $source.workflow_id -ne $workflow.id -or
+              $source.event -ne 'workflow_dispatch' -or $source.head_branch -ne 'codex/billing-blocked-to-granted') {
+            throw 'The requested prior run is not a staging billing workflow from the approved branch.'
+          }
+          $prepare = $sourceJobs.jobs | Where-Object { $_.name -eq 'staging-stripe-billing-company-c-prepare' } | Select-Object -First 1
+          $verify = $sourceJobs.jobs | Where-Object { $_.name -eq 'staging-stripe-billing-company-c-verify' } | Select-Object -First 1
+          if ($prepare.conclusion -ne 'success' -or $verify.conclusion -ne 'failure') {
+            throw 'The prior billing run must have prepared the Checkout artifact and failed its verification job.'
+          }
+          Write-Output 'Prior staging Checkout artifact source is valid.'
+        shell: pwsh
+      - name: Download this run company C Checkout handoff
+        if: inputs.runner_mode == 'billing-blocked-to-granted'
+        uses: actions/download-artifact@v4
         with:
           name: staging-billing-company-c-checkout
           path: ${{ runner.temp }}/staging-billing-company-c
+      - name: Download the prior company C Checkout handoff
+        if: inputs.runner_mode == 'billing-verify-company-c-existing'
+        uses: actions/download-artifact@v4
+        with:
+          name: staging-billing-company-c-checkout
+          path: ${{ runner.temp }}/staging-billing-company-c
+          repository: ${{ github.repository }}
+          run-id: ${{ inputs.billing_handoff_run_id }}
+          github-token: ${{ github.token }}
       - name: Load private synthetic owner C credentials from this run's artifact
         env:
           GITHUB_REPOSITORY: ${{ github.repository }}
@@ -1133,7 +1191,7 @@ jobs:
         run: npx playwright test --config=playwright.billing-staging.config.ts
         shell: pwsh
       - name: Keep the active staging webhook and retire stale TEST endpoints
-        if: always()
+        if: always() && inputs.runner_mode == 'billing-blocked-to-granted'
         env:
           GITHUB_REPOSITORY: ${{ github.repository }}
           GITHUB_REF: ${{ github.ref }}

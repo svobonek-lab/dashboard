@@ -67,6 +67,15 @@ test('company C billing acceptance refreshes only the fixed staging Preview befo
   assert.doesNotMatch(deployBlock, /dashboard-svobonek-6462s-projects\.vercel\.app/);
 });
 
+test('company C can verify a completed prior Checkout without reseeding or redeploying staging', () => {
+  assert.match(stagingWorkflow, /- billing-verify-company-c-existing/);
+  assert.match(stagingWorkflow, /billing_handoff_run_id:[\s\S]*?type: string/);
+  assert.match(stagingWorkflow, /Validate the prior company C run before reading its private artifact/);
+  assert.match(stagingWorkflow, /Download the prior company C Checkout handoff[\s\S]*?run-id: \$\{\{ inputs\.billing_handoff_run_id \}\}/);
+  assert.match(stagingWorkflow, /github-token: \$\{\{ github\.token \}\}/);
+  assert.match(stagingWorkflow, /Keep the active staging webhook and retire stale TEST endpoints[\s\S]*?inputs\.runner_mode == 'billing-blocked-to-granted'/);
+});
+
 test('staging billing provisions a run-specific Stripe TEST webhook and keeps the active alias working', () => {
   assert.equal(existsSync(stagingWebhookScriptPath), true, 'The staging-only webhook lifecycle helper must exist.');
   const webhookScript = readFileSync(stagingWebhookScriptPath, 'utf8');
