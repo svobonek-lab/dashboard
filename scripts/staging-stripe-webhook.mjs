@@ -11,6 +11,7 @@ const EVENTS = [
   'customer.subscription.updated',
   'customer.subscription.deleted',
 ];
+const PURPOSE = 'stavbaflow-pr156-billing-acceptance';
 
 function required(env, name) {
   const value = String(env[name] || '').trim();
@@ -38,7 +39,7 @@ export function buildStagingWebhookEndpointParams(env) {
     url: `${preview.origin}/api/stripe-webhook?staging_billing_run_id=${runId}&staging_billing_attempt=${attempt}`,
     enabled_events: EVENTS,
     description: `StavbaFlow PR 156 Stripe TEST billing run ${runId} attempt ${attempt}`,
-    metadata: { purpose: 'stavbaflow-pr156-billing-acceptance', github_run_id: runId, github_run_attempt: attempt },
+    metadata: { purpose: PURPOSE, github_run_id: runId, github_run_attempt: attempt },
   };
 }
 
@@ -62,18 +63,75 @@ export async function createStagingWebhookEndpoint(stripe, env) {
   const endpoint = await stripe.webhookEndpoints.create(params, { idempotencyKey: `stavbaflow-pr156-${runId}-${attempt}` });
   validateStagingWebhookEndpoint(endpoint, env);
   if (!/^we_[A-Za-z0-9]+$/.test(endpoint.id) || !/^whsec_[A-Za-z0-9]+$/.test(String(endpoint.secret || ''))) {
-    throw new Error('Stripe did not return a valid one-run TEST webhook endpoint.');
+    throw new Error('Stripe did not return a valid staging TEST webhook endpoint.');
   }
 
   const endpointFile = required(env, 'STAGING_WEBHOOK_ENDPOINT_FILE');
   try {
     await mkdir(dirname(endpointFile), { recursive: true });
-    await writeFile(endpointFile, JSON.stringify({ endpointId: endpoint.id, runId, attempt }), { mode: 0o600 });
+    await writeFile(endpointFile, JSON.stringify({ endpointId: endpoint.id, runId, attempt, mayServe: false, aliased: false }), { mode: 0o600 });
   } catch {
     await stripe.webhookEndpoints.del(endpoint.id).catch(() => {});
     throw new Error('Could not persist the staging webhook cleanup record.');
   }
   return { endpointId: endpoint.id, secret: endpoint.secret };
+}
+
+async function updateWebhookEndpointRecord(env, update) {
+  const endpointFile = required(env, 'STAGING_WEBHOOK_ENDPOINT_FILE');
+  let record;
+  try { record = JSON.parse(await readFile(endpointFile, 'utf8')); }
+  catch { throw new Error('The staging billing webhook cleanup record is missing or invalid.'); }
+  if (record?.runId !== required(env, 'GITHUB_RUN_ID') || record?.attempt !== required(env, 'GITHUB_RUN_ATTEMPT') ||
+      !/^we_[A-Za-z0-9]+$/.test(String(record?.endpointId || ''))) {
+    throw new Error('Refusing to update a different staging billing webhook endpoint.');
+  }
+  await writeFile(endpointFile, JSON.stringify({ ...record, ...update }), { mode: 0o600 });
+}
+
+export async function markStagingWebhookEndpointMayServe(env) {
+  await updateWebhookEndpointRecord(env, { mayServe: true });
+}
+
+export async function markStagingWebhookEndpointAliased(env) {
+  await updateWebhookEndpointRecord(env, { mayServe: true, aliased: true });
+}
+
+function isPreviousManagedStagingEndpoint(endpoint, env) {
+  if (!endpoint || endpoint.livemode !== false || endpoint.metadata?.purpose !== PURPOSE ||
+      !/^we_[A-Za-z0-9]+$/.test(String(endpoint.id || '')) || !Array.isArray(endpoint.enabled_events) ||
+      endpoint.enabled_events.length !== EVENTS.length ||
+      EVENTS.some(event => !endpoint.enabled_events.includes(event))) return false;
+  const runId = String(endpoint.metadata?.github_run_id || '');
+  const attempt = String(endpoint.metadata?.github_run_attempt || '');
+  if (!/^\d{1,20}$/.test(runId) || !/^\d{1,3}$/.test(attempt)) return false;
+  if (endpoint.description !== `StavbaFlow PR 156 Stripe TEST billing run ${runId} attempt ${attempt}`) return false;
+  let url;
+  let staging;
+  try {
+    url = new URL(String(endpoint.url || ''));
+    staging = new URL(required(env, 'STAGING_PREVIEW_URL'));
+  } catch { return false; }
+  if (url.protocol !== 'https:' || url.origin !== staging.origin || url.pathname !== '/api/stripe-webhook' ||
+      url.searchParams.get('staging_billing_run_id') !== runId ||
+      url.searchParams.get('staging_billing_attempt') !== attempt ||
+      url.searchParams.size !== 2) return false;
+  return true;
+}
+
+async function retireOlderManagedStagingEndpoints(stripe, currentId, env) {
+  let page = await stripe.webhookEndpoints.list({ limit: 100 });
+  const candidates = [];
+  while (true) {
+    for (const endpoint of page.data || []) {
+      if (endpoint.id !== currentId && isPreviousManagedStagingEndpoint(endpoint, env)) candidates.push(endpoint.id);
+    }
+    if (!page.has_more || !page.data?.length) break;
+    page = await stripe.webhookEndpoints.list({ limit: 100, starting_after: page.data.at(-1).id });
+  }
+  for (const endpointId of candidates) await stripe.webhookEndpoints.del(endpointId);
+  const retiredCount = candidates.length;
+  return retiredCount;
 }
 
 export async function cleanupStagingWebhookEndpoint(stripe, env) {
@@ -91,8 +149,14 @@ export async function cleanupStagingWebhookEndpoint(stripe, env) {
   }
   const endpoint = await stripe.webhookEndpoints.retrieve(record.endpointId);
   validateStagingWebhookEndpoint(endpoint, env);
-  await stripe.webhookEndpoints.del(endpoint.id);
-  return true;
+  if (record.mayServe !== true) {
+    await stripe.webhookEndpoints.del(endpoint.id);
+    return true;
+  }
+  const retiredCount = record.aliased === true
+    ? await retireOlderManagedStagingEndpoints(stripe, endpoint.id, env)
+    : 0;
+  return { retained: true, retiredCount };
 }
 
 function stripeClient(env) {
@@ -114,7 +178,9 @@ async function main() {
     }
     if (command === 'cleanup') {
       const removed = await cleanupStagingWebhookEndpoint(stripe, env);
-      console.log(removed ? 'Removed the temporary Stripe TEST webhook endpoint.' : 'No temporary Stripe TEST webhook endpoint needed cleanup.');
+      if (removed === true) console.log('Removed the unused Stripe TEST webhook endpoint.');
+      else if (removed && removed.retained) console.log(`Kept the Stripe TEST webhook serving the isolated staging Preview and retired ${removed.retiredCount} older run endpoint(s).`);
+      else console.log('No Stripe TEST webhook endpoint needed cleanup.');
       return;
     }
     throw new Error('Use create or cleanup.');

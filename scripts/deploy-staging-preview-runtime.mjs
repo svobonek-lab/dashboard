@@ -5,7 +5,7 @@ import Stripe from 'stripe';
 
 import { findVercelCli } from './run-vercel-build.mjs';
 import { extractVercelPreviewUrl } from './extract-vercel-preview-url.mjs';
-import { createStagingWebhookEndpoint } from './staging-stripe-webhook.mjs';
+import { createStagingWebhookEndpoint, markStagingWebhookEndpointAliased, markStagingWebhookEndpointMayServe } from './staging-stripe-webhook.mjs';
 
 const REPOSITORY = 'svobonek-lab/dashboard';
 const BRANCH = 'codex/billing-blocked-to-granted';
@@ -104,9 +104,11 @@ async function deploy() {
   ], env);
   const deploymentUrl = extractVercelPreviewUrl(deploymentOutput);
   if (!/^https:\/\/[a-z0-9-]+\.vercel\.app$/.test(deploymentUrl)) throw new Error('Vercel returned an invalid Preview deployment URL.');
+  await markStagingWebhookEndpointMayServe(env);
   runVercel(cliPath, [
     'alias', 'set', deploymentUrl, STAGING_ALIAS, `--token=${required(env, 'VERCEL_TOKEN')}`,
   ], env);
+  await markStagingWebhookEndpointAliased(env);
   console.log('Staging Preview deployed with isolated StavbaCore and Stripe TEST runtime configuration.');
 }
 

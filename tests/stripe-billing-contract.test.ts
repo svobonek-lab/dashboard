@@ -7,7 +7,7 @@ import { join } from 'node:path';
 import { getPilotStripePriceSetup } from '../scripts/configure-staging-pilot-stripe-price.mjs';
 import { cleanNpmBuildEnvironment } from '../scripts/run-vercel-build.mjs';
 import { extractVercelPreviewUrl } from '../scripts/extract-vercel-preview-url.mjs';
-import { buildStagingWebhookEndpointParams, cleanupStagingWebhookEndpoint, createStagingWebhookEndpoint, validateStagingWebhookEndpoint } from '../scripts/staging-stripe-webhook.mjs';
+import { buildStagingWebhookEndpointParams, cleanupStagingWebhookEndpoint, createStagingWebhookEndpoint, markStagingWebhookEndpointAliased, markStagingWebhookEndpointMayServe, validateStagingWebhookEndpoint } from '../scripts/staging-stripe-webhook.mjs';
 
 const contract = readFileSync(new URL('../supabase/staging/20261015_stripe_billing_contract.sql', import.meta.url), 'utf8');
 const completion = readFileSync(new URL('../supabase/staging/20261016_stripe_billing_completion.sql', import.meta.url), 'utf8');
@@ -50,6 +50,7 @@ test('company C billing acceptance refreshes only the fixed staging Preview befo
   assert.match(runtimeDeployment, /SUPABASE_SERVICE_ROLE_KEY/);
   assert.match(runtimeDeployment, /STAGING_STRIPE_WEBHOOK_SECRET\s*:\s*webhook\.secret/);
   assert.match(runtimeDeployment, /createStagingWebhookEndpoint\(new Stripe\(required\(env, 'STAGING_STRIPE_SECRET_KEY'\)\), env\)/);
+  assert.match(runtimeDeployment, /markStagingWebhookEndpointMayServe\(env\)[\s\S]*?alias', 'set'[\s\S]*?markStagingWebhookEndpointAliased\(env\)/);
   assert.match(runtimeDeployment, /extractVercelPreviewUrl/);
   assert.match(deployBlock, /STAGING_SUPABASE_URL: \$\{\{ vars\.STAGING_SUPABASE_URL \}\}/);
   assert.match(deployBlock, /STAGING_SUPABASE_PUBLISHABLE_KEY: \$\{\{ secrets\.STAGING_SUPABASE_PUBLISHABLE_KEY \}\}/);
@@ -66,14 +67,14 @@ test('company C billing acceptance refreshes only the fixed staging Preview befo
   assert.doesNotMatch(deployBlock, /dashboard-svobonek-6462s-projects\.vercel\.app/);
 });
 
-test('staging billing provisions a run-scoped Stripe TEST webhook and cleans it up after verification', () => {
+test('staging billing provisions a run-specific Stripe TEST webhook and keeps the active alias working', () => {
   assert.equal(existsSync(stagingWebhookScriptPath), true, 'The staging-only webhook lifecycle helper must exist.');
   const webhookScript = readFileSync(stagingWebhookScriptPath, 'utf8');
   assert.match(webhookScript, /api\/stripe-webhook\?staging_billing_run_id=/);
   assert.match(webhookScript, /const EVENTS = \[[\s\S]*?'checkout\.session\.completed',[\s\S]*?'customer\.subscription\.updated',[\s\S]*?'customer\.subscription\.deleted'/);
   assert.match(webhookScript, /staging billing webhook endpoint does not match this run/i);
   assert.match(stagingWorkflow, /Create a run-scoped Stripe TEST webhook and refresh isolated staging Preview/);
-  assert.match(stagingWorkflow, /Remove the run-scoped Stripe TEST webhook/);
+  assert.match(stagingWorkflow, /Keep the active staging webhook and retire stale TEST endpoints/);
   assert.match(stagingWorkflow, /if: always\(\)[\s\S]*?staging-stripe-webhook\.mjs cleanup/);
 });
 
@@ -97,7 +98,7 @@ test('staging Stripe webhook endpoint is run-scoped, HTTPS staging-only and TEST
   assert.throws(() => validateStagingWebhookEndpoint({ ...validEndpoint, livemode: true }, env), /does not match this run/);
 });
 
-test('staging Stripe webhook setup saves only its endpoint ID and cleans only the same TEST run', async () => {
+test('staging Stripe webhook cleanup removes an endpoint that never served the staging alias', async () => {
   const env = {
     GITHUB_REPOSITORY: 'svobonek-lab/dashboard',
     GITHUB_REF: 'refs/heads/codex/billing-blocked-to-granted',
@@ -132,14 +133,55 @@ test('staging Stripe webhook setup saves only its endpoint ID and cleans only th
     assert.deepEqual(created, { endpointId: endpoint.id, secret: endpoint.secret });
     assert.equal(createOptions.idempotencyKey, `stavbaflow-pr156-${env.GITHUB_RUN_ID}-${env.GITHUB_RUN_ATTEMPT}`);
     assert.equal(createdParams.url, endpoint.url);
-    const saved = JSON.parse(await fs.readFile(env.STAGING_WEBHOOK_ENDPOINT_FILE, 'utf8'));
-    assert.deepEqual(saved, { endpointId: endpoint.id, runId: env.GITHUB_RUN_ID, attempt: env.GITHUB_RUN_ATTEMPT });
     assert.equal(await cleanupStagingWebhookEndpoint(stripe, env), true);
     assert.equal(deletedEndpointId, endpoint.id);
     deletedEndpointId = '';
     await fs.writeFile(env.STAGING_WEBHOOK_ENDPOINT_FILE, JSON.stringify({ endpointId: endpoint.id, runId: env.GITHUB_RUN_ID, attempt: '2' }));
     await assert.rejects(cleanupStagingWebhookEndpoint(stripe, env), /different staging billing webhook endpoint/);
     assert.equal(deletedEndpointId, '');
+  } finally {
+    await fs.rm(join(env.STAGING_WEBHOOK_ENDPOINT_FILE, '..'), { recursive: true, force: true });
+  }
+});
+
+test('staging Stripe webhook cleanup keeps the alias webhook and retires older PR 156 TEST endpoints', async () => {
+  const env = {
+    GITHUB_REPOSITORY: 'svobonek-lab/dashboard',
+    GITHUB_REF: 'refs/heads/codex/billing-blocked-to-granted',
+    GITHUB_RUN_ID: '42385009075',
+    GITHUB_RUN_ATTEMPT: '2',
+    STAGING_STRIPE_SECRET_KEY: 'sk_test_synthetic',
+    STAGING_PREVIEW_URL: 'https://dashboard-git-codex-staging-e2e-79cdb9-svobonek-6462s-projects.vercel.app',
+    PRODUCTION_BASE_URL: 'https://dashboard-svobonek-6462s-projects.vercel.app',
+    STAGING_WEBHOOK_ENDPOINT_FILE: join(await fs.mkdtemp(join(tmpdir(), 'stavbaflow-webhook-test-')), 'endpoint.json'),
+  };
+  const endpointFor = (runId, attempt, id) => ({
+    id,
+    livemode: false,
+    url: `${env.STAGING_PREVIEW_URL}/api/stripe-webhook?staging_billing_run_id=${runId}&staging_billing_attempt=${attempt}`,
+    description: `StavbaFlow PR 156 Stripe TEST billing run ${runId} attempt ${attempt}`,
+    enabled_events: ['checkout.session.completed', 'customer.subscription.updated', 'customer.subscription.deleted'],
+    metadata: { purpose: 'stavbaflow-pr156-billing-acceptance', github_run_id: runId, github_run_attempt: attempt },
+    secret: id === 'we_current' ? 'whsec_synthetic' : undefined,
+  });
+  const current = endpointFor(env.GITHUB_RUN_ID, env.GITHUB_RUN_ATTEMPT, 'we_current');
+  const previous = endpointFor('42385009075', '1', 'we_previous');
+  const deleted = [];
+  const stripe = {
+    webhookEndpoints: {
+      create: async () => current,
+      retrieve: async (id) => id === current.id ? { ...current, secret: undefined } : previous,
+      del: async (id) => { deleted.push(id); },
+      list: async () => ({ data: [previous, current], has_more: false }),
+    },
+  };
+  try {
+    await createStagingWebhookEndpoint(stripe, env);
+    await markStagingWebhookEndpointMayServe(env);
+    await markStagingWebhookEndpointAliased(env);
+    const result = await cleanupStagingWebhookEndpoint(stripe, env);
+    assert.deepEqual(result, { retained: true, retiredCount: 1 });
+    assert.deepEqual(deleted, ['we_previous']);
   } finally {
     await fs.rm(join(env.STAGING_WEBHOOK_ENDPOINT_FILE, '..'), { recursive: true, force: true });
   }

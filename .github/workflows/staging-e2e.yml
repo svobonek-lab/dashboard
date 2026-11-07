@@ -1009,7 +1009,7 @@ jobs:
           path: ${{ runner.temp }}/staging-billing-company-c
           if-no-files-found: ignore
           retention-days: 1
-      - name: Remove the run-scoped Stripe TEST webhook after a failed prepare
+      - name: Remove the unused Stripe TEST webhook after a failed prepare
         if: failure()
         env:
           GITHUB_REPOSITORY: ${{ github.repository }}
@@ -1132,7 +1132,7 @@ jobs:
           STAGING_PUBLIC_TENANT_KEY: ${{ vars.STAGING_PUBLIC_TENANT_KEY }}
         run: npx playwright test --config=playwright.billing-staging.config.ts
         shell: pwsh
-      - name: Remove the run-scoped Stripe TEST webhook
+      - name: Keep the active staging webhook and retire stale TEST endpoints
         if: always()
         env:
           GITHUB_REPOSITORY: ${{ github.repository }}
