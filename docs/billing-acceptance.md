@@ -52,3 +52,15 @@ Use UTC timestamps and record only safe Stripe test event/session IDs. Never wri
 4. A complete payment-grants-access transition remains unproven because company A was active before checkout. Production billing, plans, intake, and import were not changed or tested with writes.
 
 Do not use a direct database update to fabricate webhook state. Never use production Stripe, production Supabase, real payment information, or real customer data for this acceptance.
+
+## Blocked to granted transition
+
+Company C is a synthetic tenant in StavbaCore Staging. This section records the current attempt honestly; it is not a passed purchase acceptance.
+
+| Step | Timestamp (UTC) | Result | Safe evidence |
+|---|---|---|---|
+| Verify the blocked pre-purchase owner state and create a Stripe TEST Checkout | 2026-11-07 16:30–16:31 | Passed, preparation only | Staging workflow run [`42391250899`](https://github.com/svobonek-lab/dashboard/actions/runs/42391250899); synthetic company `e2e-synthetic-company-c` remained `not_configured` and had no subscription before checkout. TEST Checkout session `cs_test_a1khZWiyIp0K7nKJ7yexAgPjYg6a4Zpx0qMv6YYXoC5nCyWKynrWJCfOdF` was created. |
+| Verify payment, signed webhook and owner access | 2026-11-07 16:33–17:03 | **Pending; Checkout was not paid** | The verification job timed out. Read-only staging query at 17:22:44 found company C still `not_configured`, a Stripe customer binding but no subscription ID; `app_stripe_webhook_events` contained no events for this company. No manual activation was performed. |
+| Add a verify-only continuation for the existing Checkout | 2026-11-07 17:14 | Passed locally; CI schema gate remains failed | Commit `97898f3` on PR #156 validates the source run and reuses its private artifact without re-seeding or redeploying. All 564 local tests, 19 targeted billing tests, lint, build and workflow YAML parsing passed. PR `verify` remains blocked by pre-existing staging snapshot/migration drift. |
+
+The owner must complete this one-time Stripe TEST Checkout before the verify-only staging job can prove the signed webhook, subscription binding, Starter plan and dashboard access. The private checkout URL is available only from the run's restricted artifact and must not be copied into this document or chat.
