@@ -24,6 +24,22 @@ test('Stripe billing contract is service-only, idempotent and rejects cross-tena
   assert.doesNotMatch(contract, /grant execute[^;]+to (anon|authenticated)/i);
 });
 
+test('company C billing acceptance refreshes only the fixed staging Preview before checkout', () => {
+  const companyC = stagingWorkflow.slice(
+    stagingWorkflow.indexOf('  staging-stripe-billing-company-c-prepare:'),
+    stagingWorkflow.indexOf('  staging-stripe-billing-company-c-verify:'),
+  );
+  const deploy = companyC.indexOf('Refresh isolated staging Preview with approved TEST configuration');
+  const checkout = companyC.indexOf('Verify blocked owner and start one Stripe TEST Checkout');
+  assert.ok(deploy >= 0 && deploy < checkout, 'Staging Preview must be refreshed before the Checkout attempt.');
+  const deployBlock = companyC.slice(deploy, checkout);
+  assert.match(deployBlock, /vercel@65\.8\.0 pull --yes --environment=preview --git-branch=codex\/staging-e2e-local-runner/);
+  assert.match(deployBlock, /vercel@65\.8\.0 build/);
+  assert.match(deployBlock, /vercel@65\.8\.0 deploy --prebuilt --environment=preview/);
+  assert.match(deployBlock, /dashboard-git-codex-staging-e2e-79cdb9-svobonek-6462s-projects\.vercel\.app/);
+  assert.doesNotMatch(deployBlock, /dashboard-svobonek-6462s-projects\.vercel\.app/);
+});
+
 test('CI executes the disposable Stripe billing database contract', () => {
   assert.match(workflow, /stripe-billing-contract:/);
   assert.match(workflow, /supabase\/tests\/stripe_billing_setup\.sql/);
@@ -49,6 +65,10 @@ test('staging workflow exposes a dedicated company B recovery checkout on the is
 });
 
 test('local recovery permits only the fixed loopback checkout origin and keeps verification on staging', () => {
+  const localRecovery = stagingWorkflow.slice(
+    stagingWorkflow.indexOf('  staging-stripe-billing-recover-company-b-local:'),
+    stagingWorkflow.indexOf('  staging-stripe-billing-company-c-prepare:'),
+  );
   assert.match(recoveryScript, /const LOCAL_CHECKOUT_ORIGIN = 'http:\/\/127\.0\.0\.1:4173'/);
   assert.match(recoveryScript, /STAGING_RECOVERY_CHECKOUT_ORIGIN !== LOCAL_CHECKOUT_ORIGIN/);
   assert.match(recoveryScript, /env\.STAGING_RECOVERY_CHECKOUT_ORIGIN \|\| PREVIEW_ORIGIN/);
@@ -56,8 +76,8 @@ test('local recovery permits only the fixed loopback checkout origin and keeps v
   assert.match(stagingWorkflow, /- billing-recover-b-local/);
   assert.match(stagingWorkflow, /inputs\.runner_mode == 'billing-recover-b-local'/);
   assert.match(stagingWorkflow, /\.\/node_modules\/\.bin\/vite --host 127\.0\.0\.1 --port 4173 --strictPort/);
-  assert.doesNotMatch(stagingWorkflow, /vercel@65\.8\.0 dev/);
-  assert.doesNotMatch(stagingWorkflow, /\.vercel\/\.env\.(?:preview|development)\.local/);
+  assert.doesNotMatch(localRecovery, /vercel@65\.8\.0 dev/);
+  assert.doesNotMatch(localRecovery, /\.vercel\/\.env\.(?:preview|development)\.local/);
   assert.match(stagingWorkflow, /STAGING_SUPABASE_PROJECT_REF.{0,20}xwzweltjvreqhjpbjrxa/);
 });
 
