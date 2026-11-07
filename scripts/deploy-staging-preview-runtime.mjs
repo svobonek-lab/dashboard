@@ -1,9 +1,11 @@
 import { spawnSync } from 'node:child_process';
 import { resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
+import Stripe from 'stripe';
 
 import { findVercelCli } from './run-vercel-build.mjs';
 import { extractVercelPreviewUrl } from './extract-vercel-preview-url.mjs';
+import { createStagingWebhookEndpoint } from './staging-stripe-webhook.mjs';
 
 const REPOSITORY = 'svobonek-lab/dashboard';
 const BRANCH = 'codex/billing-blocked-to-granted';
@@ -87,9 +89,11 @@ function runVercel(cliPath, args, env) {
 
 async function deploy() {
   const env = process.env;
+  const webhook = await createStagingWebhookEndpoint(new Stripe(required(env, 'STAGING_STRIPE_SECRET_KEY')), env);
+  if (env.GITHUB_ACTIONS === 'true') process.stdout.write(`::add-mask::${webhook.secret}\n`);
   const runtimeArgs = buildStagingPreviewRuntimeArgs({
     ...env,
-    STAGING_STRIPE_WEBHOOK_SECRET: required(env, 'STRIPE_WEBHOOK_SECRET'),
+    STAGING_STRIPE_WEBHOOK_SECRET: webhook.secret,
   });
   const cliPath = findVercelCli();
   const deploymentOutput = runVercel(cliPath, [

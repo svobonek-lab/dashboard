@@ -917,7 +917,7 @@ jobs:
           PRODUCTION_BASE_URL: ${{ vars.PRODUCTION_BASE_URL }}
         run: node scripts/export-staging-stripe-env.mjs
         shell: pwsh
-      - name: Refresh isolated staging Preview with approved TEST configuration
+      - name: Create a run-scoped Stripe TEST webhook and refresh isolated staging Preview
         env:
           VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
@@ -931,6 +931,7 @@ jobs:
           STAGING_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.STAGING_SUPABASE_PUBLISHABLE_KEY }}
           STAGING_SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.STAGING_SUPABASE_SERVICE_ROLE_KEY }}
           STAGING_STRIPE_SECRET_KEY: ${{ secrets.STAGING_STRIPE_SECRET_KEY }}
+          STAGING_WEBHOOK_ENDPOINT_FILE: ${{ runner.temp }}/staging-billing-company-c/stripe-webhook.json
         run: |
           if ($env:GITHUB_REF -ne 'refs/heads/codex/billing-blocked-to-granted' -or $env:GITHUB_REPOSITORY -ne 'svobonek-lab/dashboard') {
             throw 'Refusing to deploy the billing acceptance build outside its approved branch.'
@@ -950,7 +951,7 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw 'Unable to pull the approved staging Preview configuration.' }
           npx --yes --package=vercel@65.8.0 -- node scripts/run-vercel-build.mjs build --token=$env:VERCEL_TOKEN
           if ($LASTEXITCODE -ne 0) { throw 'Unable to build the staging Preview.' }
-          npx --yes --package=vercel@65.8.0 -- vercel env run --environment=preview --git-branch=codex/staging-e2e-local-runner --token=$env:VERCEL_TOKEN -- node scripts/deploy-staging-preview-runtime.mjs
+          npx --yes --package=vercel@65.8.0 -- node scripts/deploy-staging-preview-runtime.mjs
           if ($LASTEXITCODE -ne 0) { throw 'Unable to deploy the exact StavbaCore and Stripe TEST runtime configuration.' }
         shell: pwsh
       - name: Prepare private synthetic owner C credentials for this one-day run
@@ -1008,6 +1009,17 @@ jobs:
           path: ${{ runner.temp }}/staging-billing-company-c
           if-no-files-found: ignore
           retention-days: 1
+      - name: Remove the run-scoped Stripe TEST webhook after a failed prepare
+        if: failure()
+        env:
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          GITHUB_REF: ${{ github.ref }}
+          STAGING_PREVIEW_URL: ${{ vars.STAGING_PREVIEW_URL }}
+          PRODUCTION_BASE_URL: ${{ vars.PRODUCTION_BASE_URL }}
+          STAGING_STRIPE_SECRET_KEY: ${{ secrets.STAGING_STRIPE_SECRET_KEY }}
+          STAGING_WEBHOOK_ENDPOINT_FILE: ${{ runner.temp }}/staging-billing-company-c/stripe-webhook.json
+        run: node scripts/staging-stripe-webhook.mjs cleanup
+        shell: pwsh
       - name: Remove pulled Preview config and checkout handoff file
         if: always()
         run: |
@@ -1119,6 +1131,17 @@ jobs:
           STAGING_LEAD_B_ID: ${{ vars.STAGING_LEAD_B_ID }}
           STAGING_PUBLIC_TENANT_KEY: ${{ vars.STAGING_PUBLIC_TENANT_KEY }}
         run: npx playwright test --config=playwright.billing-staging.config.ts
+        shell: pwsh
+      - name: Remove the run-scoped Stripe TEST webhook
+        if: always()
+        env:
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          GITHUB_REF: ${{ github.ref }}
+          STAGING_PREVIEW_URL: ${{ vars.STAGING_PREVIEW_URL }}
+          PRODUCTION_BASE_URL: ${{ vars.PRODUCTION_BASE_URL }}
+          STAGING_STRIPE_SECRET_KEY: ${{ secrets.STAGING_STRIPE_SECRET_KEY }}
+          STAGING_WEBHOOK_ENDPOINT_FILE: ${{ runner.temp }}/staging-billing-company-c/stripe-webhook.json
+        run: node scripts/staging-stripe-webhook.mjs cleanup
         shell: pwsh
       - name: Remove pulled Preview config and handoff file
         if: always()

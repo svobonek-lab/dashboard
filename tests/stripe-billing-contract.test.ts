@@ -1,9 +1,13 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { readFileSync, promises as fs } from 'node:fs';
+import { existsSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { getPilotStripePriceSetup } from '../scripts/configure-staging-pilot-stripe-price.mjs';
 import { cleanNpmBuildEnvironment } from '../scripts/run-vercel-build.mjs';
 import { extractVercelPreviewUrl } from '../scripts/extract-vercel-preview-url.mjs';
+import { buildStagingWebhookEndpointParams, cleanupStagingWebhookEndpoint, createStagingWebhookEndpoint, validateStagingWebhookEndpoint } from '../scripts/staging-stripe-webhook.mjs';
 
 const contract = readFileSync(new URL('../supabase/staging/20261015_stripe_billing_contract.sql', import.meta.url), 'utf8');
 const completion = readFileSync(new URL('../supabase/staging/20261016_stripe_billing_completion.sql', import.meta.url), 'utf8');
@@ -14,6 +18,7 @@ const billingAcceptanceSpec = readFileSync(new URL('../tests/e2e/billing-blocked
 const recoveryScript = readFileSync(new URL('../scripts/recover-staging-stripe-company-b.mjs', import.meta.url), 'utf8');
 const purchaseVerificationScript = readFileSync(new URL('../scripts/verify-staging-stripe-company-b-purchase.mjs', import.meta.url), 'utf8');
 const pilotPriceSetupScript = readFileSync(new URL('../scripts/configure-staging-pilot-stripe-price.mjs', import.meta.url), 'utf8');
+const stagingWebhookScriptPath = new URL('../scripts/staging-stripe-webhook.mjs', import.meta.url);
 
 test('Stripe billing contract is service-only, idempotent and rejects cross-tenant customer binding', () => {
   assert.match(contract, /add column if not exists stripe_customer_id text/i);
@@ -32,29 +37,112 @@ test('company C billing acceptance refreshes only the fixed staging Preview befo
     stagingWorkflow.indexOf('  staging-stripe-billing-company-c-prepare:'),
     stagingWorkflow.indexOf('  staging-stripe-billing-company-c-verify:'),
   );
-  const deploy = companyC.indexOf('Refresh isolated staging Preview with approved TEST configuration');
+  const deploy = companyC.indexOf('Create a run-scoped Stripe TEST webhook and refresh isolated staging Preview');
   const checkout = companyC.indexOf('Verify blocked owner and start one Stripe TEST Checkout');
   assert.ok(deploy >= 0 && deploy < checkout, 'Staging Preview must be refreshed before the Checkout attempt.');
   const deployBlock = companyC.slice(deploy, checkout);
   assert.match(deployBlock, /vercel@65\.8\.0 pull --yes --environment=preview --git-branch=codex\/staging-e2e-local-runner/);
   assert.match(deployBlock, /vercel@65\.8\.0 -- node scripts\/run-vercel-build\.mjs build/);
-  assert.match(deployBlock, /--package=vercel@65\.8\.0 -- vercel env run --environment=preview --git-branch=codex\/staging-e2e-local-runner --token=\$env:VERCEL_TOKEN -- node scripts\/deploy-staging-preview-runtime\.mjs/);
+  assert.match(deployBlock, /--package=vercel@65\.8\.0 -- node scripts\/deploy-staging-preview-runtime\.mjs/);
   const runtimeDeployment = readFileSync(new URL('../scripts/deploy-staging-preview-runtime.mjs', import.meta.url), 'utf8');
   assert.match(runtimeDeployment, /'deploy', '--prebuilt', '--environment=preview'/);
   assert.match(runtimeDeployment, /\['--env', `\$\{key\}=\$\{value\}`\]/);
   assert.match(runtimeDeployment, /SUPABASE_SERVICE_ROLE_KEY/);
-  assert.match(runtimeDeployment, /STAGING_STRIPE_WEBHOOK_SECRET\s*:\s*required\(env, 'STRIPE_WEBHOOK_SECRET'\)/);
+  assert.match(runtimeDeployment, /STAGING_STRIPE_WEBHOOK_SECRET\s*:\s*webhook\.secret/);
+  assert.match(runtimeDeployment, /createStagingWebhookEndpoint\(new Stripe\(required\(env, 'STAGING_STRIPE_SECRET_KEY'\)\), env\)/);
   assert.match(runtimeDeployment, /extractVercelPreviewUrl/);
   assert.match(deployBlock, /STAGING_SUPABASE_URL: \$\{\{ vars\.STAGING_SUPABASE_URL \}\}/);
   assert.match(deployBlock, /STAGING_SUPABASE_PUBLISHABLE_KEY: \$\{\{ secrets\.STAGING_SUPABASE_PUBLISHABLE_KEY \}\}/);
   assert.match(deployBlock, /STAGING_SUPABASE_SERVICE_ROLE_KEY: \$\{\{ secrets\.STAGING_SUPABASE_SERVICE_ROLE_KEY \}\}/);
   assert.match(deployBlock, /STAGING_STRIPE_SECRET_KEY: \$\{\{ secrets\.STAGING_STRIPE_SECRET_KEY \}\}/);
-  assert.match(deployBlock, /--package=vercel@65\.8\.0 -- vercel env run --environment=preview --git-branch=codex\/staging-e2e-local-runner/);
+  assert.doesNotMatch(deployBlock, /vercel env run/);
+  assert.match(deployBlock, /STAGING_WEBHOOK_ENDPOINT_FILE:/);
+  assert.match(deployBlock, /node scripts\/deploy-staging-preview-runtime\.mjs/);
   assert.doesNotMatch(deployBlock, /STAGING_VERCEL_PREVIEW_ENV_FILE/);
+  assert.match(deployBlock, /STAGING_WEBHOOK_ENDPOINT_FILE:/);
   assert.match(deployBlock, /VITE_SUPABASE_URL\s*=\s*\$env:STAGING_SUPABASE_URL/);
   assert.match(deployBlock, /VITE_SUPABASE_ANON_KEY\s*=\s*\$env:STAGING_SUPABASE_PUBLISHABLE_KEY/);
   assert.match(deployBlock, /dashboard-git-codex-staging-e2e-79cdb9-svobonek-6462s-projects\.vercel\.app/);
   assert.doesNotMatch(deployBlock, /dashboard-svobonek-6462s-projects\.vercel\.app/);
+});
+
+test('staging billing provisions a run-scoped Stripe TEST webhook and cleans it up after verification', () => {
+  assert.equal(existsSync(stagingWebhookScriptPath), true, 'The staging-only webhook lifecycle helper must exist.');
+  const webhookScript = readFileSync(stagingWebhookScriptPath, 'utf8');
+  assert.match(webhookScript, /api\/stripe-webhook\?staging_billing_run_id=/);
+  assert.match(webhookScript, /const EVENTS = \[[\s\S]*?'checkout\.session\.completed',[\s\S]*?'customer\.subscription\.updated',[\s\S]*?'customer\.subscription\.deleted'/);
+  assert.match(webhookScript, /staging billing webhook endpoint does not match this run/i);
+  assert.match(stagingWorkflow, /Create a run-scoped Stripe TEST webhook and refresh isolated staging Preview/);
+  assert.match(stagingWorkflow, /Remove the run-scoped Stripe TEST webhook/);
+  assert.match(stagingWorkflow, /if: always\(\)[\s\S]*?staging-stripe-webhook\.mjs cleanup/);
+});
+
+test('staging Stripe webhook endpoint is run-scoped, HTTPS staging-only and TEST-only', () => {
+  const env = {
+    GITHUB_REPOSITORY: 'svobonek-lab/dashboard',
+    GITHUB_REF: 'refs/heads/codex/billing-blocked-to-granted',
+    GITHUB_RUN_ID: '42385009075',
+    GITHUB_RUN_ATTEMPT: '1',
+    STAGING_STRIPE_SECRET_KEY: 'sk_test_synthetic',
+    STAGING_PREVIEW_URL: 'https://dashboard-git-codex-staging-e2e-79cdb9-svobonek-6462s-projects.vercel.app',
+    PRODUCTION_BASE_URL: 'https://dashboard-svobonek-6462s-projects.vercel.app',
+  };
+  const params = buildStagingWebhookEndpointParams(env);
+  assert.equal(params.url, `${env.STAGING_PREVIEW_URL}/api/stripe-webhook?staging_billing_run_id=${env.GITHUB_RUN_ID}&staging_billing_attempt=${env.GITHUB_RUN_ATTEMPT}`);
+  assert.deepEqual(params.enabled_events, ['checkout.session.completed', 'customer.subscription.updated', 'customer.subscription.deleted']);
+  const validEndpoint = { id: 'we_synthetic', livemode: false, url: params.url, description: params.description, enabled_events: params.enabled_events, metadata: params.metadata };
+  assert.equal(validateStagingWebhookEndpoint(validEndpoint, env), validEndpoint);
+  assert.throws(() => buildStagingWebhookEndpointParams({ ...env, STAGING_STRIPE_SECRET_KEY: 'sk_live_forbidden' }), /Stripe TEST mode/);
+  assert.throws(() => buildStagingWebhookEndpointParams({ ...env, STAGING_PREVIEW_URL: env.PRODUCTION_BASE_URL }), /exact isolated staging Preview/);
+  assert.throws(() => validateStagingWebhookEndpoint({ ...validEndpoint, livemode: true }, env), /does not match this run/);
+});
+
+test('staging Stripe webhook setup saves only its endpoint ID and cleans only the same TEST run', async () => {
+  const env = {
+    GITHUB_REPOSITORY: 'svobonek-lab/dashboard',
+    GITHUB_REF: 'refs/heads/codex/billing-blocked-to-granted',
+    GITHUB_RUN_ID: '42385009075',
+    GITHUB_RUN_ATTEMPT: '1',
+    STAGING_STRIPE_SECRET_KEY: 'sk_test_synthetic',
+    STAGING_PREVIEW_URL: 'https://dashboard-git-codex-staging-e2e-79cdb9-svobonek-6462s-projects.vercel.app',
+    PRODUCTION_BASE_URL: 'https://dashboard-svobonek-6462s-projects.vercel.app',
+    STAGING_WEBHOOK_ENDPOINT_FILE: join(await fs.mkdtemp(join(tmpdir(), 'stavbaflow-webhook-test-')), 'endpoint.json'),
+  };
+  let createdParams;
+  let createOptions;
+  let deletedEndpointId = '';
+  const endpoint = {
+    id: 'we_synthetic',
+    livemode: false,
+    url: `${env.STAGING_PREVIEW_URL}/api/stripe-webhook?staging_billing_run_id=${env.GITHUB_RUN_ID}&staging_billing_attempt=${env.GITHUB_RUN_ATTEMPT}`,
+    description: `StavbaFlow PR 156 Stripe TEST billing run ${env.GITHUB_RUN_ID} attempt ${env.GITHUB_RUN_ATTEMPT}`,
+    enabled_events: ['checkout.session.completed', 'customer.subscription.updated', 'customer.subscription.deleted'],
+    metadata: { purpose: 'stavbaflow-pr156-billing-acceptance', github_run_id: env.GITHUB_RUN_ID, github_run_attempt: env.GITHUB_RUN_ATTEMPT },
+    secret: 'whsec_synthetic',
+  };
+  const stripe = {
+    webhookEndpoints: {
+      create: async (params, options) => { createdParams = params; createOptions = options; return endpoint; },
+      retrieve: async () => ({ ...endpoint, secret: undefined }),
+      del: async (id) => { deletedEndpointId = id; },
+    },
+  };
+  try {
+    const created = await createStagingWebhookEndpoint(stripe, env);
+    assert.deepEqual(created, { endpointId: endpoint.id, secret: endpoint.secret });
+    assert.equal(createOptions.idempotencyKey, `stavbaflow-pr156-${env.GITHUB_RUN_ID}-${env.GITHUB_RUN_ATTEMPT}`);
+    assert.equal(createdParams.url, endpoint.url);
+    const saved = JSON.parse(await fs.readFile(env.STAGING_WEBHOOK_ENDPOINT_FILE, 'utf8'));
+    assert.deepEqual(saved, { endpointId: endpoint.id, runId: env.GITHUB_RUN_ID, attempt: env.GITHUB_RUN_ATTEMPT });
+    assert.equal(await cleanupStagingWebhookEndpoint(stripe, env), true);
+    assert.equal(deletedEndpointId, endpoint.id);
+    deletedEndpointId = '';
+    await fs.writeFile(env.STAGING_WEBHOOK_ENDPOINT_FILE, JSON.stringify({ endpointId: endpoint.id, runId: env.GITHUB_RUN_ID, attempt: '2' }));
+    await assert.rejects(cleanupStagingWebhookEndpoint(stripe, env), /different staging billing webhook endpoint/);
+    assert.equal(deletedEndpointId, '');
+  } finally {
+    await fs.rm(join(env.STAGING_WEBHOOK_ENDPOINT_FILE, '..'), { recursive: true, force: true });
+  }
 });
 
 test('Vercel build wrapper strips only npm exec allow-scripts forwarding', () => {

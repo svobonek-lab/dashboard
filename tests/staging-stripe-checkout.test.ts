@@ -126,11 +126,13 @@ test('company C acceptance is branch-gated, split for CAPTCHA handoff, and retai
   assert.match(workflow, /path: \$\{\{ runner\.temp \}\}\/staging-billing-company-c/);
   assert.doesNotMatch(workflow, /STAGING_OWNER_C_PASSWORD:\s*\$\{\{\s*secrets\./);
   assert.doesNotMatch(workflow, /STAGING_OWNER_C_PASSWORD:\s*\$\{\{\s*vars\./);
-  const deploy = workflow.match(/- name: Refresh isolated staging Preview with approved TEST configuration([\s\S]*?)- name: Prepare private synthetic owner C credentials/)?.[1] || '';
+  const deploy = workflow.match(/- name: Create a run-scoped Stripe TEST webhook and refresh isolated staging Preview([\s\S]*?)- name: Prepare private synthetic owner C credentials/)?.[1] || '';
   assert.match(deploy, /deploy-staging-preview-runtime\.mjs/);
   assert.match(deploy, /STAGING_SUPABASE_SERVICE_ROLE_KEY:\s*\$\{\{\s*secrets\.STAGING_SUPABASE_SERVICE_ROLE_KEY\s*\}\}/);
   assert.match(deploy, /STAGING_STRIPE_SECRET_KEY:\s*\$\{\{\s*secrets\.STAGING_STRIPE_SECRET_KEY\s*\}\}/);
-  assert.match(deploy, /vercel env run --environment=preview --git-branch=codex\/staging-e2e-local-runner/);
+  assert.doesNotMatch(deploy, /vercel env run/);
+  assert.match(deploy, /STAGING_WEBHOOK_ENDPOINT_FILE:/);
+  assert.match(deploy, /node scripts\/deploy-staging-preview-runtime\.mjs/);
   assert.doesNotMatch(deploy, /STAGING_VERCEL_PREVIEW_ENV_FILE/);
   assert.doesNotMatch(deploy, /vercel@65\.8\.0 deploy --prebuilt/);
 });
