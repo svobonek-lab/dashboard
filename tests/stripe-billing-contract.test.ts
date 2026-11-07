@@ -255,7 +255,11 @@ test('company C verify-only workflow is restricted to its follow-up branch and p
   assert.match(verifyJob, /inputs\.runner_mode == 'billing-verify-company-c-existing'/);
   assert.match(verifyJob, /github\.ref == 'refs\/heads\/codex\/billing-webhook-receipt-verification'/);
   assert.match(verifyJob, /source\.head_branch -ne 'codex\/billing-blocked-to-granted'/);
-  assert.match(verifyJob, /STAGING_BILLING_PHASE: verify/);
+  const stripeExportStep = verifyJob.slice(
+    verifyJob.indexOf('      - name: Export allowlisted Stripe TEST configuration only'),
+    verifyJob.indexOf('      - name: Verify paid Checkout, webhook binding, and owner dashboard access'),
+  );
+  assert.match(stripeExportStep, /STAGING_BILLING_PHASE: verify/);
   assert.doesNotMatch(verifyJob, /runs-on: ubuntu-latest/);
   assert.doesNotMatch(verifyJob, /app_stripe_webhook_events/);
   assert.doesNotThrow(() => assertBillingCompanyCCredentialsBranch('svobonek-lab/dashboard', 'refs/heads/codex/billing-webhook-receipt-verification'));

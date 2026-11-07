@@ -916,7 +916,6 @@ jobs:
         shell: pwsh
       - name: Export allowlisted Stripe TEST configuration only
         env:
-          STAGING_BILLING_PHASE: verify
           STAGING_STRIPE_SECRET_KEY: ${{ secrets.STAGING_STRIPE_SECRET_KEY }}
           STAGING_PREVIEW_CONFIG_FILE: ${{ runner.temp }}/staging-stripe-preview.env
           STAGING_PREVIEW_URL: ${{ vars.STAGING_PREVIEW_URL }}
@@ -1155,6 +1154,7 @@ jobs:
         shell: pwsh
       - name: Export allowlisted Stripe TEST configuration only
         env:
+          STAGING_BILLING_PHASE: verify
           STAGING_STRIPE_SECRET_KEY: ${{ secrets.STAGING_STRIPE_SECRET_KEY }}
           STAGING_PREVIEW_CONFIG_FILE: ${{ runner.temp }}/staging-stripe-preview.env
           STAGING_PREVIEW_URL: ${{ vars.STAGING_PREVIEW_URL }}
