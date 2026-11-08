@@ -63,6 +63,17 @@ Unmatched repository versions: `20260911000000`, `20260911000001`, `202609110000
 
 These differences require a **new, narrowly reviewed reconciliation plan**, not an automatic migration. First compare function bodies, exact policy expressions, bucket settings, Auth hook configuration, scheduler configuration, and historical deployment records with a separately authorized metadata-only method where the approved MCP does not expose them. Test proposed SQL in disposable PostgreSQL and isolated staging; preserve existing migration history. Then present exact SQL hashes and a rollback plan for separate human approval. Production remains read-only in this task.
 
+### Concrete change list for the next reviewed release
+
+1. **Public intake first:** `api/public-intake.ts` sends nine named arguments, including `p_client_ip_hash`; production exposes the eight-argument `app_submit_public_lead`. Prepare a new reconciliation migration from the *live* function contract, including `client_ip_hash`, its company/IP/time index, grants, idempotency, and rate-limit behavior. Confirm the exact function body and test 429, duplicate submit, oversize input, honeypot, and cross-tenant responses in disposable PostgreSQL and isolated staging. Until then, do not market the production form as accepting inquiries; no production POST was attempted in this audit.
+2. **Keep import commit disabled:** production's four-argument `app_import_leads` cannot satisfy the five-argument call in `api/import-leads.ts`. Preserve the exact staging-URL gate while proposing a reviewed five-argument contract and rollback. Run dry-run, commit, retry, and rollback only against synthetic staging tenants before considering a separate production release.
+3. **Reconcile Auth/RLS without replaying old SQL:** the 19-table preflight in `20261025000000_secure_jwt_auth_hook.sql` cannot apply to the live 27-table set. Compare its exact seven tenant-boundary predicates and grants with the captured catalog, inspect the live hook body and Auth hook selection through an approved read-only metadata channel, and propose only the missing changes. A/B REST and Storage isolation must pass on isolated staging before writes can be considered.
+4. **Email worker evidence:** production has `app_email_outbox` but not `app_email_outbox_runs`; `api/_outbox-run-evidence.ts` expects the latter. Prepare the minimal service-only run-evidence migration, inspect actual scheduler and invitation delivery, and test retries and duplicate sends in staging. Do not enable customer invitations based on the presence of an API key name alone.
+5. **Billing and seats last:** reconcile `app_prepare_paid_registration` (six live arguments versus seven in source), the missing company plan check, and the absent seat-limit function/indexes/triggers. Verify the Stripe webhook function body, grants, price IDs, return URL, and TEST checkout/cancel/access path on staging. Legal identity and approved terms remain an explicit owner gate before live billing.
+6. **BYODB remains pilot-only:** table/RPC metadata is partial evidence. Publish an immutable connector digest and pass source-backed write, replay, failure recovery, and two-company acceptance on isolated staging before exposing `VITE_BYODB_ENABLED` or `ENABLE_BYODB_WRITES` to customers.
+
+Each production SQL proposal needs its own preflight against the **current** metadata, a disposable/staging test, a documented rollback, and a separate human deployment decision. No item above authorizes a production write.
+
 ### Superseded assessment from before the approved snapshot
 
 The earlier report treated current production schema and migration status as unknown because approved MCP authorization was unavailable. The fresh comparison above supersedes that uncertainty; its remaining gaps are explicitly identified. The [2026-10-25 matrix](security/app-rls-table-matrix.md) remains historical context only.
@@ -76,3 +87,16 @@ The earlier report treated current production schema and migration status as unk
 5. **After approved deployment:** Confirm the new production alias, deployment ID, and commit; then test the legacy `/widget-iframe.html?tenant=<synthetic-or-approved-key>` redirect preserving the tenant parameter and its intended no-key state, the `/register-paid` text/disabled state, and an unknown route's not-found page. Use read-only navigation and no customer writes. If behavior differs, rollback or reopen the release gate.
 
 The route and copy fixes already exist on `main`: `vercel.json` redirects `/widget-iframe.html`, `src/app/App.tsx` handles unknown paths, and `PaidRegistration.tsx` gates registration. Their presence in source is **not** post-deployment acceptance of the exact legacy URL, tenant parameter, or rendered text.
+
+## Read-only smoke of the currently deployed public routes
+
+On 2026-11-08 the Vercel overview still identified Production deployment `Hcp3VQDW2dbbvN1vNLEEMeT3xDou` at commit `7b9d6dca79a7a99360eaabfc383fdd0e00a02b00`. Browser navigation against its Production alias showed:
+
+| URL tested | Observed browser result |
+| --- | --- |
+| `/widget-iframe.html?tenant=e2e-synthetic-company-a` | Redirected to `/widget-iframe?tenant=e2e-synthetic-company-a`, preserving the parameter. The synthetic key showed the expected unavailable-form message; no submission was made. |
+| `/widget-iframe.html` | Redirected to `/widget-iframe` and showed the unavailable-form message. |
+| `/register-paid` | Displayed “Samostatná registrace není dostupná” and a sign-in link, with no self-service purchase control. |
+| `/this-route-does-not-exist-20261108` | Displayed “Tahle stránka neexistuje” with a link home. |
+
+This proves only the **current public navigation**. It does not verify a real tenant's form, authenticated flows, database writes, billing, or a later deployment. Repeat this smoke on the exact candidate after any separately approved release.
