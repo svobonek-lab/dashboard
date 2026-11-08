@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useOrganization } from '@/entities/session';
-import { Building, Lock, Mail, ArrowRight, CheckCircle2, ShieldAlert } from 'lucide-react';
+import { Building, Building2, BriefcaseBusiness, Lock, Mail, ArrowRight, CheckCircle2, ShieldAlert, ShieldCheck } from 'lucide-react';
 import type { UserRole } from '@/shared/model/permissions';
 import { supabase } from '@/shared/api/supabase';
 import { buildRecoveryRequest, getRecoveryErrorMessage, parseRecoveryResponse, validateNewPassword } from '@/features/login';
@@ -156,9 +156,29 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onSuccess, expectedRole })
   };
 
   return (
-    <main className="min-h-screen bg-surface-secondary px-4 py-8 font-sans sm:px-8 sm:py-12">
-      <div className="mx-auto w-full max-w-[28rem]">
-        <div className="mb-6 flex items-center gap-3">
+    <main className="auth-layout min-h-screen font-sans lg:grid lg:grid-cols-[minmax(360px,44%)_minmax(0,1fr)]">
+      <aside className="auth-value-panel hidden lg:flex" aria-label="StavbaFlow pro stavební firmy">
+        <div className="relative z-10 flex h-full w-full max-w-xl flex-col">
+          <div className="flex items-center gap-3 text-white">
+            <span aria-hidden="true" className="grid size-10 place-items-center rounded-xl bg-blue-500 text-sm font-bold">SF</span>
+            <span className="text-lg font-semibold tracking-tight">StavbaFlow</span>
+          </div>
+          <div className="my-auto py-12">
+            <p className="text-sm font-medium text-blue-200">Pracovní prostor pro stavební firmy</p>
+            <h2 className="mt-5 max-w-lg text-[clamp(2.5rem,4vw,4rem)] font-semibold leading-[1.08] tracking-[-0.055em] text-white">Zakázky a tým v jednom přehledu.</h2>
+            <p className="mt-6 max-w-md text-base leading-7 text-slate-300">Poptávka, odpovědný člověk a další krok zůstávají v jednom přehledu.</p>
+            <div className="auth-workflow mt-10" aria-label="Práce v aplikaci">
+              <div className="auth-workflow-row"><Building2 aria-hidden="true" className="h-5 w-5" /><span><strong>Firma</strong><small>Vlastní pracovní prostor a tým</small></span></div>
+              <div className="auth-workflow-row"><BriefcaseBusiness aria-hidden="true" className="h-5 w-5" /><span><strong>Zakázky</strong><small>Poptávky, přiřazení a stav práce</small></span></div>
+              <div className="auth-workflow-row"><ShieldCheck aria-hidden="true" className="h-5 w-5" /><span><strong>Přístup</strong><small>Majitel a zaměstnanec vidí svou práci</small></span></div>
+            </div>
+          </div>
+          <p className="text-sm text-slate-400">StavbaFlow · pro menší stavební firmy</p>
+        </div>
+      </aside>
+      <div className="auth-form-side flex min-h-screen items-center justify-center px-4 py-8 sm:px-8 sm:py-12">
+      <div className="w-full max-w-[28rem]">
+        <div className="auth-form-brand mb-6 flex items-center gap-3 lg:hidden">
           <span aria-hidden="true" className="grid size-9 place-items-center rounded-lg bg-[#2563EB] text-sm font-bold text-white">SF</span>
           <span className="text-lg font-semibold tracking-tight text-text">StavbaFlow</span>
         </div>
@@ -361,6 +381,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onSuccess, expectedRole })
               {PUBLIC_LANDING_URL && <a href={`${PUBLIC_LANDING_URL}/`} className="mt-4 block text-xs font-semibold underline">Web StavbaFlow</a>}
             </div>
          </div>
+      </div>
       </div>
     </main>
   );

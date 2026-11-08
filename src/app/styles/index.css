@@ -114,8 +114,27 @@ button.workspace-metric:hover { border-color: #b8c8e6; background: #fcfdff; }
 .workspace-search:focus { border-color: #93b4ef; background: #fff; box-shadow: 0 0 0 3px rgba(37,99,235,.1); }
 .workspace-list-row { display: grid; width: 100%; grid-template-columns: minmax(0, 1fr) auto minmax(110px, auto) 18px; align-items: center; gap: 14px; padding: 15px 20px; text-align: left; transition: background 140ms ease; }
 .workspace-list-row:hover { background: #fafbfc; }
-.auth-card { box-shadow: 0 16px 48px rgba(32, 41, 35, 0.07); }
+.auth-layout { background: #142a45; }
+.auth-value-panel {
+  min-height: 100vh;
+  padding: clamp(36px, 4.5vw, 72px);
+  background: #142a45;
+  border-right: 1px solid rgba(255, 255, 255, .12);
+}
+.auth-form-side { background: #edf1f5; }
+.auth-workflow { border-left: 1px solid rgba(147, 181, 220, .35); }
+.auth-workflow-row { display: flex; gap: 18px; align-items: flex-start; padding: 12px 0 18px 22px; color: #a9c8ee; }
+.auth-workflow-row + .auth-workflow-row { border-top: 1px solid rgba(255, 255, 255, .1); }
+.auth-workflow-row strong, .auth-workflow-row small { display: block; }
+.auth-workflow-row strong { color: #fff; font-size: 14px; font-weight: 600; }
+.auth-workflow-row small { margin-top: 3px; color: #b6c7dc; font-size: 13px; line-height: 1.45; }
+.auth-card { box-shadow: 0 20px 60px rgba(20, 42, 69, .1); }
 .auth-card :where(input, button, a):focus-visible { outline: 2px solid var(--workspace-primary); outline-offset: 2px; }
+
+@media (max-width: 1023px) {
+  .auth-form-side { background: #142a45; }
+  .auth-form-brand span:last-child { color: #fff; }
+}
 .auth-message { border-radius: 10px; }
 .auth-message p { line-height: 1.55; }
 

@@ -57,7 +57,7 @@ export const EmployeePhotosPage: React.FC<EmployeePhotosPageProps> = ({ leads = 
   const photos = files.filter((file) => file.mimeType.startsWith('image/'));
   if (!attachmentsEnabled) return <div className="workspace-page pb-12">
     <header className="workspace-page-header">
-      <div><p className="workspace-kicker">Terénní dokumentace</p><h1 className="workspace-title">Fotky ze stavby</h1><p role="status" className="workspace-subtitle">Přílohy budou brzy k dispozici.</p></div>
+      <div><p className="workspace-kicker">Terénní dokumentace</p><h1 className="workspace-title">Fotky ze stavby</h1><p role="status" className="workspace-subtitle">Soubory nejsou v tomto prostředí zapnuté.</p></div>
     </header>
   </div>;
 

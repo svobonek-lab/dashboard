@@ -76,7 +76,7 @@ test('staging-missing attachment schema keeps owner and employee UI honest and i
 
   for (const source of [documents, photos]) {
     assert.match(source, /isLeadAttachmentsEnabled\(import\.meta\.env\)/);
-    assert.match(source, /Přílohy budou brzy k dispozici/);
+    assert.match(source, /nejsou v tomto prostředí zapnuté/);
     assert.match(source, /if \(attachmentsEnabled\) void load/);
   }
 });
@@ -106,4 +106,18 @@ test('notes and attachments require an explicit flag and the declared staging pr
   assert.equal(isLeadAttachmentsEnabled({ ...staging, VITE_SUPABASE_URL: 'https://oncmtmrhmjlerbwkrecv.supabase.co' }), false);
   assert.equal(isLeadAttachmentsEnabled({ ...staging, VITE_STAGING_SUPABASE_PROJECT_REF: 'oncmtmrhmjlerbwkrecv' }), false);
   assert.equal(isLeadAttachmentsEnabled(staging), true);
+});
+
+test('production notes and files require a separate release flag and the exact production project', async () => {
+  const { isLeadAttachmentsEnabled } = await import('../src/features/lead-files/model/availability');
+  const production = {
+    VITE_LEAD_NOTES_FILES_ENABLED: 'true',
+    VITE_PRODUCTION_LEAD_NOTES_FILES_APPROVED: 'true',
+    VITE_SUPABASE_URL: 'https://oncmtmrhmjlerbwkrecv.supabase.co',
+  };
+
+  assert.equal(isLeadAttachmentsEnabled(production), true);
+  assert.equal(isLeadAttachmentsEnabled({ ...production, VITE_PRODUCTION_LEAD_NOTES_FILES_APPROVED: 'false' }), false);
+  assert.equal(isLeadAttachmentsEnabled({ ...production, VITE_SUPABASE_URL: 'https://xwzweltjvreqhjpbjrxa.supabase.co' }), false);
+  assert.equal(isLeadAttachmentsEnabled({ ...production, VITE_SUPABASE_URL: 'https://oncmtmrhmjlerbwkrecv.supabase.co.evil.example' }), false);
 });
