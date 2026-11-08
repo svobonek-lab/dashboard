@@ -124,4 +124,3 @@ test('local signup preserves its tenant identity across a page reload', () => {
   assert.match(signup, /setActiveOrgId\(newOrgId\)/);
   assert.match(signup, /setActiveSessionUser\(/);
 });
-
