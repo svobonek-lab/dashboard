@@ -78,7 +78,7 @@ export const DocumentsTab: React.FC<DocumentsTabProps> = ({ lead, onNotice = () 
   if (!attachmentsEnabled) return <section className="workspace-panel p-5 sm:p-7" aria-labelledby="lead-attachments-title">
     <p className="workspace-kicker">Dokumentace zakázky</p>
     <h2 id="lead-attachments-title" className="mt-1 text-base font-semibold text-slate-950">Poznámky a soubory</h2>
-    <p role="status" className="mt-2 text-sm text-slate-600">Přílohy budou brzy k dispozici.</p>
+    <p role="status" className="mt-2 text-sm text-slate-600">Poznámky a soubory nejsou v tomto prostředí zapnuté.</p>
   </section>;
 
   return <section className="workspace-panel p-5 sm:p-7" aria-labelledby="lead-attachments-title">
