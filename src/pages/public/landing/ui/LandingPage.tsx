@@ -138,7 +138,7 @@ export const LandingPage: React.FC = () => {
   };
 
   return (
-    <div className="public-landing workspace-shell min-h-screen bg-[#F2F3F0] text-slate-900 font-sans selection:bg-blue-100">
+    <div className="public-landing workspace-shell min-h-screen bg-[#f3f5f8] text-slate-900 font-sans selection:bg-blue-100">
       
       {/* 1. Header Navigation */}
       <header className="sticky top-0 z-40 bg-white/90 backdrop-blur-md border-b border-slate-200/80">
@@ -186,9 +186,9 @@ export const LandingPage: React.FC = () => {
       )}
 
 
-      <section className="mx-auto grid max-w-7xl items-center gap-9 px-4 py-12 sm:px-6 sm:py-16 lg:grid-cols-[0.95fr_1.05fr] lg:gap-12 lg:px-8 lg:py-24">
+      <section className="landing-product-hero mx-auto grid max-w-7xl items-center gap-9 px-4 py-12 sm:px-6 sm:py-16 lg:grid-cols-[0.95fr_1.05fr] lg:gap-12 lg:px-8 lg:py-24">
         <div className="min-w-0">
-          <h1 className="max-w-xl text-[2.2rem] font-semibold leading-[1.06] tracking-[-0.045em] text-slate-950 sm:text-5xl xl:text-6xl">Přehled stavebních zakázek pro malé firmy</h1>
+          <h1 className="max-w-xl text-[2.2rem] font-semibold leading-[1.06] tracking-[-0.045em] text-slate-950 sm:text-5xl xl:text-6xl">Od první poptávky po hotovou zakázku.</h1>
           <p className="mt-5 max-w-md text-slate-700">Poptávka z webu má svůj záznam. Vy ji přiřadíte člověku z týmu a v přehledu vidíte, co čeká na odpověď a co už je v realizaci.</p>
           <p className="mt-3 font-medium text-slate-600">Tarif Start stojí 1 990 Kč měsíčně bez&nbsp;DPH.</p>
           <div className="mt-6 flex flex-wrap items-center gap-3">
@@ -197,7 +197,7 @@ export const LandingPage: React.FC = () => {
           </div>
         </div>
 
-        <figure aria-label="Ukázka přehledu zakázek" className="min-w-0 overflow-hidden rounded-xl border border-slate-300 bg-white">
+        <figure aria-label="Ukázka přehledu zakázek" className="landing-product-preview min-w-0 overflow-hidden rounded-xl border border-slate-300 bg-white">
           <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 bg-slate-50 px-4 py-3 sm:px-6">
             <strong className="text-sm font-semibold text-slate-950">StavbaFlow / Zakázky</strong>
             <span className="text-xs text-slate-600">Ukázková data</span>
@@ -210,7 +210,7 @@ export const LandingPage: React.FC = () => {
             ].map(([title, place, status]) => (
               <li key={title} className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 py-4 sm:py-5">
                 <span><strong className="block text-sm font-semibold text-slate-900">{title}</strong><small className="mt-1 block text-xs text-slate-600">{place}</small></span>
-                <span className="text-xs font-medium text-blue-800">{status}</span>
+                <span className="landing-preview-status" data-status={status}>{status}</span>
               </li>
             ))}
           </ul>
