@@ -20,7 +20,7 @@
 @layer base {
   :root {
     /* Design Tokens */
-    --workspace-canvas: #f2f3f0;
+    --workspace-canvas: #f3f5f8;
     --workspace-primary: #2563eb;
     --workspace-primary-soft: rgba(37, 99, 235, 0.09);
     --workspace-success: #256344;
@@ -30,10 +30,10 @@
     --brand-primary-soft: var(--workspace-primary-soft);
     --surface: #ffffff;
     --surface-secondary: var(--workspace-canvas);
-    --surface-tertiary: #ecefeb;
-    --text: #202923;
-    --muted: #5f6b63;
-    --border: #d9ded8;
+    --surface-tertiary: #edf0f5;
+    --text: #19283d;
+    --muted: #617086;
+    --border: #dce2eb;
 
     --radius-app: 12px;
     --shadow-app: 0 1px 2px rgba(32, 41, 35, 0.04);
@@ -741,4 +741,30 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   .od-metric-label, .od-metric small { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
   .od-metric-value { font-size: 19px; overflow-wrap: anywhere; }
   .od-board { grid-template-columns: repeat(5, minmax(190px, 1fr)); overflow-x: auto; padding-bottom: 8px; }
+}
+
+/* Navy framing and meaningful status colours shared by product and workspace. */
+.landing-product-hero { min-height: min(780px, calc(100svh - 64px)); }
+.landing-product-hero h1 { color: #192d4b; }
+.landing-product-preview { box-shadow: 0 24px 64px -28px #172b4d55; border-color: #ccd5e2; }
+.landing-product-preview > div:first-child { background: #1c2c46; border-color: #31435f; padding-block: 22px; }
+.landing-product-preview > div:first-child strong,
+.landing-product-preview > div:first-child span { color: #eef3fc; }
+.landing-preview-status { padding: 6px 9px; border-radius: 6px; font-size: 11px; font-weight: 600; color: #2454a0; background: #edf3ff; }
+.landing-preview-status[data-status="Nabídka"] { color: #865b18; background: #fff5df; }
+.landing-preview-status[data-status="V realizaci"] { color: #23664c; background: #eaf5ee; }
+.owner-workspace .workspace-page-header { padding-bottom: 20px; border-bottom: 1px solid var(--border); }
+.owner-workspace .workspace-metric { min-height: 132px; padding: 20px; }
+.owner-workspace .workspace-metric strong { font-size: 32px; margin-block: 5px; font-variant-numeric: tabular-nums; }
+.owner-workspace .workspace-metric strong.workspace-metric-money { font-size: clamp(20px, 2vw, 28px); }
+.owner-workspace .workspace-toolbar { padding-block: 22px; }
+.owner-workspace .workspace-list-row { min-height: 82px; }
+.owner-workspace .workspace-row-status[data-status="New"] { color: #2454a0; background: #edf3ff; }
+.owner-workspace .workspace-row-status[data-status="Quote"] { color: #865b18; background: #fff5df; }
+.owner-workspace .workspace-row-status[data-status="In Progress"],
+.owner-workspace .workspace-row-status[data-status="Completed"] { color: #23664c; background: #eaf5ee; }
+@media (max-width: 639px) {
+  .landing-product-hero { min-height: auto; }
+  .owner-workspace .workspace-metric { min-height: 110px; padding: 14px; }
+  .owner-workspace .workspace-metric strong { font-size: 26px; }
 }

@@ -40,7 +40,7 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({ leads, onSelectL
   }, [attentionItems, attentionOnly, leads, searchQuery]);
 
   return (
-    <div className="workspace-page">
+    <div className="workspace-page owner-workspace">
       <header className="workspace-page-header">
         <div>
           <p className="workspace-kicker">{currentOrg?.name || 'StavbaFlow'}</p>
@@ -75,7 +75,7 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({ leads, onSelectL
           {visibleLeads.map((lead) => (
             <button key={lead.id} type="button" onClick={() => onSelectLead(lead)} className="workspace-list-row group">
               <span className="min-w-0"><strong className="block break-words text-sm font-semibold text-slate-950">{lead.title || 'Zakázka bez názvu'}</strong><small className="mt-1 block truncate text-xs text-slate-500">{lead.customerName || 'Zákazník neuveden'}{lead.city ? ` · ${lead.city}` : ''}</small></span>
-              <span className="workspace-row-status w-fit rounded-md bg-slate-100 px-2 py-1 text-xs font-medium text-slate-700">{statusLabel[lead.status]}</span>
+              <span data-status={lead.status} className="workspace-row-status w-fit rounded-md bg-slate-100 px-2 py-1 text-xs font-medium text-slate-700">{statusLabel[lead.status]}</span>
               <span className="text-right text-sm font-semibold text-slate-800">{lead.price ? currency.format(lead.price) : 'Cena neuvedena'}</span>
               <ArrowRight className="h-4 w-4 text-slate-300 transition group-hover:translate-x-0.5 group-hover:text-blue-600" />
             </button>
