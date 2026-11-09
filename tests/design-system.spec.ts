@@ -132,32 +132,24 @@ test('sign in and recovery screens load without submitting a request', async ({ 
   await expect(page.getByRole('button', { name: 'Odeslat bezpečný odkaz' })).toBeVisible();
 });
 
-test('landing names the product, states the existing price, and uses usable controls', async ({ page }) => {
-  await page.setViewportSize({ width: 768, height: 900 });
-  await page.goto('/landing');
-  await expect(page.getByRole('heading', { level: 1, name: /stavebních zakázek/i })).toBeVisible();
-  await expect(page.getByText(/1 990 Kč měsíčně bez\s*DPH/)).toBeVisible();
-  await expect(page.getByRole('navigation')).toBeHidden();
-  const desktopHeadingSizes = await page.getByRole('heading', { level: 2 }).evaluateAll((elements) => elements.map((element) => getComputedStyle(element).fontSize));
-  expect(new Set(desktopHeadingSizes).size, 'section titles share one desktop size').toBe(1);
-  await expect(page.getByRole('figure', { name: 'Ukázka přehledu zakázek' })).toBeVisible();
-  const primary = page.getByRole('link', { name: 'Otevřít demo', exact: true });
-  const primaryStyle = await primary.evaluate((element) => ({ height: element.getBoundingClientRect().height, background: getComputedStyle(element).backgroundColor }));
-  expect(primaryStyle.height).toBeGreaterThanOrEqual(44);
-  expect(primaryStyle.background).toBe('rgb(37, 99, 235)');
-  for (const name of ['Pokračovat s tarifem Start', 'Pokračovat s tarifem Růst']) {
-    const control = page.getByRole('link', { name });
-    const style = await control.evaluate((element) => ({ height: element.getBoundingClientRect().height, primaryClass: element.classList.contains('bg-blue-600') }));
-    expect(style.height).toBeGreaterThanOrEqual(44);
-    expect(style.primaryClass).toBe(true);
+test('landing presents the product and keeps contact and pricing accessible', async ({ page }) => {
+  for (const width of [1440, 768, 390, 320]) {
+    await page.setViewportSize({ width, height: 900 });
+    await page.goto('/');
+    await expect(page.getByRole('heading', { level: 1, name: /Na stavbě máte dost práce/ })).toBeVisible();
+    await expect(page.getByLabel('Ukázka aplikace se syntetickými zakázkami')).toBeVisible();
+    const contact = page.getByRole('button', { name: 'Prohlédnout s námi' });
+    expect((await contact.boundingBox())?.height).toBeGreaterThanOrEqual(44);
+    await contact.click();
+    await expect(page.getByRole('heading', { name: 'Ukázat StavbaFlow na mém procesu' })).toBeVisible();
+    await page.getByRole('button', { name: 'Zavřít konzultaci' }).click();
+    await page.goto('/');
+    for (const name of ['Pokračovat s tarifem Start', 'Pokračovat s tarifem Růst']) {
+      await expect(page.getByRole('link', { name })).toBeVisible();
+    }
+    const sizes = await page.evaluate(() => [document.documentElement.scrollWidth, innerWidth]);
+    expect(sizes[0]).toBeLessThanOrEqual(sizes[1]);
   }
-  await page.setViewportSize({ width: 390, height: 844 });
-  await page.goto('/landing');
-  await expect(page.getByRole('heading', { level: 1, name: /stavebních zakázek/i })).toBeVisible();
-  const mobileHeadingSizes = await page.getByRole('heading', { level: 2 }).evaluateAll((elements) => elements.map((element) => getComputedStyle(element).fontSize));
-  expect(new Set(mobileHeadingSizes).size, 'section titles share one mobile size').toBe(1);
-  const actionRows = await page.getByTestId('landing-header-actions').locator('button').evaluateAll((buttons) => buttons.map((button) => Math.round(button.getBoundingClientRect().y)));
-  expect(new Set(actionRows).size, 'mobile header actions stay on one row').toBe(1);
 });
 
 test('owner overview keeps statuses visible on mobile and can filter work awaiting action', async ({ page }) => {
@@ -334,7 +326,7 @@ test('known public and gated routes have no uncaught page errors or viewport ove
       await page.goto(route, { waitUntil: 'domcontentloaded' });
       await expect(page.locator('#root'), `${route} @ ${width}px`).toBeAttached();
       if (route === '/' || route === '/landing' || route === '/prezentace') {
-        await expect(page.getByRole('heading', { level: 1, name: /stavebních zakázek/i }), route).toBeVisible({ timeout: 12_000 });
+        await expect(page.getByRole('heading', { level: 1, name: /Na stavbě máte dost práce/i }), route).toBeVisible({ timeout: 12_000 });
       }
       if (route === '/demo' || route === '/demo/leads') await expect(page.getByText('Veřejné demo · pouze syntetická data · pouze pro čtení')).toBeVisible();
       if (route === '/login' || route.endsWith('/login')) await expect(page.getByRole('heading', { name: /Přihlášení/ })).toBeVisible();

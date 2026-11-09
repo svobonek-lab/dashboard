@@ -61,7 +61,7 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({ leads, onSelectL
         </button>
       </section>
 
-      <section className="workspace-panel overflow-hidden">
+      <div className="sf-work-grid"><section className="workspace-panel overflow-hidden">
         <div className="workspace-toolbar">
           <h2 className="text-base font-semibold text-slate-950">Poptávky a zakázky</h2>
           <label className="relative w-full sm:w-80"><span className="sr-only">Hledat zakázku</span><Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" /><input value={searchQuery} onChange={(event) => setSearchQuery(event.target.value)} placeholder="Hledat zákazníka nebo zakázku" className="workspace-search" /></label>
@@ -84,6 +84,13 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({ leads, onSelectL
         </div>
         <div className="border-t border-slate-100 bg-slate-50/70 px-5 py-3 text-right"><button type="button" onClick={() => onNavigateTab('leads')} className="text-sm font-semibold text-blue-600 hover:text-blue-700">Zobrazit celý přehled</button></div>
       </section>
+      <aside className="sf-work-focus" aria-label="Další kroky">
+        <div className="sf-focus-heading"><span className="sf-focus-dot" /><h2>K vyřízení</h2><span>{attentionItems.length}</span></div>
+        <p>Začněte zákazníky, kteří čekají na další krok.</p>
+        {attentionItems.slice(0, 4).map(item => <button type="button" key={item.id} onClick={() => { const lead = leads.find(candidate => candidate.id === item.leadId); if (lead) onSelectLead(lead); }} className="sf-focus-item"><small>{item.tag}</small><strong>{item.client}</strong><span>{item.deadline}<ArrowRight size={15} aria-hidden="true" /></span></button>)}
+        {!attentionItems.length && <div className="sf-focus-empty">Žádné nové poptávky ani nabídky k vyřízení.</div>}
+        <div className="sf-pipeline"><h3>Rozložení zakázek</h3>{(['New', 'Quote', 'In Progress', 'Completed'] as Lead['status'][]).map(status => { const count = leads.filter(lead => lead.status === status).length; return <div key={status}><span>{statusLabel[status]}<strong>{count}</strong></span><meter min={0} max={Math.max(leads.length, 1)} value={count} aria-label={statusLabel[status]} /></div>; })}</div>
+      </aside></div>
     </div>
   );
 };
