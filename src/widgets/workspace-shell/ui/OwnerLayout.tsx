@@ -158,7 +158,7 @@ export const OwnerLayout: React.FC<OwnerLayoutProps> = ({
   const isSuperAdminUser = dbUser?.role === 'super_admin' || Boolean(impersonatingOrgId);
 
   return (
-    <div className="workspace-shell min-h-screen bg-surface-secondary text-text flex flex-col font-sans selection:bg-brand-primary-soft">
+    <div className="workspace-shell sf-owner-shell min-h-screen bg-surface-secondary text-text flex flex-col font-sans selection:bg-brand-primary-soft">
       
       {/* Super Admin Company Workspace Top Bar */}
       {(isSuperAdminUser || readOnlyMode) && (

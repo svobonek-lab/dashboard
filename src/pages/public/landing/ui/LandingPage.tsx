@@ -138,7 +138,7 @@ export const LandingPage: React.FC = () => {
   };
 
   return (
-    <div className="public-landing workspace-shell min-h-screen bg-[#f3f5f8] text-slate-900 font-sans selection:bg-blue-100">
+    <div className="public-landing sf-sales workspace-shell min-h-screen bg-[#f3f5f8] text-slate-900 font-sans selection:bg-blue-100">
       
       {/* 1. Header Navigation */}
       <header className="sticky top-0 z-40 bg-white/90 backdrop-blur-md border-b border-slate-200/80">
@@ -186,36 +186,35 @@ export const LandingPage: React.FC = () => {
       )}
 
 
-      <section className="landing-product-hero mx-auto grid max-w-7xl items-center gap-9 px-4 py-12 sm:px-6 sm:py-16 lg:grid-cols-[0.95fr_1.05fr] lg:gap-12 lg:px-8 lg:py-24">
-        <div className="min-w-0">
-          <h1 className="max-w-xl text-[2.2rem] font-semibold leading-[1.06] tracking-[-0.045em] text-slate-950 sm:text-5xl xl:text-6xl">Od první poptávky po hotovou zakázku.</h1>
-          <p className="mt-5 max-w-md text-slate-700">Poptávka z webu má svůj záznam. Vy ji přiřadíte člověku z týmu a v přehledu vidíte, co čeká na odpověď a co už je v realizaci.</p>
-          <p className="mt-3 font-medium text-slate-600">Tarif Start stojí 1 990 Kč měsíčně bez&nbsp;DPH.</p>
-          <div className="mt-6 flex flex-wrap items-center gap-3">
-            {DEMO_DESTINATION.url && <a href={DEMO_DESTINATION.url} className="workspace-primary-action inline-flex items-center justify-center px-5 text-sm font-semibold">Otevřít demo</a>}
-            <button type="button" onClick={() => setIsBookingOpen(true)} className="inline-flex min-h-11 items-center rounded-lg border border-slate-300 px-4 text-sm font-semibold hover:bg-white">Domluvit ukázku</button>
+      <section className="sf-sales-hero">
+        <div className="sf-sales-intro">
+          <p className="sf-sales-audience"><HardHat size={18} aria-hidden="true" /> Pro stavební firmy a řemeslné týmy</p>
+          <h1>Na stavbě máte dost práce.<br />Mějte jasno i v zakázkách.</h1>
+          <p>Poptávky, lidé a rozpracované zakázky na jednom místě. Od prvního telefonu po dokončenou práci víte, kdo má co na starosti.</p>
+          <div className="sf-sales-actions">
+            <button onClick={() => setIsBookingOpen(true)}>Prohlédnout s námi <ArrowRight size={18} aria-hidden="true" /></button>
+            {DEMO_DESTINATION.url && <a href={DEMO_DESTINATION.url}>Vyzkoušet ukázkovou firmu</a>}
+          </div>
+          <span className="sf-sales-note">Pro majitele v kanceláři i tým v terénu.</span>
+        </div>
+        <div className="sf-product-stage">
+          <div className="sf-product-window" aria-label="Ukázka aplikace se syntetickými zakázkami">
+            <aside className="sf-product-nav" aria-hidden="true"><strong>SF <span>StavbaFlow</span></strong><span className="sf-preview-selected">Přehled firmy</span><span>Poptávky</span><span>Zakázky v realizaci</span><span>Tým</span><span>Nastavení</span><small>Ukázková firma</small></aside>
+            <div className="sf-product-content">
+              <div className="sf-product-heading"><div><small>Ukázková data</small><h2>Práce pod kontrolou.</h2></div><HardHat aria-hidden="true" /></div>
+              <div className="sf-preview-metrics"><div><small>Nové poptávky</small><strong>2</strong></div><div><small>V realizaci</small><strong>1</strong></div><div><small>Celkem zakázek</small><strong>4</strong></div></div>
+              <div className="sf-preview-table-title">Poptávky a zakázky <span>Stav práce</span></div>
+              {[
+                ['Rekonstrukce rodinného domu', 'Brno · Novákovi', 'V realizaci'],
+                ['Nová střecha na chalupě', 'Tišnov · Dvořákovi', 'Nová poptávka'],
+                ['Zateplení fasády', 'Kuřim · Svoboda', 'Nabídka'],
+                ['Dláždění příjezdové cesty', 'Brno · Černý', 'Nová poptávka'],
+              ].map(([title, place, status]) => <div className="sf-preview-job" key={title}><span><strong>{title}</strong><small>{place}</small></span><span className="landing-preview-status" data-status={status}>{status}</span></div>)}
+            </div>
           </div>
         </div>
-
-        <figure aria-label="Ukázka přehledu zakázek" className="landing-product-preview min-w-0 overflow-hidden rounded-xl border border-slate-300 bg-white">
-          <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 bg-slate-50 px-4 py-3 sm:px-6">
-            <strong className="text-sm font-semibold text-slate-950">StavbaFlow / Zakázky</strong>
-            <span className="text-xs text-slate-600">Ukázková data</span>
-          </div>
-          <ul className="divide-y divide-slate-200 px-4 sm:px-6">
-            {[
-              ['Výměna střešní krytiny', 'Brno', 'Nová poptávka'],
-              ['Zateplení rodinného domu', 'Kuřim', 'Nabídka'],
-              ['Oprava omítek ve skladu', 'Modřice', 'V realizaci'],
-            ].map(([title, place, status]) => (
-              <li key={title} className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 py-4 sm:py-5">
-                <span><strong className="block text-sm font-semibold text-slate-900">{title}</strong><small className="mt-1 block text-xs text-slate-600">{place}</small></span>
-                <span className="landing-preview-status" data-status={status}>{status}</span>
-              </li>
-            ))}
-          </ul>
-        </figure>
       </section>
+      <div className="sf-product-promise"><span><Check size={17} /> Poptávky přehledně</span><span><Users size={17} /> Odpovědný člověk u zakázky</span><span><ShieldCheck size={17} /> Vlastní firemní prostor</span></div>
 
       <section id="jak-to-funguje" className="scroll-mt-20 border-y border-slate-200 bg-white">
         <div id="problemy" className="mx-auto grid max-w-7xl gap-8 px-4 py-12 sm:px-6 sm:py-16 lg:grid-cols-[0.95fr_1.05fr] lg:gap-12 lg:px-8">
@@ -608,6 +607,7 @@ export const LandingPage: React.FC = () => {
           <div className="bg-white rounded-3xl p-6 sm:p-8 max-w-md w-full shadow-2xl border border-slate-200 space-y-5 relative">
             <button
               onClick={() => setIsBookingOpen(false)}
+              aria-label="Zavřít konzultaci"
               className="absolute top-4 right-4 p-2 text-slate-400 hover:text-slate-700 rounded-full"
             >
               <X className="w-5 h-5" />
