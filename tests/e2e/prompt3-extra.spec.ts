@@ -112,11 +112,12 @@ test('CSV dry-run, commit retry and rollback are tenant scoped and idempotent', 
     console.info('Prompt 3 CSV dry-run, commit and idempotent retry passed.');
   } finally {
     if (fingerprint && (await restGet(request, token, 'app_leads', query)).length > 0) {
-      const rollback = await request.post(`${url}/rest/v1/rpc/app_rollback_import`, {
+      const rollback = await fetch(`${url}/rest/v1/rpc/app_rollback_import`, {
+        method: 'POST',
         headers: { apikey: serviceKey, Authorization: `Bearer ${serviceKey}`, 'Content-Type': 'application/json' },
-        data: { p_company_id: companyId, p_fingerprint: fingerprint },
+        body: JSON.stringify({ p_company_id: companyId, p_fingerprint: fingerprint }),
       });
-      expect(rollback.ok(), `CSV rollback failed: HTTP ${rollback.status()}`).toBe(true);
+      expect(rollback.ok, `CSV rollback failed: HTTP ${rollback.status}`).toBe(true);
       const result = await rollback.json();
       expect(result.status).toBe('rolled_back');
       expect(await restGet(request, token, 'app_leads', query)).toHaveLength(0);
@@ -139,7 +140,7 @@ test('owner and employee of company B have active isolated workspaces', async ({
       await page.locator('input[type="password"]').fill(requiredValue(`STAGING_${account}_PASSWORD`));
       await page.getByRole('button', { name: 'Přihlásit se' }).click();
       await page.waitForURL((pageUrl) => !pageUrl.pathname.endsWith('/login'), { timeout: 20_000 });
-      await expect(page.locator('nav a').first()).toBeVisible();
+      expect(new URL(page.url()).pathname).toMatch(account === 'EMPLOYEE_B' ? /^\/employee(?:\/|$)/ : /^\/dashboard(?:\/|$)/);
       const token = await page.evaluate(() => {
         for (let index = 0; index < localStorage.length; index += 1) {
           const storageKey = localStorage.key(index);
