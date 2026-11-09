@@ -124,3 +124,43 @@ test('CSV dry-run, commit retry and rollback are tenant scoped and idempotent', 
     }
   }
 });
+
+test('owner and employee of company B have active isolated workspaces', async ({ browser, request }) => {
+  const { url, key, preview } = stagingConfig();
+  const companyB = requiredValue('STAGING_COMPANY_B_ID');
+  const employeeB = requiredValue('STAGING_EMPLOYEE_B_ID');
+  const leadB = requiredValue('STAGING_LEAD_B_ID');
+  for (const account of ['OWNER_B', 'EMPLOYEE_B'] as const) {
+    const context = await browser.newContext({ baseURL: preview });
+    try {
+      const page = await context.newPage();
+      await page.goto('/login');
+      await page.getByPlaceholder('jmeno@firma.cz').fill(requiredValue(`STAGING_${account}_EMAIL`));
+      await page.locator('input[type="password"]').fill(requiredValue(`STAGING_${account}_PASSWORD`));
+      await page.getByRole('button', { name: 'Přihlásit se' }).click();
+      await page.waitForURL((pageUrl) => !pageUrl.pathname.endsWith('/login'), { timeout: 20_000 });
+      await expect(page.locator('nav a').first()).toBeVisible();
+      const token = await page.evaluate(() => {
+        for (let index = 0; index < localStorage.length; index += 1) {
+          const storageKey = localStorage.key(index);
+          if (!storageKey?.endsWith('-auth-token')) continue;
+          const session = JSON.parse(localStorage.getItem(storageKey) || 'null') as { access_token?: string } | null;
+          if (session?.access_token) return session.access_token;
+        }
+        return null;
+      });
+      expect(token).toBeTruthy();
+      const response = await request.get(`${url}/rest/v1/app_leads?select=id,company_id,assigned_to&id=eq.${leadB}`, {
+        headers: { apikey: key, Authorization: `Bearer ${token}` },
+      });
+      expect(response.status()).toBe(200);
+      const rows = await response.json() as Array<{ id: string; company_id: string; assigned_to: string | null }>;
+      expect(rows).toHaveLength(1);
+      expect(rows[0].company_id).toBe(companyB);
+      if (account === 'EMPLOYEE_B') expect(rows[0].assigned_to).toBe(employeeB);
+      console.info(`Prompt 3 ${account} active login and own-company lead read passed.`);
+    } finally {
+      await context.close();
+    }
+  }
+});
