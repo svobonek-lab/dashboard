@@ -57,6 +57,7 @@ jobs:
     steps:
       - uses: actions/checkout@v6
         with:
+          ref: 1afc95b93fc4e25adfa4ccfb9389a5d953f738a3
           persist-credentials: false
       - uses: actions/setup-node@v6
         with:
@@ -95,9 +96,16 @@ jobs:
       - name: Run opt-in synthetic tenant acceptance scenarios
         run: |
           if [ "${{ inputs.runner_mode }}" = 'sentry-only' ]; then
-            npx playwright test --config=playwright.staging.config.ts tests/e2e/sentry-staging-event.spec.ts
+            npx playwright test --config=playwright.staging.config.ts --retries=0 tests/e2e/sentry-staging-event.spec.ts
           else
-            npm run test:e2e:staging
+            npx playwright test --config=playwright.staging.config.ts \
+              tests/e2e/employee-assigned-scope.spec.ts \
+              tests/e2e/logout-tenant-cache.spec.ts \
+              tests/e2e/owner-critical-flow.spec.ts \
+              tests/e2e/owner-menu.spec.ts \
+              tests/e2e/public-intake-idempotency.spec.ts \
+              tests/e2e/supabase-read-failure.spec.ts \
+              tests/e2e/tenant-rest-isolation.spec.ts
           fi
         env:
           CI: "true"
@@ -724,36 +732,53 @@ jobs:
     steps:
       - uses: actions/checkout@v6
         with:
+          ref: 1afc95b93fc4e25adfa4ccfb9389a5d953f738a3
           persist-credentials: false
       - uses: actions/setup-node@v6
         with:
           node-version: "24"
-      - name: Pull Preview configuration for the exact staging branch
+      - name: Deploy exact main source with explicit staging configuration
         env:
           VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          STAGING_SUPABASE_URL: ${{ vars.STAGING_SUPABASE_URL }}
+          STAGING_SUPABASE_PROJECT_REF: ${{ vars.STAGING_SUPABASE_PROJECT_REF }}
+          PRODUCTION_SUPABASE_PROJECT_REF: ${{ vars.PRODUCTION_SUPABASE_PROJECT_REF }}
+          STAGING_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.STAGING_SUPABASE_PUBLISHABLE_KEY }}
+          STAGING_SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.STAGING_SUPABASE_SERVICE_ROLE_KEY }}
+          STAGING_SENTRY_DSN: ${{ secrets.STAGING_SENTRY_DSN }}
         run: |
           set +x
-          if [ "$GITHUB_REF" != 'refs/heads/codex/staging-e2e-local-runner' ] || [ "$GITHUB_REPOSITORY" != 'svobonek-lab/dashboard' ]; then
-            echo 'Refusing deployment outside the approved staging branch.' >&2
+          if [ "$GITHUB_REF" != 'refs/heads/codex/staging-e2e-local-runner' ] ||
+             [ "$GITHUB_REPOSITORY" != 'svobonek-lab/dashboard' ] ||
+             [ "$(git rev-parse HEAD)" != '1afc95b93fc4e25adfa4ccfb9389a5d953f738a3' ] ||
+             [ "$STAGING_SUPABASE_PROJECT_REF" != 'xwzweltjvreqhjpbjrxa' ] ||
+             [ "$PRODUCTION_SUPABASE_PROJECT_REF" != 'oncmtmrhmjlerbwkrecv' ] ||
+             [ "$STAGING_SUPABASE_URL" != 'https://xwzweltjvreqhjpbjrxa.supabase.co' ] ||
+             [ -z "$STAGING_SUPABASE_PUBLISHABLE_KEY" ] ||
+             [ -z "$STAGING_SUPABASE_SERVICE_ROLE_KEY" ] ||
+             [ -z "$STAGING_SENTRY_DSN" ]; then
+            echo 'Refusing Preview deployment outside the pinned source and isolated staging configuration.' >&2
             exit 1
           fi
-          npx --yes vercel@65.8.0 pull --yes --environment=preview --git-branch=codex/staging-e2e-local-runner --token="$VERCEL_TOKEN"
-      - name: Build Preview artifacts on the self-hosted runner
-        env:
-          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
-          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
-          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
-        run: npx --yes vercel@65.8.0 build --token="$VERCEL_TOKEN"
-      - name: Deploy prebuilt artifacts and assign only the staging Preview alias
-        env:
-          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
-          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
-          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
-        run: |
-          set +x
-          deployment_url="$(npx --yes vercel@65.8.0 deploy --prebuilt --environment=preview --yes --token="$VERCEL_TOKEN" --meta githubCommitRef=codex/staging-e2e-local-runner --meta githubCommitSha="$GITHUB_SHA")"
+          deployment_url="$(npx --yes vercel@65.8.0 deploy --target=preview --yes --token="$VERCEL_TOKEN" \
+            --build-env "VITE_SUPABASE_URL=$STAGING_SUPABASE_URL" \
+            --build-env "VITE_SUPABASE_ANON_KEY=$STAGING_SUPABASE_PUBLISHABLE_KEY" \
+            --build-env "VITE_SENTRY_DSN=$STAGING_SENTRY_DSN" \
+            --build-env VITE_DEPLOYMENT_SURFACE=app \
+            --build-env VITE_APP_SCHEMA_READS=true \
+            --build-env VITE_PILOT_WRITES=true \
+            --build-env VITE_STAGING_LEAD_STATUS_WRITES=true \
+            --build-env VITE_PAID_REGISTRATION_ENABLED=false \
+            --env "SUPABASE_URL=$STAGING_SUPABASE_URL" \
+            --env "SUPABASE_ANON_KEY=$STAGING_SUPABASE_PUBLISHABLE_KEY" \
+            --env "SUPABASE_SERVICE_ROLE_KEY=$STAGING_SUPABASE_SERVICE_ROLE_KEY" \
+            --env APP_IMPORT_WORKER_ENABLED=true \
+            --env STRIPE_BILLING_MODE=test \
+            --env PAID_ONBOARDING_ENABLED=false \
+            --meta githubCommitRef=main \
+            --meta githubCommitSha=1afc95b93fc4e25adfa4ccfb9389a5d953f738a3)"
           case "$deployment_url" in
             https://*.vercel.app) ;;
             *) echo 'Vercel did not return a valid Preview deployment URL.' >&2; exit 1 ;;
