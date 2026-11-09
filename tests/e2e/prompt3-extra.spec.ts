@@ -25,13 +25,6 @@ test('owner lead detail, assignment and private attachment work on exact Preview
     await expect(page.getByRole('heading', { name: String(before[0].title) })).toBeVisible();
     await expect(page.getByRole('heading', { name: 'Zakázka a zákazník' })).toBeVisible();
 
-    await page.getByLabel('Přiřazení').selectOption('');
-    await page.getByRole('button', { name: 'Uložit přiřazení' }).click();
-    await expect.poll(async () => (await restGet(request, token, 'app_leads', leadQuery))[0]?.assigned_to).toBeNull();
-    await page.getByLabel('Přiřazení').selectOption(employeeId);
-    await page.getByRole('button', { name: 'Uložit přiřazení' }).click();
-    await expect.poll(async () => (await restGet(request, token, 'app_leads', leadQuery))[0]?.assigned_to).toBe(employeeId);
-
     const documents = page.locator('section').filter({ has: page.getByRole('heading', { name: 'Poznámky a soubory' }) });
     await expect(documents.getByText('Nahrát soubor')).toBeVisible();
     await documents.locator('input[type="file"]').setInputFiles({
@@ -43,7 +36,15 @@ test('owner lead detail, assignment and private attachment work on exact Preview
     await expect.poll(async () => (await restGet(request, token, 'app_lead_files', fileQuery)).length).toBe(1);
     await documents.locator('article').filter({ hasText: fileName }).getByRole('button', { name: 'Smazat soubor' }).click();
     await expect.poll(async () => (await restGet(request, token, 'app_lead_files', fileQuery)).length).toBe(0);
-    console.info('Prompt 3 lead detail, assignment and attachment upload/delete passed.');
+    console.info('Prompt 3 lead detail and attachment upload/delete passed.');
+
+    await page.getByLabel('Přiřazení').selectOption('');
+    await page.getByRole('button', { name: 'Uložit přiřazení' }).click();
+    await expect.poll(async () => (await restGet(request, token, 'app_leads', leadQuery))[0]?.assigned_to).toBeNull();
+    await page.getByLabel('Přiřazení').selectOption(employeeId);
+    await page.getByRole('button', { name: 'Uložit přiřazení' }).click();
+    await expect.poll(async () => (await restGet(request, token, 'app_leads', leadQuery))[0]?.assigned_to).toBe(employeeId);
+    console.info('Prompt 3 assignment change and restore passed.');
   } finally {
     const current = await restGet(request, token, 'app_leads', leadQuery);
     if (current[0]?.assigned_to !== originalAssignee) {
@@ -72,6 +73,9 @@ test('CSV dry-run, commit retry and rollback are tenant scoped and idempotent', 
   const serviceKey = requiredValue('STAGING_SUPABASE_SERVICE_ROLE_KEY');
   const companyId = requiredValue('STAGING_COMPANY_A_ID');
   const token = await accessToken(browser, 'OWNER_A');
+  const authProbe = await request.get(`${url}/auth/v1/user`, { headers: { apikey: key, Authorization: `Bearer ${token}` } });
+  console.info(`Prompt 3 direct Supabase Auth user probe HTTP ${authProbe.status()}.`);
+  expect(authProbe.status()).toBe(200);
   const marker = randomUUID();
   const title = `StavbaFlow Playwright Import ${marker}`;
   const email = `playwright-import-${marker}@stavbaflow.example.test`;
