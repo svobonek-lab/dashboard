@@ -10,6 +10,7 @@ on:
           - github-hosted
           - local-ephemeral
           - acceptance-extra
+          - admin-acceptance
           - metadata-only
           - preview-configure
           - sentry-only
@@ -51,9 +52,9 @@ jobs:
         inputs.runner_mode != 'billing-recover-b' && inputs.runner_mode != 'billing-recover-b-local' && inputs.runner_mode != 'billing-configure-pilot-price' && inputs.runner_mode != 'preview-redeploy') ||
        (github.event.pull_request.head.repo.full_name == github.repository &&
         contains(github.event.pull_request.labels.*.name, 'e2e'))) &&
-      ((inputs.runner_mode != 'local-ephemeral' && inputs.runner_mode != 'acceptance-extra' && inputs.runner_mode != 'sentry-only' && inputs.runner_mode != 'billing-portal-inspect') ||
+      ((inputs.runner_mode != 'local-ephemeral' && inputs.runner_mode != 'acceptance-extra' && inputs.runner_mode != 'admin-acceptance' && inputs.runner_mode != 'sentry-only' && inputs.runner_mode != 'billing-portal-inspect') ||
        (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/codex/staging-e2e-local-runner'))
-    runs-on: ${{ (inputs.runner_mode == 'local-ephemeral' || inputs.runner_mode == 'acceptance-extra' || inputs.runner_mode == 'sentry-only' || inputs.runner_mode == 'billing-portal-inspect') && fromJSON('["self-hosted","linux","x64","staging-e2e"]') || 'ubuntu-latest' }}
+    runs-on: ${{ (inputs.runner_mode == 'local-ephemeral' || inputs.runner_mode == 'acceptance-extra' || inputs.runner_mode == 'admin-acceptance' || inputs.runner_mode == 'sentry-only' || inputs.runner_mode == 'billing-portal-inspect') && fromJSON('["self-hosted","linux","x64","staging-e2e"]') || 'ubuntu-latest' }}
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v6
@@ -61,7 +62,7 @@ jobs:
           ref: 1afc95b93fc4e25adfa4ccfb9389a5d953f738a3
           persist-credentials: false
       - uses: actions/checkout@v6
-        if: inputs.runner_mode == 'acceptance-extra'
+        if: inputs.runner_mode == 'acceptance-extra' || inputs.runner_mode == 'admin-acceptance'
         with:
           ref: codex/staging-e2e-local-runner
           path: prompt3-overlay
@@ -113,6 +114,8 @@ jobs:
             npx playwright test --config=playwright.staging.config.ts --retries=0 tests/e2e/sentry-staging-event.spec.ts
           elif [ "${{ inputs.runner_mode }}" = 'acceptance-extra' ]; then
             npx playwright test --config=playwright.staging.config.ts --retries=0 --workers=1 tests/e2e/prompt3-extra.spec.ts
+          elif [ "${{ inputs.runner_mode }}" = 'admin-acceptance' ]; then
+            node prompt3-overlay/scripts/prompt3-admin-acceptance.mjs
           else
             npx playwright test --config=playwright.staging.config.ts \
               tests/e2e/employee-assigned-scope.spec.ts \
@@ -130,7 +133,7 @@ jobs:
           STAGING_SUPABASE_PROJECT_REF: ${{ vars.STAGING_SUPABASE_PROJECT_REF }}
           PRODUCTION_SUPABASE_PROJECT_REF: ${{ vars.PRODUCTION_SUPABASE_PROJECT_REF }}
           STAGING_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.STAGING_SUPABASE_PUBLISHABLE_KEY }}
-          STAGING_SUPABASE_SERVICE_ROLE_KEY: ${{ inputs.runner_mode == 'acceptance-extra' && secrets.STAGING_SUPABASE_SERVICE_ROLE_KEY || '' }}
+          STAGING_SUPABASE_SERVICE_ROLE_KEY: ${{ (inputs.runner_mode == 'acceptance-extra' || inputs.runner_mode == 'admin-acceptance') && secrets.STAGING_SUPABASE_SERVICE_ROLE_KEY || '' }}
           STAGING_OWNER_A_EMAIL: ${{ secrets.STAGING_OWNER_A_EMAIL }}
           STAGING_OWNER_A_PASSWORD: ${{ secrets.STAGING_OWNER_A_PASSWORD }}
           STAGING_EMPLOYEE_A_EMAIL: ${{ secrets.STAGING_EMPLOYEE_A_EMAIL }}
