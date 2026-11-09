@@ -39,7 +39,12 @@ test('owner lead detail, assignment and private attachment work on exact Preview
     console.info('Prompt 3 lead detail and attachment upload/delete passed.');
 
     await page.getByLabel('Přiřazení').selectOption('');
+    const assignmentResponse = page.waitForResponse((response) => response.url().includes('/rest/v1/app_leads') && response.request().method() === 'PATCH');
     await page.getByRole('button', { name: 'Uložit přiřazení' }).click();
+    const assignment = await assignmentResponse;
+    const assignmentBody = await assignment.json().catch(() => null) as { code?: unknown } | null;
+    const assignmentCode = typeof assignmentBody?.code === 'string' && /^[A-Z0-9_.-]{1,64}$/i.test(assignmentBody.code) ? assignmentBody.code : 'unclassified';
+    console.info(`Prompt 3 assignment PATCH HTTP ${assignment.status()} code=${assignmentCode}.`);
     await expect.poll(async () => (await restGet(request, token, 'app_leads', leadQuery))[0]?.assigned_to).toBeNull();
     await page.getByLabel('Přiřazení').selectOption(employeeId);
     await page.getByRole('button', { name: 'Uložit přiřazení' }).click();
