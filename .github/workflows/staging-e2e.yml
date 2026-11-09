@@ -773,6 +773,8 @@ jobs:
             --build-env VITE_APP_SCHEMA_READS=true \
             --build-env VITE_PILOT_WRITES=true \
             --build-env VITE_STAGING_LEAD_STATUS_WRITES=true \
+            --build-env VITE_LEAD_NOTES_FILES_ENABLED=true \
+            --build-env "VITE_STAGING_SUPABASE_PROJECT_REF=$STAGING_SUPABASE_PROJECT_REF" \
             --build-env VITE_PAID_REGISTRATION_ENABLED=false \
             --env "SUPABASE_URL=$STAGING_SUPABASE_URL" \
             --env "SUPABASE_ANON_KEY=$STAGING_SUPABASE_PUBLISHABLE_KEY" \
