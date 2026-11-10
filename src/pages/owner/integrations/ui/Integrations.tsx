@@ -193,7 +193,7 @@ export const Integrations: React.FC<IntegrationsProps> = () => {
           </div>
           <h2 className="mt-5 text-lg font-semibold tracking-tight text-slate-950">AI Dispečer (e-mail)</h2>
           <p className="mt-2 text-sm leading-6 text-slate-500">Unikátní webhook URL přijímá poptávky právě pro tuto firmu. Vložte ji do Make.com nebo do ověřené e-mailové automatizace.</p>
-          <div className="mt-5 flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 p-2">
+          <div className="mt-5 flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 p-2">
             <code className="min-w-0 flex-1 overflow-hidden text-ellipsis whitespace-nowrap px-2 text-xs text-slate-700">
               {incomingLeadLoading ? 'Načítám zabezpečenou URL…' : securedIncomingLeadUrl || 'Webhook není aktivní'}
             </code>
@@ -212,7 +212,7 @@ export const Integrations: React.FC<IntegrationsProps> = () => {
           </div>
           <h2 className="mt-5 text-lg font-semibold tracking-tight text-slate-950">Webový formulář</h2>
           <p className="mt-2 text-sm leading-6 text-slate-500">Vložte jediný řádek před koncovou značku <code>&lt;/body&gt;</code> na webu firmy.</p>
-          <div className="mt-5 flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 p-2">
+          <div className="mt-5 flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 p-2">
             <code className="min-w-0 flex-1 overflow-hidden text-ellipsis whitespace-nowrap px-2 text-xs text-slate-700">{widgetSnippet}</code>
             <button type="button" onClick={() => void copyValue('widget', widgetSnippet)} className="inline-flex min-h-10 shrink-0 items-center gap-2 rounded-lg bg-slate-950 px-3 text-xs font-semibold text-white hover:bg-slate-800" aria-label="Kopírovat kód webového formuláře">
               {copied === 'widget' ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}{copied === 'widget' ? 'Zkopírováno' : 'Kopírovat'}
@@ -254,7 +254,7 @@ export const Integrations: React.FC<IntegrationsProps> = () => {
 
           <p className="mt-3 text-xs leading-5 text-slate-500">Připojení začíná v průvodci. Přístup SQL ani jednorázový klíč firmy se nevkládá do Docker Compose; tajné údaje zůstávají v souborech na NAS.</p>
 
-          <div className="mt-5 rounded-xl border border-slate-200 bg-slate-50/70 p-4">
+          <div className="mt-5 border-t border-slate-200 pt-4">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div role="status" aria-live="polite" className="flex items-center gap-2 text-sm font-semibold text-slate-800">
                 <span className={`h-2.5 w-2.5 rounded-full ${connectorRecentlyConnected ? 'bg-emerald-500' : 'bg-slate-300'}`} aria-hidden="true" />
@@ -266,7 +266,7 @@ export const Integrations: React.FC<IntegrationsProps> = () => {
             {connectors.length > 0 && currentOrg?.id ? <div className="mt-4 border-t border-slate-200 pt-4"><ConnectorStatus companyId={currentOrg.id} items={connectors} onRefresh={() => void refreshConnectors()} /></div> : null}
           </div>
 
-          <div className="mt-4 grid gap-4 rounded-xl border border-slate-200 p-4 sm:grid-cols-[1fr_auto_auto] sm:items-end" aria-busy={modeBusy}>
+          <div className="mt-4 grid gap-4 border-t border-slate-200 pt-4 sm:grid-cols-[1fr_auto_auto] sm:items-end" aria-busy={modeBusy}>
             <div><h3 className="font-semibold text-slate-950">Ukládání dat</h3><p className="mt-1 text-sm text-slate-500">Přepnutí na firemní databázi je dostupné po schválení mapování firmy i zakázek a úspěšném ověření konektoru.</p></div>
             <label className="text-xs font-semibold text-slate-600">Databázový server<select aria-label="Typ firemní databáze" value={databaseDriver} onChange={event => setDatabaseDriver(event.target.value as typeof databaseDriver)} className="mt-1 block min-h-10 rounded-lg border border-slate-200 bg-white px-3 text-sm font-normal"><option value="postgres">PostgreSQL</option><option value="mysql">MySQL</option><option value="mariadb">MariaDB</option><option value="mssql">Microsoft SQL Server</option></select></label>
             <label className="text-xs font-semibold text-slate-600">Aktivní zdroj<select aria-label="Režim databáze" value={databaseMode} disabled={modeBusy} onChange={event => void changeDatabaseMode(event.target.value as 'managed_cloud' | 'byodb')} className="mt-1 block min-h-10 rounded-lg border border-slate-200 bg-white px-3 text-sm font-normal"><option value="managed_cloud">Managed Cloud (Supabase)</option><option value="byodb" disabled={!canActivateByodb}>Firemní databáze (BYODB){!byodbEnabled ? ', čeká na staging ověření' : ''}</option></select></label>

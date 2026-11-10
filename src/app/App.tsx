@@ -87,7 +87,7 @@ function AppSetupRequired() {
           Tento Vercel projekt je nastavený jako firemní aplikace, ale nemá dostupné Supabase připojení.
           Přihlášení a data firmy jsou proto zablokované, aby se nikdy nespustil ukázkový režim.
         </p>
-        <p className="mt-6 rounded-xl border border-cyan-300/20 bg-cyan-300/10 p-4 text-sm text-cyan-100">
+        <p className="mt-6 border-t border-white/20 pt-4 text-sm text-cyan-100">
           Nastavte VITE_SUPABASE_URL a VITE_SUPABASE_ANON_KEY ve Vercelu a znovu nasaďte projekt.
         </p>
       </section>

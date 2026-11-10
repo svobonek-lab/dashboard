@@ -141,10 +141,10 @@ export const SmartFieldMappingModal: React.FC<SmartFieldMappingModalProps> = ({
               return (
                 <div
                   key={rule.sourceColumn}
-                  className={`grid grid-cols-12 gap-3 items-center p-3.5 rounded-xl border transition-all ${
+                  className={`grid grid-cols-12 gap-3 items-center border-b border-slate-200 py-3.5 transition-all ${
                     isIgnored
-                      ? 'bg-slate-50/60 border-slate-200/60 opacity-60'
-                      : 'bg-white border-slate-200 hover:border-cyan-300'
+                      ? 'opacity-60'
+                      : 'hover:bg-slate-50'
                   }`}
                 >
                   {/* Source Column */}

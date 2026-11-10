@@ -64,7 +64,7 @@ export const RoleGuard: React.FC<RoleGuardProps> = ({ role, children, fallback }
           </p>
         </div>
 
-        <div className="bg-slate-50 rounded-xl p-4 border border-slate-200 text-left space-y-2 text-xs">
+        <div className="border-t border-slate-200 pt-4 text-left space-y-2 text-xs">
           <div className="flex items-center justify-between text-slate-500">
             <span>Uživatel:</span>
             <span className="text-slate-800 font-semibold">{dbUser?.email || 'Neznámý'}</span>

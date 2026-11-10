@@ -65,7 +65,7 @@ export class ErrorBoundary extends React.Component<Props, State> {
     if (this.state.hasError) {
       return (
         <div className="min-h-screen bg-white text-slate-900 flex items-center justify-center p-6">
-          <div className="max-w-md w-full bg-slate-800 border border-slate-300 rounded-xl p-6 space-y-6">
+          <div className="max-w-md w-full bg-white border border-slate-200 rounded-xl p-6 space-y-6">
             <div className="flex items-center gap-4">
               <div className="w-12 h-12 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400">
                 <AlertTriangle className="w-6 h-6" />
@@ -76,7 +76,7 @@ export class ErrorBoundary extends React.Component<Props, State> {
               </div>
             </div>
 
-            <div role="alert" className="p-3 bg-slate-50/80 rounded-xl border border-slate-200 text-sm text-slate-700">
+            <div role="alert" className="border-t border-slate-200 pt-3 text-sm text-slate-700">
               Zkuste stránku obnovit. Pokud potíž přetrvá, zkopírujte diagnostiku a pošlete ji podpoře.
             </div>
 

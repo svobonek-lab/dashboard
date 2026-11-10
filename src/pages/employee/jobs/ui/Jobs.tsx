@@ -101,7 +101,7 @@ export const EmployeeJobsPage: React.FC<EmployeeJobsPageProps> = ({ leads, onSel
             </div>
 
             {/* Customer Details Box */}
-            <div className="bg-slate-50 p-3 rounded-xl border border-slate-200/80 flex items-center justify-between text-xs">
+            <div className="border-t border-slate-200 py-3 flex items-center justify-between text-xs">
               <div className="space-y-0.5">
                 <span className="text-[10px] text-slate-500 block">Investor / Kontakt:</span>
                 <span className="font-bold text-slate-900">{job.customerName}</span>
