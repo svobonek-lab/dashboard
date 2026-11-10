@@ -28,7 +28,7 @@ export function getOwnerAttentionItems(leads: DashboardLead[]): OwnerAttentionIt
         leadId: lead.id,
         type: isNew ? (urgent ? 'critical' : 'urgent') : 'warning',
         tag: isNew ? 'Nová poptávka' : 'Čeká na odpověď',
-        client: `${lead.customerName} · ${lead.title}`,
+        client: `${lead.customerName}, ${lead.title}`,
         amount: lead.price > 0 ? currency.format(lead.price) : 'Cena není uvedena',
         deadline: isNew ? 'Ozvat se zákazníkovi' : 'Navázat na nabídku',
         actionText: 'Otevřít poptávku',

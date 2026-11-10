@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ArrowRight, BriefcaseBusiness, CheckCircle2, Clock3, MapPin, Phone } from 'lucide-react';
+import { BriefcaseBusiness, CheckCircle2, Clock3, MapPin, Phone } from 'lucide-react';
 import type { CompanyBranding } from '../../../entities/company';
 import type { Lead, LeadStatus } from '../../../entities/lead';
 import { LeadStatusBadge } from '../../../entities/lead';
@@ -59,7 +59,7 @@ export const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({ leads, onS
                   <div className="mt-4 flex flex-wrap gap-x-5 gap-y-2 text-sm text-slate-600">{location && <span className="inline-flex items-center gap-1.5"><MapPin className="h-4 w-4 text-slate-400" />{location}</span>}{lead.preferredDate && <span className="inline-flex items-center gap-1.5"><Clock3 className="h-4 w-4 text-slate-400" />{lead.preferredDate}</span>}{(lead.customerPhone || lead.phone) && <a href={`tel:${lead.customerPhone || lead.phone}`} className="inline-flex items-center gap-1.5 font-medium text-blue-600 hover:text-blue-700"><Phone className="h-4 w-4" />Zavolat</a>}</div>
                 </div>
                 <div className="flex shrink-0 flex-col gap-2 sm:w-48">
-                  <button type="button" onClick={() => onSelectLead(lead)} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 hover:bg-slate-50">Otevřít detail <ArrowRight className="h-4 w-4" /></button>
+                  <button type="button" onClick={() => onSelectLead(lead)} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 hover:bg-slate-50">Otevřít detail </button>
                   {next && onUpdateLeadStatus && <button type="button" disabled={updatingId === lead.id} onClick={() => advance(lead)} className="workspace-primary-action inline-flex min-h-11 items-center justify-center px-3 text-sm font-semibold disabled:cursor-wait disabled:opacity-60">{updatingId === lead.id ? 'Ukládám…' : nextStatusLabel[next] || 'Posunout stav'}</button>}
                 </div>
               </div>

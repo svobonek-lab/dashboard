@@ -13,7 +13,7 @@ export const BillingReturnPage: React.FC = () => {
         <div className={`mx-auto flex h-14 w-14 items-center justify-center rounded-2xl ${succeeded ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'}`}>
           {succeeded ? <CheckCircle2 aria-hidden="true" className="h-6 w-6" /> : <XCircle aria-hidden="true" className="h-6 w-6" />}
         </div>
-        <p className="mt-6 text-xs font-bold uppercase tracking-[0.18em] text-slate-500">StavbaFlow fakturace</p>
+        <p className="mt-6 text-xs font-bold text-slate-500">StavbaFlow fakturace</p>
         <h1 className="mt-2 text-3xl font-black tracking-tight">{succeeded ? 'Platba byla přijata' : 'Platba byla zrušena'}</h1>
         <p className="mt-3 text-sm leading-6 text-slate-600">
           {succeeded

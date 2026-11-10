@@ -1,5 +1,5 @@
 import React from 'react';
-import { ArrowRight, Building2, Check, MessageSquarePlus, UserPlus, UsersRound } from 'lucide-react';
+import { Building2, Check, MessageSquarePlus, UserPlus, UsersRound } from 'lucide-react';
 
 export const OnboardingChecklist: React.FC<{ leadsCount: number; employeesCount: number; organizationName: string; hasIdentity: boolean; onNavigate: (href: string) => void }> = ({ leadsCount, employeesCount, organizationName, hasIdentity, onNavigate }) => {
   const steps = [
@@ -29,7 +29,7 @@ export const OnboardingChecklist: React.FC<{ leadsCount: number; employeesCount:
               <span className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl ${complete ? 'bg-emerald-50 text-emerald-700' : 'bg-blue-50 text-blue-600'}`}>{complete ? <Check className="h-5 w-5" /> : <Icon className="h-5 w-5" />}</span>
               <span className="min-w-0 flex-1"><small className="text-xs font-semibold text-slate-400">Krok {index + 1}</small><strong className="mt-1 block text-sm font-semibold text-slate-950">{title}</strong><span className="mt-1 block text-sm leading-5 text-slate-500">{description}</span></span>
               <span className={`hidden rounded-full px-2.5 py-1 text-xs font-semibold sm:inline-flex ${complete ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-600'}`}>{complete ? 'Hotovo' : 'Pokračovat'}</span>
-              <ArrowRight className="h-4 w-4 shrink-0 text-slate-300 transition group-hover:translate-x-0.5 group-hover:text-blue-600" />
+
             </button>
           ))}
         </div>

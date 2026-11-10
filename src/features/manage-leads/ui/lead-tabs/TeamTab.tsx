@@ -47,14 +47,14 @@ export const TeamTab: React.FC<TeamTabProps> = ({ lead, employees, onNotice, onU
     <div className="space-y-6 font-sans">
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-2xs">
-          <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Odpovědný pracovník</span>
+          <span className="text-[11px] font-bold text-slate-500">Odpovědný pracovník</span>
           <p className="text-lg font-black text-slate-900 mt-1">{assignedEmployee?.name || 'Nepřiřazeno'}</p>
           <span className="text-[10px] text-slate-500">
             {assignedEmployee ? 'Aktivní člen této firmy' : 'Vyberte pracovníka z ověřeného seznamu'}
           </span>
         </div>
         <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-2xs">
-          <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Dostupní zaměstnanci</span>
+          <span className="text-[11px] font-bold text-slate-500">Dostupní zaměstnanci</span>
           <p className="text-lg font-black text-[#0A84FF] mt-1">{assignableEmployees.length}</p>
           <span className="text-[10px] text-slate-500">Pouze aktivní zaměstnanci stejné firmy</span>
         </div>
@@ -88,7 +88,7 @@ export const TeamTab: React.FC<TeamTabProps> = ({ lead, employees, onNotice, onU
         )}
 
         <form onSubmit={saveAssignment} className="p-5 space-y-3">
-          <label className="text-xs font-bold uppercase tracking-wider text-slate-600 block" htmlFor="lead-assignment">
+          <label className="text-xs font-bold text-slate-600 block" htmlFor="lead-assignment">
             Přiřazený zaměstnanec
           </label>
           <div className="flex flex-col sm:flex-row gap-2">
@@ -101,7 +101,7 @@ export const TeamTab: React.FC<TeamTabProps> = ({ lead, employees, onNotice, onU
             >
               <option value="">Nepřiřazeno</option>
               {assignableEmployees.map((employee) => (
-                <option key={employee.id} value={employee.id}>{employee.name} · {employee.email}</option>
+                <option key={employee.id} value={employee.id}>{employee.name}, {employee.email}</option>
               ))}
             </select>
             <button

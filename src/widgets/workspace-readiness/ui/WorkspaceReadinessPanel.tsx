@@ -1,5 +1,5 @@
 import React from 'react';
-import { ArrowRight, Check, Circle, ShieldCheck, Sparkles, Users, BriefcaseBusiness, Building2 } from 'lucide-react';
+import { Check, Circle, ShieldCheck, Sparkles, Users, BriefcaseBusiness, Building2 } from 'lucide-react';
 import type { Employee } from '@/entities/employee';
 import type { Lead } from '@/entities/lead';
 import { useRouter } from '@/shared/lib/router';
@@ -35,14 +35,14 @@ export const WorkspaceReadinessPanel: React.FC<WorkspaceReadinessPanelProps> = (
             {isEmployee ? <BriefcaseBusiness className="h-5 w-5" /> : <Building2 className="h-5 w-5" />}
           </span>
           <div className="min-w-0">
-            <p className="text-xs font-semibold text-blue-600">Další krok · {readiness.completed}/{readiness.total}</p>
+            <p className="text-xs font-semibold text-blue-600">Další krok: {readiness.completed}/{readiness.total}</p>
             <h2 className="mt-0.5 truncate text-sm font-semibold text-slate-950">{next.label}</h2>
             <p className="mt-0.5 truncate text-xs text-slate-500">{next.description}</p>
           </div>
         </div>
         <div className="flex shrink-0 items-center gap-3">
           <div className="h-1.5 w-24 overflow-hidden rounded-full bg-slate-100"><div className="h-full rounded-full bg-blue-600" style={{ width: `${readiness.percent}%` }} /></div>
-          <button type="button" onClick={() => navigate(next.href)} className="inline-flex min-h-9 items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 text-xs font-semibold text-slate-700 hover:bg-slate-50">Pokračovat <ArrowRight className="h-3.5 w-3.5" /></button>
+          <button type="button" onClick={() => navigate(next.href)} className="inline-flex min-h-9 items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 text-xs font-semibold text-slate-700 hover:bg-slate-50">Pokračovat </button>
         </div>
       </section>
     );
@@ -58,7 +58,7 @@ export const WorkspaceReadinessPanel: React.FC<WorkspaceReadinessPanelProps> = (
               {isEmployee ? <BriefcaseBusiness className="h-5 w-5" /> : <Building2 className="h-5 w-5" />}
             </div>
             <div>
-              <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.14em] text-slate-400">
+              <div className="flex items-center gap-2 text-[10px] font-black text-slate-400">
                 <Sparkles className="h-3.5 w-3.5 text-blue-500" />
                 {isEmployee ? 'Pracovní centrum' : 'Stav připravenosti firmy'}
               </div>
@@ -70,7 +70,7 @@ export const WorkspaceReadinessPanel: React.FC<WorkspaceReadinessPanelProps> = (
           </div>
           <div className="flex items-center gap-3 sm:flex-col sm:items-end sm:gap-1">
             <strong className="text-2xl font-black tracking-tight text-slate-900">{readiness.percent}%</strong>
-            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">{readiness.completed}/{readiness.total} kroků</span>
+            <span className="text-[10px] font-bold text-slate-400">{readiness.completed}/{readiness.total} kroků</span>
           </div>
         </div>
 
@@ -90,7 +90,7 @@ export const WorkspaceReadinessPanel: React.FC<WorkspaceReadinessPanelProps> = (
                 <span className={`flex h-6 w-6 items-center justify-center rounded-lg ${step.complete ? 'bg-emerald-100 text-emerald-700' : 'bg-white text-slate-400'}`}>
                   {step.complete ? <Check className="h-3.5 w-3.5" /> : <Circle className="h-3.5 w-3.5" />}
                 </span>
-                <ArrowRight className="h-3.5 w-3.5 text-slate-300 transition-transform group-hover:translate-x-0.5 group-hover:text-blue-500" />
+
               </div>
               <strong className={`mt-2 block text-xs ${step.complete ? 'text-emerald-800' : 'text-slate-800'}`}>{step.label}</strong>
               {!compact && <span className="mt-1 block text-[10px] leading-relaxed text-slate-500">{step.description}</span>}
@@ -108,7 +108,7 @@ export const WorkspaceReadinessPanel: React.FC<WorkspaceReadinessPanelProps> = (
               </div>
             </div>
             <button type="button" onClick={() => navigate(next.href)} className="inline-flex shrink-0 items-center justify-center gap-1.5 rounded-xl bg-[#0A84FF] px-3.5 py-2 text-xs font-bold text-white shadow-sm transition hover:bg-blue-600">
-              Otevřít krok <ArrowRight className="h-3.5 w-3.5" />
+              Otevřít krok
             </button>
           </div>
         )}

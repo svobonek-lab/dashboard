@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { ArrowLeft, CheckCircle2, Clock3, Mail, MapPin, Phone, Save, UserRound } from 'lucide-react';
+import { CheckCircle2, Clock3, Mail, MapPin, Phone, Save, UserRound } from 'lucide-react';
 import type { Lead } from '../../../entities/lead';
 import type { Employee } from '../../../entities/employee';
 import { buildLeadAssignmentPatch } from '../../../entities/lead';
@@ -54,9 +54,9 @@ export const LeadDetail: React.FC<LeadDetailProps> = ({ lead, employees, onBack,
   return (
     <div className="workspace-page mx-auto max-w-5xl">
       <header>
-        <button type="button" onClick={onBack} className="inline-flex items-center gap-2 text-sm font-semibold text-slate-500 hover:text-slate-900"><ArrowLeft className="h-4 w-4" />Zpět na poptávky</button>
+        <button type="button" onClick={onBack} className="inline-flex items-center gap-2 text-sm font-semibold text-slate-500 hover:text-slate-900">Zpět na poptávky</button>
         <div className="mt-5 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-          <div><p className="workspace-kicker">{statusLabel[lead.status]}</p><h1 className="workspace-title">{lead.title || 'Zakázka bez názvu'}</h1><p className="workspace-subtitle">{lead.customerName || 'Zákazník neuveden'}{lead.city ? ` · ${lead.city}` : ''}</p></div>
+          <div><p className="workspace-kicker">{statusLabel[lead.status]}</p><h1 className="workspace-title">{lead.title || 'Zakázka bez názvu'}</h1><p className="workspace-subtitle">{lead.customerName || 'Zákazník neuveden'}{lead.city ? `, ${lead.city}` : ''}</p></div>
           <strong className="text-lg font-semibold text-slate-950">{price}</strong>
         </div>
       </header>

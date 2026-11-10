@@ -1,24 +1,23 @@
 import React, { useState, useEffect } from 'react';
 import { useOrganization } from '@/entities/session';
 import { useRouter, Link } from '@/shared/lib/router';
-import { 
-  LayoutDashboard, 
-  Kanban, 
-  HardHat, 
-  Calendar, 
-  Users, 
-  BarChart3, 
-  FileText, 
-  FolderArchive, 
-  MessageSquare, 
-  Code2, 
-  Globe, 
-  Settings, 
-  Sparkles, 
-  Search, 
-  Plus, 
-  LogOut, 
-  ChevronRight,
+import {
+  LayoutDashboard,
+  Kanban,
+  HardHat,
+  Calendar,
+  Users,
+  BarChart3,
+  FileText,
+  FolderArchive,
+  MessageSquare,
+  Code2,
+  Globe,
+  Settings,
+  Sparkles,
+  Search,
+  Plus,
+  LogOut,
   Shield,
   Download,
   CheckCircle2,
@@ -44,7 +43,7 @@ interface OwnerLayoutProps {
   onExitReadOnly?: () => void;
 }
 
-export const OwnerLayout: React.FC<OwnerLayoutProps> = ({ 
+export const OwnerLayout: React.FC<OwnerLayoutProps> = ({
   children,
   leads = [],
   onSelectLead,
@@ -53,10 +52,10 @@ export const OwnerLayout: React.FC<OwnerLayoutProps> = ({
 }) => {
   const { currentOrg } = useOrganization();
   const branding = currentOrg?.branding || {};
-  const { 
-    user, 
-    dbUser, 
-    logout, 
+  const {
+    user,
+    dbUser,
+    logout,
     impersonatingOrgId,
     stopImpersonation
   } = useOrganization();
@@ -159,7 +158,7 @@ export const OwnerLayout: React.FC<OwnerLayoutProps> = ({
 
   return (
     <div className="workspace-shell sf-owner-shell min-h-screen bg-surface-secondary text-text flex flex-col font-sans selection:bg-brand-primary-soft">
-      
+
       {/* Super Admin Company Workspace Top Bar */}
       {(isSuperAdminUser || readOnlyMode) && (
         <div className="bg-[#0C111D] border-b border-slate-800 px-6 h-14 flex items-center justify-between text-xs font-bold shadow-lg fixed top-0 w-full z-50">
@@ -179,14 +178,14 @@ export const OwnerLayout: React.FC<OwnerLayoutProps> = ({
                   <img src={currentOrg.logo_url} alt={activeCompanyName} className="w-full h-full object-cover" />
                 </div>
               ) : null}
-              <span className="bg-cyan-500/20 border border-cyan-500/40 text-cyan-400 px-2.5 py-0.5 rounded-lg text-[10px] font-black uppercase tracking-wider">
+              <span className="bg-cyan-500/20 border border-cyan-500/40 text-cyan-400 px-2.5 py-0.5 rounded-lg text-[10px] font-black">
                 Impersonating
               </span>
               <span className="text-white font-black text-sm tracking-tight">{activeCompanyName}</span>
-              <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-slate-800 text-slate-300 border border-slate-700">
+              <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-800 text-slate-300 border border-slate-700">
                 Plná podpora
               </span>
-              <span className="hidden lg:inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[10px] font-mono text-green-400 bg-green-500/10 border border-green-500/20">
+              <span className="hidden lg:inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[10px] text-green-400 bg-green-500/10 border border-green-500/20">
                 <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse"></span>
                 Auditovaná relace
               </span>
@@ -202,7 +201,7 @@ export const OwnerLayout: React.FC<OwnerLayoutProps> = ({
       <div className={`flex flex-1 ${(isSuperAdminUser || readOnlyMode) ? 'pt-14' : ''}`}>
         {/* Mobile Drawer Overlay */}
         {isMobileDrawerOpen && (
-          <div 
+          <div
             className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-40 lg:hidden transition-opacity cursor-pointer"
             onClick={() => setIsMobileDrawerOpen(false)}
             onTouchStart={handleTouchStart}
@@ -213,14 +212,14 @@ export const OwnerLayout: React.FC<OwnerLayoutProps> = ({
         )}
 
         {/* Sidebar - Desktop Fixed / Mobile Slide-in Drawer with Swipe Close */}
-        <aside 
+        <aside
           id="owner-navigation"
           onTouchStart={handleTouchStart}
           onTouchMove={handleTouchMove}
           onTouchEnd={handleTouchEnd}
           className={`workspace-rail w-64 max-w-[calc(100vw-36px)] lg:max-w-none lg:w-64 bg-surface border-r border-border flex flex-col justify-between shrink-0 fixed inset-y-0 left-0 z-50 shadow-app transition-transform duration-300 ease-out font-sans ${
             isMobileDrawerOpen ? 'visible translate-x-0' : 'invisible -translate-x-full lg:visible lg:translate-x-0'
-          }`} 
+          }`}
           style={{ top: (isSuperAdminUser || readOnlyMode) ? '56px' : '0' }}
         >
           {/* Top Brand & Identity Header */}
@@ -228,7 +227,7 @@ export const OwnerLayout: React.FC<OwnerLayoutProps> = ({
             <div className="p-5 border-b border-border flex items-center justify-between">
               <div className="flex items-center gap-3 overflow-hidden">
                 {/* 36px logo */}
-                <div 
+                <div
                   className="w-[36px] h-[36px] rounded-app bg-brand-primary text-white font-black text-sm shrink-0 flex items-center justify-center shadow-app overflow-hidden"
                 >
                   {currentOrg?.logo_url ? (
@@ -237,12 +236,12 @@ export const OwnerLayout: React.FC<OwnerLayoutProps> = ({
                     activeCompanyName.substring(0, 2).toUpperCase()
                   )}
                 </div>
-                
+
                 <div className="overflow-hidden">
                   <h1 className="text-[17px] font-bold text-text truncate tracking-tight leading-tight">
                     {activeCompanyName}
                   </h1>
-                  <p className="text-[10px] font-semibold text-muted tracking-wide mt-0.5 uppercase">
+                  <p className="text-[10px] font-semibold text-muted mt-0.5">
                     Firemní účet
                   </p>
                 </div>
@@ -260,7 +259,7 @@ export const OwnerLayout: React.FC<OwnerLayoutProps> = ({
 
             {/* Navigation Menu */}
             <nav className="py-4 px-0 space-y-0.5 overflow-y-auto max-h-[calc(100vh-250px)]">
-              <div className="px-6 pb-2 text-[10px] font-bold tracking-wider text-muted uppercase font-mono">
+              <div className="px-6 pb-2 text-[10px] font-bold text-muted">
                 Aplikace
               </div>
 
@@ -274,8 +273,8 @@ export const OwnerLayout: React.FC<OwnerLayoutProps> = ({
                     exact={item.exact}
                     onClick={() => setIsMobileDrawerOpen(false)}
                     className={`w-full min-h-[44px] flex items-center justify-between px-6 py-2.5 text-sm font-semibold transition-colors relative cursor-pointer ${
-                      active 
-                        ? 'bg-brand-primary-soft/40 text-brand-primary font-bold' 
+                      active
+                        ? 'bg-brand-primary-soft/40 text-brand-primary font-bold'
                         : 'text-muted hover:text-text hover:bg-surface-secondary'
                     }`}
                   >
@@ -284,8 +283,8 @@ export const OwnerLayout: React.FC<OwnerLayoutProps> = ({
                       {active && (
                         <span className="absolute left-0 top-0 bottom-0 w-[3px] bg-brand-primary rounded-r-xs" />
                       )}
-                      <Icon 
-                        className={`w-4 h-4 ${active ? 'text-brand-primary' : 'text-muted'}`} 
+                      <Icon
+                        className={`w-4 h-4 ${active ? 'text-brand-primary' : 'text-muted'}`}
                       />
                       <span className="truncate">{item.label}</span>
                     </div>
@@ -304,7 +303,7 @@ export const OwnerLayout: React.FC<OwnerLayoutProps> = ({
           <div className="p-4 border-t border-border bg-surface-secondary flex flex-col gap-3">
             {/* Compact profile */}
             <div className="flex items-center gap-2.5 overflow-hidden">
-              <div 
+              <div
                 className="w-8 h-8 rounded-app bg-brand-primary text-white font-bold text-xs flex items-center justify-center shrink-0 shadow-app"
               >
                 {(dbUser?.email || user?.email || 'U').charAt(0).toUpperCase()}
@@ -313,7 +312,7 @@ export const OwnerLayout: React.FC<OwnerLayoutProps> = ({
                 <p className="text-xs font-bold text-text truncate">
                   {dbUser?.email || user?.email || 'Majitel CRM'}
                 </p>
-                <p className="text-[9px] font-semibold text-muted uppercase tracking-wider">
+                <p className="text-[9px] font-semibold text-muted">
                   {dbUser?.role === 'super_admin' || dbUser?.role === 'platform_admin' ? 'Správce platformy' : 'Majitel'}
                 </p>
               </div>
@@ -371,10 +370,10 @@ export const OwnerLayout: React.FC<OwnerLayoutProps> = ({
             <div className="flex items-center gap-2 min-w-0">
               {currentOrg?.logo_url ? (
                 <div className="w-8 h-8 rounded-lg overflow-hidden border border-border shrink-0 shadow-xs bg-surface flex items-center justify-center">
-                  <img 
-                    src={currentOrg.logo_url} 
-                    alt={activeCompanyName} 
-                    className="w-full h-full object-cover" 
+                  <img
+                    src={currentOrg.logo_url}
+                    alt={activeCompanyName}
+                    className="w-full h-full object-cover"
                   />
                 </div>
               ) : null}
@@ -396,7 +395,7 @@ export const OwnerLayout: React.FC<OwnerLayoutProps> = ({
             >
               <Search className="w-3.5 h-3.5 text-muted" />
               <span className="flex-1 truncate text-muted">Hledat zakázky, klienty...</span>
-              <kbd className="px-1.5 py-0.5 bg-surface border border-border rounded-md text-[10px] font-mono text-muted shadow-app">⌘K</kbd>
+              <kbd className="px-1.5 py-0.5 bg-surface border border-border rounded-md text-[10px] text-muted shadow-app">⌘K</kbd>
             </button>}
 
           </div>

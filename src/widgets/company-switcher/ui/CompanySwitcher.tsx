@@ -1,13 +1,13 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useOrganization } from '@/entities/session';
 import { useRouter } from '@/shared/lib/router';
-import { 
-  Building2, 
-  ChevronDown, 
-  Check, 
-  Plus, 
-  ExternalLink, 
-  Search, 
+import {
+  Building2,
+  ChevronDown,
+  Check,
+  Plus,
+  ExternalLink,
+  Search,
   Sparkles,
   ShieldCheck,
   Zap
@@ -18,10 +18,10 @@ interface CompanySwitcherProps {
 }
 
 export const CompanySwitcher: React.FC<CompanySwitcherProps> = ({ variant = 'dark' }) => {
-  const { 
-    currentOrg, 
-    organizations, 
-    switchOrganization, 
+  const {
+    currentOrg,
+    organizations,
+    switchOrganization,
     impersonateOrganization,
     impersonatingOrgId,
     fetchAllOrganizationsAdmin,
@@ -69,7 +69,7 @@ export const CompanySwitcher: React.FC<CompanySwitcherProps> = ({ variant = 'dar
     navigate('/dashboard');
   };
 
-  const filteredOrgs = allOrgs.filter(org => 
+  const filteredOrgs = allOrgs.filter(org =>
     org.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     (org.city && org.city.toLowerCase().includes(searchTerm.toLowerCase()))
   );
@@ -92,7 +92,7 @@ export const CompanySwitcher: React.FC<CompanySwitcherProps> = ({ variant = 'dar
             : 'bg-white hover:bg-slate-50 text-slate-900 border-slate-200 hover:border-slate-300'
         }`}
       >
-        <div 
+        <div
           className="w-5 h-5 rounded-lg flex items-center justify-center text-[10px] font-black shrink-0 overflow-hidden text-slate-900"
           style={{ backgroundColor: activeOrgColor }}
         >
@@ -102,12 +102,12 @@ export const CompanySwitcher: React.FC<CompanySwitcherProps> = ({ variant = 'dar
             activeOrgName.charAt(0).toUpperCase()
           )}
         </div>
-        
+
         <span className="truncate max-w-[140px] sm:max-w-[180px] font-bold">
           {activeOrgName}
         </span>
-        
-        <span className={`px-1.5 py-0.2 rounded text-[9px] font-mono uppercase font-bold tracking-wider ${
+
+        <span className={`px-1.5 py-0.2 rounded text-[9px]  font-bold  ${
           isDark ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/30' : 'bg-slate-100 text-slate-700'
         }`}>
           {(currentOrg as any)?.plan || 'Bez plánu'}
@@ -119,8 +119,8 @@ export const CompanySwitcher: React.FC<CompanySwitcherProps> = ({ variant = 'dar
       {/* Dropdown Menu */}
       {isOpen && (
         <div className={`absolute left-0 mt-2 w-80 rounded-2xl shadow-2xl border z-50 overflow-hidden backdrop-blur-xl animate-in fade-in zoom-in-95 duration-150 ${
-          isDark 
-            ? 'bg-[#0C111D]/95 border-slate-200 text-slate-800 shadow-cyan-950/20' 
+          isDark
+            ? 'bg-[#0C111D]/95 border-slate-200 text-slate-800 shadow-cyan-950/20'
             : 'bg-white border-slate-200 text-slate-800 shadow-slate-900/10'
         }`}>
           {/* Search Header */}
@@ -141,7 +141,7 @@ export const CompanySwitcher: React.FC<CompanySwitcherProps> = ({ variant = 'dar
           </div>
 
           {/* Section Header */}
-          <div className="px-3.5 py-2 text-[10px] font-mono uppercase tracking-wider text-slate-500 font-bold flex items-center justify-between">
+          <div className="px-3.5 py-2 text-[10px] text-slate-500 font-bold flex items-center justify-between">
             <span>Izolované pracovní prostory</span>
             <span className="text-cyan-400">{filteredOrgs.length} firem</span>
           </div>
@@ -158,8 +158,8 @@ export const CompanySwitcher: React.FC<CompanySwitcherProps> = ({ variant = 'dar
                   onClick={() => handleSelectCompany(org.id)}
                   className={`w-full flex items-center justify-between p-2.5 rounded-xl text-left text-xs transition-all group ${
                     isSelected
-                      ? isDark 
-                        ? 'bg-cyan-500/15 text-slate-900 border border-cyan-500/30' 
+                      ? isDark
+                        ? 'bg-cyan-500/15 text-slate-900 border border-cyan-500/30'
                         : 'bg-brand-primary-soft text-text border border-brand-primary-soft'
                       : isDark
                         ? 'hover:bg-slate-800/70 text-slate-700 hover:text-slate-900'
@@ -167,7 +167,7 @@ export const CompanySwitcher: React.FC<CompanySwitcherProps> = ({ variant = 'dar
                   }`}
                 >
                   <div className="flex items-center gap-2.5 overflow-hidden">
-                    <div 
+                    <div
                       className="w-7 h-7 rounded-lg flex items-center justify-center text-xs font-black shrink-0 overflow-hidden text-slate-900 shadow-sm"
                       style={{ backgroundColor: primaryColor }}
                     >
@@ -190,7 +190,7 @@ export const CompanySwitcher: React.FC<CompanySwitcherProps> = ({ variant = 'dar
                     </div>
                   </div>
 
-                  <span 
+                  <span
                     className="w-2.5 h-2.5 rounded-full shrink-0 shadow-sm"
                     style={{ backgroundColor: primaryColor }}
                     title={primaryColor}
@@ -214,7 +214,7 @@ export const CompanySwitcher: React.FC<CompanySwitcherProps> = ({ variant = 'dar
                   setIsOpen(false);
                   navigate('/admin/companies');
                 }}
-                className="w-full py-2 px-3 rounded-xl bg-gradient-to-r from-cyan-500/20 to-blue-600/20 hover:from-cyan-500/30 hover:to-blue-600/30 border border-cyan-500/30 text-cyan-300 text-xs font-bold transition-all flex items-center justify-center gap-1.5"
+                className="w-full py-2 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 border border-cyan-500/30 text-cyan-300 text-xs font-bold transition-all flex items-center justify-center gap-1.5"
               >
                 <Plus className="w-3.5 h-3.5" />
                 <span>Založit novou firmu</span>

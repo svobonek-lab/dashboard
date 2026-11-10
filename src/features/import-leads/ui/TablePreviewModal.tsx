@@ -47,7 +47,7 @@ export const TablePreviewModal: React.FC<TablePreviewModalProps> = ({
             </h3>
             <div className="flex flex-wrap gap-2">
               {availableTables.map(t => (
-                <span key={t} className="px-2.5 py-1 rounded-lg bg-slate-100 border border-slate-200 text-xs font-mono text-slate-700">
+                <span key={t} className="px-2.5 py-1 rounded-lg bg-slate-100 border border-slate-200 text-xs text-slate-700">
                   {t}
                 </span>
               ))}

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Mic, Square, Sparkles, Check, ArrowRight, User, DollarSign, ListChecks, Phone } from 'lucide-react';
+import { Mic, Square, Sparkles, Check, User, DollarSign, ListChecks, Phone } from 'lucide-react';
 import { useVoiceNotes, type ParsedVoiceLead } from '../model/useVoiceNotes';
 
 interface VoiceNotesModalProps {
@@ -114,7 +114,7 @@ export const VoiceNotesModal: React.FC<VoiceNotesModalProps> = ({
           </div>
 
           <div>
-            <p className="text-xl font-mono font-bold text-slate-900">{formatTime(seconds)}</p>
+            <p className="text-xl tabular-nums font-bold text-slate-900">{formatTime(seconds)}</p>
             <p className="text-xs text-slate-500 mt-1">
               {isRecording
                 ? 'Aktivní nahrávání hlasu... Mluvte přirozeně v češtině.'
@@ -144,7 +144,7 @@ export const VoiceNotesModal: React.FC<VoiceNotesModalProps> = ({
                 <span className="font-bold text-brand-primary flex items-center gap-1.5">
                   <Sparkles className="w-3.5 h-3.5 text-brand-primary" /> AI strukturovaná zakázka
                 </span>
-                <span className="text-[10px] bg-slate-50 text-brand-primary px-2 py-0.5 rounded-md border border-brand-primary font-mono">
+                <span className="text-[10px] bg-slate-50 text-brand-primary px-2 py-0.5 rounded-md border border-brand-primary tabular-nums">
                   {parsedLead.projectType}
                 </span>
               </div>
@@ -160,13 +160,13 @@ export const VoiceNotesModal: React.FC<VoiceNotesModalProps> = ({
                 </div>
                 <div className="flex items-center gap-1.5 text-slate-700 col-span-2">
                   <Phone className="w-3.5 h-3.5 text-slate-500" />
-                  <span className="font-mono text-slate-700">{parsedLead.phone}</span>
+                  <span className="tabular-nums text-slate-700">{parsedLead.phone}</span>
                 </div>
               </div>
 
               {parsedLead.checklist.length > 0 && (
                 <div className="text-[11px] text-slate-700 space-y-1 pt-1 border-t border-slate-900">
-                  <div className="font-semibold text-slate-500 flex items-center gap-1 text-[10px] uppercase">
+                  <div className="font-semibold text-slate-500 flex items-center gap-1 text-[10px]">
                     <ListChecks className="w-3 h-3 text-slate-500" /> Doporučený checklist úkolů:
                   </div>
                   <ul className="list-disc list-inside space-y-0.5 text-slate-700 text-[10px]">
@@ -223,7 +223,7 @@ export const VoiceNotesModal: React.FC<VoiceNotesModalProps> = ({
                   onClick={handleCreateKanbanLead}
                   className="px-5 py-2 rounded-xl bg-brand-primary hover:bg-brand-primary text-slate-900 text-xs font-semibold flex items-center gap-2 shadow-md transition-colors"
                 >
-                  <ArrowRight className="w-4 h-4" /> Vytvořit novou zakázku na Kanban
+                   Vytvořit novou zakázku na Kanban
                 </button>
               )}
             </>

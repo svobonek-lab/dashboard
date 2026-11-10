@@ -81,7 +81,7 @@ function AppSetupRequired() {
   return (
     <main className="min-h-screen bg-slate-950 text-white flex items-center justify-center p-6">
       <section className="max-w-lg rounded-3xl border border-white/10 bg-white/5 p-8 shadow-2xl">
-        <p className="text-xs font-bold uppercase tracking-[0.18em] text-cyan-300">StavbaFlow workspace</p>
+        <p className="text-xs font-bold text-cyan-300">StavbaFlow workspace</p>
         <h1 className="mt-3 text-3xl font-black tracking-tight">Systém čeká na připojení produkce</h1>
         <p className="mt-4 text-sm leading-6 text-slate-300">
           Tento Vercel projekt je nastavený jako firemní aplikace, ale nemá dostupné Supabase připojení.
@@ -99,7 +99,7 @@ function NotFoundPage() {
   return (
     <main className="min-h-screen bg-[#f5f5f7] px-5 py-16 text-slate-950">
       <section className="mx-auto mt-16 max-w-lg rounded-3xl border border-slate-200 bg-white p-8 text-center shadow-sm">
-        <p className="text-xs font-bold uppercase tracking-[0.18em] text-blue-700">StavbaFlow</p>
+        <p className="text-xs font-bold text-blue-700">StavbaFlow</p>
         <h1 className="mt-3 text-2xl font-black tracking-tight">Tahle stránka neexistuje</h1>
         <p className="mt-3 text-sm leading-6 text-slate-600">Zkontrolujte adresu nebo se vraťte na úvodní stránku.</p>
         <a href="/" className="mt-6 inline-flex min-h-11 items-center justify-center rounded-xl bg-slate-950 px-5 text-sm font-semibold text-white">Zpět na úvodní stránku</a>
@@ -111,14 +111,14 @@ function NotFoundPage() {
 function AppContent() {
   const { currentOrg } = useOrganization();
   const { isConfigured,
-    user, 
+    user,
     dbUser,
-    isLoading: isAuthLoading, 
-    fetchLeads, 
-    fetchEmployees, 
-    saveLead, 
+    isLoading: isAuthLoading,
+    fetchLeads,
+    fetchEmployees,
+    saveLead,
     createLead,
-    updateLeadStatus 
+    updateLeadStatus
   } = useOrganization();
   const { pathname, navigate } = useRouter();
 
@@ -199,14 +199,13 @@ function AppContent() {
     let link: HTMLLinkElement | null = document.querySelector("link[rel*='icon']");
     if (!link) {
       link = document.createElement('link');
-      link.type = 'image/png';
       link.rel = 'icon';
       document.head.appendChild(link);
     }
     if (activeLogo && activeLogo.trim() !== '') {
       link.href = activeLogo;
     } else {
-      link.href = 'data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🏗️</text></svg>';
+      link.href = '/favicon.svg';
     }
   }, [currentOrg?.name, currentOrg?.logo_url]);
 
@@ -417,8 +416,8 @@ function AppContent() {
         <div className="bg-white rounded-2xl shadow-xl p-8 max-w-md w-full border border-slate-200 text-center">
           <h1 className="text-2xl font-black text-slate-900 mb-2">403 - Přístup odepřen</h1>
           <p className="text-slate-500 mb-6 text-sm">Nemáte oprávnění pro přístup do této sekce.</p>
-          <button 
-            onClick={() => navigate(getDefaultRouteForRole(dbUser?.role))} 
+          <button
+            onClick={() => navigate(getDefaultRouteForRole(dbUser?.role))}
             className="px-6 py-3 bg-brand-primary text-white rounded-xl font-bold w-full hover:bg-brand-primary-dark transition-colors"
           >
             Zpět na Dashboard
@@ -523,11 +522,11 @@ function AppContent() {
         {pathname === '/dashboard' || pathname === '/' ? (
           <OwnerDashboardPage leads={leads} onSelectLead={setSelectedLead} />
         ) : pathname === '/leads' ? (
-          <OwnerLeadsPage 
-            leads={leads} 
+          <OwnerLeadsPage
+            leads={leads}
             employees={employees}
-            selectedLead={selectedLead} 
-            onSelectLead={setSelectedLead} 
+            selectedLead={selectedLead}
+            onSelectLead={setSelectedLead}
             onUpdateLeadStatus={handleUpdateLeadStatus}
             onUpdateLead={handleUpdateLead}
             onAddLead={handleAddLead}
@@ -537,14 +536,14 @@ function AppContent() {
         ) : isPilotUnavailablePath(pathname) ? (
           <PilotUnavailablePage />
         ) : pathname === '/employees' ? (
-          <OwnerEmployeesPage 
-            employees={employees} 
+          <OwnerEmployeesPage
+            employees={employees}
             leads={leads}
             onEmployeeAdded={() => {
               fetchEmployees().then(dbEmp => {
                 if (dbEmp && dbEmp.length > 0) setEmployees(dbEmp);
               }).catch(console.error);
-            }} 
+            }}
           />
         ) : pathname === '/widget' ? (
           <OwnerWidgetPage onAddLead={handleAddLead} />

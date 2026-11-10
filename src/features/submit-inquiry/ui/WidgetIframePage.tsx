@@ -1,5 +1,5 @@
 import React, { FormEvent, useEffect, useState } from 'react';
-import { AlertCircle, ArrowRight, CheckCircle2, Mail, MapPin, Phone, User } from 'lucide-react';
+import { AlertCircle, CheckCircle2, Mail, MapPin, Phone, User } from 'lucide-react';
 import { isSupabaseConfigured, publicSupabase } from '../../../shared/api/supabase';
 import { resolvePublicTenantKey } from '../model/publicIntakeRoute';
 import { requestImmediateOutboxDispatch } from '../../../shared/api/emailNotifications';
@@ -117,7 +117,7 @@ export const WidgetIframePage: React.FC = () => {
       <div className="mx-auto max-w-2xl">
         <header className="mb-5 flex items-center gap-3 px-1">
           {company.logo_url ? <img src={company.logo_url} alt="" className="h-11 w-11 rounded-2xl border border-white bg-white object-contain p-1 shadow-sm" /> : <span className="flex h-11 w-11 items-center justify-center rounded-2xl text-sm font-bold text-white shadow-sm" style={{ backgroundColor: color }}>{company.name.slice(0, 2).toUpperCase()}</span>}
-          <div><p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-400">Nezávazná poptávka</p><h1 className="text-lg font-semibold tracking-tight text-slate-950">{company.name}</h1></div>
+          <div><p className="text-xs font-semibold text-slate-400">Nezávazná poptávka</p><h1 className="text-lg font-semibold tracking-tight text-slate-950">{company.name}</h1></div>
         </header>
 
         {submitted ? (
@@ -148,7 +148,7 @@ export const WidgetIframePage: React.FC = () => {
             <label className="mt-5 flex cursor-pointer items-start gap-3 rounded-2xl bg-slate-50 p-4 text-xs leading-5 text-slate-600"><input type="checkbox" checked={form.consent} onChange={(e) => update('consent', e.target.checked)} className="mt-0.5 h-4 w-4 rounded border-slate-300" /><span>Souhlasím, aby mě {company.name} kontaktovala kvůli této poptávce. Údaje budou použity pouze pro její vyřízení.</span></label>
 
             {error && <div role="alert" className="mt-4 flex items-start gap-2 rounded-2xl border border-rose-200 bg-rose-50 p-3 text-sm text-rose-700"><AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />{error}</div>}
-            <button type="submit" disabled={submitting} className="mt-5 inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-2xl px-5 text-sm font-semibold text-white shadow-sm transition hover:opacity-90 disabled:cursor-wait disabled:opacity-60" style={{ backgroundColor: color }}>{submitting ? 'Odesílám…' : 'Odeslat poptávku'} {!submitting && <ArrowRight className="h-4 w-4" />}</button>
+            <button type="submit" disabled={submitting} className="mt-5 inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-2xl px-5 text-sm font-semibold text-white shadow-sm transition hover:opacity-90 disabled:cursor-wait disabled:opacity-60" style={{ backgroundColor: color }}>{submitting ? 'Odesílám…' : 'Odeslat poptávku'}</button>
             <p className="mt-3 text-center text-[11px] text-slate-400">Formulář bezpečně zajišťuje StavbaFlow.</p>
           </form>
         )}

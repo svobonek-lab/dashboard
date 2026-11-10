@@ -1,18 +1,17 @@
 import React, { useState } from 'react';
-import { 
-  ArrowRight, 
-  CheckCircle2, 
-  DollarSign, 
-  HardHat, 
-  Phone, 
-  ShieldCheck, 
-  Sparkles, 
-  TrendingUp, 
-  Users, 
-  FileText, 
-  Calendar, 
-  Building2, 
-  AlertCircle, 
+import {
+  CheckCircle2,
+  DollarSign,
+  HardHat,
+  Phone,
+  ShieldCheck,
+  Sparkles,
+  TrendingUp,
+  Users,
+  FileText,
+  Calendar,
+  Building2,
+  AlertCircle,
   ExternalLink,
   HelpCircle,
   Calculator,
@@ -139,7 +138,7 @@ export const LandingPage: React.FC = () => {
 
   return (
     <div className="public-landing sf-sales workspace-shell min-h-screen bg-[#f3f5f8] text-slate-900 font-sans selection:bg-blue-100">
-      
+
       {/* 1. Header Navigation */}
       <header className="sticky top-0 z-40 bg-white/90 backdrop-blur-md border-b border-slate-200/80">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
@@ -192,7 +191,7 @@ export const LandingPage: React.FC = () => {
           <h1>Na stavbě máte dost práce.<br />Mějte jasno i v zakázkách.</h1>
           <p>Poptávky, lidé a rozpracované zakázky na jednom místě. Od prvního telefonu po dokončenou práci víte, kdo má co na starosti.</p>
           <div className="sf-sales-actions">
-            <button onClick={() => setIsBookingOpen(true)}>Prohlédnout s námi <ArrowRight size={18} aria-hidden="true" /></button>
+            <button onClick={() => setIsBookingOpen(true)}>Prohlédnout s námi</button>
             {DEMO_DESTINATION.url && <a href={DEMO_DESTINATION.url}>Vyzkoušet ukázkovou firmu</a>}
           </div>
           <span className="sf-sales-note">Pro majitele v kanceláři i tým v terénu.</span>
@@ -205,10 +204,10 @@ export const LandingPage: React.FC = () => {
               <div className="sf-preview-metrics"><div><small>Nové poptávky</small><strong>2</strong></div><div><small>V realizaci</small><strong>1</strong></div><div><small>Celkem zakázek</small><strong>4</strong></div></div>
               <div className="sf-preview-table-title">Poptávky a zakázky <span>Stav práce</span></div>
               {[
-                ['Rekonstrukce rodinného domu', 'Brno · Novákovi', 'V realizaci'],
-                ['Nová střecha na chalupě', 'Tišnov · Dvořákovi', 'Nová poptávka'],
-                ['Zateplení fasády', 'Kuřim · Svoboda', 'Nabídka'],
-                ['Dláždění příjezdové cesty', 'Brno · Černý', 'Nová poptávka'],
+                ['Rekonstrukce rodinného domu', 'Brno, Novákovi', 'V realizaci'],
+                ['Nová střecha na chalupě', 'Tišnov, Dvořákovi', 'Nová poptávka'],
+                ['Zateplení fasády', 'Kuřim, Svoboda', 'Nabídka'],
+                ['Dláždění příjezdové cesty', 'Brno, Černý', 'Nová poptávka'],
               ].map(([title, place, status]) => <div className="sf-preview-job" key={title}><span><strong>{title}</strong><small>{place}</small></span><span className="landing-preview-status" data-status={status}>{status}</span></div>)}
             </div>
           </div>
@@ -241,7 +240,7 @@ export const LandingPage: React.FC = () => {
       <section id="kalkulacka" className="py-16 bg-white border-y border-slate-200">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 space-y-10">
           <div className="text-center space-y-2">
-            <span className="text-xs font-black uppercase tracking-wider text-blue-600 flex items-center justify-center gap-1.5">
+            <span className="text-xs font-black text-blue-600 flex items-center justify-center gap-1.5">
               <Calculator className="w-4 h-4" />
               Modelová kalkulačka pro vaši firmu
             </span>
@@ -256,12 +255,12 @@ export const LandingPage: React.FC = () => {
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
             {/* Sliders (7 cols) */}
             <div className="lg:col-span-7 space-y-5 bg-slate-50 p-6 rounded-3xl border border-slate-200">
-              
+
               {/* Slider 1: Leads */}
               <div className="space-y-1.5">
                 <div className="flex justify-between text-sm font-semibold text-slate-800">
                   <span>Kolik poptávek dostáváte měsíčně?</span>
-                  <span className="text-blue-600 font-mono text-sm">{monthlyLeads} poptávek</span>
+                  <span className="text-blue-600 tabular-nums text-sm">{monthlyLeads} poptávek</span>
                 </div>
                 <input
                   type="range"
@@ -278,7 +277,7 @@ export const LandingPage: React.FC = () => {
               <div className="space-y-1.5">
                 <div className="flex justify-between text-sm font-semibold text-slate-800">
                   <span>Kolik z nich dostane cenovou nabídku?</span>
-                  <span className="text-blue-600 font-mono text-sm">{quotedRate} % ({calculatedQuotes} nabídek)</span>
+                  <span className="text-blue-600 tabular-nums text-sm">{quotedRate} % ({calculatedQuotes} nabídek)</span>
                 </div>
                 <input
                   type="range"
@@ -295,7 +294,7 @@ export const LandingPage: React.FC = () => {
               <div className="space-y-1.5">
                 <div className="flex justify-between text-sm font-semibold text-slate-800">
                   <span>Kolik odeslaných nabídek reálně vyhrajete?</span>
-                  <span className="text-blue-600 font-mono text-sm">{winRate} %</span>
+                  <span className="text-blue-600 tabular-nums text-sm">{winRate} %</span>
                 </div>
                 <input
                   type="range"
@@ -312,7 +311,7 @@ export const LandingPage: React.FC = () => {
               <div className="space-y-1.5">
                 <div className="flex justify-between text-sm font-semibold text-slate-800">
                   <span>Průměrná hrubá marže jedné zakázky?</span>
-                  <span className="text-blue-600 font-mono text-sm">{avgMargin.toLocaleString('cs-CZ')} Kč</span>
+                  <span className="text-blue-600 tabular-nums text-sm">{avgMargin.toLocaleString('cs-CZ')} Kč</span>
                 </div>
                 <input
                   type="range"
@@ -330,7 +329,7 @@ export const LandingPage: React.FC = () => {
               <div className="space-y-1.5">
                 <div className="flex justify-between text-sm font-semibold text-slate-800">
                   <span>Kolik hodin týdně tráví kancelář přepisováním?</span>
-                  <span className="text-blue-600 font-mono text-sm">{adminHoursWeekly} h / týdně</span>
+                  <span className="text-blue-600 tabular-nums text-sm">{adminHoursWeekly} h / týdně</span>
                 </div>
                 <input
                   type="range"
@@ -513,7 +512,7 @@ export const LandingPage: React.FC = () => {
           {!COMPANY_LEGAL_DETAILS_CONFIGURED && (
             <section data-testid="legal-identity-placeholder" role="status" className="rounded-xl border border-amber-700/50 bg-amber-950/40 px-4 py-3 text-[11px] leading-5 text-amber-100">
               <strong className="block text-xs">Právní identita provozovatele není dokončená.</strong>
-              <span>IČO: {COMPANY_ICO || 'nedoplněno'} · Právní adresa: {LEGAL_COMPANY_ADDRESS || 'nedoplněna'} · VOP: {String(LANDING_ENV.VITE_COMPANY_VOP_APPROVED || '').toLowerCase() === 'true' ? 'schválené' : 'připravit a schválit'}.</span>
+              <span>IČO: {COMPANY_ICO || 'nedoplněno'}, Právní adresa: {LEGAL_COMPANY_ADDRESS || 'nedoplněna'}, VOP: {String(LANDING_ENV.VITE_COMPANY_VOP_APPROVED || '').toLowerCase() === 'true' ? 'schválené' : 'připravit a schválit'}.</span>
               <span className="block">Údaje doplní provozovatel před uzavřením smlouvy a ostrým spuštěním.</span>
             </section>
           )}
@@ -521,14 +520,14 @@ export const LandingPage: React.FC = () => {
             <div>
               <span>
                 {COMPANY_LEGAL_DETAILS_CONFIGURED
-                  ? [COMPANY_NAME, `IČO: ${COMPANY_ICO}`, LEGAL_COMPANY_ADDRESS].join(' · ')
+                  ? [COMPANY_NAME, `IČO: ${COMPANY_ICO}`, LEGAL_COMPANY_ADDRESS].join(', ')
                   : COMPANY_NAME}
               </span>
             </div>
             <div>
               <a href={`mailto:${COMPANY_EMAIL}`} className="hover:text-white transition-colors">Kontakt: {COMPANY_EMAIL}</a>
               <span className="block">Veřejná kontaktní adresa: {PUBLIC_CONTACT_ADDRESS}</span>
-              {COMPANY_PHONE && <span> · Tel: {COMPANY_PHONE}</span>}
+              {COMPANY_PHONE && <span>, Tel: {COMPANY_PHONE}</span>}
             </div>
           </div>
         </div>
@@ -616,14 +615,14 @@ export const LandingPage: React.FC = () => {
             {!bookingSuccess ? (
               <form onSubmit={handleBookingSubmit} className="space-y-4">
                 <div>
-                  <span className="text-[10px] font-bold text-blue-600 uppercase tracking-wider">
+                  <span className="text-[10px] font-bold text-blue-600">
                     Nezávazná konzultace (20 min)
                   </span>
                   <h3 className="text-lg font-black text-slate-900 mt-0.5">
                     Ukázat StavbaFlow na mém procesu
                   </h3>
                   <p className="text-xs text-slate-500 mt-1">
-                    Společně projdeme vaše současné tabulky a ukážeme pilotní tok formulář → poptávka → zaměstnanec → stav zakázky.
+                    Společně projdeme vaše současné tabulky a ukážeme, jak se formulář promění v poptávku, zaměstnanec ji převezme a změní stav zakázky.
                   </p>
                 </div>
 
@@ -727,7 +726,6 @@ export const LandingPage: React.FC = () => {
                   ) : (
                     <>
                       <span>{SALES_CONTACT.mode === 'booking' ? 'Otevřít rezervační kalendář' : 'Připravit e-mail s žádostí'}</span>
-                      <ArrowRight className="w-4 h-4" />
                     </>
                   )}
                 </button>
