@@ -7,10 +7,11 @@ const landing = readFileSync(new URL('../src/pages/public/landing/ui/LandingPage
 const envExample = readFileSync(new URL('../.env.example', import.meta.url), 'utf8');
 const checklist = readFileSync(new URL('../docs/go-live-checklist.md', import.meta.url), 'utf8');
 
-test('missing legal identity shows an operator warning only in development', () => {
+test('missing legal identity shows a public notice in development and production', () => {
   const missing = { VITE_COMPANY_NAME: '', VITE_COMPANY_ICO: '', VITE_COMPANY_ADDRESS: '', VITE_COMPANY_EMAIL: '' };
-  assert.equal(getLegalIdentityReadiness({ ...missing, DEV: true }).showDevelopmentWarning, true);
-  assert.equal(getLegalIdentityReadiness({ ...missing, DEV: false }).showDevelopmentWarning, false);
+  assert.equal(getLegalIdentityReadiness({ ...missing, DEV: true }).showIncompleteNotice, true);
+  assert.equal(getLegalIdentityReadiness({ ...missing, DEV: false }).showIncompleteNotice, true);
+  assert.equal(getLegalIdentityReadiness({ ...missing, VITE_COMPANY_NAME: 'StavbaFlow s.r.o.', VITE_COMPANY_ICO: '12345678', VITE_COMPANY_ADDRESS: 'Ulice 1, Praha', VITE_COMPANY_EMAIL: 'legal@example.cz', VITE_COMPANY_VOP_APPROVED: 'true' }).showIncompleteNotice, false);
 });
 
 test('VOP approval is required before legal documents are presented as complete', () => {

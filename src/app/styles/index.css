@@ -815,7 +815,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 .sf-sales-hero { background: var(--sf-navy); color: white; padding: 72px 32px 0; }
 .sf-sales-intro { max-width: 950px; margin: auto; text-align: center; }
 .sf-sales-audience { display: flex; align-items: center; justify-content: center; gap: 9px; color: #bfcee5; }
-.sf-sales-intro h1 { font-size: clamp(36px, 4.8vw, 68px); line-height: 1.08; letter-spacing: -.045em; font-weight: 650; margin: 22px 0; }
+.sf-sales-intro h1 { font-size: clamp(36px, 4.8vw, 68px); line-height: 1.08; letter-spacing: -.045em; font-weight: 650; margin: 22px 0; text-wrap: balance; }
 .sf-sales-intro > p:not(.sf-sales-audience) { max-width: 590px; margin: auto; color: #d0dbea; font-size: 18px; line-height: 1.65; }
 .sf-sales-actions { display: flex; justify-content: center; align-items: center; flex-wrap: wrap; gap: 24px; margin: 30px 0 16px; }
 .sf-sales-actions button { display: inline-flex; align-items: center; gap: 18px; background: #fff; color: #152b48; padding: 15px 22px; border-radius: 9px; font-weight: 650; transition: transform .15s; }

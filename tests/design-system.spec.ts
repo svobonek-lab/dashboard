@@ -29,6 +29,12 @@ test.beforeEach(async ({ page }) => {
   await page.route((url) => /^https?:/.test(url.href) && url.origin !== 'http://127.0.0.1:4177', (route) => route.abort());
 });
 
+test('public landing shows a plain legal identity notice without variable names', async ({ page }) => {
+  await page.goto('/landing');
+  await expect(page.getByTestId('legal-identity-notice')).toHaveText('Údaje o firmě se doplňují.');
+  await expect(page.locator('body')).not.toContainText('VITE_');
+});
+
 test('public landing, demo, and login fit desktop, tablet, and phone widths', async ({ page }, testInfo) => {
   test.setTimeout(90_000);
   for (const route of ['/landing', ...routes]) {
