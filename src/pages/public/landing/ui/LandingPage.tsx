@@ -45,6 +45,9 @@ const LEGAL_IDENTITY_READINESS = getLegalIdentityReadiness({
   VITE_COMPANY_VOP_APPROVED: String(LANDING_ENV.VITE_COMPANY_VOP_APPROVED || ''),
 });
 const COMPANY_LEGAL_DETAILS_CONFIGURED = LEGAL_IDENTITY_READINESS.ready;
+if (import.meta.env?.DEV && !COMPANY_LEGAL_DETAILS_CONFIGURED) {
+  console.info('Chybějící nastavení právní identity:', LEGAL_IDENTITY_READINESS.missing);
+}
 const SALES_CONTACT = getSalesContactMode({
   ...((import.meta as any).env || {}),
   VITE_COMPANY_EMAIL: COMPANY_EMAIL,
@@ -178,9 +181,9 @@ export const LandingPage: React.FC = () => {
         </div>
       </header>
 
-      {LEGAL_IDENTITY_READINESS.showDevelopmentWarning && (
-        <aside role="status" data-testid="legal-identity-development-warning" className="border-b border-amber-300 bg-amber-50 px-4 py-3 text-center text-sm font-medium text-amber-950">
-          Vývojová kontrola: doplňte {LEGAL_IDENTITY_READINESS.missing.join(', ')} před ostrým nasazením. Veřejná kontaktní adresa se za právní adresu nepovažuje.
+      {LEGAL_IDENTITY_READINESS.showIncompleteNotice && (
+        <aside role="status" data-testid="legal-identity-notice" className="border-b border-amber-300 bg-amber-50 px-4 py-3 text-center text-sm font-medium text-amber-950">
+          Údaje o firmě se doplňují.
         </aside>
       )}
 
@@ -188,7 +191,7 @@ export const LandingPage: React.FC = () => {
       <section className="sf-sales-hero">
         <div className="sf-sales-intro">
           <p className="sf-sales-audience"><HardHat size={18} aria-hidden="true" /> Pro stavební firmy a řemeslné týmy</p>
-          <h1>Na stavbě máte dost práce.<br />Mějte jasno i v zakázkách.</h1>
+          <h1>Na stavbě máte dost práce. Mějte jasno i v zakázkách.</h1>
           <p>Poptávky, lidé a rozpracované zakázky na jednom místě. Od prvního telefonu po dokončenou práci víte, kdo má co na starosti.</p>
           <div className="sf-sales-actions">
             <button onClick={() => setIsBookingOpen(true)}>Prohlédnout s námi</button>

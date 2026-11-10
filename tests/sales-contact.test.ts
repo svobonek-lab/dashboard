@@ -55,5 +55,5 @@ test('landing publishes the owner-approved contact but keeps legal documents gat
   assert.match(landing, /Vincence Makovského 4428\/11/);
   assert.match(landing, /COMPANY_LEGAL_DETAILS_CONFIGURED/);
   assert.match(landing, /COMPANY_LEGAL_DETAILS_CONFIGURED = LEGAL_IDENTITY_READINESS\.ready/);
-  assert.match(landing, /LEGAL_IDENTITY_READINESS\.showDevelopmentWarning/);
+  assert.match(landing, /LEGAL_IDENTITY_READINESS\.showIncompleteNotice/);
 });

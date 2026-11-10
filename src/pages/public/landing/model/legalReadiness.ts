@@ -10,7 +10,7 @@ export type LegalIdentityEnv = {
 export type LegalIdentityReadiness = {
   ready: boolean;
   missing: Array<'VITE_COMPANY_NAME' | 'VITE_COMPANY_ICO' | 'VITE_COMPANY_ADDRESS' | 'VITE_COMPANY_EMAIL' | 'VITE_COMPANY_VOP_APPROVED'>;
-  showDevelopmentWarning: boolean;
+  showIncompleteNotice: boolean;
 };
 
 export function getLegalIdentityReadiness(env: LegalIdentityEnv): LegalIdentityReadiness {
@@ -32,6 +32,6 @@ export function getLegalIdentityReadiness(env: LegalIdentityEnv): LegalIdentityR
   return {
     ready: missing.length === 0,
     missing,
-    showDevelopmentWarning: env.DEV === true && missing.length > 0,
+    showIncompleteNotice: missing.length > 0,
   };
 }
