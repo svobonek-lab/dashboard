@@ -37,12 +37,12 @@ export const EmployeeJobsPage: React.FC<EmployeeJobsPageProps> = ({ leads, onSel
             <Briefcase className="w-5 h-5 text-brand-primary" />
             Moje zakázky & montáže
           </h1>
-          <p className="text-xs text-slate-500 mt-0.5">
+          <p className="text-xs text-slate-600 mt-0.5">
             Seznam přiřazených staveb a montáží na tento týden.
           </p>
         </div>
 
-        <span className="px-3 py-1 rounded-full bg-brand-primary-soft text-brand-primary text-xs font-bold border border-brand-primary-soft">
+        <span className="px-3 py-1 rounded-full bg-brand-primary-soft text-blue-800 text-xs font-bold border border-brand-primary-soft">
           {myJobs.length} aktivních
         </span>
       </div>
@@ -85,7 +85,7 @@ export const EmployeeJobsPage: React.FC<EmployeeJobsPageProps> = ({ leads, onSel
             {/* Top row */}
             <div className="flex items-start justify-between gap-3">
               <div>
-                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-brand-primary-soft text-brand-primary border border-brand-primary-soft">
+                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-brand-primary-soft text-blue-800 border border-brand-primary-soft">
                   <CalendarClock className="mr-1 inline h-3 w-3" />{dateLabel(job)}
                 </span>
                 <h3 className="text-base font-bold text-slate-900 mt-1.5">{job.title}</h3>

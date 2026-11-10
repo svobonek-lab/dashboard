@@ -2,7 +2,7 @@ import { defineConfig } from 'playwright/test';
 
 export default defineConfig({
   testDir: './tests',
-  testMatch: 'design-system.spec.ts',
+  testMatch: ['design-system.spec.ts', 'design-roles.spec.ts'],
   fullyParallel: false,
   workers: 1,
   reporter: 'list',

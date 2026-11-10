@@ -34,3 +34,17 @@ Playwright prošel klávesou Tab všechny dosažitelné odkazy a tlačítka: 14 
 Další referenční snímky: [landing 390](design-review-2026-11-10/-landing-390.png), [landing 1440](design-review-2026-11-10/-landing-1440.png), [login 390](design-review-2026-11-10/-login-390.png), [login 1440](design-review-2026-11-10/-login-1440.png), [demo přehled 390](design-review-2026-11-10/-demo-390.png), [demo přehled 1440](design-review-2026-11-10/-demo-1440.png).
 
 Ověření: `npm test` (610/610), `npm run lint`, `npm run build` a `npm run test:design` (18/18).
+
+## Přihlášené role
+
+Nový designový test přihlašuje syntetického pracovníka a správce platformy přes lokálně zachycené odpovědi Auth. Otevírá chráněné routy, ověřuje obsah, kontrast textu pomocí axe a vodorovné přetékání stránky při 390 a 1440 px. Všechny zobrazené firmy a zakázky jsou syntetické; žádná žádost nešla do Supabase projektu a test neprovedl zápis přes platformní API.
+
+| Obrazovka | 390 px | 1440 px |
+| --- | --- | --- |
+| Přiřazené zakázky pracovníka | [Snímek](design-review-2026-11-10/employee-jobs-390.png) | [Snímek](design-review-2026-11-10/employee-jobs-1440.png) |
+| Fotky pracovníka | [Snímek](design-review-2026-11-10/employee-photos-390.png) | [Snímek](design-review-2026-11-10/employee-photos-1440.png) |
+| Adresář firem správce | [Snímek](design-review-2026-11-10/admin-company-directory-390.png) | [Snímek](design-review-2026-11-10/admin-company-directory-1440.png) |
+
+Na stránce fotek je v designovém prostředí zobrazen stav „Soubory nejsou v tomto prostředí zapnuté“. Přílohy vyžadují výslovně povolený izolovaný staging projekt; snímky proto nehodnotí galerii ani upload. Po vizuální kontrole byly upraveny jen kontrasty textu v zakázkách pracovníka a aktivní položce admin navigace. Funkce a přístupová pravidla se nezměnila.
+
+Ověření rozšířené přejímky: `npm test` (610/610), `npm run lint`, `npm run build` a `npm run test:design` (20/20).
