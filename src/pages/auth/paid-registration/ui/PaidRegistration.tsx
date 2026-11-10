@@ -109,7 +109,7 @@ export function PaidRegistrationPage(){
      <p className="mt-5 max-w-sm text-base leading-7 text-slate-600">Poptávky, zakázky a tým na jednom místě. Ověřte účet, vyplňte firmu a připravte svůj workspace.</p>
      <p className="mt-6 text-sm text-slate-500">{enabled&&supabase?'Po ověření účtu vyberte tarif a před potvrzením objednávky zkontrolujte jeho aktuální cenu.':'Samostatná registrace není dostupná. Přístup do firemního prostoru připravujeme při onboardingu.'}</p>
     </section>
-    <section className="rounded-2xl border border-slate-200 bg-white p-6 md:p-8">
+    <section className="rounded-xl border border-slate-200 bg-white p-6 md:p-8">
      {!enabled||!supabase?<p>Samostatná registrace zatím není dostupná. <a href="/login" className="underline">Přejít k přihlášení</a></p>
       :!user?<form onSubmit={account} className="space-y-5">
        <h2 className="text-xl font-semibold">{signIn?'Přihlášení k registraci':'Vytvořte svůj účet'}</h2>
@@ -123,7 +123,7 @@ export function PaidRegistrationPage(){
        <button className={button} disabled={busy} onClick={()=>void checkActivation()}>{busy?'Ověřuji…':'Zkontrolovat aktivaci'}</button>
       </div>:<form onSubmit={checkout} className="space-y-5">
        <h2 className="text-xl font-semibold">Připravte svou firmu</h2><p className="break-all text-sm text-slate-500">{user.email}</p>
-       <p className="rounded-xl bg-slate-50 p-4 text-sm text-slate-700">Vybraný tarif: <strong>{plan==='starter'?'Start':plan==='growth'?'Růst':'Profi'}</strong>, {plan==='starter'?'1 990 Kč':plan==='growth'?'2 990 Kč':'4 990 Kč'} měsíčně bez DPH</p>
+       <p className="border-t border-slate-200 pt-4 text-sm text-slate-700">Vybraný tarif: <strong>{plan==='starter'?'Start':plan==='growth'?'Růst':'Profi'}</strong>, {plan==='starter'?'1 990 Kč':plan==='growth'?'2 990 Kč':'4 990 Kč'} měsíčně bez DPH</p>
        <label className="block text-sm">Vaše jméno<input className={input} required maxLength={160} value={ownerName} onChange={e=>setOwnerName(e.target.value)}/></label>
        <label className="block text-sm">Název firmy<input className={input} required maxLength={160} value={companyName} onChange={e=>setCompanyName(e.target.value)}/></label>
        <label className="block text-sm">Adresa firmy ve StavbaFlow<input className={input} required pattern="[a-z0-9][a-z0-9-]{2,79}" placeholder="moje-stavebni-firma" value={slug} onChange={e=>setSlug(e.target.value)}/></label>

@@ -42,19 +42,19 @@ export const WorkspaceReadinessPanel: React.FC<WorkspaceReadinessPanelProps> = (
         </div>
         <div className="flex shrink-0 items-center gap-3">
           <div className="h-1.5 w-24 overflow-hidden rounded-full bg-slate-100"><div className="h-full rounded-full bg-blue-600" style={{ width: `${readiness.percent}%` }} /></div>
-          <button type="button" onClick={() => navigate(next.href)} className="inline-flex min-h-9 items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 text-xs font-semibold text-slate-700 hover:bg-slate-50">Pokračovat </button>
+          <button type="button" onClick={() => navigate(next.href)} className="inline-flex min-h-9 items-center justify-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 text-xs font-semibold text-slate-700 hover:bg-slate-50">Pokračovat </button>
         </div>
       </section>
     );
   }
 
   return (
-    <section className={`relative overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm ${compact ? 'p-4' : 'p-5 sm:p-6'}`}>
+    <section className={`relative overflow-hidden rounded-xl border border-slate-200 bg-white ${compact ? 'p-4' : 'p-5 sm:p-6'}`}>
       <div className="pointer-events-none absolute -right-12 -top-16 h-40 w-40 rounded-full bg-blue-50 blur-2xl" />
       <div className="relative">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div className="flex items-start gap-3">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-slate-900 text-white shadow-sm">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-slate-900 text-white ">
               {isEmployee ? <BriefcaseBusiness className="h-5 w-5" /> : <Building2 className="h-5 w-5" />}
             </div>
             <div>
@@ -84,7 +84,7 @@ export const WorkspaceReadinessPanel: React.FC<WorkspaceReadinessPanelProps> = (
               key={step.id}
               type="button"
               onClick={() => navigate(step.href)}
-              className={`group rounded-2xl border p-3 text-left transition-all hover:-translate-y-0.5 hover:border-blue-300 hover:shadow-sm ${step.complete ? 'border-emerald-100 bg-emerald-50/50' : 'border-slate-200 bg-slate-50/60'}`}
+              className={`group border-t border-slate-200 p-3 text-left transition-colors hover:bg-slate-50 ${step.complete ? 'text-emerald-800' : 'text-slate-800'}`}
             >
               <div className="flex items-center justify-between gap-2">
                 <span className={`flex h-6 w-6 items-center justify-center rounded-lg ${step.complete ? 'bg-emerald-100 text-emerald-700' : 'bg-white text-slate-400'}`}>
@@ -99,7 +99,7 @@ export const WorkspaceReadinessPanel: React.FC<WorkspaceReadinessPanelProps> = (
         </div>
 
         {next && (
-          <div className="mt-5 flex flex-col gap-3 rounded-2xl border border-blue-100 bg-blue-50/70 p-3.5 sm:flex-row sm:items-center sm:justify-between">
+          <div className="mt-5 flex flex-col gap-3 border-t border-slate-200 pt-4 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex items-start gap-2.5">
               <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-blue-600" />
               <div>
@@ -107,13 +107,13 @@ export const WorkspaceReadinessPanel: React.FC<WorkspaceReadinessPanelProps> = (
                 <p className="mt-0.5 text-[11px] font-medium text-blue-800">{next.description}</p>
               </div>
             </div>
-            <button type="button" onClick={() => navigate(next.href)} className="inline-flex shrink-0 items-center justify-center gap-1.5 rounded-xl bg-[#0A84FF] px-3.5 py-2 text-xs font-bold text-white shadow-sm transition hover:bg-blue-600">
+            <button type="button" onClick={() => navigate(next.href)} className="inline-flex shrink-0 items-center justify-center gap-1.5 rounded-lg bg-[#0A84FF] px-3.5 py-2 text-xs font-bold text-white transition hover:bg-blue-600">
               Otevřít krok
             </button>
           </div>
         )}
         {!next && (
-          <div className="mt-5 flex items-center gap-2 rounded-2xl border border-emerald-100 bg-emerald-50/70 p-3.5 text-xs font-bold text-emerald-800">
+          <div className="mt-5 flex items-center gap-2 border-t border-slate-200 pt-4 text-xs font-bold text-emerald-800">
             <Users className="h-4 w-4" /> Provozní základ je připravený. Stavbu můžete řídit z jednoho místa.
           </div>
         )}

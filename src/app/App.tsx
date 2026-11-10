@@ -80,14 +80,14 @@ function InternalRedirect({ url }: { url: string }) {
 function AppSetupRequired() {
   return (
     <main className="min-h-screen bg-slate-950 text-white flex items-center justify-center p-6">
-      <section className="max-w-lg rounded-3xl border border-white/10 bg-white/5 p-8 shadow-2xl">
+      <section className="max-w-lg rounded-xl border border-white/10 bg-white/5 p-8 ">
         <p className="text-xs font-bold text-cyan-300">StavbaFlow workspace</p>
         <h1 className="mt-3 text-3xl font-black tracking-tight">Systém čeká na připojení produkce</h1>
         <p className="mt-4 text-sm leading-6 text-slate-300">
           Tento Vercel projekt je nastavený jako firemní aplikace, ale nemá dostupné Supabase připojení.
           Přihlášení a data firmy jsou proto zablokované, aby se nikdy nespustil ukázkový režim.
         </p>
-        <p className="mt-6 rounded-2xl border border-cyan-300/20 bg-cyan-300/10 p-4 text-sm text-cyan-100">
+        <p className="mt-6 border-t border-white/20 pt-4 text-sm text-cyan-100">
           Nastavte VITE_SUPABASE_URL a VITE_SUPABASE_ANON_KEY ve Vercelu a znovu nasaďte projekt.
         </p>
       </section>
@@ -98,11 +98,11 @@ function AppSetupRequired() {
 function NotFoundPage() {
   return (
     <main className="min-h-screen bg-[#f5f5f7] px-5 py-16 text-slate-950">
-      <section className="mx-auto mt-16 max-w-lg rounded-3xl border border-slate-200 bg-white p-8 text-center shadow-sm">
+      <section className="mx-auto mt-16 max-w-lg rounded-xl border border-slate-200 bg-white p-8 text-center ">
         <p className="text-xs font-bold text-blue-700">StavbaFlow</p>
         <h1 className="mt-3 text-2xl font-black tracking-tight">Tahle stránka neexistuje</h1>
         <p className="mt-3 text-sm leading-6 text-slate-600">Zkontrolujte adresu nebo se vraťte na úvodní stránku.</p>
-        <a href="/" className="mt-6 inline-flex min-h-11 items-center justify-center rounded-xl bg-slate-950 px-5 text-sm font-semibold text-white">Zpět na úvodní stránku</a>
+        <a href="/" className="mt-6 inline-flex min-h-11 items-center justify-center rounded-lg bg-slate-950 px-5 text-sm font-semibold text-white">Zpět na úvodní stránku</a>
       </section>
     </main>
   );
@@ -368,10 +368,10 @@ function AppContent() {
   if (dataLoadError) {
     return (
       <main className="min-h-screen bg-slate-50 p-6 text-slate-900">
-        <div role="alert" aria-live="assertive" className="mx-auto mt-16 max-w-xl rounded-2xl border border-amber-200 bg-white p-6 shadow-sm">
+        <div role="alert" aria-live="assertive" className="mx-auto mt-16 max-w-xl rounded-xl border border-amber-200 bg-white p-6 ">
           <h1 className="text-lg font-semibold">Data se nepodařilo načíst</h1>
           <p className="mt-2 text-sm text-slate-600">{dataLoadError}</p>
-          <button type="button" onClick={() => window.location.reload()} className="mt-5 rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white">
+          <button type="button" onClick={() => window.location.reload()} className="mt-5 rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white">
             Zkusit znovu
           </button>
         </div>
@@ -413,12 +413,12 @@ function AppContent() {
   if (pathname === '/unauthorized') {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center p-6 text-slate-800">
-        <div className="bg-white rounded-2xl shadow-xl p-8 max-w-md w-full border border-slate-200 text-center">
+        <div className="bg-white rounded-xl p-8 max-w-md w-full border border-slate-200 text-center">
           <h1 className="text-2xl font-black text-slate-900 mb-2">403 - Přístup odepřen</h1>
           <p className="text-slate-500 mb-6 text-sm">Nemáte oprávnění pro přístup do této sekce.</p>
           <button
             onClick={() => navigate(getDefaultRouteForRole(dbUser?.role))}
-            className="px-6 py-3 bg-brand-primary text-white rounded-xl font-bold w-full hover:bg-brand-primary-dark transition-colors"
+            className="px-6 py-3 bg-brand-primary text-white rounded-lg font-bold w-full hover:bg-brand-primary-dark transition-colors"
           >
             Zpět na Dashboard
           </button>
@@ -559,7 +559,7 @@ function AppContent() {
       {/* Persistent Toast Notifications */}
       {toast && (
         <div className="fixed bottom-6 right-6 z-50 animate-in fade-in slide-in-from-bottom-5 duration-200">
-          <div className={`px-5 py-3.5 rounded-2xl shadow-2xl border flex items-center gap-3 text-sm font-bold ${
+          <div className={`px-5 py-3.5 rounded-xl border flex items-center gap-3 text-sm font-bold ${
             toast.type === 'error' ? 'bg-rose-950 text-rose-100 border-rose-800' : 'bg-slate-900 text-white border-slate-700'
           }`}>
             <span className={`w-2.5 h-2.5 rounded-full ${toast.type === 'error' ? 'bg-rose-500 animate-pulse' : 'bg-emerald-400'}`}></span>

@@ -57,7 +57,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 bg-slate-50/60 backdrop-blur-xs flex items-start justify-center pt-20 px-4">
-      <div className="w-full max-w-2xl bg-white rounded-3xl shadow-2xl border border-slate-200 overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+      <div className="w-full max-w-2xl bg-white rounded-2xl border border-slate-200 overflow-hidden animate-in fade-in zoom-in-95 duration-150">
         {/* Search Input Bar */}
         <div className="p-4 border-b border-slate-100 flex items-center gap-3">
           <Search className="w-5 h-5 text-slate-500" />
@@ -89,7 +89,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
                         onNavigateTab(action.id);
                         onClose();
                       }}
-                      className="w-full flex items-center justify-between p-3 rounded-2xl hover:bg-slate-50 text-slate-700 hover:text-slate-900 transition-all text-sm font-medium group"
+                      className="w-full flex items-center justify-between p-3 rounded-lg hover:bg-slate-50 text-slate-700 hover:text-slate-900 transition-all text-sm font-medium group"
                     >
                       <div className="flex items-center gap-3">
                         <div className="w-8 h-8 rounded-xl bg-slate-100 text-slate-600 flex items-center justify-center group-hover:bg-brand-primary-soft group-hover:text-brand-primary transition-all">
@@ -116,7 +116,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
                       onSelectLead(lead);
                       onClose();
                     }}
-                    className="w-full flex items-center justify-between p-3 rounded-2xl hover:bg-slate-50 text-slate-700 hover:text-slate-900 transition-all text-sm group"
+                    className="w-full flex items-center justify-between p-3 rounded-lg hover:bg-slate-50 text-slate-700 hover:text-slate-900 transition-all text-sm group"
                   >
                     <div className="flex items-center gap-3 overflow-hidden text-left">
                       <span className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl bg-blue-50 text-xs font-black text-blue-700">
@@ -140,8 +140,8 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
         {/* Footer */}
         <div className="p-3 bg-slate-50 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
           <div className="flex items-center gap-3">
-            <span><kbd className="px-1.5 py-0.5 bg-white border border-slate-200 rounded-md shadow-2xs">ESC</kbd> zavře nabídku</span>
-            <span><kbd className="px-1.5 py-0.5 bg-white border border-slate-200 rounded-md shadow-2xs">Ctrl + K</kbd> otevře hledání</span>
+            <span><kbd className="px-1.5 py-0.5 bg-white border border-slate-200 rounded-md ">ESC</kbd> zavře nabídku</span>
+            <span><kbd className="px-1.5 py-0.5 bg-white border border-slate-200 rounded-md ">Ctrl + K</kbd> otevře hledání</span>
           </div>
           <span className="font-semibold text-slate-600">{branding.name} CRM</span>
         </div>

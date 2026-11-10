@@ -59,7 +59,7 @@ export function ConnectorStatus({ companyId, items, onRefresh }: { companyId: st
           <article key={item.id} className="workspace-panel p-5 sm:p-6">
             <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
               <div className="flex min-w-0 items-start gap-3">
-                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-slate-100 text-slate-600"><Activity className="h-5 w-5" /></span>
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-slate-600"><Activity className="h-5 w-5" /></span>
                 <div className="min-w-0">
                   <p className="font-semibold text-slate-950">{labels[item.status] ?? 'Stav není dostupný'}</p>
                   <p className="mt-1 text-xs text-slate-500">Poslední spojení: {dateLabel(item.lastHeartbeatAt)}</p>
@@ -69,14 +69,14 @@ export function ConnectorStatus({ companyId, items, onRefresh }: { companyId: st
               </div>
 
               <div className="flex flex-wrap gap-2">
-                <button type="button" disabled={Boolean(pending) || isRevoked || item.status === 'dry_run_required'} onClick={() => void command(item, 'sync_now')} className="rounded-xl border border-slate-200 px-3 py-2 text-xs font-semibold disabled:cursor-not-allowed disabled:opacity-50"><RefreshCw className="mr-1 inline h-3.5 w-3.5" />Synchronizovat</button>
+                <button type="button" disabled={Boolean(pending) || isRevoked || item.status === 'dry_run_required'} onClick={() => void command(item, 'sync_now')} className="rounded-lg border border-slate-200 px-3 py-2 text-xs font-semibold disabled:cursor-not-allowed disabled:opacity-50"><RefreshCw className="mr-1 inline h-3.5 w-3.5" />Synchronizovat</button>
                 {item.status === 'paused'
-                  ? <button type="button" disabled={Boolean(pending) || isRevoked} onClick={() => void command(item, 'resume')} className="rounded-xl border border-slate-200 px-3 py-2 text-xs font-semibold disabled:opacity-50"><Play className="mr-1 inline h-3.5 w-3.5" />Obnovit</button>
-                  : <button type="button" disabled={Boolean(pending) || isRevoked} onClick={() => void command(item, 'pause')} className="rounded-xl border border-slate-200 px-3 py-2 text-xs font-semibold disabled:opacity-50"><Pause className="mr-1 inline h-3.5 w-3.5" />Pozastavit</button>}
+                  ? <button type="button" disabled={Boolean(pending) || isRevoked} onClick={() => void command(item, 'resume')} className="rounded-lg border border-slate-200 px-3 py-2 text-xs font-semibold disabled:opacity-50"><Play className="mr-1 inline h-3.5 w-3.5" />Obnovit</button>
+                  : <button type="button" disabled={Boolean(pending) || isRevoked} onClick={() => void command(item, 'pause')} className="rounded-lg border border-slate-200 px-3 py-2 text-xs font-semibold disabled:opacity-50"><Pause className="mr-1 inline h-3.5 w-3.5" />Pozastavit</button>}
                 {confirmRevokeId === item.id ? <>
-                  <button type="button" disabled={Boolean(pending)} onClick={() => void command(item, 'revoke')} className="rounded-xl bg-rose-600 px-3 py-2 text-xs font-semibold text-white disabled:opacity-50">Potvrdit odpojení</button>
-                  <button type="button" disabled={Boolean(pending)} onClick={() => setConfirmRevokeId(null)} className="rounded-xl border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-600 disabled:opacity-50">Zrušit</button>
-                </> : <button type="button" disabled={Boolean(pending) || isRevoked} onClick={() => setConfirmRevokeId(item.id)} className="rounded-xl border border-rose-200 px-3 py-2 text-xs font-semibold text-rose-700 disabled:opacity-50"><Unplug className="mr-1 inline h-3.5 w-3.5" />Odpojit</button>}
+                  <button type="button" disabled={Boolean(pending)} onClick={() => void command(item, 'revoke')} className="rounded-lg bg-rose-600 px-3 py-2 text-xs font-semibold text-white disabled:opacity-50">Potvrdit odpojení</button>
+                  <button type="button" disabled={Boolean(pending)} onClick={() => setConfirmRevokeId(null)} className="rounded-lg border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-600 disabled:opacity-50">Zrušit</button>
+                </> : <button type="button" disabled={Boolean(pending) || isRevoked} onClick={() => setConfirmRevokeId(item.id)} className="rounded-lg border border-rose-200 px-3 py-2 text-xs font-semibold text-rose-700 disabled:opacity-50"><Unplug className="mr-1 inline h-3.5 w-3.5" />Odpojit</button>}
               </div>
             </div>
 
@@ -90,7 +90,7 @@ export function ConnectorStatus({ companyId, items, onRefresh }: { companyId: st
         );
       })}
       <article className="workspace-panel p-5" aria-live="polite">
-        <div className="flex flex-wrap items-center justify-between gap-3"><div><h3 className="font-semibold text-slate-950">Zápisy do firemní databáze</h3><p className="mt-1 text-xs text-slate-500">Stav se obnovuje průběžně. Čekající zápis není uložený.</p></div><button type="button" onClick={() => void refreshOperations()} className="rounded-xl border border-slate-200 px-3 py-2 text-xs font-semibold">Obnovit stav</button></div>
+        <div className="flex flex-wrap items-center justify-between gap-3"><div><h3 className="font-semibold text-slate-950">Zápisy do firemní databáze</h3><p className="mt-1 text-xs text-slate-500">Stav se obnovuje průběžně. Čekající zápis není uložený.</p></div><button type="button" onClick={() => void refreshOperations()} className="rounded-lg border border-slate-200 px-3 py-2 text-xs font-semibold">Obnovit stav</button></div>
         <p className="mt-3 text-sm text-slate-700">Čekající zápisy: {operations.filter(item => item.status === 'pending' || item.status === 'processing').length}, Konflikty: {operations.filter(item => item.status === 'conflict').length}, Chyby: {operations.filter(item => item.status === 'failed').length}</p>
         {operations.filter(item => ['pending', 'processing', 'conflict', 'failed'].includes(item.status)).slice(0, 5).map(item => <div key={item.operationId} className="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-slate-100 pt-3 text-xs"><span>{item.entityType === 'lead' ? 'Poptávka' : 'Firma'}, {item.action}, {item.status === 'pending' ? 'čeká na konektor' : item.status === 'processing' ? 'zpracovává se' : item.status === 'conflict' ? 'vyžaduje kontrolu konfliktu' : 'nebylo uloženo'}</span>{item.status === 'pending' && items[0] ? <button type="button" disabled={Boolean(pending)} onClick={() => void command(items[0]!, 'sync_now')} className="rounded-lg border border-slate-200 px-2.5 py-1.5 font-semibold disabled:opacity-50">Zkusit bezpečně znovu</button> : null}{item.errorCode ? <span className="text-amber-700">{item.errorCode === 'SOURCE_CONFLICT' ? 'Zdrojová data se mezitím změnila.' : item.errorCode === 'MAPPING_STALE' ? 'Mapování vyžaduje nové schválení.' : item.errorCode === 'SOURCE_WRITE_REJECTED' ? 'Zdroj odmítl změnu.' : 'Zdroj není dostupný.'}</span> : null}</div>)}
       </article>

@@ -2,8 +2,8 @@ import React from 'react';
 
 // Design System Constants
 // Spacing scale: p-4 (16px), p-6 (24px)
-// Radius: rounded-app (12px)
-// Shadow: shadow-app
+// Radius: controls 8px, panels 12px, dialogs 16px
+// Elevation: 1px border using the shared line token
 
 // AppButton
 export interface AppButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
@@ -199,7 +199,7 @@ export const AppModal: React.FC<AppModalProps> = ({
       />
       
       {/* Modal Card */}
-      <div className="relative bg-surface border border-border rounded-dialog w-full max-w-xl shadow-app z-10 overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+      <div className="relative bg-surface border border-border rounded-dialog w-full max-w-xl z-10 overflow-hidden animate-in fade-in zoom-in-95 duration-150">
         {title && (
           <div className="px-6 py-4 border-b border-border flex items-center justify-between">
             <h3 className="text-base font-bold text-text">{title}</h3>

@@ -143,7 +143,7 @@ export const LandingPage: React.FC = () => {
       <header className="sticky top-0 z-40 bg-white/90 backdrop-blur-md border-b border-slate-200/80">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-[#2563EB] text-white font-black text-base flex items-center justify-center shadow-xs">
+            <div className="w-9 h-9 rounded-xl bg-[#2563EB] text-white font-black text-base flex items-center justify-center ">
               SF
             </div>
             <div>
@@ -169,7 +169,7 @@ export const LandingPage: React.FC = () => {
             <button
               onClick={() => setIsBookingOpen(true)}
               aria-label="Domluvit ukázku StavbaFlow"
-              className="min-h-11 min-w-11 px-4 max-[359px]:px-2 py-2 bg-[#2563EB] hover:bg-blue-700 text-white rounded-xl text-sm font-semibold shadow-xs hover:shadow-md transition-all"
+              className="min-h-11 min-w-11 px-4 max-[359px]:px-2 py-2 bg-[#2563EB] hover:bg-blue-700 text-white rounded-lg text-sm font-semibold transition-all"
             >
               <span className="max-[359px]:hidden">Domluvit ukázku</span>
               <Calendar aria-hidden="true" className="mx-auto hidden h-4 w-4 max-[359px]:block" />
@@ -254,7 +254,7 @@ export const LandingPage: React.FC = () => {
 
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
             {/* Sliders (7 cols) */}
-            <div className="lg:col-span-7 space-y-5 bg-slate-50 p-6 rounded-3xl border border-slate-200">
+            <div className="lg:col-span-7 space-y-5 bg-slate-50 p-6 rounded-xl border border-slate-200">
 
               {/* Slider 1: Leads */}
               <div className="space-y-1.5">
@@ -345,7 +345,7 @@ export const LandingPage: React.FC = () => {
             </div>
 
             {/* Results Output Box (5 cols) */}
-            <div className="lg:col-span-5 bg-slate-900 text-white p-6 rounded-3xl space-y-5 shadow-xl">
+            <div className="lg:col-span-5 bg-slate-900 text-white p-6 rounded-xl space-y-5 ">
               <div>
                   <span className="text-xs font-semibold text-emerald-300">
                   Modelový kvartální přínos (3 měsíce)
@@ -373,13 +373,13 @@ export const LandingPage: React.FC = () => {
                 </div>
               </div>
 
-              <div className="p-3.5 bg-slate-800/80 rounded-2xl border border-slate-700 text-sm text-slate-200 leading-relaxed">
+              <div className="border-t border-slate-700 pt-3.5 text-sm text-slate-200 leading-relaxed">
                 Ilustrativní výpočet s orientačními hodnotami. Předpokládá o 20 % více získaných zakázek a o 60 % méně času na administrativu.
               </div>
 
               <button
                 onClick={() => setIsBookingOpen(true)}
-                className="w-full min-h-12 px-4 py-3 bg-[#2563EB] hover:bg-blue-700 text-white rounded-xl text-sm font-semibold transition-all shadow-md"
+                className="w-full min-h-12 px-4 py-3 bg-[#2563EB] hover:bg-blue-700 text-white rounded-lg text-sm font-semibold transition-all "
               >
                 Ověřit výpočet na osobní ukázce (20 min)
               </button>
@@ -401,24 +401,24 @@ export const LandingPage: React.FC = () => {
         </div>
 
         <div className="mt-10 grid gap-4 lg:grid-cols-3">
-          <article className="flex min-h-[340px] flex-col border-t-4 border-slate-300 bg-white p-6 shadow-sm">
+          <article className="flex min-h-[340px] flex-col border-t-4 border-slate-300 bg-white p-6 ">
             <h3 className="flex items-center gap-2 text-base font-extrabold text-slate-950"><Building2 aria-hidden="true" className="h-5 w-5 text-blue-700" />Start</h3>
             <p className="mt-1 text-sm text-slate-600">Pro menší tým</p>
             <p className="mt-7 text-4xl font-black tracking-tight text-slate-950">1 990 Kč</p>
             <p className="mt-1 text-sm text-slate-500">měsíčně bez&nbsp;DPH</p>
             <p className="mt-6 border-t border-slate-200 pt-4 text-sm font-semibold text-slate-800">Až 5 zaměstnanců</p>
-            <a href={START_REGISTRATION_URL} className="mt-auto inline-flex min-h-12 items-center justify-center rounded-xl bg-blue-600 px-5 py-3 text-sm font-semibold text-white hover:bg-blue-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-700">
+            <a href={START_REGISTRATION_URL} className="mt-auto inline-flex min-h-12 items-center justify-center rounded-lg bg-blue-600 px-5 py-3 text-sm font-semibold text-white hover:bg-blue-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-700">
               Pokračovat s tarifem Start
             </a>
           </article>
 
-          <article className="flex min-h-[340px] flex-col border-t-4 border-blue-600 bg-blue-50/60 p-6 shadow-sm">
+          <article className="flex min-h-[340px] flex-col border-t-4 border-blue-600 bg-blue-50/60 p-6 ">
             <h3 className="flex items-center gap-2 text-base font-extrabold text-slate-950"><Users aria-hidden="true" className="h-5 w-5 text-blue-700" />Růst</h3>
             <p className="mt-1 text-sm text-slate-600">Pro rostoucí firmu</p>
             <p className="mt-7 text-4xl font-black tracking-tight text-slate-950">2 990 Kč</p>
             <p className="mt-1 text-sm text-slate-500">měsíčně bez&nbsp;DPH</p>
             <p className="mt-6 border-t border-blue-200 pt-4 text-sm font-semibold text-slate-800">Až 15 zaměstnanců</p>
-            <a href={GROWTH_REGISTRATION_URL} className="mt-auto inline-flex min-h-12 items-center justify-center rounded-xl bg-blue-600 px-5 py-3 text-sm font-semibold text-white hover:bg-blue-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-700">
+            <a href={GROWTH_REGISTRATION_URL} className="mt-auto inline-flex min-h-12 items-center justify-center rounded-lg bg-blue-600 px-5 py-3 text-sm font-semibold text-white hover:bg-blue-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-700">
               Pokračovat s tarifem Růst
             </a>
           </article>
@@ -465,21 +465,21 @@ export const LandingPage: React.FC = () => {
           </div>
 
           <div className="space-y-4 text-sm">
-            <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 space-y-1.5">
+            <div className="p-4 bg-slate-50 rounded-xl border border-slate-200 space-y-1.5">
               <h4 className="flex items-start gap-2 font-black text-slate-900 text-sm"><HelpCircle aria-hidden="true" className="mt-0.5 h-4 w-4 shrink-0 text-blue-700" /><span>Jak dostaneme do systému současná data?</span></h4>
               <p className="text-slate-600 leading-relaxed">
                 Scénář pilotu počítá s kontrolovaným CSV importem. Před potvrzením je potřeba ověřit mapování, chyby i opakovaný běh. V režimu Managed Cloud se data neukládají do původní firemní databáze.
               </p>
             </div>
 
-            <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 space-y-1.5">
+            <div className="p-4 bg-slate-50 rounded-xl border border-slate-200 space-y-1.5">
               <h4 className="flex items-start gap-2 font-black text-slate-900 text-sm"><HelpCircle aria-hidden="true" className="mt-0.5 h-4 w-4 shrink-0 text-blue-700" /><span>Co zaměstnanec po přihlášení uvidí?</span></h4>
               <p className="text-slate-600 leading-relaxed">
                 Přejímka ověřuje, že zaměstnanec vidí jen zakázky přiřazené jeho účtu a databázová pravidla mu nedovolí měnit údaje firmy ani cizí zakázky.
               </p>
             </div>
 
-            <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 space-y-1.5">
+            <div className="p-4 bg-slate-50 rounded-xl border border-slate-200 space-y-1.5">
               <h4 className="flex items-start gap-2 font-black text-slate-900 text-sm"><HelpCircle aria-hidden="true" className="mt-0.5 h-4 w-4 shrink-0 text-blue-700" /><span>Je systém připravený na přímé propojení s naší SQL databází?</span></h4>
               <p className="text-slate-600 leading-relaxed">
                 V prvním pilotu ne. Začínáme bezpečným CSV importem bez zápisu zpět. Přímé propojení se nacení a ověří samostatně až po úspěšném pilotu.
@@ -537,7 +537,7 @@ export const LandingPage: React.FC = () => {
       {/* Legal Document Modal */}
       {activeLegalModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-in fade-in">
-          <div className="bg-white rounded-3xl p-6 sm:p-8 max-w-2xl w-full max-h-[85vh] overflow-y-auto shadow-2xl border border-slate-200 space-y-4 relative text-slate-800 text-xs leading-relaxed">
+          <div className="bg-white rounded-2xl p-6 sm:p-8 max-w-2xl w-full max-h-[85vh] overflow-y-auto border border-slate-200 space-y-4 relative text-slate-800 text-xs leading-relaxed">
             <button
               onClick={() => setActiveLegalModal(null)}
               className="absolute top-4 right-4 p-2 text-slate-400 hover:text-slate-700 rounded-full"
@@ -603,7 +603,7 @@ export const LandingPage: React.FC = () => {
       {/* 9. Booking Modal (20-min Personal Demo) */}
       {isBookingOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-in fade-in">
-          <div className="bg-white rounded-3xl p-6 sm:p-8 max-w-md w-full shadow-2xl border border-slate-200 space-y-5 relative">
+          <div className="bg-white rounded-2xl p-6 sm:p-8 max-w-md w-full border border-slate-200 space-y-5 relative">
             <button
               onClick={() => setIsBookingOpen(false)}
               aria-label="Zavřít konzultaci"
@@ -652,7 +652,7 @@ export const LandingPage: React.FC = () => {
                         setBookingName(e.target.value);
                         if (bookingError) setBookingError(null);
                       }}
-                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-blue-600"
+                      className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-blue-600"
                     />
                   </div>
                   <div>
@@ -666,7 +666,7 @@ export const LandingPage: React.FC = () => {
                         setBookingCompany(e.target.value);
                         if (bookingError) setBookingError(null);
                       }}
-                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-blue-600"
+                      className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-blue-600"
                     />
                   </div>
                   <div>
@@ -680,7 +680,7 @@ export const LandingPage: React.FC = () => {
                         setBookingPhone(e.target.value);
                         if (bookingError) setBookingError(null);
                       }}
-                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-blue-600"
+                      className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-blue-600"
                     />
                   </div>
                   <div>
@@ -694,7 +694,7 @@ export const LandingPage: React.FC = () => {
                         setBookingEmail(e.target.value);
                         if (bookingError) setBookingError(null);
                       }}
-                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-blue-600"
+                      className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-blue-600"
                     />
                   </div>
                   <div>
@@ -702,7 +702,7 @@ export const LandingPage: React.FC = () => {
                     <select
                       value={bookingDate}
                       onChange={e => setBookingDate(e.target.value)}
-                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-blue-600 font-medium"
+                      className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-blue-600 font-medium"
                     >
                       <option value="Pondělí 10:00">Pondělí 10:00</option>
                       <option value="Úterý 13:00">Úterý 13:00</option>
@@ -716,7 +716,7 @@ export const LandingPage: React.FC = () => {
                 <button
                   type="submit"
                   disabled={isBookingLoading}
-                  className="w-full py-3 bg-[#2563EB] hover:bg-blue-600 disabled:opacity-60 disabled:cursor-not-allowed text-white rounded-xl text-xs font-black shadow-md transition-all flex items-center justify-center gap-2"
+                  className="w-full py-3 bg-[#2563EB] hover:bg-blue-600 disabled:opacity-60 disabled:cursor-not-allowed text-white rounded-lg text-xs font-black transition-all flex items-center justify-center gap-2"
                 >
                   {isBookingLoading ? (
                     <>

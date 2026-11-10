@@ -46,21 +46,21 @@ export const TeamTab: React.FC<TeamTabProps> = ({ lead, employees, onNotice, onU
   return (
     <div className="space-y-6 font-sans">
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-2xs">
+        <div className="bg-white p-5 rounded-xl border border-slate-200 ">
           <span className="text-[11px] font-bold text-slate-500">Odpovědný pracovník</span>
           <p className="text-lg font-black text-slate-900 mt-1">{assignedEmployee?.name || 'Nepřiřazeno'}</p>
           <span className="text-[10px] text-slate-500">
             {assignedEmployee ? 'Aktivní člen této firmy' : 'Vyberte pracovníka z ověřeného seznamu'}
           </span>
         </div>
-        <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-2xs">
+        <div className="bg-white p-5 rounded-xl border border-slate-200 ">
           <span className="text-[11px] font-bold text-slate-500">Dostupní zaměstnanci</span>
           <p className="text-lg font-black text-[#0A84FF] mt-1">{assignableEmployees.length}</p>
           <span className="text-[10px] text-slate-500">Pouze aktivní zaměstnanci stejné firmy</span>
         </div>
       </div>
 
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
+      <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
         <div className="p-5 border-b border-slate-100">
           <h2 className="text-sm font-black text-slate-900">Přiřazení zakázky</h2>
           <p className="text-xs text-slate-500 mt-0.5">
@@ -97,7 +97,7 @@ export const TeamTab: React.FC<TeamTabProps> = ({ lead, employees, onNotice, onU
               aria-label="Přiřazený zaměstnanec"
               value={selectedEmployeeId}
               onChange={(event) => setSelectedEmployeeId(event.target.value)}
-              className="flex-1 p-3 rounded-xl border border-slate-200 bg-white font-medium text-slate-700 focus:outline-none focus:border-[#0A84FF]"
+              className="flex-1 p-3 rounded-lg border border-slate-200 bg-white font-medium text-slate-700 focus:outline-none focus:border-[#0A84FF]"
             >
               <option value="">Nepřiřazeno</option>
               {assignableEmployees.map((employee) => (
@@ -107,7 +107,7 @@ export const TeamTab: React.FC<TeamTabProps> = ({ lead, employees, onNotice, onU
             <button
               type="submit"
               disabled={saving || selectedEmployeeId === (lead.assignedEmployeeId || '')}
-              className="px-5 py-3 bg-slate-900 hover:bg-slate-800 disabled:bg-slate-300 text-white rounded-xl font-bold text-xs transition-colors"
+              className="px-5 py-3 bg-slate-900 hover:bg-slate-800 disabled:bg-slate-300 text-white rounded-lg font-bold text-xs transition-colors"
             >
               {saving ? 'Ukládám…' : 'Uložit přiřazení'}
             </button>

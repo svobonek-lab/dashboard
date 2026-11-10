@@ -48,27 +48,27 @@ export const EmployeeJobsPage: React.FC<EmployeeJobsPageProps> = ({ leads, onSel
       </div>
 
       {/* Filter Tabs */}
-      <div className="flex items-center gap-2 bg-slate-100 p-1.5 rounded-2xl border border-slate-200/60">
+      <div className="flex items-center gap-2 bg-slate-100 p-1.5 rounded-xl border border-slate-200/60">
         <button
           onClick={() => setFilter('today')}
-          className={`flex-1 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-            filter === 'today' ? 'bg-white text-brand-primary shadow-xs border border-slate-200/80' : 'text-slate-600 hover:text-slate-900'
+          className={`flex-1 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+            filter === 'today' ? 'bg-white text-brand-primary border border-slate-200/80' : 'text-slate-600 hover:text-slate-900'
           }`}
         >
           Dnešní výjezdy ({filterEmployeeJobs(myJobs, 'today').length})
         </button>
         <button
           onClick={() => setFilter('upcoming')}
-          className={`flex-1 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-            filter === 'upcoming' ? 'bg-white text-brand-primary shadow-xs border border-slate-200/80' : 'text-slate-600 hover:text-slate-900'
+          className={`flex-1 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+            filter === 'upcoming' ? 'bg-white text-brand-primary border border-slate-200/80' : 'text-slate-600 hover:text-slate-900'
           }`}
         >
           Plánované ({filterEmployeeJobs(myJobs, 'upcoming').length})
         </button>
         <button
           onClick={() => setFilter('completed')}
-          className={`flex-1 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-            filter === 'completed' ? 'bg-white text-brand-primary shadow-xs border border-slate-200/80' : 'text-slate-600 hover:text-slate-900'
+          className={`flex-1 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+            filter === 'completed' ? 'bg-white text-brand-primary border border-slate-200/80' : 'text-slate-600 hover:text-slate-900'
           }`}
         >
           Předané ({filterEmployeeJobs(myJobs, 'completed').length})
@@ -80,7 +80,7 @@ export const EmployeeJobsPage: React.FC<EmployeeJobsPageProps> = ({ leads, onSel
         {displayedJobs.map((job, idx) => (
           <div
             key={job.id}
-            className="bg-white border border-slate-200/80 rounded-3xl p-5 shadow-xs space-y-4 hover:border-brand-primary-soft transition-colors"
+            className="bg-white border border-slate-200/80 rounded-xl p-5 space-y-4 hover:border-brand-primary-soft transition-colors"
           >
             {/* Top row */}
             <div className="flex items-start justify-between gap-3">
@@ -101,14 +101,14 @@ export const EmployeeJobsPage: React.FC<EmployeeJobsPageProps> = ({ leads, onSel
             </div>
 
             {/* Customer Details Box */}
-            <div className="bg-slate-50 p-3 rounded-2xl border border-slate-200/80 flex items-center justify-between text-xs">
+            <div className="border-t border-slate-200 py-3 flex items-center justify-between text-xs">
               <div className="space-y-0.5">
                 <span className="text-[10px] text-slate-500 block">Investor / Kontakt:</span>
                 <span className="font-bold text-slate-900">{job.customerName}</span>
               </div>
               <a
                 href={`tel:${job.customerPhone}`}
-                className="px-3 py-1.5 rounded-xl bg-emerald-50 text-emerald-700 hover:bg-emerald-100 font-bold flex items-center gap-1.5 border border-emerald-200 cursor-pointer"
+                className="px-3 py-1.5 rounded-lg bg-emerald-50 text-emerald-700 hover:bg-emerald-100 font-bold flex items-center gap-1.5 border border-emerald-200 cursor-pointer"
               >
                 <Phone className="w-3.5 h-3.5" />
                 <span>Zavolat</span>
@@ -121,7 +121,7 @@ export const EmployeeJobsPage: React.FC<EmployeeJobsPageProps> = ({ leads, onSel
                 href={`https://maps.google.com/?q=${encodeURIComponent(job.address + ', ' + job.city)}`}
                 target="_blank"
                 rel="noreferrer"
-                className="min-h-[44px] py-2.5 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer border border-slate-200/80"
+                className="min-h-[44px] py-2.5 px-3 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer border border-slate-200/80"
               >
                 <Navigation className="w-4 h-4 text-brand-primary" />
                 <span>Navigace</span>
@@ -129,7 +129,7 @@ export const EmployeeJobsPage: React.FC<EmployeeJobsPageProps> = ({ leads, onSel
 
               <button
                 onClick={() => { onSelectLead(job); navigate('/employee/photos'); }}
-                className="min-h-[44px] py-2.5 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer border border-slate-200/80"
+                className="min-h-[44px] py-2.5 px-3 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer border border-slate-200/80"
               >
                 <Camera className="w-4 h-4 text-brand-primary" />
                 <span>Vyfotit</span>

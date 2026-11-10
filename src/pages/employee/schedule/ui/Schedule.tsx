@@ -46,9 +46,9 @@ export const EmployeeSchedulePage: React.FC<EmployeeSchedulePageProps> = ({ lead
           <button
             key={i}
             onClick={() => setSelectedDay(i)}
-            className={`min-w-[100px] p-3 rounded-2xl border text-center transition-all cursor-pointer ${
+            className={`min-w-[100px] p-3 rounded-lg border text-center transition-all cursor-pointer ${
               selectedDay === i
-                ? 'bg-brand-primary border-brand-primary text-white font-bold shadow-xs'
+                ? 'bg-brand-primary border-brand-primary text-white font-bold '
                 : 'bg-white border-slate-200/80 text-slate-600 hover:text-slate-900'
             }`}
           >
@@ -66,13 +66,13 @@ export const EmployeeSchedulePage: React.FC<EmployeeSchedulePageProps> = ({ lead
       {/* Schedule Items List */}
       <div className="space-y-3">
         {scheduleItems.length === 0 ? (
-          <div className="rounded-3xl border border-dashed border-slate-200 bg-slate-50 p-8 text-center text-xs text-slate-500">
+          <div className="rounded-xl border border-dashed border-slate-200 bg-slate-50 p-8 text-center text-xs text-slate-500">
             Nemáte žádné přiřazené termíny. Harmonogram se zobrazí po přiřazení zakázky.
           </div>
         ) : scheduleItems.map((item, i) => (
           <div
             key={i}
-            className="bg-white border border-slate-200/80 rounded-3xl p-5 shadow-xs space-y-3"
+            className="bg-white border border-slate-200/80 rounded-xl p-5 space-y-3"
           >
             <div className="flex items-center justify-between">
               <span className="px-2.5 py-1 rounded-xl bg-slate-50 border border-slate-200 text-xs tabular-nums font-bold text-brand-primary flex items-center gap-1.5">

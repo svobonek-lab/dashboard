@@ -45,8 +45,8 @@ export const RoleGuard: React.FC<RoleGuardProps> = ({ role, children, fallback }
       <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-rose-500/5 rounded-full blur-3xl pointer-events-none"></div>
       <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-amber-500/5 rounded-full blur-3xl pointer-events-none"></div>
 
-      <div className="relative z-10 max-w-lg w-full bg-white border border-slate-200 rounded-3xl p-8 shadow-2xl space-y-6 text-center">
-        <div className="w-16 h-16 mx-auto rounded-2xl bg-rose-50 text-rose-600 border border-rose-100 flex items-center justify-center shadow-inner">
+      <div className="relative z-10 max-w-lg w-full bg-white border border-slate-200 rounded-xl p-8 space-y-6 text-center">
+        <div className="w-16 h-16 mx-auto rounded-xl bg-rose-50 text-rose-600 border border-rose-100 flex items-center justify-center ">
           <Lock className="w-8 h-8" />
         </div>
 
@@ -64,7 +64,7 @@ export const RoleGuard: React.FC<RoleGuardProps> = ({ role, children, fallback }
           </p>
         </div>
 
-        <div className="bg-slate-50 rounded-2xl p-4 border border-slate-200 text-left space-y-2 text-xs">
+        <div className="border-t border-slate-200 pt-4 text-left space-y-2 text-xs">
           <div className="flex items-center justify-between text-slate-500">
             <span>Uživatel:</span>
             <span className="text-slate-800 font-semibold">{dbUser?.email || 'Neznámý'}</span>
@@ -86,7 +86,7 @@ export const RoleGuard: React.FC<RoleGuardProps> = ({ role, children, fallback }
         <div className="flex flex-col sm:flex-row items-center gap-3 pt-2">
           <button
             onClick={() => navigate(defaultTarget)}
-            className="w-full sm:flex-1 py-3 px-4 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-black transition-all flex items-center justify-center gap-2 shadow-lg shadow-amber-500/10 cursor-pointer"
+            className="w-full sm:flex-1 py-3 px-4 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-black transition-all flex items-center justify-center gap-2 cursor-pointer"
           >
             <Home className="w-4 h-4" />
             <span>Přejít na můj dashboard</span>
@@ -94,7 +94,7 @@ export const RoleGuard: React.FC<RoleGuardProps> = ({ role, children, fallback }
 
           <button
             onClick={() => window.history.back()}
-            className="w-full sm:w-auto py-3 px-4 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition-all flex items-center justify-center gap-1.5 border border-slate-200 cursor-pointer"
+            className="w-full sm:w-auto py-3 px-4 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition-all flex items-center justify-center gap-1.5 border border-slate-200 cursor-pointer"
           >
             <span>Zpět</span>
           </button>

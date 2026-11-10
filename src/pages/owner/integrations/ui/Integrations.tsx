@@ -188,16 +188,16 @@ export const Integrations: React.FC<IntegrationsProps> = () => {
       {databaseMode === 'managed_cloud' ? <section className="mb-6 grid gap-4 lg:grid-cols-2">
         <article className="workspace-panel overflow-hidden p-6 sm:p-7">
           <div className="flex items-start justify-between gap-4">
-            <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-violet-50 text-violet-700"><Bot className="h-5 w-5" /></span>
+            <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-violet-50 text-violet-700"><Bot className="h-5 w-5" /></span>
             <span className="rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-[11px] font-bold text-emerald-700">AI příjem</span>
           </div>
           <h2 className="mt-5 text-lg font-semibold tracking-tight text-slate-950">AI Dispečer (e-mail)</h2>
           <p className="mt-2 text-sm leading-6 text-slate-500">Unikátní webhook URL přijímá poptávky právě pro tuto firmu. Vložte ji do Make.com nebo do ověřené e-mailové automatizace.</p>
-          <div className="mt-5 flex items-center gap-2 rounded-2xl border border-slate-200 bg-slate-50 p-2">
+          <div className="mt-5 flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 p-2">
             <code className="min-w-0 flex-1 overflow-hidden text-ellipsis whitespace-nowrap px-2 text-xs text-slate-700">
               {incomingLeadLoading ? 'Načítám zabezpečenou URL…' : securedIncomingLeadUrl || 'Webhook není aktivní'}
             </code>
-            <button type="button" disabled={!securedIncomingLeadUrl} onClick={() => void copyValue('inbox', securedIncomingLeadUrl)} className="inline-flex min-h-10 shrink-0 items-center gap-2 rounded-xl bg-slate-950 px-3 text-xs font-semibold text-white hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-40" aria-label="Kopírovat webhook AI dispečera">
+            <button type="button" disabled={!securedIncomingLeadUrl} onClick={() => void copyValue('inbox', securedIncomingLeadUrl)} className="inline-flex min-h-10 shrink-0 items-center gap-2 rounded-lg bg-slate-950 px-3 text-xs font-semibold text-white hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-40" aria-label="Kopírovat webhook AI dispečera">
               {copied === 'inbox' ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}{copied === 'inbox' ? 'Zkopírováno' : 'Kopírovat'}
             </button>
           </div>
@@ -207,14 +207,14 @@ export const Integrations: React.FC<IntegrationsProps> = () => {
 
         <article className="workspace-panel overflow-hidden p-6 sm:p-7">
           <div className="flex items-start justify-between gap-4">
-            <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-blue-50 text-blue-700"><Globe2 className="h-5 w-5" /></span>
+            <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-blue-50 text-blue-700"><Globe2 className="h-5 w-5" /></span>
             <span className="rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-[11px] font-bold text-blue-700">Web firmy</span>
           </div>
           <h2 className="mt-5 text-lg font-semibold tracking-tight text-slate-950">Webový formulář</h2>
           <p className="mt-2 text-sm leading-6 text-slate-500">Vložte jediný řádek před koncovou značku <code>&lt;/body&gt;</code> na webu firmy.</p>
-          <div className="mt-5 flex items-center gap-2 rounded-2xl border border-slate-200 bg-slate-50 p-2">
+          <div className="mt-5 flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 p-2">
             <code className="min-w-0 flex-1 overflow-hidden text-ellipsis whitespace-nowrap px-2 text-xs text-slate-700">{widgetSnippet}</code>
-            <button type="button" onClick={() => void copyValue('widget', widgetSnippet)} className="inline-flex min-h-10 shrink-0 items-center gap-2 rounded-xl bg-slate-950 px-3 text-xs font-semibold text-white hover:bg-slate-800" aria-label="Kopírovat kód webového formuláře">
+            <button type="button" onClick={() => void copyValue('widget', widgetSnippet)} className="inline-flex min-h-10 shrink-0 items-center gap-2 rounded-lg bg-slate-950 px-3 text-xs font-semibold text-white hover:bg-slate-800" aria-label="Kopírovat kód webového formuláře">
               {copied === 'widget' ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}{copied === 'widget' ? 'Zkopírováno' : 'Kopírovat'}
             </button>
           </div>
@@ -224,19 +224,19 @@ export const Integrations: React.FC<IntegrationsProps> = () => {
 
       <section className="grid gap-4 md:grid-cols-[1.25fr_.75fr]">
         <article className="workspace-panel p-6 sm:p-7">
-          <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-blue-50 text-blue-600"><FileSpreadsheet className="h-5 w-5" /></span>
+          <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-blue-50 text-blue-600"><FileSpreadsheet className="h-5 w-5" /></span>
           <h2 className="mt-5 text-lg font-semibold tracking-tight text-slate-950">Kontrolovaný CSV import</h2>
           <p className="mt-2 max-w-xl text-sm leading-6 text-slate-500">Nejdřív zkontrolujete sloupce a jejich mapování. Server následně ověří firmu, oprávnění majitele a fingerprint souboru. Opakovaný import nevytvoří stejné záznamy podruhé.</p>
           <ul className="mt-5 grid gap-3 text-sm text-slate-700 sm:grid-cols-2">
             {['Náhled před zápisem', 'Mapování polí', 'Kontrola duplicit', 'Auditovatelný fingerprint'].map((item) => <li key={item} className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-emerald-600" />{item}</li>)}
           </ul>
-          <button type="button" onClick={() => setIsCsvOpen(true)} className="mt-6 inline-flex min-h-10 items-center justify-center rounded-xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-700 hover:bg-slate-50">Vybrat CSV soubor</button>
+          <button type="button" onClick={() => setIsCsvOpen(true)} className="mt-6 inline-flex min-h-10 items-center justify-center rounded-lg border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-700 hover:bg-slate-50">Vybrat CSV soubor</button>
         </article>
 
         <aside className="workspace-panel border-l-4 border-blue-600 p-6 md:col-span-2 sm:p-7">
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div className="flex items-start gap-3">
-              <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-blue-50 text-blue-700"><Database className="h-5 w-5" /></span>
+              <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-blue-700"><Database className="h-5 w-5" /></span>
               <div>
                 <p className="text-xs font-semibold text-blue-700">Dvě bezpečné cesty</p>
                 <h2 className="mt-1 text-lg font-semibold tracking-tight text-slate-950">Vlastní firemní databáze (Synology / On-Premise)</h2>
@@ -248,13 +248,13 @@ export const Integrations: React.FC<IntegrationsProps> = () => {
 
           <div className="mt-5 flex flex-wrap gap-2">
             <button type="button" onClick={() => { setConnectorError(''); setConnectorDialog('setup'); }} className="workspace-primary-action inline-flex min-h-11 items-center justify-center gap-2 px-4 text-sm font-semibold"><Database className="h-4 w-4" />Připojit vlastní databázi</button>
-            <button type="button" onClick={downloadSynologyCompose} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white px-4 text-sm font-semibold text-slate-700 transition-colors hover:border-slate-400 hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600"><Download className="h-4 w-4" />Stáhnout Synology Docker Compose</button>
-            <button type="button" onClick={() => { setConnectorError(''); setConnectorDialog('mapping'); }} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white px-4 text-sm font-semibold text-slate-700 transition-colors hover:border-slate-400 hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600"><SlidersHorizontal className="h-4 w-4" />Spravovat mapování polí</button>
+            <button type="button" onClick={downloadSynologyCompose} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-slate-300 bg-white px-4 text-sm font-semibold text-slate-700 transition-colors hover:border-slate-400 hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600"><Download className="h-4 w-4" />Stáhnout Synology Docker Compose</button>
+            <button type="button" onClick={() => { setConnectorError(''); setConnectorDialog('mapping'); }} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-slate-300 bg-white px-4 text-sm font-semibold text-slate-700 transition-colors hover:border-slate-400 hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600"><SlidersHorizontal className="h-4 w-4" />Spravovat mapování polí</button>
           </div>
 
           <p className="mt-3 text-xs leading-5 text-slate-500">Připojení začíná v průvodci. Přístup SQL ani jednorázový klíč firmy se nevkládá do Docker Compose; tajné údaje zůstávají v souborech na NAS.</p>
 
-          <div className="mt-5 rounded-2xl border border-slate-200 bg-slate-50/70 p-4">
+          <div className="mt-5 border-t border-slate-200 pt-4">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div role="status" aria-live="polite" className="flex items-center gap-2 text-sm font-semibold text-slate-800">
                 <span className={`h-2.5 w-2.5 rounded-full ${connectorRecentlyConnected ? 'bg-emerald-500' : 'bg-slate-300'}`} aria-hidden="true" />
@@ -266,10 +266,10 @@ export const Integrations: React.FC<IntegrationsProps> = () => {
             {connectors.length > 0 && currentOrg?.id ? <div className="mt-4 border-t border-slate-200 pt-4"><ConnectorStatus companyId={currentOrg.id} items={connectors} onRefresh={() => void refreshConnectors()} /></div> : null}
           </div>
 
-          <div className="mt-4 grid gap-4 rounded-2xl border border-slate-200 p-4 sm:grid-cols-[1fr_auto_auto] sm:items-end" aria-busy={modeBusy}>
+          <div className="mt-4 grid gap-4 border-t border-slate-200 pt-4 sm:grid-cols-[1fr_auto_auto] sm:items-end" aria-busy={modeBusy}>
             <div><h3 className="font-semibold text-slate-950">Ukládání dat</h3><p className="mt-1 text-sm text-slate-500">Přepnutí na firemní databázi je dostupné po schválení mapování firmy i zakázek a úspěšném ověření konektoru.</p></div>
-            <label className="text-xs font-semibold text-slate-600">Databázový server<select aria-label="Typ firemní databáze" value={databaseDriver} onChange={event => setDatabaseDriver(event.target.value as typeof databaseDriver)} className="mt-1 block min-h-10 rounded-xl border border-slate-200 bg-white px-3 text-sm font-normal"><option value="postgres">PostgreSQL</option><option value="mysql">MySQL</option><option value="mariadb">MariaDB</option><option value="mssql">Microsoft SQL Server</option></select></label>
-            <label className="text-xs font-semibold text-slate-600">Aktivní zdroj<select aria-label="Režim databáze" value={databaseMode} disabled={modeBusy} onChange={event => void changeDatabaseMode(event.target.value as 'managed_cloud' | 'byodb')} className="mt-1 block min-h-10 rounded-xl border border-slate-200 bg-white px-3 text-sm font-normal"><option value="managed_cloud">Managed Cloud (Supabase)</option><option value="byodb" disabled={!canActivateByodb}>Firemní databáze (BYODB){!byodbEnabled ? ', čeká na staging ověření' : ''}</option></select></label>
+            <label className="text-xs font-semibold text-slate-600">Databázový server<select aria-label="Typ firemní databáze" value={databaseDriver} onChange={event => setDatabaseDriver(event.target.value as typeof databaseDriver)} className="mt-1 block min-h-10 rounded-lg border border-slate-200 bg-white px-3 text-sm font-normal"><option value="postgres">PostgreSQL</option><option value="mysql">MySQL</option><option value="mariadb">MariaDB</option><option value="mssql">Microsoft SQL Server</option></select></label>
+            <label className="text-xs font-semibold text-slate-600">Aktivní zdroj<select aria-label="Režim databáze" value={databaseMode} disabled={modeBusy} onChange={event => void changeDatabaseMode(event.target.value as 'managed_cloud' | 'byodb')} className="mt-1 block min-h-10 rounded-lg border border-slate-200 bg-white px-3 text-sm font-normal"><option value="managed_cloud">Managed Cloud (Supabase)</option><option value="byodb" disabled={!canActivateByodb}>Firemní databáze (BYODB){!byodbEnabled ? ', čeká na staging ověření' : ''}</option></select></label>
             {!byodbEnabled && <p className="text-xs text-amber-700 sm:col-span-3">Nastavení konektoru je dostupné. Přepnutí zdroje zápisů se otevře po staging přejímce a vydání ověřeného image digestu.</p>}
           </div>
           {connectorError && <p role="alert" className="mt-3 text-sm text-amber-800">{connectorError}</p>}
@@ -277,12 +277,12 @@ export const Integrations: React.FC<IntegrationsProps> = () => {
       </section>
 
       {connectorDialog && currentOrg?.id ? <dialog ref={connectorDialogRef} role="dialog" aria-modal="true" aria-labelledby="connector-dialog-title" onCancel={event => { event.preventDefault(); setConnectorDialog(null); }} onClick={event => { if (event.target === event.currentTarget) setConnectorDialog(null); }} className="fixed inset-0 m-0 flex h-screen max-h-none w-screen max-w-none items-center justify-center overflow-y-auto border-0 bg-transparent p-4 backdrop:bg-slate-950/55">
-        <section className="max-h-[90vh] w-full max-w-3xl overflow-y-auto rounded-3xl bg-white p-5 shadow-2xl sm:p-7">
+        <section className="max-h-[90vh] w-full max-w-3xl overflow-y-auto rounded-2xl bg-white p-5 sm:p-7">
           <header className="mb-5 flex items-start justify-between gap-4">
             <div><p className="text-xs font-semibold text-blue-700">Vlastní firemní databáze</p><h2 id="connector-dialog-title" className="mt-1 text-xl font-semibold text-slate-950">{connectorDialog === 'setup' ? 'Připojit databázi firmy' : 'Mapování databázových polí'}</h2></div>
-            <button type="button" autoFocus onClick={() => setConnectorDialog(null)} aria-label="Zavřít průvodce databází" className="rounded-xl border border-slate-200 p-2 text-slate-600 hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600"><X className="h-4 w-4" /></button>
+            <button type="button" autoFocus onClick={() => setConnectorDialog(null)} aria-label="Zavřít průvodce databází" className="rounded-lg border border-slate-200 p-2 text-slate-600 hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600"><X className="h-4 w-4" /></button>
           </header>
-          {connectorDialog === 'setup' ? <ConnectorSetup companyId={currentOrg.id} initialDriver={databaseDriver} onDriverChange={setDatabaseDriver} onCreated={() => void refreshConnectors()} /> : activeConnector && activeConnector.status !== 'awaiting_enrollment' ? <ConnectorMapping companyId={currentOrg.id} connector={activeConnector} onSaved={() => void refreshConnectors()} /> : <div className="rounded-2xl border border-blue-100 bg-blue-50/60 p-5"><h3 className="font-semibold text-slate-950">Nejdřív připojte firemní databázi</h3><p className="mt-2 text-sm leading-6 text-slate-600">Mapování se načte z metadat až po prvním heartbeat konektoru. Zákaznické řádky se při nastavení nečtou.</p><button type="button" onClick={() => setConnectorDialog('setup')} className="workspace-primary-action mt-4 inline-flex min-h-10 items-center gap-2 px-4 text-sm font-semibold"><Database className="h-4 w-4" />Připojit vlastní databázi</button></div>}
+          {connectorDialog === 'setup' ? <ConnectorSetup companyId={currentOrg.id} initialDriver={databaseDriver} onDriverChange={setDatabaseDriver} onCreated={() => void refreshConnectors()} /> : activeConnector && activeConnector.status !== 'awaiting_enrollment' ? <ConnectorMapping companyId={currentOrg.id} connector={activeConnector} onSaved={() => void refreshConnectors()} /> : <div className="border-t border-slate-200 pt-5"><h3 className="font-semibold text-slate-950">Nejdřív připojte firemní databázi</h3><p className="mt-2 text-sm leading-6 text-slate-600">Mapování se načte z metadat až po prvním heartbeat konektoru. Zákaznické řádky se při nastavení nečtou.</p><button type="button" onClick={() => setConnectorDialog('setup')} className="workspace-primary-action mt-4 inline-flex min-h-10 items-center gap-2 px-4 text-sm font-semibold"><Database className="h-4 w-4" />Připojit vlastní databázi</button></div>}
         </section>
       </dialog> : null}
 
