@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useOrganization } from '@/entities/session';
-import { Building, Building2, BriefcaseBusiness, Lock, Mail, ArrowRight, CheckCircle2, ShieldAlert, ShieldCheck } from 'lucide-react';
+import { Building, Building2, BriefcaseBusiness, Lock, Mail, CheckCircle2, ShieldAlert, ShieldCheck } from 'lucide-react';
 import type { UserRole } from '@/shared/model/permissions';
 import { supabase } from '@/shared/api/supabase';
 import { buildRecoveryRequest, getRecoveryErrorMessage, parseRecoveryResponse, validateNewPassword } from '@/features/login';
@@ -46,7 +46,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onSuccess, expectedRole })
     error: contextError,
   } = useOrganization();
   const branding = currentOrg?.branding || {};
-  
+
   const [mode, setMode] = useState<'login' | 'signup' | 'recover' | 'new_password'>('login');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -55,7 +55,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onSuccess, expectedRole })
   const [inviteToken, setInviteToken] = useState<string | null>(null);
   const [termsAccepted, setTermsAccepted] = useState(false);
   const [dpaAccepted, setDpaAccepted] = useState(false);
-  
+
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -173,7 +173,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onSuccess, expectedRole })
               <div className="auth-workflow-row"><ShieldCheck aria-hidden="true" className="h-5 w-5" /><span><strong>Přístup</strong><small>Majitel a zaměstnanec vidí svou práci</small></span></div>
             </div>
           </div>
-          <p className="text-sm text-slate-400">StavbaFlow · pro menší stavební firmy</p>
+          <p className="text-sm text-slate-400">StavbaFlow, pro menší stavební firmy</p>
         </div>
       </aside>
       <div className="auth-form-side flex min-h-screen items-center justify-center px-4 py-8 sm:px-8 sm:py-12">
@@ -194,7 +194,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onSuccess, expectedRole })
                       : invitePasswordRequired ? 'Nastavte si heslo' : 'Nastavit nové heslo'}
               </h1>
               <p className="text-sm text-muted font-medium mt-2">
-                {mode === 'login' 
+                {mode === 'login'
                   ? (roleCopy?.description || 'Použijte e-mail, který máte u svého účtu.')
                   : mode === 'signup'
                     ? 'Zadejte údaje pro založení firemního účtu.'
@@ -232,7 +232,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onSuccess, expectedRole })
               {mode === 'signup' && (
                 <div className="space-y-4">
                   <div>
-                    <label className="text-xs font-bold uppercase tracking-wider text-muted block mb-1.5">Název vaší firmy</label>
+                    <label className="text-xs font-bold text-muted block mb-1.5">Název vaší firmy</label>
                     <div className="relative">
                       <span className="absolute inset-y-0 left-0 pl-4 flex items-center text-muted">
                         <Building className="w-4 h-4" />
@@ -249,7 +249,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onSuccess, expectedRole })
                     </div>
                   </div>
                   <div>
-                    <label className="text-xs font-bold uppercase tracking-wider text-muted block mb-1.5">Hlavní barva značky</label>
+                    <label className="text-xs font-bold text-muted block mb-1.5">Hlavní barva značky</label>
                     <div className="flex items-center gap-3">
                       <div className="relative w-12 h-12 border border-border rounded-app overflow-hidden shrink-0 shadow-sm">
                         <input
@@ -259,7 +259,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onSuccess, expectedRole })
                           className="absolute inset-0 w-full h-full p-0 border-0 cursor-pointer scale-150 bg-transparent"
                         />
                       </div>
-                      <span className="font-mono text-sm font-bold text-text">{primaryColor === 'var(--brand-primary)' ? '#2563eb' : primaryColor}</span>
+                      <span className="text-sm font-bold text-text">{primaryColor === 'var(--brand-primary)' ? '#2563eb' : primaryColor}</span>
                     </div>
                   </div>
                 </div>
@@ -335,7 +335,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onSuccess, expectedRole })
                 ) : (
                   <>
                     <span>{mode === 'login' ? 'Přihlásit se' : mode === 'signup' ? 'Založit firmu' : mode === 'recover' ? 'Odeslat bezpečný odkaz' : invitePasswordRequired ? 'Nastavit heslo a pokračovat' : 'Uložit nové heslo'}</span>
-                    <ArrowRight className="w-4 h-4" />
+
                   </>
                 )}
               </button>
@@ -345,7 +345,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onSuccess, expectedRole })
               {mode === 'login' && !isConfigured ? (
                 <>
                   Nemáte firemní prostor?{' '}
-                  <button 
+                  <button
                     onClick={() => { setMode('signup'); setTermsAccepted(false); setDpaAccepted(false); }}
                     className="font-bold hover:underline transition-colors"
                     style={{ color: displayBrandColor }}
@@ -358,7 +358,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onSuccess, expectedRole })
               ) : mode === 'signup' ? (
                 <>
                   Již máte u nás účet?{' '}
-                  <button 
+                  <button
                     onClick={() => { setMode('login'); setTermsAccepted(false); setDpaAccepted(false); }}
                     className="font-bold hover:underline transition-colors"
                     style={{ color: displayBrandColor }}

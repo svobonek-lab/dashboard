@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import type { FieldMappingConfig, FieldMappingRule, TargetFieldType } from '../model';
 import { generateSmartMappings } from '../lib/fieldMapping';
-import { Sparkles, ArrowRight, CheckCircle2, SlidersHorizontal, RefreshCw } from 'lucide-react';
+import { Sparkles, CheckCircle2, SlidersHorizontal, RefreshCw } from 'lucide-react';
 
 interface SmartFieldMappingModalProps {
   isOpen: boolean;
@@ -45,7 +45,7 @@ export const SmartFieldMappingModal: React.FC<SmartFieldMappingModalProps> = ({
   useEffect(() => {
     if (isOpen && headers && headers.length > 0) {
       const generated = generateSmartMappings(headers, sampleRow);
-      
+
       // Merge with initialMapping if present
       if (initialMapping) {
         const merged = generated.map(r => ({
@@ -84,7 +84,7 @@ export const SmartFieldMappingModal: React.FC<SmartFieldMappingModalProps> = ({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
       <div className="bg-white rounded-3xl shadow-2xl border border-slate-200 w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden text-slate-900">
-        
+
         {/* Header */}
         <div className="px-6 py-5 border-b border-slate-100 flex items-center justify-between bg-slate-50/80">
           <div className="flex items-center gap-3">
@@ -116,19 +116,19 @@ export const SmartFieldMappingModal: React.FC<SmartFieldMappingModalProps> = ({
         </div>
 
         {/* AI Banner */}
-        <div className="bg-gradient-to-r from-cyan-50 via-sky-50 to-blue-50 border-b border-cyan-100 px-6 py-3 flex items-center justify-between text-xs">
+        <div className="bg-surface border-b border-cyan-100 px-6 py-3 flex items-center justify-between text-xs">
           <div className="flex items-center gap-2 font-semibold text-cyan-900">
             <Sparkles className="w-4 h-4 text-cyan-600 shrink-0" />
             <span>AI automaticky spárovala <strong>{mappedCount} z {rules.length}</strong> sloupců. Můžete libovolné pole ručně upravit.</span>
           </div>
-          <span className="px-2.5 py-0.5 rounded-full bg-cyan-600 text-white font-black text-[10px] tracking-wide uppercase">
+          <span className="px-2.5 py-0.5 rounded-full bg-cyan-600 text-white font-black text-[10px]">
             Automatické mapování
           </span>
         </div>
 
         {/* Mapping Table */}
         <div className="flex-1 overflow-y-auto p-6 space-y-3">
-          <div className="grid grid-cols-12 gap-3 text-[11px] font-black uppercase tracking-wider text-slate-600 px-4 py-1.5">
+          <div className="grid grid-cols-12 gap-3 text-[11px] font-black text-slate-600 px-4 py-1.5">
             <div className="col-span-4">Sloupec v externím souboru / DB</div>
             <div className="col-span-3">Hodnota ze zdroje (řádek 1)</div>
             <div className="col-span-1 text-center">Směr</div>
@@ -139,18 +139,18 @@ export const SmartFieldMappingModal: React.FC<SmartFieldMappingModalProps> = ({
             {rules.map((rule) => {
               const isIgnored = rule.targetField === 'ignore';
               return (
-                <div 
-                  key={rule.sourceColumn} 
+                <div
+                  key={rule.sourceColumn}
                   className={`grid grid-cols-12 gap-3 items-center p-3.5 rounded-2xl border transition-all ${
-                    isIgnored 
-                      ? 'bg-slate-50/60 border-slate-200/60 opacity-60' 
+                    isIgnored
+                      ? 'bg-slate-50/60 border-slate-200/60 opacity-60'
                       : 'bg-white border-slate-200 shadow-sm hover:border-cyan-300'
                   }`}
                 >
                   {/* Source Column */}
                   <div className="col-span-4">
                     <div className="flex items-center gap-2">
-                      <span className="font-mono text-xs font-bold text-slate-900 bg-slate-100 px-2.5 py-1 rounded-lg border border-slate-200 truncate">
+                      <span className="text-xs font-bold text-slate-900 bg-slate-100 px-2.5 py-1 rounded-lg border border-slate-200 truncate">
                         {rule.sourceColumn}
                       </span>
                       {rule.confidence && rule.confidence >= 80 && !isIgnored && (
@@ -170,7 +170,7 @@ export const SmartFieldMappingModal: React.FC<SmartFieldMappingModalProps> = ({
 
                   {/* Arrow */}
                   <div className="col-span-1 flex justify-center">
-                    <ArrowRight className={`w-4 h-4 ${isIgnored ? 'text-slate-300' : 'text-cyan-500'}`} />
+
                   </div>
 
                   {/* Target Field Selector */}

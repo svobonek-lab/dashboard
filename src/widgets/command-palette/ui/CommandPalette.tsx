@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Search, LayoutDashboard, Kanban, HardHat, Users, Code2, Settings, X, ArrowRight, Upload } from 'lucide-react';
+import { Search, LayoutDashboard, Kanban, HardHat, Users, Code2, Settings, X, Upload } from 'lucide-react';
 import type { CompanyBranding } from '@/entities/company';
 import type { Lead } from '@/entities/lead';
 
@@ -78,7 +78,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
         <div className="max-h-96 overflow-y-auto p-4 space-y-4">
           {navigationActions.length > 0 && (
             <div>
-              <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider px-3 pb-2">Navigace</p>
+              <p className="text-[11px] font-bold text-slate-500 px-3 pb-2">Navigace</p>
               <div className="space-y-1">
                 {navigationActions.map(action => {
                   const Icon = action.icon;
@@ -97,7 +97,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
                         </div>
                         <span>{action.label}</span>
                       </div>
-                      <ArrowRight className="w-4 h-4 text-slate-500 opacity-0 group-hover:opacity-100 transition-all" />
+
                     </button>
                   );
                 })}
@@ -107,7 +107,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
 
           {filteredLeads.length > 0 && (
             <div>
-              <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider px-3 pb-2">Poptávky a zakázky</p>
+              <p className="text-[11px] font-bold text-slate-500 px-3 pb-2">Poptávky a zakázky</p>
               <div className="space-y-1">
                 {filteredLeads.map(lead => (
                   <button
@@ -124,7 +124,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
                       </span>
                       <div className="overflow-hidden">
                         <p className="text-xs font-bold text-slate-900 truncate">{lead.title}</p>
-                        <p className="text-[11px] text-slate-500 truncate">{[lead.customerName, lead.city].filter(Boolean).join(' · ')}</p>
+                        <p className="text-[11px] text-slate-500 truncate">{[lead.customerName, lead.city].filter(Boolean).join(', ')}</p>
                       </div>
                     </div>
                     <span className="px-2.5 py-1 rounded-lg text-[10px] font-semibold bg-brand-primary-soft text-brand-primary">
@@ -140,8 +140,8 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
         {/* Footer */}
         <div className="p-3 bg-slate-50 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
           <div className="flex items-center gap-3">
-            <span><kbd className="px-1.5 py-0.5 bg-white border border-slate-200 rounded-md shadow-2xs font-mono">ESC</kbd> zavře nabídku</span>
-            <span><kbd className="px-1.5 py-0.5 bg-white border border-slate-200 rounded-md shadow-2xs font-mono">Ctrl + K</kbd> otevře hledání</span>
+            <span><kbd className="px-1.5 py-0.5 bg-white border border-slate-200 rounded-md shadow-2xs">ESC</kbd> zavře nabídku</span>
+            <span><kbd className="px-1.5 py-0.5 bg-white border border-slate-200 rounded-md shadow-2xs">Ctrl + K</kbd> otevře hledání</span>
           </div>
           <span className="font-semibold text-slate-600">{branding.name} CRM</span>
         </div>

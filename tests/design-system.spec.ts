@@ -3,6 +3,28 @@ import { expect, test } from 'playwright/test';
 const routes = ['/demo', '/demo/leads', '/login'];
 const widths = [1440, 1024, 768, 390, 320];
 
+async function expectSingleTypeface(page: import('playwright/test').Page) {
+  const fonts = await page.evaluate(async () => {
+    await document.fonts.ready;
+    const families = new Set<string>();
+    const offenders: string[] = [];
+    for (const element of document.querySelectorAll('body *')) {
+      if (![...element.childNodes].some((node) => node.nodeType === Node.TEXT_NODE && node.textContent?.trim())) continue;
+      const style = getComputedStyle(element);
+      if (style.display !== 'none' && style.visibility !== 'hidden') {
+        families.add(style.fontFamily);
+        if (!style.fontFamily.startsWith('"IBM Plex Sans"')) offenders.push(element.outerHTML.slice(0, 180));
+      }
+    }
+    const fontResources = performance.getEntriesByType('resource').map((entry) => entry.name).filter((url) => url.includes('.woff2'));
+    return { families: [...families], offenders: offenders.slice(0, 5), fontResources, origin: location.origin, loaded: [...document.fonts].some((font) => font.family === 'IBM Plex Sans' && font.status === 'loaded') };
+  });
+  expect(fonts.families, `visible text should use one self-hosted typeface: ${JSON.stringify(fonts.offenders)}`).toEqual(['"IBM Plex Sans", sans-serif']);
+  expect(fonts.loaded, 'IBM Plex Sans should load from the local font files').toBe(true);
+  expect(fonts.fontResources.length).toBeGreaterThan(0);
+  expect(fonts.fontResources.every((url) => url.startsWith(`${fonts.origin}/fonts/`)), 'font requests should stay on the application origin').toBe(true);
+}
+
 test.beforeEach(async ({ page }) => {
   await page.route((url) => /^https?:/.test(url.href) && url.origin !== 'http://127.0.0.1:4177', (route) => route.abort());
 });
@@ -30,6 +52,7 @@ test('public landing, demo, and login fit desktop, tablet, and phone widths', as
         .slice(0, 12)) : [];
       expect(sizes.document, `${route} overflows at ${width}px: ${JSON.stringify(offenders)}`).toBeLessThanOrEqual(sizes.viewport);
       if ([1440, 390].includes(width)) {
+        if (['/landing', '/demo'].includes(route)) await expectSingleTypeface(page);
         await page.screenshot({ path: testInfo.outputPath(`${route.replaceAll('/', '-')}-${width}.png`), fullPage: true });
       }
       if (route === '/demo') {
@@ -89,7 +112,7 @@ test('long synthetic lead titles and prices remain available and mobile tabs nam
   await expect(panel).toHaveAttribute('id', 'kanban-col-New');
   const title = 'Oprava a kompletní rekonstrukce střechy rodinného domu včetně zateplení, okapů a nového krovu';
   await expect(panel.getByRole('heading', { name: title })).toBeVisible();
-  const price = panel.locator('[class*="font-mono"]').filter({ hasText: 'Kč' });
+  const price = panel.locator('[class*="tabular-nums"]').filter({ hasText: 'Kč' });
   await expect(price).toBeVisible();
   const priceText = (await price.textContent()) || '';
   expect(priceText.replace(/\D/g, '')).toBe('987654321');
@@ -100,7 +123,7 @@ test('long synthetic lead titles and prices remain available and mobile tabs nam
 
 test('keyboard focus is visible on the public demo navigation', async ({ page }) => {
   await page.goto('/demo/leads');
-  await expect(page.getByRole('link', { name: 'StavbaFlow · demo' })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'StavbaFlow demo' })).toBeVisible();
   await page.keyboard.press('Tab');
   const focus = await page.evaluate(() => {
     const element = document.activeElement;
@@ -205,6 +228,7 @@ test('synthetic owner signs in through the form and reaches the protected dashbo
   await expect(page.getByRole('heading', { name: 'Dobrý den, Patrik' })).toBeVisible();
   const lead = page.locator('.workspace-list-row').filter({ hasText: 'Výměna krytiny v Brně' });
   await expect(lead.getByText('Nová poptávka')).toBeVisible();
+  await expectSingleTypeface(page);
   await page.screenshot({ path: testInfo.outputPath('dashboard-signed-in-1440.png') });
   await page.setViewportSize({ width: 390, height: 844 });
   await expect(page.getByRole('button', { name: 'Otevřít menu navigace' })).toBeVisible();
@@ -222,6 +246,7 @@ test('synthetic owner signs in through the form and reaches the protected dashbo
   await expect(menuButton).toHaveAttribute('aria-expanded', 'false');
   await expect(lead.getByText('Nová poptávka')).toBeVisible();
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(390);
+  await expectSingleTypeface(page);
   await page.screenshot({ path: testInfo.outputPath('dashboard-signed-in-390.png'), animations: 'disabled' });
 });
 

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import type { Lead, LeadStatus } from '../../../entities/lead';
-import { MapPin, DollarSign, User, Plus, Phone, MessageSquare, ShieldCheck, Calendar, Clock, AlertTriangle } from 'lucide-react';
+import { MapPin, DollarSign, User, Plus, Phone, MessageSquare, ShieldCheck, Calendar, Clock, AlertTriangle, Flag, Globe2, Inbox } from 'lucide-react';
 import { createManualLeadDraft } from '../model/manualLeadDraft';
 import { getLeadSourceBadge } from '../../../entities/lead';
 
@@ -46,7 +46,7 @@ export const LeadsKanban: React.FC<LeadsKanbanProps> = ({
     if (readOnly) return;
     const targetLead = leads.find(l => l.id === id);
     if (!targetLead || targetLead.status === status) return;
-    
+
     // Okamžitá reakce v UI (interní state komponenty pro drag and drop plynulost)
     const updated = leads.map(l => l.id === id ? { ...l, status } : l);
     setLeads(updated);
@@ -127,7 +127,7 @@ export const LeadsKanban: React.FC<LeadsKanbanProps> = ({
           <div className="bg-white border border-slate-200 rounded-3xl sm:rounded-[32px] max-w-xl w-full p-4 sm:p-8 shadow-2xl animate-in fade-in zoom-in-95 max-h-[92vh] flex flex-col overflow-hidden">
             <div className="flex items-center justify-between pb-3.5 border-b border-slate-100 shrink-0">
               <h3 className="text-lg sm:text-xl font-black text-slate-900">Vytvořit novou zakázku / poptávku</h3>
-              <button 
+              <button
                 onClick={() => setIsModalOpen(false)}
                 className="w-8 h-8 rounded-full bg-slate-100 text-slate-500 hover:text-slate-800 flex items-center justify-center text-sm font-bold cursor-pointer"
               >
@@ -139,7 +139,7 @@ export const LeadsKanban: React.FC<LeadsKanbanProps> = ({
               {/* Single column on mobile (grid-cols-1), two-column on desktop (sm:grid-cols-2) */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 sm:gap-5 pt-1">
                 <div className="space-y-1.5">
-                  <label className="text-xs font-bold uppercase tracking-wider text-slate-600 block">Název projektu / zakázky *</label>
+                  <label className="text-xs font-bold text-slate-600 block">Název projektu / zakázky *</label>
                   <input
                     type="text"
                     value={formTitle}
@@ -150,7 +150,7 @@ export const LeadsKanban: React.FC<LeadsKanbanProps> = ({
                   />
                 </div>
                 <div className="space-y-1.5">
-                  <label className="text-xs font-bold uppercase tracking-wider text-slate-600 block">Jméno zákazníka *</label>
+                  <label className="text-xs font-bold text-slate-600 block">Jméno zákazníka *</label>
                   <input
                     type="text"
                     value={formCustomerName}
@@ -164,7 +164,7 @@ export const LeadsKanban: React.FC<LeadsKanbanProps> = ({
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 sm:gap-5">
                 <div className="space-y-1.5">
-                  <label className="text-xs font-bold uppercase tracking-wider text-slate-600 block">Telefon *</label>
+                  <label className="text-xs font-bold text-slate-600 block">Telefon *</label>
                   <input
                     type="tel"
                     value={formPhone}
@@ -175,7 +175,7 @@ export const LeadsKanban: React.FC<LeadsKanbanProps> = ({
                   />
                 </div>
                 <div className="space-y-1.5">
-                  <label className="text-xs font-bold uppercase tracking-wider text-slate-600 block">E-mail *</label>
+                  <label className="text-xs font-bold text-slate-600 block">E-mail *</label>
                   <input
                     type="email"
                     value={formEmail}
@@ -189,7 +189,7 @@ export const LeadsKanban: React.FC<LeadsKanbanProps> = ({
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 sm:gap-5">
                 <div className="space-y-1.5">
-                  <label className="text-xs font-bold uppercase tracking-wider text-slate-600 block">Rozpočet (Kč) *</label>
+                  <label className="text-xs font-bold text-slate-600 block">Rozpočet (Kč) *</label>
                   <input
                     type="number"
                     value={formBudget}
@@ -200,7 +200,7 @@ export const LeadsKanban: React.FC<LeadsKanbanProps> = ({
                   />
                 </div>
                 <div className="space-y-1.5">
-                  <label className="text-xs font-bold uppercase tracking-wider text-slate-600 block">Adresa stavby *</label>
+                  <label className="text-xs font-bold text-slate-600 block">Adresa stavby *</label>
                   <input
                     type="text"
                     value={formAddress}
@@ -264,14 +264,14 @@ export const LeadsKanban: React.FC<LeadsKanbanProps> = ({
             >
               <span aria-hidden="true" className={`w-2 h-2 rounded-full ${selected ? 'bg-white' : col.badgeColor.split(' ')[0]}`}></span>
               <span>{col.label}</span>
-              <span className={`text-[11px] px-1.5 py-0.5 rounded-full font-mono ${selected ? 'bg-white/15 text-white' : 'bg-slate-100 text-slate-600'}`} aria-label={`${count} zakázek`}>{count}</span>
+              <span className={`text-[11px] px-1.5 py-0.5 rounded-full tabular-nums ${selected ? 'bg-white/15 text-white' : 'bg-slate-100 text-slate-600'}`} aria-label={`${count} zakázek`}>{count}</span>
             </button>
           );
         })}
       </div>
 
       {/* Wide Kanban Board Container with Mobile Snap Scrolling: scroll-snap-type: x mandatory */}
-      <div 
+      <div
         className="overflow-x-hidden pb-6 -mx-3 px-3 sm:-mx-8 sm:px-8 md:overflow-x-auto snap-x snap-mandatory scroll-smooth kanban-scroll-container"
         style={{ scrollSnapType: 'x mandatory', WebkitOverflowScrolling: 'touch' }}
       >
@@ -279,8 +279,8 @@ export const LeadsKanban: React.FC<LeadsKanbanProps> = ({
           {columns.map(col => {
             const columnLeads = leads.filter(l => l.status === col.status);
             return (
-              <div 
-                key={col.status} 
+              <div
+                key={col.status}
                 id={`kanban-col-${col.status}`}
                 onDragOver={(e) => {
                   e.preventDefault();
@@ -338,18 +338,18 @@ export const LeadsKanban: React.FC<LeadsKanbanProps> = ({
                       {/* Top: Priority & Budget */}
                       <div className="flex min-w-0 items-start justify-between gap-2">
                         <div className="flex flex-wrap items-center gap-1.5">
-                          <span className={`text-[10px] font-black px-2.5 py-1 rounded-lg border uppercase tracking-wider ${
+                          <span className={`text-[10px] font-black px-2.5 py-1 rounded-lg border ${
                             lead.priority === 'High' ? 'bg-rose-50 border-rose-200 text-rose-700' : 'bg-slate-50 border-slate-200 text-slate-600'
                           }`}>
-                            {lead.priority === 'High' ? '🔥 Vysoká priorita' : 'Normální'}
+                            {lead.priority === 'High' ? <><Flag aria-hidden="true" className="mr-1 inline h-3 w-3" />Vysoká priorita</> : 'Normální'}
                           </span>
                           {sourceBadge && (
                             <span className="rounded-lg border border-blue-100 bg-blue-50 px-2 py-1 text-[10px] font-bold text-blue-700">
-                              <span aria-hidden="true">{sourceBadge.icon}</span> {sourceBadge.label}
+                              {sourceBadge.icon === 'inbox' ? <Inbox aria-hidden="true" className="mr-1 inline h-3 w-3" /> : <Globe2 aria-hidden="true" className="mr-1 inline h-3 w-3" />}{sourceBadge.label}
                             </span>
                           )}
                         </div>
-                        <span className="max-w-[48%] min-w-0 whitespace-normal break-words text-right text-sm font-black font-mono leading-tight text-slate-900 bg-slate-50 px-2 py-1 rounded-md border border-slate-100">
+                        <span className="max-w-[48%] min-w-0 whitespace-normal break-words text-right text-sm font-black tabular-nums leading-tight text-slate-900 bg-slate-50 px-2 py-1 rounded-md border border-slate-100">
                           {lead.price ? `${lead.price.toLocaleString('cs-CZ')} Kč` : 'Dohodou'}
                         </span>
                       </div>

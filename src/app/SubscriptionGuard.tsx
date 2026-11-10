@@ -57,7 +57,7 @@ function SubscriptionGuardComponent({ children }: SubscriptionGuardProps) {
         <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-amber-50 text-amber-700">
           <CreditCard aria-hidden="true" className="h-6 w-6" />
         </div>
-        <p className="mt-6 text-xs font-bold uppercase tracking-[0.18em] text-amber-700">StavbaFlow předplatné</p>
+        <p className="mt-6 text-xs font-bold text-amber-700">StavbaFlow předplatné</p>
         <h1 className="mt-2 text-3xl font-black tracking-tight">Předplatné vypršelo</h1>
         <p className="mt-3 text-sm leading-6 text-slate-600">
           Pro obnovení přístupu k firemnímu workspace pokračujte na zabezpečenou platební stránku Stripe.

@@ -95,7 +95,7 @@ export const AdminSupportSessionPage: React.FC<{ sessionId: string }> = ({ sessi
   return <OrganizationContext.Provider value={supportContext}>
     <OwnerLayout leads={leads} onSelectLead={setSelectedLead} readOnlyMode="support" onExitReadOnly={() => void leaveSupport()}>
       <div className="mb-5 flex flex-col gap-3 rounded-3xl border border-amber-200 bg-amber-50 p-5 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex gap-3"><ShieldCheck className="h-6 w-6 shrink-0 text-amber-700" /><div><strong className="text-slate-950">Impersonating: {company.name} · auditovaná plná podpora</strong><p className="mt-1 text-sm text-amber-900/75">Každý zápis je svázaný s touto relací, firmou a administrátorským účtem.</p></div></div>
+        <div className="flex gap-3"><ShieldCheck className="h-6 w-6 shrink-0 text-amber-700" /><div><strong className="text-slate-950">Impersonating: {company.name}, auditovaná plná podpora</strong><p className="mt-1 text-sm text-amber-900/75">Každý zápis je svázaný s touto relací, firmou a administrátorským účtem.</p></div></div>
         <span className="inline-flex items-center gap-2 text-sm font-bold text-amber-900"><Clock3 className="h-4 w-4" />{remaining} min</span>
       </div>
       {suffix === '/leads' ? <OwnerLeadsPage leads={leads} employees={employees} selectedLead={selectedLead} onSelectLead={setSelectedLead} onUpdateLeadStatus={(id, status) => void updateStatus(id, status)} onUpdateLead={persistLead} onAddLead={persistLead as any} />

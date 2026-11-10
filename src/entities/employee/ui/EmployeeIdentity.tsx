@@ -8,7 +8,7 @@ export function EmployeeIdentity({ employee }: { employee: Employee }) {
       </span>
       <span className="min-w-0">
         <strong className="block truncate text-sm font-semibold text-slate-950">{employee.name || 'Člen týmu'}</strong>
-        <small className="mt-1 block truncate text-xs text-slate-500">{employee.email} · {employee.specialization || employee.role || 'zaměstnanec'}</small>
+        <small className="mt-1 block truncate text-xs text-slate-500">{employee.email}, {employee.specialization || employee.role || 'zaměstnanec'}</small>
       </span>
     </span>
   );

@@ -60,7 +60,7 @@ export const EmbedWidgetPage: React.FC<EmbedWidgetPageProps> = ({ branding }) =>
           </div>
 
           <section className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
-            <div className="border-b border-slate-100 px-5 py-4"><p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-400">Skutečný náhled</p><h2 className="mt-1 font-semibold text-slate-950">Formulář, který uvidí zákazník</h2></div>
+            <div className="border-b border-slate-100 px-5 py-4"><p className="text-xs font-semibold text-slate-400">Skutečný náhled</p><h2 className="mt-1 font-semibold text-slate-950">Formulář, který uvidí zákazník</h2></div>
             <iframe src={publicFormUrl} title="Náhled veřejného poptávkového formuláře" className="h-[760px] w-full bg-slate-50" />
           </section>
         </div>

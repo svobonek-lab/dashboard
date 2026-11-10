@@ -4,8 +4,8 @@ import test from 'node:test';
 import { getLeadSourceBadge } from '../src/entities/lead';
 
 test('lead source badges identify AI inbox and website widget', () => {
-  assert.deepEqual(getLeadSourceBadge('ai_inbox'), { icon: '🤖', label: 'AI zpracováno' });
-  assert.deepEqual(getLeadSourceBadge('widget'), { icon: '🌐', label: 'Z webu' });
+  assert.deepEqual(getLeadSourceBadge('ai_inbox'), { icon: 'inbox', label: 'AI zpracováno' });
+  assert.deepEqual(getLeadSourceBadge('widget'), { icon: 'globe', label: 'Z webu' });
   assert.equal(getLeadSourceBadge('manual'), null);
 });
 

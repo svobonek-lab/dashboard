@@ -5,7 +5,7 @@ import type { CompanyBranding } from '../../../entities/company';
 export const PUBLIC_DEMO_LEADS = Object.freeze([
   { id: 'demo-101', customer: 'Rodinný dům Novotných', project: 'Rekonstrukce koupelny', city: 'Brno-Žabovřesky', value: 185000, status: 'new', updated: 'Dnes, 9:20' },
   { id: 'demo-102', customer: 'Bytový dům Javor', project: 'Oprava společné střechy', city: 'Brno-střed', value: 640000, status: 'contacted', updated: 'Dnes, 8:45' },
-  { id: 'demo-105', customer: 'Rodina Malých', project: 'Rekonstrukce kuchyně', city: 'Modřice', value: 315000, status: 'scheduled', updated: 'Zaměření · zítra 10:30' },
+  { id: 'demo-105', customer: 'Rodina Malých', project: 'Rekonstrukce kuchyně', city: 'Modřice', value: 315000, status: 'scheduled', updated: 'Zaměření zítra v 10:30' },
   { id: 'demo-103', customer: 'Ateliér Na Výsluní', project: 'Nová terasa a pergola', city: 'Kuřim', value: 278000, status: 'quote', updated: 'Včera' },
   { id: 'demo-104', customer: 'Chalupa U Potoka', project: 'Zateplení fasády', city: 'Tišnov', value: 420000, status: 'job', updated: 'Včera' },
 ] as const);

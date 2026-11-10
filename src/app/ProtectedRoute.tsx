@@ -31,7 +31,7 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, allowe
           </div>
         </div>
         <div className="text-center space-y-1">
-          <p className="text-xs font-bold text-slate-200 tracking-wide">StavbaFlow Enterprise OS</p>
+          <p className="text-xs font-bold text-slate-200">StavbaFlow Enterprise OS</p>
           <p className="text-[11px] font-medium text-slate-500 animate-pulse">Načítání oprávnění a datové vrstvy...</p>
         </div>
       </div>

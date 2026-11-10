@@ -2,25 +2,24 @@ import React, { useState, useRef } from 'react';
 import type { FieldMappingConfig, TargetFieldType } from '../model';
 import { parseUploadedFile, type ParsedFileResult } from '../lib/fileParser';
 import { SmartFieldMappingModal } from './SmartFieldMappingModal';
-import { 
-  UploadCloud, 
-  FileText, 
-  Sparkles, 
-  CheckCircle2, 
-  AlertTriangle, 
-  RefreshCw, 
-  Play, 
-  SlidersHorizontal, 
+import {
+  UploadCloud,
+  FileText,
+  Sparkles,
+  CheckCircle2,
+  AlertTriangle,
+  RefreshCw,
+  Play,
+  SlidersHorizontal,
   Layers,
-  ArrowRight
 } from 'lucide-react';
 
 interface CSVImportModalProps {
   isOpen: boolean;
   onClose: () => void;
   onImportBatch: (
-    rows: Record<string, any>[], 
-    mapping: FieldMappingConfig, 
+    rows: Record<string, any>[],
+    mapping: FieldMappingConfig,
     deduplicate: boolean,
     updateExisting: boolean,
     source: { fileName: string; csv: string }
@@ -108,7 +107,7 @@ export const CSVImportModal: React.FC<CSVImportModalProps> = ({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
       <div className="bg-white rounded-3xl shadow-2xl border border-slate-200 w-full max-w-3xl max-h-[90vh] flex flex-col overflow-hidden text-slate-900">
-        
+
         {/* Header */}
         <div className="px-6 py-5 border-b border-slate-100 flex items-center justify-between bg-slate-50/80">
           <div className="flex items-center gap-3">
@@ -130,7 +129,7 @@ export const CSVImportModal: React.FC<CSVImportModalProps> = ({
 
         {/* Body */}
         <div className="flex-1 overflow-y-auto p-6 space-y-5">
-          
+
           {/* Drag & Drop Area */}
           {!parsedData ? (
             <div
@@ -139,8 +138,8 @@ export const CSVImportModal: React.FC<CSVImportModalProps> = ({
               onDrop={handleDrop}
               onClick={() => fileInputRef.current?.click()}
               className={`border-2 border-dashed rounded-3xl p-8 text-center transition-all cursor-pointer ${
-                isDragging 
-                  ? 'border-amber-500 bg-amber-50/50 scale-[0.99]' 
+                isDragging
+                  ? 'border-amber-500 bg-amber-50/50 scale-[0.99]'
                   : 'border-slate-300 hover:border-amber-400 hover:bg-slate-50/70 bg-slate-50/30'
               }`}
             >
@@ -174,7 +173,7 @@ export const CSVImportModal: React.FC<CSVImportModalProps> = ({
               {/* File Info Pill */}
               <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-amber-100 text-amber-800 font-black flex items-center justify-center text-xs uppercase font-mono">
+                  <div className="w-10 h-10 rounded-xl bg-amber-100 text-amber-800 font-black flex items-center justify-center text-xs">
                     {parsedData.format}
                   </div>
                   <div>
@@ -261,7 +260,7 @@ export const CSVImportModal: React.FC<CSVImportModalProps> = ({
                   <thead>
                     <tr className="bg-slate-100 border-b border-slate-200 text-slate-700 font-bold">
                       {parsedData.headers.slice(0, 6).map(h => (
-                        <th key={h} className="px-3.5 py-2 whitespace-nowrap text-[11px] font-mono">
+                        <th key={h} className="px-3.5 py-2 whitespace-nowrap text-[11px]">
                           {h}
                         </th>
                       ))}
