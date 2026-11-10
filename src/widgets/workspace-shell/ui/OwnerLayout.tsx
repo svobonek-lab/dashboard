@@ -224,8 +224,8 @@ export const OwnerLayout: React.FC<OwnerLayoutProps> = ({
         >
           {/* Top Brand & Identity Header */}
           <div>
-            <div className="p-5 border-b border-border flex items-center justify-between">
-              <div className="flex items-center gap-3 overflow-hidden">
+            <div className="p-4 border-b border-border flex items-center justify-between gap-2">
+              <div className="flex min-w-0 flex-1 items-center gap-3">
                 {/* 36px logo */}
                 <div
                   className="w-[36px] h-[36px] rounded-app bg-brand-primary text-white font-black text-sm shrink-0 flex items-center justify-center overflow-hidden"
@@ -237,8 +237,8 @@ export const OwnerLayout: React.FC<OwnerLayoutProps> = ({
                   )}
                 </div>
 
-                <div className="overflow-hidden">
-                  <h1 className="text-[17px] font-bold text-text truncate tracking-tight leading-tight">
+                <div className="min-w-0">
+                  <h1 className="owner-rail-company-name text-[16px] font-bold text-text tracking-tight leading-tight">
                     {activeCompanyName}
                   </h1>
                   <p className="text-[10px] font-semibold text-muted mt-0.5">
