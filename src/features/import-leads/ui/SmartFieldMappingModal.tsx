@@ -83,12 +83,12 @@ export const SmartFieldMappingModal: React.FC<SmartFieldMappingModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="bg-white rounded-3xl shadow-2xl border border-slate-200 w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden text-slate-900">
+      <div className="bg-white rounded-2xl border border-slate-200 w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden text-slate-900">
 
         {/* Header */}
         <div className="px-6 py-5 border-b border-slate-100 flex items-center justify-between bg-slate-50/80">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-cyan-500/10 border border-cyan-500/20 text-cyan-600 flex items-center justify-center font-bold">
+            <div className="w-10 h-10 rounded-xl bg-cyan-500/10 border border-cyan-500/20 text-cyan-600 flex items-center justify-center font-bold">
               <Sparkles className="w-5 h-5 text-cyan-600" />
             </div>
             <div>
@@ -101,14 +101,14 @@ export const SmartFieldMappingModal: React.FC<SmartFieldMappingModalProps> = ({
             <button
               onClick={handleAutoRemap}
               type="button"
-              className="px-3 py-1.5 text-xs font-bold text-slate-600 hover:text-cyan-700 bg-white hover:bg-slate-100 border border-slate-200 rounded-xl flex items-center gap-1.5 transition-all shadow-sm cursor-pointer"
+              className="px-3 py-1.5 text-xs font-bold text-slate-600 hover:text-cyan-700 bg-white hover:bg-slate-100 border border-slate-200 rounded-lg flex items-center gap-1.5 transition-all cursor-pointer"
             >
               <RefreshCw className="w-3.5 h-3.5" />
               Znovu detekovat AI
             </button>
             <button
               onClick={onClose}
-              className="p-2 text-slate-400 hover:text-slate-700 rounded-xl hover:bg-slate-100 transition-colors"
+              className="p-2 text-slate-400 hover:text-slate-700 rounded-lg hover:bg-slate-100 transition-colors"
             >
               ✕
             </button>
@@ -141,10 +141,10 @@ export const SmartFieldMappingModal: React.FC<SmartFieldMappingModalProps> = ({
               return (
                 <div
                   key={rule.sourceColumn}
-                  className={`grid grid-cols-12 gap-3 items-center p-3.5 rounded-2xl border transition-all ${
+                  className={`grid grid-cols-12 gap-3 items-center p-3.5 rounded-xl border transition-all ${
                     isIgnored
                       ? 'bg-slate-50/60 border-slate-200/60 opacity-60'
-                      : 'bg-white border-slate-200 shadow-sm hover:border-cyan-300'
+                      : 'bg-white border-slate-200 hover:border-cyan-300'
                   }`}
                 >
                   {/* Source Column */}
@@ -178,7 +178,7 @@ export const SmartFieldMappingModal: React.FC<SmartFieldMappingModalProps> = ({
                     <select
                       value={rule.targetField}
                       onChange={(e) => handleFieldChange(rule.sourceColumn, e.target.value as TargetFieldType)}
-                      className={`w-full px-3 py-2 text-xs font-bold rounded-xl border transition-all cursor-pointer ${
+                      className={`w-full px-3 py-2 text-xs font-bold rounded-lg border transition-all cursor-pointer ${
                         isIgnored
                           ? 'bg-slate-100 border-slate-200 text-slate-400'
                           : 'bg-slate-50 border-cyan-200 text-slate-900 focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500'
@@ -206,14 +206,14 @@ export const SmartFieldMappingModal: React.FC<SmartFieldMappingModalProps> = ({
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2.5 rounded-xl border border-slate-200 text-xs font-bold text-slate-600 hover:bg-slate-100 transition-colors"
+              className="px-4 py-2.5 rounded-lg border border-slate-200 text-xs font-bold text-slate-600 hover:bg-slate-100 transition-colors"
             >
               Zrušit
             </button>
             <button
               type="button"
               onClick={handleSave}
-              className="px-6 py-2.5 rounded-xl bg-slate-900 hover:bg-black text-white text-xs font-bold flex items-center gap-2 shadow-lg transition-all cursor-pointer"
+              className="px-6 py-2.5 rounded-lg bg-slate-900 hover:bg-black text-white text-xs font-bold flex items-center gap-2 transition-all cursor-pointer"
             >
               <CheckCircle2 className="w-4 h-4 text-emerald-400" />
               Potvrdit mapování ({mappedCount} polí)

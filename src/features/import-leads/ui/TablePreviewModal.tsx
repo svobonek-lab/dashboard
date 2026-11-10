@@ -20,10 +20,10 @@ export const TablePreviewModal: React.FC<TablePreviewModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="bg-white rounded-3xl shadow-2xl border border-slate-200 w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden text-slate-900">
+      <div className="bg-white rounded-2xl border border-slate-200 w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden text-slate-900">
         <div className="px-6 py-5 border-b border-slate-100 flex items-center justify-between bg-slate-50/80">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-600 flex items-center justify-center font-bold">
+            <div className="w-10 h-10 rounded-xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-600 flex items-center justify-center font-bold">
               <Table2 className="w-5 h-5 text-indigo-600" />
             </div>
             <div>
@@ -33,7 +33,7 @@ export const TablePreviewModal: React.FC<TablePreviewModalProps> = ({
           </div>
           <button
             onClick={onClose}
-            className="p-2 text-slate-400 hover:text-slate-700 rounded-xl hover:bg-slate-100 transition-colors"
+            className="p-2 text-slate-400 hover:text-slate-700 rounded-lg hover:bg-slate-100 transition-colors"
           >
             <X className="w-5 h-5" />
           </button>
@@ -56,7 +56,7 @@ export const TablePreviewModal: React.FC<TablePreviewModalProps> = ({
 
           <div>
             <h3 className="text-sm font-bold text-slate-800 mb-2">Náhled dat vybrané tabulky</h3>
-            <div className="border border-slate-200 rounded-2xl overflow-hidden bg-white shadow-sm">
+            <div className="border border-slate-200 rounded-xl overflow-hidden bg-white ">
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-xs border-collapse">
                   <thead>

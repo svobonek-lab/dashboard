@@ -78,7 +78,7 @@ export const OwnerSettingsPage: React.FC = () => {
     reader.readAsDataURL(file);
   };
 
-  const fieldClass = 'mt-1.5 w-full rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-3 text-sm text-slate-950 outline-none transition focus:border-blue-400 focus:bg-white focus:ring-4 focus:ring-blue-50';
+  const fieldClass = 'mt-1.5 w-full rounded-lg border border-slate-200 bg-slate-50 px-3.5 py-3 text-sm text-slate-950 outline-none transition focus:border-blue-400 focus:bg-white focus:ring-4 focus:ring-blue-50';
 
   const openBillingPortal = async () => {
     setBillingBusy(true); setBillingError('');
@@ -105,21 +105,21 @@ export const OwnerSettingsPage: React.FC = () => {
           <div className="flex items-center gap-2"><Building2 className="h-4 w-4 text-blue-600" /><h2 className="text-sm font-semibold text-slate-950">Identita</h2></div>
           <div className="mt-4 grid gap-5 sm:grid-cols-2">
             <label className="text-sm font-medium text-slate-700">Název firmy<input required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className={fieldClass} /></label>
-            <label className="text-sm font-medium text-slate-700">Hlavní barva<div className="mt-1.5 flex items-center gap-3 rounded-xl border border-slate-200 bg-slate-50 p-2"><input type="color" disabled={byodbMode} value={form.color} onChange={(e) => setForm({ ...form, color: e.target.value })} className="h-9 w-12 cursor-pointer rounded-lg border-0 bg-transparent disabled:cursor-not-allowed disabled:opacity-50" /><span className="text-sm text-slate-600">{form.color}</span></div></label>
+            <label className="text-sm font-medium text-slate-700">Hlavní barva<div className="mt-1.5 flex items-center gap-3 rounded-lg border border-slate-200 bg-slate-50 p-2"><input type="color" disabled={byodbMode} value={form.color} onChange={(e) => setForm({ ...form, color: e.target.value })} className="h-9 w-12 cursor-pointer rounded-lg border-0 bg-transparent disabled:cursor-not-allowed disabled:opacity-50" /><span className="text-sm text-slate-600">{form.color}</span></div></label>
           </div>
-          <div className="mt-5 flex items-center gap-4 rounded-2xl border border-slate-200 bg-slate-50 p-4">
-            <span className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-white text-slate-400 shadow-sm">{form.logo ? <img src={form.logo} alt="Náhled loga" className="h-full w-full object-cover" /> : <ImageIcon className="h-5 w-5" />}</span>
+          <div className="mt-5 flex items-center gap-4 border-t border-slate-200 pt-4">
+            <span className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-white text-slate-400 ">{form.logo ? <img src={form.logo} alt="Náhled loga" className="h-full w-full object-cover" /> : <ImageIcon className="h-5 w-5" />}</span>
             <div><strong className="block text-sm font-semibold text-slate-950">Logo firmy</strong><p className="mt-1 text-xs text-slate-500">PNG, JPG nebo SVG do 1 MB.</p><input ref={fileInputRef} type="file" disabled={byodbMode} accept="image/png,image/jpeg,image/svg+xml" onChange={(e) => readLogo(e.target.files?.[0])} className="hidden" /><button type="button" disabled={byodbMode} onClick={() => fileInputRef.current?.click()} className="mt-2 inline-flex items-center gap-1.5 text-xs font-semibold text-blue-600 disabled:cursor-not-allowed disabled:opacity-50"><Upload className="h-3.5 w-3.5" />Vybrat logo</button></div>
           </div>
         </section>
         <section className="border-t border-slate-100 pt-6">
           <div className="flex items-center gap-2"><Bell className="h-4 w-4 text-blue-600" /><h2 className="text-sm font-semibold text-slate-950">E-mailová upozornění</h2></div>
-          <label className="mt-4 flex cursor-pointer items-start justify-between gap-4 rounded-2xl border border-slate-200 bg-slate-50 p-4">
+          <label className="mt-4 flex cursor-pointer items-start justify-between gap-4 border-t border-slate-200 py-4">
             <span><strong className="block text-sm font-semibold text-slate-950">Posílat e-mailová upozornění</strong><span className="mt-1 block text-xs leading-5 text-slate-500">Majitel dostane zprávu po nové poptávce a zaměstnanec po přiřazení zakázky.</span></span>
             <input aria-label="Posílat e-mailová upozornění" type="checkbox" disabled={byodbMode} checked={form.emailNotifications} onChange={(event) => setForm({ ...form, emailNotifications: event.target.checked })} className="mt-1 h-5 w-5 rounded border-slate-300 text-blue-600 disabled:cursor-not-allowed disabled:opacity-50" />
           </label>
           {providerConfigured === false && form.emailNotifications && (
-            <div role="status" className="mt-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs leading-5 text-amber-800">Poskytovatel e-mailů není nakonfigurovaný. Upozornění zůstanou ve frontě jako neodeslané a systém nebude tvrdit, že byla doručena.</div>
+            <div role="status" className="mt-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs leading-5 text-amber-800">Poskytovatel e-mailů není nakonfigurovaný. Upozornění zůstanou ve frontě jako neodeslané a systém nebude tvrdit, že byla doručena.</div>
           )}
           {providerConfigured === true && <p className="mt-3 text-xs font-medium text-emerald-700">Odesílání e-mailů je připravené.</p>}
         </section>

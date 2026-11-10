@@ -30,7 +30,7 @@ export const WeatherWidget: React.FC<WeatherWidgetProps> = ({ weather }) => {
   const hasWarning = data.rainProbability > 60 || data.windSpeed > 35 || data.condition === 'Rain' || data.condition === 'Snow';
 
   return (
-    <div className={`p-4 rounded-2xl border transition-all ${hasWarning ? 'bg-amber-50/70 border-amber-200' : 'bg-white border-slate-200'} shadow-xs`}>
+    <div className={`p-4 rounded-xl border transition-all ${hasWarning ? 'bg-amber-50/70 border-amber-200' : 'bg-white border-slate-200'} `}>
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center">

@@ -86,7 +86,7 @@ export const CompanySwitcher: React.FC<CompanySwitcherProps> = ({ variant = 'dar
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className={`flex items-center gap-2.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all border shadow-sm ${
+        className={`flex items-center gap-2.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all border ${
           isDark
             ? 'bg-[#090D16] hover:bg-slate-800/80 text-slate-900 border-slate-300/80 hover:border-cyan-500/40'
             : 'bg-white hover:bg-slate-50 text-slate-900 border-slate-200 hover:border-slate-300'
@@ -107,7 +107,7 @@ export const CompanySwitcher: React.FC<CompanySwitcherProps> = ({ variant = 'dar
           {activeOrgName}
         </span>
 
-        <span className={`px-1.5 py-0.2 rounded text-[9px]  font-bold  ${
+        <span className={`px-1.5 py-0.2 rounded text-[9px] font-bold ${
           isDark ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/30' : 'bg-slate-100 text-slate-700'
         }`}>
           {(currentOrg as any)?.plan || 'Bez plánu'}
@@ -118,10 +118,10 @@ export const CompanySwitcher: React.FC<CompanySwitcherProps> = ({ variant = 'dar
 
       {/* Dropdown Menu */}
       {isOpen && (
-        <div className={`absolute left-0 mt-2 w-80 rounded-2xl shadow-2xl border z-50 overflow-hidden backdrop-blur-xl animate-in fade-in zoom-in-95 duration-150 ${
+        <div className={`absolute left-0 mt-2 w-80 rounded-xl border z-50 overflow-hidden backdrop-blur-xl animate-in fade-in zoom-in-95 duration-150 ${
           isDark
-            ? 'bg-[#0C111D]/95 border-slate-200 text-slate-800 shadow-cyan-950/20'
-            : 'bg-white border-slate-200 text-slate-800 shadow-slate-900/10'
+            ? 'bg-[#0C111D]/95 border-slate-200 text-slate-800 '
+            : 'bg-white border-slate-200 text-slate-800 '
         }`}>
           {/* Search Header */}
           <div className="p-3 border-b border-slate-200/80">
@@ -156,7 +156,7 @@ export const CompanySwitcher: React.FC<CompanySwitcherProps> = ({ variant = 'dar
                 <button
                   key={org.id}
                   onClick={() => handleSelectCompany(org.id)}
-                  className={`w-full flex items-center justify-between p-2.5 rounded-xl text-left text-xs transition-all group ${
+                  className={`w-full flex items-center justify-between p-2.5 rounded-lg text-left text-xs transition-all group ${
                     isSelected
                       ? isDark
                         ? 'bg-cyan-500/15 text-slate-900 border border-cyan-500/30'
@@ -168,7 +168,7 @@ export const CompanySwitcher: React.FC<CompanySwitcherProps> = ({ variant = 'dar
                 >
                   <div className="flex items-center gap-2.5 overflow-hidden">
                     <div
-                      className="w-7 h-7 rounded-lg flex items-center justify-center text-xs font-black shrink-0 overflow-hidden text-slate-900 shadow-sm"
+                      className="w-7 h-7 rounded-lg flex items-center justify-center text-xs font-black shrink-0 overflow-hidden text-slate-900 "
                       style={{ backgroundColor: primaryColor }}
                     >
                       {org.logo_url ? (
@@ -191,7 +191,7 @@ export const CompanySwitcher: React.FC<CompanySwitcherProps> = ({ variant = 'dar
                   </div>
 
                   <span
-                    className="w-2.5 h-2.5 rounded-full shrink-0 shadow-sm"
+                    className="w-2.5 h-2.5 rounded-full shrink-0 "
                     style={{ backgroundColor: primaryColor }}
                     title={primaryColor}
                   />
@@ -214,7 +214,7 @@ export const CompanySwitcher: React.FC<CompanySwitcherProps> = ({ variant = 'dar
                   setIsOpen(false);
                   navigate('/admin/companies');
                 }}
-                className="w-full py-2 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 border border-cyan-500/30 text-cyan-300 text-xs font-bold transition-all flex items-center justify-center gap-1.5"
+                className="w-full py-2 px-3 rounded-lg bg-slate-800 hover:bg-slate-700 border border-cyan-500/30 text-cyan-300 text-xs font-bold transition-all flex items-center justify-center gap-1.5"
               >
                 <Plus className="w-3.5 h-3.5" />
                 <span>Založit novou firmu</span>

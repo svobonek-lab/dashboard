@@ -111,7 +111,7 @@ export const LeadsKanban: React.FC<LeadsKanbanProps> = ({
           {!readOnly && (
           <button
             onClick={() => setIsModalOpen(true)}
-            className="w-full md:w-auto px-5 py-3 min-h-[48px] rounded-2xl font-black text-xs shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2"
+            className="w-full md:w-auto px-5 py-3 min-h-[48px] rounded-lg font-black text-xs transition-all flex items-center justify-center gap-2"
             style={{ backgroundColor: 'var(--brand-primary)', color: '#ffffff' }}
           >
             <Plus className="w-4 h-4" />
@@ -124,7 +124,7 @@ export const LeadsKanban: React.FC<LeadsKanbanProps> = ({
       {/* New Lead Modal */}
       {!readOnly && isModalOpen && (
         <div className="fixed inset-0 z-50 bg-white/60 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4">
-          <div className="bg-white border border-slate-200 rounded-3xl sm:rounded-[32px] max-w-xl w-full p-4 sm:p-8 shadow-2xl animate-in fade-in zoom-in-95 max-h-[92vh] flex flex-col overflow-hidden">
+          <div className="bg-white border border-slate-200 rounded-2xl max-w-xl w-full p-4 sm:p-8 animate-in fade-in zoom-in-95 max-h-[92vh] flex flex-col overflow-hidden">
             <div className="flex items-center justify-between pb-3.5 border-b border-slate-100 shrink-0">
               <h3 className="text-lg sm:text-xl font-black text-slate-900">Vytvořit novou zakázku / poptávku</h3>
               <button
@@ -146,7 +146,7 @@ export const LeadsKanban: React.FC<LeadsKanbanProps> = ({
                     onChange={(e) => setFormTitle(e.target.value)}
                     required
                     placeholder="Např. Pergola na míru"
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 sm:px-4 sm:py-3 text-slate-900 focus:outline-none focus:ring-2 focus:ring-brand-primary-soft focus:border-brand-primary transition-all font-semibold text-base sm:text-sm"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3.5 py-2.5 sm:px-4 sm:py-3 text-slate-900 focus:outline-none focus:ring-2 focus:ring-brand-primary-soft focus:border-brand-primary transition-all font-semibold text-base sm:text-sm"
                   />
                 </div>
                 <div className="space-y-1.5">
@@ -157,7 +157,7 @@ export const LeadsKanban: React.FC<LeadsKanbanProps> = ({
                     onChange={(e) => setFormCustomerName(e.target.value)}
                     required
                     placeholder="Ing. Petr Novák"
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 sm:px-4 sm:py-3 text-slate-900 focus:outline-none focus:ring-2 focus:ring-brand-primary-soft focus:border-brand-primary transition-all font-semibold text-base sm:text-sm"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3.5 py-2.5 sm:px-4 sm:py-3 text-slate-900 focus:outline-none focus:ring-2 focus:ring-brand-primary-soft focus:border-brand-primary transition-all font-semibold text-base sm:text-sm"
                   />
                 </div>
               </div>
@@ -171,7 +171,7 @@ export const LeadsKanban: React.FC<LeadsKanbanProps> = ({
                     onChange={(e) => setFormPhone(e.target.value)}
                     required
                     placeholder="+420 777 123 456"
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 sm:px-4 sm:py-3 text-slate-900 focus:outline-none focus:ring-2 focus:ring-brand-primary-soft focus:border-brand-primary transition-all font-semibold text-base sm:text-sm"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3.5 py-2.5 sm:px-4 sm:py-3 text-slate-900 focus:outline-none focus:ring-2 focus:ring-brand-primary-soft focus:border-brand-primary transition-all font-semibold text-base sm:text-sm"
                   />
                 </div>
                 <div className="space-y-1.5">
@@ -182,7 +182,7 @@ export const LeadsKanban: React.FC<LeadsKanbanProps> = ({
                     onChange={(e) => setFormEmail(e.target.value)}
                     required
                     placeholder="klient@email.cz"
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 sm:px-4 sm:py-3 text-slate-900 focus:outline-none focus:ring-2 focus:ring-brand-primary-soft focus:border-brand-primary transition-all font-semibold text-base sm:text-sm"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3.5 py-2.5 sm:px-4 sm:py-3 text-slate-900 focus:outline-none focus:ring-2 focus:ring-brand-primary-soft focus:border-brand-primary transition-all font-semibold text-base sm:text-sm"
                   />
                 </div>
               </div>
@@ -196,7 +196,7 @@ export const LeadsKanban: React.FC<LeadsKanbanProps> = ({
                     onChange={(e) => setFormBudget(e.target.value)}
                     required
                     placeholder="250000"
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 sm:px-4 sm:py-3 text-slate-900 focus:outline-none focus:ring-2 focus:ring-brand-primary-soft focus:border-brand-primary transition-all font-semibold text-base sm:text-sm"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3.5 py-2.5 sm:px-4 sm:py-3 text-slate-900 focus:outline-none focus:ring-2 focus:ring-brand-primary-soft focus:border-brand-primary transition-all font-semibold text-base sm:text-sm"
                   />
                 </div>
                 <div className="space-y-1.5">
@@ -207,25 +207,25 @@ export const LeadsKanban: React.FC<LeadsKanbanProps> = ({
                     onChange={(e) => setFormAddress(e.target.value)}
                     required
                     placeholder="Ulice 12, Město"
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 sm:px-4 sm:py-3 text-slate-900 focus:outline-none focus:ring-2 focus:ring-brand-primary-soft focus:border-brand-primary transition-all font-semibold text-base sm:text-sm"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3.5 py-2.5 sm:px-4 sm:py-3 text-slate-900 focus:outline-none focus:ring-2 focus:ring-brand-primary-soft focus:border-brand-primary transition-all font-semibold text-base sm:text-sm"
                   />
                 </div>
               </div>
 
               {submitError && <p role="alert" className="rounded-xl bg-red-50 px-3 py-2 text-xs font-bold text-red-700">{submitError}</p>}
               {/* Sticky Submit Bar at Bottom */}
-              <div className="sticky bottom-0 bg-white/95 backdrop-blur-md pt-3.5 pb-1 flex flex-col sm:flex-row justify-end gap-2.5 border-t border-slate-100 mt-4 shrink-0 shadow-[0_-6px_16px_-4px_rgba(0,0,0,0.05)]">
+              <div className="sticky bottom-0 bg-white/95 backdrop-blur-md pt-3.5 pb-1 flex flex-col sm:flex-row justify-end gap-2.5 border-t border-slate-100 mt-4 shrink-0 ">
                 <button
                   type="button"
                   onClick={() => setIsModalOpen(false)}
-                  className="w-full sm:w-auto px-5 py-3 rounded-xl bg-slate-100 text-slate-600 font-bold hover:bg-slate-200 transition-colors text-center order-2 sm:order-1 cursor-pointer"
+                  className="w-full sm:w-auto px-5 py-3 rounded-lg bg-slate-100 text-slate-600 font-bold hover:bg-slate-200 transition-colors text-center order-2 sm:order-1 cursor-pointer"
                 >
                   Zrušit
                 </button>
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="w-full sm:w-auto px-6 py-3 rounded-xl font-extrabold shadow-md hover:shadow-lg transition-all text-center order-1 sm:order-2 cursor-pointer"
+                  className="w-full sm:w-auto px-6 py-3 rounded-lg font-extrabold transition-all text-center order-1 sm:order-2 cursor-pointer"
                   style={{ backgroundColor: 'var(--brand-primary)', color: '#ffffff' }}
                 >
                   {isSubmitting ? 'Ukládám…' : 'Vytvořit zakázku'}
@@ -260,7 +260,7 @@ export const LeadsKanban: React.FC<LeadsKanbanProps> = ({
                 setActiveMobileStatus(next.status);
                 requestAnimationFrame(() => document.getElementById(`kanban-tab-${next.status}`)?.focus());
               }}
-              className={`flex items-center justify-center gap-1.5 px-3 py-2 min-h-[44px] rounded-xl border text-xs font-bold whitespace-nowrap shrink-0 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-primary ${selected ? 'border-brand-primary bg-brand-primary text-white' : 'border-slate-200 bg-white text-slate-700'}`}
+              className={`flex items-center justify-center gap-1.5 px-3 py-2 min-h-[44px] rounded-lg border text-xs font-bold whitespace-nowrap shrink-0 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-primary ${selected ? 'border-brand-primary bg-brand-primary text-white' : 'border-slate-200 bg-white text-slate-700'}`}
             >
               <span aria-hidden="true" className={`w-2 h-2 rounded-full ${selected ? 'bg-white' : col.badgeColor.split(' ')[0]}`}></span>
               <span>{col.label}</span>
@@ -303,19 +303,19 @@ export const LeadsKanban: React.FC<LeadsKanbanProps> = ({
                 aria-labelledby={`kanban-tab-${col.status}`}
                 data-kanban-column
                 style={{ scrollSnapAlign: 'start' }}
-                className={`${activeMobileStatus === col.status ? 'flex' : 'hidden'} md:flex w-[calc(100vw-2rem)] min-w-0 max-w-[calc(100vw-2rem)] md:w-[360px] md:min-w-[340px] md:max-w-[420px] rounded-xl md:rounded-2xl border flex-col shadow-sm md:shrink-0 snap-start kanban-column-snap transition-all duration-200 ${
+                className={`${activeMobileStatus === col.status ? 'flex' : 'hidden'} md:flex w-[calc(100vw-2rem)] min-w-0 max-w-[calc(100vw-2rem)] md:w-[360px] md:min-w-[340px] md:max-w-[420px] flex-col md:shrink-0 snap-start kanban-column-snap transition-all duration-200 ${
                   dragOverColumn === col.status
-                    ? 'bg-blue-50/60 border-brand-primary ring-2 ring-brand-primary-soft shadow-md'
-                    : 'bg-slate-50/80 border-slate-200'
+                    ? 'bg-blue-50/60 ring-2 ring-brand-primary-soft'
+                    : ''
                 }`}
               >
                 {/* Sticky Column Header */}
-                <div className="p-5 border-b border-slate-200 sticky top-0 bg-slate-50/95 backdrop-blur-md rounded-t-[24px] z-10 flex items-center justify-between">
+                <div className="p-5 border-b border-slate-200 sticky top-0 bg-slate-50/95 backdrop-blur-md z-10 flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <span className={`w-3 h-3 rounded-full ${col.badgeColor.split(' ')[0]}`}></span>
                     <h3 className="font-black text-sm text-slate-900 tracking-tight">{col.label}</h3>
                   </div>
-                  <span className="text-xs font-black px-2.5 py-1 rounded-full bg-white text-slate-600 border border-slate-200 shadow-xs">
+                  <span className="text-xs font-black px-2.5 py-1 rounded-full bg-white text-slate-600 border border-slate-200 ">
                     {columnLeads.length}
                   </span>
                 </div>
@@ -330,7 +330,7 @@ export const LeadsKanban: React.FC<LeadsKanbanProps> = ({
                       onDragStart={() => { if (!readOnly) setDraggedLead(lead.id); }}
                       onDragEnd={() => setDraggedLead(null)}
                       onClick={() => { if (!readOnly) onSelectLead(lead); }}
-                      className={`bg-white p-5 rounded-2xl ${draggedLead === lead.id ? 'opacity-50 scale-95 shadow-none ring-2 ring-brand-primary' : 'opacity-100'} ${readOnly ? 'cursor-default' : 'cursor-grab active:cursor-grabbing hover:shadow-xl hover:-translate-y-1'} border border-slate-200 shadow-sm transition-all duration-300 space-y-4 group min-h-[190px] flex flex-col justify-between relative overflow-hidden`}
+                      className={`bg-white p-5 rounded-xl ${draggedLead === lead.id ? 'opacity-50 scale-95 ring-2 ring-brand-primary' : 'opacity-100'} ${readOnly ? 'cursor-default' : 'cursor-grab active:cursor-grabbing hover:-translate-y-1'} border border-slate-200 transition-all duration-300 space-y-4 group min-h-[190px] flex flex-col justify-between relative overflow-hidden`}
                     >
                       {/* Subtle hover accent line */}
                       <div className="absolute left-0 top-0 bottom-0 w-1.5 opacity-0 group-hover:opacity-100 transition-opacity" style={{ backgroundColor: 'var(--brand-primary)' }}></div>
@@ -390,7 +390,7 @@ export const LeadsKanban: React.FC<LeadsKanbanProps> = ({
                         {readOnly ? <span className="flex min-h-[48px] flex-1 items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-slate-50 text-xs font-bold text-slate-400"><ShieldCheck className="h-3.5 w-3.5" /> Bez akcí</span> : <><a
                           href={`tel:${lead.customerPhone}`}
                           onClick={(e) => e.stopPropagation()}
-                          className="flex-1 py-2.5 min-h-[48px] rounded-xl bg-slate-50 hover:bg-slate-100 text-slate-700 text-xs font-bold flex items-center justify-center gap-1.5 border border-slate-200 transition-colors active:scale-[0.98]"
+                          className="flex-1 py-2.5 min-h-[48px] rounded-lg bg-slate-50 hover:bg-slate-100 text-slate-700 text-xs font-bold flex items-center justify-center gap-1.5 border border-slate-200 transition-colors active:scale-[0.98]"
                         >
                           <Phone className="w-3.5 h-3.5 text-brand-primary shrink-0" />
                           <span>Zavolat</span>
@@ -399,7 +399,7 @@ export const LeadsKanban: React.FC<LeadsKanbanProps> = ({
                             e.stopPropagation();
                             onSelectLead(lead);
                           }}
-                          className="flex-1 py-2.5 min-h-[48px] rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-all border shadow-sm hover:shadow active:scale-[0.98]"
+                          className="flex-1 py-2.5 min-h-[48px] rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 transition-all border active:scale-[0.98]"
                           style={{ backgroundColor: 'var(--brand-primary-soft)', color: 'var(--brand-primary)', borderColor: 'var(--border)' }}
                         >
                           <span>Otevřít</span>
@@ -409,7 +409,7 @@ export const LeadsKanban: React.FC<LeadsKanbanProps> = ({
                   })}
 
                   {columnLeads.length === 0 && (
-                    <div className="h-40 flex items-center justify-center text-xs text-slate-500 border border-dashed border-slate-300 rounded-2xl bg-white/50">
+                    <div className="h-40 flex items-center justify-center text-xs text-slate-500 border border-dashed border-slate-300 rounded-xl bg-white/50">
                       Žádné zakázky
                     </div>
                   )}

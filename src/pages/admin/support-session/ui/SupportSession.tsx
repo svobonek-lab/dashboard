@@ -77,7 +77,7 @@ export const AdminSupportSessionPage: React.FC<{ sessionId: string }> = ({ sessi
     setSelectedLead((current) => current?.id === leadId ? mapped : current);
   }, [employees, sessionId]);
 
-  if (error) return <main className="min-h-screen bg-slate-950 p-6 text-white"><section className="mx-auto mt-24 max-w-xl rounded-3xl border border-rose-500/30 bg-rose-500/10 p-8 text-rose-100"><h1 className="text-xl font-black">Přístup byl odmítnut</h1><p className="mt-2 text-sm">{error}</p><button onClick={() => navigate('/admin/companies')} className="mt-5 rounded-xl border border-rose-300/30 px-4 py-2 text-sm font-bold">Vrátit se do Adminu</button></section></main>;
+  if (error) return <main className="min-h-screen bg-slate-950 p-6 text-white"><section className="mx-auto mt-24 max-w-xl rounded-xl border border-rose-500/30 bg-rose-500/10 p-8 text-rose-100"><h1 className="text-xl font-black">Přístup byl odmítnut</h1><p className="mt-2 text-sm">{error}</p><button onClick={() => navigate('/admin/companies')} className="mt-5 rounded-lg border border-rose-300/30 px-4 py-2 text-sm font-bold">Vrátit se do Adminu</button></section></main>;
   if (!session || !company) return <div className="min-h-screen bg-slate-950 py-20 text-center text-sm text-slate-400">Ověřuji auditovanou relaci a načítám workspace…</div>;
 
   const organization = { id: company.id, name: company.name, slug: company.slug, email: company.email || '', phone: company.phone || '', address: company.address || '', primary_color: company.color || '#2563eb', logo_url: company.logo_url || '', plan: company.plan || session.subscription_status || 'pilot', status: company.active === false ? 'Suspended' : 'Active' };
@@ -94,7 +94,7 @@ export const AdminSupportSessionPage: React.FC<{ sessionId: string }> = ({ sessi
 
   return <OrganizationContext.Provider value={supportContext}>
     <OwnerLayout leads={leads} onSelectLead={setSelectedLead} readOnlyMode="support" onExitReadOnly={() => void leaveSupport()}>
-      <div className="mb-5 flex flex-col gap-3 rounded-3xl border border-amber-200 bg-amber-50 p-5 sm:flex-row sm:items-center sm:justify-between">
+      <div className="mb-5 flex flex-col gap-3 rounded-xl border border-amber-200 bg-amber-50 p-5 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex gap-3"><ShieldCheck className="h-6 w-6 shrink-0 text-amber-700" /><div><strong className="text-slate-950">Impersonating: {company.name}, auditovaná plná podpora</strong><p className="mt-1 text-sm text-amber-900/75">Každý zápis je svázaný s touto relací, firmou a administrátorským účtem.</p></div></div>
         <span className="inline-flex items-center gap-2 text-sm font-bold text-amber-900"><Clock3 className="h-4 w-4" />{remaining} min</span>
       </div>

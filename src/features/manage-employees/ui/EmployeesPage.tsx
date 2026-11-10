@@ -79,7 +79,7 @@ export const EmployeesPage: React.FC<EmployeesPageProps> = ({ employees, leads, 
               </div>
             </article>;
           })}
-          {!employees.length && <div className="workspace-empty-state m-5 px-6 py-12 text-center"><ShieldCheck className="mx-auto h-8 w-8 text-blue-600" /><h2 className="mt-3 text-base font-semibold text-slate-950">Pozvěte prvního zaměstnance</h2><p className="mx-auto mt-1 max-w-md text-sm text-slate-500">Pozvánka má omezenou platnost a po použití se zaměstnanec připojí pouze k této firmě.</p><button type="button" onClick={() => setIsInviteOpen(true)} className="mt-5 inline-flex min-h-10 items-center gap-2 rounded-xl bg-blue-600 px-4 text-sm font-semibold text-white"><UserPlus className="h-4 w-4" />Vytvořit pozvánku</button></div>}
+          {!employees.length && <div className="workspace-empty-state m-5 px-6 py-12 text-center"><ShieldCheck className="mx-auto h-8 w-8 text-blue-600" /><h2 className="mt-3 text-base font-semibold text-slate-950">Pozvěte prvního zaměstnance</h2><p className="mx-auto mt-1 max-w-md text-sm text-slate-500">Pozvánka má omezenou platnost a po použití se zaměstnanec připojí pouze k této firmě.</p><button type="button" onClick={() => setIsInviteOpen(true)} className="mt-5 inline-flex min-h-10 items-center gap-2 rounded-lg bg-blue-600 px-4 text-sm font-semibold text-white"><UserPlus className="h-4 w-4" />Vytvořit pozvánku</button></div>}
         </div>
       </section>
 
@@ -87,7 +87,7 @@ export const EmployeesPage: React.FC<EmployeesPageProps> = ({ employees, leads, 
         <form onSubmit={invite} className="space-y-4 py-2 text-left">
           <label className="block text-xs font-semibold text-slate-700">Jméno a příjmení<AppInput required value={inviteForm.name} onChange={(event) => setInviteForm({ ...inviteForm, name: event.target.value })} placeholder="Jan Novák" /></label>
           <label className="block text-xs font-semibold text-slate-700">Pracovní e-mail<AppInput type="email" required value={inviteForm.email} onChange={(event) => setInviteForm({ ...inviteForm, email: event.target.value })} placeholder="jan@firma.cz" /></label>
-          <label className="block text-xs font-semibold text-slate-700">Role v týmu<select value={inviteForm.role} onChange={(event) => setInviteForm({ ...inviteForm, role: event.target.value })} className="mt-1.5 w-full rounded-xl border border-slate-200 bg-white px-3 py-3 text-sm"><option>Montážník</option><option>Stavbyvedoucí</option><option>Rozpočtář</option><option>Administrativa</option></select></label>
+          <label className="block text-xs font-semibold text-slate-700">Role v týmu<select value={inviteForm.role} onChange={(event) => setInviteForm({ ...inviteForm, role: event.target.value })} className="mt-1.5 w-full rounded-lg border border-slate-200 bg-white px-3 py-3 text-sm"><option>Montážník</option><option>Stavbyvedoucí</option><option>Rozpočtář</option><option>Administrativa</option></select></label>
           <p className="flex gap-2 rounded-xl bg-blue-50 p-3 text-xs leading-5 text-blue-800"><CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0" />Zaměstnanec si nastaví vlastní heslo přes jednorázovou pozvánku. Heslo se v dashboardu nikdy nezobrazuje.</p>
           <div className="flex justify-end gap-2 pt-2"><AppButton type="button" variant="outline" onClick={() => setIsInviteOpen(false)}>Zrušit</AppButton><AppButton type="submit" variant="primary" disabled={isInviting}>{isInviting ? 'Vytvářím…' : 'Odeslat pozvánku'}</AppButton></div>
         </form>

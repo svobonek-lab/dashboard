@@ -251,7 +251,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onSuccess, expectedRole })
                   <div>
                     <label className="text-xs font-bold text-muted block mb-1.5">Hlavní barva značky</label>
                     <div className="flex items-center gap-3">
-                      <div className="relative w-12 h-12 border border-border rounded-app overflow-hidden shrink-0 shadow-sm">
+                      <div className="relative w-12 h-12 border border-border rounded-app overflow-hidden shrink-0 ">
                         <input
                           type="color"
                           value={primaryColor === 'var(--brand-primary)' ? '#2563eb' : primaryColor}
@@ -324,7 +324,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onSuccess, expectedRole })
               <button
                 type="submit"
                 disabled={isLoading || !canSubmitLegalConsent}
-                className="w-full min-h-12 px-4 rounded-control text-sm font-semibold shadow-app transition-all flex items-center justify-center gap-2 hover:opacity-90 active:scale-[0.98] mt-4 cursor-pointer disabled:cursor-wait disabled:opacity-65"
+                className="w-full min-h-12 px-4 rounded-control text-sm font-semibold transition-all flex items-center justify-center gap-2 hover:opacity-90 active:scale-[0.98] mt-4 cursor-pointer disabled:cursor-wait disabled:opacity-65"
                 style={{
                   backgroundColor: displayBrandColor,
                   color: '#ffffff',

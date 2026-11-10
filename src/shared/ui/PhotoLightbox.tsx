@@ -28,7 +28,7 @@ export const PhotoLightbox: React.FC<PhotoLightboxProps> = ({
       </button>
 
       <div className="max-w-4xl w-full flex flex-col items-center">
-        <div className="relative rounded-2xl overflow-hidden shadow-2xl border border-slate-200 bg-white max-h-[80vh]">
+        <div className="relative rounded-2xl overflow-hidden border border-slate-200 bg-white max-h-[80vh]">
           <img src={imageUrl} alt={title} className="max-w-full max-h-[75vh] object-contain" />
           {category && (
             <span className="absolute top-4 left-4 px-3 py-1 rounded-lg text-xs font-bold bg-white/80 backdrop-blur-md text-slate-900 border border-slate-300">

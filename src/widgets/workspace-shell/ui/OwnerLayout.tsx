@@ -161,11 +161,11 @@ export const OwnerLayout: React.FC<OwnerLayoutProps> = ({
 
       {/* Super Admin Company Workspace Top Bar */}
       {(isSuperAdminUser || readOnlyMode) && (
-        <div className="bg-[#0C111D] border-b border-slate-800 px-6 h-14 flex items-center justify-between text-xs font-bold shadow-lg fixed top-0 w-full z-50">
+        <div className="bg-[#0C111D] border-b border-slate-800 px-6 h-14 flex items-center justify-between text-xs font-bold fixed top-0 w-full z-50">
           <div className="flex items-center gap-4">
             <button
               onClick={() => { if (onExitReadOnly) onExitReadOnly(); else { stopImpersonation(); navigate('/admin'); } }}
-              className="bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 hover:border-cyan-500/50 px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2 shadow-sm shadow-cyan-500/10"
+              className="bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 hover:border-cyan-500/50 px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-2 "
             >
               ← Vrátit se do Adminu
             </button>
@@ -217,7 +217,7 @@ export const OwnerLayout: React.FC<OwnerLayoutProps> = ({
           onTouchStart={handleTouchStart}
           onTouchMove={handleTouchMove}
           onTouchEnd={handleTouchEnd}
-          className={`workspace-rail w-64 max-w-[calc(100vw-36px)] lg:max-w-none lg:w-64 bg-surface border-r border-border flex flex-col justify-between shrink-0 fixed inset-y-0 left-0 z-50 shadow-app transition-transform duration-300 ease-out font-sans ${
+          className={`workspace-rail w-64 max-w-[calc(100vw-36px)] lg:max-w-none lg:w-64 bg-surface border-r border-border flex flex-col justify-between shrink-0 fixed inset-y-0 left-0 z-50 transition-transform duration-300 ease-out font-sans ${
             isMobileDrawerOpen ? 'visible translate-x-0' : 'invisible -translate-x-full lg:visible lg:translate-x-0'
           }`}
           style={{ top: (isSuperAdminUser || readOnlyMode) ? '56px' : '0' }}
@@ -228,7 +228,7 @@ export const OwnerLayout: React.FC<OwnerLayoutProps> = ({
               <div className="flex items-center gap-3 overflow-hidden">
                 {/* 36px logo */}
                 <div
-                  className="w-[36px] h-[36px] rounded-app bg-brand-primary text-white font-black text-sm shrink-0 flex items-center justify-center shadow-app overflow-hidden"
+                  className="w-[36px] h-[36px] rounded-app bg-brand-primary text-white font-black text-sm shrink-0 flex items-center justify-center overflow-hidden"
                 >
                   {currentOrg?.logo_url ? (
                     <img src={currentOrg.logo_url} alt={activeCompanyName} className="w-full h-full object-cover" />
@@ -304,7 +304,7 @@ export const OwnerLayout: React.FC<OwnerLayoutProps> = ({
             {/* Compact profile */}
             <div className="flex items-center gap-2.5 overflow-hidden">
               <div
-                className="w-8 h-8 rounded-app bg-brand-primary text-white font-bold text-xs flex items-center justify-center shrink-0 shadow-app"
+                className="w-8 h-8 rounded-app bg-brand-primary text-white font-bold text-xs flex items-center justify-center shrink-0 "
               >
                 {(dbUser?.email || user?.email || 'U').charAt(0).toUpperCase()}
               </div>
@@ -361,7 +361,7 @@ export const OwnerLayout: React.FC<OwnerLayoutProps> = ({
               aria-expanded={isMobileDrawerOpen}
               aria-controls="owner-navigation"
               onClick={() => setIsMobileDrawerOpen(true)}
-              className="lg:hidden min-h-[44px] min-w-[44px] rounded-xl border border-border bg-surface flex items-center justify-center text-muted hover:text-text hover:bg-surface-secondary shrink-0"
+              className="lg:hidden min-h-[44px] min-w-[44px] rounded-lg border border-border bg-surface flex items-center justify-center text-muted hover:text-text hover:bg-surface-secondary shrink-0"
               aria-label="Otevřít menu navigace"
             >
               <Menu className="w-5 h-5" />
@@ -369,7 +369,7 @@ export const OwnerLayout: React.FC<OwnerLayoutProps> = ({
 
             <div className="flex items-center gap-2 min-w-0">
               {currentOrg?.logo_url ? (
-                <div className="w-8 h-8 rounded-lg overflow-hidden border border-border shrink-0 shadow-xs bg-surface flex items-center justify-center">
+                <div className="w-8 h-8 rounded-lg overflow-hidden border border-border shrink-0 bg-surface flex items-center justify-center">
                   <img
                     src={currentOrg.logo_url}
                     alt={activeCompanyName}
@@ -395,7 +395,7 @@ export const OwnerLayout: React.FC<OwnerLayoutProps> = ({
             >
               <Search className="w-3.5 h-3.5 text-muted" />
               <span className="flex-1 truncate text-muted">Hledat zakázky, klienty...</span>
-              <kbd className="px-1.5 py-0.5 bg-surface border border-border rounded-md text-[10px] text-muted shadow-app">⌘K</kbd>
+              <kbd className="px-1.5 py-0.5 bg-surface border border-border rounded-md text-[10px] text-muted ">⌘K</kbd>
             </button>}
 
           </div>

@@ -78,7 +78,7 @@ export const VoiceNotesModal: React.FC<VoiceNotesModalProps> = ({
 
   return (
     <div className="fixed inset-0 bg-slate-50/80 backdrop-blur-xs z-50 flex items-center justify-center p-4">
-      <div className="w-full max-w-lg bg-white border border-slate-200 rounded-3xl shadow-2xl p-6 text-slate-900 space-y-5">
+      <div className="w-full max-w-lg bg-white border border-slate-200 rounded-2xl p-6 text-slate-900 space-y-5">
         <div className="flex items-center justify-between border-b border-slate-200 pb-3">
           <div className="flex items-center gap-2.5">
             <div className="w-9 h-9 rounded-xl bg-rose-500/10 border border-rose-500/20 flex items-center justify-center text-rose-400">
@@ -126,7 +126,7 @@ export const VoiceNotesModal: React.FC<VoiceNotesModalProps> = ({
 
           {/* Transcript preview */}
           {(isRecording || transcript) && (
-            <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 text-xs text-slate-700 text-left space-y-1">
+            <div className="border-t border-slate-200 pt-3 text-xs text-slate-700 text-left space-y-1">
               <span className="text-brand-primary font-semibold flex items-center gap-1 text-[11px]">
                 <Sparkles className="w-3.5 h-3.5 text-brand-primary" />
                 {isRecording ? 'Živý přepis mluveného slova:' : 'Výsledný text:'}
@@ -139,7 +139,7 @@ export const VoiceNotesModal: React.FC<VoiceNotesModalProps> = ({
 
           {/* Structured AI Lead Extraction */}
           {parsedLead && (
-            <div className="p-3.5 bg-slate-50/80 rounded-2xl border border-brand-primary/40 text-left space-y-2.5 animate-in fade-in">
+            <div className="border-t border-slate-200 pt-3.5 text-left space-y-2.5 animate-in fade-in">
               <div className="flex items-center justify-between text-xs border-b border-slate-200 pb-2">
                 <span className="font-bold text-brand-primary flex items-center gap-1.5">
                   <Sparkles className="w-3.5 h-3.5 text-brand-primary" /> AI strukturovaná zakázka
@@ -185,7 +185,7 @@ export const VoiceNotesModal: React.FC<VoiceNotesModalProps> = ({
           {!isRecording && !transcript && (
             <button
               onClick={handleStart}
-              className="px-5 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-slate-900 font-semibold text-xs flex items-center gap-2 shadow-lg transition-colors"
+              className="px-5 py-2.5 rounded-lg bg-rose-600 hover:bg-rose-500 text-slate-900 font-semibold text-xs flex items-center gap-2 transition-colors"
             >
               <Mic className="w-4 h-4" /> Spustit nahrávání hlasu
             </button>
@@ -194,7 +194,7 @@ export const VoiceNotesModal: React.FC<VoiceNotesModalProps> = ({
           {isRecording && (
             <button
               onClick={handleStop}
-              className="px-5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-900 font-semibold text-xs flex items-center gap-2 transition-colors"
+              className="px-5 py-2.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-900 font-semibold text-xs flex items-center gap-2 transition-colors"
             >
               <Square className="w-4 h-4 text-rose-400" /> Ukončit nahrávání & analyzovat
             </button>
@@ -204,7 +204,7 @@ export const VoiceNotesModal: React.FC<VoiceNotesModalProps> = ({
             <>
               <button
                 onClick={handleStart}
-                className="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-700 text-xs font-medium transition-colors"
+                className="px-3.5 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-700 text-xs font-medium transition-colors"
               >
                 Nahrát znovu
               </button>
@@ -212,7 +212,7 @@ export const VoiceNotesModal: React.FC<VoiceNotesModalProps> = ({
               {hasActiveLead && (
                 <button
                   onClick={handleSaveToActiveLead}
-                  className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-800 text-xs font-semibold flex items-center gap-1.5 transition-colors"
+                  className="px-4 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-800 text-xs font-semibold flex items-center gap-1.5 transition-colors"
                 >
                   <Check className="w-3.5 h-3.5 text-green-400" /> Uložit poznámku k zakázce
                 </button>
@@ -221,7 +221,7 @@ export const VoiceNotesModal: React.FC<VoiceNotesModalProps> = ({
               {onCreateLeadFromVoice && (
                 <button
                   onClick={handleCreateKanbanLead}
-                  className="px-5 py-2 rounded-xl bg-brand-primary hover:bg-brand-primary text-slate-900 text-xs font-semibold flex items-center gap-2 shadow-md transition-colors"
+                  className="px-5 py-2 rounded-lg bg-brand-primary hover:bg-brand-primary text-slate-900 text-xs font-semibold flex items-center gap-2 transition-colors"
                 >
                    Vytvořit novou zakázku na Kanban
                 </button>

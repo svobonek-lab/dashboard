@@ -65,7 +65,7 @@ export class ErrorBoundary extends React.Component<Props, State> {
     if (this.state.hasError) {
       return (
         <div className="min-h-screen bg-white text-slate-900 flex items-center justify-center p-6">
-          <div className="max-w-md w-full bg-slate-800 border border-slate-300 rounded-2xl shadow-2xl p-6 space-y-6">
+          <div className="max-w-md w-full bg-slate-800 border border-slate-300 rounded-xl p-6 space-y-6">
             <div className="flex items-center gap-4">
               <div className="w-12 h-12 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400">
                 <AlertTriangle className="w-6 h-6" />
@@ -83,7 +83,7 @@ export class ErrorBoundary extends React.Component<Props, State> {
             <div className="space-y-2">
               <button
                 onClick={this.handleReload}
-                className="w-full py-2.5 px-4 rounded-xl bg-brand-primary hover:bg-brand-primary text-slate-900 font-medium text-xs flex items-center justify-center gap-2 transition-colors"
+                className="w-full py-2.5 px-4 rounded-lg bg-brand-primary hover:bg-brand-primary text-slate-900 font-medium text-xs flex items-center justify-center gap-2 transition-colors"
               >
                 <RefreshCw className="w-4 h-4" /> Obnovit stránku
               </button>
@@ -91,7 +91,7 @@ export class ErrorBoundary extends React.Component<Props, State> {
               <div className="flex gap-2">
                 <button
                   onClick={this.handleCopyDiagnostic}
-                  className="flex-1 py-2 px-3 rounded-xl bg-slate-700 hover:bg-slate-600 text-slate-800 text-xs flex items-center justify-center gap-1.5 transition-colors"
+                  className="flex-1 py-2 px-3 rounded-lg bg-slate-700 hover:bg-slate-600 text-slate-800 text-xs flex items-center justify-center gap-1.5 transition-colors"
                 >
                   {this.state.copied ? <Check className="w-3.5 h-3.5 text-green-400" /> : <Copy className="w-3.5 h-3.5" />}
                   {this.state.copied ? 'Zkopírováno' : 'Kopírovat diagnostiku'}
@@ -99,7 +99,7 @@ export class ErrorBoundary extends React.Component<Props, State> {
 
                 <button
                   onClick={this.handleResetCache}
-                  className="py-2 px-3 rounded-xl bg-slate-700 hover:bg-rose-900/40 text-slate-800 hover:text-rose-300 text-xs flex items-center justify-center gap-1.5 transition-colors"
+                  className="py-2 px-3 rounded-lg bg-slate-700 hover:bg-rose-900/40 text-slate-800 hover:text-rose-300 text-xs flex items-center justify-center gap-1.5 transition-colors"
                   title="Vymaže mezipaměť a obnoví tovární stav"
                 >
                   <Trash2 className="w-3.5 h-3.5" /> Reset mezipaměti

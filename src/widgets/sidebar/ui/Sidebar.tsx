@@ -69,7 +69,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
       <div className="p-4 border-b border-border flex items-center gap-3">
         {/* 36px logo */}
         <div
-          className="w-[36px] h-[36px] rounded-app bg-brand-primary text-white font-black text-sm shrink-0 flex items-center justify-center shadow-app"
+          className="w-[36px] h-[36px] rounded-app bg-brand-primary text-white font-black text-sm shrink-0 flex items-center justify-center "
         >
           {activeCompanyName.substring(0, 2).toUpperCase()}
         </div>
@@ -137,7 +137,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         {/* Compact profile */}
         <div className="flex items-center gap-2.5 overflow-hidden">
           <div
-            className="w-8 h-8 rounded-app bg-brand-primary text-white font-bold text-xs flex items-center justify-center shrink-0 shadow-app"
+            className="w-8 h-8 rounded-app bg-brand-primary text-white font-bold text-xs flex items-center justify-center shrink-0 "
           >
             {(dbUser?.email || user?.email || 'U').charAt(0).toUpperCase()}
           </div>
