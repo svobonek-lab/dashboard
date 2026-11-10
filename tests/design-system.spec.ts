@@ -1,4 +1,5 @@
 import { expect, test } from 'playwright/test';
+import AxeBuilder from '@axe-core/playwright';
 
 const routes = ['/demo', '/demo/leads', '/login'];
 const widths = [1440, 1024, 768, 390, 320];
@@ -232,6 +233,41 @@ test('synthetic owner signs in through the form and reaches the protected dashbo
   await page.getByRole('button', { name: 'Přihlásit se', exact: true }).click();
   await expect(page).toHaveURL(/\/dashboard$/);
   await expect(page.getByRole('heading', { name: 'Dobrý den, Patrik' })).toBeVisible();
+  const railName = page.locator('#owner-navigation h1');
+  await expect(railName).toHaveText('Ukázková stavební firma');
+  const railDetails = await railName.evaluate((name) => {
+    const rail = name.closest('aside');
+    const luminance = (value: number) => {
+      const channel = value / 255;
+      return channel <= 0.04045 ? channel / 12.92 : ((channel + 0.055) / 1.055) ** 2.4;
+    };
+    const rgb = (color: string) => (color.match(/[\d.]+/g) || []).slice(0, 3).map(Number);
+    const luma = (color: string) => rgb(color).reduce((sum, value, index) => sum + luminance(value) * [0.2126, 0.7152, 0.0722][index], 0);
+    const foreground = luma(getComputedStyle(name).color);
+    const background = luma(getComputedStyle(rail!).backgroundColor);
+    return {
+      contrast: (Math.max(foreground, background) + 0.05) / (Math.min(foreground, background) + 0.05),
+      textHeight: name.scrollHeight,
+      lineHeight: parseFloat(getComputedStyle(name).lineHeight),
+      clipped: name.scrollWidth > name.clientWidth,
+    };
+  });
+  expect(railDetails.contrast).toBeGreaterThanOrEqual(4.5);
+  console.log(`Owner rail company name contrast: ${railDetails.contrast.toFixed(2)}:1`);
+  expect(railDetails.textHeight / railDetails.lineHeight).toBeGreaterThan(1.5);
+  expect(railDetails.textHeight / railDetails.lineHeight).toBeLessThanOrEqual(2.1);
+  expect(railDetails.clipped).toBe(false);
+  await expect(page.locator('.workspace-primary-action')).toHaveCount(1);
+  await expect(page.getByRole('button', { name: 'Otevřít poptávky' })).toHaveCount(1);
+  await expect(page.locator('.sf-work-focus')).toHaveCount(0);
+  await expect(page.getByRole('button', { name: /^K vyřízení/ })).toHaveCount(1);
+  const nextStep = page.getByText(/^Další krok:/);
+  await expect(nextStep).toBeVisible();
+  const nextStepTop = await nextStep.evaluate((element) => element.getBoundingClientRect().top);
+  const dashboardTop = await page.getByRole('heading', { name: 'Dobrý den, Patrik' }).evaluate((element) => element.getBoundingClientRect().top);
+  expect(nextStepTop).toBeLessThan(dashboardTop);
+  const desktopContrast = await new AxeBuilder({ page }).withRules(['color-contrast']).analyze();
+  expect(desktopContrast.violations.map((violation) => ({ id: violation.id, nodes: violation.nodes.map((node) => node.target) }))).toEqual([]);
   const lead = page.locator('.workspace-list-row').filter({ hasText: 'Výměna krytiny v Brně' });
   await expect(lead.getByText('Nová poptávka')).toBeVisible();
   await expectSingleTypeface(page);
@@ -246,6 +282,16 @@ test('synthetic owner signs in through the form and reaches the protected dashbo
   await menuButton.click();
   await expect(navigation).toBeVisible();
   await expect(menuButton).toHaveAttribute('aria-expanded', 'true');
+  const mobileName = await railName.evaluate((name) => ({
+    clipped: name.scrollWidth > name.clientWidth,
+    lines: name.scrollHeight / parseFloat(getComputedStyle(name).lineHeight),
+  }));
+  expect(mobileName.clipped).toBe(false);
+  expect(mobileName.lines).toBeGreaterThan(1.5);
+  expect(mobileName.lines).toBeLessThanOrEqual(2.1);
+  const mobileContrast = await new AxeBuilder({ page }).withRules(['color-contrast']).analyze();
+  expect(mobileContrast.violations.map((violation) => ({ id: violation.id, nodes: violation.nodes.map((node) => node.target) }))).toEqual([]);
+  await page.screenshot({ path: testInfo.outputPath('dashboard-signed-in-390-menu-open.png'), animations: 'disabled' });
   await page.keyboard.press('Escape');
   await expect(navigation).toBeHidden();
   await expect(menuButton).toBeFocused();
@@ -253,7 +299,7 @@ test('synthetic owner signs in through the form and reaches the protected dashbo
   await expect(lead.getByText('Nová poptávka')).toBeVisible();
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(390);
   await expectSingleTypeface(page);
-  await page.screenshot({ path: testInfo.outputPath('dashboard-signed-in-390.png'), animations: 'disabled' });
+  await page.screenshot({ path: testInfo.outputPath('dashboard-signed-in-390.png'), animations: 'disabled', fullPage: true });
 });
 
 test('calculator sliders have accessible names and keyboard controls', async ({ page }) => {
