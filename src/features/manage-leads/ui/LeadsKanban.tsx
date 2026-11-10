@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import type { Lead, LeadStatus } from '../../../entities/lead';
 import { MapPin, DollarSign, User, Plus, Phone, MessageSquare, ShieldCheck, Calendar, Clock, AlertTriangle, Flag, Globe2, Inbox } from 'lucide-react';
 import { createManualLeadDraft } from '../model/manualLeadDraft';
@@ -12,6 +12,11 @@ interface LeadsKanbanProps {
   readOnly?: boolean;
   author?: string;
 }
+
+const getTabScrollEdges = (element: HTMLDivElement) => ({
+  left: element.scrollLeft > 1,
+  right: element.scrollLeft + element.clientWidth < element.scrollWidth - 1,
+});
 
 export const LeadsKanban: React.FC<LeadsKanbanProps> = ({
   leads: initialLeads,
@@ -35,6 +40,18 @@ export const LeadsKanban: React.FC<LeadsKanbanProps> = ({
   const [draggedLead, setDraggedLead] = useState<string | null>(null);
   const [dragOverColumn, setDragOverColumn] = useState<string | null>(null);
   const [activeMobileStatus, setActiveMobileStatus] = useState<LeadStatus>('New');
+  const mobileTabsRef = useRef<HTMLDivElement>(null);
+  const [tabScrollEdges, setTabScrollEdges] = useState({ left: false, right: false });
+
+  useEffect(() => {
+    const element = mobileTabsRef.current;
+    if (!element) return;
+    const updateEdges = () => setTabScrollEdges(getTabScrollEdges(element));
+    updateEdges();
+    const observer = new ResizeObserver(updateEdges);
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, []);
 
   // Synchronize internal state with props when parent state changes
   useEffect(() => {
@@ -237,7 +254,8 @@ export const LeadsKanban: React.FC<LeadsKanbanProps> = ({
       )}
 
       {/* Mobile Quick Status Filter Pills (Sticky horizontal bar on phone) */}
-      <div role="tablist" aria-label="Stav zakázek" className="flex md:hidden overflow-x-auto gap-2 pb-2 -mx-3 px-3 scrollbar-none">
+      <div className="kanban-mobile-tabs relative -mx-3 md:hidden" data-scroll-left={tabScrollEdges.left} data-scroll-right={tabScrollEdges.right}>
+      <div ref={mobileTabsRef} role="tablist" aria-label="Stav zakázek" onScroll={(event) => setTabScrollEdges(getTabScrollEdges(event.currentTarget))} className="flex overflow-x-auto gap-2 pb-2 px-3 scrollbar-none">
         {columns.map(col => {
           const count = leads.filter(l => l.status === col.status).length;
           const selected = activeMobileStatus === col.status;
@@ -268,6 +286,7 @@ export const LeadsKanban: React.FC<LeadsKanbanProps> = ({
             </button>
           );
         })}
+      </div>
       </div>
 
       {/* Wide Kanban Board Container with Mobile Snap Scrolling: scroll-snap-type: x mandatory */}

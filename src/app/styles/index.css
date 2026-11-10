@@ -236,6 +236,22 @@ button.workspace-metric:hover { border-color: #b8c8e6; background: #fcfdff; }
 }
 
 /* Kanban mobile UX scroll-snap specifications */
+.kanban-mobile-tabs::before,
+.kanban-mobile-tabs::after {
+  content: "";
+  position: absolute;
+  z-index: 1;
+  top: 0;
+  bottom: 8px;
+  width: 28px;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 160ms ease;
+}
+.kanban-mobile-tabs::before { left: 0; background: linear-gradient(to right, var(--workspace-canvas), transparent); }
+.kanban-mobile-tabs::after { right: 0; background: linear-gradient(to left, var(--workspace-canvas), transparent); }
+.kanban-mobile-tabs[data-scroll-left="true"]::before,
+.kanban-mobile-tabs[data-scroll-right="true"]::after { opacity: 1; }
 .kanban-scroll-container {
   scroll-snap-type: x mandatory;
   -webkit-overflow-scrolling: touch;

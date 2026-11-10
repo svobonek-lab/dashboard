@@ -50,6 +50,7 @@ test('public landing, demo, and login fit desktop, tablet, and phone widths', as
         viewport: window.innerWidth,
         document: document.documentElement.scrollWidth,
       }));
+      console.log(`${route} @ ${width}px: document ${sizes.document}px`);
       const offenders = sizes.document > sizes.viewport ? await page.evaluate(() => [...document.querySelectorAll('body *')]
         .map((element) => {
           const rect = element.getBoundingClientRect();
@@ -58,7 +59,7 @@ test('public landing, demo, and login fit desktop, tablet, and phone widths', as
         .filter((element) => element.left < -1 || element.right > innerWidth + 1)
         .slice(0, 12)) : [];
       expect(sizes.document, `${route} overflows at ${width}px: ${JSON.stringify(offenders)}`).toBeLessThanOrEqual(sizes.viewport);
-      if ([1440, 390].includes(width)) {
+      if ([1440, 390].includes(width) || route === '/demo/leads') {
         if (['/landing', '/demo'].includes(route)) await expectSingleTypeface(page);
         await page.screenshot({ path: testInfo.outputPath(`${route.replaceAll('/', '-')}-${width}.png`), fullPage: true });
       }
@@ -85,12 +86,26 @@ test('public demo remains clearly synthetic, read only, and free of external nam
   expect(externalRequests.filter((url) => /dicebear/i.test(url)), 'employee avatars must be generated locally').toEqual([]);
 });
 
-test('mobile kanban switches stages without clipping the active column', async ({ page }) => {
+test('mobile kanban switches stages without clipping the active column', async ({ page }, testInfo) => {
   for (const width of [320, 390]) {
     await page.setViewportSize({ width, height: 844 });
     await page.goto('/demo/leads');
     const tabs = page.getByRole('tablist', { name: 'Stav zakázek' });
     await expect(tabs).toBeVisible();
+    const fade = page.locator('.kanban-mobile-tabs');
+    await expect(fade).toHaveAttribute('data-scroll-right', 'true');
+    await expect.poll(() => fade.evaluate((element) => getComputedStyle(element, '::after').opacity)).toBe('1');
+    expect(await fade.evaluate((element) => getComputedStyle(element, '::after').backgroundImage)).toContain('linear-gradient');
+    const tabHeights = await tabs.getByRole('tab').evaluateAll((items) => items.map((item) => item.getBoundingClientRect().height));
+    expect(Math.min(...tabHeights)).toBeGreaterThanOrEqual(44);
+    const tabScroll = await tabs.evaluate((element) => ({ width: element.clientWidth, content: element.scrollWidth }));
+    expect(tabScroll.content).toBeGreaterThan(tabScroll.width);
+    await tabs.evaluate((element) => { element.scrollLeft = element.scrollWidth; });
+    await expect(fade).toHaveAttribute('data-scroll-left', 'true');
+    await expect(fade).toHaveAttribute('data-scroll-right', 'false');
+    if (width === 390) await page.screenshot({ path: testInfo.outputPath('demo-tabs-390-scrolled.png'), animations: 'disabled' });
+    await tabs.evaluate((element) => { element.scrollLeft = 0; });
+    await expect(fade).toHaveAttribute('data-scroll-right', 'true');
     const firstTab = tabs.getByRole('tab', { name: /Nová poptávka/ });
     await firstTab.focus();
     await page.keyboard.press('ArrowLeft');
@@ -141,6 +156,50 @@ test('keyboard focus is visible on the public demo navigation', async ({ page })
   expect(focus?.visible, JSON.stringify(focus)).toBe(true);
   expect(focus?.outlineStyle).not.toBe('none');
   expect(Number.parseFloat(focus?.outlineWidth || '0')).toBeGreaterThanOrEqual(2);
+});
+
+test('keyboard Tab shows a focus ring on every reachable button and link', async ({ page }, testInfo) => {
+  test.setTimeout(90_000);
+  for (const route of ['/landing', '/login', '/demo/leads']) {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto(route);
+    if (route === '/landing') await expect(page.getByRole('heading', { level: 1 }).first()).toBeVisible();
+    if (route === '/login') await expect(page.getByRole('heading', { name: /přihlášení/i })).toBeVisible();
+    if (route === '/demo/leads') await expect(page.getByRole('tablist', { name: 'Stav zakázek' })).toBeVisible();
+    const eligible = await page.evaluate(() => {
+      let count = 0;
+      for (const element of document.querySelectorAll<HTMLElement>('button, a[href]')) {
+        if (element.tabIndex < 0 || element.hasAttribute('disabled') || !element.getClientRects().length || getComputedStyle(element).visibility === 'hidden') continue;
+        element.dataset.focusAuditId = String(count++);
+      }
+      return count;
+    });
+    const visited = new Set<string>();
+    expect(eligible, `${route}: rendered button/link count`).toBeGreaterThan(0);
+    let captured = false;
+    for (let step = 0; step < eligible + 20 && visited.size < eligible; step++) {
+      await page.keyboard.press('Tab');
+      const focus = await page.evaluate(() => {
+        const element = document.activeElement as HTMLElement;
+        if (!element?.dataset.focusAuditId) return null;
+        const style = getComputedStyle(element);
+        return { id: element.dataset.focusAuditId, visible: element.matches(':focus-visible'), outlineStyle: style.outlineStyle, outlineWidth: parseFloat(style.outlineWidth), outlineColor: style.outlineColor };
+      });
+      if (!focus) continue;
+      expect(focus.visible, `${route}: ${JSON.stringify(focus)}`).toBe(true);
+      expect(focus.outlineStyle, `${route}: ${JSON.stringify(focus)}`).not.toBe('none');
+      expect(focus.outlineWidth, `${route}: ${JSON.stringify(focus)}`).toBeGreaterThanOrEqual(2);
+      expect(focus.outlineColor, `${route}: ${JSON.stringify(focus)}`).not.toBe('rgba(0, 0, 0, 0)');
+      visited.add(focus.id);
+      if (!captured) {
+        await page.screenshot({ path: testInfo.outputPath(`focus-${route.replaceAll('/', '-')}-390.png`), animations: 'disabled' });
+        captured = true;
+      }
+    }
+    expect(visited.size, `${route}: reachable button/link focus stops`).toBe(eligible);
+    expect(captured, `${route}: focus screenshot was captured`).toBe(true);
+    console.log(`${route}: ${visited.size} button/link Tab stops with visible focus rings`);
+  }
 });
 
 test('reduced motion removes decorative transition time', async ({ page }) => {
