@@ -10,6 +10,6 @@ Srovnání vychází ze stejného lokálního syntetického Playwright scénář
 
 Kontrola: ovládací prvky používají 8 px, panely 12 px a dialogy 16 px. Stíny v `src/` byly odstraněny; plochy odděluje hranice 1 px nebo prostor. Vnořené karty v Kanbanu, prodejní pipeline, detailu zakázky, nastavení, importu a konektoru byly nahrazeny oddělovači. Kulaté stavové body a pilulky zůstávají funkčními značkami.
 
-Vizuální rozdíl jsem zkontroloval na všech šesti výsledných snímcích. Landing je o 36 px kratší na telefonu a o 13 px na desktopu po odstranění vnitřního rámečku kalkulačky. Demo je pixelově beze změny; owner dashboard má stejné rozměry a jen drobné změny okrajů. Na 390 px ani 1440 px nevidím přetečení nebo ztracený obsah.
+Vizuální rozdíl jsem zkontroloval na všech šesti výsledných snímcích. Landing je o 36 px kratší na telefonu a o 13 px na desktopu po odstranění vnitřního rámečku kalkulačky. Demo a owner dashboard mají stejné rozměry; neutrální hranice se sjednotily na `--line`. Na 390 px ani 1440 px nevidím přetečení nebo ztracený obsah.
 
 Lokální ověření finálního stavu: `npm test` 610/610, `npm run lint`, `npm run build` a `npm run test:design` 16/16 prošly. Playwright ověřil přetečení viewportu, dostupnost obsahu a průchod hlavními syntetickými obrazovkami.

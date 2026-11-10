@@ -49,6 +49,7 @@
   --color-text: var(--text);
   --color-muted: var(--muted);
   --color-border: var(--border);
+  --color-slate-200: var(--line);
   
   --radius-app: var(--radius-app);
   --radius-control: 8px;
