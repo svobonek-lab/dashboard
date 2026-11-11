@@ -54,6 +54,10 @@ test('public landing, demo, and login fit desktop, tablet, and phone widths', as
       if ([1440, 390].includes(width)) {
         if (['/landing', '/demo'].includes(route)) await expectSingleTypeface(page);
         await page.screenshot({ path: testInfo.outputPath(`${route.replaceAll('/', '-')}-${width}.png`), fullPage: true });
+        if (['/landing', '/demo', '/login'].includes(route) && [390, 1440].includes(width)) {
+          await page.evaluate(() => document.fonts.ready);
+          await expect(page).toHaveScreenshot(`${route.slice(1)}-${width}.png`, { fullPage: true });
+        }
       }
       if (route === '/demo') {
         await expect(page.getByRole('heading', { name: /dobrý den/i })).toBeVisible();
@@ -230,6 +234,7 @@ test('synthetic owner signs in through the form and reaches the protected dashbo
   await expect(lead.getByText('Nová poptávka')).toBeVisible();
   await expectSingleTypeface(page);
   await page.screenshot({ path: testInfo.outputPath('dashboard-signed-in-1440.png') });
+  await expect(page).toHaveScreenshot('owner-dashboard-1440.png', { fullPage: true });
   await page.setViewportSize({ width: 390, height: 844 });
   await expect(page.getByRole('button', { name: 'Otevřít menu navigace' })).toBeVisible();
   await expect.poll(() => page.locator('aside.workspace-rail').evaluate((sidebar) => sidebar.getBoundingClientRect().right)).toBeLessThanOrEqual(1);
@@ -247,7 +252,8 @@ test('synthetic owner signs in through the form and reaches the protected dashbo
   await expect(lead.getByText('Nová poptávka')).toBeVisible();
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(390);
   await expectSingleTypeface(page);
-  await page.screenshot({ path: testInfo.outputPath('dashboard-signed-in-390.png'), animations: 'disabled' });
+  await page.screenshot({ path: testInfo.outputPath('dashboard-signed-in-390.png'), animations: 'disabled', fullPage: true });
+  await expect(page).toHaveScreenshot('owner-dashboard-390.png', { fullPage: true });
 });
 
 test('calculator sliders have accessible names and keyboard controls', async ({ page }) => {
