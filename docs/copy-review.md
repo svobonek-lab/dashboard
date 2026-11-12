@@ -25,8 +25,10 @@ Stav k větvi `codex/czech-copy-review`. Inventář níže vzniká z `src/` př�
 | CSV import | „Importuji data do CRM...“; `res.message` / `e.message` | „Importovat N poptávek“ → „Importuji poptávky…“ → počet zpracovaných poptávek; při chybě další krok bez technického textu |
 | Export | „Připravuji export…“; surová chyba | „Stáhnout CSV“ → „Připravuji CSV ke stažení…“; při chybě znovu stáhnout |
 | Platební stránka | „Přejít k platbě“ → „Otevírám platbu…“ | „Otevřít platební stránku“ → „Otevírám platební stránku…“ |
+| Veřejná poptávka a kontakt | „Odesílám…“, „Otevírám kontakt...“ | „Odeslat poptávku“ → „Odesílám poptávku…“; „Otevřít rezervační kalendář“ → „Otevírám rezervační kalendář…“; „Připravit e-mail s žádostí“ → „Připravuji e-mail s žádostí…“ |
+| Nastavení profilu a plateb | „Zkusit znovu“, „Spravovat platbu“, „Ukládám…“ | „Ověřit režim znovu“ → „Ověřuji režim…“; „Otevřít správu plateb“ → „Otevírám správu plateb…“; „Uložit profil“ → „Ukládám profil…“ |
 | Konektor | Surové chyby mapování a příkazu; viditelné „image digest“ | Popis neuloženého mapování nebo nepotvrzené změny, výzva k opravě či opakování; text o schváleném vydání |
-| Admin firmy | „Nová firma“; surové chyby akcí | „Založit firmu“; chyba vždy popíše neprovedenou akci a další krok |
+| Admin firmy | „Nová firma“, „Zakládám…“, „Vytvářím…“; surové chyby akcí | „Založit firmu“, „Zakládám firmu a zvu vlastníka…“, „Spouštím podporu…“; chyba vždy popíše neprovedenou akci a další krok |
 | Navigace a filtry | „Přehled“, „Poptávky“, „Dokončeno“, „K vyřízení“ | „Zobrazit přehled“, „Zobrazit poptávky“, „Zobrazit dokončené“, „Zobrazit k vyřízení“ |
 | Veřejná patička | „Přihlášení“, „Interaktivní demo“, „VOP“ | „Přihlásit se“, „Otevřít demo“, „Otevřít VOP“ |
 | Pracovní stav zakázky | „Tento krok není v pracovním postupu povolený.“ | „Stav zakázky se nezměnil. Vyberte následující povolený krok.“ |
@@ -82,7 +84,7 @@ Následující tabulky zachycují staticky zjistitelné popisky. `[dynamic/icon]
 | src/features/manage-integrations/ui/ConnectorMapping.tsx | 97 | Schválit kontrolní běh |
 | src/features/manage-integrations/ui/ConnectorSetup.tsx | 74 | Připravit napojení |
 | src/features/manage-integrations/ui/ConnectorSetup.tsx | 81 | [dynamic/icon] |
-| src/features/manage-integrations/ui/ConnectorSetup.tsx | 84 | Připravuji balíček… \| Stáhnout balíček pro Synology |
+| src/features/manage-integrations/ui/ConnectorSetup.tsx | 84 | Připravuji balíček ke stažení… \| Stáhnout balíček pro Synology |
 | src/features/manage-integrations/ui/ConnectorStatus.tsx | 72 | Synchronizovat |
 | src/features/manage-integrations/ui/ConnectorStatus.tsx | 74 | Obnovit |
 | src/features/manage-integrations/ui/ConnectorStatus.tsx | 75 | Pozastavit |
@@ -104,31 +106,31 @@ Následující tabulky zachycují staticky zjistitelné popisky. `[dynamic/icon]
 | src/features/manage-leads/ui/LeadDetail.tsx | 103 | Obnovit historii |
 | src/features/manage-leads/ui/LeadsKanban.tsx | 112 | Přidat poptávku |
 | src/features/manage-leads/ui/LeadsKanban.tsx | 130 | ✕ |
-| src/features/manage-leads/ui/LeadsKanban.tsx | 218 | Zrušit |
-| src/features/manage-leads/ui/LeadsKanban.tsx | 225 | Vytvářím zakázku… \| Vytvořit zakázku |
-| src/features/manage-leads/ui/LeadsKanban.tsx | 245 | [dynamic/icon] |
-| src/features/manage-leads/ui/LeadsKanban.tsx | 397 | Otevřít |
-| src/features/manage-leads/ui/LeadsKanban.tsx | 414 | Zobrazit nové poptávky \| Přidat poptávku |
+| src/features/manage-leads/ui/LeadsKanban.tsx | 219 | Zrušit |
+| src/features/manage-leads/ui/LeadsKanban.tsx | 226 | Vytvářím zakázku… \| Vytvořit zakázku |
+| src/features/manage-leads/ui/LeadsKanban.tsx | 246 | [dynamic/icon] |
+| src/features/manage-leads/ui/LeadsKanban.tsx | 398 | Otevřít |
+| src/features/manage-leads/ui/LeadsKanban.tsx | 415 | Zobrazit nové poptávky \| Přidat poptávku |
 | src/features/onboarding-checklist/ui/OnboardingChecklist.tsx | 28 | Krok \| Hotovo \| Pokračovat |
-| src/features/submit-inquiry/ui/WidgetIframePage.tsx | 151 | Odesílám… \| Odeslat poptávku |
+| src/features/submit-inquiry/ui/WidgetIframePage.tsx | 151 | Odesílám poptávku… \| Odeslat poptávku |
 | src/pages/admin/companies/ui/Companies.tsx | 80 | Založit firmu |
 | src/pages/admin/companies/ui/Companies.tsx | 82 | [dynamic/icon] |
 | src/pages/admin/companies/ui/Companies.tsx | 101 | Nastavit tarif |
 | src/pages/admin/companies/ui/Companies.tsx | 102 | Obnovit pozvánku |
 | src/pages/admin/companies/ui/Companies.tsx | 103 | Kopírovat odkaz |
-| src/pages/admin/companies/ui/Companies.tsx | 104 | Spustit podporu |
+| src/pages/admin/companies/ui/Companies.tsx | 104 | Zadat důvod podpory |
 | src/pages/admin/companies/ui/Companies.tsx | 107 | Vymazat hledání \| Obnovit seznam firem |
 | src/pages/admin/companies/ui/Companies.tsx | 109 | Nastavit tarif |
 | src/pages/admin/companies/ui/Companies.tsx | 109 | Obnovit pozvánku |
 | src/pages/admin/companies/ui/Companies.tsx | 109 | Kopírovat odkaz formuláře |
-| src/pages/admin/companies/ui/Companies.tsx | 109 | Přihlásit jako podpora |
+| src/pages/admin/companies/ui/Companies.tsx | 109 | Zadat důvod podpory |
 | src/pages/admin/companies/ui/Companies.tsx | 109 | Vymazat hledání \| Obnovit seznam firem |
 | src/pages/admin/companies/ui/Companies.tsx | 110 | [dynamic/icon] |
 | src/pages/admin/companies/ui/Companies.tsx | 110 | Zrušit |
-| src/pages/admin/companies/ui/Companies.tsx | 110 | Zakládám… \| Založit a pozvat vlastníka |
+| src/pages/admin/companies/ui/Companies.tsx | 110 | Zakládám firmu a zvu vlastníka… \| Založit a pozvat vlastníka |
 | src/pages/admin/companies/ui/Companies.tsx | 111 | [dynamic/icon] |
 | src/pages/admin/companies/ui/Companies.tsx | 111 | Zrušit |
-| src/pages/admin/companies/ui/Companies.tsx | 111 | Vytvářím… \| Spustit podporu |
+| src/pages/admin/companies/ui/Companies.tsx | 111 | Spouštím podporu… \| Spustit podporu |
 | src/pages/admin/dashboard/ui/Dashboard.tsx | 17 | Zkontrolovat firmy |
 | src/pages/admin/support-session/ui/SupportSession.tsx | 80 | Vrátit se do Adminu |
 | src/pages/auth/login/ui/LoginPage.tsx | 322 | Obnovit heslo |
@@ -167,10 +169,10 @@ Následující tabulky zachycují staticky zjistitelné popisky. `[dynamic/icon]
 | src/pages/owner/projects/ui/Projects.tsx | 34 | Zobrazit dokončené |
 | src/pages/owner/projects/ui/Projects.tsx | 37 | Dokončeno \| V realizaci \| Cena neuvedena \| Otevřít zakázku |
 | src/pages/owner/projects/ui/Projects.tsx | 43 | Otevřít poptávky |
-| src/pages/owner/settings/ui/Settings.tsx | 94 | Ověřuji… \| Zkusit znovu |
-| src/pages/owner/settings/ui/Settings.tsx | 101 | Otevírám… \| Spravovat platbu |
+| src/pages/owner/settings/ui/Settings.tsx | 94 | Ověřuji režim… \| Ověřit režim znovu |
+| src/pages/owner/settings/ui/Settings.tsx | 101 | Otevírám správu plateb… \| Otevřít správu plateb |
 | src/pages/owner/settings/ui/Settings.tsx | 112 | Vybrat logo |
-| src/pages/owner/settings/ui/Settings.tsx | 134 | Ukládám… \| Ověřuji režim… \| Uložit profil |
+| src/pages/owner/settings/ui/Settings.tsx | 134 | Ukládám profil… \| Ověřuji režim… \| Uložit profil |
 | src/pages/public/demo/ui/PublicDemoWorkspace.tsx | 100 | Zobrazit přehled |
 | src/pages/public/demo/ui/PublicDemoWorkspace.tsx | 101 | Zobrazit poptávky |
 | src/pages/public/embed/ui/EmbedWidgetPage.tsx | 51 | Kopírovat |
@@ -187,7 +189,7 @@ Následující tabulky zachycují staticky zjistitelné popisky. `[dynamic/icon]
 | src/pages/public/landing/ui/LandingPage.tsx | 509 | Otevřít zpracovatelskou smlouvu |
 | src/pages/public/landing/ui/LandingPage.tsx | 541 | [dynamic/icon] |
 | src/pages/public/landing/ui/LandingPage.tsx | 608 | [dynamic/icon] |
-| src/pages/public/landing/ui/LandingPage.tsx | 717 | Otevírám kontakt... \| Otevřít rezervační kalendář \| Připravit e-mail s žádostí |
+| src/pages/public/landing/ui/LandingPage.tsx | 717 | Otevírám rezervační kalendář… \| Připravuji e-mail s žádostí… \| Otevřít rezervační kalendář \| Připravit e-mail s žádostí |
 | src/pages/public/sales/ui/SalesWorkspace.tsx | 55 | Skrýt postup \| Otevřít postup |
 | src/pages/public/sales/ui/SalesWorkspace.tsx | 56 | CSV staženo \| Stáhnout CSV |
 | src/pages/public/sales/ui/SalesWorkspace.tsx | 57 | Přidat poptávku |
@@ -251,13 +253,14 @@ Následující tabulky zachycují staticky zjistitelné popisky. `[dynamic/icon]
 | src/app/providers/ErrorBoundary.tsx | 103 | Vymaže mezipaměť a obnoví tovární stav |
 | src/features/import-leads/ui/CSVImportModal.tsx | 129 | Zavřít import |
 | src/features/import-leads/ui/CSVImportModal.tsx | 205 | Vybrat jiný soubor |
-| src/features/import-leads/ui/CSVImportModal.tsx | 212 | Nahrát jiný soubor |
+| src/features/import-leads/ui/CSVImportModal.tsx | 212 | Vybrat jiný soubor |
 | src/features/import-leads/ui/SmartFieldMappingModal.tsx | 110 | Zavřít mapování |
 | src/features/import-leads/ui/TablePreviewModal.tsx | 35 | Zavřít náhled |
 | src/features/lead-files/ui/VoiceNotesModal.tsx | 99 | Zavřít hlasové poznámky |
 | src/features/manage-integrations/ui/ConnectorSetup.tsx | 81 | Kopírovat kód |
 | src/features/manage-leads/ui/lead-tabs/DocumentsTab.tsx | 98 | Smazat poznámku |
 | src/features/manage-leads/ui/lead-tabs/DocumentsTab.tsx | 102 | Smazat soubor |
+| src/features/manage-leads/ui/LeadsKanban.tsx | 131 | Zavřít formulář zakázky |
 | src/features/onboarding-checklist/ui/OnboardingChecklist.tsx | 28 | `Otevřít krok ${title}` |
 | src/pages/admin/companies/ui/Companies.tsx | 82 | Obnovit adresář |
 | src/pages/admin/companies/ui/Companies.tsx | 102 | Znovu poslat pozvánku |
@@ -585,7 +588,7 @@ Následující tabulky zachycují staticky zjistitelné popisky. `[dynamic/icon]
 | src/features/manage-leads/ui/lead-tabs/DocumentsTab.tsx | 89 | [dynamic] |
 | src/features/manage-leads/ui/lead-tabs/TeamTab.tsx | 123 | [dynamic] |
 | src/features/manage-leads/ui/LeadDetail.tsx | 65 | [dynamic] |
-| src/features/manage-leads/ui/LeadsKanban.tsx | 215 | [dynamic] |
+| src/features/manage-leads/ui/LeadsKanban.tsx | 216 | [dynamic] |
 | src/features/submit-inquiry/ui/WidgetIframePage.tsx | 150 | [dynamic] |
 | src/pages/admin/companies/ui/Companies.tsx | 83 | [dynamic] |
 | src/pages/admin/dashboard/ui/Dashboard.tsx | 15 | [dynamic] |
@@ -595,5 +598,5 @@ Následující tabulky zachycují staticky zjistitelné popisky. `[dynamic/icon]
 | src/pages/owner/integrations/ui/Integrations.tsx | 204 | [dynamic] |
 | src/pages/owner/integrations/ui/Integrations.tsx | 275 | [dynamic] |
 | src/pages/owner/settings/ui/Settings.tsx | 93 | [dynamic] |
-| src/pages/owner/settings/ui/Settings.tsx | 94 | Režim databáze firmy se nepodařilo ověřit. Uložení profilu zůstává vypnuté. \| Ověřuji… \| Zkusit znovu |
+| src/pages/owner/settings/ui/Settings.tsx | 94 | Režim databáze firmy se nepodařilo ověřit. Ověřte ho znovu a pak uložte profil. \| Ověřuji režim… \| Ověřit režim znovu |
 | src/pages/owner/settings/ui/Settings.tsx | 100 | [dynamic] |

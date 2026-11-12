@@ -722,7 +722,7 @@ export const LandingPage: React.FC = () => {
                   {isBookingLoading ? (
                     <>
                       <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
-                      <span>Otevírám kontakt...</span>
+                      <span>{SALES_CONTACT.mode === 'booking' ? 'Otevírám rezervační kalendář…' : 'Připravuji e-mail s žádostí…'}</span>
                     </>
                   ) : (
                     <>

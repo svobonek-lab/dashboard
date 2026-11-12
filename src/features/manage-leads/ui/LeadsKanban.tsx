@@ -128,6 +128,7 @@ export const LeadsKanban: React.FC<LeadsKanbanProps> = ({
             <div className="flex items-center justify-between pb-3.5 border-b border-slate-100 shrink-0">
               <h3 className="text-lg sm:text-xl font-black text-slate-900">Vytvořit novou zakázku / poptávku</h3>
               <button
+                aria-label="Zavřít formulář zakázky"
                 onClick={() => setIsModalOpen(false)}
                 className="w-8 h-8 rounded-full bg-slate-100 text-slate-500 hover:text-slate-800 flex items-center justify-center text-sm font-bold cursor-pointer"
               >

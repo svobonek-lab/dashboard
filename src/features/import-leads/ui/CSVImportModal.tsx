@@ -209,7 +209,7 @@ export const CSVImportModal: React.FC<CSVImportModalProps> = ({
                       setImportSummary(null);
                     }}
                     className="p-1.5 text-slate-400 hover:text-slate-700 rounded-lg hover:bg-slate-100"
-                    title="Nahrát jiný soubor"
+                    title="Vybrat jiný soubor"
                   >
                     ✕
                   </button>

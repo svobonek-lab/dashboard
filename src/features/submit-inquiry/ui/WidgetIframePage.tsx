@@ -148,7 +148,7 @@ export const WidgetIframePage: React.FC = () => {
             <label className="mt-5 flex cursor-pointer items-start gap-3 rounded-2xl bg-slate-50 p-4 text-xs leading-5 text-slate-600"><input type="checkbox" checked={form.consent} onChange={(e) => update('consent', e.target.checked)} className="mt-0.5 h-4 w-4 rounded border-slate-300" /><span>Souhlasím, aby mě {company.name} kontaktovala kvůli této poptávce. Údaje budou použity pouze pro její vyřízení.</span></label>
 
             {error && <div role="alert" className="mt-4 flex items-start gap-2 rounded-2xl border border-rose-200 bg-rose-50 p-3 text-sm text-rose-700"><AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />{error}</div>}
-            <button type="submit" disabled={submitting} className="mt-5 inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-2xl px-5 text-sm font-semibold text-white shadow-sm transition hover:opacity-90 disabled:cursor-wait disabled:opacity-60" style={{ backgroundColor: color }}>{submitting ? 'Odesílám…' : 'Odeslat poptávku'}</button>
+            <button type="submit" disabled={submitting} className="mt-5 inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-2xl px-5 text-sm font-semibold text-white shadow-sm transition hover:opacity-90 disabled:cursor-wait disabled:opacity-60" style={{ backgroundColor: color }}>{submitting ? 'Odesílám poptávku…' : 'Odeslat poptávku'}</button>
             <p className="mt-3 text-center text-[11px] text-slate-400">Formulář bezpečně zajišťuje StavbaFlow.</p>
           </form>
         )}
