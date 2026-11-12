@@ -26,7 +26,7 @@ test('the guarded UI keeps employee copy separate and exposes checkout only to t
   const employeeBranch = source.slice(employeeStart, employeeEnd);
   assert.match(source, /Kontaktujte administrátora vaší společnosti\. Přístup k systému byl pozastaven\./);
   assert.match(source, /Předplatné vypršelo/);
-  assert.match(source, /Přejít k platbě/);
-  assert.doesNotMatch(employeeBranch, /Přejít k platbě|handlePayment/);
+  assert.match(source, /Otevřít platební stránku/);
+  assert.doesNotMatch(employeeBranch, /Otevřít platební stránku|handlePayment/);
   assert.match(source, /memo\(SubscriptionGuardComponent\)/);
 });

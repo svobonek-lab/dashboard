@@ -328,7 +328,7 @@ export const OwnerLayout: React.FC<OwnerLayoutProps> = ({
                 className="flex items-center gap-1.5 px-2.5 py-2 rounded-app text-xs font-semibold text-muted hover:text-text hover:bg-surface-tertiary transition-colors cursor-pointer"
               >
                 <Settings className="w-3.5 h-3.5" />
-                <span>Nastavení</span>
+                <span>Otevřít nastavení</span>
               </button>}
 
               <button

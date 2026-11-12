@@ -115,7 +115,7 @@ test('connector enrollment stays blocked until an immutable connector image is r
   assert.equal(isImmutableConnectorImage(''), false);
   assert.equal(isImmutableConnectorImage('latest'), false);
   assert.match(setup, /disabled=\{busy\s*\|\|\s*!imageReady\}/);
-  assert.match(setup, /imageReady[\s\S]*neměnné vydání konektoru/);
+  assert.match(setup, /imageReady[\s\S]*schválení vydání konektoru/);
   assert.match(setup, /buildConnectorPackage\(\{ image, driver, apiBaseUrl: window\.location\.origin, companyId \}\)/);
   assert.match(setup, /role="alert"/);
 });

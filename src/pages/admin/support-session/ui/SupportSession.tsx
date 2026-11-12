@@ -49,11 +49,11 @@ export const AdminSupportSessionPage: React.FC<{ sessionId: string }> = ({ sessi
   useEffect(() => {
     try {
       const stored = JSON.parse(sessionStorage.getItem(STORAGE_KEY) || 'null');
-      if (!stored || stored.id !== sessionId || new Date(stored.expiresAt).getTime() <= Date.now()) { setError('Dočasná relace v tomto prohlížeči chybí nebo vypršela.'); return; }
-    } catch { setError('Dočasnou relaci se nepodařilo bezpečně ověřit.'); return; }
+      if (!stored || stored.id !== sessionId || new Date(stored.expiresAt).getTime() <= Date.now()) { setError('Dočasná relace chybí nebo vypršela. Vraťte se do správy firem a spusťte podporu znovu.'); return; }
+    } catch { setError('Dočasná relace se neověřila. Vraťte se do správy firem a spusťte podporu znovu.'); return; }
     Promise.all([getPlatformSupportSession(sessionId), getPlatformSupportWorkspace(sessionId)])
       .then(([activeSession, workspace]) => { setSession(activeSession); applyWorkspace(workspace); })
-      .catch((value) => setError(value instanceof Error ? value.message : 'Relace podpory není dostupná.'));
+      .catch(() => setError('Relace podpory se nenačetla. Obnovte stránku a zkuste to znovu.'));
   }, [applyWorkspace, sessionId]);
 
   useEffect(() => { const timer = window.setInterval(() => setNow(Date.now()), 30_000); return () => window.clearInterval(timer); }, []);

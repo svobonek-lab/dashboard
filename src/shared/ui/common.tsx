@@ -203,7 +203,7 @@ export const AppModal: React.FC<AppModalProps> = ({
         {title && (
           <div className="px-6 py-4 border-b border-border flex items-center justify-between">
             <h3 className="text-base font-bold text-text">{title}</h3>
-            <button 
+            <button aria-label="Zavřít okno"
               onClick={onClose}
               className="text-muted hover:text-text cursor-pointer p-1 rounded-app hover:bg-surface-secondary"
             >

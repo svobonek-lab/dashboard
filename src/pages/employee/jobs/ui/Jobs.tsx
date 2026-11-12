@@ -55,7 +55,7 @@ export const EmployeeJobsPage: React.FC<EmployeeJobsPageProps> = ({ leads, onSel
             filter === 'today' ? 'bg-white text-brand-primary shadow-xs border border-slate-200/80' : 'text-slate-600 hover:text-slate-900'
           }`}
         >
-          Dnešní výjezdy ({filterEmployeeJobs(myJobs, 'today').length})
+          Zobrazit dnešní ({filterEmployeeJobs(myJobs, 'today').length})
         </button>
         <button
           onClick={() => setFilter('upcoming')}
@@ -63,7 +63,7 @@ export const EmployeeJobsPage: React.FC<EmployeeJobsPageProps> = ({ leads, onSel
             filter === 'upcoming' ? 'bg-white text-brand-primary shadow-xs border border-slate-200/80' : 'text-slate-600 hover:text-slate-900'
           }`}
         >
-          Plánované ({filterEmployeeJobs(myJobs, 'upcoming').length})
+          Zobrazit plánované ({filterEmployeeJobs(myJobs, 'upcoming').length})
         </button>
         <button
           onClick={() => setFilter('completed')}
@@ -71,7 +71,7 @@ export const EmployeeJobsPage: React.FC<EmployeeJobsPageProps> = ({ leads, onSel
             filter === 'completed' ? 'bg-white text-brand-primary shadow-xs border border-slate-200/80' : 'text-slate-600 hover:text-slate-900'
           }`}
         >
-          Předané ({filterEmployeeJobs(myJobs, 'completed').length})
+          Zobrazit předané ({filterEmployeeJobs(myJobs, 'completed').length})
         </button>
       </div>
 
@@ -138,7 +138,7 @@ export const EmployeeJobsPage: React.FC<EmployeeJobsPageProps> = ({ leads, onSel
             </div>
           </div>
         ))}
-        {!displayedJobs.length && <div className="workspace-empty-state px-6 py-12 text-center text-sm text-slate-500">V této záložce nejsou žádné přiřazené zakázky.</div>}
+        {!displayedJobs.length && <div className="workspace-empty-state px-6 py-12 text-center text-sm text-slate-500"><p>V této záložce nejsou žádné přiřazené zakázky.</p><button type="button" onClick={() => window.location.reload()} className="mt-3 font-semibold text-blue-700">Obnovit zakázky</button></div>}
       </div>
 
     </div>

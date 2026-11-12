@@ -63,7 +63,7 @@ export function ConnectorMapping({ companyId, connector, onSaved }: { companyId:
       await connectorClient.saveMapping(companyId, connector.id, mapping);
       setMessage('Mapování je uložené. Konektor nyní provede kontrolní běh bez zápisu.');
       onSaved();
-    } catch (cause) { setError(cause instanceof Error ? cause.message : 'Mapování nelze uložit.'); }
+    } catch { setError('Mapování se neuložilo. Zkontrolujte vybraná pole a zkuste to znovu.'); }
     finally { setBusy(false); }
   };
 
@@ -73,11 +73,11 @@ export function ConnectorMapping({ companyId, connector, onSaved }: { companyId:
     try {
       await connectorClient.approveMapping(companyId, connector.id, approvalVersion);
       setMessage('Kontrolní běh je schválený.'); onSaved();
-    } catch (cause) { setError(cause instanceof Error ? cause.message : 'Schválení mapování selhalo.'); }
+    } catch { setError('Mapování se neschválilo. Zkontrolujte kontrolní běh a zkuste to znovu.'); }
     finally { setBusy(false); }
   };
 
-  if (!sourceSchema) return <article className="workspace-panel p-5"><h3 className="font-semibold text-slate-950">Mapování firemních dat</h3><p className="mt-2 text-sm text-slate-500">Nejdřív připojte konektor. Ten načte pouze metadata tabulek a sloupců; žádné řádky.</p></article>;
+  if (!sourceSchema) return <article className="workspace-panel p-5"><h3 className="font-semibold text-slate-950">Mapování firemních dat</h3><p className="mt-2 text-sm text-slate-500">Zdrojová databáze zatím neposlala strukturu tabulek.</p><button type="button" onClick={onSaved} className="mt-3 font-semibold text-blue-700">Obnovit připojení</button></article>;
 
   return <>
     <article className="workspace-panel p-6 sm:p-7">
@@ -88,7 +88,7 @@ export function ConnectorMapping({ companyId, connector, onSaved }: { companyId:
         <label className="text-xs font-semibold text-slate-600">Jedinečný klíč<select value={externalIdColumn} onChange={event => setExternalIdColumn(event.target.value)} className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm font-normal text-slate-950">{columns.map(column => <option key={column.name} value={column.name}>{column.name}{column.primaryKey ? ', primární klíč' : ''}{column.generated ? ', generovaný' : ''}</option>)}</select></label>
         <label className="text-xs font-semibold text-slate-600">Sloupec poslední změny<select value={updatedAtColumn} onChange={event => setUpdatedAtColumn(event.target.value)} className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm font-normal text-slate-950"><option value="">Bez časového razítka (kontrola fingerprintem)</option>{columns.map(column => <option key={column.name} value={column.name}>{column.name}, {column.dataType}</option>)}</select></label>
         <div className="sm:col-span-2"><p className="text-xs text-slate-500">Namapovaná pole: {fields.length ? fields.map(field => field.targetField).join(', ') : 'zatím žádná'}</p><button type="button" onClick={() => setShowFieldMapping(true)} className="mt-2 rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-semibold">Zkontrolovat a upravit pole</button></div>
-      </div> : <p className="mt-5 flex items-center gap-2 text-sm text-amber-700"><TriangleAlert className="h-4 w-4" />Konektor nenašel žádnou dostupnou tabulku.</p>}
+      </div> : <div className="mt-5 text-sm text-amber-700"><p className="flex items-center gap-2"><TriangleAlert className="h-4 w-4" />Konektor nenašel žádnou dostupnou tabulku.</p><button type="button" onClick={onSaved} className="mt-2 font-semibold underline">Obnovit připojení</button></div>}
       {table && !columns.some(column => column.name === externalIdColumn && column.primaryKey && !column.generated) ? <p className="mt-3 text-xs text-amber-700">Tato tabulka nemá ověřený stabilní primární klíč. Čtení lze zkontrolovat, ale vytváření záznamů zůstane vypnuté.</p> : null}
       <button type="button" disabled={busy || !table || !externalIdColumn} onClick={() => void save()} className="workspace-primary-action mt-5 min-h-10 px-4 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-50">Uložit a spustit kontrolní běh</button>
       {dryRun ? <section className="mt-6 rounded-2xl border border-slate-200 bg-slate-50 p-4" aria-label="Výsledek kontrolního běhu">

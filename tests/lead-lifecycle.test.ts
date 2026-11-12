@@ -11,7 +11,7 @@ test('employee can advance an assigned lead through the normal delivery flow', (
 
 test('employee cannot skip a required commercial step', () => {
   assert.equal(canTransitionLeadStatus('New', 'Completed', 'employee'), false);
-  assert.equal(getLeadTransitionError('New', 'Completed', 'employee'), 'Tento krok není v pracovním postupu povolený.');
+  assert.equal(getLeadTransitionError('New', 'Completed', 'employee'), 'Stav zakázky se nezměnil. Vyberte následující povolený krok.');
 });
 
 test('employee cannot reopen terminal work', () => {
