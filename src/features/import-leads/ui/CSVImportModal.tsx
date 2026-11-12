@@ -126,6 +126,7 @@ export const CSVImportModal: React.FC<CSVImportModalProps> = ({
             </div>
           </div>
           <button
+            aria-label="Zavřít import"
             onClick={onClose}
             className="p-2 text-slate-400 hover:text-slate-700 rounded-xl hover:bg-slate-100 transition-colors"
           >
@@ -201,6 +202,7 @@ export const CSVImportModal: React.FC<CSVImportModalProps> = ({
                   </button>
                   <button
                     type="button"
+                    aria-label="Vybrat jiný soubor"
                     onClick={() => {
                       setParsedData(null);
                       setSourceCsv('');

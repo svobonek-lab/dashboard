@@ -55,14 +55,14 @@ Následující tabulky zachycují staticky zjistitelné popisky. `[dynamic/icon]
 | src/features/employee-workflow/ui/EmployeeDashboard.tsx | 69 | Obnovit zakázky |
 | src/features/export-company-data/ui/CompanyDataExport.tsx | 41 | Připravuji CSV ke stažení… \| Stáhnout CSV |
 | src/features/import-leads/ui/CSVImportModal.tsx | 128 | ✕ |
-| src/features/import-leads/ui/CSVImportModal.tsx | 194 | Zkontrolovat mapování ( \| ) |
-| src/features/import-leads/ui/CSVImportModal.tsx | 202 | ✕ |
-| src/features/import-leads/ui/CSVImportModal.tsx | 309 | Zavřít |
-| src/features/import-leads/ui/CSVImportModal.tsx | 318 | Importuji poptávky… \| `Importovat ${parsedData.totalRows} poptávek` |
+| src/features/import-leads/ui/CSVImportModal.tsx | 195 | Zkontrolovat mapování ( \| ) |
+| src/features/import-leads/ui/CSVImportModal.tsx | 203 | ✕ |
+| src/features/import-leads/ui/CSVImportModal.tsx | 311 | Zavřít |
+| src/features/import-leads/ui/CSVImportModal.tsx | 320 | Importuji poptávky… \| `Importovat ${parsedData.totalRows} poptávek` |
 | src/features/import-leads/ui/SmartFieldMappingModal.tsx | 101 | Navrhnout pole znovu |
 | src/features/import-leads/ui/SmartFieldMappingModal.tsx | 109 | ✕ |
-| src/features/import-leads/ui/SmartFieldMappingModal.tsx | 206 | Zrušit |
-| src/features/import-leads/ui/SmartFieldMappingModal.tsx | 213 | Potvrdit mapování ( \| polí) |
+| src/features/import-leads/ui/SmartFieldMappingModal.tsx | 207 | Zrušit |
+| src/features/import-leads/ui/SmartFieldMappingModal.tsx | 214 | Potvrdit mapování ( \| polí) |
 | src/features/import-leads/ui/TablePreviewModal.tsx | 34 | [dynamic/icon] |
 | src/features/import-leads/ui/TablePreviewModal.tsx | 83 | Zavřít náhled |
 | src/features/lead-files/ui/VoiceNotesModal.tsx | 99 | ✕ |
@@ -247,13 +247,18 @@ Následující tabulky zachycují staticky zjistitelné popisky. `[dynamic/icon]
 
 | Soubor | Řádek | Text |
 | --- | ---: | --- |
+| src/app/App.tsx | 568 | Zavřít oznámení |
 | src/app/providers/ErrorBoundary.tsx | 103 | Vymaže mezipaměť a obnoví tovární stav |
-| src/features/import-leads/ui/CSVImportModal.tsx | 210 | Nahrát jiný soubor |
+| src/features/import-leads/ui/CSVImportModal.tsx | 129 | Zavřít import |
+| src/features/import-leads/ui/CSVImportModal.tsx | 205 | Vybrat jiný soubor |
+| src/features/import-leads/ui/CSVImportModal.tsx | 212 | Nahrát jiný soubor |
+| src/features/import-leads/ui/SmartFieldMappingModal.tsx | 110 | Zavřít mapování |
 | src/features/import-leads/ui/TablePreviewModal.tsx | 35 | Zavřít náhled |
 | src/features/lead-files/ui/VoiceNotesModal.tsx | 99 | Zavřít hlasové poznámky |
 | src/features/manage-integrations/ui/ConnectorSetup.tsx | 81 | Kopírovat kód |
 | src/features/manage-leads/ui/lead-tabs/DocumentsTab.tsx | 98 | Smazat poznámku |
 | src/features/manage-leads/ui/lead-tabs/DocumentsTab.tsx | 102 | Smazat soubor |
+| src/features/onboarding-checklist/ui/OnboardingChecklist.tsx | 28 | `Otevřít krok ${title}` |
 | src/pages/admin/companies/ui/Companies.tsx | 82 | Obnovit adresář |
 | src/pages/admin/companies/ui/Companies.tsx | 102 | Znovu poslat pozvánku |
 | src/pages/admin/companies/ui/Companies.tsx | 103 | Kopírovat odkaz formuláře |
@@ -572,7 +577,7 @@ Následující tabulky zachycují staticky zjistitelné popisky. `[dynamic/icon]
 | src/app/SubscriptionGuard.tsx | 73 | [dynamic] |
 | src/features/employee-workflow/ui/EmployeeDashboard.tsx | 44 | [dynamic] |
 | src/features/export-company-data/ui/CompanyDataExport.tsx | 45 | [dynamic] |
-| src/features/import-leads/ui/CSVImportModal.tsx | 292 | [dynamic] |
+| src/features/import-leads/ui/CSVImportModal.tsx | 294 | [dynamic] |
 | src/features/manage-integrations/ui/ConnectorMapping.tsx | 98 | Nejdřív opravte mapování. Import s chybami nelze schválit. |
 | src/features/manage-integrations/ui/ConnectorMapping.tsx | 101 | [dynamic] |
 | src/features/manage-integrations/ui/ConnectorSetup.tsx | 88 | [dynamic] |

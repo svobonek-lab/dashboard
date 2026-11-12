@@ -565,7 +565,7 @@ function AppContent() {
           }`}>
             <span className={`w-2.5 h-2.5 rounded-full ${toast.type === 'error' ? 'bg-rose-500 animate-pulse' : 'bg-emerald-400'}`}></span>
             <span>{toast.message}</span>
-            <button onClick={() => setToast(null)} className="ml-2 text-slate-400 hover:text-white font-bold text-xs">✕</button>
+            <button type="button" aria-label="Zavřít oznámení" onClick={() => setToast(null)} className="ml-2 text-slate-400 hover:text-white font-bold text-xs">✕</button>
           </div>
         </div>
       )}
