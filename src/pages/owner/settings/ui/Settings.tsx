@@ -60,19 +60,19 @@ export const OwnerSettingsPage: React.FC = () => {
 
   const save = async (event: React.FormEvent) => {
     event.preventDefault();
-    if (!canManageCompany(dbUser?.role) || !currentOrg?.id) { setState({ kind: 'error', message: 'Firemní profil může upravit pouze majitel firmy.' }); return; }
+    if (!canManageCompany(dbUser?.role) || !currentOrg?.id) { setState({ kind: 'error', message: 'Firemní profil se neuložil. O úpravu požádejte majitele firmy.' }); return; }
     setState({ kind: 'saving' });
     try {
       await updateBrandingAdmin(currentOrg.id, form.name.trim(), form.color, form.logo, { email: form.email.trim(), phone: form.phone.trim(), address: form.address.trim(), email_notifications: form.emailNotifications });
-      setState({ kind: 'success', message: 'Firemní profil byl uložen.' });
+      setState({ kind: 'success', message: 'Firemní profil uložen.' });
     } catch (error) {
-      setState({ kind: 'error', message: error instanceof Error ? error.message : 'Firemní profil se nepodařilo uložit.' });
+      setState({ kind: 'error', message: 'Firemní profil se neuložil. Zkontrolujte údaje a zkuste to znovu.' });
     }
   };
 
   const readLogo = (file?: File) => {
     if (!file) return;
-    if (!file.type.startsWith('image/') || file.size > 1024 * 1024) { setState({ kind: 'error', message: 'Logo musí být obrázek do 1 MB.' }); return; }
+    if (!file.type.startsWith('image/') || file.size > 1024 * 1024) { setState({ kind: 'error', message: 'Logo se nenačetlo. Vyberte obrázek do 1 MB.' }); return; }
     const reader = new FileReader();
     reader.onload = () => setForm((current) => ({ ...current, logo: String(reader.result || '') }));
     reader.readAsDataURL(file);
@@ -83,7 +83,7 @@ export const OwnerSettingsPage: React.FC = () => {
   const openBillingPortal = async () => {
     setBillingBusy(true); setBillingError('');
     try { await startBillingPortal(); }
-    catch (error) { setBillingError(error instanceof Error ? error.message : 'Správu plateb se nepodařilo otevřít.'); setBillingBusy(false); }
+    catch { setBillingError('Správa plateb se neotevřela. Zkuste to znovu.'); setBillingBusy(false); }
   };
 
   return (

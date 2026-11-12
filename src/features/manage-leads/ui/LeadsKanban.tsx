@@ -90,8 +90,8 @@ export const LeadsKanban: React.FC<LeadsKanbanProps> = ({
       });
       await onAddLead(newLead);
       setIsModalOpen(false);
-    } catch (error) {
-      setSubmitError(error instanceof Error ? error.message : 'Poptávku se nepodařilo uložit.');
+    } catch {
+      setSubmitError('Poptávka se nevytvořila. Zkontrolujte údaje a zkuste to znovu.');
     } finally {
       setIsSubmitting(false);
     }
@@ -115,7 +115,7 @@ export const LeadsKanban: React.FC<LeadsKanbanProps> = ({
             style={{ backgroundColor: 'var(--brand-primary)', color: '#ffffff' }}
           >
             <Plus className="w-4 h-4" />
-            <span>Nová zakázka / Poptávka</span>
+            <span>Přidat poptávku</span>
           </button>
           )}
         </div>
@@ -228,7 +228,7 @@ export const LeadsKanban: React.FC<LeadsKanbanProps> = ({
                   className="w-full sm:w-auto px-6 py-3 rounded-xl font-extrabold shadow-md hover:shadow-lg transition-all text-center order-1 sm:order-2 cursor-pointer"
                   style={{ backgroundColor: 'var(--brand-primary)', color: '#ffffff' }}
                 >
-                  {isSubmitting ? 'Ukládám…' : 'Vytvořit zakázku'}
+                  {isSubmitting ? 'Vytvářím zakázku…' : 'Vytvořit zakázku'}
                 </button>
               </div>
             </form>
@@ -409,8 +409,9 @@ export const LeadsKanban: React.FC<LeadsKanbanProps> = ({
                   })}
 
                   {columnLeads.length === 0 && (
-                    <div className="h-40 flex items-center justify-center text-xs text-slate-500 border border-dashed border-slate-300 rounded-2xl bg-white/50">
-                      Žádné zakázky
+                    <div className="h-40 flex flex-col items-center justify-center text-xs text-slate-500 border border-dashed border-slate-300 rounded-2xl bg-white/50">
+                      <p>V tomto kroku zatím není žádná zakázka.</p>
+                      <button type="button" onClick={() => { if (readOnly) { setActiveMobileStatus('New'); requestAnimationFrame(() => document.getElementById('kanban-col-New')?.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'start' })); } else setIsModalOpen(true); }} className="mt-2 font-semibold text-blue-700">{readOnly ? 'Zobrazit nové poptávky' : 'Přidat poptávku'}</button>
                     </div>
                   )}
                 </div>

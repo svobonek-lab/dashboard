@@ -95,15 +95,15 @@ export const LandingPage: React.FC = () => {
 
     // Validation: name min. 2 chars, phone min. 5 chars
     if (bookingName.trim().length < 2) {
-      setBookingError('Zadejte prosím platné jméno (minimálně 2 znaky).');
+      setBookingError('Žádost se nepřipravila. Zadejte jméno alespoň se dvěma znaky.');
       return;
     }
     if (bookingPhone.trim().length < 5) {
-      setBookingError('Zadejte prosím platné telefonní číslo (minimálně 5 znaků).');
+      setBookingError('Žádost se nepřipravila. Zadejte telefon alespoň s pěti číslicemi.');
       return;
     }
     if (!bookingEmail.includes('@')) {
-      setBookingError('Zadejte prosím platný e-mail.');
+      setBookingError('Žádost se nepřipravila. Opravte e-mail a zkuste to znovu.');
       return;
     }
 
@@ -127,10 +127,10 @@ export const LandingPage: React.FC = () => {
         return;
       }
 
-      setBookingError('Obchodní kontakt zatím není nakonfigurovaný. Použijte prosím živé demo a vraťte se později.');
+      setBookingError('Kontakt se neotevřel. Prohlédněte si demo a žádost zkuste později.');
     } catch (err) {
       console.error('Sales contact handoff failed:', err);
-      setBookingError('Kontaktní cestu se nepodařilo otevřít. Zkuste to prosím znovu.');
+      setBookingError('Kontakt se neotevřel. Zkuste to znovu.');
     } finally {
       setIsBookingLoading(false);
     }
@@ -501,12 +501,12 @@ export const LandingPage: React.FC = () => {
               <span className="text-slate-500">· Operační systém pro české stavební firmy</span>
             </div>
             <div className="flex flex-wrap gap-4 text-slate-400">
-              <button onClick={() => navigate('/login')} className="hover:text-white transition-colors">Přihlášení</button>
-              <button onClick={() => DEMO_DESTINATION.url && window.location.assign(DEMO_DESTINATION.url)} disabled={!DEMO_DESTINATION.url} title={DEMO_DESTINATION.error || 'Otevřít skutečné demo StavbaFlow'} className="hover:text-white transition-colors disabled:cursor-not-allowed disabled:opacity-50">Interaktivní demo</button>
-              <button onClick={() => setIsBookingOpen(true)} className="hover:text-white transition-colors">Osobní ukázka (20 min)</button>
-              <button onClick={() => setActiveLegalModal('vop')} className="hover:text-white transition-colors">VOP</button>
-              <button onClick={() => setActiveLegalModal('gdpr')} className="hover:text-white transition-colors">GDPR & Soukromí</button>
-              <button onClick={() => setActiveLegalModal('dpa')} className="hover:text-white transition-colors">Zpracovatelská smlouva (DPA)</button>
+              <button onClick={() => navigate('/login')} className="hover:text-white transition-colors">Přihlásit se</button>
+              <button onClick={() => DEMO_DESTINATION.url && window.location.assign(DEMO_DESTINATION.url)} disabled={!DEMO_DESTINATION.url} title={DEMO_DESTINATION.error || 'Otevřít skutečné demo StavbaFlow'} className="hover:text-white transition-colors disabled:cursor-not-allowed disabled:opacity-50">Otevřít demo</button>
+              <button onClick={() => setIsBookingOpen(true)} className="hover:text-white transition-colors">Domluvit ukázku (20 min)</button>
+              <button onClick={() => setActiveLegalModal('vop')} className="hover:text-white transition-colors">Otevřít VOP</button>
+              <button onClick={() => setActiveLegalModal('gdpr')} className="hover:text-white transition-colors">Otevřít zásady soukromí</button>
+              <button onClick={() => setActiveLegalModal('dpa')} className="hover:text-white transition-colors">Otevřít zpracovatelskou smlouvu</button>
             </div>
           </div>
           {!COMPANY_LEGAL_DETAILS_CONFIGURED && (
@@ -539,6 +539,7 @@ export const LandingPage: React.FC = () => {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-in fade-in">
           <div className="bg-white rounded-3xl p-6 sm:p-8 max-w-2xl w-full max-h-[85vh] overflow-y-auto shadow-2xl border border-slate-200 space-y-4 relative text-slate-800 text-xs leading-relaxed">
             <button
+              aria-label="Zavřít právní dokument"
               onClick={() => setActiveLegalModal(null)}
               className="absolute top-4 right-4 p-2 text-slate-400 hover:text-slate-700 rounded-full"
             >

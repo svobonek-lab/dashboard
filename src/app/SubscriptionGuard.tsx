@@ -28,7 +28,7 @@ function SubscriptionGuardComponent({ children }: SubscriptionGuardProps) {
     try {
       await startSubscriptionCheckout();
     } catch (error) {
-      setCheckoutError(error instanceof Error ? error.message : 'Platební stránku se nepodařilo otevřít.');
+      setCheckoutError('Platební stránka se neotevřela. Zkuste to znovu.');
       setIsOpeningCheckout(false);
     }
   }, [isOpeningCheckout]);
@@ -68,7 +68,7 @@ function SubscriptionGuardComponent({ children }: SubscriptionGuardProps) {
           disabled={isOpeningCheckout}
           className="mt-7 inline-flex min-h-12 w-full items-center justify-center rounded-2xl bg-slate-950 px-5 py-3 text-sm font-extrabold text-white transition hover:bg-slate-800 disabled:cursor-wait disabled:opacity-60"
         >
-          {isOpeningCheckout ? 'Otevírám platbu…' : 'Přejít k platbě'}
+          {isOpeningCheckout ? 'Otevírám platební stránku…' : 'Otevřít platební stránku'}
         </button>
         {checkoutError ? <p role="alert" className="mt-4 text-sm font-semibold text-rose-700">{checkoutError}</p> : null}
       </section>

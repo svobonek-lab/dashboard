@@ -154,7 +154,7 @@ test('sign in and recovery screens load without submitting a request', async ({ 
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('/login');
   await expect(page.getByRole('heading', { name: /přihlášení/i })).toBeVisible();
-  await page.getByRole('button', { name: /zapomenuté heslo/i }).click();
+  await page.getByRole('button', { name: /obnovit heslo/i }).click();
   await expect(page.getByRole('heading', { name: 'Obnovit heslo' })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Odeslat bezpečný odkaz' })).toBeVisible();
 });
@@ -184,7 +184,7 @@ test('owner overview keeps statuses visible on mobile and can filter work awaiti
   await page.goto('/demo');
   const rows = page.locator('.workspace-list-row');
   await expect(rows.first().locator('.workspace-row-status')).toBeVisible();
-  const filter = page.getByRole('button', { name: /^K vyřízení/ });
+  const filter = page.getByRole('button', { name: /^Zobrazit k vyřízení/ });
   await filter.click();
   await expect(filter).toHaveAttribute('aria-pressed', 'true');
   for (const status of await rows.locator('.workspace-row-status').allTextContents()) {
@@ -276,7 +276,7 @@ test('recovery failure gives a safe next step without exposing provider text', a
   }));
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('/login');
-  await page.getByRole('button', { name: /zapomenuté heslo/i }).click();
+  await page.getByRole('button', { name: /obnovit heslo/i }).click();
   await page.getByLabel('E-mail').fill('synthetic@example.test');
   await page.getByRole('button', { name: 'Odeslat bezpečný odkaz' }).click();
   await expect(page.getByRole('alert')).toContainText('Požádejte správce StavbaFlow o pomoc.');
@@ -290,7 +290,7 @@ test('recovery success is shown only after the mocked API confirms a request', a
     await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ requested: true, message: 'Pokud účet existuje, přijde na něj bezpečný odkaz.' }) });
   });
   await page.goto('/login');
-  await page.getByRole('button', { name: /zapomenuté heslo/i }).click();
+  await page.getByRole('button', { name: /obnovit heslo/i }).click();
   await page.getByLabel('E-mail').fill('Synthetic@Example.test');
   await page.getByRole('button', { name: 'Odeslat bezpečný odkaz' }).click();
   await expect(page.getByRole('status')).toContainText('Pokud účet existuje, přijde na něj bezpečný odkaz.');

@@ -27,11 +27,12 @@ export const TablePreviewModal: React.FC<TablePreviewModalProps> = ({
               <Table2 className="w-5 h-5 text-indigo-600" />
             </div>
             <div>
-              <h2 className="text-lg font-black text-slate-900 tracking-tight">Preview Tables & Data</h2>
+              <h2 className="text-lg font-black text-slate-900 tracking-tight">Náhled tabulek a dat</h2>
               <p className="text-xs text-slate-500 font-medium">Náčrt struktury databáze a náhled záznamů</p>
             </div>
           </div>
           <button
+            aria-label="Zavřít náhled"
             onClick={onClose}
             className="p-2 text-slate-400 hover:text-slate-700 rounded-xl hover:bg-slate-100 transition-colors"
           >
@@ -79,7 +80,7 @@ export const TablePreviewModal: React.FC<TablePreviewModalProps> = ({
                     {sampleRows.length === 0 && (
                       <tr>
                         <td colSpan={sampleColumns.length || 1} className="px-4 py-8 text-center text-slate-500">
-                          Žádná data k náhledu.
+                          <p>V této tabulce zatím nejsou data k náhledu.</p><button type="button" onClick={onClose} className="mt-2 font-semibold text-blue-700">Zavřít náhled</button>
                         </td>
                       </tr>
                     )}

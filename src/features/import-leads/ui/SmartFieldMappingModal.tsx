@@ -104,7 +104,7 @@ export const SmartFieldMappingModal: React.FC<SmartFieldMappingModalProps> = ({
               className="px-3 py-1.5 text-xs font-bold text-slate-600 hover:text-cyan-700 bg-white hover:bg-slate-100 border border-slate-200 rounded-xl flex items-center gap-1.5 transition-all shadow-sm cursor-pointer"
             >
               <RefreshCw className="w-3.5 h-3.5" />
-              Znovu detekovat AI
+              Navrhnout pole znovu
             </button>
             <button
               onClick={onClose}

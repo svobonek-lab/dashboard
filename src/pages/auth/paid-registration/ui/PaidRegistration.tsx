@@ -48,7 +48,7 @@ export function PaidRegistrationPage(){
    if(companyError||!activationReady(members[0],company)){setMessage('Předplatné zatím není aktivované. Zkontrolujte stav za chvíli.');return;}
    sessionStorage.removeItem('sf_registration:'+data.user.id);
    window.location.assign('/dashboard');
-  }catch(e){setError(e instanceof Error?e.message:'Aktivaci se nepodařilo ověřit.');}
+  }catch{setError('Aktivace se neověřila. Přihlaste se znovu a zopakujte kontrolu.');}
   finally{setBusy(false);}
  },[]);
  useEffect(()=>{
@@ -74,7 +74,7 @@ export function PaidRegistrationPage(){
    setPassword('');
    if(!result.data.session)setMessage('Otevřete potvrzovací e-mail. Poté se sem vraťte a přihlaste.');
    else setUser(result.data.user);
-  }catch(e){setError(e instanceof Error?e.message:'Přihlášení se nepodařilo.');}
+  }catch{setError(signIn?'Přihlášení se nezdařilo. Zkontrolujte e-mail a heslo a zkuste to znovu.':'Účet se nevytvořil. Zkontrolujte údaje a zkuste to znovu.');}
   finally{setBusy(false);}
  };
  const checkout=async(event:React.FormEvent)=>{
@@ -97,7 +97,7 @@ export function PaidRegistrationPage(){
    const target=new URL(result.url);
    if(target.protocol!=='https:'||target.hostname!=='checkout.stripe.com')throw new Error('Platební odkaz není platný.');
    window.location.assign(target.toString());
-  }catch(e){setError(e instanceof Error?e.message:'Platbu se nepodařilo připravit.');}
+  }catch{setError('Platební stránka se nepřipravila. Zkontrolujte údaje a zkuste to znovu.');}
   finally{setBusy(false);}
  };
  const input='mt-2 w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-blue-500';
@@ -115,12 +115,12 @@ export function PaidRegistrationPage(){
        <h2 className="text-xl font-semibold">{signIn?'Přihlášení k registraci':'Vytvořte svůj účet'}</h2>
        <label className="block text-sm">Pracovní e-mail<input className={input} type="email" autoComplete="email" required value={email} onChange={e=>setEmail(e.target.value)}/></label>
        <label className="block text-sm">Heslo<input className={input} type="password" minLength={12} autoComplete={signIn?'current-password':'new-password'} required value={password} onChange={e=>setPassword(e.target.value)}/></label>
-       <button className={button} disabled={busy}>{busy?'Chvíli strpení…':signIn?'Přihlásit se':'Ověřit e-mail'}</button>
-       <button type="button" className="text-sm underline" onClick={()=>{setSignIn(!signIn);setError('');}}>{signIn?'Vytvořit nový účet':'Už mám ověřený účet'}</button>
+       <button className={button} disabled={busy}>{busy?signIn?'Přihlašuji…':'Ověřuji e-mail…':signIn?'Přihlásit se':'Ověřit e-mail'}</button>
+       <button type="button" className="text-sm underline" onClick={()=>{setSignIn(!signIn);setError('');}}>{signIn?'Vytvořit nový účet':'Přihlásit se s ověřeným účtem'}</button>
       </form>:returning?<div className="space-y-5">
        <h2 className="text-xl font-semibold">Připravujeme váš workspace</h2>
        <p className="text-sm leading-6 text-slate-600">Platbu ověřujeme u Stripe. Přístup zpřístupníme po potvrzení a vytvoření firmy.</p>
-       <button className={button} disabled={busy} onClick={()=>void checkActivation()}>{busy?'Ověřuji…':'Zkontrolovat aktivaci'}</button>
+       <button className={button} disabled={busy} onClick={()=>void checkActivation()}>{busy?'Kontroluji aktivaci…':'Zkontrolovat aktivaci'}</button>
       </div>:<form onSubmit={checkout} className="space-y-5">
        <h2 className="text-xl font-semibold">Připravte svou firmu</h2><p className="break-all text-sm text-slate-500">{user.email}</p>
        <p className="rounded-xl bg-slate-50 p-4 text-sm text-slate-700">Vybraný tarif: <strong>{plan==='starter'?'Start':plan==='growth'?'Růst':'Profi'}</strong>, {plan==='starter'?'1 990 Kč':plan==='growth'?'2 990 Kč':'4 990 Kč'} měsíčně bez DPH</p>
@@ -128,8 +128,8 @@ export function PaidRegistrationPage(){
        <label className="block text-sm">Název firmy<input className={input} required maxLength={160} value={companyName} onChange={e=>setCompanyName(e.target.value)}/></label>
        <label className="block text-sm">Adresa firmy ve StavbaFlow<input className={input} required pattern="[a-z0-9][a-z0-9-]{2,79}" placeholder="moje-stavebni-firma" value={slug} onChange={e=>setSlug(e.target.value)}/></label>
        <LegalConsentFields termsAccepted={terms} dpaAccepted={dpa} onTermsAcceptedChange={setTerms} onDpaAcceptedChange={setDpa}/>
-       <button className={button} disabled={busy||!terms||!dpa||!user.email_confirmed_at||plan==='pro'}>{busy?'Připravuji…':plan==='pro'?'Profi se připravuje':'Pokračovat na platbu'}</button>
-       <button type="button" className="text-sm underline" disabled={busy} onClick={()=>void checkActivation()}>Už jsem zaplatil — zkontrolovat aktivaci</button>
+       <button className={button} disabled={busy||!terms||!dpa||!user.email_confirmed_at||plan==='pro'}>{busy?'Otevírám platební stránku…':plan==='pro'?'Tarif Profi se připravuje':'Otevřít platební stránku'}</button>
+       <button type="button" className="text-sm underline" disabled={busy} onClick={()=>void checkActivation()}>Zkontrolovat aktivaci po platbě</button>
       </form>}
      {error&&<p role="alert" className="mt-5 text-sm text-red-700">{error}</p>}
      {message&&<p role="status" className="mt-5 text-sm text-slate-600">{message}</p>}

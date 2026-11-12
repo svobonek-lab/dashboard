@@ -31,7 +31,7 @@ export const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({ leads, onS
     setStatusError('');
     setUpdatingId(lead.id);
     try { await onUpdateLeadStatus(lead.id, next); }
-    catch (error) { setStatusError(error instanceof Error ? error.message : 'Stav zakázky se nepodařilo uložit.'); }
+    catch { setStatusError('Stav zakázky se neuložil. Zkontrolujte připojení a zkuste to znovu.'); }
     finally { setUpdatingId(null); }
   };
 
@@ -60,13 +60,13 @@ export const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({ leads, onS
                 </div>
                 <div className="flex shrink-0 flex-col gap-2 sm:w-48">
                   <button type="button" onClick={() => onSelectLead(lead)} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 hover:bg-slate-50">Otevřít detail </button>
-                  {next && onUpdateLeadStatus && <button type="button" disabled={updatingId === lead.id} onClick={() => advance(lead)} className="workspace-primary-action inline-flex min-h-11 items-center justify-center px-3 text-sm font-semibold disabled:cursor-wait disabled:opacity-60">{updatingId === lead.id ? 'Ukládám…' : nextStatusLabel[next] || 'Posunout stav'}</button>}
+                  {next && onUpdateLeadStatus && <button type="button" disabled={updatingId === lead.id} onClick={() => advance(lead)} className="workspace-primary-action inline-flex min-h-11 items-center justify-center px-3 text-sm font-semibold disabled:cursor-wait disabled:opacity-60">{updatingId === lead.id ? 'Ukládám stav zakázky…' : nextStatusLabel[next] || 'Posunout stav'}</button>}
                 </div>
               </div>
             </article>
           );
         })}
-        {!active.length && <div className="workspace-empty-state px-6 py-14 text-center"><CheckCircle2 className="mx-auto h-8 w-8 text-emerald-600" /><h2 className="mt-3 text-base font-semibold text-slate-950">Aktuálně nemáte přiřazenou práci</h2><p className="mt-1 text-sm text-slate-500">Nové zakázky se zde objeví po přiřazení majitelem firmy.</p></div>}
+        {!active.length && <div className="workspace-empty-state px-6 py-14 text-center"><CheckCircle2 className="mx-auto h-8 w-8 text-emerald-600" /><p className="mt-3 text-sm text-slate-500">Aktuálně nemáte žádnou aktivní přiřazenou zakázku.</p><button type="button" onClick={() => window.location.reload()} className="mt-3 font-semibold text-blue-700">Obnovit zakázky</button></div>}
       </section>
     </div>
   );

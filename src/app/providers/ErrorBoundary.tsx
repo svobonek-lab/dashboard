@@ -102,7 +102,7 @@ export class ErrorBoundary extends React.Component<Props, State> {
                   className="py-2 px-3 rounded-xl bg-slate-700 hover:bg-rose-900/40 text-slate-800 hover:text-rose-300 text-xs flex items-center justify-center gap-1.5 transition-colors"
                   title="Vymaže mezipaměť a obnoví tovární stav"
                 >
-                  <Trash2 className="w-3.5 h-3.5" /> Reset mezipaměti
+                  <Trash2 className="w-3.5 h-3.5" /> Vymazat mezipaměť
                 </button>
               </div>
             </div>

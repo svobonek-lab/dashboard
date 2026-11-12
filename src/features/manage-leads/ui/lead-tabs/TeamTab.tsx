@@ -3,6 +3,7 @@ import { CheckCircle2, Mail, UserRoundCheck } from 'lucide-react';
 import type { Lead } from '../../../../entities/lead';
 import type { Employee } from '../../../../entities/employee';
 import { buildLeadAssignment, getAssignableEmployees } from '../../../../entities/lead';
+import { useRouter } from '../../../../shared/lib/router';
 
 interface TeamTabProps {
   lead: Lead;
@@ -12,6 +13,7 @@ interface TeamTabProps {
 }
 
 export const TeamTab: React.FC<TeamTabProps> = ({ lead, employees, onNotice, onUpdateLead }) => {
+  const { navigate } = useRouter();
   const assignableEmployees = useMemo(
     () => getAssignableEmployees(employees, lead.organization_id),
     [employees, lead.organization_id],
@@ -34,10 +36,10 @@ export const TeamTab: React.FC<TeamTabProps> = ({ lead, employees, onNotice, onU
       const updatedLead = buildLeadAssignment(lead, selectedEmployeeId, assignableEmployees, lead.organization_id);
       await onUpdateLead(updatedLead);
       onNotice(selectedEmployeeId
-        ? `Zakázka byla přiřazena pracovníkovi ${updatedLead.assignedEmployeeName}.`
-        : 'Přiřazení pracovníka bylo zrušeno.');
-    } catch (cause) {
-      setError(cause instanceof Error ? cause.message : 'Přiřazení se nepodařilo uložit.');
+        ? `Přiřazení uloženo: ${updatedLead.assignedEmployeeName}.`
+        : 'Přiřazení odebráno.');
+    } catch {
+      setError('Přiřazení se neuložilo. Zkontrolujte připojení a zkuste to znovu.');
     } finally {
       setSaving(false);
     }
@@ -109,13 +111,14 @@ export const TeamTab: React.FC<TeamTabProps> = ({ lead, employees, onNotice, onU
               disabled={saving || selectedEmployeeId === (lead.assignedEmployeeId || '')}
               className="px-5 py-3 bg-slate-900 hover:bg-slate-800 disabled:bg-slate-300 text-white rounded-xl font-bold text-xs transition-colors"
             >
-              {saving ? 'Ukládám…' : 'Uložit přiřazení'}
+              {saving ? 'Ukládám přiřazení…' : 'Uložit přiřazení'}
             </button>
           </div>
           {assignableEmployees.length === 0 && (
-            <p className="rounded-xl bg-amber-50 px-3 py-2 text-xs font-medium text-amber-800">
-              Firma zatím nemá aktivního zaměstnance. Nejprve dokončete jeho pozvánku a aktivaci.
-            </p>
+            <div className="rounded-xl bg-amber-50 px-3 py-2 text-xs font-medium text-amber-800">
+              <p>Firma zatím nemá aktivního zaměstnance pro přiřazení.</p>
+              <button type="button" onClick={() => navigate('/employees')} className="mt-2 font-semibold underline">Otevřít tým</button>
+            </div>
           )}
           {error && <p role="alert" className="rounded-xl bg-red-50 px-3 py-2 text-xs font-bold text-red-700">{error}</p>}
         </form>

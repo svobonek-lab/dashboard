@@ -21,6 +21,7 @@ export const PhotoLightbox: React.FC<PhotoLightboxProps> = ({
   return (
     <div className="fixed inset-0 bg-slate-50/90 backdrop-blur-md z-50 flex items-center justify-center p-4">
       <button
+        aria-label="Zavřít fotografii"
         onClick={onClose}
         className="absolute top-6 right-6 w-10 h-10 rounded-full bg-white border border-slate-200 text-slate-900 flex items-center justify-center hover:bg-slate-800 transition-all z-10"
       >

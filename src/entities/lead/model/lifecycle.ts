@@ -37,7 +37,7 @@ export function canTransitionLeadStatus(
 export function getLeadTransitionError(from: LeadStatus, to: LeadStatus, role: LifecycleRole): string | null {
   if (canTransitionLeadStatus(from, to, role)) return null;
   if (role === 'employee' && (from === 'Completed' || from === 'Lost')) {
-    return 'Dokončenou nebo stornovanou zakázku může znovu otevřít pouze majitel.';
+    return 'Stav zakázky se nezměnil. O znovuotevření dokončené nebo stornované zakázky požádejte majitele.';
   }
-  return 'Tento krok není v pracovním postupu povolený.';
+  return 'Stav zakázky se nezměnil. Vyberte následující povolený krok.';
 }

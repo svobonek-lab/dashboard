@@ -69,7 +69,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
             placeholder="Hledat poptávku nebo otevřít část systému…"
             className="w-full text-slate-800 placeholder-slate-400 text-base focus:outline-none bg-transparent font-medium"
           />
-          <button onClick={onClose} className="p-1 rounded-lg hover:bg-slate-100 text-slate-500 hover:text-slate-600">
+          <button aria-label="Zavřít hledání" onClick={onClose} className="p-1 rounded-lg hover:bg-slate-100 text-slate-500 hover:text-slate-600">
             <X className="w-5 h-5" />
           </button>
         </div>

@@ -67,7 +67,7 @@ export const EmployeeSchedulePage: React.FC<EmployeeSchedulePageProps> = ({ lead
       <div className="space-y-3">
         {scheduleItems.length === 0 ? (
           <div className="rounded-3xl border border-dashed border-slate-200 bg-slate-50 p-8 text-center text-xs text-slate-500">
-            Nemáte žádné přiřazené termíny. Harmonogram se zobrazí po přiřazení zakázky.
+            <p>Nemáte žádné přiřazené termíny.</p><button type="button" onClick={() => window.location.reload()} className="mt-3 font-semibold text-blue-700">Obnovit harmonogram</button>
           </div>
         ) : scheduleItems.map((item, i) => (
           <div

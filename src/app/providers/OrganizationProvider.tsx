@@ -142,7 +142,7 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
         } catch (err: any) {
           console.error('Supabase Auth init error:', err);
           Sentry.captureException(err);
-          setError(err.message || 'Chyba při připojování k Supabase');
+          setError('Přihlášení se neobnovilo. Obnovte stránku a přihlaste se znovu.');
           const activeSession = canUseLocalMockAuth(IS_PRODUCTION) ? LocalSupabaseMock.getActiveSessionUser() : null;
           if (activeSession) {
             const allOrgs = LocalSupabaseMock.getOrganizations();
@@ -202,7 +202,7 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
   // Helper: Setup mock local data in state
   const setupLocalDemoData = () => {
     if (!canUseLocalMockAuth(IS_PRODUCTION)) {
-      setError('Databáze není nakonfigurována nebo neodpovídá. Přihlášení do lokálního režimu je v produkci vypnuté.');
+      setError('Přihlášení není dostupné. Obnovte stránku a pokud problém trvá, kontaktujte podporu.');
       setUser(null);
       setDbUser(null);
       setOrganizations([]);
@@ -301,7 +301,7 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
         }
         const identity = await resolveOrAcceptAppIdentity(supabase, { id: userId, email, user_metadata: userMetadata });
         if (!identity) {
-          setSchemaError('Účet nemá aktivní členství v žádné firmě. Kontaktujte majitele workspace.');
+          setSchemaError('Účet nemá přístup k žádné aktivní firmě. Požádejte majitele firmy o pozvánku.');
           setDbUser(null);
           setCurrentOrg(null);
           setOrganizations([]);
@@ -500,10 +500,10 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
       Sentry.captureException(err);
       if (err?.code === 'PGRST125' || (err?.message && err.message.includes('PGRST125'))) {
         if (IS_PRODUCTION) {
-          setSchemaError('Databáze není správně nastavená. Kontaktujte podporu (support@stavbacore.cz).');
+          setSchemaError('Firemní data se nenačetla. Kontaktujte podporu na support@stavbacore.cz.');
           throw err;
         } else {
-          setSchemaError('V Supabase databázi chybí tabulky. CRM automaticky spustilo lokální režim (Local Storage) pro zachování plné funkčnosti.');
+          setSchemaError('Firemní data se nenačetla. Obnovte stránku nebo kontaktujte podporu.');
           setupLocalDemoData();
         }
       } else if (RUNTIME_POLICY.allowLocalDataFallback) {
@@ -526,7 +526,7 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
 
     if (!isSupabaseConfigured || !supabase) {
       if (!(import.meta as any).env?.DEV) {
-        const errorMsg = 'Přihlášení selhalo. Databáze není nakonfigurována.';
+        const errorMsg = 'Přihlášení není dostupné. Obnovte stránku a pokud problém trvá, kontaktujte podporu.';
         setError(errorMsg);
         throw new Error(errorMsg);
       }
@@ -537,14 +537,14 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
       // 1. Find user by email in local storage
       const foundUser = allUsers.find((u: any) => u.email?.toLowerCase() === cleanEmail.toLowerCase());
       if (!foundUser) {
-        const errorMsg = 'Nesprávný e-mail nebo heslo.';
+        const errorMsg = 'Přihlášení se nezdařilo. Zkontrolujte e-mail a heslo.';
         setError(errorMsg);
         throw new Error(errorMsg);
       }
 
       // Password validation in mock mode
       if (!foundUser.password || foundUser.password !== pass) {
-        const errorMsg = 'Nesprávný e-mail nebo heslo.';
+        const errorMsg = 'Přihlášení se nezdařilo. Zkontrolujte e-mail a heslo.';
         setError(errorMsg);
         throw new Error(errorMsg);
       }
@@ -587,7 +587,7 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
         password: pass
       });
       if (authErr) {
-        const errorMsg = 'Nesprávný e-mail nebo heslo. Ověřte zadané údaje.';
+        const errorMsg = 'Přihlášení se nezdařilo. Zkontrolujte e-mail a heslo a zkuste to znovu.';
         setError(errorMsg);
         throw new Error(errorMsg);
       }
@@ -646,7 +646,7 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
     } catch (err: any) {
       console.error('login error:', err);
       Sentry.captureException(err);
-      setError(err.message || 'Přihlášení selhalo');
+      setError('Přihlášení se nezdařilo. Zkontrolujte e-mail a heslo a zkuste to znovu.');
       throw err;
     }
   };
@@ -696,7 +696,7 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
     setError(null);
     if (!isSupabaseConfigured || !supabase) {
       if (!(import.meta as any).env?.DEV) {
-        const errorMsg = 'Registrace selhala. Databáze není nakonfigurována.';
+        const errorMsg = 'Účet se nevytvořil. Obnovte stránku a zkuste to znovu.';
         setError(errorMsg);
         throw new Error(errorMsg);
       }
@@ -774,7 +774,7 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
     } catch (err: any) {
       console.error('signUp error:', err);
       Sentry.captureException(err);
-      setError(err.message || 'Registrace selhala');
+      setError('Účet se nevytvořil. Zkontrolujte údaje a zkuste to znovu.');
       throw err;
     }
   };
@@ -845,7 +845,7 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
       setOrganizations(prev => [...prev, data]);
       return data as Organization;
     } catch (err: any) {
-      setError(err.message || 'Vytvoření organizace selhalo');
+      setError('Firma se nevytvořila. Zkontrolujte údaje a zkuste to znovu.');
       throw err;
     }
   };
@@ -1224,7 +1224,7 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
       Sentry.captureException(err);
       if (err?.code === 'PGRST125' || (err?.message && err.message.includes('PGRST125')) || err?.code === '22P02') {
         if (IS_PRODUCTION && err?.code === 'PGRST125') {
-          setSchemaError('Databáze není správně nastavená. Kontaktujte podporu (support@stavbacore.cz).');
+        setSchemaError('Firemní data se nenačetla. Kontaktujte podporu na support@stavbacore.cz.');
           throw err;
         } else {
           return fetchLeadsLocal();
@@ -1816,7 +1816,7 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
     if (!currentOrg) return [];
 
     if (APP_SCHEMA_READS) {
-      setSchemaError('Zakázky čekají na ověřený app_* kontrakt pro projekty a úkoly.');
+      setSchemaError('Projekty a úkoly se zatím nenačetly. Kontaktujte podporu.');
       return [];
     }
 
@@ -1977,7 +1977,7 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
     }
 
     if (APP_SCHEMA_READS) {
-      setSchemaError('Platformní přehled firem čeká na oddělený app_* admin kontrakt.');
+      setSchemaError('Přehled firem se zatím nenačetl. Kontaktujte podporu.');
       return [];
     }
 

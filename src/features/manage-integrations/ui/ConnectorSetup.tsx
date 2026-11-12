@@ -29,8 +29,8 @@ export function ConnectorSetup({ companyId, onCreated, initialDriver, onDriverCh
     try {
       setEnrollment(await connectorClient.createEnrollment(companyId));
       onCreated();
-    } catch (cause) {
-      setError(cause instanceof Error ? cause.message : 'Připojení nelze připravit.');
+    } catch {
+      setError('Připojení se nepřipravilo. Zkontrolujte nastavení a zkuste to znovu.');
     } finally {
       setBusy(false);
     }
@@ -56,8 +56,8 @@ export function ConnectorSetup({ companyId, onCreated, initialDriver, onDriverCh
     } catch (cause) {
       const message = cause instanceof Error ? cause.message : '';
       setError(message === 'CONNECTOR_IMAGE_DIGEST_REQUIRED'
-        ? 'Instalační balíček zatím nelze stáhnout: čeká se na publikované a schválené neměnné vydání konektoru.'
-        : message || 'Balíček zatím nelze bezpečně připravit.');
+        ? 'Instalační balíček zatím není připravený. Počkejte na schválené vydání konektoru a zkuste stažení znovu.'
+        : 'Balíček se nepřipravil. Zkontrolujte nastavení a zkuste to znovu.');
     }
     finally { setPackageBusy(false); }
   };
@@ -82,7 +82,7 @@ export function ConnectorSetup({ companyId, onCreated, initialDriver, onDriverCh
         <ol className="mt-4 grid gap-2 text-xs leading-5 text-slate-600 sm:grid-cols-3"><li><strong className="text-slate-800">1.</strong> Stáhněte instalační balíček z prověřeného vydání.</li><li><strong className="text-slate-800">2.</strong> Uložte kód do souboru pouze na NAS.</li><li><strong className="text-slate-800">3.</strong> Po prvním spojení se kód zneplatní.</li></ol>
         <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-3"><p className="text-xs font-semibold text-amber-900">Jednorázový klíč konektoru</p><code className="mt-1 block break-all text-xs text-amber-950">{enrollment.connectorSecret}</code><p className="mt-1 text-xs text-amber-800">Uložte tento klíč pouze do souboru connector-identity na NAS. Po zavření stránky ho už nezobrazíme.</p></div>
         <button type="button" disabled={packageBusy} onClick={() => void downloadPackage()} className="mt-4 inline-flex min-h-10 items-center gap-2 rounded-xl bg-slate-950 px-4 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50"><Download className="h-4 w-4" />{packageBusy ? 'Připravuji balíček…' : 'Stáhnout balíček pro Synology'}</button>
-        {!imageReady && <p className="mt-2 text-xs text-amber-700">Stažení se otevře po publikaci a revizi neměnného konektoru. CI zatím nemá schválený image digest.</p>}
+        {!imageReady && <p className="mt-2 text-xs text-amber-700">Balíček bude ke stažení po schválení vydání konektoru.</p>}
         <p className="mt-3 text-xs text-slate-500">Platnost jednorázového kódu končí {new Date(enrollment.expiresAt).toLocaleString('cs-CZ')}. Přístupové údaje SQL doplňte jen na NAS; stáhnutý balíček obsahuje bezpečné zástupné hodnoty.</p>
       </div> : null}
       {error ? <p role="alert" className="mt-4 text-sm text-rose-700">{error}</p> : null}

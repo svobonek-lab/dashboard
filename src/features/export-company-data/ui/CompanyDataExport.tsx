@@ -26,7 +26,7 @@ export const CompanyDataExport: React.FC<{ companyId: string; role?: string }> =
         ? 'Export poptávek, týmu a dostupné historie se stáhl.'
         : 'Export poptávek a týmu se stáhl. Ověřitelná historie není v tomto prostředí dostupná.');
     } catch (exportError) {
-      setError(exportError instanceof Error ? exportError.message : 'Export se nepodařilo připravit.');
+      setError('Export se nepřipravil. Zkontrolujte připojení a zkuste ho stáhnout znovu.');
     } finally {
       setBusy(false);
     }
@@ -39,7 +39,7 @@ export const CompanyDataExport: React.FC<{ companyId: string; role?: string }> =
         <p className="mt-1 text-xs leading-5 text-slate-500">Stáhněte poptávky, tým a ověřitelnou historii dostupnou pro váš účet. Export neobsahuje interní identifikátory, přístupové údaje, tokeny ani hashe.</p>
       </div>
       <button type="button" disabled={busy || !companyId} onClick={() => void download()} className="workspace-secondary-action inline-flex min-h-11 items-center gap-2 px-4 text-sm font-semibold disabled:opacity-60">
-        <Download className="h-4 w-4" />{busy ? 'Připravuji export…' : 'Stáhnout CSV'}
+        <Download className="h-4 w-4" />{busy ? 'Připravuji CSV ke stažení…' : 'Stáhnout CSV'}
       </button>
       {message && <p role="status" className="text-xs font-medium text-emerald-700">{message}</p>}
       {error && <p role="alert" className="text-xs font-medium text-rose-700">{error}</p>}

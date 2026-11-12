@@ -8,7 +8,7 @@ export const AdminDashboardPage: React.FC = () => {
   const [companies, setCompanies] = useState<PlatformCompany[]>([]);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
-  useEffect(() => { listPlatformCompanies().then(setCompanies).catch((reason) => setError(reason instanceof Error ? reason.message : 'Přehled není dostupný.')).finally(() => setLoading(false)); }, []);
+  useEffect(() => { listPlatformCompanies().then(setCompanies).catch(() => setError('Přehled se nenačetl. Obnovte stránku a zkuste to znovu.')).finally(() => setLoading(false)); }, []);
   const ready = companies.filter((company) => company.onboarding_completed).length;
   return <div className="workspace-page">
     <header className="workspace-page-header"><div><p className="workspace-kicker">Provozní přehled</p><h1 className="workspace-title">Přehled platformy</h1><p className="workspace-subtitle">Souhrnná metadata firem, onboardingu a integrací.</p></div></header>

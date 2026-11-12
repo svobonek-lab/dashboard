@@ -47,15 +47,15 @@ export const WidgetIframePage: React.FC = () => {
   const submit = async (event: FormEvent) => {
     event.preventDefault();
     if (!company || !form.name.trim() || !form.phone.trim() || !form.projectType || !form.consent) {
-      setError('Doplňte jméno, telefon, typ práce a potvrďte souhlas.');
+      setError('Poptávka se neodeslala. Doplňte jméno, telefon, typ práce a potvrďte souhlas.');
       return;
     }
     if (form.name.trim().length > 120 || form.phone.trim().length > 30 || form.email.trim().length > 254 || form.address.trim().length > 250 || form.description.trim().length > 3500) {
-      setError('Některé pole překročilo povolenou délku.');
+      setError('Poptávka se neodeslala. Zkraťte příliš dlouhé údaje a zkuste to znovu.');
       return;
     }
     if (form.email && !/^\S+@\S+\.\S+$/.test(form.email)) {
-      setError('Zadejte platný e-mail.');
+      setError('Poptávka se neodeslala. Opravte e-mail a zkuste to znovu.');
       return;
     }
 
