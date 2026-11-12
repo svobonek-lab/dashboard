@@ -26,6 +26,7 @@ Stav k větvi `codex/czech-copy-review`. Inventář níže vzniká z `src/` př�
 | Export | „Připravuji export…“; surová chyba | „Stáhnout CSV“ → „Připravuji CSV ke stažení…“; při chybě znovu stáhnout |
 | Platební stránka | „Přejít k platbě“ → „Otevírám platbu…“ | „Otevřít platební stránku“ → „Otevírám platební stránku…“ |
 | Veřejná poptávka a kontakt | „Odesílám…“, „Otevírám kontakt...“ | „Odeslat poptávku“ → „Odesílám poptávku…“; „Otevřít rezervační kalendář“ → „Otevírám rezervační kalendář…“; „Připravit e-mail s žádostí“ → „Připravuji e-mail s žádostí…“ |
+| Nedostupný veřejný formulář | „Odkaz není platný nebo firma příjem poptávek zatím neaktivovala.“ | „Formulář se pro tento odkaz neotevřel. Požádejte firmu o nový odkaz.“ |
 | Nastavení profilu a plateb | „Zkusit znovu“, „Spravovat platbu“, „Ukládám…“ | „Ověřit režim znovu“ → „Ověřuji režim…“; „Otevřít správu plateb“ → „Otevírám správu plateb…“; „Uložit profil“ → „Ukládám profil…“ |
 | Konektor | Surové chyby mapování a příkazu; viditelné „image digest“ | Popis neuloženého mapování nebo nepotvrzené změny, výzva k opravě či opakování; text o schváleném vydání |
 | Admin firmy | „Nová firma“, „Zakládám…“, „Vytvářím…“; surové chyby akcí | „Založit firmu“, „Zakládám firmu a zvu vlastníka…“, „Spouštím podporu…“; chyba vždy popíše neprovedenou akci a další krok |

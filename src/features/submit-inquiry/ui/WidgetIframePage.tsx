@@ -105,7 +105,7 @@ export const WidgetIframePage: React.FC = () => {
       <section className="w-full max-w-lg rounded-3xl border border-slate-200 bg-white p-8 text-center shadow-sm">
         <AlertCircle className="mx-auto h-9 w-9 text-amber-500" />
         <h1 className="mt-4 text-xl font-semibold text-slate-950">Formulář není dostupný</h1>
-        <p className="mt-2 text-sm leading-6 text-slate-500">Odkaz není platný nebo firma příjem poptávek zatím neaktivovala.</p>
+        <p className="mt-2 text-sm leading-6 text-slate-500">Formulář se pro tento odkaz neotevřel. Požádejte firmu o nový odkaz.</p>
       </section>
     </main>
   );
