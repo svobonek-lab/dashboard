@@ -33,7 +33,10 @@ order by 2, 3;
 
 select n.nspname, p.proname,
        pg_catalog.pg_get_function_identity_arguments(p.oid) as arguments,
-       p.prosecdef as security_definer, p.proacl as execute_acl
+       p.prosecdef as security_definer, p.proacl as execute_acl,
+       pg_catalog.has_function_privilege('anon', p.oid, 'EXECUTE') as anon_execute,
+       pg_catalog.has_function_privilege('authenticated', p.oid, 'EXECUTE') as authenticated_execute,
+       pg_catalog.has_function_privilege('service_role', p.oid, 'EXECUTE') as service_execute
 from pg_catalog.pg_proc p
 join pg_catalog.pg_namespace n on n.oid = p.pronamespace
 where n.nspname = 'app_private'

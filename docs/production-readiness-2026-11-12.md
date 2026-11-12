@@ -56,12 +56,12 @@ RLS enabled is not proof of tenant isolation. [Supabase's RLS guide](https://sup
 Run the following **SELECTs only through the project-scoped read-only `supabase-ci` MCP** against the confirmed production project. Record capture time and project ref; retain the actual result in the reviewed report. Do not run them through another connector, direct credentials, the application or a browser SQL editor.
 
 ```sql
--- Public table names and RLS flags; catalog metadata only.
+-- Application-schema table names and RLS flags; catalog metadata only.
 select n.nspname as schema_name, c.relname as table_name,
        c.relrowsecurity as rls_enabled, c.relforcerowsecurity as force_rls
 from pg_catalog.pg_class c
 join pg_catalog.pg_namespace n on n.oid = c.relnamespace
-where n.nspname = 'public' and c.relkind in ('r', 'p')
+where n.nspname in ('public', 'app_private', 'storage') and c.relkind in ('r', 'p')
 order by 1, 2;
 
 -- Function signatures and security attributes; no body text.
@@ -71,7 +71,7 @@ select n.nspname as schema_name, p.proname as function_name,
        p.prosecdef as security_definer, p.proacl as execute_acl
 from pg_catalog.pg_proc p
 join pg_catalog.pg_namespace n on n.oid = p.pronamespace
-where n.nspname in ('public', 'app_private') and p.proname like 'app_%'
+where n.nspname in ('public', 'app_private')
 order by 1, 2, 3;
 
 -- Policy names and access metadata; no table rows.
@@ -83,7 +83,7 @@ select n.nspname as schema_name, c.relname as table_name,
 from pg_catalog.pg_policy p
 join pg_catalog.pg_class c on c.oid = p.polrelid
 join pg_catalog.pg_namespace n on n.oid = c.relnamespace
-where n.nspname in ('public', 'storage')
+where n.nspname in ('public', 'app_private', 'storage')
 order by 1, 2, 3;
 ```
 
