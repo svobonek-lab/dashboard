@@ -96,7 +96,7 @@ export const VoiceNotesModal: React.FC<VoiceNotesModalProps> = ({
               <p className="text-[11px] text-slate-500">Automatický přepis a strukturování zakázky ze staveniště</p>
             </div>
           </div>
-          <button onClick={onClose} className="text-slate-500 hover:text-slate-900 p-1 rounded-lg hover:bg-slate-800">
+          <button aria-label="Zavřít hlasové poznámky" onClick={onClose} className="text-slate-500 hover:text-slate-900 p-1 rounded-lg hover:bg-slate-800">
             ✕
           </button>
         </div>

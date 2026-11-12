@@ -54,6 +54,10 @@ test('public landing, demo, and login fit desktop, tablet, and phone widths', as
       if ([1440, 390].includes(width)) {
         if (['/landing', '/demo'].includes(route)) await expectSingleTypeface(page);
         await page.screenshot({ path: testInfo.outputPath(`${route.replaceAll('/', '-')}-${width}.png`), fullPage: true });
+        if (['/landing', '/demo', '/login'].includes(route) && [390, 1440].includes(width)) {
+          await page.evaluate(() => document.fonts.ready);
+          await expect(page).toHaveScreenshot(`${route.slice(1)}-${width}.png`, { fullPage: true });
+        }
       }
       if (route === '/demo') {
         await expect(page.getByRole('heading', { name: /dobrý den/i })).toBeVisible();
@@ -150,7 +154,7 @@ test('sign in and recovery screens load without submitting a request', async ({ 
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('/login');
   await expect(page.getByRole('heading', { name: /přihlášení/i })).toBeVisible();
-  await page.getByRole('button', { name: /zapomenuté heslo/i }).click();
+  await page.getByRole('button', { name: /obnovit heslo/i }).click();
   await expect(page.getByRole('heading', { name: 'Obnovit heslo' })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Odeslat bezpečný odkaz' })).toBeVisible();
 });
@@ -180,7 +184,7 @@ test('owner overview keeps statuses visible on mobile and can filter work awaiti
   await page.goto('/demo');
   const rows = page.locator('.workspace-list-row');
   await expect(rows.first().locator('.workspace-row-status')).toBeVisible();
-  const filter = page.getByRole('button', { name: /^K vyřízení/ });
+  const filter = page.getByRole('button', { name: /^Zobrazit k vyřízení/ });
   await filter.click();
   await expect(filter).toHaveAttribute('aria-pressed', 'true');
   for (const status of await rows.locator('.workspace-row-status').allTextContents()) {
@@ -230,6 +234,7 @@ test('synthetic owner signs in through the form and reaches the protected dashbo
   await expect(lead.getByText('Nová poptávka')).toBeVisible();
   await expectSingleTypeface(page);
   await page.screenshot({ path: testInfo.outputPath('dashboard-signed-in-1440.png') });
+  await expect(page).toHaveScreenshot('owner-dashboard-1440.png', { fullPage: true });
   await page.setViewportSize({ width: 390, height: 844 });
   await expect(page.getByRole('button', { name: 'Otevřít menu navigace' })).toBeVisible();
   await expect.poll(() => page.locator('aside.workspace-rail').evaluate((sidebar) => sidebar.getBoundingClientRect().right)).toBeLessThanOrEqual(1);
@@ -247,7 +252,8 @@ test('synthetic owner signs in through the form and reaches the protected dashbo
   await expect(lead.getByText('Nová poptávka')).toBeVisible();
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(390);
   await expectSingleTypeface(page);
-  await page.screenshot({ path: testInfo.outputPath('dashboard-signed-in-390.png'), animations: 'disabled' });
+  await page.screenshot({ path: testInfo.outputPath('dashboard-signed-in-390.png'), animations: 'disabled', fullPage: true });
+  await expect(page).toHaveScreenshot('owner-dashboard-390.png', { fullPage: true });
 });
 
 test('calculator sliders have accessible names and keyboard controls', async ({ page }) => {
@@ -270,7 +276,7 @@ test('recovery failure gives a safe next step without exposing provider text', a
   }));
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('/login');
-  await page.getByRole('button', { name: /zapomenuté heslo/i }).click();
+  await page.getByRole('button', { name: /obnovit heslo/i }).click();
   await page.getByLabel('E-mail').fill('synthetic@example.test');
   await page.getByRole('button', { name: 'Odeslat bezpečný odkaz' }).click();
   await expect(page.getByRole('alert')).toContainText('Požádejte správce StavbaFlow o pomoc.');
@@ -284,7 +290,7 @@ test('recovery success is shown only after the mocked API confirms a request', a
     await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ requested: true, message: 'Pokud účet existuje, přijde na něj bezpečný odkaz.' }) });
   });
   await page.goto('/login');
-  await page.getByRole('button', { name: /zapomenuté heslo/i }).click();
+  await page.getByRole('button', { name: /obnovit heslo/i }).click();
   await page.getByLabel('E-mail').fill('Synthetic@Example.test');
   await page.getByRole('button', { name: 'Odeslat bezpečný odkaz' }).click();
   await expect(page.getByRole('status')).toContainText('Pokud účet existuje, přijde na něj bezpečný odkaz.');

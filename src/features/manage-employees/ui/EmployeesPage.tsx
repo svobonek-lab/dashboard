@@ -33,9 +33,9 @@ export const EmployeesPage: React.FC<EmployeesPageProps> = ({ employees, leads, 
       onEmployeeAdded?.(employee);
       setInviteForm({ name: '', email: '', role: 'Montážník' });
       setIsInviteOpen(false);
-      setNotice({ kind: 'success', text: `Pozvánka pro ${employee.email || employee.name} byla vytvořena a zařazena k odeslání.` });
-    } catch (error) {
-      setNotice({ kind: 'error', text: error instanceof Error ? error.message : 'Pozvánku se nepodařilo vytvořit.' });
+      setNotice({ kind: 'success', text: `Pozvánka pro ${employee.email || employee.name} vytvořena a zařazena k odeslání.` });
+    } catch {
+      setNotice({ kind: 'error', text: 'Pozvánka se nevytvořila. Zkontrolujte údaje a zkuste to znovu.' });
     } finally { setIsInviting(false); }
   };
 
@@ -43,11 +43,12 @@ export const EmployeesPage: React.FC<EmployeesPageProps> = ({ employees, leads, 
     setBusyEmployee(employee.id);
     setNotice(null);
     try {
-      const result = action === 'resend' ? await resendEmployeeInvite(employee.id) : await resetEmployeePassword(employee.id);
+      if (action === 'resend') await resendEmployeeInvite(employee.id);
+      else await resetEmployeePassword(employee.id);
       if (action === 'resend') await fetchEmployees();
-      setNotice({ kind: 'success', text: result.message });
-    } catch (error) {
-      setNotice({ kind: 'error', text: error instanceof Error ? error.message : 'Akci se nepodařilo dokončit.' });
+      setNotice({ kind: 'success', text: action === 'resend' ? 'Pozvánka obnovena a zařazena k odeslání.' : 'Odkaz pro obnovu hesla zařazen k odeslání.' });
+    } catch {
+      setNotice({ kind: 'error', text: action === 'resend' ? 'Pozvánka se neobnovila. Zkuste to znovu.' : 'Odkaz pro obnovu hesla se nevytvořil. Zkuste to znovu.' });
     } finally { setBusyEmployee(null); }
   };
 
@@ -75,11 +76,11 @@ export const EmployeesPage: React.FC<EmployeesPageProps> = ({ employees, leads, 
                 <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-600">{assignedCounts.get(employee.id) || 0} zakázek</span>
                 {employee.phone && <a href={`tel:${employee.phone}`} aria-label={`Zavolat ${employee.name}`} className="rounded-lg p-2 text-slate-500 hover:bg-slate-100 hover:text-blue-600"><Phone className="h-4 w-4" /></a>}
                 {employee.email && <a href={`mailto:${employee.email}`} aria-label={`Napsat ${employee.name}`} className="rounded-lg p-2 text-slate-500 hover:bg-slate-100 hover:text-blue-600"><Mail className="h-4 w-4" /></a>}
-                {invitationStatus === 'Pending' ? <button type="button" disabled={busyEmployee === employee.id} onClick={() => accountAction(employee, 'resend')} className="inline-flex min-h-9 items-center gap-1.5 rounded-lg border border-slate-200 px-3 text-xs font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-50"><Send className="h-3.5 w-3.5" />Obnovit pozvánku</button> : invitationStatus === 'Active' ? <button type="button" disabled={busyEmployee === employee.id} onClick={() => accountAction(employee, 'recovery')} className="inline-flex min-h-9 items-center gap-1.5 rounded-lg border border-slate-200 px-3 text-xs font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-50"><KeyRound className="h-3.5 w-3.5" />Obnova hesla</button> : null}
+                {invitationStatus === 'Pending' ? <button type="button" disabled={busyEmployee === employee.id} onClick={() => accountAction(employee, 'resend')} className="inline-flex min-h-9 items-center gap-1.5 rounded-lg border border-slate-200 px-3 text-xs font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-50"><Send className="h-3.5 w-3.5" />Obnovit pozvánku</button> : invitationStatus === 'Active' ? <button type="button" disabled={busyEmployee === employee.id} onClick={() => accountAction(employee, 'recovery')} className="inline-flex min-h-9 items-center gap-1.5 rounded-lg border border-slate-200 px-3 text-xs font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-50"><KeyRound className="h-3.5 w-3.5" />Obnovit heslo</button> : null}
               </div>
             </article>;
           })}
-          {!employees.length && <div className="workspace-empty-state m-5 px-6 py-12 text-center"><ShieldCheck className="mx-auto h-8 w-8 text-blue-600" /><h2 className="mt-3 text-base font-semibold text-slate-950">Pozvěte prvního zaměstnance</h2><p className="mx-auto mt-1 max-w-md text-sm text-slate-500">Pozvánka má omezenou platnost a po použití se zaměstnanec připojí pouze k této firmě.</p><button type="button" onClick={() => setIsInviteOpen(true)} className="mt-5 inline-flex min-h-10 items-center gap-2 rounded-xl bg-blue-600 px-4 text-sm font-semibold text-white"><UserPlus className="h-4 w-4" />Vytvořit pozvánku</button></div>}
+          {!employees.length && <div className="workspace-empty-state m-5 px-6 py-12 text-center"><ShieldCheck className="mx-auto h-8 w-8 text-blue-600" /><p className="mx-auto mt-3 max-w-md text-sm text-slate-500">Ve firmě zatím není žádný zaměstnanec.</p><button type="button" onClick={() => setIsInviteOpen(true)} className="mt-5 inline-flex min-h-10 items-center gap-2 rounded-xl bg-blue-600 px-4 text-sm font-semibold text-white"><UserPlus className="h-4 w-4" />Vytvořit pozvánku</button></div>}
         </div>
       </section>
 
@@ -89,7 +90,7 @@ export const EmployeesPage: React.FC<EmployeesPageProps> = ({ employees, leads, 
           <label className="block text-xs font-semibold text-slate-700">Pracovní e-mail<AppInput type="email" required value={inviteForm.email} onChange={(event) => setInviteForm({ ...inviteForm, email: event.target.value })} placeholder="jan@firma.cz" /></label>
           <label className="block text-xs font-semibold text-slate-700">Role v týmu<select value={inviteForm.role} onChange={(event) => setInviteForm({ ...inviteForm, role: event.target.value })} className="mt-1.5 w-full rounded-xl border border-slate-200 bg-white px-3 py-3 text-sm"><option>Montážník</option><option>Stavbyvedoucí</option><option>Rozpočtář</option><option>Administrativa</option></select></label>
           <p className="flex gap-2 rounded-xl bg-blue-50 p-3 text-xs leading-5 text-blue-800"><CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0" />Zaměstnanec si nastaví vlastní heslo přes jednorázovou pozvánku. Heslo se v dashboardu nikdy nezobrazuje.</p>
-          <div className="flex justify-end gap-2 pt-2"><AppButton type="button" variant="outline" onClick={() => setIsInviteOpen(false)}>Zrušit</AppButton><AppButton type="submit" variant="primary" disabled={isInviting}>{isInviting ? 'Vytvářím…' : 'Odeslat pozvánku'}</AppButton></div>
+          <div className="flex justify-end gap-2 pt-2"><AppButton type="button" variant="outline" onClick={() => setIsInviteOpen(false)}>Zrušit</AppButton><AppButton type="submit" variant="primary" disabled={isInviting}>{isInviting ? 'Vytvářím pozvánku…' : 'Vytvořit pozvánku'}</AppButton></div>
         </form>
       </AppModal>
     </div>

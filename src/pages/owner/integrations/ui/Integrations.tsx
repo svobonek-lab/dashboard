@@ -53,7 +53,7 @@ export const Integrations: React.FC<IntegrationsProps> = () => {
       setDatabaseMode(mode.mode);
       if (mode.driver) setDatabaseDriver(mode.driver as typeof databaseDriver);
     }
-    catch (cause) { if (!(cause instanceof DOMException && cause.name === 'AbortError')) setConnectorError('Napojení databáze zatím není na tomto prostředí dostupné.'); }
+    catch (cause) { if (!(cause instanceof DOMException && cause.name === 'AbortError')) setConnectorError('Připojení databáze se nenačetlo. Obnovte stránku a zkuste to znovu.'); }
   }, [currentOrg?.id]);
   useEffect(() => {
     const controller = new AbortController();
@@ -88,7 +88,7 @@ export const Integrations: React.FC<IntegrationsProps> = () => {
         if (!response.ok || typeof body?.webhookUrl !== 'string') throw new Error('AI inbox není aktivní.');
         setSecuredIncomingLeadUrl(body.webhookUrl);
       } catch (error) {
-        if (!(error instanceof DOMException && error.name === 'AbortError')) setIncomingLeadError('Webhook zatím není na tomto prostředí aktivovaný.');
+        if (!(error instanceof DOMException && error.name === 'AbortError')) setIncomingLeadError('Příjem poptávek z e-mailu se nenačetl. Obnovte stránku nebo kontaktujte podporu.');
       } finally {
         if (!controller.signal.aborted) setIncomingLeadLoading(false);
       }
@@ -114,7 +114,7 @@ export const Integrations: React.FC<IntegrationsProps> = () => {
       setDatabaseMode(nextMode);
       await fetchLeads();
     } catch {
-      setConnectorError('Režim databáze se nepodařilo bezpečně změnit. Zkontrolujte schválené mapování a stav konektoru.');
+      setConnectorError('Režim databáze se nezměnil. Zkontrolujte schválené mapování a stav konektoru a zkuste to znovu.');
     } finally { setModeBusy(false); }
   };
 
@@ -139,8 +139,8 @@ export const Integrations: React.FC<IntegrationsProps> = () => {
       window.setTimeout(() => URL.revokeObjectURL(url), 1000);
     } catch (cause) {
       setConnectorError(cause instanceof Error && cause.message === 'CONNECTOR_IMAGE_DIGEST_REQUIRED'
-        ? 'Stažení čeká na vydaný a ověřený neměnný image digest. Nastavení připojení můžeš otevřít už teď.'
-        : 'Konfiguraci Docker Compose se nepodařilo připravit.');
+        ? 'Soubor zatím není připravený. Počkejte na schválené vydání konektoru a zkuste stažení znovu.'
+        : 'Soubor se nepřipravil. Zkontrolujte nastavení a zkuste to znovu.');
     }
   };
 

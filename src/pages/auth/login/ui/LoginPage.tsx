@@ -148,7 +148,11 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onSuccess, expectedRole })
       if (mode === 'recover') {
         setError(err?.message === 'Zadejte platný e-mail.' ? err.message : getRecoveryErrorMessage(null));
       } else {
-        setError(err.message || 'Neznámá chyba');
+        setError(mode === 'login'
+          ? 'Přihlášení se nezdařilo. Zkontrolujte e-mail a heslo a zkuste to znovu.'
+          : mode === 'new_password'
+            ? 'Heslo se nenastavilo. Zkontrolujte odkaz a zkuste to znovu.'
+            : 'Účet se nevytvořil. Zkontrolujte údaje a zkuste to znovu.');
       }
     } finally {
       setIsLoading(false);
@@ -316,7 +320,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onSuccess, expectedRole })
               {mode === 'login' && (
                 <div className="text-right -mt-2">
                   <button type="button" onClick={() => { setMode('recover'); setError(null); setSuccessMessage(null); }} className="min-h-11 px-2 text-sm font-semibold text-brand-primary hover:underline">
-                    Zapomenuté heslo
+                    Obnovit heslo
                   </button>
                 </div>
               )}
@@ -375,7 +379,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onSuccess, expectedRole })
                   className="font-bold hover:underline transition-colors"
                   style={{ color: displayBrandColor }}
                 >
-                  Zpět na přihlášení
+                  Vrátit se k přihlášení
                 </button>
               )}
               {PUBLIC_LANDING_URL && <a href={`${PUBLIC_LANDING_URL}/`} className="mt-4 block text-xs font-semibold underline">Web StavbaFlow</a>}

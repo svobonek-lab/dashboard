@@ -41,8 +41,8 @@ export function ConnectorStatus({ companyId, items, onRefresh }: { companyId: st
       if (value === 'revoke') setConfirmRevokeId(null);
       await refreshOperations();
       onRefresh();
-    } catch (cause) {
-      setError(cause instanceof Error ? cause.message : 'Příkaz se nepodařilo bezpečně předat konektoru.');
+    } catch {
+      setError('Změna stavu konektoru se nepotvrdila. Obnovte stav a zkuste to znovu.');
     } finally {
       setPending(null);
     }

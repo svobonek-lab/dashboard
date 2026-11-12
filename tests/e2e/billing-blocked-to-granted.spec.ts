@@ -72,12 +72,12 @@ test('company C owner is blocked before Stripe TEST payment and reaches /dashboa
     await signIn(page, 'OWNER_C');
     await expect(page).toHaveURL(/\/dashboard\/?$/);
     await expect(page.getByRole('heading', { name: 'Předplatné vypršelo' })).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Přejít k platbě' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Otevřít platební stránku' })).toBeVisible();
     await testInfo.attach('company-c-blocked-before-payment', { body: await page.screenshot(), contentType: 'image/png' });
 
     await Promise.all([
       page.waitForURL(url => url.hostname === 'checkout.stripe.com', { timeout: 45_000 }),
-      page.getByRole('button', { name: 'Přejít k platbě' }).click(),
+      page.getByRole('button', { name: 'Otevřít platební stránku' }).click(),
     ]);
     const checkoutUrl = page.url();
     const sessionId = parseSessionId(checkoutUrl);
@@ -177,7 +177,7 @@ test('company C owner is blocked before Stripe TEST payment and reaches /dashboa
   await signIn(page, 'OWNER_C');
   await expect(page).toHaveURL(/\/dashboard\/?$/);
   await expect(page.getByRole('heading', { name: 'Předplatné vypršelo' })).toBeHidden();
-  await expect(page.getByRole('button', { name: 'Přejít k platbě' })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Otevřít platební stránku' })).toHaveCount(0);
   await expect(page.getByText('Přehled stavby (Executive)', { exact: true }).first()).toBeVisible();
 
   await testInfo.attach('company-c-paid-webhook-result', {

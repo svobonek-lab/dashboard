@@ -96,7 +96,7 @@ export const RoleGuard: React.FC<RoleGuardProps> = ({ role, children, fallback }
             onClick={() => window.history.back()}
             className="w-full sm:w-auto py-3 px-4 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition-all flex items-center justify-center gap-1.5 border border-slate-200 cursor-pointer"
           >
-            <span>Zpět</span>
+            <span>Vrátit se</span>
           </button>
         </div>
       </div>

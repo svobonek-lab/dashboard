@@ -229,7 +229,7 @@ function AppContent() {
 
   const handleUpdateLeadStatus = async (leadId: string, newStatus: LeadStatus) => {
     if (dbUser?.role === 'employee' && !canEmployeeAccessLead(leadId, leads, employees, dbUser.id, dbUser.email, currentOrg?.id)) {
-      showToast('Tuto zakázku nemáte přiřazenou.', 'error');
+      showToast('Stav zakázky se nezměnil. Požádejte majitele firmy o přiřazení.', 'error');
       return;
     }
     const targetLead = leads.find(l => l.id === leadId);
@@ -301,13 +301,13 @@ function AppContent() {
       );
     } catch (e: any) {
       console.error('Failed to sync status with database', e);
-      showToast('Nepodařilo se uložit změnu stavu. Data zůstala beze změny.', 'error');
+      showToast('Stav zakázky se neuložil. Zkontrolujte připojení a zkuste to znovu.', 'error');
     }
   };
 
   const handleUpdateLead = async (updatedLead: Partial<Lead> & Pick<Lead, 'id'>): Promise<void> => {
     if (!canEditLeadDetails(dbUser?.role)) {
-      showToast('Zaměstnanec může měnit pouze stav přiřazené zakázky.', 'error');
+      showToast('Detail zakázky se nezměnil. O úpravu požádejte majitele firmy.', 'error');
       throw new Error('Zaměstnanec nemůže měnit detail zakázky.');
     }
     try {
@@ -325,7 +325,7 @@ function AppContent() {
       }
     } catch (error) {
       console.error('Failed to save lead', error);
-      showToast('Změnu se nepodařilo uložit. Data zůstala beze změny.', 'error');
+      showToast('Změna zakázky se neuložila. Zkontrolujte připojení a zkuste to znovu.', 'error');
       throw error;
     }
   };
@@ -339,7 +339,8 @@ function AppContent() {
     };
     const handleCrmToast = (e: any) => {
       if (e.detail?.message) {
-        showToast(e.detail.message, e.detail.type || 'success');
+        const failed = e.detail.type === 'error';
+        showToast(failed ? 'Akce se nedokončila. Zkuste to znovu.' : 'Změna uložena.', failed ? 'error' : 'success');
       }
     };
     window.addEventListener('crm:lead_created', handleCrmLeadCreated as EventListener);
@@ -420,7 +421,7 @@ function AppContent() {
             onClick={() => navigate(getDefaultRouteForRole(dbUser?.role))}
             className="px-6 py-3 bg-brand-primary text-white rounded-xl font-bold w-full hover:bg-brand-primary-dark transition-colors"
           >
-            Zpět na Dashboard
+            Vrátit se na dashboard
           </button>
         </div>
       </div>
@@ -564,7 +565,7 @@ function AppContent() {
           }`}>
             <span className={`w-2.5 h-2.5 rounded-full ${toast.type === 'error' ? 'bg-rose-500 animate-pulse' : 'bg-emerald-400'}`}></span>
             <span>{toast.message}</span>
-            <button onClick={() => setToast(null)} className="ml-2 text-slate-400 hover:text-white font-bold text-xs">✕</button>
+            <button type="button" aria-label="Zavřít oznámení" onClick={() => setToast(null)} className="ml-2 text-slate-400 hover:text-white font-bold text-xs">✕</button>
           </div>
         </div>
       )}

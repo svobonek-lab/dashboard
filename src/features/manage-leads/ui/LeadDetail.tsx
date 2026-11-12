@@ -35,9 +35,9 @@ export const LeadDetail: React.FC<LeadDetailProps> = ({ lead, employees, onBack,
     setSaveState({ kind: 'saving' });
     try {
       await onUpdateLead(buildLeadAssignmentPatch(lead.id, employee));
-      setSaveState({ kind: 'success', text: employee ? `Zakázka je přiřazena: ${employee.name}.` : 'Přiřazení bylo odebráno.' });
-    } catch (error) {
-      setSaveState({ kind: 'error', text: error instanceof Error ? error.message : 'Přiřazení se nepodařilo uložit.' });
+      setSaveState({ kind: 'success', text: employee ? `Přiřazení uloženo: ${employee.name}.` : 'Přiřazení odebráno.' });
+    } catch {
+      setSaveState({ kind: 'error', text: 'Přiřazení se neuložilo. Zkontrolujte připojení a zkuste to znovu.' });
     }
   };
 
@@ -45,16 +45,16 @@ export const LeadDetail: React.FC<LeadDetailProps> = ({ lead, employees, onBack,
     setSaveState({ kind: 'saving' });
     try {
       await onUpdateLead({ id: lead.id, ...operational });
-      setSaveState({ kind: 'success', text: 'Údaje ze stavby byly uloženy.' });
-    } catch (error) {
-      setSaveState({ kind: 'error', text: error instanceof Error ? error.message : 'Údaje se nepodařilo uložit.' });
+      setSaveState({ kind: 'success', text: 'Údaje ze stavby uloženy.' });
+    } catch {
+      setSaveState({ kind: 'error', text: 'Údaje ze stavby se neuložily. Zkontrolujte připojení a zkuste to znovu.' });
     }
   };
 
   return (
     <div className="workspace-page mx-auto max-w-5xl">
       <header>
-        <button type="button" onClick={onBack} className="inline-flex items-center gap-2 text-sm font-semibold text-slate-500 hover:text-slate-900">Zpět na poptávky</button>
+        <button type="button" onClick={onBack} className="inline-flex items-center gap-2 text-sm font-semibold text-slate-500 hover:text-slate-900">Vrátit se k poptávkám</button>
         <div className="mt-5 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div><p className="workspace-kicker">{statusLabel[lead.status]}</p><h1 className="workspace-title">{lead.title || 'Zakázka bez názvu'}</h1><p className="workspace-subtitle">{lead.customerName || 'Zákazník neuveden'}{lead.city ? `, ${lead.city}` : ''}</p></div>
           <strong className="text-lg font-semibold text-slate-950">{price}</strong>
@@ -80,7 +80,7 @@ export const LeadDetail: React.FC<LeadDetailProps> = ({ lead, employees, onBack,
         {canManageAssignment && <aside className="workspace-panel p-5 sm:p-7">
           <h2 className="text-base font-semibold text-slate-950">Odpovědný zaměstnanec</h2><p className="mt-2 text-sm leading-5 text-slate-500">Po uložení se zakázka objeví v pracovním dashboardu vybraného zaměstnance.</p>
           <label className="mt-5 block text-xs font-semibold text-slate-700">Přiřazení<select value={employeeId} onChange={(event) => setEmployeeId(event.target.value)} className="mt-1.5 w-full rounded-xl border border-slate-200 bg-white px-3 py-3 text-sm text-slate-900"><option value="">Bez přiřazení</option>{activeEmployees.map((employee) => <option key={employee.id} value={employee.id}>{employee.name}</option>)}</select></label>
-          <button type="button" disabled={saveState.kind === 'saving' || employeeId === (lead.assignedEmployeeId || '')} onClick={saveAssignment} className="workspace-primary-action mt-4 inline-flex min-h-10 w-full items-center justify-center gap-2 px-4 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-50"><Save className="h-4 w-4" />{saveState.kind === 'saving' ? 'Ukládám…' : 'Uložit přiřazení'}</button>
+          <button type="button" disabled={saveState.kind === 'saving' || employeeId === (lead.assignedEmployeeId || '')} onClick={saveAssignment} className="workspace-primary-action mt-4 inline-flex min-h-10 w-full items-center justify-center gap-2 px-4 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-50"><Save className="h-4 w-4" />{saveState.kind === 'saving' ? 'Ukládám přiřazení…' : 'Uložit přiřazení'}</button>
         </aside>}
       </div>
 
@@ -93,14 +93,14 @@ export const LeadDetail: React.FC<LeadDetailProps> = ({ lead, employees, onBack,
           <label className="text-xs font-semibold text-slate-700 sm:col-span-2">Kontaktní e-mail<input type="email" value={operational.customerEmail} onChange={(event) => setOperational((value) => ({ ...value, customerEmail: event.target.value }))} className="mt-1.5 w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm" /></label>
           <label className="text-xs font-semibold text-slate-700 sm:col-span-2">Popis a poznámka z místa<textarea value={operational.description} onChange={(event) => setOperational((value) => ({ ...value, description: event.target.value }))} rows={4} className="mt-1.5 w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm" /></label>
         </div>
-        <button type="button" disabled={saveState.kind === 'saving'} onClick={saveOperationalFields} className="workspace-primary-action mt-4 inline-flex min-h-10 items-center gap-2 px-4 text-sm font-semibold disabled:opacity-50"><Save className="h-4 w-4" />{saveState.kind === 'saving' ? 'Ukládám…' : 'Uložit údaje ze stavby'}</button>
+        <button type="button" disabled={saveState.kind === 'saving'} onClick={saveOperationalFields} className="workspace-primary-action mt-4 inline-flex min-h-10 items-center gap-2 px-4 text-sm font-semibold disabled:opacity-50"><Save className="h-4 w-4" />{saveState.kind === 'saving' ? 'Ukládám údaje ze stavby…' : 'Uložit údaje ze stavby'}</button>
       </section>}
 
       <section className="workspace-panel p-5 sm:p-7">
         <h2 className="text-base font-semibold text-slate-950">Uložená historie</h2>
         <div className="mt-4 divide-y divide-slate-100">
           {(lead.history || []).map((event) => <div key={event.id} className="grid gap-1 py-3 text-sm sm:grid-cols-[150px_1fr_auto]"><time className="text-xs text-slate-400">{event.timestamp}</time><span className="font-medium text-slate-800">{event.action}</span><span className="text-xs text-slate-500">{event.author}</span></div>)}
-          {!lead.history?.length && <p className="py-7 text-center text-sm text-slate-500">Zatím nejsou uložené žádné události.</p>}
+          {!lead.history?.length && <div className="py-7 text-center text-sm text-slate-500"><p>U zakázky zatím není uložená žádná událost.</p><button type="button" onClick={() => window.location.reload()} className="mt-2 font-semibold text-blue-700">Obnovit historii</button></div>}
         </div>
       </section>
       <DocumentsTab lead={lead} />

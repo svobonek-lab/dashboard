@@ -47,15 +47,15 @@ export const WidgetIframePage: React.FC = () => {
   const submit = async (event: FormEvent) => {
     event.preventDefault();
     if (!company || !form.name.trim() || !form.phone.trim() || !form.projectType || !form.consent) {
-      setError('Doplňte jméno, telefon, typ práce a potvrďte souhlas.');
+      setError('Poptávka se neodeslala. Doplňte jméno, telefon, typ práce a potvrďte souhlas.');
       return;
     }
     if (form.name.trim().length > 120 || form.phone.trim().length > 30 || form.email.trim().length > 254 || form.address.trim().length > 250 || form.description.trim().length > 3500) {
-      setError('Některé pole překročilo povolenou délku.');
+      setError('Poptávka se neodeslala. Zkraťte příliš dlouhé údaje a zkuste to znovu.');
       return;
     }
     if (form.email && !/^\S+@\S+\.\S+$/.test(form.email)) {
-      setError('Zadejte platný e-mail.');
+      setError('Poptávka se neodeslala. Opravte e-mail a zkuste to znovu.');
       return;
     }
 
@@ -105,7 +105,7 @@ export const WidgetIframePage: React.FC = () => {
       <section className="w-full max-w-lg rounded-3xl border border-slate-200 bg-white p-8 text-center shadow-sm">
         <AlertCircle className="mx-auto h-9 w-9 text-amber-500" />
         <h1 className="mt-4 text-xl font-semibold text-slate-950">Formulář není dostupný</h1>
-        <p className="mt-2 text-sm leading-6 text-slate-500">Odkaz není platný nebo firma příjem poptávek zatím neaktivovala.</p>
+        <p className="mt-2 text-sm leading-6 text-slate-500">Formulář se pro tento odkaz neotevřel. Požádejte firmu o nový odkaz.</p>
       </section>
     </main>
   );
@@ -148,7 +148,7 @@ export const WidgetIframePage: React.FC = () => {
             <label className="mt-5 flex cursor-pointer items-start gap-3 rounded-2xl bg-slate-50 p-4 text-xs leading-5 text-slate-600"><input type="checkbox" checked={form.consent} onChange={(e) => update('consent', e.target.checked)} className="mt-0.5 h-4 w-4 rounded border-slate-300" /><span>Souhlasím, aby mě {company.name} kontaktovala kvůli této poptávce. Údaje budou použity pouze pro její vyřízení.</span></label>
 
             {error && <div role="alert" className="mt-4 flex items-start gap-2 rounded-2xl border border-rose-200 bg-rose-50 p-3 text-sm text-rose-700"><AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />{error}</div>}
-            <button type="submit" disabled={submitting} className="mt-5 inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-2xl px-5 text-sm font-semibold text-white shadow-sm transition hover:opacity-90 disabled:cursor-wait disabled:opacity-60" style={{ backgroundColor: color }}>{submitting ? 'Odesílám…' : 'Odeslat poptávku'}</button>
+            <button type="submit" disabled={submitting} className="mt-5 inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-2xl px-5 text-sm font-semibold text-white shadow-sm transition hover:opacity-90 disabled:cursor-wait disabled:opacity-60" style={{ backgroundColor: color }}>{submitting ? 'Odesílám poptávku…' : 'Odeslat poptávku'}</button>
             <p className="mt-3 text-center text-[11px] text-slate-400">Formulář bezpečně zajišťuje StavbaFlow.</p>
           </form>
         )}

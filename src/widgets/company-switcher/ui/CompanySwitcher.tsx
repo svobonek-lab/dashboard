@@ -85,6 +85,7 @@ export const CompanySwitcher: React.FC<CompanySwitcherProps> = ({ variant = 'dar
       {/* Trigger Button */}
       <button
         type="button"
+        aria-label={isOpen ? 'Skrýt seznam firem' : 'Zobrazit seznam firem'}
         onClick={() => setIsOpen(!isOpen)}
         className={`flex items-center gap-2.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all border shadow-sm ${
           isDark
@@ -155,6 +156,7 @@ export const CompanySwitcher: React.FC<CompanySwitcherProps> = ({ variant = 'dar
               return (
                 <button
                   key={org.id}
+                  aria-label={`Přepnout na firmu ${org.name}`}
                   onClick={() => handleSelectCompany(org.id)}
                   className={`w-full flex items-center justify-between p-2.5 rounded-xl text-left text-xs transition-all group ${
                     isSelected
@@ -201,7 +203,8 @@ export const CompanySwitcher: React.FC<CompanySwitcherProps> = ({ variant = 'dar
 
             {filteredOrgs.length === 0 && (
               <div className="p-4 text-center text-xs text-slate-500">
-                Žádná firma neodpovídá hledání.
+                <p>Žádná firma neodpovídá hledání.</p>
+                <button type="button" onClick={() => setSearchTerm('')} className="mt-2 font-semibold text-cyan-300">Vymazat hledání</button>
               </div>
             )}
           </div>

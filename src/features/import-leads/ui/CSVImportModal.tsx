@@ -45,6 +45,7 @@ export const CSVImportModal: React.FC<CSVImportModalProps> = ({
   const [currentMapping, setCurrentMapping] = useState<FieldMappingConfig>({});
   const [isImporting, setIsImporting] = useState(false);
   const [importSummary, setImportSummary] = useState<string | null>(null);
+  const [importFailed, setImportFailed] = useState(false);
 
   if (!isOpen) return null;
 
@@ -52,6 +53,7 @@ export const CSVImportModal: React.FC<CSVImportModalProps> = ({
     setIsParsing(true);
     setParsingError(null);
     setImportSummary(null);
+    setImportFailed(false);
     try {
       const csv = await file.text();
       const res = await parseUploadedFile(file);
@@ -59,8 +61,8 @@ export const CSVImportModal: React.FC<CSVImportModalProps> = ({
       setParsedData(res);
       // Auto open mapping if needed
       setIsMappingOpen(true);
-    } catch (e: any) {
-      setParsingError(e.message || 'Chyba při čtení souboru.');
+    } catch {
+      setParsingError('Soubor se nepodařilo přečíst. Vyberte soubor CSV nebo Excel a zkuste to znovu.');
     } finally {
       setIsParsing(false);
     }
@@ -88,6 +90,7 @@ export const CSVImportModal: React.FC<CSVImportModalProps> = ({
 
     setIsImporting(true);
     setImportSummary(null);
+    setImportFailed(false);
     try {
       const res = await onImportBatch(
         parsedData.rows,
@@ -96,9 +99,12 @@ export const CSVImportModal: React.FC<CSVImportModalProps> = ({
         updateExisting,
         { fileName: parsedData.fileName, csv: sourceCsv }
       );
-      setImportSummary(res.message || 'Import úspěšně dokončen.');
-    } catch (e: any) {
-      setImportSummary(`Chyba: ${e.message || 'Import selhal'}`);
+      const created = Number(res.created ?? res.inserted ?? res.imported_count ?? 0);
+      const updated = Number(res.updated ?? res.updated_count ?? 0);
+      setImportSummary(`Import dokončen. Přidáno: ${created}, aktualizováno: ${updated}. Otevřete přehled poptávek a zkontrolujte výsledek.`);
+    } catch {
+      setImportFailed(true);
+      setImportSummary('Import se nedokončil. Zkontrolujte soubor a zkuste to znovu.');
     } finally {
       setIsImporting(false);
     }
@@ -120,6 +126,7 @@ export const CSVImportModal: React.FC<CSVImportModalProps> = ({
             </div>
           </div>
           <button
+            aria-label="Zavřít import"
             onClick={onClose}
             className="p-2 text-slate-400 hover:text-slate-700 rounded-xl hover:bg-slate-100 transition-colors"
           >
@@ -195,13 +202,14 @@ export const CSVImportModal: React.FC<CSVImportModalProps> = ({
                   </button>
                   <button
                     type="button"
+                    aria-label="Vybrat jiný soubor"
                     onClick={() => {
                       setParsedData(null);
                       setSourceCsv('');
                       setImportSummary(null);
                     }}
                     className="p-1.5 text-slate-400 hover:text-slate-700 rounded-lg hover:bg-slate-100"
-                    title="Nahrát jiný soubor"
+                    title="Vybrat jiný soubor"
                   >
                     ✕
                   </button>
@@ -283,15 +291,15 @@ export const CSVImportModal: React.FC<CSVImportModalProps> = ({
           )}
 
           {parsingError && (
-            <div className="p-4 rounded-2xl bg-red-50 border border-red-200 text-red-900 text-xs font-semibold flex items-center gap-2">
+            <div role="alert" className="p-4 rounded-2xl bg-red-50 border border-red-200 text-red-900 text-xs font-semibold flex items-center gap-2">
               <AlertTriangle className="w-4 h-4 text-red-600 shrink-0" />
               <span>{parsingError}</span>
             </div>
           )}
 
           {importSummary && (
-            <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-950 text-xs font-semibold flex items-center gap-2 animate-in fade-in">
-              <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+            <div role={importFailed ? 'alert' : 'status'} className={`p-4 rounded-2xl border text-xs font-semibold flex items-center gap-2 animate-in fade-in ${importFailed ? 'bg-rose-50 border-rose-200 text-rose-800' : 'bg-emerald-50 border-emerald-200 text-emerald-950'}`}>
+              {importFailed ? <AlertTriangle className="w-4 h-4 text-rose-600 shrink-0" /> : <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />}
               <span>{importSummary}</span>
             </div>
           )}
@@ -316,7 +324,7 @@ export const CSVImportModal: React.FC<CSVImportModalProps> = ({
               className="px-6 py-2.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold flex items-center gap-2 shadow-lg transition-all cursor-pointer disabled:opacity-50"
             >
               {isImporting ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Play className="w-4 h-4" />}
-              <span>{isImporting ? 'Importuji data do CRM...' : `Importovat ${parsedData.totalRows} zakázek do Kanbanu`}</span>
+              <span>{isImporting ? 'Importuji poptávky…' : `Importovat ${parsedData.totalRows} poptávek`}</span>
             </button>
           )}
         </div>

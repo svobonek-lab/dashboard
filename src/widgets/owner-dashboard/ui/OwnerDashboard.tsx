@@ -51,13 +51,13 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({ leads, onSelectL
 
       <section className="grid grid-cols-2 gap-3 sm:grid-cols-3" aria-label="Souhrn firmy">
         <button type="button" onClick={() => onNavigateTab('leads')} className="workspace-metric text-left">
-          <span className="workspace-metric-icon bg-blue-50 text-blue-600"><CircleAlert className="h-5 w-5" /></span><span className="workspace-metric-label">Nové poptávky</span><strong>{newLeads.length}</strong><small>čeká na první reakci</small>
+          <span className="workspace-metric-icon bg-blue-50 text-blue-600"><CircleAlert className="h-5 w-5" /></span><span className="workspace-metric-label">Zobrazit nové poptávky</span><strong>{newLeads.length}</strong><small>čeká na první reakci</small>
         </button>
         <button type="button" onClick={() => onNavigateTab('projects')} className="workspace-metric text-left">
-          <span className="workspace-metric-icon bg-emerald-50 text-emerald-700"><BriefcaseBusiness className="h-5 w-5" /></span><span className="workspace-metric-label">Zakázky v realizaci</span><strong>{activeJobs.length}</strong><small>právě probíhá</small>
+          <span className="workspace-metric-icon bg-emerald-50 text-emerald-700"><BriefcaseBusiness className="h-5 w-5" /></span><span className="workspace-metric-label">Zobrazit realizace</span><strong>{activeJobs.length}</strong><small>právě probíhá</small>
         </button>
         <button type="button" onClick={() => onNavigateTab('leads')} className="workspace-metric col-span-2 text-left sm:col-span-1">
-          <span className="workspace-metric-icon bg-blue-50 text-blue-700"><UsersRound className="h-5 w-5" /></span><span className="workspace-metric-label">Hodnota otevřených zakázek</span><strong className="workspace-metric-money tabular-nums">{currency.format(pipelineValue)}</strong><small>bez dokončených a nezískaných</small>
+          <span className="workspace-metric-icon bg-blue-50 text-blue-700"><UsersRound className="h-5 w-5" /></span><span className="workspace-metric-label">Zobrazit otevřené zakázky</span><strong className="workspace-metric-money tabular-nums">{currency.format(pipelineValue)}</strong><small>bez dokončených a nezískaných</small>
         </button>
       </section>
 
@@ -68,27 +68,27 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({ leads, onSelectL
         </div>
         <div className="border-b border-slate-200 px-4 py-2 sm:px-5">
           <button type="button" aria-pressed={attentionOnly} onClick={() => setAttentionOnly((selected) => !selected)} className={`min-h-11 rounded-lg border px-3 text-sm font-semibold ${attentionOnly ? 'border-blue-300 bg-blue-50 text-blue-800' : 'border-slate-200 text-slate-700 hover:bg-slate-50'}`}>
-            K vyřízení ({attentionItems.length})
+            Zobrazit k vyřízení ({attentionItems.length})
           </button>
         </div>
         <div className="divide-y divide-slate-100">
           {visibleLeads.map((lead) => (
-            <button key={lead.id} type="button" onClick={() => onSelectLead(lead)} className="workspace-list-row group">
+            <button key={lead.id} type="button" aria-label={`Otevřít zakázku ${lead.title || lead.customerName}`} onClick={() => onSelectLead(lead)} className="workspace-list-row group">
               <span className="min-w-0"><strong className="block break-words text-sm font-semibold text-slate-950">{lead.title || 'Zakázka bez názvu'}</strong><small className="mt-1 block truncate text-xs text-slate-500">{lead.customerName || 'Zákazník neuveden'}{lead.city ? `, ${lead.city}` : ''}</small></span>
               <span data-status={lead.status} className="workspace-row-status w-fit rounded-md bg-slate-100 px-2 py-1 text-xs font-medium text-slate-700">{statusLabel[lead.status]}</span>
               <span className="text-right tabular-nums text-sm font-semibold text-slate-800">{lead.price ? currency.format(lead.price) : 'Cena neuvedena'}</span>
 
             </button>
           ))}
-          {!visibleLeads.length && <div className="px-5 py-12 text-center text-sm text-slate-500">{searchQuery.trim() ? 'Žádná zakázka neodpovídá hledání.' : attentionOnly ? 'Žádné poptávky ani nabídky k vyřízení.' : 'Zatím tu nejsou žádné poptávky ani zakázky.'}</div>}
+          {!visibleLeads.length && <div className="px-5 py-12 text-center text-sm text-slate-500"><p>{searchQuery.trim() ? 'Žádná zakázka neodpovídá hledání.' : attentionOnly ? 'Žádné poptávky ani nabídky k vyřízení.' : 'Zatím tu nejsou žádné poptávky ani zakázky.'}</p><button type="button" onClick={() => searchQuery.trim() ? setSearchQuery('') : attentionOnly ? setAttentionOnly(false) : onNavigateTab('leads')} className="mt-3 font-semibold text-blue-700">{searchQuery.trim() ? 'Vymazat hledání' : attentionOnly ? 'Zobrazit všechny zakázky' : 'Otevřít poptávky'}</button></div>}
         </div>
         <div className="border-t border-slate-100 bg-slate-50/70 px-5 py-3 text-right"><button type="button" onClick={() => onNavigateTab('leads')} className="text-sm font-semibold text-blue-600 hover:text-blue-700">Zobrazit celý přehled</button></div>
       </section>
       <aside className="sf-work-focus" aria-label="Další kroky">
         <div className="sf-focus-heading"><span className="sf-focus-dot" /><h2>K vyřízení</h2><span>{attentionItems.length}</span></div>
         <p>Začněte zákazníky, kteří čekají na další krok.</p>
-        {attentionItems.slice(0, 4).map(item => <button type="button" key={item.id} onClick={() => { const lead = leads.find(candidate => candidate.id === item.leadId); if (lead) onSelectLead(lead); }} className="sf-focus-item"><small>{item.tag}</small><strong>{item.client}</strong><span>{item.deadline}</span></button>)}
-        {!attentionItems.length && <div className="sf-focus-empty">Žádné nové poptávky ani nabídky k vyřízení.</div>}
+        {attentionItems.slice(0, 4).map(item => <button type="button" key={item.id} aria-label={`Otevřít zakázku ${item.client}`} onClick={() => { const lead = leads.find(candidate => candidate.id === item.leadId); if (lead) onSelectLead(lead); }} className="sf-focus-item"><small>{item.tag}</small><strong>{item.client}</strong><span>{item.deadline}</span></button>)}
+        {!attentionItems.length && <div className="sf-focus-empty"><p>Žádné nové poptávky ani nabídky k vyřízení.</p><button type="button" onClick={() => onNavigateTab('leads')} className="mt-3 font-semibold text-blue-700">Otevřít poptávky</button></div>}
         <div className="sf-pipeline"><h3>Rozložení zakázek</h3>{(['New', 'Quote', 'In Progress', 'Completed'] as Lead['status'][]).map(status => { const count = leads.filter(lead => lead.status === status).length; return <div key={status}><span>{statusLabel[status]}<strong>{count}</strong></span><meter min={0} max={Math.max(leads.length, 1)} value={count} aria-label={statusLabel[status]} /></div>; })}</div>
       </aside></div>
     </div>

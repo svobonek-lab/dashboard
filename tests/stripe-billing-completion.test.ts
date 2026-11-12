@@ -52,7 +52,8 @@ test('billing completion is plan-allowlisted, idempotent and keeps browser price
   assert.match(client, /BILLING_PLAN_UNAVAILABLE/);
   assert.match(checkout, /billing\/return\?status=success/);
   assert.match(billingReturn, /Platba byla přijata/);
-  assert.match(settings, /Spravovat platbu/);
+  assert.match(settings, /Otevřít správu plateb/);
+  assert.match(settings, /Otevírám správu plateb…/);
   assert.match(platform, /set_billing_plan/);
   assert.match(admin, /Nastavit tarif/);
   assert.match(contract, /app_platform_set_billing_plan/);

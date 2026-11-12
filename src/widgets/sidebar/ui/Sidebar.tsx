@@ -126,7 +126,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               className="w-full flex items-center gap-2 px-3 py-2 rounded-app text-xs font-semibold text-text bg-surface-secondary hover:bg-surface-tertiary border border-border transition-colors text-left cursor-pointer"
             >
               <Sparkles className="w-3.5 h-3.5 text-brand-primary" />
-              <span>Generátor dema</span>
+              <span>Otevřít generátor dema</span>
             </button>
           </div>
         )}
@@ -162,7 +162,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             }`}
           >
             <Settings className="w-3.5 h-3.5" />
-            <span>Nastavení</span>
+            <span>Otevřít nastavení</span>
           </button>
 
           <button

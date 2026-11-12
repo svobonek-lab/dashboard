@@ -8,7 +8,8 @@ test('storage mode verification failure offers retry while keeping profile saves
   assert.match(source, /storageModeError/);
   assert.match(source, /storageModeCompanyId/);
   assert.match(source, /setStorageModeLoading\(false\)/);
-  assert.match(source, /Zkusit znovu/);
+  assert.match(source, /Ověřit režim znovu/);
+  assert.match(source, /Ověřuji režim…/);
   assert.match(source, /disabled=\{[^}]*storageModeError[^}]*\}/);
   assert.match(source, /storageModeCompanyId !== \(currentOrg\?\.id \?\? null\)/);
 });
