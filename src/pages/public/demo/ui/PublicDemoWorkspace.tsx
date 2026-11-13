@@ -6,6 +6,9 @@ import { generateRealisticEmployees, generateRealisticLeads } from '@/features/p
 import { DEFAULT_DEMO_ORG_ID } from '@/shared/api/supabase';
 import { RouterProvider, useRouter } from '@/shared/lib/router';
 import type { CompanyBranding } from '@/entities/company';
+import { normalizePublicOrigin } from '@/shared/lib/publicUrls';
+
+const landingOrigin = normalizePublicOrigin(import.meta.env.PUBLIC_LANDING_URL, Boolean(import.meta.env.DEV));
 
 const DEMO_BRANDING: CompanyBranding = {
   name: 'Novákova stavební firma',
@@ -100,7 +103,10 @@ const PublicDemoContent: React.FC = () => {
             <button type="button" aria-current={!isKanban ? 'page' : undefined} onClick={() => navigate('/demo')} className="rounded-lg px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100">Přehled</button>
             <button type="button" aria-current={isKanban ? 'page' : undefined} onClick={() => navigate('/demo/leads')} className="rounded-lg px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100">Poptávky</button>
           </nav>
-          <a href="/login" className="rounded-lg border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">Přihlásit se</a>
+          <div className="flex items-center gap-2">
+            {landingOrigin && <a href={`${landingOrigin}/`} className="rounded-lg px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100">Zpět na web</a>}
+            <a href="/login" className="rounded-lg border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">Přihlásit se</a>
+          </div>
         </div>
       </header>
       <main className="mx-auto w-full max-w-7xl px-4 py-6 sm:px-6">
