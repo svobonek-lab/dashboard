@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { buildAppLoginUrl, buildAppRouteUrl, getDeploymentConfig, shouldShowLandingAtRoot } from '../src/app/deploymentSurface';
+import { buildAppLoginUrl, buildAppRouteUrl, getDeploymentConfig, shouldShowLandingAtRoot, getLandingLoginUrl } from '../src/app/deploymentSurface';
 
 test('unknown deployment surface stays on the safe unified default', () => {
   assert.deepEqual(getDeploymentConfig({ VITE_DEPLOYMENT_SURFACE: 'preview' }), { surface: 'unified', appUrl: '', landingUrl: '' });
@@ -31,6 +31,13 @@ test('missing app URL keeps login local instead of creating a broken external li
   assert.equal(buildAppRouteUrl('', '/register-paid?plan=starter'), '/register-paid?plan=starter');
 });
 
+test('sales login destination fails closed for missing or invalid app origins', () => {
+  assert.equal(getLandingLoginUrl('', '?inviteToken=abc'), null);
+  assert.equal(getLandingLoginUrl('http://app.example.test', ''), null);
+  assert.equal(getLandingLoginUrl('https://app.example.test/path', ''), null);
+  assert.equal(getLandingLoginUrl('https://app.example.test', '?inviteToken=abc'), 'https://app.example.test/login?inviteToken=abc');
+});
+
 test('preview host keeps the two Vercel surfaces separated when env is missing', () => {
   const previousWindow = (globalThis as typeof globalThis & { window?: unknown }).window;
   (globalThis as typeof globalThis & { window?: unknown }).window = {
@@ -38,6 +45,32 @@ test('preview host keeps the two Vercel surfaces separated when env is missing',
   } as any;
   try {
     assert.equal(getDeploymentConfig({}).surface, 'landing');
+  } finally {
+    if (previousWindow === undefined) delete (globalThis as typeof globalThis & { window?: unknown }).window;
+    else (globalThis as typeof globalThis & { window?: unknown }).window = previousWindow;
+  }
+});
+
+test('renamed sales preview host still fails closed as a landing surface', () => {
+  const previousWindow = (globalThis as typeof globalThis & { window?: unknown }).window;
+  (globalThis as typeof globalThis & { window?: unknown }).window = {
+    location: { hostname: 'stavbaflow-landing-git-review.vercel.app' },
+  } as any;
+  try {
+    assert.equal(getDeploymentConfig({}).surface, 'landing');
+  } finally {
+    if (previousWindow === undefined) delete (globalThis as typeof globalThis & { window?: unknown }).window;
+    else (globalThis as typeof globalThis & { window?: unknown }).window = previousWindow;
+  }
+});
+
+test('renamed application preview host remains the app surface', () => {
+  const previousWindow = (globalThis as typeof globalThis & { window?: unknown }).window;
+  (globalThis as typeof globalThis & { window?: unknown }).window = {
+    location: { hostname: 'stavbaflow-git-review.vercel.app' },
+  } as any;
+  try {
+    assert.equal(getDeploymentConfig({}).surface, 'app');
   } finally {
     if (previousWindow === undefined) delete (globalThis as typeof globalThis & { window?: unknown }).window;
     else (globalThis as typeof globalThis & { window?: unknown }).window = previousWindow;

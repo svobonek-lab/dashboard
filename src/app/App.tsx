@@ -41,7 +41,7 @@ import { WidgetIframePage } from '../pages/public/iframe';
 
 // Types
 import type { Lead, LeadStatus } from '@/entities/lead';
-import { buildAppLoginUrl, getDeploymentConfig, shouldShowLandingAtRoot } from './deploymentSurface';
+import { getLandingLoginUrl, getDeploymentConfig, shouldShowLandingAtRoot } from './deploymentSurface';
 import { isKnownAppPath } from './routePolicy';
 import { getLeadTransitionError } from '../entities/lead';
 import { readTenantCache, removeTenantCache, writeTenantCache, TENANT_CACHE_NAMES } from '../shared/lib/tenantCache';
@@ -445,11 +445,17 @@ function AppContent() {
     '/employee/login': 'employee',
   };
 
+  if (pathname === '/register-paid' && deploymentSurface === 'landing') {
+    return <main className="min-h-screen bg-slate-50 p-6 text-slate-900"><div className="mx-auto mt-20 max-w-lg rounded-xl bg-white p-8"><h1 className="text-2xl font-semibold">Registrace zde není dostupná</h1><a className="mt-5 inline-block underline" href="/">Zpět na web</a></div></main>;
+  }
   if (pathname === '/register-paid') return <PaidRegistrationPage />;
 
   if (pathname === '/login' || roleLoginRoutes[pathname]) {
-    if (deploymentSurface === 'landing' && appUrl) {
-      return <ExternalRedirect url={buildAppLoginUrl(appUrl, window.location.search, Boolean((import.meta as any).env?.DEV))} />;
+    if (deploymentSurface === 'landing') {
+      const destination = getLandingLoginUrl(appUrl, window.location.search, Boolean((import.meta as any).env?.DEV));
+      return destination
+        ? <ExternalRedirect url={destination} />
+        : <main className="min-h-screen bg-slate-50 p-6 text-slate-900"><div className="mx-auto mt-20 max-w-lg rounded-xl bg-white p-8"><h1 className="text-2xl font-semibold">Přihlášení teď není dostupné</h1><p className="mt-3">Adresa aplikace není správně nastavená.</p><a className="mt-5 inline-block underline" href="/">Zpět na web</a></div></main>;
     }
     if (roleLoginRoutes[pathname]) {
       return <InternalRedirect url={`/login${window.location.search}`} />;
