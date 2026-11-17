@@ -1,4 +1,4 @@
-import { buildPublicAppPath, normalizePublicOrigin } from '../shared/lib/publicUrls';
+import { buildPublicAppPath, normalizeDistinctAppOrigin, normalizePublicOrigin } from '../shared/lib/publicUrls';
 
 export type DeploymentSurface = 'unified' | 'landing' | 'app';
 
@@ -10,9 +10,9 @@ export interface DeploymentConfig {
 
 export function getDeploymentConfig(env: Record<string, unknown> = {}): DeploymentConfig {
   const hostname = typeof window !== 'undefined' ? window.location.hostname.toLowerCase() : '';
-  const hostnameSurface = hostname.startsWith('jobflow-pro')
+  const hostnameSurface = hostname.startsWith('jobflow-pro') || hostname.startsWith('stavbaflow-landing')
     ? 'landing'
-    : hostname.startsWith('dashboard')
+    : hostname.startsWith('dashboard') || hostname.startsWith('stavbaflow')
       ? 'app'
       : '';
   const rawSurface = String(env.VITE_DEPLOYMENT_SURFACE || hostnameSurface || 'unified').toLowerCase();
@@ -26,6 +26,11 @@ export function buildAppLoginUrl(appUrl: string, search = '', allowLocalhost = f
   const normalized = normalizePublicOrigin(appUrl, allowLocalhost);
   if (!normalized) return '/login';
   return `${normalized}/login${search.startsWith('?') ? search : search ? `?${search}` : ''}`;
+}
+
+export function getLandingLoginUrl(appUrl: string, salesOrigin: string, landingOrigin: string, search = '', allowLocalhost = false): string | null {
+  const origin = normalizeDistinctAppOrigin(appUrl, salesOrigin, landingOrigin, allowLocalhost);
+  return origin ? buildAppLoginUrl(origin, search, allowLocalhost) : null;
 }
 
 export function buildAppRouteUrl(appUrl: string, path: string, allowLocalhost = false): string {

@@ -1,4 +1,5 @@
 import { readdir, readFile } from 'node:fs/promises';
+import { createHash } from 'node:crypto';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
@@ -58,6 +59,23 @@ export function verifySchemaSnapshot(snapshot, expectedVersions, { stagingProjec
   }
 
   return { ok: errors.length === 0, errors };
+}
+
+export function verifyDocumentedSchemaDrift(result, baseline, { snapshotSha256, migrationTreeSha256 }) {
+  const exactSources = /^[a-f0-9]{64}$/.test(String(snapshotSha256))
+    && /^[a-f0-9]{64}$/.test(String(migrationTreeSha256))
+    && baseline?.snapshotSha256 === snapshotSha256
+    && baseline?.migrationTreeSha256 === migrationTreeSha256;
+  if (result.ok) return exactSources
+    ? result
+    : { ok: false, errors: ['Schema snapshot or migration SQL differs from the reviewed baseline.'] };
+  const knownDifference = /^(Repo migrations absent from the staging snapshot|Staging snapshot has migration versions absent from the repo|Migration schema objects absent from the snapshot): /;
+  const exactInventory = Array.isArray(baseline?.errors)
+    && result.errors.length > 0
+    && result.errors.every((error) => knownDifference.test(error))
+    && JSON.stringify(result.errors) === JSON.stringify(baseline.errors);
+  if (exactInventory && exactSources) return { ok: true, errors: [], documentedDrift: result.errors };
+  return { ok: false, errors: [...result.errors, 'Schema drift differs from the reviewed baseline; reconcile it before updating the baseline.'] };
 }
 
 function stripSqlComments(sql) {
@@ -165,7 +183,7 @@ export async function readRepoMigrationVersions(migrationsDirectory) {
   return sqlFiles.map((file) => file.slice(0, 14));
 }
 
-async function readRepoMigrationContracts(migrationsDirectory) {
+export async function readRepoMigrationContracts(migrationsDirectory) {
   const files = (await readdir(migrationsDirectory)).filter((file) => /^\d{14}_.+\.sql$/i.test(file)).sort();
   return extractMigrationSchemaContracts(await Promise.all(files.map(async (file) => ({
     file,
@@ -173,22 +191,53 @@ async function readRepoMigrationContracts(migrationsDirectory) {
   }))));
 }
 
+function canonicalText(bytes) {
+  return bytes.toString('utf8').replace(/\r\n/g, '\n');
+}
+
+export function calculateSnapshotSha256(bytes) {
+  return createHash('sha256').update(canonicalText(bytes)).digest('hex');
+}
+
+export async function calculateMigrationTreeSha256(migrationsDirectory) {
+  const files = (await readdir(migrationsDirectory)).filter((file) => file.toLowerCase().endsWith('.sql')).sort();
+  const hash = createHash('sha256');
+  for (const file of files) {
+    hash.update(file);
+    hash.update('\0');
+    hash.update(canonicalText(await readFile(join(migrationsDirectory, file))));
+    hash.update('\0');
+  }
+  return hash.digest('hex');
+}
+
 async function main() {
   const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
   const snapshotPath = process.env.STAGING_SCHEMA_SNAPSHOT || join(root, 'supabase/schema-snapshots/stavbacore-staging-20261030.json');
-  const snapshot = JSON.parse(await readFile(snapshotPath, 'utf8'));
-  const expectedVersions = await readRepoMigrationVersions(join(root, 'supabase/migrations'));
-  const contracts = await readRepoMigrationContracts(join(root, 'supabase/migrations'));
+  const snapshotBytes = await readFile(snapshotPath);
+  const snapshot = JSON.parse(snapshotBytes.toString('utf8'));
+  const migrationsDirectory = join(root, 'supabase/migrations');
+  const expectedVersions = await readRepoMigrationVersions(migrationsDirectory);
+  const contracts = await readRepoMigrationContracts(migrationsDirectory);
   const result = verifySchemaSnapshot(snapshot, expectedVersions, {
     stagingProjectRef: process.env.STAGING_SUPABASE_PROJECT_REF,
     productionProjectRef: process.env.PRODUCTION_SUPABASE_PROJECT_REF,
   }, contracts);
-  if (!result.ok) {
-    for (const error of result.errors) console.error(`Schema snapshot drift: ${error}`);
+  const baseline = JSON.parse(await readFile(join(root, 'supabase/schema-snapshots/stavbacore-staging-known-drift.json'), 'utf8'));
+  const checked = verifyDocumentedSchemaDrift(result, baseline, {
+    snapshotSha256: calculateSnapshotSha256(snapshotBytes),
+    migrationTreeSha256: await calculateMigrationTreeSha256(migrationsDirectory),
+  });
+  if (!checked.ok) {
+    for (const error of checked.errors) console.error(`Schema snapshot drift: ${error}`);
     process.exitCode = 1;
     return;
   }
-  console.log(`Schema snapshot matches ${expectedVersions.length} repository migrations and all ${contracts.tables.length} tables, ${contracts.policies.length} policies, and ${contracts.functions.length} functions declared in migration SQL.`);
+  if (checked.documentedDrift) {
+    console.log(`Schema snapshot has ${checked.documentedDrift.length} reviewed, unchanged drift categories; repository migration SQL and snapshot content match the baseline.`);
+  } else {
+    console.log(`Schema snapshot matches ${expectedVersions.length} repository migrations and all ${contracts.tables.length} tables, ${contracts.policies.length} policies, and ${contracts.functions.length} functions declared in migration SQL.`);
+  }
 }
 
 if (process.argv[1] && pathToFileURL(resolve(process.argv[1])).href === import.meta.url) {

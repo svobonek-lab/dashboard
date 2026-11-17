@@ -3,7 +3,7 @@ import { mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import test from 'node:test';
-import { extractMigrationSchemaContracts, readRepoMigrationVersions, verifySchemaSnapshot } from '../scripts/verify-schema-snapshot.mjs';
+import { calculateMigrationTreeSha256, calculateSnapshotSha256, extractMigrationSchemaContracts, readRepoMigrationVersions, verifyDocumentedSchemaDrift, verifySchemaSnapshot } from '../scripts/verify-schema-snapshot.mjs';
 
 const snapshot = {
   projectRef: 'bbbbbbbbbbbbbbbbbbbb',
@@ -32,6 +32,25 @@ test('schema snapshot verification reports both unapplied repo migrations and un
   assert.equal(result.ok, false);
   assert.match(result.errors.join('\n'), /20260902000000/);
   assert.match(result.errors.join('\n'), /20260901000000/);
+});
+
+test('documented schema drift accepts only the exact reviewed inventory and source bytes', () => {
+  const refs = { stagingProjectRef: 'bbbbbbbbbbbbbbbbbbbb', productionProjectRef: 'aaaaaaaaaaaaaaaaaaaa' };
+  const drift = verifySchemaSnapshot(snapshot, ['20260902000000'], refs);
+  const hashes = { snapshotSha256: 'a'.repeat(64), migrationTreeSha256: 'b'.repeat(64) };
+  const baseline = { ...hashes, errors: drift.errors };
+  assert.deepEqual(verifyDocumentedSchemaDrift(drift, baseline, hashes), { ok: true, errors: [], documentedDrift: drift.errors });
+
+  const newMigration = verifySchemaSnapshot(snapshot, ['20260902000000', '20260903000000'], refs);
+  assert.equal(verifyDocumentedSchemaDrift(newMigration, baseline, hashes).ok, false);
+  assert.equal(verifyDocumentedSchemaDrift(drift, baseline, { ...hashes, snapshotSha256: 'c'.repeat(64) }).ok, false);
+  assert.equal(verifyDocumentedSchemaDrift(drift, baseline, { ...hashes, migrationTreeSha256: 'c'.repeat(64) }).ok, false);
+
+  const unreadable = verifySchemaSnapshot({ ...snapshot, migrationHistory: undefined }, ['20260902000000'], refs);
+  assert.equal(verifyDocumentedSchemaDrift(unreadable, { ...baseline, errors: unreadable.errors }, hashes).ok, false);
+
+  const reconciled = verifySchemaSnapshot(snapshot, ['20260901000000'], refs);
+  assert.equal(verifyDocumentedSchemaDrift(reconciled, baseline, { ...hashes, snapshotSha256: 'c'.repeat(64) }).ok, false);
 });
 
 test('schema snapshot verification accepts exact migration history and required metadata inventory', () => {
@@ -69,6 +88,20 @@ test('migration inventory refuses unversioned SQL files instead of omitting them
     await writeFile(join(directory, '20261028000000_valid.sql'), '-- valid');
     await writeFile(join(directory, 'manual-change.sql'), '-- must not be skipped');
     await assert.rejects(readRepoMigrationVersions(directory), /unversioned SQL migration/i);
+  } finally {
+    await rm(directory, { recursive: true, force: true });
+  }
+});
+
+test('schema and migration hashes are identical with Git LF and Windows CRLF checkout', async () => {
+  assert.equal(calculateSnapshotSha256(Buffer.from('{\n  "a": 1\n}\n')), calculateSnapshotSha256(Buffer.from('{\r\n  "a": 1\r\n}\r\n')));
+  const directory = await mkdtemp(join(tmpdir(), 'schema-line-endings-'));
+  try {
+    const file = join(directory, '20261028000000_valid.sql');
+    await writeFile(file, 'select 1;\nselect 2;\n');
+    const lfHash = await calculateMigrationTreeSha256(directory);
+    await writeFile(file, 'select 1;\r\nselect 2;\r\n');
+    assert.equal(await calculateMigrationTreeSha256(directory), lfHash);
   } finally {
     await rm(directory, { recursive: true, force: true });
   }

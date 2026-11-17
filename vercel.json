@@ -9,7 +9,8 @@
       "codex/staging-invite-consent-compat": false,
       "codex/staging-invite-hotfix": false,
       "codex/stavbaflow-design-refresh": false,
-      "codex/design-accessibility-finish": false
+      "codex/design-accessibility-finish": false,
+      "codex/two-approved-origins": false
     }
   },
   "crons": [

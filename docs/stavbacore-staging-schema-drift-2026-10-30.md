@@ -38,6 +38,12 @@ The schema extractor reports these source-declared objects as missing by exact n
 
 The historical migration set models `organizations/users/leads`, unlike the live `app_*` schema; it is not a safe batch to apply. The staging directory includes contracts that may be unapplied or represented under a different name/signature. Treat the report as a reconciliation list, not deployment authorization.
 
+## CI gate for the documented drift
+
+The `verify` job checks the exact current difference inventory in [stavbacore-staging-known-drift.json](../supabase/schema-snapshots/stavbacore-staging-known-drift.json). It also checks SHA-256 hashes of the captured snapshot and every repository migration SQL file. A new migration, changed SQL, changed snapshot, unreadable metadata, different project identity, or additional missing schema object fails the job until the change and baseline receive review. The baseline includes four migration proposals added after this report was written.
+
+Passing this gate means the recorded divergence has not changed. The snapshot was captured on 2026-10-30; this check does not establish that staging still has the same schema today or that repository migrations have been applied. Reconcile individual contracts and capture fresh staging metadata before treating a database change as ready for release.
+
 ## Remaining gates
 
 1. Run the updated staging E2E Storage scenario against the exact branch Preview. It creates a synthetic company-B file and metadata row, tests owner-A/employee-A denial and owner-B access, and deletes the exact fixture in `finally`.

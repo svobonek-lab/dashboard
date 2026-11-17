@@ -53,8 +53,10 @@ const DEMO_DESTINATION = resolveDemoUrl(LANDING_ENV, {
   isDevelopment: Boolean(LANDING_ENV.DEV),
   origin: typeof window === 'undefined' ? '' : window.location.origin,
   allowRelative: String(LANDING_ENV.VITE_DEPLOYMENT_SURFACE || '').toLowerCase() !== 'landing'
-    && !(typeof window !== 'undefined' && window.location.hostname.toLowerCase().startsWith('jobflow-pro')),
+    && !(typeof window !== 'undefined' && /^(jobflow-pro|stavbaflow-landing)/.test(window.location.hostname.toLowerCase())),
 });
+const IS_SALES_SURFACE = String(LANDING_ENV.VITE_DEPLOYMENT_SURFACE || '').toLowerCase() === 'landing'
+  || (typeof window !== 'undefined' && /^(jobflow-pro|stavbaflow-landing)/.test(window.location.hostname.toLowerCase()));
 const START_REGISTRATION_URL = buildPublicAppPath(LANDING_ENV.PUBLIC_APP_URL, '/register-paid?plan=starter', Boolean(LANDING_ENV.DEV));
 const GROWTH_REGISTRATION_URL = buildPublicAppPath(LANDING_ENV.PUBLIC_APP_URL, '/register-paid?plan=growth', Boolean(LANDING_ENV.DEV));
 
@@ -407,9 +409,7 @@ export const LandingPage: React.FC = () => {
             <p className="mt-7 text-4xl font-black tracking-tight text-slate-950">1 990 Kč</p>
             <p className="mt-1 text-sm text-slate-500">měsíčně bez&nbsp;DPH</p>
             <p className="mt-6 border-t border-slate-200 pt-4 text-sm font-semibold text-slate-800">Až 5 zaměstnanců</p>
-            <a href={START_REGISTRATION_URL} className="mt-auto inline-flex min-h-12 items-center justify-center rounded-xl bg-blue-600 px-5 py-3 text-sm font-semibold text-white hover:bg-blue-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-700">
-              Pokračovat s tarifem Start
-            </a>
+            {IS_SALES_SURFACE ? <button onClick={() => setIsBookingOpen(true)} className="mt-auto min-h-12 rounded-xl bg-blue-600 px-5 py-3 text-sm font-semibold text-white hover:bg-blue-700">Domluvit tarif Start</button> : <a href={START_REGISTRATION_URL} className="mt-auto inline-flex min-h-12 items-center justify-center rounded-xl bg-blue-600 px-5 py-3 text-sm font-semibold text-white hover:bg-blue-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-700">Pokračovat s tarifem Start</a>}
           </article>
 
           <article className="flex min-h-[340px] flex-col border-t-4 border-blue-600 bg-blue-50/60 p-6 shadow-sm">
@@ -418,9 +418,7 @@ export const LandingPage: React.FC = () => {
             <p className="mt-7 text-4xl font-black tracking-tight text-slate-950">2 990 Kč</p>
             <p className="mt-1 text-sm text-slate-500">měsíčně bez&nbsp;DPH</p>
             <p className="mt-6 border-t border-blue-200 pt-4 text-sm font-semibold text-slate-800">Až 15 zaměstnanců</p>
-            <a href={GROWTH_REGISTRATION_URL} className="mt-auto inline-flex min-h-12 items-center justify-center rounded-xl bg-blue-600 px-5 py-3 text-sm font-semibold text-white hover:bg-blue-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-700">
-              Pokračovat s tarifem Růst
-            </a>
+            {IS_SALES_SURFACE ? <button onClick={() => setIsBookingOpen(true)} className="mt-auto min-h-12 rounded-xl bg-blue-600 px-5 py-3 text-sm font-semibold text-white hover:bg-blue-700">Domluvit tarif Růst</button> : <a href={GROWTH_REGISTRATION_URL} className="mt-auto inline-flex min-h-12 items-center justify-center rounded-xl bg-blue-600 px-5 py-3 text-sm font-semibold text-white hover:bg-blue-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-700">Pokračovat s tarifem Růst</a>}
           </article>
 
           <article className="flex min-h-[340px] flex-col border-t-4 border-slate-700 bg-slate-900 p-6 text-white">
