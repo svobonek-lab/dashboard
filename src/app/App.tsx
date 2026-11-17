@@ -48,7 +48,7 @@ import { readTenantCache, removeTenantCache, writeTenantCache, TENANT_CACHE_NAME
 import { canEditLeadDetails, persistBeforeApply } from './pilotWrites';
 import { hydrateLeadAssignments } from '../entities/lead';
 
-const { surface: deploymentSurface, appUrl } = getDeploymentConfig((import.meta as any).env || {});
+const { surface: deploymentSurface, appUrl, landingUrl } = getDeploymentConfig((import.meta as any).env || {});
 const LandingPage = React.lazy(() => import('../pages/public/landing').then(module => ({ default: module.LandingPage })));
 
 function ExternalRedirect({ url }: { url: string }) {
@@ -452,7 +452,7 @@ function AppContent() {
 
   if (pathname === '/login' || roleLoginRoutes[pathname]) {
     if (deploymentSurface === 'landing') {
-      const destination = getLandingLoginUrl(appUrl, window.location.search, Boolean((import.meta as any).env?.DEV));
+      const destination = getLandingLoginUrl(appUrl, window.location.origin, landingUrl, window.location.search, Boolean((import.meta as any).env?.DEV));
       return destination
         ? <ExternalRedirect url={destination} />
         : <main className="min-h-screen bg-slate-50 p-6 text-slate-900"><div className="mx-auto mt-20 max-w-lg rounded-xl bg-white p-8"><h1 className="text-2xl font-semibold">Přihlášení teď není dostupné</h1><p className="mt-3">Adresa aplikace není správně nastavená.</p><a className="mt-5 inline-block underline" href="/">Zpět na web</a></div></main>;

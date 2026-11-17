@@ -1,4 +1,4 @@
-import { normalizePublicOrigin } from './publicUrls';
+import { normalizeDistinctAppOrigin, normalizePublicOrigin } from './publicUrls';
 
 export interface DemoRuntime {
   isDevelopment: boolean;
@@ -21,7 +21,9 @@ export function isPublicDemoPath(pathname: string): boolean {
 export function resolveDemoUrl(env: Record<string, unknown>, runtime: DemoRuntime): DemoDestination {
   const app = String(env.PUBLIC_APP_URL || '').trim();
   if (app) {
-    const origin = normalizePublicOrigin(app, runtime.isDevelopment);
+    const origin = runtime.allowRelative
+      ? normalizePublicOrigin(app, runtime.isDevelopment)
+      : normalizeDistinctAppOrigin(app, runtime.origin, env.PUBLIC_LANDING_URL, runtime.isDevelopment);
     if (!origin) {
       return { url: null, error: 'Odkaz na demo nelze odvodit z adresy aplikace.' };
     }

@@ -12,6 +12,14 @@ export function normalizePublicOrigin(raw: unknown, allowLocalhost = false): str
   }
 }
 
+export function normalizeDistinctAppOrigin(rawApp: unknown, currentOrigin: unknown, landingOrigin: unknown, allowLocalhost = false): string {
+  const app = normalizePublicOrigin(rawApp, allowLocalhost);
+  if (!app) return '';
+  const current = normalizePublicOrigin(currentOrigin, allowLocalhost);
+  const landing = normalizePublicOrigin(landingOrigin, allowLocalhost);
+  return app === current || app === landing ? '' : app;
+}
+
 export function buildPublicAppPath(rawOrigin: unknown, path: string, allowLocalhost = false): string {
   if (!path.startsWith('/') || path.startsWith('//')) return '/';
   const origin = normalizePublicOrigin(rawOrigin, allowLocalhost);

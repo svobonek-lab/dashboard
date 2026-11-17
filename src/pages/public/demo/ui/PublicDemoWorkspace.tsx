@@ -104,7 +104,9 @@ const PublicDemoContent: React.FC = () => {
             <button type="button" aria-current={isKanban ? 'page' : undefined} onClick={() => navigate('/demo/leads')} className="rounded-lg px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100">Poptávky</button>
           </nav>
           <div className="flex items-center gap-2">
-            {landingOrigin && <a href={`${landingOrigin}/`} className="rounded-lg px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100">Zpět na web</a>}
+            {landingOrigin
+              ? <a href={`${landingOrigin}/`} className="rounded-lg px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100">Zpět na web</a>
+              : <a href="/" className="rounded-lg px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100">Opustit demo</a>}
             <a href="/login" className="rounded-lg border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">Přihlásit se</a>
           </div>
         </div>

@@ -1,4 +1,4 @@
-import { buildPublicAppPath, normalizePublicOrigin } from '../shared/lib/publicUrls';
+import { buildPublicAppPath, normalizeDistinctAppOrigin, normalizePublicOrigin } from '../shared/lib/publicUrls';
 
 export type DeploymentSurface = 'unified' | 'landing' | 'app';
 
@@ -28,8 +28,8 @@ export function buildAppLoginUrl(appUrl: string, search = '', allowLocalhost = f
   return `${normalized}/login${search.startsWith('?') ? search : search ? `?${search}` : ''}`;
 }
 
-export function getLandingLoginUrl(appUrl: string, search = '', allowLocalhost = false): string | null {
-  const origin = normalizePublicOrigin(appUrl, allowLocalhost);
+export function getLandingLoginUrl(appUrl: string, salesOrigin: string, landingOrigin: string, search = '', allowLocalhost = false): string | null {
+  const origin = normalizeDistinctAppOrigin(appUrl, salesOrigin, landingOrigin, allowLocalhost);
   return origin ? buildAppLoginUrl(origin, search, allowLocalhost) : null;
 }
 

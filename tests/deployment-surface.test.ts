@@ -32,10 +32,15 @@ test('missing app URL keeps login local instead of creating a broken external li
 });
 
 test('sales login destination fails closed for missing or invalid app origins', () => {
-  assert.equal(getLandingLoginUrl('', '?inviteToken=abc'), null);
-  assert.equal(getLandingLoginUrl('http://app.example.test', ''), null);
-  assert.equal(getLandingLoginUrl('https://app.example.test/path', ''), null);
-  assert.equal(getLandingLoginUrl('https://app.example.test', '?inviteToken=abc'), 'https://app.example.test/login?inviteToken=abc');
+  assert.equal(getLandingLoginUrl('', 'https://sales.example.test', '', '?inviteToken=abc'), null);
+  assert.equal(getLandingLoginUrl('http://app.example.test', 'https://sales.example.test', ''), null);
+  assert.equal(getLandingLoginUrl('https://app.example.test/path', 'https://sales.example.test', ''), null);
+  assert.equal(getLandingLoginUrl('https://app.example.test', 'https://sales.example.test', '', '?inviteToken=abc'), 'https://app.example.test/login?inviteToken=abc');
+});
+
+test('sales login destination rejects its own origin and the configured landing origin', () => {
+  assert.equal(getLandingLoginUrl('https://sales.example.test', 'https://sales.example.test', ''), null);
+  assert.equal(getLandingLoginUrl('https://sales.example.test', 'https://preview.example.test', 'https://sales.example.test'), null);
 });
 
 test('preview host keeps the two Vercel surfaces separated when env is missing', () => {

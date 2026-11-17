@@ -57,3 +57,14 @@ test('configured invalid URL never falls through to another destination', () => 
   );
   assert.equal(result.url, null);
 });
+
+test('sales demo rejects its own origin and the configured landing origin', () => {
+  assert.equal(resolveDemoUrl(
+    { PUBLIC_APP_URL: 'https://sales.example.test' },
+    { isDevelopment: false, origin: 'https://sales.example.test', allowRelative: false },
+  ).url, null);
+  assert.equal(resolveDemoUrl(
+    { PUBLIC_APP_URL: 'https://sales.example.test', PUBLIC_LANDING_URL: 'https://sales.example.test' },
+    { isDevelopment: false, origin: 'https://preview.example.test', allowRelative: false },
+  ).url, null);
+});

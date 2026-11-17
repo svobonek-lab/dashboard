@@ -27,7 +27,7 @@ for (const width of [390, 1440]) {
   });
 }
 
-for (const [name, origin] of [['missing', 'http://127.0.0.1:4179'], ['invalid', 'http://127.0.0.1:4180']] as const) {
+for (const [name, origin] of [['missing', 'http://127.0.0.1:4179'], ['invalid', 'http://127.0.0.1:4180'], ['same-origin', 'http://127.0.0.1:4181']] as const) {
   test(`${name} app URL fails closed on sales surface`, async ({ page }) => {
     await page.goto(origin);
     await expect(page.getByRole('button', { name: 'Interaktivní demo' })).toBeDisabled();
@@ -37,3 +37,11 @@ for (const [name, origin] of [['missing', 'http://127.0.0.1:4179'], ['invalid', 
     await expect(page.getByRole('button', { name: 'Založit firmu' })).toHaveCount(0);
   });
 }
+
+test('demo has a safe exit when the landing URL is missing', async ({ page }) => {
+  const origin = 'http://127.0.0.1:4182';
+  await page.goto(`${origin}/demo`);
+  await page.getByRole('link', { name: 'Opustit demo' }).click();
+  await expect(page).toHaveURL(`${origin}/`);
+  await expect(page.getByRole('heading', { name: /Přihlášení/ })).toBeVisible();
+});

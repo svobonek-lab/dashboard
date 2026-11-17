@@ -16,7 +16,7 @@ const vite = spawn(process.execPath, [
     VITE_PILOT_WRITES: 'false',
     VITE_PAID_REGISTRATION_ENABLED: 'false',
     PUBLIC_APP_URL: process.env.SALES_TEST_APP_URL ?? '',
-    PUBLIC_LANDING_URL: 'http://127.0.0.1:4177',
+    PUBLIC_LANDING_URL: process.env.SALES_TEST_LANDING_URL ?? 'http://127.0.0.1:4177',
   },
 });
 
