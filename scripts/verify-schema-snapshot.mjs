@@ -191,13 +191,21 @@ export async function readRepoMigrationContracts(migrationsDirectory) {
   }))));
 }
 
+function canonicalText(bytes) {
+  return bytes.toString('utf8').replace(/\r\n/g, '\n');
+}
+
+export function calculateSnapshotSha256(bytes) {
+  return createHash('sha256').update(canonicalText(bytes)).digest('hex');
+}
+
 export async function calculateMigrationTreeSha256(migrationsDirectory) {
   const files = (await readdir(migrationsDirectory)).filter((file) => file.toLowerCase().endsWith('.sql')).sort();
   const hash = createHash('sha256');
   for (const file of files) {
     hash.update(file);
     hash.update('\0');
-    hash.update(await readFile(join(migrationsDirectory, file)));
+    hash.update(canonicalText(await readFile(join(migrationsDirectory, file))));
     hash.update('\0');
   }
   return hash.digest('hex');
@@ -217,7 +225,7 @@ async function main() {
   }, contracts);
   const baseline = JSON.parse(await readFile(join(root, 'supabase/schema-snapshots/stavbacore-staging-known-drift.json'), 'utf8'));
   const checked = verifyDocumentedSchemaDrift(result, baseline, {
-    snapshotSha256: createHash('sha256').update(snapshotBytes).digest('hex'),
+    snapshotSha256: calculateSnapshotSha256(snapshotBytes),
     migrationTreeSha256: await calculateMigrationTreeSha256(migrationsDirectory),
   });
   if (!checked.ok) {
@@ -226,7 +234,7 @@ async function main() {
     return;
   }
   if (checked.documentedDrift) {
-    console.log(`Schema snapshot has ${checked.documentedDrift.length} reviewed, unchanged drift categories; repository migration SQL and snapshot bytes match the baseline.`);
+    console.log(`Schema snapshot has ${checked.documentedDrift.length} reviewed, unchanged drift categories; repository migration SQL and snapshot content match the baseline.`);
   } else {
     console.log(`Schema snapshot matches ${expectedVersions.length} repository migrations and all ${contracts.tables.length} tables, ${contracts.policies.length} policies, and ${contracts.functions.length} functions declared in migration SQL.`);
   }

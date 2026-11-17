@@ -1,7 +1,7 @@
 {
-  "description": "Reviewed staging divergence from historical repository migration proposals. Exact source bytes and difference inventory must remain unchanged.",
-  "snapshotSha256": "0615ea1b53aa79b29cbadb17d7940abbea05ed2bc04f57cbcad6a8bb66a8e6ca",
-  "migrationTreeSha256": "a3cca52d28c289df78b15b0d86d0d66e31044505ad7724f4e6eb34897ae1828e",
+  "description": "Reviewed staging divergence from historical repository migration proposals. Source content and difference inventory must remain unchanged (LF and CRLF are equivalent).",
+  "snapshotSha256": "7a06346691d5944f39be887f37ea2b04eaf644ae712aac87ee28cad002310754",
+  "migrationTreeSha256": "4403ab9258d1cdd31b083ae34680c9c920d1ce96129d6c466a4e433b1a92e49b",
   "errors": [
     "Repo migrations absent from the staging snapshot: 20260911000000, 20260911000001, 20260911000002, 20260911000003, 20260911000004, 20260912000000, 20260916000000, 20260917000000, 20260919000000, 20260920000001, 20261025000000, 20261026000000, 20261027000000, 20261031185027, 20261101131053, 20261101140813, 20261101144114.",
     "Staging snapshot has migration versions absent from the repo: 20260917155629, 20260917160151, 20260917165504, 20260917165549, 20260917170137, 20260918062031, 20260918105000, 20260918111721, 20260918115811, 20260919075823, 20260919075832, 20260919075840, 20260919080259.",
