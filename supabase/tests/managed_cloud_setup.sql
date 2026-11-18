@@ -17,7 +17,8 @@ create table public.app_invites (
   id uuid primary key default gen_random_uuid(),
   company_id uuid not null references public.app_companies(id) on delete cascade,
   email text not null, name text not null, role text not null,
-  expires_at timestamptz not null, accepted_at timestamptz, revoked_at timestamptz
+  expires_at timestamptz not null, accepted_at timestamptz,
+  accepted_by uuid references auth.users(id), revoked_at timestamptz
 );
 create table public.app_members (
   company_id uuid not null references public.app_companies(id) on delete cascade,

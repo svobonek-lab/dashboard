@@ -61,7 +61,7 @@ begin
   update public.app_companies set stripe_customer_id = 'cus_synthetic_one' where id = v_company;
   insert into auth.users(id,email) values('40000000-0000-4000-8000-000000000004','owner-one@example.invalid');
   insert into public.app_members(company_id,user_id,role) values(v_company,'40000000-0000-4000-8000-000000000004','owner');
-  update public.app_invites set accepted_at = clock_timestamp() where id = v_invite;
+  update public.app_invites set accepted_at = clock_timestamp(), accepted_by = '40000000-0000-4000-8000-000000000004' where id = v_invite;
   select public.app_activate_paid_checkout(
     'evt_unpaid_checkout', clock_timestamp(), v_company, 'cus_synthetic_one', 'sub_synthetic_one',
     'cs_synthetic_unpaid', 'no_payment_required', 'starter') into v_status;
@@ -98,7 +98,14 @@ begin
   end if;
   insert into auth.users(id,email) values('50000000-0000-4000-8000-000000000005','owner-two@example.invalid');
   insert into public.app_members(company_id,user_id,role) values(v_second,'50000000-0000-4000-8000-000000000005','owner');
-  update public.app_invites set accepted_at = clock_timestamp() where company_id = v_second;
+  update public.app_invites set accepted_at = clock_timestamp(), accepted_by = '40000000-0000-4000-8000-000000000004' where company_id = v_second;
+  select public.app_activate_paid_checkout(
+    'evt_wrong_owner_acceptance', v_checkout_time, v_second, 'cus_synthetic_two', 'sub_synthetic_two',
+    'cs_wrong_owner', 'paid', 'growth') into v_status;
+  if v_status <> 'stale' or (select subscription_status from public.app_companies where id = v_second) <> 'not_configured' then
+    raise exception 'WRONG_OWNER_ACCEPTANCE_ACTIVATED';
+  end if;
+  update public.app_invites set accepted_by = '50000000-0000-4000-8000-000000000005' where company_id = v_second;
   select public.app_apply_stripe_subscription_event(
     'evt_later_past_due', 'customer.subscription.updated', v_checkout_time, v_second,
     'cus_synthetic_two', 'sub_synthetic_two', 'past_due', null) into v_status;

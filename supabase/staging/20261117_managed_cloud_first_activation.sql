@@ -99,8 +99,12 @@ begin
     and p_payment_status = 'paid'
     and v_company.plan = p_plan
     and v_company.active
-    and exists (select 1 from public.app_members m where m.company_id = p_tenant_id and m.role = 'owner' and m.active)
-    and exists (select 1 from public.app_invites i where i.company_id = p_tenant_id and i.role = 'owner' and i.accepted_at is not null)
+    and exists (
+      select 1 from public.app_members m
+      join public.app_invites i on i.company_id = m.company_id and i.accepted_by = m.user_id
+      where m.company_id = p_tenant_id and m.role = 'owner' and m.active
+        and i.role = 'owner' and i.accepted_at is not null
+    )
     and not exists (
       select 1 from public.app_stripe_webhook_events e
       where e.company_id = p_tenant_id and e.stripe_customer_id = p_stripe_customer_id
