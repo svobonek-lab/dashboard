@@ -6,6 +6,7 @@ declare
   v_invite uuid;
   v_second uuid;
   v_status text;
+  v_checkout_time timestamptz := date_trunc('second', clock_timestamp());
 begin
   select company_id, invite_id into v_company, v_invite
   from public.app_platform_create_company_onboarding(
@@ -45,7 +46,7 @@ begin
   end;
 
   select public.app_apply_stripe_subscription_event(
-    'evt_early_update', 'customer.subscription.updated', clock_timestamp(), v_company,
+    'evt_early_update', 'customer.subscription.updated', v_checkout_time, v_company,
     'cus_synthetic_one', 'sub_synthetic_one', 'active', null) into v_status;
   if v_status <> 'stale' or (select subscription_status from public.app_companies where id = v_company) <> 'not_configured' then
     raise exception 'EARLY_SUBSCRIPTION_ACTIVATED';
@@ -68,7 +69,7 @@ begin
     raise exception 'NO_PAYMENT_ACTIVATED';
   end if;
   select public.app_activate_paid_checkout(
-    'evt_paid_checkout', clock_timestamp(), v_company, 'cus_synthetic_one', 'sub_synthetic_one',
+    'evt_paid_checkout', v_checkout_time, v_company, 'cus_synthetic_one', 'sub_synthetic_one',
     'cs_synthetic_paid', 'paid', 'starter') into v_status;
   if v_status <> 'applied' or (select subscription_status from public.app_companies where id = v_company) <> 'active'
     or not exists (select 1 from public.app_first_checkout_activations where company_id = v_company and event_id = 'evt_paid_checkout')
@@ -94,6 +95,19 @@ begin
   end;
   if (select subscription_status from public.app_companies where id = v_second) <> 'not_configured' then
     raise exception 'WRONG_COMPANY_CHANGED_ENTITLEMENT';
+  end if;
+  insert into auth.users(id,email) values('50000000-0000-4000-8000-000000000005','owner-two@example.invalid');
+  insert into public.app_members(company_id,user_id,role) values(v_second,'50000000-0000-4000-8000-000000000005','owner');
+  update public.app_invites set accepted_at = clock_timestamp() where company_id = v_second;
+  select public.app_apply_stripe_subscription_event(
+    'evt_later_past_due', 'customer.subscription.updated', v_checkout_time, v_second,
+    'cus_synthetic_two', 'sub_synthetic_two', 'past_due', null) into v_status;
+  if v_status <> 'stale' then raise exception 'EARLY_PAST_DUE_NOT_RECORDED'; end if;
+  select public.app_activate_paid_checkout(
+    'evt_paid_before_past_due', v_checkout_time, v_second, 'cus_synthetic_two', 'sub_synthetic_two',
+    'cs_synthetic_two', 'paid', 'growth') into v_status;
+  if v_status <> 'stale' or (select subscription_status from public.app_companies where id = v_second) <> 'not_configured' then
+    raise exception 'LATER_PAST_DUE_WAS_OVERRIDDEN';
   end if;
 end;
 $$;

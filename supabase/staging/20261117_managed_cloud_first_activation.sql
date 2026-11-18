@@ -2,6 +2,10 @@
 -- Existing tenants keep the reviewed subscription renewal and rebind behavior.
 begin;
 
+alter table public.app_stripe_webhook_events
+  add column if not exists reported_subscription_status text
+  check (reported_subscription_status in ('active', 'past_due', 'canceled'));
+
 do $$
 declare
   definition text;
@@ -32,11 +36,17 @@ declare
   target regprocedure := 'public.app_apply_stripe_subscription_event(text,text,timestamptz,uuid,text,text,text,timestamptz)'::regprocedure;
   definition text := pg_get_functiondef(target);
   marker text := '  insert into public.app_stripe_webhook_events(';
+  columns_marker text := 'event_id, event_type, company_id, stripe_customer_id, event_created_at, result';
+  values_marker text := 'p_event_id, p_event_type, v_company.id, p_stripe_customer_id, p_event_created_at, v_result';
 begin
   if position(marker in definition) = 0
-    or (length(definition) - length(replace(definition, marker, ''))) / length(marker) <> 1 then
+    or (length(definition) - length(replace(definition, marker, ''))) / length(marker) <> 1
+    or (length(definition) - length(replace(definition, columns_marker, ''))) / length(columns_marker) <> 1
+    or (length(definition) - length(replace(definition, values_marker, ''))) / length(values_marker) <> 1 then
     raise exception 'Stripe event insertion boundary differs from reviewed baseline';
   end if;
+  definition := replace(definition, columns_marker, columns_marker || ', reported_subscription_status');
+  definition := replace(definition, values_marker, values_marker || ', p_subscription_status');
   execute replace(definition, marker,
     '  if v_company.subscription_status = ''not_configured'' then v_result := ''stale''; end if;' || chr(10) || marker);
 end;
@@ -95,6 +105,7 @@ begin
       select 1 from public.app_stripe_webhook_events e
       where e.company_id = p_tenant_id and e.stripe_customer_id = p_stripe_customer_id
         and e.event_type in ('customer.subscription.updated', 'customer.subscription.deleted')
+        and e.reported_subscription_status in ('past_due', 'canceled')
         and e.event_created_at >= p_event_created_at
     ) then
     v_result := 'applied';

@@ -19,6 +19,7 @@ test('first paid activation has a separate service-only transaction and subscrip
   assert.match(sql, /subscription_status = 'not_configured'/);
   assert.match(sql, /app_activate_paid_checkout/);
   assert.match(sql, /app_stripe_webhook_events/);
+  assert.match(sql, /reported_subscription_status/);
   assert.match(sql, /app_platform_audit_events/);
   assert.match(sql, /revoke all on function public\.app_activate_paid_checkout[\s\S]*?from public, anon, authenticated/);
   assert.match(sql, /grant execute on function public\.app_activate_paid_checkout[\s\S]*?to service_role/);
