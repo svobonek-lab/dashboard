@@ -239,9 +239,10 @@ export async function resendPlatformOwnerInvite(
     await assertInvitationQueued(service, inviteId);
   } catch (error) {
     if (error instanceof PlatformHttpError && error.code === 'COMPANY_INVITE_REVIEW_REQUIRED') throw error;
-    await service.rpc('app_platform_cancel_owner_invite', {
+    const { error: rollbackError } = await service.rpc('app_platform_cancel_owner_invite', {
       p_actor_user_id: actorUserId, p_company_id: companyId, p_invite_id: inviteId,
     });
+    if (rollbackError) throw new PlatformHttpError('COMPANY_INVITE_ROLLBACK_FAILED', 503);
     throw new PlatformHttpError('COMPANY_INVITE_QUEUE_FAILED', 503);
   }
   return { invitationStatus: 'queued' };

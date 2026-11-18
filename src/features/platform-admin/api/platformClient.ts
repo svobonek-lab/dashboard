@@ -62,6 +62,7 @@ async function platformRequest<T>(route: 'session' | 'companies' | 'support-sess
       COMPANY_OWNER_ALREADY_REGISTERED: 'Tento e-mail už má účet. Pro nového vlastníka použijte dosud neregistrovaný e-mail.',
       COMPANY_PLAN_UNAVAILABLE: 'Vybraný tarif zatím nemá ověřenou cenu ve Stripe. Zvolte jiný tarif nebo doplňte konfiguraci.',
       COMPANY_BILLING_CONFIG_MISSING: 'Platby nejsou pro toto prostředí připravené. Firmu zatím nelze založit.',
+      COMPANY_INVITE_ROLLBACK_FAILED: 'Pozvánku se nepodařilo vrátit zpět. Před dalším pokusem kontaktujte správce platformy.',
       COMPANY_INVITE_SEND_FAILED: 'Firmu se nepodařilo vytvořit, protože pozvánka nebyla doručena. Změny byly vráceny zpět.',
       COMPANY_INVITE_DELIVERY_UNAVAILABLE: 'E-mailovou pozvánku nelze odeslat. Ověřte vlastní SMTP v Supabase; firma nebyla aktivována.',
       PLATFORM_ACCESS_DENIED: 'Tuto akci může provést pouze správce platformy.',

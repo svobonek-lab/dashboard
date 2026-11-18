@@ -167,8 +167,8 @@ test('landing presents the product and keeps contact and pricing accessible', as
     await expect(page.getByRole('heading', { name: 'Ukázat StavbaFlow na mém procesu' })).toBeVisible();
     await page.getByRole('button', { name: 'Zavřít konzultaci' }).click();
     await page.goto('/');
-    for (const name of ['Pokračovat s tarifem Start', 'Pokračovat s tarifem Růst']) {
-      await expect(page.getByRole('link', { name })).toBeVisible();
+    for (const name of ['Domluvit tarif Start', 'Domluvit tarif Růst']) {
+      await expect(page.getByRole('button', { name })).toBeVisible();
     }
     const sizes = await page.evaluate(() => [document.documentElement.scrollWidth, innerWidth]);
     expect(sizes[0]).toBeLessThanOrEqual(sizes[1]);

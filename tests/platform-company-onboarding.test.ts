@@ -6,6 +6,7 @@ import {
   createPlatformCompanyOnboarding,
   assertPlatformBillingReady,
   getPlatformCompanyAction,
+  resendPlatformOwnerInvite,
   type PlatformCompanyOnboardingInput,
 } from '../api/_platform/routes/companies.js';
 
@@ -115,6 +116,20 @@ test('missing durable queue row compensates company and invite state', async () 
   assert.equal(calls[1].name, 'app_platform_cancel_company_onboarding');
   assert.equal(calls[1].args.p_company_id, 'company-a');
   assert.equal(calls[1].args.p_invite_id, 'invite-a');
+});
+
+test('resend reports failed compensation when a missing queue cannot revoke its replacement invite', async () => {
+  const calls: string[] = [];
+  const service = {
+    rpc: async (name: string) => {
+      calls.push(name);
+      if (name === 'app_platform_resend_owner_invite') return { data: [{ invite_id: 'invite-new', owner_email: 'owner@example.invalid' }], error: null };
+      return { data: null, error: new Error('rollback failed') };
+    },
+    from: () => ({ select: () => ({ eq: () => ({ eq: () => ({ maybeSingle: async () => ({ data: null, error: null }) }) }) }) }),
+  } as any;
+  await assert.rejects(resendPlatformOwnerInvite(service, 'admin-a', 'company-a', 'https://app.example.invalid'), /COMPANY_INVITE_ROLLBACK_FAILED/);
+  assert.deepEqual(calls, ['app_platform_resend_owner_invite', 'app_platform_cancel_owner_invite']);
 });
 
 test('company actions are actor-bound and return only a public form path', async () => {
