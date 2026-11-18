@@ -13,7 +13,7 @@
 
 - The Staging Supabase Dashboard showed Site URL `https://dashboard-git-codex-staging-e2e-79cdb9-svobonek-6462s-projects.vercel.app/login` and exactly one redirect allowlist entry with the same URL. There was no wildcard. This is the existing staging alias, not a verified Preview for `codex/managed-cloud-onboarding`.
 - The read-only GitHub metadata snapshot [run 44304689312](https://github.com/svobonek-lab/dashboard/actions/runs/44304689312) failed before Auth metadata capture: `SUPABASE_ACCESS_TOKEN` received HTTP 401 on the Management API database read-only endpoint. Renewing that token and rerunning the snapshot is required for machine-readable Auth/DB evidence. The browser observation above is limited to the Auth URL settings page.
-- `vercel env ls` showed `EMAIL_LINK_ENCRYPTION_KEY` and public origins only on another invitation Preview branch, and TEST Stripe prices on previous billing branches. Name presence on those branches does not configure the new branch. No values were copied to Git.
+- `vercel env ls` showed `EMAIL_LINK_ENCRYPTION_KEY` and public origins only on another invitation Preview branch, and TEST Stripe prices on previous billing branches. Follow-up `vercel env ls preview codex/managed-cloud-onboarding` returned no variables, and the branch deployment inventory returned no deployments. Name presence on other branches does not configure this branch. No values were copied to Git.
 - The owner identified two Gmail inboxes that could receive two new plus-address aliases. Their addresses are omitted here and must be supplied privately to the staging operator. Confirm actual delivery before treating aliases as controlled identities.
 
 ## Required order after review

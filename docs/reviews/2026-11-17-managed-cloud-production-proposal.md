@@ -25,6 +25,6 @@ Rollback application and landing to the prior deployments and restore prior env 
 
 ## Current blockers
 
-- The isolated staging SQL proposals in this PR are unapplied and require a separate review under `AGENTS.md`.
-- The new branch has no verified branch-scoped staging Auth redirect, encrypted invitation key, public origins, and complete Stripe TEST price configuration. Presence of a variable name on another Preview branch does not establish readiness here.
-- The two new controlled synthetic owner mailboxes and live Stripe product/price approvals have not been supplied or verified. The two-company staging acceptance and production release therefore remain pending.
+- The two isolated staging SQL proposals were separately approved and applied to StavbaCore Staging on 2026-11-18. Read-only metadata confirms their migration records, service-only paid activation RPC, RLS and an empty activation table. The two-company UI acceptance has not run.
+- As of the follow-up Vercel inventory, `codex/managed-cloud-onboarding` has zero branch-scoped Preview variables and zero deployments. It has no verified staging Auth redirect, encrypted invitation key, public origins, or complete Stripe TEST price configuration. Presence of a variable name on another Preview branch does not establish readiness here.
+- Two controlled inboxes were identified, but new synthetic aliases and their delivery have not been verified. Live Stripe product/price approvals also remain pending. The two-company staging acceptance and production release therefore remain pending.
