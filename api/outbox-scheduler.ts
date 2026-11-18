@@ -15,6 +15,8 @@ import {
 } from './_outbox-run-evidence.js';
 import { createInviteLinkDependencies, prepareAuthInviteEmail } from './_invite-outbox.js';
 import { buildPublicAppUrl, getPublicAppUrl, replaceEmailAppOrigins } from './_shared/publicUrls.js';
+import { resolveEmailProviderConfig } from './_email-provider-config.js';
+import { createGmailSmtpProvider } from './_gmail-smtp-provider.js';
 
 function secretsMatch(provided: string, expected: string): boolean {
   const actualBuffer = Buffer.from(provided);
@@ -50,9 +52,8 @@ export default async function outboxSchedulerHandler(req: any, res: any) {
     return;
   }
 
-  const providerApiKey = process.env.EMAIL_PROVIDER_API_KEY || process.env.RESEND_API_KEY;
-  const emailFrom = process.env.EMAIL_FROM;
-  if (!providerApiKey || !emailFrom) {
+  const providerConfig = resolveEmailProviderConfig(process.env);
+  if (!providerConfig) {
     res.status(503).json({ success: false, code: 'EMAIL_PROVIDER_NOT_CONFIGURED' });
     return;
   }
@@ -67,7 +68,9 @@ export default async function outboxSchedulerHandler(req: any, res: any) {
   const service = createServerlessSupabaseClient(supabaseUrl, serviceKey, {
     auth: { persistSession: false },
   });
-  const provider = createResendEmailProvider(providerApiKey, emailFrom);
+  const provider = providerConfig.kind === 'resend'
+    ? createResendEmailProvider(providerConfig.apiKey, providerConfig.from)
+    : createGmailSmtpProvider(providerConfig);
   const startedAt = new Date().toISOString();
   let runId: string;
   try {
@@ -102,10 +105,13 @@ export default async function outboxSchedulerHandler(req: any, res: any) {
     const nowIso = now.toISOString();
     const staleProcessingBefore = new Date(now.getTime() - 15 * 60 * 1000).toISOString();
     const deliveryUnknownBefore = new Date(now.getTime() - 20 * 60 * 60 * 1000).toISOString();
-    const { data: pendingEmails, error: fetchError } = await service
+    const pendingQuery = service
       .from('app_email_outbox')
       .select('*')
-      .or(`and(status.in.(pending,retry),scheduled_for.lte.${nowIso}),and(status.in.(processing,sending),updated_at.lte.${staleProcessingBefore})`)
+      .or(`and(status.in.(pending,retry),scheduled_for.lte.${nowIso}),and(status.in.(processing,sending),updated_at.lte.${staleProcessingBefore})`);
+    const { data: pendingEmails, error: fetchError } = await (providerConfig.kind === 'gmail_smtp'
+      ? pendingQuery.in('recipient', [...providerConfig.allowedRecipients])
+      : pendingQuery)
       .order('created_at', { ascending: true })
       .limit(40);
 
@@ -130,11 +136,37 @@ export default async function outboxSchedulerHandler(req: any, res: any) {
     const batch = pendingEmails.slice(0, 20);
     for (const email of batch) {
       try {
+        if (providerConfig.kind === 'gmail_smtp') {
+          const recipient = String(email.recipient || email.to || '').trim().toLowerCase();
+          if (!providerConfig.allowedRecipients.includes(recipient)) {
+            itemStatuses.push('skipped');
+            continue;
+          }
+        }
         const attempts = Math.max(0, Number(email.attempts) || 0);
         const staleProcessing = isRecoverableOutboxClaim(email.status, email.updated_at, staleProcessingBefore);
         const processingAgeMs = staleProcessing && email.updated_at
           ? now.getTime() - new Date(email.updated_at).getTime()
           : 0;
+        if (providerConfig.kind === 'gmail_smtp' && staleProcessing) {
+          const { data: uncertain, error: uncertainError } = await service
+            .from('app_email_outbox')
+            .update({ status: 'failed', last_error: 'OUTBOX_DELIVERY_STATE_UNKNOWN', updated_at: nowIso,
+              ...(email.notification_kind === 'auth_invite' ? { invite_link_ciphertext: null, invite_link_expires_at: null, invite_link_lock_id: null, invite_link_lock_until: null } : {}) })
+            .eq('id', email.id)
+            .eq('status', email.status)
+            .lte('updated_at', staleProcessingBefore)
+            .select('id')
+            .maybeSingle();
+          if (uncertainError) {
+            itemStatuses.push('claim_failed');
+            itemErrorCodes.push('OUTBOX_CLAIM_FAILED');
+          } else {
+            itemStatuses.push(uncertain ? 'failed' : 'skipped');
+            if (uncertain) itemErrorCodes.push('OUTBOX_DELIVERY_STATE_UNKNOWN');
+          }
+          continue;
+        }
         if (staleProcessing && processingAgeMs >= 20 * 60 * 60 * 1000) {
           const { data: uncertain, error: uncertainError } = await service
             .from('app_email_outbox')

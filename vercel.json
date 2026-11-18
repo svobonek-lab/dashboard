@@ -11,7 +11,8 @@
       "codex/stavbaflow-design-refresh": false,
       "codex/design-accessibility-finish": false,
       "codex/two-approved-origins": false,
-      "codex/managed-cloud-onboarding": false
+      "codex/managed-cloud-onboarding": false,
+      "codex/staging-gmail-invitations": false
     }
   },
   "crons": [
