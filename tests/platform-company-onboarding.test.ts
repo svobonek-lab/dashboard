@@ -4,7 +4,9 @@ import { readFileSync } from 'node:fs';
 
 import {
   createPlatformCompanyOnboarding,
+  assertPlatformBillingReady,
   getPlatformCompanyAction,
+  resendPlatformOwnerInvite,
   type PlatformCompanyOnboardingInput,
 } from '../api/_platform/routes/companies.js';
 
@@ -13,7 +15,7 @@ const validInput: PlatformCompanyOnboardingInput = {
   slug: 'strechy-novak',
   ownerName: 'Jan Novák',
   ownerEmail: 'jan@example.cz',
-  plan: 'pilot',
+  plan: 'starter',
   legalConsent: { termsAccepted: true, dpaAccepted: true, acceptedAt: new Date().toISOString() },
 };
 
@@ -44,10 +46,33 @@ test('company onboarding creates one pending owner invite through the actor-boun
   assert.equal(calls[0].name, 'app_platform_create_company_onboarding');
   assert.deepEqual(calls[0].args, {
     p_actor_user_id: 'admin-a', p_name: 'Střechy Novák', p_slug: 'strechy-novak',
-    p_owner_name: 'Jan Novák', p_owner_email: 'jan@example.cz', p_plan: 'pilot',
+    p_owner_name: 'Jan Novák', p_owner_email: 'jan@example.cz', p_plan: 'starter',
     p_terms_accepted_at: validInput.legalConsent.acceptedAt,
     p_dpa_accepted_at: validInput.legalConsent.acceptedAt,
   });
+});
+
+test('company onboarding rejects the legacy pilot plan and missing paid plan before database access', async () => {
+  let called = false;
+  const service = { rpc: async () => { called = true; return { data: null, error: null }; } } as any;
+  for (const plan of ['pilot', undefined] as const) {
+    await assert.rejects(
+      createPlatformCompanyOnboarding(service, 'admin-a', { ...validInput, plan: plan as PlatformCompanyOnboardingInput['plan'] }, 'https://app.example.cz'),
+      /COMPANY_PLAN_INVALID/,
+    );
+  }
+  assert.equal(called, false);
+});
+
+test('company creation requires the selected server-side Stripe price and live mode in production', () => {
+  const config = {
+    secretKey: 'sk_test_synthetic', publicAppUrl: 'https://app.example.invalid', mode: 'test' as const,
+    prices: { pilot: '', starter: 'price_starter', growth: '', pro: '' },
+  };
+  assert.doesNotThrow(() => assertPlatformBillingReady('starter', config, 'preview'));
+  assert.throws(() => assertPlatformBillingReady('growth', config, 'preview'), /COMPANY_PLAN_UNAVAILABLE/);
+  assert.throws(() => assertPlatformBillingReady('starter', config, 'production'), /COMPANY_BILLING_CONFIG_MISSING/);
+  assert.doesNotThrow(() => assertPlatformBillingReady('starter', { ...config, secretKey: 'sk_live_synthetic', mode: 'live' }, 'production'));
 });
 
 test('duplicate slug is returned as a clear conflict', async () => {
@@ -91,6 +116,20 @@ test('missing durable queue row compensates company and invite state', async () 
   assert.equal(calls[1].name, 'app_platform_cancel_company_onboarding');
   assert.equal(calls[1].args.p_company_id, 'company-a');
   assert.equal(calls[1].args.p_invite_id, 'invite-a');
+});
+
+test('resend reports failed compensation when a missing queue cannot revoke its replacement invite', async () => {
+  const calls: string[] = [];
+  const service = {
+    rpc: async (name: string) => {
+      calls.push(name);
+      if (name === 'app_platform_resend_owner_invite') return { data: [{ invite_id: 'invite-new', owner_email: 'owner@example.invalid' }], error: null };
+      return { data: null, error: new Error('rollback failed') };
+    },
+    from: () => ({ select: () => ({ eq: () => ({ eq: () => ({ maybeSingle: async () => ({ data: null, error: null }) }) }) }) }),
+  } as any;
+  await assert.rejects(resendPlatformOwnerInvite(service, 'admin-a', 'company-a', 'https://app.example.invalid'), /COMPANY_INVITE_ROLLBACK_FAILED/);
+  assert.deepEqual(calls, ['app_platform_resend_owner_invite', 'app_platform_cancel_owner_invite']);
 });
 
 test('company actions are actor-bound and return only a public form path', async () => {

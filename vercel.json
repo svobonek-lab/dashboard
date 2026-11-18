@@ -10,7 +10,8 @@
       "codex/staging-invite-hotfix": false,
       "codex/stavbaflow-design-refresh": false,
       "codex/design-accessibility-finish": false,
-      "codex/two-approved-origins": false
+      "codex/two-approved-origins": false,
+      "codex/managed-cloud-onboarding": false
     }
   },
   "crons": [

@@ -167,8 +167,8 @@ test('landing presents the product and keeps contact and pricing accessible', as
     await expect(page.getByRole('heading', { name: 'Ukázat StavbaFlow na mém procesu' })).toBeVisible();
     await page.getByRole('button', { name: 'Zavřít konzultaci' }).click();
     await page.goto('/');
-    for (const name of ['Pokračovat s tarifem Start', 'Pokračovat s tarifem Růst']) {
-      await expect(page.getByRole('link', { name })).toBeVisible();
+    for (const name of ['Domluvit tarif Start', 'Domluvit tarif Růst']) {
+      await expect(page.getByRole('button', { name })).toBeVisible();
     }
     const sizes = await page.evaluate(() => [document.documentElement.scrollWidth, innerWidth]);
     expect(sizes[0]).toBeLessThanOrEqual(sizes[1]);
@@ -326,6 +326,11 @@ test('synthetic platform directory fits mobile and desktop without sending mutat
     const surface = page.locator(width < 768 ? '[data-testid="admin-company-cards"]' : '[data-testid="admin-company-table"]');
     await expect(surface).toBeVisible();
     await expect(surface.getByText('Ukázková střešní firma')).toBeVisible();
+    await page.getByRole('button', { name: 'Nová firma' }).click();
+    const onboarding = page.getByRole('dialog', { name: 'Nová firma' });
+    await expect(onboarding.getByRole('combobox', { name: 'Měsíční tarif' })).toHaveValue('starter');
+    await expect(onboarding.getByRole('option', { name: 'Pilot' })).toHaveCount(0);
+    await onboarding.getByRole('button', { name: 'Zavřít' }).click();
     const sizes = await page.evaluate(() => ({ viewport: innerWidth, document: document.documentElement.scrollWidth }));
     expect(sizes.document).toBeLessThanOrEqual(sizes.viewport);
     if (width === 390) await page.screenshot({ path: testInfo.outputPath('admin-company-directory-390.png'), fullPage: true });
@@ -355,7 +360,7 @@ test('known public and gated routes have no uncaught page errors or viewport ove
       }
       if (route === '/demo' || route === '/demo/leads') await expect(page.getByText('Veřejné demo · pouze syntetická data · pouze pro čtení')).toBeVisible();
       if (route === '/login' || route.endsWith('/login')) await expect(page.getByRole('heading', { name: /Přihlášení/ })).toBeVisible();
-      if (route === '/register-paid') await expect(page.getByRole('heading', { name: /Vaše firma/ })).toBeVisible();
+      if (route === '/register-paid') await expect(page.getByRole('heading', { name: /Registrace zde není dostupná/ })).toBeVisible();
       if (['/widget-iframe', '/widget-iframe.html', '/inquiry', '/inquiry/synthetic-company', '/poptavka', '/form', '/form/synthetic-company'].includes(route)) {
         await expect(page.getByRole('heading', { name: 'Formulář není dostupný' })).toBeVisible();
       }

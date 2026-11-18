@@ -201,6 +201,23 @@ export function sanitizeAuthHookConfig(config) {
   };
 }
 
+function publicRedirectUrl(value) {
+  try {
+    const url = new URL(String(value || '').trim());
+    if (url.protocol !== 'https:' || url.username || url.password || url.search || url.hash) return 'INVALID_REDIRECT_URL';
+    return url.toString().replace(/\/$/, '');
+  } catch {
+    return 'INVALID_REDIRECT_URL';
+  }
+}
+
+export function sanitizeAuthRedirectConfig(config) {
+  return {
+    siteUrl: publicRedirectUrl(config?.site_url),
+    allowedUrls: String(config?.uri_allow_list || '').split(',').map((value) => value.trim()).filter(Boolean).map(publicRedirectUrl),
+  };
+}
+
 async function readJson(response, label) {
   const body = await response.json().catch(() => null);
   if (!response.ok) {
@@ -261,6 +278,9 @@ export async function captureStagingMetadata({
   const authHook = authConfigResult.status === 'fulfilled'
     ? { readable: true, ...sanitizeAuthHookConfig(authConfigResult.value) }
     : { readable: false, error: authConfigResult.reason instanceof Error ? authConfigResult.reason.message : 'Auth hook configuration could not be read.' };
+  const authRedirects = authConfigResult.status === 'fulfilled'
+    ? { readable: true, ...sanitizeAuthRedirectConfig(authConfigResult.value) }
+    : { readable: false, error: authConfigResult.reason instanceof Error ? authConfigResult.reason.message : 'Auth redirect configuration could not be read.' };
 
   return {
     projectRef: stagingProjectRef,
@@ -270,6 +290,7 @@ export async function captureStagingMetadata({
       ? { readable: true, ...unwrapMetadataQueryResult(migrationHistoryResult.value, 'Staging migration history query') }
       : { readable: false, error: migrationHistoryResult.reason instanceof Error ? migrationHistoryResult.reason.message : 'Staging migration history could not be read.' },
     authHook,
+    authRedirects,
   };
 }
 

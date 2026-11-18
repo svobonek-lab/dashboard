@@ -58,9 +58,11 @@ function SubscriptionGuardComponent({ children }: SubscriptionGuardProps) {
           <CreditCard aria-hidden="true" className="h-6 w-6" />
         </div>
         <p className="mt-6 text-xs font-bold text-amber-700">StavbaFlow předplatné</p>
-        <h1 className="mt-2 text-3xl font-black tracking-tight">Předplatné vypršelo</h1>
+        <h1 className="mt-2 text-3xl font-black tracking-tight">{currentOrg?.subscription_status === 'not_configured' ? 'Dokončete první platbu' : 'Předplatné vypršelo'}</h1>
         <p className="mt-3 text-sm leading-6 text-slate-600">
-          Pro obnovení přístupu k firemnímu workspace pokračujte na zabezpečenou platební stránku Stripe.
+          {currentOrg?.subscription_status === 'not_configured'
+            ? 'Firemní prostor je připravený. Přístup získáte po dokončení platby na zabezpečené stránce Stripe.'
+            : 'Pro obnovení přístupu k firemnímu workspace pokračujte na zabezpečenou platební stránku Stripe.'}
         </p>
         <button
           type="button"

@@ -31,7 +31,7 @@ test('pilot dashboards expose only real product actions', () => {
 test('configured login is onboarding-led rather than fake self-service provisioning', () => {
   const login = readFileSync(new URL('../src/pages/auth/login/ui/LoginPage.tsx', import.meta.url), 'utf8');
   assert.match(login, /Přístup k firemnímu účtu vám připraví správce StavbaFlow/);
-  assert.match(login, /VITE_PAID_REGISTRATION_ENABLED === 'true'/);
+  assert.doesNotMatch(login, /href="\/register-paid"|VITE_PAID_REGISTRATION_ENABLED/);
 });
 
 test('new company onboarding stays inside the verified pilot scope', () => {
