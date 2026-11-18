@@ -62,3 +62,10 @@ test('empty optional staging selector keeps the existing Resend configuration us
     STAGING_EMAIL_PROVIDER: '', RESEND_API_KEY: 'synthetic-resend', EMAIL_FROM: 'sender@example.test',
   }), { providerConfigured: true, state: 'ready' });
 });
+
+test('staging Gmail branch requires an explicit sender choice despite shared Preview Resend settings', async () => {
+  assert.deepEqual(await statusWith({
+    VERCEL_ENV: 'preview', VERCEL_GIT_COMMIT_REF: 'codex/staging-gmail-invitations',
+    RESEND_API_KEY: 'synthetic-inherited-key', EMAIL_FROM: 'sender@example.test',
+  }), { providerConfigured: false, state: 'not_configured' });
+});

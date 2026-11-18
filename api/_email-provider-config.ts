@@ -6,6 +6,7 @@ const STAGING_BRANCH = 'codex/staging-gmail-invitations';
 const EMAIL_ADDRESS = /^[^\s@,]+@[^\s@,]+\.[^\s@,]+$/;
 
 export function resolveEmailProviderConfig(env: NodeJS.ProcessEnv): EmailProviderConfig | null {
+  if (env.VERCEL_GIT_COMMIT_REF === STAGING_BRANCH && !env.STAGING_EMAIL_PROVIDER?.trim()) return null;
   if (env.STAGING_EMAIL_PROVIDER?.trim()) {
     if (env.STAGING_EMAIL_PROVIDER !== 'gmail_smtp'
       || env.VERCEL_ENV !== 'preview'
