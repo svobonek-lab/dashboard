@@ -1,4 +1,3 @@
-import registrationCheckoutHandler from './_billing/registration-checkout.js';
 import stripeCheckoutHandler from './_billing/stripe-checkout.js';
 import stripePortalHandler from './_billing/stripe-portal.js';
 import stripeWebhookHandler from './_billing/stripe-webhook.js';
@@ -11,6 +10,7 @@ export const config = {
 };
 
 type BillingRequest = {
+  method?: string;
   query?: Record<string, string | string[] | undefined>;
   url?: string;
 };
@@ -29,10 +29,6 @@ function routeFrom(request: BillingRequest): string {
 
 export default async function billingHandler(request: BillingRequest, response: BillingResponse) {
   const route = routeFrom(request);
-  if (route === 'register') {
-    await registrationCheckoutHandler(request as never, response as never);
-    return;
-  }
   if (route === 'checkout') {
     await stripeCheckoutHandler(request as never, response as never);
     return;

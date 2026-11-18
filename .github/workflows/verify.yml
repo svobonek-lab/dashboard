@@ -381,6 +381,12 @@ jobs:
           docker exec -i stripe-billing-postgres psql -v ON_ERROR_STOP=1 -U postgres < supabase/migrations/20261031185027_allow_canceled_stripe_subscription_rebind.sql
           docker exec -i stripe-billing-postgres psql -v ON_ERROR_STOP=1 -U postgres < supabase/tests/stripe_billing_verify.sql
           bash supabase/tests/stripe_billing_concurrency.sh
+      - name: Verify Managed Cloud onboarding on disposable PostgreSQL
+        run: |
+          docker exec -i stripe-billing-postgres psql -v ON_ERROR_STOP=1 -U postgres < supabase/tests/managed_cloud_setup.sql
+          docker exec -i stripe-billing-postgres psql -v ON_ERROR_STOP=1 -U postgres < supabase/staging/20261117_managed_cloud_admin_onboarding.sql
+          docker exec -i stripe-billing-postgres psql -v ON_ERROR_STOP=1 -U postgres < supabase/staging/20261117_managed_cloud_first_activation.sql
+          docker exec -i stripe-billing-postgres psql -v ON_ERROR_STOP=1 -U postgres < supabase/tests/managed_cloud_verify.sql
       - name: Stop disposable PostgreSQL
         if: always()
         run: docker rm --force stripe-billing-postgres

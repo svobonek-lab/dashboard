@@ -49,7 +49,7 @@ function checkoutEvent(): Stripe.Event {
         mode: 'subscription',
         payment_status: 'paid',
         subscription: 'sub_checkout_1',
-        metadata: {},
+        metadata: { plan: 'starter' },
       },
     },
     livemode: false,
@@ -245,6 +245,9 @@ test('applies checkout completion to the tenant bound in the signed event', asyn
     subscriptionId: 'sub_checkout_1',
     subscriptionStatus: 'active',
     currentPeriodEnd: null,
+    checkoutSessionId: 'cs_test_1',
+    paymentStatus: 'paid',
+    checkoutPlan: 'starter',
   }]);
 });
 
@@ -260,6 +263,19 @@ test('does not activate an unpaid checkout session', async () => {
   await handler({ method: 'POST', headers: { 'stripe-signature': 'valid' }, body: Buffer.from('{}') }, response);
   assert.equal(response.statusCode, 200);
   assert.equal(updates[0]?.subscriptionStatus, 'past_due');
+});
+
+test('a no-payment Checkout completion never grants first entitlement', async () => {
+  const event = checkoutEvent();
+  (event.data.object as Stripe.Checkout.Session).payment_status = 'no_payment_required';
+  let received: StripeSubscriptionUpdate | undefined;
+  const handler = createStripeWebhookHandler({
+    verifyEvent: () => event,
+    applySubscriptionUpdate: async (update) => { received = update; return 'stale'; },
+  });
+  await handler({ method: 'POST', headers: { 'stripe-signature': 'valid' }, body: Buffer.from('{}') }, responseRecorder());
+  assert.equal(received?.subscriptionStatus, 'past_due');
+  assert.equal(received?.paymentStatus, 'no_payment_required');
 });
 
 test('rejects conflicting signed checkout tenant bindings without touching the database', async () => {
@@ -353,8 +369,9 @@ test('registration checkout carries its signed session binding into atomic provi
   assert.equal(response.statusCode, 200);
   assert.equal(received.checkoutSessionId, 'cs_test_1');
   assert.equal(received.paymentStatus, 'paid');
+  assert.equal(received.legacyRegistration, true);
 });
-test('registration persistence calls the service RPC only behind the reviewed feature gate', async () => {
+test('legacy paid-registration events cannot provision a new tenant and use only the guarded lifecycle RPC', async () => {
   const { persistSubscriptionUpdate } = await import('../api/_billing/stripe-webhook.ts');
   const names = ['SUPABASE_URL','SUPABASE_SERVICE_ROLE_KEY','PAID_ONBOARDING_ENABLED'] as const;
   const original = names.map(name => process.env[name]);
@@ -363,7 +380,7 @@ test('registration persistence calls the service RPC only behind the reviewed fe
     eventId: 'evt_registration', eventType: 'checkout.session.completed', eventCreatedAt: new Date().toISOString(),
     tenantId: '10000000-0000-4000-8000-000000000001', customerId: 'cus_new',
     subscriptionId: 'sub_new', subscriptionStatus: 'active', currentPeriodEnd: null,
-    checkoutSessionId: 'cs_new', paymentStatus: 'paid',
+    checkoutSessionId: 'cs_new', paymentStatus: 'paid', checkoutPlan: 'starter', legacyRegistration: true,
   };
   let calls = 0;
   const bodies: any[] = [];
@@ -376,17 +393,22 @@ test('registration persistence calls the service RPC only behind the reviewed fe
       calls++;
       urls.push(String(input));
       bodies.push(JSON.parse(String(init?.body)));
-      return new Response('"applied"', { status: 200, headers: { 'content-type': 'application/json' } });
+      return new Response(String(input).includes('app_activate_paid_checkout') ? '"applied"' : '"stale"', { status: 200, headers: { 'content-type': 'application/json' } });
     };
-    await assert.rejects(persistSubscriptionUpdate(update), /staging acceptance/);
-    assert.equal(calls, 0);
+    assert.equal(await persistSubscriptionUpdate(update), 'stale');
+    assert.equal(calls, 1);
+    assert.match(urls[0], /rpc\/app_apply_stripe_subscription_event$/);
     process.env.PAID_ONBOARDING_ENABLED = 'true';
-    assert.equal(await persistSubscriptionUpdate(update), 'applied');
-    assert.match(urls[0], /rpc\/app_provision_paid_checkout$/);
-    assert.equal(bodies[0].p_session_id, 'cs_new');
-    assert.equal(bodies[0].p_payment_status, 'paid');
+    assert.equal(await persistSubscriptionUpdate(update), 'stale');
+    assert.equal(calls, 2);
+    const managed = { ...update, legacyRegistration: false };
+    assert.equal(await persistSubscriptionUpdate(managed), 'applied');
+    assert.match(urls[2], /rpc\/app_activate_paid_checkout$/);
+    assert.equal(bodies[2].p_checkout_session_id, 'cs_new');
+    assert.equal(bodies[2].p_payment_status, 'paid');
+    assert.equal(bodies[2].p_plan, 'starter');
     globalThis.fetch = async () => new Response('{"message":"private detail"}', { status: 400 });
-    await assert.rejects(persistSubscriptionUpdate(update), /Paid provisioning rejected/);
+    await assert.rejects(persistSubscriptionUpdate(managed), /Paid Checkout activation rejected/);
   } finally {
     globalThis.fetch = oldFetch;
     names.forEach((name,i) => { if(original[i]===undefined) delete process.env[name]; else process.env[name]=original[i]; });

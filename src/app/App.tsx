@@ -1,4 +1,3 @@
-import { PaidRegistrationPage } from '../pages/auth/paid-registration';
 import React, { useState, useEffect } from 'react';
 import { useOrganization } from '@/entities/session';
 import { RouterProvider, useRouter } from '../shared/lib/router';
@@ -445,10 +444,9 @@ function AppContent() {
     '/employee/login': 'employee',
   };
 
-  if (pathname === '/register-paid' && deploymentSurface === 'landing') {
+  if (pathname === '/register-paid') {
     return <main className="min-h-screen bg-slate-50 p-6 text-slate-900"><div className="mx-auto mt-20 max-w-lg rounded-xl bg-white p-8"><h1 className="text-2xl font-semibold">Registrace zde není dostupná</h1><a className="mt-5 inline-block underline" href="/">Zpět na web</a></div></main>;
   }
-  if (pathname === '/register-paid') return <PaidRegistrationPage />;
 
   if (pathname === '/login' || roleLoginRoutes[pathname]) {
     if (deploymentSurface === 'landing') {

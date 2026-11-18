@@ -354,7 +354,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onSuccess, expectedRole })
                   </button>
                 </>
               ) : mode === 'login' ? (
-                <span className="text-xs leading-5">{import.meta.env.VITE_PAID_REGISTRATION_ENABLED === 'true' ? <a href="/register-paid" className="font-semibold underline">Založit firemní účet</a> : 'Přístup k firemnímu účtu vám připraví správce StavbaFlow.'}</span>
+                <span className="text-xs leading-5">Přístup k firemnímu účtu vám připraví správce StavbaFlow.</span>
               ) : mode === 'signup' ? (
                 <>
                   Již máte u nás účet?{' '}

@@ -72,6 +72,8 @@ test('staging metadata capture is catalog-only, read-only, and redacts Auth hook
         hook_custom_access_token_uri: 'pg-functions://postgres/auth/app_tenant_access_token_hook',
         hook_custom_access_token_secrets: 'must-not-escape-this-function',
         smtp_pass: 'also-must-not-escape',
+        site_url: 'https://staging-app.example.invalid',
+        uri_allow_list: 'https://staging-app.example.invalid/login,https://staging-app.example.invalid/billing/return',
       }), { status: 200 });
     },
   });
@@ -95,6 +97,11 @@ test('staging metadata capture is catalog-only, read-only, and redacts Auth hook
     customAccessTokenUri: 'pg-functions://<database>/auth/app_tenant_access_token_hook',
     customAccessTokenSecretConfigured: true,
   });
+  assert.deepEqual(result.authRedirects, {
+    readable: true,
+    siteUrl: 'https://staging-app.example.invalid',
+    allowedUrls: ['https://staging-app.example.invalid/login', 'https://staging-app.example.invalid/billing/return'],
+  });
   assert.doesNotMatch(JSON.stringify(result), /must-not-escape|also-must-not-escape/);
 
   const { sanitizeAuthHookConfig } = await import('../scripts/staging-metadata-snapshot.mjs');
@@ -116,4 +123,5 @@ test('staging metadata capture is catalog-only, read-only, and redacts Auth hook
     readable: false,
     error: 'Staging Auth hook configuration metadata query failed with HTTP 403.',
   });
+  assert.deepEqual(partial.authRedirects, { readable: false, error: 'Staging Auth hook configuration metadata query failed with HTTP 403.' });
 });

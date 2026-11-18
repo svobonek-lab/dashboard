@@ -5,6 +5,7 @@ import { runPlatformHandler } from '../handler.js';
 import { PlatformHttpError } from '../http.js';
 import { hasOwnerLegalConsent, type OwnerLegalConsent } from '../../../src/shared/model/legalConsent.js';
 import { normalizePublicOrigin } from '../../_shared/publicUrls.js';
+import { readBillingConfig, type BillingConfig } from '../../_billing/stripe-checkout.js';
 
 const SLUG_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -14,7 +15,7 @@ export interface PlatformCompanyOnboardingInput {
   slug: string;
   ownerName: string;
   ownerEmail: string;
-  plan?: 'pilot';
+  plan: 'starter' | 'growth' | 'pro';
   legalConsent: OwnerLegalConsent;
 }
 
@@ -99,7 +100,7 @@ function normalizeInput(input: PlatformCompanyOnboardingInput): Required<Platfor
     slug: String(input?.slug || '').trim().toLowerCase(),
     ownerName: String(input?.ownerName || '').trim().slice(0, 160),
     ownerEmail: String(input?.ownerEmail || '').trim().toLowerCase(),
-    plan: 'pilot' as const,
+    plan: String(input?.plan || ''),
     legalConsent: input?.legalConsent,
   };
   if (!hasOwnerLegalConsent(normalized.legalConsent)) throw new PlatformHttpError('LEGAL_CONSENT_REQUIRED', 400);
@@ -107,12 +108,29 @@ function normalizeInput(input: PlatformCompanyOnboardingInput): Required<Platfor
   if (!SLUG_PATTERN.test(normalized.slug) || normalized.slug.length > 80) throw new PlatformHttpError('COMPANY_SLUG_INVALID', 400);
   if (normalized.ownerName.length < 2) throw new PlatformHttpError('COMPANY_OWNER_NAME_INVALID', 400);
   if (!EMAIL_PATTERN.test(normalized.ownerEmail) || normalized.ownerEmail.length > 254) throw new PlatformHttpError('COMPANY_OWNER_EMAIL_INVALID', 400);
-  return normalized;
+  if (!['starter', 'growth', 'pro'].includes(normalized.plan)) throw new PlatformHttpError('COMPANY_PLAN_INVALID', 400);
+  return normalized as Required<PlatformCompanyOnboardingInput>;
 }
 
 function assertInviteRedirect(appUrl: string): void {
   if (!normalizePublicOrigin(appUrl)) {
     throw new PlatformHttpError('COMPANY_INVITE_CONFIG_MISSING', 503);
+  }
+}
+
+export function assertPlatformBillingReady(
+  plan: string,
+  config: BillingConfig = readBillingConfig(),
+  deploymentEnvironment: string | undefined = process.env.VERCEL_ENV,
+): void {
+  if (!['starter', 'growth', 'pro'].includes(plan)) throw new PlatformHttpError('COMPANY_PLAN_INVALID', 400);
+  if (!normalizePublicOrigin(config.publicAppUrl)
+    || !new RegExp(`^(?:sk|rk)_${config.mode}_[A-Za-z0-9]+$`).test(config.secretKey)
+    || (deploymentEnvironment === 'production' && config.mode !== 'live')) {
+    throw new PlatformHttpError('COMPANY_BILLING_CONFIG_MISSING', 503);
+  }
+  if (!/^price_[A-Za-z0-9]+$/.test(config.prices[plan as 'starter' | 'growth' | 'pro'])) {
+    throw new PlatformHttpError('COMPANY_PLAN_UNAVAILABLE', 409);
   }
 }
 
@@ -167,6 +185,7 @@ export async function createPlatformCompanyOnboarding(
     p_terms_accepted_at: value.legalConsent.acceptedAt,
     p_dpa_accepted_at: value.legalConsent.acceptedAt,
   });
+  if (error?.message === 'owner email already registered') throw new PlatformHttpError('COMPANY_OWNER_ALREADY_REGISTERED', 409);
   if (error?.code === '23505') throw new PlatformHttpError('COMPANY_SLUG_EXISTS', 409);
   if (error) throw new PlatformHttpError('COMPANY_ONBOARDING_CREATE_FAILED', 502);
   const row = readRpcRow(data);
@@ -242,6 +261,7 @@ export default async function platformCompaniesHandler(request: any, response: a
         return setPlatformBillingPlan(service, userId, String(request.body?.companyId || ''), String(request.body?.plan || ''));
       }
       if (request.body?.action) throw new PlatformHttpError('COMPANY_ACTION_INVALID', 400);
+      assertPlatformBillingReady(String(request.body?.plan || ''));
       return { company: await createPlatformCompanyOnboarding(service, userId, request.body, String(process.env.PUBLIC_APP_URL || '')) };
     }
     if (request.method !== 'GET') throw new PlatformHttpError('METHOD_NOT_ALLOWED', 405);

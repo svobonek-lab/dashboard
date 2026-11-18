@@ -110,6 +110,7 @@ export function readBillingConfig(): BillingConfig {
 }
 
 function validConfig(config: BillingConfig): boolean {
+  if (process.env.VERCEL_ENV === 'production' && config.mode !== 'live') return false;
   if (!new RegExp(`^(?:sk|rk)_${config.mode}_[A-Za-z0-9]+$`).test(config.secretKey)) return false;
   return Boolean(normalizePublicOrigin(config.publicAppUrl));
 }

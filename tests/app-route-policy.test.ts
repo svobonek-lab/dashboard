@@ -55,6 +55,7 @@ test('legacy widget iframe URL redirects to the SPA route and the embed emits th
 test('pre-sales audit branch does not trigger an unverified Preview deployment', () => {
   const deploymentConfig = deployment.git?.deploymentEnabled;
   assert.equal(deploymentConfig?.['codex/pre-sales-readiness-followup'], false);
+  assert.equal(deploymentConfig?.['codex/managed-cloud-onboarding'], false);
 });
 
 test('paid registration copy does not claim that the public flow is a test checkout', () => {

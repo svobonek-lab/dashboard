@@ -1,0 +1,30 @@
+# Managed Cloud production change proposal — review only
+
+**Status:** Unapplied. The owner chose verified production Stripe Checkout for the first company bill. This proposal does not authorize a deployment, migration, Auth change, Stripe object creation, or environment write.
+
+## Exact release boundary
+
+Release the admin-only company onboarding code only after the two staging SQL proposals have been reviewed and applied to isolated staging, and two new synthetic owner flows have passed through delivery, acceptance, Stripe TEST payment, signed webhook activation, and owner/employee access. The checkout route must stay unavailable until the matching database RPC is present. The old `/register-paid` page and `route=register` endpoint remain closed regardless of feature flags.
+
+The existing approved public origins from [PR #191](https://github.com/svobonek-lab/dashboard/pull/191) are `https://dashboard-tau-snowy-61.vercel.app` (application) and `https://jobflow-pro-brown.vercel.app` (sales). Recheck ownership and the live aliases before release. Renaming a Vercel project does not change these origins by itself. If either alias changes, obtain explicit approval of the replacement pair and rebuild both surfaces; do not infer an origin from a project name.
+
+## Production sequence for human review
+
+1. Inspect Production **metadata only** through the project-scoped read-only `supabase-ci` tool. Compare the exact function signatures, defaults, constraints, RLS, grants and migration history with isolated staging. Review a Production-specific migration derived from the observed baseline. Do not apply either staging SQL file blindly to Production.
+2. Confirm approved legal terms and DPA, verified outbound sender/provider, and the exact Supabase Auth Site URL and redirect allowlist. The allowlist must include `https://dashboard-tau-snowy-61.vercel.app/login` for invitation and recovery. Avoid wildcard redirects. Verify the configured Auth email link expiry is at least the application TTL.
+3. In the `dashboard` Vercel project, scope `VITE_DEPLOYMENT_SURFACE=app`, `PUBLIC_APP_URL=https://dashboard-tau-snowy-61.vercel.app`, and `PUBLIC_LANDING_URL=https://jobflow-pro-brown.vercel.app` to Production. In `jobflow-pro`, scope the same public origins with `VITE_DEPLOYMENT_SURFACE=landing`. Reconfirm existing values immediately before editing and keep a private rollback record.
+4. On the application server only, set `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `EMAIL_LINK_ENCRYPTION_KEY`, `EMAIL_PROVIDER_API_KEY` or the reviewed `RESEND_API_KEY` alias, `EMAIL_FROM`, `AUTH_EMAIL_LINK_TTL_SECONDS`, `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `STRIPE_BILLING_MODE=live`, and the approved `STRIPE_PRICE_STARTER_ID`, `STRIPE_PRICE_GROWTH_ID`, `STRIPE_PRICE_PRO_ID` for plans actually offered. Keep values in the private secret store. Set client Supabase URL/key only to the reviewed Production project. Keep `PAID_ONBOARDING_ENABLED=false` and `VITE_PAID_REGISTRATION_ENABLED=false`.
+5. In Stripe **live** mode, verify merchant/legal readiness, recurring products, prices, currency, interval, tax treatment and webhook endpoint. The signed webhook must subscribe to `checkout.session.completed`, `customer.subscription.updated`, and `customer.subscription.deleted` at the exact application API origin. Record object IDs and endpoint ownership privately; store no secret or customer identifier in Git.
+6. Apply the separately reviewed Production migration in a controlled window. Verify service-only grants and `not_configured` default. Deploy the reviewed application commit manually, then the landing commit. Test a new synthetic company only with an approved cleanup plan and no customer data. Verify owner invitation and recovery, paid Checkout, replay, out-of-order event, non-active owner/employee denial, and the sales demo/login URLs at 390 and 1440 px. Inspect audit and Stripe event rows by synthetic IDs only.
+
+## Fail-closed gate and rollback
+
+If a prerequisite is missing, stop before creating a company or presenting Checkout. Do not change `subscription_status` by UI or ad hoc SQL. On failed email delivery, keep the invite queued for bounded retry or manual review; on failed webhook persistence, return a retryable response so Stripe replays the signed event. A paid event and entitlement update must commit together.
+
+Rollback application and landing to the prior deployments and restore prior env values from the operator's private record. Keep the event/audit tables and migration history for investigation; use a separately reviewed forward migration to repair DB state. Disable new admin onboarding and Checkout first if the new RPC cannot be safely used. Do not delete a charged subscription or customer as a technical rollback. Reconcile live Stripe charges with the owner before any compensation.
+
+## Current blockers
+
+- The isolated staging SQL proposals in this PR are unapplied and require a separate review under `AGENTS.md`.
+- The new branch has no verified branch-scoped staging Auth redirect, encrypted invitation key, public origins, and complete Stripe TEST price configuration. Presence of a variable name on another Preview branch does not establish readiness here.
+- The two new controlled synthetic owner mailboxes and live Stripe product/price approvals have not been supplied or verified. The two-company staging acceptance and production release therefore remain pending.

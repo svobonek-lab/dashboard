@@ -18,6 +18,26 @@ function responseRecorder() {
 
 const tenantId = '10000000-0000-4000-8000-000000000001';
 
+test('production Checkout refuses a Stripe TEST configuration before owner or provider access', async () => {
+  const previous = process.env.VERCEL_ENV;
+  process.env.VERCEL_ENV = 'production';
+  let ownerCalls = 0;
+  try {
+    const handler = createStripeCheckoutHandler(dependencies({ authorizeOwner: async () => {
+      ownerCalls += 1;
+      throw new Error('should not be called');
+    } }));
+    const response = responseRecorder();
+    await handler({ method: 'POST' }, response);
+    assert.equal(response.statusCode, 503);
+    assert.deepEqual(response.body, { code: 'BILLING_NOT_CONFIGURED' });
+    assert.equal(ownerCalls, 0);
+  } finally {
+    if (previous === undefined) delete process.env.VERCEL_ENV;
+    else process.env.VERCEL_ENV = previous;
+  }
+});
+
 function dependencies(overrides: Partial<CheckoutDependencies> = {}): CheckoutDependencies {
   return {
     authorizeOwner: async () => ({ userId: '20000000-0000-4000-8000-000000000002', companyId: tenantId, customerId: null, plan: 'starter', email: 'owner@example.invalid' }),

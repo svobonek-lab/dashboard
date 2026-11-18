@@ -26,6 +26,8 @@ export interface StripeSubscriptionUpdate {
   currentPeriodEnd: string | null;
   checkoutSessionId?: string;
   paymentStatus?: string;
+  checkoutPlan?: string;
+  legacyRegistration?: boolean;
 }
 
 interface StripeWebhookDependencies {
@@ -178,12 +180,14 @@ function toSubscriptionUpdate(event: Stripe.Event): StripeSubscriptionUpdate | n
         tenantId,
         customerId,
         subscriptionId,
-        subscriptionStatus: session.payment_status === 'paid' || session.payment_status === 'no_payment_required'
+        subscriptionStatus: session.payment_status === 'paid'
           ? 'active'
           : 'past_due',
         currentPeriodEnd: null,
-        ...(session.metadata?.onboarding === 'paid_registration'
-          ? { checkoutSessionId: session.id, paymentStatus: session.payment_status } : {}),
+        checkoutSessionId: session.id,
+        paymentStatus: session.payment_status,
+        checkoutPlan: String(session.metadata?.plan || ''),
+        ...(session.metadata?.onboarding === 'paid_registration' ? { legacyRegistration: true } : {}),
       };
     }
     case 'customer.subscription.updated':
@@ -215,15 +219,15 @@ export async function persistSubscriptionUpdate(update: StripeSubscriptionUpdate
   const service = createServerlessSupabaseClient(supabaseUrl, serviceKey, {
     auth: { persistSession: false, autoRefreshToken: false },
   });
-  if (update.checkoutSessionId) {
-    if (process.env.PAID_ONBOARDING_ENABLED !== 'true') throw new Error('Paid onboarding requires staging acceptance.');
-    const { data, error } = await service.rpc('app_provision_paid_checkout', {
+  if (update.checkoutSessionId && !update.legacyRegistration) {
+    const { data, error } = await service.rpc('app_activate_paid_checkout', {
       p_event_id: update.eventId, p_event_created_at: update.eventCreatedAt,
-      p_tenant_id: update.tenantId, p_customer_id: update.customerId,
-      p_subscription_id: update.subscriptionId, p_session_id: update.checkoutSessionId,
-      p_payment_status: update.paymentStatus,
+      p_tenant_id: update.tenantId,
+      p_stripe_customer_id: update.customerId, p_stripe_subscription_id: update.subscriptionId,
+      p_checkout_session_id: update.checkoutSessionId, p_payment_status: update.paymentStatus,
+      p_plan: update.checkoutPlan,
     });
-    if (error || !['applied','duplicate','stale'].includes(String(data))) throw new Error('Paid provisioning rejected.');
+    if (error || !['applied','duplicate','stale'].includes(String(data))) throw new Error('Paid Checkout activation rejected.');
     return data as StripeApplyResult;
   }
   const { data, error } = await service.rpc('app_apply_stripe_subscription_event', {

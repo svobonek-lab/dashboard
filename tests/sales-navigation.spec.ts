@@ -21,6 +21,9 @@ for (const width of [390, 1440]) {
     await page.getByRole('button', { name: 'Přihlásit se' }).click();
     await expect(page).toHaveURL(`${app}/login`);
     await expect(page.getByRole('heading', { name: /Přihlášení/ })).toBeVisible();
+    await page.goto(`${app}/register-paid`);
+    await expect(page.getByRole('heading', { name: 'Registrace zde není dostupná' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Založit firmu' })).toHaveCount(0);
     await page.goto(`${landing}/register-paid`);
     await expect(page.getByRole('heading', { name: 'Registrace zde není dostupná' })).toBeVisible();
     await expect(page.getByRole('button', { name: 'Založit firmu' })).toHaveCount(0);

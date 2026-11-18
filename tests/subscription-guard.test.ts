@@ -11,12 +11,14 @@ test('subscription access is fail-closed and allows only active or trialing tena
   assert.equal(getSubscriptionAccess('canceled', 'owner'), 'owner_blocked');
   assert.equal(getSubscriptionAccess(undefined, 'owner'), 'owner_blocked');
   assert.equal(getSubscriptionAccess('pilot', 'owner'), 'owner_blocked');
+  assert.equal(getSubscriptionAccess('not_configured', 'owner'), 'owner_blocked');
 });
 
 test('an employee with an unpaid tenant never receives the payment action', () => {
   assert.equal(getSubscriptionAccess('past_due', 'employee'), 'employee_blocked');
   assert.equal(getSubscriptionAccess('canceled', 'employee'), 'employee_blocked');
   assert.equal(getSubscriptionAccess(undefined, 'employee'), 'employee_blocked');
+  assert.equal(getSubscriptionAccess('not_configured', 'employee'), 'employee_blocked');
 });
 
 test('the guarded UI keeps employee copy separate and exposes checkout only to the owner branch', () => {
@@ -26,6 +28,7 @@ test('the guarded UI keeps employee copy separate and exposes checkout only to t
   const employeeBranch = source.slice(employeeStart, employeeEnd);
   assert.match(source, /Kontaktujte administrátora vaší společnosti\. Přístup k systému byl pozastaven\./);
   assert.match(source, /Předplatné vypršelo/);
+  assert.match(source, /Dokončete první platbu/);
   assert.match(source, /Přejít k platbě/);
   assert.doesNotMatch(employeeBranch, /Přejít k platbě|handlePayment/);
   assert.match(source, /memo\(SubscriptionGuardComponent\)/);
