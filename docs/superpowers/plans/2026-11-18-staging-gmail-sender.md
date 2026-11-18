@@ -12,7 +12,7 @@
 
 ## Global Constraints
 
-- Only `VERCEL_ENV=preview` and `VERCEL_GIT_COMMIT_REF=codex/managed-cloud-onboarding` may select Gmail.
+- Only `VERCEL_ENV=preview` and `VERCEL_GIT_COMMIT_REF=codex/staging-gmail-invitations` may select Gmail.
 - Require an exact four-recipient allowlist; leave unrelated queued mail untouched and reject any other recipient before opening SMTP.
 - Do not log or store SMTP credentials, email content or recipient addresses in run evidence.
 - No Production env, database, Auth or Stripe changes.
@@ -58,4 +58,4 @@
 - [ ] Document exact branch-scoped Preview variable names and operator steps; no secret values.
 - [ ] Run `npm test`, `npm run lint`, `npm run build`, and `git diff --check`.
 - [ ] Review staged diff and scan for secrets.
-- [ ] Commit and push to Draft PR #192 for review; do not deploy.
+- [ ] Commit and push to a new reviewable PR from `codex/staging-gmail-invitations`; do not deploy.

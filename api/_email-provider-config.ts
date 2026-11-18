@@ -2,7 +2,7 @@ export type EmailProviderConfig =
   | { kind: 'resend'; apiKey: string; from: string }
   | { kind: 'gmail_smtp'; user: string; appPassword: string; from: string; allowedRecipients: readonly string[] };
 
-const STAGING_BRANCH = 'codex/managed-cloud-onboarding';
+const STAGING_BRANCH = 'codex/staging-gmail-invitations';
 const EMAIL_ADDRESS = /^[^\s@,]+@[^\s@,]+\.[^\s@,]+$/;
 
 export function resolveEmailProviderConfig(env: NodeJS.ProcessEnv): EmailProviderConfig | null {

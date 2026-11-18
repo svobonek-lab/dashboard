@@ -12,7 +12,7 @@ Deliver two synthetic Managed Cloud owner invitations and two employee invitatio
 
 ## Proposed behavior
 
-1. The server selects Gmail SMTP only when `VERCEL_ENV=preview`, the exact Preview branch is `codex/managed-cloud-onboarding`, and explicit staging provider configuration is complete. All other deployments keep the existing Resend selection and fail closed when its configuration is missing.
+1. The server selects Gmail SMTP only when `VERCEL_ENV=preview`, the exact Preview branch is `codex/staging-gmail-invitations`, and explicit staging provider configuration is complete. All other deployments keep the existing Resend selection and fail closed when its configuration is missing.
 2. The Gmail adapter accepts only an exact allowlist of four controlled staging owner and employee addresses (including chosen aliases) configured in Preview env. The worker filters unrelated pending messages before claiming them. It sends from the Gmail account address. It never exposes the app password in responses or audit records.
 3. SMTP's accepted message ID is recorded as `provider_message_id`; definite recipient rejection is terminal. Network timeout or acceptance ambiguity is recorded as an unknown delivery state, with **no automatic resend**. An operator may inspect the Gmail Sent folder and outbox row before deciding to retry or compensate. Existing Resend idempotent retries remain unchanged.
 4. Configure Gmail user, app password, from address, and recipient allowlist only on the branch-scoped Vercel Preview, directly in Vercel. Before deployment, verify that inherited Resend or Stripe secrets cannot silently select a wrong provider or environment. No credential values are copied through this workspace.

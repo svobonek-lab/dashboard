@@ -15,7 +15,7 @@ test('staging Gmail leaves unrelated pending mail untouched and quarantines a st
     Object.assign(process.env, {
       CRON_SECRET: 'synthetic-cron', EMAIL_FROM: 'sender@example.test',
       SUPABASE_URL: 'https://synthetic.supabase.test', SUPABASE_SERVICE_ROLE_KEY: 'synthetic-service',
-      VERCEL_ENV: 'preview', VERCEL_GIT_COMMIT_REF: 'codex/managed-cloud-onboarding',
+      VERCEL_ENV: 'preview', VERCEL_GIT_COMMIT_REF: 'codex/staging-gmail-invitations',
       STAGING_EMAIL_PROVIDER: 'gmail_smtp', STAGING_GMAIL_USER: 'sender@example.test',
       STAGING_GMAIL_APP_PASSWORD: 'synthetic-password',
       STAGING_EMAIL_ALLOWED_RECIPIENTS: 'owner-a@example.test,owner-b@example.test,employee-a@example.test,employee-b@example.test',

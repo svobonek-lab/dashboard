@@ -31,7 +31,7 @@ async function statusWith(values: Record<string, string | undefined>) {
 
 const gmail = {
   VERCEL_ENV: 'preview',
-  VERCEL_GIT_COMMIT_REF: 'codex/managed-cloud-onboarding',
+  VERCEL_GIT_COMMIT_REF: 'codex/staging-gmail-invitations',
   STAGING_EMAIL_PROVIDER: 'gmail_smtp',
   STAGING_GMAIL_USER: 'sender@example.test',
   STAGING_GMAIL_APP_PASSWORD: 'synthetic-password',
