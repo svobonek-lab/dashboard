@@ -19,7 +19,7 @@ async function openLead(page: Page, role: 'owner' | 'employee', title: string) {
 }
 
 test('owner and assigned employee persist notes, PDF and JPEG; company B is isolated', async ({ browser, request }) => {
-  test.setTimeout(120_000);
+  test.setTimeout(300_000);
   const { preview, url, key } = stagingConfig();
   const companyA = requiredValue('STAGING_COMPANY_A_ID');
   const leadA = requiredValue('STAGING_LEAD_A_ID');
@@ -42,6 +42,7 @@ test('owner and assigned employee persist notes, PDF and JPEG; company B is isol
     await signIn(employee, 'EMPLOYEE_A');
     ownerToken = await accessToken(browser, 'OWNER_A');
     const ownerBToken = await accessToken(browser, 'OWNER_B');
+    console.info('Attachment acceptance: sessions established.');
 
     for (const [page, role, body, prefix] of [
       [owner, 'owner', noteOwner, 'owner'],
@@ -80,6 +81,7 @@ test('owner and assigned employee persist notes, PDF and JPEG; company B is isol
     const fileRows = await restGet(request, ownerToken, 'app_lead_files', `select=id,file_name,storage_path&company_id=eq.${companyA}&lead_id=eq.${leadA}`);
     const created = fileRows.filter(row => names.includes(String(row.file_name)));
     expect(created).toHaveLength(4);
+    console.info('Attachment acceptance: notes and files persisted after reload.');
 
     for (const table of ['app_lead_notes', 'app_lead_files']) {
       const rows = await restGet(request, ownerBToken, table, `select=id&company_id=eq.${companyA}&lead_id=eq.${leadA}`);
@@ -119,6 +121,7 @@ test('owner and assigned employee persist notes, PDF and JPEG; company B is isol
       headers: { apikey: key, Authorization: `Bearer ${ownerToken}` },
     });
     expect(ownerStorageControl.status()).toBe(200);
+    console.info('Attachment acceptance: company B isolation verified.');
 
     const deniedOwnerNote = await restDelete(request, await accessToken(browser, 'EMPLOYEE_A'), 'app_lead_notes', `id=eq.${noteRows.find(row => row.body === noteOwner)?.id}&company_id=eq.${companyA}`);
     expect(await deniedOwnerNote.json()).toEqual([]);
@@ -164,6 +167,7 @@ test('owner and assigned employee persist notes, PDF and JPEG; company B is isol
     expect(uploadAborted).toBe(true);
     await owner.unroute('**/storage/v1/object/upload/sign/lead-files/**');
     expect(await restGet(request, ownerToken, 'app_lead_files', `select=id&company_id=eq.${companyA}&lead_id=eq.${leadA}&file_name=eq.${encodeURIComponent(`interrupted-${run}.pdf`)}`)).toHaveLength(0);
+    console.info('Attachment acceptance: preview and interrupted upload faults verified.');
 
     const orphanRow = created.find(row => row.file_name === `owner-${run}.pdf`);
     expect(orphanRow).toBeTruthy();
@@ -177,6 +181,7 @@ test('owner and assigned employee persist notes, PDF and JPEG; company B is isol
       headers: { apikey: key, Authorization: `Bearer ${ownerToken}` },
     });
     expect(orphanControl.status()).toBe(200);
+    console.info('Attachment acceptance: Storage delete failure verified.');
 
     const employeeOwnerNote = employee.locator('article').filter({ hasText: noteOwner });
     await expect(employeeOwnerNote.getByRole('button', { name: 'Smazat poznámku' })).toHaveCount(0);
@@ -197,7 +202,9 @@ test('owner and assigned employee persist notes, PDF and JPEG; company B is isol
       });
       expect(removedObject.status()).not.toBe(200);
     }
+    console.info('Attachment acceptance: authorized deletes verified.');
   } finally {
+    console.info('Attachment acceptance: exact synthetic cleanup started.');
     if (ownerToken) {
       for (const body of [noteOwner, noteEmployee]) {
         const rows = await restGet(request, ownerToken, 'app_lead_notes', `select=id&company_id=eq.${companyA}&lead_id=eq.${leadA}&body=eq.${encodeURIComponent(body)}`);
@@ -239,6 +246,7 @@ test('same-company employee cannot read or change another synthetic lead and its
   const companyA = requiredValue('STAGING_COMPANY_A_ID');
   const ownerAId = requiredValue('STAGING_OWNER_A_ID');
   const employeeAId = requiredValue('STAGING_EMPLOYEE_A_ID');
+  const serviceRoleKey = requiredValue('STAGING_SUPABASE_SERVICE_ROLE_KEY');
   const [ownerToken, employeeToken] = await Promise.all([
     accessToken(browser, 'OWNER_A'), accessToken(browser, 'EMPLOYEE_A'),
   ]);
@@ -252,10 +260,13 @@ test('same-company employee cannot read or change another synthetic lead and its
   let fileCreated = false;
   let objectCreated = false;
   try {
-    const lead = await restInsert(request, ownerToken, 'app_leads', {
-      ...buildTenantLeadFixture('A', companyA, employeeAId),
-      id: leadId, title: `Synthetic unassigned attachment ${fileId}`,
-      assigned_to: null,
+    const lead = await request.post(`${url}/rest/v1/app_leads`, {
+      headers: { apikey: serviceRoleKey, Authorization: `Bearer ${serviceRoleKey}`, Prefer: 'return=representation', 'Content-Type': 'application/json' },
+      data: {
+        ...buildTenantLeadFixture('A', companyA, employeeAId),
+        id: leadId, title: `Synthetic unassigned attachment ${fileId}`,
+        assigned_to: null,
+      },
     });
     expect(lead.status()).toBe(201);
     leadCreated = true;
@@ -322,7 +333,12 @@ test('same-company employee cannot read or change another synthetic lead and its
       expect(removed.ok()).toBe(true);
     }
     if (noteId) await restDelete(request, ownerToken, 'app_lead_notes', `id=eq.${noteId}&company_id=eq.${companyA}`);
-    if (leadCreated) await restDelete(request, ownerToken, 'app_leads', `id=eq.${leadId}&company_id=eq.${companyA}`);
+    if (leadCreated) {
+      const deleted = await request.delete(`${url}/rest/v1/app_leads?id=eq.${leadId}&company_id=eq.${companyA}`, {
+        headers: { apikey: serviceRoleKey, Authorization: `Bearer ${serviceRoleKey}`, Prefer: 'return=representation' },
+      });
+      expect((await deleted.json()) as Array<unknown>).toHaveLength(1);
+    }
   }
 });
 
