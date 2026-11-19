@@ -33,7 +33,7 @@ export interface LeadStoredFile {
   mimeType: string;
   sizeBytes: number;
   createdAt: string;
-  previewUrl: string;
+  previewUrl: string | null;
 }
 
 export interface ICRMRepository {

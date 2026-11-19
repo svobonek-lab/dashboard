@@ -7,6 +7,8 @@ import {
   filterEmployeeJobs,
   normalizeLeadNote,
   sanitizeUploadName,
+  validateLeadUpload,
+  MAX_LEAD_FILE_BYTES,
 } from '../src/app/leadAttachments';
 
 const read = (path: string) => readFileSync(new URL(path, import.meta.url), 'utf8');
@@ -24,6 +26,12 @@ test('lead attachment input is bounded and storage paths are tenant and lead sco
     buildLeadFilePath(companyId, leadId, fileId, '../foto stavby?.JPG'),
     `${companyId}/${leadId}/${fileId}-foto-stavby-.jpg`,
   );
+});
+
+test('upload accepts exactly 15 MiB of an allowed MIME and rejects oversize or unsupported types', () => {
+  assert.doesNotThrow(() => validateLeadUpload({ name: 'drawing.pdf', type: 'application/pdf', size: MAX_LEAD_FILE_BYTES }));
+  assert.throws(() => validateLeadUpload({ name: 'drawing.pdf', type: 'application/pdf', size: MAX_LEAD_FILE_BYTES + 1 }), /15 MB/);
+  assert.throws(() => validateLeadUpload({ name: 'script.html', type: 'text/html', size: 1 }), /Povolené/);
 });
 
 test('employee job tabs filter persisted jobs instead of only changing tab styling', () => {

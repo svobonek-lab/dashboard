@@ -3,12 +3,14 @@ import { resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 
 const allowedBranch = 'codex/staging-e2e-local-runner';
+const attachmentBranch = 'codex/lead-notes-files-acceptance';
+const allowedBranches = new Set([allowedBranch, attachmentBranch]);
 const allowedStagingRef = 'xwzweltjvreqhjpbjrxa';
 const allowedProductionRef = 'oncmtmrhmjlerbwkrecv';
 
 export function validateStagingPreviewConfig(env) {
   const errors = [];
-  if (env.GITHUB_REF !== `refs/heads/${allowedBranch}` || env.STAGING_PREVIEW_GIT_BRANCH !== allowedBranch) {
+  if (!allowedBranches.has(env.STAGING_PREVIEW_GIT_BRANCH) || env.GITHUB_REF !== `refs/heads/${env.STAGING_PREVIEW_GIT_BRANCH}`) {
     errors.push('Preview configuration is allowed only on the explicitly approved staging branch.');
   }
   if (env.STAGING_SUPABASE_PROJECT_REF !== allowedStagingRef || env.PRODUCTION_SUPABASE_PROJECT_REF !== allowedProductionRef) {
@@ -16,7 +18,8 @@ export function validateStagingPreviewConfig(env) {
   }
   try {
     const url = new URL(env.STAGING_SUPABASE_URL);
-    if (url.protocol !== 'https:' || url.hostname !== `${allowedStagingRef}.supabase.co`) {
+    if (url.protocol !== 'https:' || url.hostname !== `${allowedStagingRef}.supabase.co` ||
+      url.username || url.password || url.port || url.pathname !== '/' || url.search || url.hash) {
       errors.push('The configured Supabase URL is not the approved staging project URL.');
     }
   } catch {
@@ -32,19 +35,25 @@ export function validateStagingPreviewConfig(env) {
 }
 
 export function buildPreviewVariables(env, randomBytesImpl = randomBytes) {
-  return [
+  const values = [
     ['VITE_SUPABASE_URL', env.STAGING_SUPABASE_URL],
     ['VITE_SUPABASE_ANON_KEY', env.STAGING_SUPABASE_PUBLISHABLE_KEY],
     ['SUPABASE_URL', env.STAGING_SUPABASE_URL],
     ['SUPABASE_SERVICE_ROLE_KEY', env.STAGING_SUPABASE_SERVICE_ROLE_KEY],
     ['CONNECTOR_SECRET_ENCRYPTION_KEY', randomBytesImpl(32).toString('base64')],
     ['INTAKE_HASH_SECRET', randomBytesImpl(32).toString('base64url')],
-  ].map(([key, value]) => ({
+  ];
+  if (env.STAGING_PREVIEW_GIT_BRANCH === attachmentBranch) values.push(
+    ['VITE_LEAD_NOTES_FILES_ENABLED', 'true'],
+    ['VITE_STAGING_SUPABASE_PROJECT_REF', allowedStagingRef],
+    ['VITE_PRODUCTION_LEAD_NOTES_FILES_APPROVED', 'false'],
+  );
+  return values.map(([key, value]) => ({
     key,
     value,
     type: 'sensitive',
     target: ['preview'],
-    gitBranch: allowedBranch,
+    gitBranch: env.STAGING_PREVIEW_GIT_BRANCH,
     comment: 'Staging-only Preview for synthetic acceptance tests',
   }));
 }
@@ -70,7 +79,7 @@ async function vercelApi(url, env, fetchImpl, init) {
 
 export async function createMissingPreviewVariables(env, fetchImpl = fetch, randomBytesImpl = randomBytes) {
   const baseUrl = `https://api.vercel.com/v10/projects/${encodeURIComponent(env.VERCEL_PROJECT_ID)}/env`;
-  const query = new URLSearchParams({ gitBranch: allowedBranch, teamId: env.VERCEL_ORG_ID, decrypt: 'false' });
+  const query = new URLSearchParams({ gitBranch: env.STAGING_PREVIEW_GIT_BRANCH, teamId: env.VERCEL_ORG_ID, decrypt: 'false' });
   const inventory = await vercelApi(`${baseUrl}?${query}`, env, fetchImpl);
   const variables = Array.isArray(inventory)
     ? inventory
@@ -87,7 +96,7 @@ export async function createMissingPreviewVariables(env, fetchImpl = fetch, rand
   }
 
   const existingNames = new Set(variables
-    .filter((item) => item.gitBranch === allowedBranch && Array.isArray(item.target) && item.target.includes('preview'))
+    .filter((item) => item.gitBranch === env.STAGING_PREVIEW_GIT_BRANCH && Array.isArray(item.target) && item.target.includes('preview'))
     .map((item) => item.key));
   const missing = buildPreviewVariables(env, randomBytesImpl).filter((item) => !existingNames.has(item.key));
   if (missing.length) {
@@ -106,7 +115,7 @@ async function main() {
   if (errors.length) throw new Error(errors.join(' '));
 
   const result = await createMissingPreviewVariables(process.env);
-  console.log(`Created ${result.created} missing sensitive Preview variables; kept ${result.kept} existing variables for ${allowedBranch}.`);
+  console.log(`Created ${result.created} missing sensitive Preview variables; kept ${result.kept} existing variables for ${process.env.STAGING_PREVIEW_GIT_BRANCH}.`);
 }
 
 if (process.argv[1] && pathToFileURL(resolve(process.argv[1])).href === import.meta.url) {

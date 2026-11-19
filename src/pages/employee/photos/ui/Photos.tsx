@@ -1,13 +1,15 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { Building, Camera, CheckCircle2, LoaderCircle, Trash2, UploadCloud } from 'lucide-react';
 import type { Lead } from '@/entities/lead';
+import { useOrganization } from '@/entities/session';
 import type { LeadStoredFile } from '@/shared/api/crm-repository';
 import { crmRepo } from '@/shared/api/crm-repository';
-import { isLeadAttachmentsEnabled, resizeImageForUpload } from '@/features/lead-files';
+import { canDeleteLeadAttachment, isLeadAttachmentsEnabled, resizeImageForUpload } from '@/features/lead-files';
 
 interface EmployeePhotosPageProps { leads: Lead[]; }
 
 export const EmployeePhotosPage: React.FC<EmployeePhotosPageProps> = ({ leads = [] }) => {
+  const { dbUser } = useOrganization();
   const attachmentsEnabled = isLeadAttachmentsEnabled(import.meta.env);
   const [files, setFiles] = useState<LeadStoredFile[]>([]);
   const [activeLeadId, setActiveLeadId] = useState(leads[0]?.id || '');
@@ -15,18 +17,23 @@ export const EmployeePhotosPage: React.FC<EmployeePhotosPageProps> = ({ leads = 
   const [uploading, setUploading] = useState(false);
   const [success, setSuccess] = useState('');
   const [error, setError] = useState('');
+  const [now, setNow] = useState(() => new Date());
   const activeLead = leads.find((lead) => lead.id === activeLeadId) || leads[0];
 
   useEffect(() => {
     if (!activeLeadId && leads[0]?.id) setActiveLeadId(leads[0].id);
   }, [activeLeadId, leads]);
+  useEffect(() => {
+    const timer = window.setInterval(() => setNow(new Date()), 1000);
+    return () => window.clearInterval(timer);
+  }, []);
 
   const loadFiles = useCallback(async () => {
-    if (!attachmentsEnabled) return;
-    if (!activeLead?.organization_id) { setFiles([]); return; }
+    if (!attachmentsEnabled) return false;
+    if (!activeLead?.organization_id) { setFiles([]); return false; }
     setLoading(true); setError('');
-    try { setFiles(await crmRepo.getLeadFiles(activeLead.organization_id, activeLead.id)); }
-    catch (loadError) { setFiles([]); setError(loadError instanceof Error ? loadError.message : 'Fotky se nepodařilo načíst.'); }
+    try { setFiles(await crmRepo.getLeadFiles(activeLead.organization_id, activeLead.id)); return true; }
+    catch (loadError) { setError(loadError instanceof Error ? loadError.message : 'Fotky se nepodařilo načíst.'); return false; }
     finally { setLoading(false); }
   }, [activeLead?.id, activeLead?.organization_id, attachmentsEnabled]);
 
@@ -38,9 +45,11 @@ export const EmployeePhotosPage: React.FC<EmployeePhotosPageProps> = ({ leads = 
     setUploading(true); setError(''); setSuccess('');
     try {
       const resized = await resizeImageForUpload(selected, 1600);
-      await crmRepo.uploadLeadFile(activeLead.organization_id, activeLead.id, resized);
-      await loadFiles();
-      setSuccess('Fotografie byla zmenšena a uložena u zakázky.');
+      const stored = await crmRepo.uploadLeadFile(activeLead.organization_id, activeLead.id, resized);
+      if (await loadFiles()) {
+        if (!stored.previewUrl) setError('Fotografie byla uložena, ale náhled není dostupný.');
+        else setSuccess('Fotografie byla zmenšena a uložena u zakázky.');
+      }
     } catch (uploadError) { setError(uploadError instanceof Error ? uploadError.message : 'Fotografii se nepodařilo uložit.'); }
     finally { setUploading(false); }
   };
@@ -50,7 +59,7 @@ export const EmployeePhotosPage: React.FC<EmployeePhotosPageProps> = ({ leads = 
     if (!activeLead?.organization_id) return;
     setUploading(true); setError(''); setSuccess('');
     try { await crmRepo.deleteLeadFile(activeLead.organization_id, file); await loadFiles(); }
-    catch (deleteError) { setError(deleteError instanceof Error ? deleteError.message : 'Fotografii se nepodařilo smazat.'); }
+    catch (deleteError) { await loadFiles(); setError(deleteError instanceof Error ? deleteError.message : 'Fotografii se nepodařilo smazat.'); }
     finally { setUploading(false); }
   };
 
@@ -69,6 +78,6 @@ export const EmployeePhotosPage: React.FC<EmployeePhotosPageProps> = ({ leads = 
     {leads.length > 0 && <label className="workspace-panel flex items-center gap-3 p-4 text-sm font-semibold text-slate-700"><Building className="h-4 w-4 text-blue-600" /><span className="sr-only">Zakázka</span><select value={activeLead?.id || ''} onChange={(event) => setActiveLeadId(event.target.value)} className="min-w-0 flex-1 bg-transparent outline-none">{leads.map((lead) => <option key={lead.id} value={lead.id}>{lead.title || lead.customerName}</option>)}</select></label>}
     {success && <div role="status" className="flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-800"><CheckCircle2 className="h-4 w-4" />{success}</div>}
     {error && <div role="alert" className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-700">{error}</div>}
-    {loading ? <div className="flex items-center justify-center gap-2 py-12 text-sm text-slate-500"><LoaderCircle className="h-5 w-5 animate-spin" />Načítám fotky…</div> : photos.length ? <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3" aria-label="Uložené fotografie">{photos.map((photo) => <article key={photo.id} className="workspace-panel overflow-hidden"><a href={photo.previewUrl} target="_blank" rel="noreferrer"><img src={photo.previewUrl} alt={photo.fileName} className="h-52 w-full bg-slate-100 object-cover" /></a><div className="flex items-center justify-between gap-3 p-4"><span className="min-w-0"><strong className="block truncate text-sm text-slate-900">{photo.fileName}</strong><small className="text-xs text-slate-400">{new Intl.DateTimeFormat('cs-CZ', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(photo.createdAt))}</small></span><button type="button" disabled={uploading} onClick={() => deletePhoto(photo)} aria-label="Smazat fotografii" className="rounded-xl p-2 text-slate-400 hover:bg-rose-50 hover:text-rose-600"><Trash2 className="h-4 w-4" /></button></div></article>)}</section> : <div className="workspace-empty-state px-6 py-14 text-center"><Camera className="mx-auto h-8 w-8 text-slate-300" /><h2 className="mt-3 text-base font-semibold text-slate-950">U této zakázky zatím nejsou fotky</h2><p className="mt-1 text-sm text-slate-500">První nahraná fotografie se zde zobrazí až po potvrzeném uložení.</p></div>}
+    {loading ? <div className="flex items-center justify-center gap-2 py-12 text-sm text-slate-500"><LoaderCircle className="h-5 w-5 animate-spin" />Načítám fotky…</div> : photos.length ? <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3" aria-label="Uložené fotografie">{photos.map((photo) => <article key={photo.id} className="workspace-panel overflow-hidden">{photo.previewUrl ? <a href={photo.previewUrl} target="_blank" rel="noreferrer"><img src={photo.previewUrl} alt={photo.fileName} className="h-52 w-full bg-slate-100 object-cover" /></a> : <div className="flex h-52 items-center justify-center bg-slate-50 px-3 text-center text-sm text-slate-500">Náhled není dostupný. Zkuste stránku obnovit.</div>}<div className="flex items-center justify-between gap-3 p-4"><span className="min-w-0"><strong className="block truncate text-sm text-slate-900">{photo.fileName}</strong><small className="text-xs text-slate-400">{new Intl.DateTimeFormat('cs-CZ', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(photo.createdAt))}</small></span>{canDeleteLeadAttachment(dbUser?.role, dbUser?.id, photo.authorId, photo.createdAt, now) && <button type="button" disabled={uploading} onClick={() => deletePhoto(photo)} aria-label="Smazat fotografii" className="rounded-xl p-2 text-slate-400 hover:bg-rose-50 hover:text-rose-600"><Trash2 className="h-4 w-4" /></button>}</div></article>)}</section> : <div className="workspace-empty-state px-6 py-14 text-center"><Camera className="mx-auto h-8 w-8 text-slate-300" /><h2 className="mt-3 text-base font-semibold text-slate-950">U této zakázky zatím nejsou fotky</h2><p className="mt-1 text-sm text-slate-500">První nahraná fotografie se zde zobrazí až po potvrzeném uložení.</p></div>}
   </div>;
 };

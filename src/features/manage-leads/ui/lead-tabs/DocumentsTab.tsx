@@ -1,9 +1,10 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { Camera, FileText, LoaderCircle, MessageSquareText, Paperclip, Trash2, Upload } from 'lucide-react';
 import type { Lead } from '../../../../entities/lead';
+import { useOrganization } from '../../../../entities/session';
 import type { LeadNote, LeadStoredFile } from '../../../../shared/api/crm-repository';
 import { crmRepo } from '../../../../shared/api/crm-repository';
-import { isLeadAttachmentsEnabled, resizeImageForUpload } from '../../../lead-files';
+import { canDeleteLeadAttachment, isLeadAttachmentsEnabled, loadLeadAttachmentLists, resizeImageForUpload } from '../../../lead-files';
 
 interface DocumentsTabProps { lead: Lead; onNotice?: (message: string) => void; }
 
@@ -11,6 +12,7 @@ const formatDate = (value: string) => new Intl.DateTimeFormat('cs-CZ', { dateSty
 const formatSize = (bytes: number) => bytes < 1024 * 1024 ? `${Math.ceil(bytes / 1024)} kB` : `${(bytes / 1024 / 1024).toFixed(1)} MB`;
 
 export const DocumentsTab: React.FC<DocumentsTabProps> = ({ lead, onNotice = () => {} }) => {
+  const { dbUser } = useOrganization();
   const attachmentsEnabled = isLeadAttachmentsEnabled(import.meta.env);
   const companyId = lead.organization_id || '';
   const [notes, setNotes] = useState<LeadNote[]>([]);
@@ -19,30 +21,34 @@ export const DocumentsTab: React.FC<DocumentsTabProps> = ({ lead, onNotice = () 
   const [busy, setBusy] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [now, setNow] = useState(() => new Date());
 
   const loadAttachments = useCallback(async () => {
     if (!attachmentsEnabled) return;
     setLoading(true); setError('');
-    try {
-      const [loadedNotes, loadedFiles] = await Promise.all([
-        crmRepo.getLeadNotes(companyId, lead.id),
-        crmRepo.getLeadFiles(companyId, lead.id),
-      ]);
-      setNotes(loadedNotes); setFiles(loadedFiles);
-    } catch (loadError) {
-      setError(loadError instanceof Error ? loadError.message : 'Poznámky a soubory se nepodařilo načíst.');
-      setNotes([]); setFiles([]);
-    } finally { setLoading(false); }
+    const loaded = await loadLeadAttachmentLists(
+      () => crmRepo.getLeadNotes(companyId, lead.id),
+      () => crmRepo.getLeadFiles(companyId, lead.id),
+    );
+    if (loaded.notes) setNotes(loaded.notes);
+    if (loaded.files) setFiles(loaded.files);
+    setError(loaded.error);
+    setLoading(false);
+    return !loaded.error;
   }, [attachmentsEnabled, companyId, lead.id]);
 
   useEffect(() => { if (attachmentsEnabled) void loadAttachments(); }, [attachmentsEnabled, loadAttachments]);
+  useEffect(() => {
+    const timer = window.setInterval(() => setNow(new Date()), 1000);
+    return () => window.clearInterval(timer);
+  }, []);
 
   const addNote = async (event: React.FormEvent) => {
     event.preventDefault(); setBusy(true); setError('');
     if (!attachmentsEnabled) { setBusy(false); return; }
     try {
       await crmRepo.addLeadNote(companyId, lead.id, noteBody);
-      setNoteBody(''); await loadAttachments(); onNotice('Poznámka byla uložena.');
+      setNoteBody(''); if (await loadAttachments()) onNotice('Poznámka byla uložena.');
     } catch (saveError) { setError(saveError instanceof Error ? saveError.message : 'Poznámku se nepodařilo uložit.'); }
     finally { setBusy(false); }
   };
@@ -53,15 +59,15 @@ export const DocumentsTab: React.FC<DocumentsTabProps> = ({ lead, onNotice = () 
     setBusy(true); setError('');
     try {
       const prepared = selected.type.startsWith('image/') ? await resizeImageForUpload(selected) : selected;
-      await crmRepo.uploadLeadFile(companyId, lead.id, prepared);
-      await loadAttachments(); onNotice('Soubor byl bezpečně uložen.');
+      const stored = await crmRepo.uploadLeadFile(companyId, lead.id, prepared);
+      if (await loadAttachments()) onNotice(stored.previewUrl ? 'Soubor byl bezpečně uložen.' : 'Soubor byl uložen, ale náhled není dostupný.');
     } catch (uploadError) { setError(uploadError instanceof Error ? uploadError.message : 'Soubor se nepodařilo uložit.'); }
     finally { setBusy(false); }
   };
 
   const removeNote = async (note: LeadNote) => {
     if (!attachmentsEnabled) return;
-    setBusy(true);
+    setBusy(true); setError('');
     try { await crmRepo.deleteLeadNote(companyId, note.id); await loadAttachments(); }
     catch (removeError) { setError(removeError instanceof Error ? removeError.message : 'Poznámku se nepodařilo smazat.'); }
     finally { setBusy(false); }
@@ -69,9 +75,9 @@ export const DocumentsTab: React.FC<DocumentsTabProps> = ({ lead, onNotice = () 
 
   const removeFile = async (file: LeadStoredFile) => {
     if (!attachmentsEnabled) return;
-    setBusy(true);
+    setBusy(true); setError('');
     try { await crmRepo.deleteLeadFile(companyId, file); await loadAttachments(); }
-    catch (removeError) { setError(removeError instanceof Error ? removeError.message : 'Soubor se nepodařilo smazat.'); }
+    catch (removeError) { await loadAttachments(); setError(removeError instanceof Error ? removeError.message : 'Soubor se nepodařilo smazat.'); }
     finally { setBusy(false); }
   };
 
@@ -95,11 +101,11 @@ export const DocumentsTab: React.FC<DocumentsTabProps> = ({ lead, onNotice = () 
     </form>
     {!loading && <div className="mt-6 grid gap-6 lg:grid-cols-2">
       <div><h3 className="flex items-center gap-2 text-sm font-semibold text-slate-900"><MessageSquareText className="h-4 w-4 text-blue-600" />Poznámky ({notes.length})</h3><div className="mt-3 space-y-2">
-        {notes.map((note) => <article key={note.id} className="rounded-xl border border-slate-200 bg-white p-4"><p className="whitespace-pre-wrap text-sm leading-6 text-slate-700">{note.body}</p><div className="mt-3 flex items-center justify-between gap-2"><time className="text-xs text-slate-400">{formatDate(note.createdAt)}</time><button type="button" disabled={busy} onClick={() => removeNote(note)} className="rounded-lg p-2 text-slate-400 hover:bg-rose-50 hover:text-rose-600" aria-label="Smazat poznámku"><Trash2 className="h-4 w-4" /></button></div></article>)}
+        {notes.map((note) => <article key={note.id} className="rounded-xl border border-slate-200 bg-white p-4"><p className="whitespace-pre-wrap text-sm leading-6 text-slate-700">{note.body}</p><div className="mt-3 flex items-center justify-between gap-2"><time className="text-xs text-slate-400">{formatDate(note.createdAt)}</time>{canDeleteLeadAttachment(dbUser?.role, dbUser?.id, note.authorId, note.createdAt, now) && <button type="button" disabled={busy} onClick={() => removeNote(note)} className="rounded-lg p-2 text-slate-400 hover:bg-rose-50 hover:text-rose-600" aria-label="Smazat poznámku"><Trash2 className="h-4 w-4" /></button>}</div></article>)}
         {!notes.length && <p className="rounded-xl bg-slate-50 p-5 text-center text-sm text-slate-500">Zatím bez poznámek.</p>}
       </div></div>
       <div><h3 className="flex items-center gap-2 text-sm font-semibold text-slate-900"><Paperclip className="h-4 w-4 text-blue-600" />Soubory ({files.length})</h3><div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
-        {files.map((file) => <article key={file.id} className="overflow-hidden rounded-xl border border-slate-200 bg-white">{file.mimeType.startsWith('image/') ? <a href={file.previewUrl} target="_blank" rel="noreferrer"><img src={file.previewUrl} alt={file.fileName} className="h-36 w-full bg-slate-100 object-cover" /></a> : <a href={file.previewUrl} target="_blank" rel="noreferrer" className="flex h-36 items-center justify-center bg-slate-50"><FileText className="h-10 w-10 text-slate-300" /></a>}<div className="flex items-start justify-between gap-2 p-3"><span className="min-w-0"><strong className="block truncate text-xs font-semibold text-slate-800">{file.fileName}</strong><small className="text-[11px] text-slate-400">{formatSize(file.sizeBytes)}, {formatDate(file.createdAt)}</small></span><button type="button" disabled={busy} onClick={() => removeFile(file)} className="rounded-lg p-2 text-slate-400 hover:bg-rose-50 hover:text-rose-600" aria-label="Smazat soubor"><Trash2 className="h-4 w-4" /></button></div></article>)}
+        {files.map((file) => <article key={file.id} className="overflow-hidden rounded-xl border border-slate-200 bg-white">{file.previewUrl ? (file.mimeType.startsWith('image/') ? <a href={file.previewUrl} target="_blank" rel="noreferrer"><img src={file.previewUrl} alt={file.fileName} className="h-36 w-full bg-slate-100 object-cover" /></a> : <a href={file.previewUrl} target="_blank" rel="noreferrer" className="flex h-36 items-center justify-center bg-slate-50"><FileText className="h-10 w-10 text-slate-300" /></a>) : <div className="flex h-36 items-center justify-center bg-slate-50 px-3 text-center text-xs text-slate-500">Náhled není dostupný. Zkuste stránku obnovit.</div>}<div className="flex items-start justify-between gap-2 p-3"><span className="min-w-0"><strong className="block truncate text-xs font-semibold text-slate-800">{file.fileName}</strong><small className="text-[11px] text-slate-400">{formatSize(file.sizeBytes)}, {formatDate(file.createdAt)}</small></span>{canDeleteLeadAttachment(dbUser?.role, dbUser?.id, file.authorId, file.createdAt, now) && <button type="button" disabled={busy} onClick={() => removeFile(file)} className="rounded-lg p-2 text-slate-400 hover:bg-rose-50 hover:text-rose-600" aria-label="Smazat soubor"><Trash2 className="h-4 w-4" /></button>}</div></article>)}
         {!files.length && <div className="rounded-xl bg-slate-50 p-5 text-center text-sm text-slate-500 sm:col-span-2 lg:col-span-1 xl:col-span-2"><Camera className="mx-auto mb-2 h-6 w-6 text-slate-300" />Zatím bez fotografií a dokumentů.</div>}
       </div></div>
     </div>}
