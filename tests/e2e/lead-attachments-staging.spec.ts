@@ -2,7 +2,6 @@ import { randomUUID } from 'node:crypto';
 import { expect, test, type Page } from 'playwright/test';
 import { accessToken, requiredValue, restDelete, restGet, restInsert, signIn, stagingConfig } from './support';
 
-const jpeg = Buffer.from('/9j/4AAQSkZJRgABAQEAYABgAAD/2wBDAAMCAgMCAgMDAwMEAwMEBQgFBQQEBQoHBwYIDAoMDAsKCwsNDhIQDQ4RDgsLEBYQERMUFRUVDA8XGBYUGBIUFRT/2wBDAQMEBAUEBQkFBQkUDQsNFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBT/wAARCAACAAIDASIAAhEBAxEB/8QAHwAAAQUBAQEBAQEAAAAAAAAAAAECAwQFBgcICQoL/8QAtRAAAgEDAwIEAwUFBAQAAAF9AQIDAAQRBRIhMUEGE1FhByJxFDKBkaEII0KxwRVS0fAkM2JyggkKFhcYGRolJicoKSo0NTY3ODk6Q0RFRkdISUpTVFVWV1hZWmNkZWZnaGlqc3R1dnd4eXqDhIWGh4iJipKTlJWWl5iZmqKjpKWmp6ipqrKztLW2t7i5usLDxMXGx8jJytLT1NXW19jZ2uHi4+Tl5ufo6erx8vP09fb3+Pn6/8QAHwEAAwEBAQEBAQEBAQAAAAAAAAECAwQFBgcICQoL/8QAtREAAgECBAQDBAcFBAQAAQJ3AAECAxEEBSExBhJBUQdhcRMiMoEIFEKRobHBCSMzUvAVYnLRChYkNOEl8RcYGRomJygpKjU2Nzg5OkNERUZHSElKU1RVVldYWVpjZGVmZ2hpanN0dXZ3eHl6goOEhYaHiImKkpOUlZaXmJmaoqOkpaanqKmqsrO0tba3uLm6wsPExcbHyMnK0tPU1dbX2Nna4uPk5ebn6Onq8vP09fb3+Pn6/9oADAMBAAIRAxEAPwD8rZ55LmaSaaRpZZGLvI7EszE5JJPUmiiis6fwL0OvF/7xU/xP8z//2Q==', 'base64');
 const pdf = Buffer.from('%PDF-1.4\n1 0 obj<< /Type /Catalog >>endobj\ntrailer<< /Root 1 0 R >>\n%%EOF\n');
 
 async function openLead(page: Page, role: 'owner' | 'employee', title: string) {
@@ -47,6 +46,17 @@ test('owner and assigned employee persist notes, PDF and JPEG; company B is isol
     await signIn(employee, 'EMPLOYEE_A');
     ownerToken = await accessToken(browser, 'OWNER_A');
     const ownerBToken = await accessToken(browser, 'OWNER_B');
+    const jpeg = Buffer.from(await owner.evaluate(() => {
+      const canvas = document.createElement('canvas');
+      canvas.width = 2;
+      canvas.height = 2;
+      const context = canvas.getContext('2d');
+      if (!context) throw new Error('Synthetic JPEG canvas is unavailable.');
+      context.fillStyle = '#c24b35';
+      context.fillRect(0, 0, 2, 2);
+      return canvas.toDataURL('image/jpeg', 0.85).split(',')[1];
+    }), 'base64');
+    expect(jpeg.byteLength).toBeGreaterThan(100);
     console.info('Attachment acceptance: sessions established.');
 
     for (const [page, role, body, prefix] of [
