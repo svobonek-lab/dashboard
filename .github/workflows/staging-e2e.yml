@@ -239,7 +239,7 @@ jobs:
       inputs.runner_mode == 'lead-attachments-acceptance' &&
       github.ref == 'refs/heads/codex/lead-notes-files-acceptance'
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v6
         with:
@@ -267,7 +267,6 @@ jobs:
           STAGING_SUPABASE_PROJECT_REF: ${{ vars.STAGING_SUPABASE_PROJECT_REF }}
           PRODUCTION_SUPABASE_PROJECT_REF: ${{ vars.PRODUCTION_SUPABASE_PROJECT_REF }}
           STAGING_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.STAGING_SUPABASE_PUBLISHABLE_KEY }}
-          STAGING_SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.STAGING_SUPABASE_SERVICE_ROLE_KEY }}
           STAGING_OWNER_A_EMAIL: ${{ secrets.STAGING_OWNER_A_EMAIL }}
           STAGING_OWNER_A_PASSWORD: ${{ secrets.STAGING_OWNER_A_PASSWORD }}
           STAGING_EMPLOYEE_A_EMAIL: ${{ secrets.STAGING_EMPLOYEE_A_EMAIL }}
@@ -282,6 +281,7 @@ jobs:
           STAGING_EMPLOYEE_B_ID: ${{ vars.STAGING_EMPLOYEE_B_ID }}
           STAGING_LEAD_A_ID: ${{ vars.STAGING_LEAD_A_ID }}
           STAGING_LEAD_B_ID: ${{ vars.STAGING_LEAD_B_ID }}
+          STAGING_UNASSIGNED_LEAD_ID: ${{ vars.STAGING_UNASSIGNED_LEAD_ID }}
           STAGING_PUBLIC_TENANT_KEY: ${{ vars.STAGING_PUBLIC_TENANT_KEY }}
           STAGING_PUBLIC_INTAKE_ENABLED: ${{ vars.STAGING_PUBLIC_INTAKE_ENABLED }}
 

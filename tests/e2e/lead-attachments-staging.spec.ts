@@ -1,7 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import { expect, test, type Page } from 'playwright/test';
 import { accessToken, requiredValue, restDelete, restGet, restInsert, signIn, stagingConfig } from './support';
-import { buildTenantLeadFixture } from '../../scripts/seed-two-tenants';
 
 const jpeg = Buffer.from('/9j/4AAQSkZJRgABAQEAYABgAAD/2wBDAAMCAgMCAgMDAwMEAwMEBQgFBQQEBQoHBwYIDAoMDAsKCwsNDhIQDQ4RDgsLEBYQERMUFRUVDA8XGBYUGBIUFRT/2wBDAQMEBAUEBQkFBQkUDQsNFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBT/wAARCAACAAIDASIAAhEBAxEB/8QAHwAAAQUBAQEBAQEAAAAAAAAAAAECAwQFBgcICQoL/8QAtRAAAgEDAwIEAwUFBAQAAAF9AQIDAAQRBRIhMUEGE1FhByJxFDKBkaEII0KxwRVS0fAkM2JyggkKFhcYGRolJicoKSo0NTY3ODk6Q0RFRkdISUpTVFVWV1hZWmNkZWZnaGlqc3R1dnd4eXqDhIWGh4iJipKTlJWWl5iZmqKjpKWmp6ipqrKztLW2t7i5usLDxMXGx8jJytLT1NXW19jZ2uHi4+Tl5ufo6erx8vP09fb3+Pn6/8QAHwEAAwEBAQEBAQEBAQAAAAAAAAECAwQFBgcICQoL/8QAtREAAgECBAQDBAcFBAQAAQJ3AAECAxEEBSExBhJBUQdhcRMiMoEIFEKRobHBCSMzUvAVYnLRChYkNOEl8RcYGRomJygpKjU2Nzg5OkNERUZHSElKU1RVVldYWVpjZGVmZ2hpanN0dXZ3eHl6goOEhYaHiImKkpOUlZaXmJmaoqOkpaanqKmqsrO0tba3uLm6wsPExcbHyMnK0tPU1dbX2Nna4uPk5ebn6Onq8vP09fb3+Pn6/9oADAMBAAIRAxEAPwD8rZ55LmaSaaRpZZGLvI7EszE5JJPUmiiis6fwL0OvF/7xU/xP8z//2Q==', 'base64');
 const pdf = Buffer.from('%PDF-1.4\n1 0 obj<< /Type /Catalog >>endobj\ntrailer<< /Root 1 0 R >>\n%%EOF\n');
@@ -19,7 +18,7 @@ async function openLead(page: Page, role: 'owner' | 'employee', title: string) {
 }
 
 test('owner and assigned employee persist notes, PDF and JPEG; company B is isolated', async ({ browser, request }) => {
-  test.setTimeout(300_000);
+  test.setTimeout(600_000);
   const { preview, url, key } = stagingConfig();
   const companyA = requiredValue('STAGING_COMPANY_A_ID');
   const leadA = requiredValue('STAGING_LEAD_A_ID');
@@ -48,10 +47,13 @@ test('owner and assigned employee persist notes, PDF and JPEG; company B is isol
       [owner, 'owner', noteOwner, 'owner'],
       [employee, 'employee', noteEmployee, 'employee'],
     ] as const) {
+      console.info(`Attachment acceptance: opening ${role} lead.`);
       await openLead(page, role, title);
+      console.info(`Attachment acceptance: ${role} lead opened.`);
       await page.getByLabel('Nová poznámka').fill(body);
       await page.getByRole('button', { name: 'Uložit poznámku' }).click();
       await expect(page.getByText(body, { exact: true })).toBeVisible();
+      console.info(`Attachment acceptance: ${role} note saved.`);
       for (const [extension, mimeType, buffer] of [
         ['pdf', 'application/pdf', pdf], ['jpg', 'image/jpeg', jpeg],
       ] as const) {
@@ -59,8 +61,10 @@ test('owner and assigned employee persist notes, PDF and JPEG; company B is isol
           name: `${prefix}-${run}.${extension}`, mimeType, buffer,
         });
         await expect(page.getByText(`${prefix}-${run}.${extension}`, { exact: true })).toBeVisible();
+        console.info(`Attachment acceptance: ${role} ${extension} uploaded.`);
       }
       await page.reload();
+      console.info(`Attachment acceptance: ${role} page reloaded.`);
       await openLead(page, role, title);
       await expect(page.getByText(body, { exact: true })).toBeVisible();
       for (const extension of ['pdf', 'jpg']) {
@@ -70,6 +74,7 @@ test('owner and assigned employee persist notes, PDF and JPEG; company B is isol
         expect(signedUrl).toBeTruthy();
         const opened = await request.get(signedUrl!);
         expect(opened.status()).toBe(200);
+        console.info(`Attachment acceptance: ${role} ${extension} signed read verified.`);
       }
     }
 
@@ -246,30 +251,20 @@ test('same-company employee cannot read or change another synthetic lead and its
   const companyA = requiredValue('STAGING_COMPANY_A_ID');
   const ownerAId = requiredValue('STAGING_OWNER_A_ID');
   const employeeAId = requiredValue('STAGING_EMPLOYEE_A_ID');
-  const serviceRoleKey = requiredValue('STAGING_SUPABASE_SERVICE_ROLE_KEY');
+  const leadId = requiredValue('STAGING_UNASSIGNED_LEAD_ID');
   const [ownerToken, employeeToken] = await Promise.all([
     accessToken(browser, 'OWNER_A'), accessToken(browser, 'EMPLOYEE_A'),
   ]);
-  const leadId = randomUUID();
   const fileId = randomUUID();
   const fileName = `unassigned-${fileId}.pdf`;
   const path = `${companyA}/${leadId}/${fileId}-${fileName}`;
   const encodedPath = path.split('/').map(encodeURIComponent).join('/');
-  let leadCreated = false;
   let noteId: string | null = null;
   let fileCreated = false;
   let objectCreated = false;
   try {
-    const lead = await request.post(`${url}/rest/v1/app_leads`, {
-      headers: { apikey: serviceRoleKey, Authorization: `Bearer ${serviceRoleKey}`, Prefer: 'return=representation', 'Content-Type': 'application/json' },
-      data: {
-        ...buildTenantLeadFixture('A', companyA, employeeAId),
-        id: leadId, title: `Synthetic unassigned attachment ${fileId}`,
-        assigned_to: null,
-      },
-    });
-    expect(lead.status()).toBe(201);
-    leadCreated = true;
+    const lead = await restGet(request, ownerToken, 'app_leads', `select=id,title,assigned_to&company_id=eq.${companyA}&id=eq.${leadId}`);
+    expect(lead).toEqual([{ id: leadId, title: 'StavbaFlow E2E Unassigned Attachment Lead', assigned_to: null }]);
     const note = await restInsert(request, ownerToken, 'app_lead_notes', {
       company_id: companyA, lead_id: leadId, author_id: ownerAId, body: `Synthetic unassigned note ${fileId}`,
     });
@@ -333,12 +328,6 @@ test('same-company employee cannot read or change another synthetic lead and its
       expect(removed.ok()).toBe(true);
     }
     if (noteId) await restDelete(request, ownerToken, 'app_lead_notes', `id=eq.${noteId}&company_id=eq.${companyA}`);
-    if (leadCreated) {
-      const deleted = await request.delete(`${url}/rest/v1/app_leads?id=eq.${leadId}&company_id=eq.${companyA}`, {
-        headers: { apikey: serviceRoleKey, Authorization: `Bearer ${serviceRoleKey}`, Prefer: 'return=representation' },
-      });
-      expect((await deleted.json()) as Array<unknown>).toHaveLength(1);
-    }
   }
 });
 

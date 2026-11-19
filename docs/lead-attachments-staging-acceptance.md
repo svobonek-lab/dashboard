@@ -6,6 +6,8 @@ The acceptance target is isolated StavbaCore Staging `xwzweltjvreqhjpbjrxa`, on 
 
 Read-only staging metadata inspection on 2026-11-18 found RLS enabled on `app_lead_notes`, `app_lead_files`, `storage.objects` and `storage.buckets`. The private `lead-files` bucket permits JPEG, PNG, WebP, HEIC and PDF up to 15,728,640 bytes. `authenticated` has SELECT, INSERT and DELETE grants on both metadata tables. Policies scope notes, files and Storage objects to owner or assigned employee; employee DELETE additionally requires authorship and the 15-minute window. These catalog facts do not prove the browser flow.
 
+The same-company unassigned probe uses one staging-only fixture: lead `e5f4eab8-291b-4ba8-913f-20a036d6a709` in synthetic company A `3a51a21e-5b13-48d1-87e9-a5915b46d37d`. Its title is `StavbaFlow E2E Unassigned Attachment Lead` and `assigned_to` is null. It was inserted through the isolated staging database on 2026-11-19 because `authenticated` has no `INSERT` or `DELETE` grant on `app_leads`; a stale staging service-role secret returned HTTP 401. GitHub variable `STAGING_UNASSIGNED_LEAD_ID` contains only this public synthetic UUID. The test checks title, company and assignment before writing any note or file, and removes its own notes and files. After acceptance, delete this exact lead through the staging operator and remove the GitHub variable, then verify no attachment metadata or Storage objects remain under its path. Never use the shared Preview server runtime to seed this fixture.
+
 ## Exact Preview procedure
 
 1. Review the PR diff and verify `vercel.json` disables automatic Git deployment for this branch.
