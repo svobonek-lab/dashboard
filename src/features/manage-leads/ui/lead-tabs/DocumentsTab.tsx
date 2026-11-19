@@ -1,10 +1,10 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Camera, FileText, LoaderCircle, MessageSquareText, Paperclip, Trash2, Upload } from 'lucide-react';
 import type { Lead } from '../../../../entities/lead';
 import { useOrganization } from '../../../../entities/session';
 import type { LeadNote, LeadStoredFile } from '../../../../shared/api/crm-repository';
 import { crmRepo } from '../../../../shared/api/crm-repository';
-import { canDeleteLeadAttachment, isLeadAttachmentsEnabled, loadLeadAttachmentLists, resizeImageForUpload } from '../../../lead-files';
+import { canDeleteLeadAttachment, isLeadAttachmentsEnabled, loadLeadAttachmentLists, mergeScopedRows, resizeImageForUpload, visibleScopedRows } from '../../../lead-files';
 
 interface DocumentsTabProps { lead: Lead; onNotice?: (message: string) => void; }
 
@@ -15,8 +15,12 @@ export const DocumentsTab: React.FC<DocumentsTabProps> = ({ lead, onNotice = () 
   const { dbUser } = useOrganization();
   const attachmentsEnabled = isLeadAttachmentsEnabled(import.meta.env);
   const companyId = lead.organization_id || '';
-  const [notes, setNotes] = useState<LeadNote[]>([]);
-  const [files, setFiles] = useState<LeadStoredFile[]>([]);
+  const scope = `${companyId}/${lead.id}`;
+  const [noteState, setNoteState] = useState({ scope, rows: [] as LeadNote[] });
+  const [fileState, setFileState] = useState({ scope, rows: [] as LeadStoredFile[] });
+  const notes = visibleScopedRows(noteState, scope);
+  const files = visibleScopedRows(fileState, scope);
+  const loadSequence = useRef(0);
   const [noteBody, setNoteBody] = useState('');
   const [busy, setBusy] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -25,17 +29,19 @@ export const DocumentsTab: React.FC<DocumentsTabProps> = ({ lead, onNotice = () 
 
   const loadAttachments = useCallback(async () => {
     if (!attachmentsEnabled) return;
+    const sequence = ++loadSequence.current;
     setLoading(true); setError('');
     const loaded = await loadLeadAttachmentLists(
       () => crmRepo.getLeadNotes(companyId, lead.id),
       () => crmRepo.getLeadFiles(companyId, lead.id),
     );
-    if (loaded.notes) setNotes(loaded.notes);
-    if (loaded.files) setFiles(loaded.files);
+    if (sequence !== loadSequence.current) return false;
+    setNoteState(previous => mergeScopedRows(previous, scope, loaded.notes));
+    setFileState(previous => mergeScopedRows(previous, scope, loaded.files));
     setError(loaded.error);
     setLoading(false);
     return !loaded.error;
-  }, [attachmentsEnabled, companyId, lead.id]);
+  }, [attachmentsEnabled, companyId, lead.id, scope]);
 
   useEffect(() => { if (attachmentsEnabled) void loadAttachments(); }, [attachmentsEnabled, loadAttachments]);
   useEffect(() => {

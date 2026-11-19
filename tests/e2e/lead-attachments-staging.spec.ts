@@ -186,6 +186,17 @@ test('owner and assigned employee persist notes, PDF and JPEG; company B is isol
     await expect(employee.getByText(noteEmployee, { exact: true })).toHaveCount(0);
     await owner.locator('article').filter({ hasText: noteOwner }).getByRole('button', { name: 'Smazat poznámku' }).click();
     await expect(owner.getByText(noteOwner, { exact: true })).toHaveCount(0);
+    for (const [page, fileName] of [[employee, `employee-${run}.pdf`], [owner, `owner-${run}.jpg`]] as const) {
+      const row = created.find(item => item.file_name === fileName);
+      expect(row).toBeTruthy();
+      await page.locator('article').filter({ hasText: fileName }).getByRole('button', { name: 'Smazat soubor' }).click();
+      await expect(page.getByText(fileName, { exact: true })).toHaveCount(0);
+      expect(await restGet(request, ownerToken, 'app_lead_files', `select=id&company_id=eq.${companyA}&id=eq.${row!.id}`)).toHaveLength(0);
+      const removedObject = await request.get(`${url}/storage/v1/object/authenticated/lead-files/${String(row!.storage_path).split('/').map(encodeURIComponent).join('/')}`, {
+        headers: { apikey: key, Authorization: `Bearer ${ownerToken}` },
+      });
+      expect(removedObject.status()).not.toBe(200);
+    }
   } finally {
     if (ownerToken) {
       for (const body of [noteOwner, noteEmployee]) {
@@ -276,9 +287,10 @@ test('same-company employee cannot read or change another synthetic lead and its
       company_id: companyA, lead_id: leadId, author_id: employeeAId, body: `forbidden-${fileId}`,
     });
     expect(forbiddenNote.ok()).toBe(false);
+    const forbiddenFileId = randomUUID();
     const forbiddenFile = await restInsert(request, employeeToken, 'app_lead_files', {
-      id: randomUUID(), company_id: companyA, lead_id: leadId, author_id: employeeAId,
-      storage_path: `${companyA}/${leadId}/${randomUUID()}-forbidden.pdf`,
+      id: forbiddenFileId, company_id: companyA, lead_id: leadId, author_id: employeeAId,
+      storage_path: `${companyA}/${leadId}/${forbiddenFileId}-forbidden.pdf`,
       file_name: 'forbidden.pdf', mime_type: 'application/pdf', size_bytes: pdf.byteLength,
     });
     expect(forbiddenFile.ok()).toBe(false);

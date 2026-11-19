@@ -250,6 +250,14 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npx playwright install --with-deps chromium
+      - name: Verify Preview deployment belongs to this reviewed commit
+        run: node scripts/assert-lead-attachments-preview-provenance.mjs
+        env:
+          STAGING_PREVIEW_URL: ${{ inputs.lead_attachments_preview_url }}
+          PRODUCTION_BASE_URL: ${{ vars.PRODUCTION_BASE_URL }}
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
       - name: Run exact Preview browser and REST acceptance
         run: npx playwright test --config=playwright.staging.config.ts tests/e2e/lead-attachments-staging.spec.ts
         env:

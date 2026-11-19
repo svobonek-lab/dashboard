@@ -12,3 +12,13 @@ export async function loadLeadAttachmentLists<TNote, TFile>(
     error: failures.join(' '),
   };
 }
+
+export type ScopedRows<T> = { scope: string; rows: T[] };
+
+export function visibleScopedRows<T>(stored: ScopedRows<T>, scope: string): T[] {
+  return stored.scope === scope ? stored.rows : [];
+}
+
+export function mergeScopedRows<T>(stored: ScopedRows<T>, scope: string, loaded: T[] | null): ScopedRows<T> {
+  return { scope, rows: loaded ?? visibleScopedRows(stored, scope) };
+}

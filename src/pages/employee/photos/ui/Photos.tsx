@@ -1,17 +1,16 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Building, Camera, CheckCircle2, LoaderCircle, Trash2, UploadCloud } from 'lucide-react';
 import type { Lead } from '@/entities/lead';
 import { useOrganization } from '@/entities/session';
 import type { LeadStoredFile } from '@/shared/api/crm-repository';
 import { crmRepo } from '@/shared/api/crm-repository';
-import { canDeleteLeadAttachment, isLeadAttachmentsEnabled, resizeImageForUpload } from '@/features/lead-files';
+import { canDeleteLeadAttachment, isLeadAttachmentsEnabled, mergeScopedRows, resizeImageForUpload, visibleScopedRows } from '@/features/lead-files';
 
 interface EmployeePhotosPageProps { leads: Lead[]; }
 
 export const EmployeePhotosPage: React.FC<EmployeePhotosPageProps> = ({ leads = [] }) => {
   const { dbUser } = useOrganization();
   const attachmentsEnabled = isLeadAttachmentsEnabled(import.meta.env);
-  const [files, setFiles] = useState<LeadStoredFile[]>([]);
   const [activeLeadId, setActiveLeadId] = useState(leads[0]?.id || '');
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -19,6 +18,10 @@ export const EmployeePhotosPage: React.FC<EmployeePhotosPageProps> = ({ leads = 
   const [error, setError] = useState('');
   const [now, setNow] = useState(() => new Date());
   const activeLead = leads.find((lead) => lead.id === activeLeadId) || leads[0];
+  const scope = `${activeLead?.organization_id || ''}/${activeLead?.id || ''}`;
+  const [fileState, setFileState] = useState({ scope, rows: [] as LeadStoredFile[] });
+  const files = visibleScopedRows(fileState, scope);
+  const loadSequence = useRef(0);
 
   useEffect(() => {
     if (!activeLeadId && leads[0]?.id) setActiveLeadId(leads[0].id);
@@ -30,12 +33,21 @@ export const EmployeePhotosPage: React.FC<EmployeePhotosPageProps> = ({ leads = 
 
   const loadFiles = useCallback(async () => {
     if (!attachmentsEnabled) return false;
-    if (!activeLead?.organization_id) { setFiles([]); return false; }
+    if (!activeLead?.organization_id) return false;
+    const sequence = ++loadSequence.current;
     setLoading(true); setError('');
-    try { setFiles(await crmRepo.getLeadFiles(activeLead.organization_id, activeLead.id)); return true; }
-    catch (loadError) { setError(loadError instanceof Error ? loadError.message : 'Fotky se nepodařilo načíst.'); return false; }
-    finally { setLoading(false); }
-  }, [activeLead?.id, activeLead?.organization_id, attachmentsEnabled]);
+    try {
+      const loaded = await crmRepo.getLeadFiles(activeLead.organization_id, activeLead.id);
+      if (sequence !== loadSequence.current) return false;
+      setFileState(previous => mergeScopedRows(previous, scope, loaded));
+      return true;
+    } catch (loadError) {
+      if (sequence !== loadSequence.current) return false;
+      setFileState(previous => mergeScopedRows(previous, scope, null));
+      setError(loadError instanceof Error ? loadError.message : 'Fotky se nepodařilo načíst.');
+      return false;
+    } finally { if (sequence === loadSequence.current) setLoading(false); }
+  }, [activeLead?.id, activeLead?.organization_id, attachmentsEnabled, scope]);
 
   useEffect(() => { if (attachmentsEnabled) void loadFiles(); }, [attachmentsEnabled, loadFiles]);
 

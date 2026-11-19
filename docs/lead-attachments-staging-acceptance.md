@@ -11,7 +11,7 @@ Read-only staging metadata inspection on 2026-11-18 found RLS enabled on `app_le
 1. Review the PR diff and verify `vercel.json` disables automatic Git deployment for this branch.
 2. On the exact branch, manually dispatch `staging-e2e.yml` with `runner_mode=lead-attachments-configure`. It creates only missing branch-scoped Preview environment values using GitHub Actions secrets without printing them. Confirm the run succeeds and inspect variable **names and branch scope only**. Do not copy values into a report.
 3. Deliberately create a Vercel Preview for the reviewed commit. Record its deployment ID, commit SHA and HTTPS URL. Confirm its built client targets staging using `scripts/assert-staging-e2e-env.mjs` before any browser writes.
-4. Manually dispatch `staging-e2e.yml` on that branch with `runner_mode=lead-attachments-acceptance` and `lead_attachments_preview_url` set to that exact Preview URL. The preflight rejects a Production Supabase target. Record the run URL, result and synthetic fixture IDs.
+4. Manually dispatch `staging-e2e.yml` on that branch with `runner_mode=lead-attachments-acceptance` and `lead_attachments_preview_url` set to that exact Preview URL. The provenance check requires the deployment metadata to match the workflow commit SHA, branch and Vercel project. The preflight then rejects a Production Supabase target. Record the run URL, result and synthetic fixture IDs.
 5. If a check fails, inspect the trace and repair the code or fixture. Repeat against a new exact Preview SHA; do not treat an older Preview or a green unit suite as acceptance.
 
 ## Required evidence matrix
