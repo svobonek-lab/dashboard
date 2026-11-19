@@ -26,6 +26,7 @@ test('staging Preview configuration refuses any other branch', () => {
 test('staging Preview configuration refuses production URL or project identity', () => {
   assert.ok(validateStagingPreviewConfig({ ...valid, STAGING_SUPABASE_URL: 'https://oncmtmrhmjlerbwkrecv.supabase.co' }).some((error) => error.includes('approved staging project URL')));
   assert.ok(validateStagingPreviewConfig({ ...valid, STAGING_SUPABASE_PROJECT_REF: 'oncmtmrhmjlerbwkrecv' }).some((error) => error.includes('approved refs')));
+  assert.ok(validateStagingPreviewConfig({ ...valid, STAGING_SUPABASE_URL: `${valid.STAGING_SUPABASE_URL}/wrong` }).some((error) => error.includes('approved staging project URL')));
 });
 
 test('staging Preview configuration requires the staging credentials and Vercel identity', () => {
@@ -83,4 +84,15 @@ test('branch env API fails when Vercel reports rejected variables in an otherwis
   };
   const { createMissingPreviewVariables } = await import('../scripts/configure-staging-preview-env.mjs');
   await assert.rejects(createMissingPreviewVariables(valid, fetchImpl), /Vercel rejected 1 branch-scoped environment variable/);
+});
+
+test('attachment acceptance branch gets only staging-bound Preview flags', () => {
+  const branch = 'codex/lead-notes-files-acceptance';
+  const config = { ...valid, GITHUB_REF: `refs/heads/${branch}`, STAGING_PREVIEW_GIT_BRANCH: branch };
+  assert.deepEqual(validateStagingPreviewConfig(config), []);
+  const variables = buildPreviewVariables(config, () => Buffer.alloc(32, 7));
+  assert.ok(variables.every(item => item.gitBranch === branch && item.target[0] === 'preview'));
+  assert.equal(variables.find(item => item.key === 'VITE_LEAD_NOTES_FILES_ENABLED')?.value, 'true');
+  assert.equal(variables.find(item => item.key === 'VITE_STAGING_SUPABASE_PROJECT_REF')?.value, valid.STAGING_SUPABASE_PROJECT_REF);
+  assert.equal(variables.find(item => item.key === 'VITE_PRODUCTION_LEAD_NOTES_FILES_APPROVED')?.value, 'false');
 });

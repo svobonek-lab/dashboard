@@ -21,6 +21,7 @@ test('staging E2E has isolated scenarios and an opt-in same-repository workflow'
   assert.deepEqual(specs.filter((name) => name.endsWith('.spec.ts')).sort(), [
     'billing-blocked-to-granted.spec.ts',
     'employee-assigned-scope.spec.ts',
+    'lead-attachments-staging.spec.ts',
     'logout-tenant-cache.spec.ts',
     'owner-critical-flow.spec.ts',
     'owner-menu.spec.ts',
@@ -53,7 +54,7 @@ test('staging E2E has isolated scenarios and an opt-in same-repository workflow'
     assert.match(workflow, new RegExp(`${name}:\\s*\\$\\{\\{\\s*vars\\.${name}\\s*\\}\\}`));
     assert.match(safety, new RegExp(name));
   }
-  assert.equal((workflow.match(/STAGING_PUBLIC_INTAKE_ENABLED:\s*\$\{\{\s*vars\.STAGING_PUBLIC_INTAKE_ENABLED\s*\}\}/g) ?? []).length, 2);
+  assert.equal((workflow.match(/STAGING_PUBLIC_INTAKE_ENABLED:\s*\$\{\{\s*vars\.STAGING_PUBLIC_INTAKE_ENABLED\s*\}\}/g) ?? []).length, 3);
   assert.match(safety, /STAGING_PUBLIC_INTAKE_ENABLED/);
   assert.match(publicIntake, /test\.skip\(!\(process\.env\.STAGING_PUBLIC_INTAKE_ENABLED === 'true'\)/);
   assert.match(sentrySpec, /company_id: companyId, role: 'owner'/);
@@ -75,8 +76,8 @@ test('staging E2E has isolated scenarios and an opt-in same-repository workflow'
   assert.match(tenantIsolation, /crossTenantSelect: 'company_id,user_id'/);
   assert.match(workflow, /STAGING_PUBLIC_TENANT_KEY:\s*\$\{\{\s*vars\.STAGING_PUBLIC_TENANT_KEY\s*\}\}/);
   assert.doesNotMatch(workflow, /STAGING_PUBLIC_TENANT_KEY:\s*\$\{\{\s*secrets\.STAGING_PUBLIC_TENANT_KEY\s*\}\}/);
-  assert.equal((workflow.match(/STAGING_OWNER_B_EMAIL:\s*\$\{\{\s*secrets\.STAGING_OWNER_B_EMAIL\s*\}\}/g) ?? []).length, 10);
-  assert.equal((workflow.match(/STAGING_OWNER_B_PASSWORD:\s*\$\{\{\s*secrets\.STAGING_OWNER_B_PASSWORD\s*\}\}/g) ?? []).length, 10);
+  assert.equal((workflow.match(/STAGING_OWNER_B_EMAIL:\s*\$\{\{\s*secrets\.STAGING_OWNER_B_EMAIL\s*\}\}/g) ?? []).length, 11);
+  assert.equal((workflow.match(/STAGING_OWNER_B_PASSWORD:\s*\$\{\{\s*secrets\.STAGING_OWNER_B_PASSWORD\s*\}\}/g) ?? []).length, 11);
   assert.doesNotMatch(workflow, /STAGING_LEAD_B_FILE_PATH/);
   const e2eWorkflow = workflow.split('  staging-metadata-snapshot:')[0];
   const browserTestStep = e2eWorkflow.split('      - name: Run opt-in synthetic tenant acceptance scenarios')[1]?.split('      - name: Roll back only exact synthetic owner CSV imports')[0];

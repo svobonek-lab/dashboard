@@ -1,0 +1,47 @@
+# Lead notes and private files: staging acceptance
+
+## Scope and current state
+
+The acceptance target is isolated StavbaCore Staging `xwzweltjvreqhjpbjrxa`, on the exact reviewed Preview of `codex/lead-notes-files-acceptance`. Production `VITE_LEAD_NOTES_FILES_ENABLED` and `VITE_PRODUCTION_LEAD_NOTES_FILES_APPROVED` remain off. The repository's browser flags only control visibility; Postgres RLS and private Storage policies decide access.
+
+Read-only staging metadata inspection on 2026-11-18 found RLS enabled on `app_lead_notes`, `app_lead_files`, `storage.objects` and `storage.buckets`. The private `lead-files` bucket permits JPEG, PNG, WebP, HEIC and PDF up to 15,728,640 bytes. `authenticated` has SELECT, INSERT and DELETE grants on both metadata tables. Policies scope notes, files and Storage objects to owner or assigned employee; employee DELETE additionally requires authorship and the 15-minute window. These catalog facts do not prove the browser flow.
+
+## Exact Preview procedure
+
+1. Review the PR diff and verify `vercel.json` disables automatic Git deployment for this branch.
+2. On the exact branch, manually dispatch `staging-e2e.yml` with `runner_mode=lead-attachments-configure`. It creates only missing branch-scoped Preview environment values using GitHub Actions secrets without printing them. Confirm the run succeeds and inspect variable **names and branch scope only**. Do not copy values into a report.
+3. Deliberately create a Vercel Preview for the reviewed commit. Record its deployment ID, commit SHA and HTTPS URL. Confirm its built client targets staging using `scripts/assert-staging-e2e-env.mjs` before any browser writes.
+4. Manually dispatch `staging-e2e.yml` on that branch with `runner_mode=lead-attachments-acceptance` and `lead_attachments_preview_url` set to that exact Preview URL. The provenance check requires the deployment metadata to match the workflow commit SHA, branch and Vercel project. The preflight then rejects a Production Supabase target. Record the run URL, result and synthetic fixture IDs.
+5. If a check fails, inspect the trace and repair the code or fixture. Repeat against a new exact Preview SHA; do not treat an older Preview or a green unit suite as acceptance.
+
+## Required evidence matrix
+
+| Scenario | Evidence needed |
+| --- | --- |
+| Owner and assigned employee add notes, PDF and JPEG (HEIC only in a browser that decodes it), then reload and open | Browser trace, HTTP 200 for each private signed read, exact synthetic metadata rows and authors |
+| Owner delete at any age; employee delete only own within 15 minutes | UI controls plus affected-row REST responses, including an expired synthetic record after 15 minutes |
+| Same-company unassigned employee and company B | Zero visible metadata rows, rejected or zero-row writes, denied private Storage reads/writes and surviving owner control |
+| 15 MiB and MIME | Exact 15,728,640-byte allowed upload, 15,728,641-byte rejection, unsupported MIME rejection, no rejected metadata |
+| Interrupted upload and signed URL failure | No metadata after interrupted upload; exact-path cleanup checked; one failed preview leaves notes and other files visible |
+| Zero-row RLS DELETE and Storage delete failure | No success on zero-row delete; partial failure message after Storage delete error; orphan identified and cleaned |
+
+The current Playwright script and unit tests cover part of this matrix. Mark each row verified only after inspecting its live run. In particular, old-age owner delete and exact-boundary Storage upload require live staging evidence beyond the current script.
+
+## Exact-path orphan cleanup
+
+If an upload cleanup or metadata-first delete reports a possible orphan, ask the operator for the displayed file UUID and the synthetic company/lead IDs from the acceptance run. In isolated staging, inspect only that company and lead. Use a read-only query scoped to the exact path or UUID:
+
+```sql
+select o.name, f.id as metadata_id
+from storage.objects o
+left join public.app_lead_files f
+  on f.storage_path = o.name and f.company_id = :company_id and f.lead_id = :lead_id
+where o.bucket_id = 'lead-files'
+  and o.name like :company_id || '/' || :lead_id || '/' || :file_id || '-%';
+```
+
+Verify the object was created by this synthetic acceptance run and `metadata_id` is null. Remove only its exact `name` through the Storage API as the authorized owner or approved staging operator, then verify the object is absent. Never delete from `storage.objects` using SQL and never sweep a whole bucket. Keep exact paths, credentials and signed URLs out of public logs and PR comments.
+
+## Production gate
+
+Review current Production table policies, `storage.objects` policies, bucket limits, grants, tenant helper functions and exact deployed app URL only via the approved project-scoped read-only `supabase-ci` MCP. That connection is unavailable in this session, so the review is pending. No Production flag proposal or change is authorized until staging acceptance passes and a separate release decision is approved.
