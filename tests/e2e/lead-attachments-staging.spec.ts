@@ -7,11 +7,17 @@ const pdf = Buffer.from('%PDF-1.4\n1 0 obj<< /Type /Catalog >>endobj\ntrailer<< 
 
 async function openLead(page: Page, role: 'owner' | 'employee', title: string) {
   if (role === 'owner') {
-    await page.goto('/leads');
-    await page.getByText(title, { exact: true }).first().click();
+    await page.goto('/leads', { waitUntil: 'domcontentloaded' });
+    console.info(`Attachment acceptance: owner route ${new URL(page.url()).pathname}.`);
+    const cardTitle = page.getByText(title, { exact: true }).first();
+    await expect(cardTitle).toBeVisible({ timeout: 15_000 });
+    await cardTitle.click({ timeout: 15_000 });
   } else {
-    await page.goto('/employee/dashboard');
-    await page.getByRole('article').filter({ has: page.getByRole('heading', { name: title }) }).getByRole('button', { name: /Otevřít detail/ }).click();
+    await page.goto('/employee/dashboard', { waitUntil: 'domcontentloaded' });
+    console.info(`Attachment acceptance: employee route ${new URL(page.url()).pathname}.`);
+    const openButton = page.getByRole('article').filter({ has: page.getByRole('heading', { name: title }) }).getByRole('button', { name: /Otevřít detail/ });
+    await expect(openButton).toBeVisible({ timeout: 15_000 });
+    await openButton.click({ timeout: 15_000 });
   }
   await expect(page.getByRole('heading', { name: 'Poznámky a soubory' })).toBeVisible();
   await expect(page.getByText('Poznámky a soubory nejsou v tomto prostředí zapnuté.')).toHaveCount(0);
