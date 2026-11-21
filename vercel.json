@@ -13,7 +13,8 @@
       "codex/two-approved-origins": false,
       "codex/managed-cloud-onboarding": false,
       "codex/staging-gmail-invitations": false,
-      "codex/lead-notes-files-acceptance": false
+      "codex/lead-notes-files-acceptance": false,
+      "codex/lead-notes-release-proposal": false
     }
   },
   "crons": [
