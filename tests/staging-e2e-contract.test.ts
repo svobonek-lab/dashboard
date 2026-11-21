@@ -77,8 +77,11 @@ test('staging E2E has isolated scenarios and an opt-in same-repository workflow'
   assert.match(tenantIsolation, /crossTenantSelect: 'company_id,user_id'/);
   assert.match(workflow, /STAGING_PUBLIC_TENANT_KEY:\s*\$\{\{\s*vars\.STAGING_PUBLIC_TENANT_KEY\s*\}\}/);
   assert.doesNotMatch(workflow, /STAGING_PUBLIC_TENANT_KEY:\s*\$\{\{\s*secrets\.STAGING_PUBLIC_TENANT_KEY\s*\}\}/);
-  assert.equal((workflow.match(/STAGING_OWNER_B_EMAIL:\s*\$\{\{\s*secrets\.STAGING_OWNER_B_EMAIL\s*\}\}/g) ?? []).length, 11);
-  assert.equal((workflow.match(/STAGING_OWNER_B_PASSWORD:\s*\$\{\{\s*secrets\.STAGING_OWNER_B_PASSWORD\s*\}\}/g) ?? []).length, 11);
+  assert.equal((workflow.match(/STAGING_OWNER_B_EMAIL:\s*\$\{\{\s*secrets\.STAGING_OWNER_B_EMAIL\s*\}\}/g) ?? []).length, 12);
+  assert.equal((workflow.match(/STAGING_OWNER_B_PASSWORD:\s*\$\{\{\s*secrets\.STAGING_OWNER_B_PASSWORD\s*\}\}/g) ?? []).length, 12);
+  const publicFormJob = workflow.split('  public-form-acceptance:')[1]?.split('  lead-attachments-exact-cleanup:')[0];
+  assert.match(publicFormJob, /refs\/heads\/codex\/public-intake-acceptance/);
+  assert.doesNotMatch(publicFormJob.split('      - name: Run public form and three-role acceptance')[1], /STAGING_SUPABASE_SERVICE_ROLE_KEY/);
   assert.doesNotMatch(workflow, /STAGING_LEAD_B_FILE_PATH/);
   const e2eWorkflow = workflow.split('  staging-metadata-snapshot:')[0];
   const browserTestStep = e2eWorkflow.split('      - name: Run opt-in synthetic tenant acceptance scenarios')[1]?.split('      - name: Roll back only exact synthetic owner CSV imports')[0];

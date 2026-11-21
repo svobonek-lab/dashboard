@@ -104,8 +104,17 @@ test('the synthetic public form and the three roles process one lead end to end'
     const visitor = await publicContext.newPage();
     const owner = await ownerContext.newPage();
     const employee = await employeeContext.newPage();
-    const ownerB = await accessToken(browser, 'OWNER_B');
-    const ownerToken = await accessToken(browser, 'OWNER_A');
+    const [ownerToken, employeeToken, ownerB] = await Promise.all(
+      (['OWNER_A', 'EMPLOYEE_A', 'OWNER_B'] as const).map(account => accessToken(browser, account)),
+    );
+    for (const [token, account, tenant] of [
+      [ownerToken, 'OWNER_A', company], [employeeToken, 'EMPLOYEE_A', company],
+      [ownerB, 'OWNER_B', requiredValue('STAGING_COMPANY_B_ID')],
+    ]) {
+      const claims = JSON.parse(Buffer.from(token.split('.')[1], 'base64url').toString('utf8'));
+      expect(claims.sub, `synthetic ${account} identity`).toBe(requiredValue(`STAGING_${account}_ID`));
+      expect(claims.app_metadata?.tenant_id, `synthetic ${account} tenant`).toBe(tenant);
+    }
 
     for (const key of [`invalid-${run}`, 'e2e-synthetic-company-b']) {
       await visitor.goto(`/inquiry/${key}`);
@@ -114,6 +123,7 @@ test('the synthetic public form and the three roles process one lead end to end'
     }
     await visitor.goto(`/inquiry/${slug}`);
     const submit = visitor.getByRole('button', { name: 'Odeslat poptávku' });
+    await expect(submit).toBeVisible();
     await submit.click();
     await expect(visitor.getByRole('alert')).toContainText('Doplňte jméno');
     await visitor.getByLabel('Jméno a příjmení').fill(customer);

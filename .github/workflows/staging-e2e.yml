@@ -322,6 +322,7 @@ jobs:
         id: preview
         run: node scripts/deploy-public-intake-staging.mjs
         env:
+          EXACT_INTAKE_PREVIEW_URL: ${{ inputs.lead_attachments_preview_url }}
           STAGING_SUPABASE_URL: ${{ vars.STAGING_SUPABASE_URL }}
           STAGING_SUPABASE_PROJECT_REF: ${{ vars.STAGING_SUPABASE_PROJECT_REF }}
           PRODUCTION_SUPABASE_PROJECT_REF: ${{ vars.PRODUCTION_SUPABASE_PROJECT_REF }}
@@ -336,6 +337,7 @@ jobs:
         run: npx playwright test --config=playwright.staging.config.ts tests/e2e/public-intake-idempotency.spec.ts --grep 'three roles' --workers=1 --retries=0
         env:
           STAGING_PUBLIC_FORM_ACCEPTANCE: 'true'
+          STAGING_PUBLIC_INTAKE_ENABLED: 'true'
           STAGING_PREVIEW_URL: ${{ steps.preview.outputs.preview }}
           PRODUCTION_BASE_URL: ${{ vars.PRODUCTION_BASE_URL }}
           STAGING_SUPABASE_URL: ${{ vars.STAGING_SUPABASE_URL }}

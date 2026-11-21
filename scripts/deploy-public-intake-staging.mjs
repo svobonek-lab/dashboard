@@ -51,9 +51,12 @@ const runtime = {
 };
 for (const [name,value] of Object.entries(build)) args.push('--build-env', `${name}=${value}`);
 for (const [name,value] of Object.entries(runtime)) args.push('--env', `${name}=${value}`);
-const deploy = spawnSync('npx', args, { cwd: 'candidate', encoding: 'utf8', maxBuffer: 8 * 1024 * 1024 });
-if (deploy.status !== 0) throw new Error('Staging Preview deploy failed.');
-const preview = extractVercelPreviewUrl(`${deploy.stdout}\n${deploy.stderr}`);
+let preview = env.EXACT_INTAKE_PREVIEW_URL?.trim();
+if (!preview) {
+  const deploy = spawnSync('npx', args, { cwd: 'candidate', encoding: 'utf8', maxBuffer: 8 * 1024 * 1024 });
+  if (deploy.status !== 0) throw new Error('Staging Preview deploy failed.');
+  preview = extractVercelPreviewUrl(`${deploy.stdout}\n${deploy.stderr}`);
+}
 if (!/^https:\/\/[a-z0-9-]+\.vercel\.app$/.test(preview)) throw new Error('Unexpected Preview origin.');
 const info = await fetch(`https://api.vercel.com/v13/deployments/${new URL(preview).hostname}?teamId=${encodeURIComponent(env.VERCEL_ORG_ID)}`, {
   headers: { Authorization: `Bearer ${env.VERCEL_TOKEN}` }, signal: AbortSignal.timeout(20_000),
