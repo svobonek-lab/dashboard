@@ -2,9 +2,7 @@ import { resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { validateStagingPreview } from './validate-staging-preview.mjs';
 
-const branch = 'codex/lead-notes-files-acceptance';
-
-export async function assertLeadAttachmentsPreviewProvenance(env, fetchImpl = fetch) {
+export async function assertLeadAttachmentsPreviewProvenance(env, fetchImpl = fetch, branch = 'codex/lead-notes-files-acceptance') {
   const preview = validateStagingPreview(env.STAGING_PREVIEW_URL, env.PRODUCTION_BASE_URL);
   if (!env.VERCEL_ORG_ID || !env.VERCEL_PROJECT_ID || !env.VERCEL_TOKEN || !/^[0-9a-f]{40}$/i.test(String(env.GITHUB_SHA || ''))) {
     throw new Error('Preview provenance configuration is incomplete.');
@@ -28,7 +26,8 @@ export async function assertLeadAttachmentsPreviewProvenance(env, fetchImpl = fe
 
 if (process.argv[1] && pathToFileURL(resolve(process.argv[1])).href === import.meta.url) {
   try {
-    const result = await assertLeadAttachmentsPreviewProvenance(process.env);
+    const expectedBranch = process.argv[2] === '--lead-write-contract' ? 'codex/lead-write-contract' : undefined;
+    const result = await assertLeadAttachmentsPreviewProvenance(process.env, fetch, expectedBranch);
     console.log(`Preview provenance verified: ${result.deploymentId}, ${result.commitSha}.`);
   } catch (error) {
     console.error(error instanceof Error ? error.message : 'Preview provenance check failed.');

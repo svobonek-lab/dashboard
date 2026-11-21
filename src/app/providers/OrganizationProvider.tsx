@@ -1294,10 +1294,13 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
     const priority = leadData.priority || 'Medium';
     const notes = (leadData as any).notes || '';
 
-    if (BLOCK_LEGACY_WRITES && isSupabaseConfigured) {
-      return saveLeadEntity(targetOrgId, {
+    if (BLOCK_LEGACY_WRITES) {
+      if (!isSupabaseConfigured || !currentOrg?.id || !isValidUUID(currentOrg.id)) {
+        throw new Error('Supabase připojení nebo identifikátor firmy není platný.');
+      }
+      return saveLeadEntity(currentOrg.id, {
         ...leadData,
-        organization_id: targetOrgId,
+        organization_id: currentOrg.id,
       });
     }
 
@@ -1449,16 +1452,18 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
 
   // Data Action: Update lead status
   const updateLeadStatus = async (leadId: string, status: string) => {
+    if (BLOCK_LEGACY_WRITES) {
+      if (!isSupabaseConfigured || !supabase || !isValidUUID(leadId) || !isValidUUID(currentOrg?.id)) {
+        throw new Error('Supabase připojení nebo identifikátor zakázky není platný.');
+      }
+      await updateLeadStatusEntity(currentOrg?.id || '', leadId, status);
+      return;
+    }
     // Production must never make a successful-looking local-only mutation.
     // Optimistic local state is reserved for the synthetic development demo.
     if (!IS_PRODUCTION) updateLeadStatusLocal(leadId, status);
 
     if (!isSupabaseConfigured || !supabase || !isValidUUID(leadId)) {
-      return;
-    }
-
-    if (BLOCK_LEGACY_WRITES) {
-      await updateLeadStatusEntity(currentOrg?.id || '', leadId, status);
       return;
     }
 

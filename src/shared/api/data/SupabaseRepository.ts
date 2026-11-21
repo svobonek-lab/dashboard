@@ -1,15 +1,17 @@
 import { ICRMRepository, LeadNote, LeadStoredFile, RepositoryHealthStatus } from './types';
 import type { Lead, Employee, CompanyBranding } from './types';
 import { supabase, isSupabaseConfigured, isValidUUID } from '../supabase';
-import { AppInviteRow, AppLeadRow, AppLeadStatusAuditRow, AppMemberRow, toAppAuditLeadHistory, toAppLead, toAppMember, toPendingInvite } from '../productionSchema';
+import { AppInviteRow, AppLeadEventRow, AppLeadRow, AppLeadStatusAuditRow, AppMemberRow, toAppAuditLeadHistory, toAppLead, toAppLeadEventHistory, toAppMember, toPendingInvite } from '../productionSchema';
 import { APP_SCHEMA_WRITES_BLOCKED_MESSAGE } from '../productionDataPolicy';
-import { canWritePilot, canWriteStagingLeadStatus } from '../pilotWritePolicy';
+import { canWriteAppLeads } from '../pilotWritePolicy';
 import { toLeadPatch } from './leadWritePatch';
-import { persistStagingLeadStatus } from './leadStatusRpc';
+import { requireLeadWriteResult } from './leadWriteResult';
 import { buildLeadFilePath, normalizeLeadNote, validateLeadUpload } from './leadFilePolicy';
 import { requireOneDeletedRow, resolveSignedPreviews, runLeadFileDelete, runLeadFileUpload } from './leadAttachmentOperations';
 
 const appSchemaReadsEnabled = Boolean((import.meta as any).env?.PROD) || (import.meta as any).env?.VITE_APP_SCHEMA_READS === 'true';
+const leadWriteEnv: Record<string, unknown> = import.meta.env || {};
+const appLeadWritesEnabled = canWriteAppLeads(leadWriteEnv);
 
 const appStatus: Record<string, AppLeadRow['status']> = {
   New: 'new', Contacted: 'contacted', Quote: 'scheduled', 'In Progress': 'in_progress', Completed: 'won', Lost: 'lost'
@@ -87,19 +89,33 @@ export class SupabaseRepository implements ICRMRepository {
           throw new Error('Poptávky se nepodařilo načíst. Zkuste obnovit připojení.');
         }
 
-        let events: AppLeadStatusAuditRow[] = [];
-        if (canWritePilot((import.meta as any).env || {})) {
+        let events: AppLeadEventRow[] = [];
+        let legacyEvents: AppLeadStatusAuditRow[] = [];
+        if (appLeadWritesEnabled && data?.length) {
+          const history = await supabase.from('app_lead_events')
+            .select('id,lead_id,actor_id,operation,old_status,new_status,old_assigned_to,new_assigned_to,created_at')
+            .eq('company_id', orgId)
+            .in('operation', ['INSERT', 'UPDATE', 'ASSIGNMENT', 'STATUS', 'DETAILS'])
+            .order('created_at', { ascending: false });
+          if (history.error) throw new Error('Historii zakázek se nepodařilo načíst.');
+          events = (history.data || []) as AppLeadEventRow[];
+        }
+        if (appLeadWritesEnabled && data?.length
+          && leadWriteEnv.VITE_SUPABASE_URL === 'https://xwzweltjvreqhjpbjrxa.supabase.co') {
           const historyResult = await supabase.from('app_audit')
             .select('id,actor,action,entity_id,created_at')
             .eq('company_id', orgId)
             .eq('action', 'lead_status_changed')
             .order('created_at', { ascending: false });
           if (historyResult.error) throw new Error('Historii zakázek se nepodařilo načíst.');
-          events = (historyResult.data || []) as AppLeadStatusAuditRow[];
+          legacyEvents = (historyResult.data || []) as AppLeadStatusAuditRow[];
         }
         return ((data || []) as AppLeadRow[]).map((row) => ({
           ...toAppLead(row),
-          history: events.filter(event => event.entity_id === row.id).map(toAppAuditLeadHistory),
+          history: [
+            ...events.filter(event => event.lead_id === row.id).map(toAppLeadEventHistory),
+            ...legacyEvents.filter(event => event.entity_id === row.id).map(toAppAuditLeadHistory),
+          ].sort((a, b) => b.timestamp.localeCompare(a.timestamp)),
         }));
       }
 
@@ -148,14 +164,27 @@ export class SupabaseRepository implements ICRMRepository {
 
   async saveLead(orgId: string, lead: Partial<Lead>): Promise<Lead> {
     if (appSchemaReadsEnabled) {
-      if (!canWritePilot((import.meta as any).env || {}) || !supabase || !isValidUUID(orgId)) throw new Error(APP_SCHEMA_WRITES_BLOCKED_MESSAGE);
+      if (!appLeadWritesEnabled || !supabase || !isValidUUID(orgId)) throw new Error(APP_SCHEMA_WRITES_BLOCKED_MESSAGE);
       const patch = toLeadPatch(lead);
-      const query = isValidUUID(lead.id)
-        ? supabase.from('app_leads').update(patch).eq('company_id', orgId).eq('id', lead.id)
-        : supabase.from('app_leads').insert({ ...patch, company_id: orgId });
-      const { data, error } = await query.select().single();
-      if (error || !data) throw new Error(error?.message || 'Zakázka nebyla uložena.');
-      return toAppLead(data as AppLeadRow);
+      if (!lead.id) {
+        if ((patch.status && patch.status !== 'new') || patch.assigned_to) {
+          throw new Error('Stav a přiřazení změňte až po vytvoření zakázky.');
+        }
+        const { status: _status, assigned_to: _assignee, ...payload } = patch;
+        const response = await supabase.rpc('app_create_lead', { p_payload: payload });
+        return toAppLead(requireLeadWriteResult(response, orgId, { status: 'new', assigned_to: null }));
+      }
+      if (!isValidUUID(lead.id)) throw new Error('Neplatný identifikátor zakázky.');
+      if ('assigned_to' in patch && Object.keys(patch).length === 1) {
+        const assignee = patch.assigned_to as string | null;
+        const response = await supabase.rpc('app_assign_lead', { p_lead_id: lead.id, p_employee_id: assignee });
+        return toAppLead(requireLeadWriteResult(response, orgId, { id: lead.id, assigned_to: assignee }));
+      }
+      if (!Object.keys(patch).length || Object.keys(patch).some(field => !['description', 'address', 'phone', 'email'].includes(field))) {
+        throw new Error('Tuto změnu nelze uložit jako úpravu detailu zakázky.');
+      }
+      const response = await supabase.rpc('app_edit_lead_details', { p_lead_id: lead.id, p_payload: patch });
+      return toAppLead(requireLeadWriteResult(response, orgId, { id: lead.id }));
     }
     if (!isSupabaseConfigured || !supabase || !isValidUUID(orgId)) {
       throw new Error('Supabase připojení nebo identifikátor firmy není platný.');
@@ -223,8 +252,10 @@ export class SupabaseRepository implements ICRMRepository {
       if (!isSupabaseConfigured || !supabase || !isValidUUID(orgId) || !isValidUUID(leadId)) {
         throw new Error('Supabase připojení nebo identifikátor zakázky není platný.');
       }
-      if (!canWriteStagingLeadStatus((import.meta as any).env || {})) throw new Error(APP_SCHEMA_WRITES_BLOCKED_MESSAGE);
-      await persistStagingLeadStatus(supabase, orgId, leadId, status);
+      if (!appLeadWritesEnabled) throw new Error(APP_SCHEMA_WRITES_BLOCKED_MESSAGE);
+      const requested = toLeadPatch({ status: status as Lead['status'] }).status as AppLeadRow['status'];
+      const response = await supabase.rpc('app_set_lead_status', { p_lead_id: leadId, p_status: requested });
+      requireLeadWriteResult(response, orgId, { id: leadId, status: requested });
       return;
     }
     if (!isSupabaseConfigured || !supabase || !isValidUUID(orgId) || !isValidUUID(leadId)) {
