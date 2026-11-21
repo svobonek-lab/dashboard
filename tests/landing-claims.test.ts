@@ -5,16 +5,15 @@ import test from 'node:test';
 const landing = readFileSync(new URL('../src/pages/public/landing/ui/LandingPage.tsx', import.meta.url), 'utf8');
 const loginPage = readFileSync(new URL('../src/pages/auth/login/ui/LoginPage.tsx', import.meta.url), 'utf8');
 
-test('landing marks every unavailable pilot capability it mentions as preparing or outside scope', () => {
+test('unaccepted production capabilities are visibly outside the pilot', () => {
   const heading = landing.indexOf('Mimo první pilot');
-  const roadmapEnd = landing.indexOf('</ul>', heading);
-  assert.ok(heading >= 0 && roadmapEnd > heading, 'unavailable features need an explicit roadmap section');
-  const roadmap = landing.slice(heading, roadmapEnd);
-  assert.match(roadmap, /Tyto části zatím nejsou součástí obchodního slibu/);
-  for (const moduleName of ['Kalendář', 'Analytika', 'Cenové nabídky', 'Dokumenty', 'Komunikační centrum', 'Klientský portál']) {
-    const line = roadmap.split(/\r?\n/).find((item) => item.includes(moduleName));
-    assert.ok(line && /(?:není|nejsou) součástí prvního pilotu/i.test(line), `${moduleName} must be clearly excluded from the first pilot`);
+  const scope = landing.slice(heading, landing.indexOf('</ul>', heading));
+  assert.ok(heading >= 0);
+  for (const feature of ['CSV import', 'AI zpracování e-mailů', 'BYODB']) {
+    const line = scope.split('\n').find(item => item.includes(feature));
+    assert.ok(line?.includes('nejsou součástí prvního pilotu'));
   }
+  assert.match(scope, /Poznámky, přílohy a historie změn čekají na produkční uvolnění/);
 });
 
 test('ROI calculator identifies its figures as illustrative and approximate', () => {
@@ -32,28 +31,10 @@ test('landing claim changelog records unsupported features and illustrative calc
   assert.match(changelog, /Ověřený firemní pilot/);
 });
 
-test('pilot scope is labelled as a scenario and planned capabilities, not a delivered promise', () => {
-  const pilotDescription = landing.slice(landing.indexOf('Plánovaný rozsah scénáře'), landing.indexOf('</p>', landing.indexOf('Plánovaný rozsah scénáře')));
-  assert.match(pilotDescription, /Plánovaný rozsah scénáře/);
-  for (const item of ['přihlášení majitele', 'pozvání zaměstnanců', 'webový formulář', 'kontrolovaný CSV import']) {
-    assert.ok(pilotDescription.includes(item), `Planned scenario must continue to identify: ${item}`);
-  }
-  assert.match(landing, /Scénář pilotu/i);
-  assert.match(landing, /plánované funkce/i);
-  assert.doesNotMatch(landing, /První pilot používá kontrolovaný CSV import/);
-});
-
-test('sales copy does not describe the current staging flow as accepted until owner acceptance passes', () => {
-  assert.doesNotMatch(landing, /Ověřený pracovní tok Founding Pilotu/);
-  assert.doesNotMatch(landing, /Tento průchod je ověřený v odděleném stagingu/);
-  assert.doesNotMatch(landing, /OVĚŘENÝ PILOTNÍ TOK/);
-  assert.doesNotMatch(landing, /Oddělení: firma A nevidí firmu B/);
-  assert.doesNotMatch(landing, /Výsledek: skutečná uložená data bez demo fallbacku/);
-  assert.doesNotMatch(landing, /Funkce ověřené ve stagingu a zahrnuté v prvním nasazení/);
-  assert.doesNotMatch(landing, /Ověřený základ/);
-  assert.doesNotMatch(landing, /ukážeme ověřený tok formulář/);
-  assert.match(landing, /Plánované funkce/);
-  assert.match(landing, /před zákaznickými daty/);
+test('the workflow is presented as a pilot scenario, without claiming production acceptance', () => {
+  assert.match(landing, /Plánovaný scénář pilotu/i);
+  assert.match(landing, /před vložením zákaznických dat/i);
+  assert.doesNotMatch(landing, /Změny se zapíšou do historie|Začínáme bezpečným CSV importem|Ověřený pracovní tok/i);
 });
 
 test('landing visibly marks IČO, legal address and VOP incomplete until explicitly supplied and approved', () => {
@@ -64,25 +45,14 @@ test('landing visibly marks IČO, legal address and VOP incomplete until explici
   assert.match(landing, /VITE_COMPANY_VOP_APPROVED/);
 });
 
-test('landing offers three monthly tiers and keeps the pilot as an unpriced secondary offer', () => {
+test('the single pilot offer covers commercial terms without promising unavailable checkout', () => {
   const pricing = landing.slice(landing.indexOf('id="cenik"'), landing.indexOf('{/* 7. FAQ'));
-  assert.match(pricing, /Start/);
-  assert.match(pricing, /1\s*990\s*Kč/);
-  assert.match(pricing, /5 zaměstnanců/);
-  assert.match(pricing, /Růst/);
-  assert.match(pricing, /2\s*990\s*Kč/);
-  assert.match(pricing, /15 zaměstnanců/);
-  assert.match(pricing, /Profi/);
-  assert.match(pricing, /4\s*990\s*Kč/);
-  assert.match(pricing, /neomezený počet zaměstnanců/i);
-  assert.match(pricing, /Přímý databázový konektor připravujeme pro únor(?:&nbsp;|\s)*2027/i);
-  assert.match(pricing, /Founding Pilot/);
-  assert.match(pricing, /jednorázový onboardingový poplatek.*první měsíc/i);
-  assert.match(pricing, /cena potvrzena při nabídce/i);
-  assert.doesNotMatch(pricing, /7\s*900\s*Kč/);
-  assert.doesNotMatch(landing, /foundingPilotCost\s*=\s*7900/);
-  const profi = pricing.slice(pricing.indexOf('Profi'));
-  assert.doesNotMatch(profi, /Pokračovat na platbu|Vybrat tarif|Koupit/i);
+  assert.match(pricing, /30denní Managed Cloud pilot s osobním zřízením/);
+  for (const label of ['Cena za 30 dní a režim DPH', 'Jednorázové zřízení', 'Počet uživatelů', 'Soubory a limity', 'Podpora a reakční doba', 'Export dat', 'Ukončení pilotu']) {
+    assert.ok(pricing.includes(label));
+  }
+  assert.match(pricing, /Domluvit 30denní pilot/);
+  assert.doesNotMatch(pricing, /register-paid|Vybrat tarif|Domluvit tarif/);
 });
 
 test('owner login avoids unverified pilot claims and internal product jargon', () => {

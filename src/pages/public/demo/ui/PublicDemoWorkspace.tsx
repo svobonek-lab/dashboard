@@ -2,16 +2,17 @@ import React from 'react';
 import { OrganizationContext, type Organization, type OrganizationContextType } from '@/entities/session';
 import { LeadsKanban } from '@/features/manage-leads';
 import { OwnerDashboard } from '../../../../widgets/owner-dashboard';
-import { generateRealisticEmployees, generateRealisticLeads } from '@/features/public-demo';
+import { generateRealisticEmployees, PUBLIC_DEMO_COMPANY_NAME, PUBLIC_DEMO_LEADS, PUBLIC_DEMO_LEAD_STATES } from '@/features/public-demo';
 import { DEFAULT_DEMO_ORG_ID } from '@/shared/api/supabase';
 import { RouterProvider, useRouter } from '@/shared/lib/router';
 import type { CompanyBranding } from '@/entities/company';
+import type { Lead } from '@/entities/lead';
 import { normalizePublicOrigin } from '@/shared/lib/publicUrls';
 
 const landingOrigin = normalizePublicOrigin(import.meta.env.PUBLIC_LANDING_URL, Boolean(import.meta.env.DEV));
 
 const DEMO_BRANDING: CompanyBranding = {
-  name: 'Novákova stavební firma',
+  name: PUBLIC_DEMO_COMPANY_NAME,
   primaryColor: '#2563eb',
   phone: '+420 777 123 456',
   email: 'demo@stavbaflow.cz',
@@ -34,9 +35,14 @@ const DEMO_ORGANIZATION: Organization = {
   branding: DEMO_BRANDING,
 };
 
-const DEMO_LEADS = generateRealisticLeads(DEMO_BRANDING).map((lead) => ({
-  ...lead,
+const DEMO_LEADS: Lead[] = PUBLIC_DEMO_LEADS.map(lead => ({
   organization_id: DEMO_ORGANIZATION.id,
+  id: lead.id, title: lead.project, customerName: lead.customer, city: lead.city, address: lead.city,
+  price: lead.value, status: PUBLIC_DEMO_LEAD_STATES[lead.status].status, priority: 'Medium',
+  description: '', customerPhone: '', customerEmail: '', preferredDate: '',
+  assignedEmployeeId: '', assignedEmployeeName: '', thumbnail: '',
+  photos: [], files: [], checklist: [], timeline: [], aiChat: [], history: [],
+  aiSummary: { jobType: '', complexity: 'Low', estimatedRange: '', assignedEmployee: '', risks: [], recommendedNextStep: '' },
 }));
 
 const DEMO_EMPLOYEES = generateRealisticEmployees(DEMO_BRANDING.city).map((employee) => ({

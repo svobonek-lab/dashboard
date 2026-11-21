@@ -17,7 +17,8 @@
       "codex/lead-notes-release-proposal": false,
       "codex/lead-write-contract": false,
       "codex/lead-write-evidence": false,
-      "codex/public-intake-acceptance": false
+      "codex/public-intake-acceptance": false,
+      "codex/managed-cloud-pilot-offer": false
     }
   },
   "crons": [

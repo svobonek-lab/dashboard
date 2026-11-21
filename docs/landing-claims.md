@@ -1,5 +1,19 @@
 # Changelog tvrzení na landingu
 
+## 30denní Managed Cloud pilot s osobním zřízením
+
+Veřejná nabídka používá jediný kontakt k domluvě pilotu. Obchodní podmínky čekají na údaje od provozovatele. Kalkulačka uvádí vlastní předpoklady pro 30 dní a ukáže návratnost až po zadání nákladů. Hero a demo zobrazují stejnou syntetickou firmu a stejné poptávky.
+
+| Funkce | Ověřený stav a dopad na nabídku |
+|---|---|
+| CSV | [Přejímka](prompt-acceptance-status.md) dokládá import a úklid syntetických řádků na stagingu. Produkční přejímka je otevřená. Import není součástí nabídky. |
+| AI e-mail | [Produkční přehled](production-release-readiness-2026-11-08.md) uvádí otevřené podmínky zpracování. AI příjem e-mailu není součástí nabídky. |
+| BYODB | [Pracovní plán](../WORKPLAN.md) uvádí otevřené přejímky konektoru a onboarding. BYODB není součástí nabídky spravovaného cloudu. |
+| Poznámky a soubory | [Přejímka na stagingu](lead-attachments-staging-acceptance.md) a návrh produkčního vydání nedokládají aktivaci v produkci. Nabídka označuje obě funkce jako čekající na produkční přejímku. |
+| Historie změn | [Přejímka zápisů](reviews/2026-11-21-lead-write-contract.md#staging-execution-record) dokládá historii na stagingu. Nabídka ji označuje jako čekající na produkční přejímku a demo ji nezobrazuje. |
+
+## Předchozí změny
+
 | Původní tvrzení | Upravené tvrzení | Důvod |
 |---|---|---|
 | Navigace majitele a příkazová paleta nabízely „Prodejní cockpit“ se samostatným SalesWorkspace playbookem. | Položka i route byly odstraněny v Promptu 1; tato obrazovka už není prezentovaná jako funkce pilotního účtu. | SalesWorkspace nebyl součástí ověřených provozních tras pilotu. |

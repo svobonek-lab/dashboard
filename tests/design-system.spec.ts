@@ -161,15 +161,14 @@ test('landing presents the product and keeps contact and pricing accessible', as
     await page.goto('/');
     await expect(page.getByRole('heading', { level: 1, name: /Na stavbě máte dost práce/ })).toBeVisible();
     await expect(page.getByLabel('Ukázka aplikace se syntetickými zakázkami')).toBeVisible();
-    const contact = page.getByRole('button', { name: 'Prohlédnout s námi' });
-    expect((await contact.boundingBox())?.height).toBeGreaterThanOrEqual(44);
-    await contact.click();
-    await expect(page.getByRole('heading', { name: 'Ukázat StavbaFlow na mém procesu' })).toBeVisible();
-    await page.getByRole('button', { name: 'Zavřít konzultaci' }).click();
-    await page.goto('/');
-    for (const name of ['Domluvit tarif Start', 'Domluvit tarif Růst']) {
-      await expect(page.getByRole('button', { name })).toBeVisible();
+    const heroContact = page.getByRole('button', { name: 'Domluvit pilot', exact: true });
+    expect((await heroContact.boundingBox())?.height).toBeGreaterThanOrEqual(44);
+    for (const name of ['Domluvit pilot StavbaFlow', 'Domluvit pilot', 'Domluvit 30denní pilot', 'Probrat předpoklady pilotu', 'Kontakt k pilotu']) {
+      await page.getByRole('button', { name, exact: true }).click();
+      await expect(page.getByRole('heading', { name: 'Domluvit Managed Cloud pilot' })).toBeVisible();
+      await page.getByRole('button', { name: 'Zavřít konzultaci' }).click();
     }
+    await expect(page.getByRole('button', { name: /Domluvit tarif/ })).toHaveCount(0);
     const sizes = await page.evaluate(() => [document.documentElement.scrollWidth, innerWidth]);
     expect(sizes[0]).toBeLessThanOrEqual(sizes[1]);
   }
