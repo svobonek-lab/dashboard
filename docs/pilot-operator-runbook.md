@@ -17,7 +17,8 @@ Record the deployment URL, Git commit and Supabase project reference. Do not cop
 ## 2. Provision a synthetic rehearsal company
 
 - Prepare the staging-only operator variables outside the repository:
-  - `STAGING_SUPABASE_URL=https://oncmtmrhmjlerbwkrecv.supabase.co`
+  - `STAGING_SUPABASE_URL=https://xwzweltjvreqhjpbjrxa.supabase.co`
+  - `STAGING_SUPABASE_PROJECT_REF=xwzweltjvreqhjpbjrxa`
   - `STAGING_SUPABASE_SERVICE_ROLE_KEY` from the server-side staging secret store
   - `STAGING_APP_URL` set to the reviewed HTTPS dashboard deployment
 - Review the plan without sending an invitation or writing data:
