@@ -168,9 +168,9 @@ test('owner and assigned employee persist notes, PDF and JPEG; company B is isol
     });
     await owner.reload();
     await openLead(owner, 'owner', title);
-    expect(previewFailed).toBe(true);
     await expect(owner.getByText(noteOwner, { exact: true })).toBeVisible();
     await expect(owner.getByText('Náhled není dostupný. Zkuste stránku obnovit.').first()).toBeVisible();
+    expect(previewFailed).toBe(true);
     await owner.unroute('**/storage/v1/object/sign/lead-files/**');
 
     let uploadAborted = false;
