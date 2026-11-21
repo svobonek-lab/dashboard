@@ -400,3 +400,98 @@ test('private Storage enforces the exact 15 MiB and MIME boundaries', async ({ b
     }
   }
 });
+
+test('owner can delete an aged note and file while assigned employee cannot', async ({ browser, request }) => {
+  test.setTimeout(20 * 60_000);
+  const { preview, url, key } = stagingConfig();
+  const companyA = requiredValue('STAGING_COMPANY_A_ID');
+  const leadA = requiredValue('STAGING_LEAD_A_ID');
+  const employeeAId = requiredValue('STAGING_EMPLOYEE_A_ID');
+  const title = 'StavbaFlow E2E Isolation Lead A';
+  const run = randomUUID().slice(0, 8);
+  const body = `Synthetic attachment aged ${run}`;
+  const fileName = `aged-${run}.pdf`;
+  const fileId = randomUUID();
+  const path = `${companyA}/${leadA}/${fileId}-${fileName}`;
+  const ownerToken = await accessToken(browser, 'OWNER_A');
+  const employeeToken = await accessToken(browser, 'EMPLOYEE_A');
+  const ownerContext = await browser.newContext({ baseURL: preview });
+  const employeeContext = await browser.newContext({ baseURL: preview });
+  let noteId: string | null = null;
+  let objectCreated = false;
+  let metadataCreated = false;
+  try {
+    const owner = await ownerContext.newPage();
+    const employee = await employeeContext.newPage();
+    await signIn(owner, 'OWNER_A');
+    await signIn(employee, 'EMPLOYEE_A');
+    const note = await restInsert(request, employeeToken, 'app_lead_notes', {
+      company_id: companyA, lead_id: leadA, author_id: employeeAId, body,
+    });
+    expect(note.status()).toBe(201);
+    const noteRows = await restGet(request, ownerToken, 'app_lead_notes',
+      `select=id&company_id=eq.${companyA}&lead_id=eq.${leadA}&body=eq.${encodeURIComponent(body)}`);
+    expect(noteRows).toHaveLength(1);
+    noteId = String(noteRows[0].id);
+    const upload = await request.post(`${url}/storage/v1/object/lead-files/${path.split('/').map(encodeURIComponent).join('/')}`, {
+      headers: { apikey: key, Authorization: `Bearer ${employeeToken}`, 'Content-Type': 'application/pdf', 'x-upsert': 'false' },
+      data: pdf,
+    });
+    expect(upload.status()).toBe(200);
+    objectCreated = true;
+    const metadata = await restInsert(request, employeeToken, 'app_lead_files', {
+      id: fileId, company_id: companyA, lead_id: leadA, author_id: employeeAId,
+      storage_path: path, file_name: fileName, mime_type: 'application/pdf', size_bytes: pdf.byteLength,
+    });
+    expect(metadata.status()).toBe(201);
+    metadataCreated = true;
+    console.info(`Attachment acceptance: aged fixture ${run} created; waiting for the real 15-minute rule.`);
+
+    await new Promise(resolve => setTimeout(resolve, 16 * 60_000));
+    await openLead(employee, 'employee', title);
+    const employeeNote = employee.locator('article').filter({ hasText: body });
+    const employeeFile = employee.locator('article').filter({ hasText: fileName });
+    await expect(employeeNote).toBeVisible();
+    await expect(employeeFile).toBeVisible();
+    await expect(employeeNote.getByRole('button', { name: 'Smazat poznámku' })).toHaveCount(0);
+    await expect(employeeFile.getByRole('button', { name: 'Smazat soubor' })).toHaveCount(0);
+    const expiredNoteDelete = await restDelete(request, employeeToken, 'app_lead_notes', `id=eq.${noteId}&company_id=eq.${companyA}`);
+    expect(expiredNoteDelete.ok()).toBe(true);
+    expect(await expiredNoteDelete.json()).toHaveLength(0);
+    const expiredFileDelete = await restDelete(request, employeeToken, 'app_lead_files', `id=eq.${fileId}&company_id=eq.${companyA}`);
+    expect(expiredFileDelete.ok()).toBe(true);
+    expect(await expiredFileDelete.json()).toHaveLength(0);
+
+    await openLead(owner, 'owner', title);
+    const ownerNote = owner.locator('article').filter({ hasText: body });
+    const ownerFile = owner.locator('article').filter({ hasText: fileName });
+    await expect(ownerNote.getByRole('button', { name: 'Smazat poznámku' })).toBeVisible();
+    await expect(ownerFile.getByRole('button', { name: 'Smazat soubor' })).toBeVisible();
+    await ownerNote.getByRole('button', { name: 'Smazat poznámku' }).click();
+    await expect(owner.getByText(body, { exact: true })).toHaveCount(0);
+    await ownerFile.getByRole('button', { name: 'Smazat soubor' }).click();
+    await expect(owner.getByText(fileName, { exact: true })).toHaveCount(0);
+    expect(await restGet(request, ownerToken, 'app_lead_notes', `select=id&id=eq.${noteRows[0].id}`)).toHaveLength(0);
+    noteId = null;
+    expect(await restGet(request, ownerToken, 'app_lead_files', `select=id&id=eq.${fileId}`)).toHaveLength(0);
+    metadataCreated = false;
+    const info = await request.head(`${url}/storage/v1/object/info/lead-files/${path.split('/').map(encodeURIComponent).join('/')}`, {
+      headers: { apikey: key, Authorization: `Bearer ${ownerToken}` },
+    });
+    expect(info.status()).not.toBe(200);
+    objectCreated = false;
+    console.info('Attachment acceptance: aged owner deletion and expired employee controls verified.');
+  } finally {
+    if (noteId) await restDelete(request, ownerToken, 'app_lead_notes', `id=eq.${noteId}&company_id=eq.${companyA}`);
+    if (metadataCreated) await restDelete(request, ownerToken, 'app_lead_files', `id=eq.${fileId}&company_id=eq.${companyA}`);
+    if (objectCreated) {
+      const removed = await request.delete(`${url}/storage/v1/object/lead-files`, {
+        headers: { apikey: key, Authorization: `Bearer ${ownerToken}`, 'Content-Type': 'application/json' },
+        data: { prefixes: [path] },
+      });
+      expect(removed.ok()).toBe(true);
+    }
+    await ownerContext.close();
+    await employeeContext.close();
+  }
+});

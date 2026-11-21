@@ -14,10 +14,10 @@ const env = {
   STAGING_OWNER_A_PASSWORD: 'synthetic-password',
 };
 
-test('cleanup plan names only four exact synthetic files in one lead', () => {
+test('cleanup plan names only exact synthetic files in one lead', () => {
   assert.deepEqual(cleanupPlan(env).names, [
     'owner-00c49be4.pdf', 'owner-00c49be4.jpg',
-    'employee-00c49be4.pdf', 'employee-00c49be4.jpg',
+    'employee-00c49be4.pdf', 'employee-00c49be4.jpg', 'aged-00c49be4.pdf',
   ]);
 });
 

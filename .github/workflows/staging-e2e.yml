@@ -244,7 +244,7 @@ jobs:
       inputs.runner_mode == 'lead-attachments-acceptance' &&
       github.ref == 'refs/heads/codex/lead-notes-files-acceptance'
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@v6
         with:

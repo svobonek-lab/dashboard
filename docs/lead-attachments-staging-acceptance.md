@@ -34,7 +34,7 @@ The exact-commit Preview `dpl_H9NGkb7VqCNna6B4tZ8gquox7PxH` for `e880550` passed
 | Interrupted upload and signed URL failure | No metadata after interrupted upload; exact-path cleanup checked; one failed preview leaves notes and other files visible |
 | Zero-row RLS DELETE and Storage delete failure | No success on zero-row delete; partial failure message after Storage delete error; orphan identified and cleaned |
 
-The live run verifies the exact-boundary Storage upload. Owner deletion of a record older than 15 minutes remains unverified in the browser; the current test covers recent records only. Retain that release gate until an aged synthetic fixture has been checked.
+The live run verifies the exact-boundary Storage upload. A fourth Playwright scenario now creates a synthetic employee-owned note and PDF, waits 16 minutes, then checks that the employee cannot delete either by UI or RLS and that the owner can delete both. Retain the old-age release gate until this longer scenario passes on an exact Preview.
 
 ## Exact-path orphan cleanup
 

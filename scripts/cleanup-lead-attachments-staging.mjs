@@ -18,8 +18,8 @@ export function cleanupPlan(env) {
   }
   return {
     run,
-    names: [`owner-${run}.pdf`, `owner-${run}.jpg`, `employee-${run}.pdf`, `employee-${run}.jpg`],
-    noteBodies: [`Synthetic attachment owner ${run}`, `Synthetic attachment employee ${run}`],
+    names: [`owner-${run}.pdf`, `owner-${run}.jpg`, `employee-${run}.pdf`, `employee-${run}.jpg`, `aged-${run}.pdf`],
+    noteBodies: [`Synthetic attachment owner ${run}`, `Synthetic attachment employee ${run}`, `Synthetic attachment aged ${run}`],
     folder: `${companyId}/${leadId}/`,
   };
 }
