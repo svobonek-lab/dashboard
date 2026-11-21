@@ -28,6 +28,7 @@ on:
           - lead-attachments-configure
           - lead-attachments-acceptance
           - lead-write-contract-acceptance
+          - public-form-acceptance
           - lead-attachments-cleanup
         default: github-hosted
       load_recover_run_id:
@@ -62,6 +63,7 @@ jobs:
       github.repository == 'svobonek-lab/dashboard' &&
       ((github.event_name == 'workflow_dispatch' &&
         inputs.runner_mode != 'metadata-only' && inputs.runner_mode != 'load-acceptance' &&
+        inputs.runner_mode != 'public-form-acceptance' &&
         inputs.runner_mode != 'load-recover' && inputs.runner_mode != 'preview-configure' &&
         inputs.runner_mode != 'billing-setup' && inputs.runner_mode != 'billing-portal-inspect' &&
         inputs.runner_mode != 'billing-cancel-advance' && inputs.runner_mode != 'billing-past-due' &&
@@ -294,6 +296,67 @@ jobs:
           STAGING_UNASSIGNED_LEAD_ID: ${{ vars.STAGING_UNASSIGNED_LEAD_ID }}
           STAGING_PUBLIC_TENANT_KEY: ${{ vars.STAGING_PUBLIC_TENANT_KEY }}
           STAGING_PUBLIC_INTAKE_ENABLED: ${{ vars.STAGING_PUBLIC_INTAKE_ENABLED }}
+
+  public-form-acceptance:
+    if: >-
+      github.repository == 'svobonek-lab/dashboard' &&
+      github.event_name == 'workflow_dispatch' &&
+      inputs.runner_mode == 'public-form-acceptance' &&
+      github.ref == 'refs/heads/codex/public-intake-acceptance'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - uses: actions/checkout@v6
+        with:
+          ref: 53c27ac71f4db2b53251f34719ec82cbb9a1b693
+          path: candidate
+          persist-credentials: false
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+          cache: npm
+      - name: Deploy and verify the exact staging candidate
+        id: preview
+        run: node scripts/deploy-public-intake-staging.mjs
+        env:
+          STAGING_SUPABASE_URL: ${{ vars.STAGING_SUPABASE_URL }}
+          STAGING_SUPABASE_PROJECT_REF: ${{ vars.STAGING_SUPABASE_PROJECT_REF }}
+          PRODUCTION_SUPABASE_PROJECT_REF: ${{ vars.PRODUCTION_SUPABASE_PROJECT_REF }}
+          STAGING_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.STAGING_SUPABASE_PUBLISHABLE_KEY }}
+          STAGING_SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.STAGING_SUPABASE_SERVICE_ROLE_KEY }}
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - name: Run public form and three-role acceptance
+        run: npx playwright test --config=playwright.staging.config.ts tests/e2e/public-intake-idempotency.spec.ts --grep 'three roles' --workers=1 --retries=0
+        env:
+          STAGING_PUBLIC_FORM_ACCEPTANCE: 'true'
+          STAGING_PREVIEW_URL: ${{ steps.preview.outputs.preview }}
+          PRODUCTION_BASE_URL: ${{ vars.PRODUCTION_BASE_URL }}
+          STAGING_SUPABASE_URL: ${{ vars.STAGING_SUPABASE_URL }}
+          STAGING_SUPABASE_PROJECT_REF: ${{ vars.STAGING_SUPABASE_PROJECT_REF }}
+          PRODUCTION_SUPABASE_PROJECT_REF: ${{ vars.PRODUCTION_SUPABASE_PROJECT_REF }}
+          STAGING_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.STAGING_SUPABASE_PUBLISHABLE_KEY }}
+          STAGING_OWNER_A_EMAIL: ${{ secrets.STAGING_OWNER_A_EMAIL }}
+          STAGING_OWNER_A_PASSWORD: ${{ secrets.STAGING_OWNER_A_PASSWORD }}
+          STAGING_EMPLOYEE_A_EMAIL: ${{ secrets.STAGING_EMPLOYEE_A_EMAIL }}
+          STAGING_EMPLOYEE_A_PASSWORD: ${{ secrets.STAGING_EMPLOYEE_A_PASSWORD }}
+          STAGING_OWNER_B_EMAIL: ${{ secrets.STAGING_OWNER_B_EMAIL }}
+          STAGING_OWNER_B_PASSWORD: ${{ secrets.STAGING_OWNER_B_PASSWORD }}
+          STAGING_COMPANY_A_ID: ${{ vars.STAGING_COMPANY_A_ID }}
+          STAGING_COMPANY_B_ID: ${{ vars.STAGING_COMPANY_B_ID }}
+          STAGING_OWNER_A_ID: ${{ vars.STAGING_OWNER_A_ID }}
+          STAGING_OWNER_B_ID: ${{ vars.STAGING_OWNER_B_ID }}
+          STAGING_EMPLOYEE_A_ID: ${{ vars.STAGING_EMPLOYEE_A_ID }}
+          STAGING_EMPLOYEE_B_ID: ${{ vars.STAGING_EMPLOYEE_B_ID }}
+          STAGING_LEAD_A_ID: ${{ vars.STAGING_LEAD_A_ID }}
+          STAGING_LEAD_B_ID: ${{ vars.STAGING_LEAD_B_ID }}
+          STAGING_PUBLIC_TENANT_KEY: ${{ vars.STAGING_PUBLIC_TENANT_KEY }}
 
   lead-attachments-exact-cleanup:
     if: >-
