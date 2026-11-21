@@ -7,7 +7,7 @@ test.beforeEach(async ({ page }) => {
   await page.route('https://sales-test.invalid/**', route => route.abort());
 });
 
-for (const width of [390, 1440]) {
+for (const width of [320, 390, 768, 1440]) {
   test(`sales CTA destinations and demo return at ${width}px`, async ({ page }) => {
     await page.setViewportSize({ width, height: 900 });
     await page.goto(landing);

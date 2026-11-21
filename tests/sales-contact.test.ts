@@ -30,7 +30,7 @@ test('email contact prepares an honest draft and does not claim delivery', () =>
   assert.match(decodeURIComponent(contact), /Úterý 13:00/);
 });
 
-test('landing offers the scoped founding pilot and never fakes a booking', () => {
+test('landing offers one managed pilot and never fakes a booking', () => {
   assert.doesNotMatch(landing, /submit_demo_booking/);
   assert.doesNotMatch(landing, /stavbacore_demo_bookings/);
   assert.doesNotMatch(landing, /Termín ukázky je zarezervován/);
@@ -40,10 +40,8 @@ test('landing offers the scoped founding pilot and never fakes a booking', () =>
   assert.doesNotMatch(landing, /Cena tarifu Growth/);
   assert.match(landing, /Zákazník odešle poptávku/);
   assert.match(landing, /Majitel ji přidělí/);
-  assert.match(landing, /Změny se zapíšou do historie/);
-  assert.match(landing, /Tarif Start za 3 měsíce/);
-  assert.match(landing, /1 990 Kč/);
-  assert.doesNotMatch(landing, /7\s*900 Kč/);
+  assert.match(landing, /30denní Managed Cloud pilot s osobním zřízením/);
+  assert.match(landing, /Odeslání dokončete ve své e-mailové aplikaci/);
   assert.doesNotMatch(landing, /ověřeného 30denního pilotu/i);
   assert.match(landing, /Přímé SQL\/ERP propojení[^<]*nejsou součástí prvního pilotu/);
   assert.match(landing, /Veřejná kontaktní adresa/);

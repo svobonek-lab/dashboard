@@ -10,6 +10,15 @@ export const PUBLIC_DEMO_LEADS = Object.freeze([
   { id: 'demo-104', customer: 'Chalupa U Potoka', project: 'Zateplení fasády', city: 'Tišnov', value: 420000, status: 'job', updated: 'Včera' },
 ] as const);
 
+export const PUBLIC_DEMO_COMPANY_NAME = 'Novákova stavební firma';
+export const PUBLIC_DEMO_LEAD_STATES = {
+  new: { status: 'New', label: 'Nová poptávka' },
+  contacted: { status: 'Contacted', label: 'Kontaktováno' },
+  scheduled: { status: 'Quote', label: 'Nabídka' },
+  quote: { status: 'Quote', label: 'Nabídka' },
+  job: { status: 'In Progress', label: 'V realizaci' },
+} as const;
+
 export function generateRealisticLeads(company: CompanyBranding): Lead[] {
   const safeCompany = {
     name: company?.name || 'Novák Stavby',

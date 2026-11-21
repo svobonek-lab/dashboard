@@ -24,6 +24,8 @@ import { useRouter } from '@/shared/lib/router';
 import { buildSalesContact, getSalesContactMode } from '@/pages/public/landing';
 import { getLegalIdentityReadiness } from '../model/legalReadiness';
 import { resolveDemoUrl } from '@/shared/lib/demoUrl';
+import { PUBLIC_DEMO_COMPANY_NAME, PUBLIC_DEMO_LEADS, PUBLIC_DEMO_LEAD_STATES } from '@/features/public-demo';
+import { estimatePilotScenario, pilotTerms } from '../model/pilotOffer';
 
 const PUBLIC_CONTACT_EMAIL = 'svobonek@gmail.com';
 const PUBLIC_CONTACT_ADDRESS = 'Vincence Makovského 4428/11';
@@ -68,6 +70,7 @@ export const LandingPage: React.FC = () => {
   const [bookingEmail, setBookingEmail] = useState('');
   const [bookingDate, setBookingDate] = useState('Pondělí 10:00');
   const [bookingSuccess, setBookingSuccess] = useState(false);
+  const [bookingMailto, setBookingMailto] = useState('');
   const [bookingError, setBookingError] = useState<string | null>(null);
   const [isBookingLoading, setIsBookingLoading] = useState(false);
   const [activeLegalModal, setActiveLegalModal] = useState<'vop' | 'gdpr' | 'dpa' | null>(null);
@@ -78,15 +81,21 @@ export const LandingPage: React.FC = () => {
   const [winRate, setWinRate] = useState(35); // %
   const [avgMargin, setAvgMargin] = useState(98000); // Kč
   const [adminHoursWeekly, setAdminHoursWeekly] = useState(8); // h
+  const [extraWinsPercent, setExtraWinsPercent] = useState(0);
+  const [timeSavedPercent, setTimeSavedPercent] = useState(0);
+  const [scenarioCost, setScenarioCost] = useState('');
 
   // Calculations
   const calculatedQuotes = Math.round(monthlyLeads * (quotedRate / 100));
-  const wonPerQuarter = Math.round((calculatedQuotes * 3) * (winRate / 100));
-  const additionalWonQuarter = Math.round(wonPerQuarter * 0.2);
-  const additionalMarginQuarter = additionalWonQuarter * avgMargin;
-  const starterQuarterCost = 1990 * 3;
-  const roiMultiplier = (additionalMarginQuarter / starterQuarterCost).toFixed(1);
-  const adminHoursSavedQuarter = Math.round(adminHoursWeekly * 12 * 0.6); // 60% time saved on paperwork
+  const scenario = estimatePilotScenario({
+    monthlyLeads, quotedRate, winRate, margin: avgMargin, adminHoursWeekly,
+    extraWinsPercent, timeSavedPercent, cost: scenarioCost ? Number(scenarioCost) : null,
+  });
+  const openPilotContact = () => {
+    setBookingSuccess(false);
+    setBookingError(null);
+    setIsBookingOpen(true);
+  };
 
   const handleBookingSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -121,6 +130,7 @@ export const LandingPage: React.FC = () => {
           email: bookingEmail,
           preferredTime: bookingDate
         });
+        setBookingMailto(mailto);
         setBookingSuccess(true);
         window.location.assign(mailto);
         return;
@@ -152,8 +162,8 @@ export const LandingPage: React.FC = () => {
 
           <nav className="hidden lg:flex items-center gap-4 xl:gap-6 text-sm font-semibold text-slate-700">
             <a href="#jak-to-funguje" className="hover:text-blue-600 transition-colors">Jak to funguje</a>
-            <a href="#kalkulacka" className="hover:text-blue-600 transition-colors">Spočítat přínos</a>
-            <a href="#cenik" className="hover:text-blue-600 transition-colors">Ceník</a>
+            <a href="#kalkulacka" className="hover:text-blue-600 transition-colors">Model přínosu</a>
+            <a href="#cenik" className="hover:text-blue-600 transition-colors">Nabídka pilotu</a>
           </nav>
 
           <div data-testid="landing-header-actions" className="flex shrink-0 items-center gap-2 sm:gap-3">
@@ -166,11 +176,11 @@ export const LandingPage: React.FC = () => {
               <LockKeyhole aria-hidden="true" className="mx-auto h-4 w-4 sm:hidden" />
             </button>
             <button
-              onClick={() => setIsBookingOpen(true)}
-              aria-label="Domluvit ukázku StavbaFlow"
+              onClick={openPilotContact}
+              aria-label="Domluvit pilot StavbaFlow"
               className="min-h-11 min-w-11 px-4 max-[359px]:px-2 py-2 bg-[#2563EB] hover:bg-blue-700 text-white rounded-xl text-sm font-semibold shadow-xs hover:shadow-md transition-all"
             >
-              <span className="max-[359px]:hidden">Domluvit ukázku</span>
+              <span className="max-[359px]:hidden">Domluvit pilot</span>
               <Calendar aria-hidden="true" className="mx-auto hidden h-4 w-4 max-[359px]:block" />
             </button>
           </div>
@@ -190,8 +200,8 @@ export const LandingPage: React.FC = () => {
           <h1>Na stavbě máte dost práce.<br />Mějte jasno i v zakázkách.</h1>
           <p>Poptávky, lidé a rozpracované zakázky na jednom místě. Od prvního telefonu po dokončenou práci víte, kdo má co na starosti.</p>
           <div className="sf-sales-actions">
-            <button onClick={() => setIsBookingOpen(true)}>Prohlédnout s námi</button>
-            {DEMO_DESTINATION.url && <a href={DEMO_DESTINATION.url}>Vyzkoušet ukázkovou firmu</a>}
+            <button type="button" onClick={openPilotContact}>Domluvit pilot</button>
+            {DEMO_DESTINATION.url && <a href={DEMO_DESTINATION.url}>Zobrazit ukázkovou firmu</a>}
           </div>
           <span className="sf-sales-note">Pro majitele v kanceláři i tým v terénu.</span>
         </div>
@@ -199,15 +209,13 @@ export const LandingPage: React.FC = () => {
           <div className="sf-product-window" aria-label="Ukázka aplikace se syntetickými zakázkami">
             <aside className="sf-product-nav" aria-hidden="true"><strong>SF <span>StavbaFlow</span></strong><span className="sf-preview-selected">Přehled firmy</span><span>Poptávky</span><span>Zakázky v realizaci</span><span>Tým</span><span>Nastavení</span><small>Ukázková firma</small></aside>
             <div className="sf-product-content">
-              <div className="sf-product-heading"><div><small>Ukázková data</small><h2>Práce pod kontrolou.</h2></div><HardHat aria-hidden="true" /></div>
-              <div className="sf-preview-metrics"><div><small>Nové poptávky</small><strong>2</strong></div><div><small>V realizaci</small><strong>1</strong></div><div><small>Celkem zakázek</small><strong>4</strong></div></div>
+              <div className="sf-product-heading"><div><small>Syntetická data</small><h2>{PUBLIC_DEMO_COMPANY_NAME}</h2></div><HardHat aria-hidden="true" /></div>
+              <div className="sf-preview-metrics"><div><small>Nové poptávky</small><strong>{PUBLIC_DEMO_LEADS.filter(lead => lead.status === 'new').length}</strong></div><div><small>V realizaci</small><strong>{PUBLIC_DEMO_LEADS.filter(lead => lead.status === 'job').length}</strong></div><div><small>Celkem zakázek</small><strong>{PUBLIC_DEMO_LEADS.length}</strong></div></div>
               <div className="sf-preview-table-title">Poptávky a zakázky <span>Stav práce</span></div>
-              {[
-                ['Rekonstrukce rodinného domu', 'Brno, Novákovi', 'V realizaci'],
-                ['Nová střecha na chalupě', 'Tišnov, Dvořákovi', 'Nová poptávka'],
-                ['Zateplení fasády', 'Kuřim, Svoboda', 'Nabídka'],
-                ['Dláždění příjezdové cesty', 'Brno, Černý', 'Nová poptávka'],
-              ].map(([title, place, status]) => <div className="sf-preview-job" key={title}><span><strong>{title}</strong><small>{place}</small></span><span className="landing-preview-status" data-status={status}>{status}</span></div>)}
+              {PUBLIC_DEMO_LEADS.map(lead => {
+                const { label } = PUBLIC_DEMO_LEAD_STATES[lead.status];
+                return <div className="sf-preview-job" key={lead.id}><span><strong>{lead.project}</strong><small>{lead.customer}, {lead.city}</small></span><span className="landing-preview-status" data-status={label}>{label}</span></div>;
+              })}
             </div>
           </div>
         </div>
@@ -218,13 +226,13 @@ export const LandingPage: React.FC = () => {
         <div id="problemy" className="mx-auto grid max-w-7xl gap-8 px-4 py-12 sm:px-6 sm:py-16 lg:grid-cols-[0.95fr_1.05fr] lg:gap-12 lg:px-8">
           <div>
             <h2 className="text-2xl font-semibold tracking-tight text-slate-950 sm:text-3xl">Jak firma zpracuje poptávku</h2>
-            <p className="mt-3 max-w-sm text-slate-600">Scénář pilotu ukazuje cestu od prvního kontaktu po změnu stavu zakázky. Nasazení ověřujeme před zákaznickými daty.</p>
+            <p className="mt-3 max-w-sm text-slate-600">Plánovaný scénář pilotu vede od první poptávky po změnu stavu. Dostupný rozsah prověříme před vložením zákaznických dat.</p>
           </div>
           <ol className="divide-y divide-slate-200 border-y border-slate-200">
             {[
-              ['Zákazník odešle poptávku', 'Formulář na webu firmy založí záznam v jejím přehledu.'],
-              ['Majitel ji přidělí', 'Zkontroluje údaje a vybere odpovědného pracovníka.'],
-              ['Pracovník aktualizuje stav', 'Vidí přidělené zakázky. Změny se zapíšou do historie.'],
+              ['Zákazník odešle poptávku', 'V pilotu navrhujeme začít u formuláře na webu firmy.'],
+              ['Majitel ji přidělí', 'Vybere odpovědného pracovníka.'],
+              ['Pracovník aktualizuje stav', 'Cílem je přehled o zpracování přidělené zakázky.'],
             ].map(([title, description], index) => (
               <li key={title} className="grid grid-cols-[2rem_minmax(0,1fr)] gap-2 py-4">
                 <span aria-hidden="true" className="text-sm font-semibold tabular-nums text-blue-700">{index + 1}.</span>
@@ -236,7 +244,7 @@ export const LandingPage: React.FC = () => {
       </section>
 
       {/* 5. User-Driven ROI Calculator (Audit Page 13) */}
-      <section id="kalkulacka" className="py-16 bg-white border-y border-slate-200">
+      <section id="kalkulacka" className="scroll-mt-20 py-16 bg-white border-y border-slate-200">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 space-y-10">
           <div className="text-center space-y-2">
             <span className="text-xs font-black text-blue-600 flex items-center justify-center gap-1.5">
@@ -343,110 +351,64 @@ export const LandingPage: React.FC = () => {
 
             </div>
 
-            {/* Results Output Box (5 cols) */}
-            <div className="lg:col-span-5 bg-slate-900 text-white p-6 rounded-3xl space-y-5 shadow-xl">
+            <section className="space-y-5 rounded-3xl bg-slate-900 p-5 text-white sm:p-6 lg:col-span-5" aria-label="Ilustrativní výsledek">
               <div>
-                  <span className="text-xs font-semibold text-emerald-300">
-                  Modelový kvartální přínos (3 měsíce)
-                </span>
-                <div className="text-2xl sm:text-3xl font-black text-white mt-1">
-                  +{additionalMarginQuarter.toLocaleString('cs-CZ')} Kč
-                </div>
-                <p className="text-sm text-slate-300 mt-1">
-                  Počet zakázek navíc v tomto scénáři: {additionalWonQuarter}
-                </p>
+                <h3 className="text-lg font-semibold">Předpoklady na 30 dní</h3>
+                <p className="mt-1 text-sm leading-6 text-slate-300">Výchozí odhad je {scenario.baselineWins.toLocaleString('cs-CZ', { maximumFractionDigits: 1 })} získaných zakázek. Počet poptávek, podíl nabídek a úspěšnost vycházejí z vašich vstupů.</p>
               </div>
-
-              <div className="space-y-2.5 pt-4 border-t border-slate-800 text-sm">
-                <div className="flex justify-between">
-                  <span className="text-slate-400">Modelovaná úspora času:</span>
-                  <strong className="text-white">{adminHoursSavedQuarter} hodin / kvartál</strong>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-slate-400">Tarif Start za 3 měsíce:</span>
-                  <strong className="text-slate-300">{starterQuarterCost.toLocaleString('cs-CZ')} Kč (bez DPH)</strong>
-                </div>
-                <div className="flex justify-between pt-2 border-t border-slate-800 text-emerald-400 font-bold">
-                  <span>Modelová marže vůči ceně tarifu:</span>
-                  <span>{roiMultiplier}×</span>
-                </div>
-              </div>
-
-              <div className="p-3.5 bg-slate-800/80 rounded-2xl border border-slate-700 text-sm text-slate-200 leading-relaxed">
-                Ilustrativní výpočet s orientačními hodnotami. Předpokládá o 20 % více získaných zakázek a o 60 % méně času na administrativu.
-              </div>
-
-              <button
-                onClick={() => setIsBookingOpen(true)}
-                className="w-full min-h-12 px-4 py-3 bg-[#2563EB] hover:bg-blue-700 text-white rounded-xl text-sm font-semibold transition-all shadow-md"
-              >
-                Ověřit výpočet na osobní ukázce (20 min)
-              </button>
-            </div>
+              <label className="block text-sm">O kolik více zakázek předpokládáte ({extraWinsPercent} %)
+                <input type="range" min="0" max="100" value={extraWinsPercent} onChange={e => setExtraWinsPercent(Number(e.target.value))} className="mt-2 block w-full accent-blue-400" />
+              </label>
+              <label className="block text-sm">O kolik méně administrativy předpokládáte ({timeSavedPercent} %)
+                <input type="range" min="0" max="100" value={timeSavedPercent} onChange={e => setTimeSavedPercent(Number(e.target.value))} className="mt-2 block w-full accent-blue-400" />
+              </label>
+              <label className="block text-sm">Celkové náklady na pilot a zřízení (Kč, volitelné)
+                <input type="number" min="0" step="any" inputMode="decimal" value={scenarioCost} onChange={e => setScenarioCost(e.target.value)} placeholder="Zadejte částku z nabídky" className="mt-2 w-full rounded-xl border border-slate-600 bg-slate-800 px-3 py-2 text-base text-white" />
+              </label>
+              <dl className="grid gap-2 border-t border-slate-700 pt-4 text-sm">
+                <div className="flex flex-wrap justify-between gap-x-3"><dt>Hrubá marže navíc před náklady</dt><dd className="font-semibold">{scenario.extraMargin.toLocaleString('cs-CZ')} Kč</dd></div>
+                <div className="flex flex-wrap justify-between gap-x-3"><dt>Úspora administrativy</dt><dd className="font-semibold">{scenario.hoursSaved} h</dd></div>
+                <div className="flex flex-wrap justify-between gap-x-3"><dt>Ilustrativní návratnost</dt><dd className="font-semibold">{scenario.roiPercent === null ? 'Zadejte náklady' : `${scenario.roiPercent.toLocaleString('cs-CZ')} %`}</dd></div>
+              </dl>
+              <p className="text-sm leading-6 text-slate-300">Ilustrativní výpočet s orientačními hodnotami. Návratnost je marže navíc po odečtení zadaných nákladů, dělená těmito náklady. Časovou úsporu do návratnosti nezapočítáváme.</p>
+              <button type="button" onClick={openPilotContact} className="min-h-12 w-full rounded-xl bg-blue-600 px-4 py-3 text-sm font-semibold text-white hover:bg-blue-700">Probrat předpoklady pilotu</button>
+            </section>
           </div>
         </div>
       </section>
 
-      {/* 6. Monthly plans */}
-      <section id="cenik" className="py-20 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="grid gap-10 lg:grid-cols-[0.8fr_2fr] lg:items-end">
+      {/* Pilot offer */}
+      <section id="cenik" className="mx-auto max-w-6xl scroll-mt-20 px-4 py-16 sm:px-6 lg:px-8">
+        <article className="grid gap-8 rounded-3xl border border-slate-200 bg-white p-5 shadow-sm sm:p-8 lg:grid-cols-[1fr_1.1fr] lg:p-10">
           <div>
-            <p className="text-sm font-bold text-blue-700">Tarify StavbaFlow</p>
-            <h2 className="mt-3 text-2xl sm:text-3xl font-black tracking-tight text-slate-950">Tarif podle velikosti vašeho týmu.</h2>
+            <h2 className="text-2xl font-semibold tracking-tight text-slate-950 sm:text-3xl">30denní Managed Cloud pilot s osobním zřízením</h2>
+            <p className="mt-4 max-w-lg leading-7 text-slate-600">Společně vybereme jeden pracovní postup a domluvíme zřízení firemního prostoru v cloudu. Před zahájením dostanete nabídku s cenou, rozsahem a pravidly ukončení.</p>
+            <button type="button" onClick={openPilotContact} className="mt-6 min-h-12 rounded-xl bg-blue-600 px-5 py-3 text-sm font-semibold text-white hover:bg-blue-700">Domluvit 30denní pilot</button>
           </div>
-          <p className="max-w-2xl text-sm leading-6 text-slate-600 lg:justify-self-end">
-            Měsíční ceny jsou bez DPH. Vyberte kapacitu podle počtu zaměstnanců.
-          </p>
-        </div>
-
-        <div className="mt-10 grid gap-4 lg:grid-cols-3">
-          <article className="flex min-h-[340px] flex-col border-t-4 border-slate-300 bg-white p-6 shadow-sm">
-            <h3 className="flex items-center gap-2 text-base font-extrabold text-slate-950"><Building2 aria-hidden="true" className="h-5 w-5 text-blue-700" />Start</h3>
-            <p className="mt-1 text-sm text-slate-600">Pro menší tým</p>
-            <p className="mt-7 text-4xl font-black tracking-tight text-slate-950">1 990 Kč</p>
-            <p className="mt-1 text-sm text-slate-500">měsíčně bez&nbsp;DPH</p>
-            <p className="mt-6 border-t border-slate-200 pt-4 text-sm font-semibold text-slate-800">Až 5 zaměstnanců</p>
-            <button onClick={() => setIsBookingOpen(true)} className="mt-auto min-h-12 rounded-xl bg-blue-600 px-5 py-3 text-sm font-semibold text-white hover:bg-blue-700">Domluvit tarif Start</button>
-          </article>
-
-          <article className="flex min-h-[340px] flex-col border-t-4 border-blue-600 bg-blue-50/60 p-6 shadow-sm">
-            <h3 className="flex items-center gap-2 text-base font-extrabold text-slate-950"><Users aria-hidden="true" className="h-5 w-5 text-blue-700" />Růst</h3>
-            <p className="mt-1 text-sm text-slate-600">Pro rostoucí firmu</p>
-            <p className="mt-7 text-4xl font-black tracking-tight text-slate-950">2 990 Kč</p>
-            <p className="mt-1 text-sm text-slate-500">měsíčně bez&nbsp;DPH</p>
-            <p className="mt-6 border-t border-blue-200 pt-4 text-sm font-semibold text-slate-800">Až 15 zaměstnanců</p>
-            <button onClick={() => setIsBookingOpen(true)} className="mt-auto min-h-12 rounded-xl bg-blue-600 px-5 py-3 text-sm font-semibold text-white hover:bg-blue-700">Domluvit tarif Růst</button>
-          </article>
-
-          <article className="flex min-h-[340px] flex-col border-t-4 border-slate-700 bg-slate-900 p-6 text-white">
-            <h3 className="flex items-center gap-2 text-base font-extrabold"><HardHat aria-hidden="true" className="h-5 w-5 text-blue-300" />Profi</h3>
-            <p className="mt-1 text-sm text-slate-300">Pro větší provoz</p>
-            <p className="mt-7 text-4xl font-black tracking-tight">4 990 Kč</p>
-            <p className="mt-1 text-sm text-slate-300">měsíčně bez&nbsp;DPH</p>
-            <p className="mt-6 border-t border-slate-700 pt-4 text-sm font-semibold">Neomezený počet zaměstnanců</p>
-            <p className="mt-5 text-sm leading-6 text-slate-300">Přímý databázový konektor připravujeme pro únor&nbsp;2027.</p>
-            <p className="mt-auto pt-6 text-sm font-semibold text-slate-300">Profi zatím nelze objednat.</p>
-          </article>
-        </div>
-
-        <p className="mt-8 border-l-2 border-blue-600 pl-4 text-sm leading-6 text-slate-600">
-          <strong className="text-slate-900">Founding Pilot:</strong> jednorázový onboardingový poplatek plus první měsíc. Cena potvrzena při nabídce.
-        </p>
-        <p className="mt-3 max-w-4xl text-xs leading-5 text-slate-500">
-          <strong>SCÉNÁŘ PILOTU — Plánovaný rozsah scénáře:</strong> Plánované funkce zahrnují založení firmy, přihlášení majitele, pozvání zaměstnanců, webový formulář a kontrolovaný CSV import. Před zákaznickými daty je třeba dokončit živou přejímku.
-        </p>
-        <details className="mt-5 max-w-4xl text-sm text-slate-600">
-          <summary className="cursor-pointer font-semibold text-slate-800">Mimo první pilot</summary>
+          <dl className="divide-y divide-slate-200 border-y border-slate-200 text-sm">
+            {([
+              ['Cena za 30 dní a režim DPH', pilotTerms.price],
+              ['Jednorázové zřízení', pilotTerms.setup],
+              ['Počet uživatelů', pilotTerms.users],
+              ['Soubory a limity', pilotTerms.files],
+              ['Podpora a reakční doba', pilotTerms.support],
+              ['Export dat', pilotTerms.export],
+              ['Ukončení pilotu', pilotTerms.exit],
+            ] as const).map(([label, value]) => (
+              <div className="grid gap-1 py-3 sm:grid-cols-[1fr_1.3fr] sm:gap-3" key={label}>
+                <dt className="font-semibold text-slate-950">{label}</dt>
+                <dd className="text-slate-600">{value}</dd>
+              </div>
+            ))}
+          </dl>
+        </article>
+        <details className="mt-6 max-w-4xl text-sm leading-6 text-slate-600">
+          <summary className="cursor-pointer font-semibold text-slate-900">Mimo první pilot</summary>
           <p className="mt-2">Tyto části zatím nejsou součástí obchodního slibu:</p>
           <ul className="mt-2 grid gap-x-8 gap-y-1 sm:grid-cols-2">
-            <li>Kalendář — není součástí prvního pilotu</li>
-            <li>Analytika — není součástí prvního pilotu</li>
-            <li>Cenové nabídky — nejsou součástí prvního pilotu</li>
-            <li>Dokumenty a protokoly — nejsou součástí prvního pilotu</li>
-            <li>Komunikační centrum — není součástí prvního pilotu</li>
-            <li>Klientský portál — není součástí prvního pilotu</li>
-            <li>Automatické follow-upy — nejsou součástí prvního pilotu</li>
-            <li>Přímé SQL/ERP propojení, obousměrná synchronizace a účetní exporty — nejsou součástí prvního pilotu</li>
+            <li>CSV import a AI zpracování e-mailů nejsou součástí prvního pilotu.</li>
+            <li>Přímé SQL/ERP propojení ani provoz nad vlastní databází (BYODB) nejsou součástí prvního pilotu.</li>
+            <li>Poznámky, přílohy a historie změn čekají na produkční uvolnění.</li>
           </ul>
         </details>
       </section>
@@ -463,21 +425,21 @@ export const LandingPage: React.FC = () => {
             <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 space-y-1.5">
               <h4 className="flex items-start gap-2 font-black text-slate-900 text-sm"><HelpCircle aria-hidden="true" className="mt-0.5 h-4 w-4 shrink-0 text-blue-700" /><span>Jak dostaneme do systému současná data?</span></h4>
               <p className="text-slate-600 leading-relaxed">
-                Scénář pilotu počítá s kontrolovaným CSV importem. Před potvrzením je potřeba ověřit mapování, chyby i opakovaný běh. V režimu Managed Cloud se data neukládají do původní firemní databáze.
+                Před zřízením se domluvíme, která data jsou pro pilot potřeba. Automatický import CSV do nabídky zatím nezahrnujeme.
               </p>
             </div>
 
             <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 space-y-1.5">
               <h4 className="flex items-start gap-2 font-black text-slate-900 text-sm"><HelpCircle aria-hidden="true" className="mt-0.5 h-4 w-4 shrink-0 text-blue-700" /><span>Co zaměstnanec po přihlášení uvidí?</span></h4>
               <p className="text-slate-600 leading-relaxed">
-                Přejímka ověřuje, že zaměstnanec vidí jen zakázky přiřazené jeho účtu a databázová pravidla mu nedovolí měnit údaje firmy ani cizí zakázky.
+                Rozsah rolí a dostupných úkonů projdeme při domluvě pilotu. Demo ukazuje pohled majitele na syntetických datech.
               </p>
             </div>
 
             <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 space-y-1.5">
               <h4 className="flex items-start gap-2 font-black text-slate-900 text-sm"><HelpCircle aria-hidden="true" className="mt-0.5 h-4 w-4 shrink-0 text-blue-700" /><span>Je systém připravený na přímé propojení s naší SQL databází?</span></h4>
               <p className="text-slate-600 leading-relaxed">
-                V prvním pilotu ne. Začínáme bezpečným CSV importem bez zápisu zpět. Přímé propojení se nacení a ověří samostatně až po úspěšném pilotu.
+                Pilot běží ve spravovaném cloudu. Přímé propojení s vaší databází do této nabídky nezahrnujeme.
               </p>
             </div>
           </div>
@@ -498,7 +460,7 @@ export const LandingPage: React.FC = () => {
             <div className="flex flex-wrap gap-4 text-slate-400">
               <button onClick={() => navigate('/login')} className="hover:text-white transition-colors">Přihlášení</button>
               <button onClick={() => DEMO_DESTINATION.url && window.location.assign(DEMO_DESTINATION.url)} disabled={!DEMO_DESTINATION.url} title={DEMO_DESTINATION.error || 'Otevřít skutečné demo StavbaFlow'} className="hover:text-white transition-colors disabled:cursor-not-allowed disabled:opacity-50">Interaktivní demo</button>
-              <button onClick={() => setIsBookingOpen(true)} className="hover:text-white transition-colors">Osobní ukázka (20 min)</button>
+              <button onClick={openPilotContact} className="hover:text-white transition-colors">Kontakt k pilotu</button>
               <button onClick={() => setActiveLegalModal('vop')} className="hover:text-white transition-colors">VOP</button>
               <button onClick={() => setActiveLegalModal('gdpr')} className="hover:text-white transition-colors">GDPR & Soukromí</button>
               <button onClick={() => setActiveLegalModal('dpa')} className="hover:text-white transition-colors">Zpracovatelská smlouva (DPA)</button>
@@ -598,7 +560,7 @@ export const LandingPage: React.FC = () => {
       {/* 9. Booking Modal (20-min Personal Demo) */}
       {isBookingOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-in fade-in">
-          <div className="bg-white rounded-3xl p-6 sm:p-8 max-w-md w-full shadow-2xl border border-slate-200 space-y-5 relative">
+          <div role="dialog" aria-modal="true" aria-label="Domluva Managed Cloud pilotu" className="relative max-h-[90dvh] w-full max-w-md space-y-5 overflow-y-auto rounded-3xl border border-slate-200 bg-white p-5 shadow-2xl sm:p-8">
             <button
               onClick={() => setIsBookingOpen(false)}
               aria-label="Zavřít konzultaci"
@@ -611,13 +573,13 @@ export const LandingPage: React.FC = () => {
               <form onSubmit={handleBookingSubmit} className="space-y-4">
                 <div>
                   <span className="text-[10px] font-bold text-blue-600">
-                    Nezávazná konzultace (20 min)
+                    Nezávazná domluva
                   </span>
                   <h3 className="text-lg font-black text-slate-900 mt-0.5">
-                    Ukázat StavbaFlow na mém procesu
+                    Domluvit Managed Cloud pilot
                   </h3>
                   <p className="text-xs text-slate-500 mt-1">
-                    Společně projdeme vaše současné tabulky a ukážeme, jak se formulář promění v poptávku, zaměstnanec ji převezme a změní stav zakázky.
+                    Probereme váš pracovní postup, rozsah pilotu a podmínky osobního zřízení.
                   </p>
                 </div>
 
@@ -637,8 +599,9 @@ export const LandingPage: React.FC = () => {
 
                 <div className="space-y-3 text-xs">
                   <div>
-                    <label className="font-bold text-slate-700 block mb-1">Vaše jméno</label>
+                    <label htmlFor="pilot-contact-name" className="font-bold text-slate-700 block mb-1">Vaše jméno</label>
                     <input
+                      id="pilot-contact-name"
                       type="text"
                       required
                       placeholder="Ing. Petr Novák"
@@ -651,8 +614,9 @@ export const LandingPage: React.FC = () => {
                     />
                   </div>
                   <div>
-                    <label className="font-bold text-slate-700 block mb-1">Název stavební firmy</label>
+                    <label htmlFor="pilot-contact-company" className="font-bold text-slate-700 block mb-1">Název stavební firmy</label>
                     <input
+                      id="pilot-contact-company"
                       type="text"
                       required
                       placeholder="Střechy & Stavby Novák s.r.o."
@@ -665,8 +629,9 @@ export const LandingPage: React.FC = () => {
                     />
                   </div>
                   <div>
-                    <label className="font-bold text-slate-700 block mb-1">Telefonní číslo pro potvrzení</label>
+                    <label htmlFor="pilot-contact-phone" className="font-bold text-slate-700 block mb-1">Telefon</label>
                     <input
+                      id="pilot-contact-phone"
                       type="tel"
                       required
                       placeholder="+420 777 123 456"
@@ -679,8 +644,9 @@ export const LandingPage: React.FC = () => {
                     />
                   </div>
                   <div>
-                    <label className="font-bold text-slate-700 block mb-1">E-mail pro zaslání pozvánky</label>
+                    <label htmlFor="pilot-contact-email" className="font-bold text-slate-700 block mb-1">Kontaktní e-mail</label>
                     <input
+                      id="pilot-contact-email"
                       type="email"
                       required
                       placeholder="petr@novak-stavby.cz"
@@ -693,8 +659,9 @@ export const LandingPage: React.FC = () => {
                     />
                   </div>
                   <div>
-                    <label className="font-bold text-slate-700 block mb-1">Preferovaný termín</label>
+                    <label htmlFor="pilot-contact-time" className="font-bold text-slate-700 block mb-1">Preferovaný termín</label>
                     <select
+                      id="pilot-contact-time"
                       value={bookingDate}
                       onChange={e => setBookingDate(e.target.value)}
                       className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-blue-600 font-medium"
@@ -736,6 +703,7 @@ export const LandingPage: React.FC = () => {
                 <p className="text-xs text-slate-600 leading-relaxed">
                   Děkujeme, {bookingName}. Odeslání dokončete ve své e-mailové aplikaci. Termín {bookingDate} je potvrzený až po naší odpovědi.
                 </p>
+                <a href={bookingMailto} className="inline-flex min-h-11 items-center rounded-lg bg-blue-600 px-4 text-sm font-semibold text-white hover:bg-blue-700">Otevřít připravený e-mail</a>
               </div>
             )}
           </div>
