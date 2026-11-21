@@ -96,3 +96,18 @@ test('attachment acceptance branch gets only staging-bound Preview flags', () =>
   assert.equal(variables.find(item => item.key === 'VITE_STAGING_SUPABASE_PROJECT_REF')?.value, valid.STAGING_SUPABASE_PROJECT_REF);
   assert.equal(variables.find(item => item.key === 'VITE_PRODUCTION_LEAD_NOTES_FILES_APPROVED')?.value, 'false');
 });
+
+test('lead write acceptance config targets only the candidate staging Preview', () => {
+  const branch = 'codex/lead-write-contract';
+  const config = { ...valid, GITHUB_REF: `refs/heads/${branch}`, STAGING_PREVIEW_GIT_BRANCH: branch };
+  assert.deepEqual(validateStagingPreviewConfig(config), []);
+  const variables = buildPreviewVariables(config);
+  const values = new Map(variables.map(({ key, value }) => [key, value]));
+  assert.ok(variables.every(item => item.gitBranch === branch && item.target.length === 1 && item.target[0] === 'preview'));
+  assert.equal(values.get('VITE_APP_LEAD_WRITES'), 'true');
+  assert.equal(values.get('VITE_PRODUCTION_APP_LEAD_WRITES_APPROVED'), 'false');
+  assert.equal(values.get('VITE_SUPABASE_URL'), valid.STAGING_SUPABASE_URL);
+  assert.equal(values.get('SUPABASE_URL'), valid.STAGING_SUPABASE_URL);
+  assert.notEqual(values.get('SUPABASE_SERVICE_ROLE_KEY'), valid.STAGING_SUPABASE_SERVICE_ROLE_KEY);
+  assert.ok(values.has('SUPABASE_SERVICE_ROLE_KEY'), 'mask shared Preview service-role credentials');
+});
