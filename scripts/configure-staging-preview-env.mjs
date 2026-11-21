@@ -4,7 +4,8 @@ import { pathToFileURL } from 'node:url';
 
 const allowedBranch = 'codex/staging-e2e-local-runner';
 const attachmentBranch = 'codex/lead-notes-files-acceptance';
-const allowedBranches = new Set([allowedBranch, attachmentBranch]);
+const leadWriteBranch = 'codex/lead-write-contract';
+const allowedBranches = new Set([allowedBranch, attachmentBranch, leadWriteBranch]);
 const allowedStagingRef = 'xwzweltjvreqhjpbjrxa';
 const allowedProductionRef = 'oncmtmrhmjlerbwkrecv';
 
@@ -26,23 +27,38 @@ export function validateStagingPreviewConfig(env) {
     errors.push('The staging Supabase URL is invalid.');
   }
   for (const name of [
-    'STAGING_SUPABASE_PUBLISHABLE_KEY', 'STAGING_SUPABASE_SERVICE_ROLE_KEY',
+    'STAGING_SUPABASE_PUBLISHABLE_KEY',
     'VERCEL_ORG_ID', 'VERCEL_PROJECT_ID', 'VERCEL_TOKEN',
   ]) {
     if (!env[name]) errors.push(`Required configuration is missing: ${name}.`);
+  }
+  if (env.STAGING_PREVIEW_GIT_BRANCH !== leadWriteBranch && !env.STAGING_SUPABASE_SERVICE_ROLE_KEY) {
+    errors.push('Required configuration is missing: STAGING_SUPABASE_SERVICE_ROLE_KEY.');
   }
   return errors;
 }
 
 export function buildPreviewVariables(env, randomBytesImpl = randomBytes) {
+  const leadWrite = env.STAGING_PREVIEW_GIT_BRANCH === leadWriteBranch;
+  const disabled = 'disabled-for-lead-write-acceptance';
+  const supabaseUrl = leadWrite ? `https://${allowedStagingRef}.supabase.co` : env.STAGING_SUPABASE_URL;
   const values = [
-    ['VITE_SUPABASE_URL', env.STAGING_SUPABASE_URL],
+    ['VITE_SUPABASE_URL', supabaseUrl],
     ['VITE_SUPABASE_ANON_KEY', env.STAGING_SUPABASE_PUBLISHABLE_KEY],
-    ['SUPABASE_URL', env.STAGING_SUPABASE_URL],
-    ['SUPABASE_SERVICE_ROLE_KEY', env.STAGING_SUPABASE_SERVICE_ROLE_KEY],
+    ['SUPABASE_URL', supabaseUrl],
+    ['SUPABASE_SERVICE_ROLE_KEY', leadWrite ? disabled : env.STAGING_SUPABASE_SERVICE_ROLE_KEY],
     ['CONNECTOR_SECRET_ENCRYPTION_KEY', randomBytesImpl(32).toString('base64')],
     ['INTAKE_HASH_SECRET', randomBytesImpl(32).toString('base64url')],
   ];
+  if (leadWrite) values.push(
+    ['VITE_DEPLOYMENT_SURFACE', 'app'],
+    ['VITE_APP_LEAD_WRITES', 'true'],
+    ['VITE_PRODUCTION_APP_LEAD_WRITES_APPROVED', 'false'],
+    ['APP_IMPORT_WORKER_ENABLED', 'false'],
+    ['APP_INVITE_WORKER_ENABLED', 'false'],
+    ['STRIPE_SECRET_KEY', disabled],
+    ['RESEND_API_KEY', disabled],
+  );
   if (env.STAGING_PREVIEW_GIT_BRANCH === attachmentBranch) values.push(
     ['VITE_LEAD_NOTES_FILES_ENABLED', 'true'],
     ['VITE_STAGING_SUPABASE_PROJECT_REF', allowedStagingRef],
