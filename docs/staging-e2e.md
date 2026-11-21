@@ -81,3 +81,11 @@ The public form acceptance uses app commit `53c27ac71f4db2b53251f34719ec82cbb9a1
 The fixture A route is `/inquiry/e2e-synthetic-company-a`. Company B has no active public form. The first staging attempt exposed a missing branding lookup required by the candidate. The [staging-only SQL](../supabase/staging/20261121_public_form_branding_staging.sql) restricts that lookup to the two fixtures and only returns public display fields when the form is enabled. A disposable PostgreSQL verification checks the return fields, unavailable fixtures and the lack of a direct anonymous company-table read. The current deployed application code is unchanged.
 
 The workflow verifies the staging service credential before creating a Preview. The browser step receives only the staging publishable key and fixture login data. Email delivery is optional in the work plan and is outside this Preview's scope. Record the outbox response and database queue separately from provider delivery. Synthetic recipient addresses are not real inboxes.
+
+[Run 44932184510](https://github.com/svobonek-lab/dashboard/actions/runs/44932184510) passed against the exact Preview. The same public-form submission and replay produced one lead and one intake event for company A and no leads for company B. The owner opened that lead, assigned employee A, and saw the assignment and subsequent employee status change after reload. The staging catalog confirmed both history events and their synthetic actors.
+
+Missing input returned HTTP 400 with a generic validation code. An unknown tenant and the disabled company B returned the unavailable form and generic HTTP 503 API responses. After the form lead and four new requests, the next fresh request returned HTTP 429 with `Retry-After: 600`. Neither the acceptance nor error responses exposed another tenant's data.
+
+The outbox endpoint returned `OUTBOX_WORKER_NOT_CONFIGURED` with zero processed and `queued=false`. The staging catalog showed zero new company A outbox rows during the accepted run. There was no email delivery evidence. The lead and four throttle fixtures were removed. The follow-up queries confirmed zero remaining leads, intake events or lead history for the tracked runs and restored company A to `canceled`.
+
+Production acceptance requires approval of the first company and its test data.
