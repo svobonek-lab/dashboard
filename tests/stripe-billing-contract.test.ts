@@ -336,7 +336,7 @@ test('Preview redeploy is manually gated to the staging branch and uses prebuilt
   assert.match(stagingWorkflow, /github\.ref == 'refs\/heads\/codex\/staging-e2e-local-runner'/);
   assert.match(stagingWorkflow, /vercel@65\.8\.0 deploy --prebuilt --environment=preview/);
   assert.match(stagingWorkflow, /alias set "\$deployment_url" dashboard-git-codex-staging-e2e-79cdb9-svobonek-6462s-projects\.vercel\.app/);
-  assert.match(stagingWorkflow, /inputs\.runner_mode != 'preview-redeploy' && inputs\.runner_mode != 'lead-attachments-configure' && inputs\.runner_mode != 'lead-attachments-acceptance'\) \|\|/);
+  assert.match(stagingWorkflow, /inputs\.runner_mode != 'preview-redeploy' && inputs\.runner_mode != 'lead-attachments-configure' && inputs\.runner_mode != 'lead-attachments-acceptance' && inputs\.runner_mode != 'lead-attachments-cleanup'\) \|\|/);
 });
 
 test('pilot price setup sets only the approved TEST Starter price on the exact branch', () => {

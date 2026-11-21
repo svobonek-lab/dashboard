@@ -215,10 +215,15 @@ test('owner and assigned employee persist notes, PDF and JPEG; company B is isol
     for (const [page, fileName] of [[employee, `employee-${run}.pdf`], [owner, `owner-${run}.jpg`]] as const) {
       const row = created.find(item => item.file_name === fileName);
       expect(row).toBeTruthy();
+      const objectInfoUrl = `${url}/storage/v1/object/info/lead-files/${String(row!.storage_path).split('/').map(encodeURIComponent).join('/')}`;
+      const existingObject = await request.head(objectInfoUrl, {
+        headers: { apikey: key, Authorization: `Bearer ${ownerToken}` },
+      });
+      expect(existingObject.status()).toBe(200);
       await page.locator('article').filter({ hasText: fileName }).getByRole('button', { name: 'Smazat soubor' }).click();
       await expect(page.getByText(fileName, { exact: true })).toHaveCount(0);
       expect(await restGet(request, ownerToken, 'app_lead_files', `select=id&company_id=eq.${companyA}&id=eq.${row!.id}`)).toHaveLength(0);
-      const removedObject = await request.get(`${url}/storage/v1/object/authenticated/lead-files/${String(row!.storage_path).split('/').map(encodeURIComponent).join('/')}`, {
+      const removedObject = await request.head(objectInfoUrl, {
         headers: { apikey: key, Authorization: `Bearer ${ownerToken}` },
       });
       expect(removedObject.status()).not.toBe(200);
@@ -239,7 +244,7 @@ test('owner and assigned employee persist notes, PDF and JPEG; company B is isol
           data: { prefixes: [row.storage_path] },
         });
         expect(removed.ok()).toBe(true);
-        const check = await request.get(`${url}/storage/v1/object/authenticated/lead-files/${String(row.storage_path).split('/').map(encodeURIComponent).join('/')}`, {
+        const check = await request.head(`${url}/storage/v1/object/info/lead-files/${String(row.storage_path).split('/').map(encodeURIComponent).join('/')}`, {
           headers: { apikey: key, Authorization: `Bearer ${ownerToken}` },
         });
         expect(check.status()).not.toBe(200);
@@ -250,7 +255,7 @@ test('owner and assigned employee persist notes, PDF and JPEG; company B is isol
           data: { prefixes: [orphanPath] },
         });
         expect(removed.ok()).toBe(true);
-        const check = await request.get(`${url}/storage/v1/object/authenticated/lead-files/${orphanPath.split('/').map(encodeURIComponent).join('/')}`, {
+        const check = await request.head(`${url}/storage/v1/object/info/lead-files/${orphanPath.split('/').map(encodeURIComponent).join('/')}`, {
           headers: { apikey: key, Authorization: `Bearer ${ownerToken}` },
         });
         expect(check.status()).not.toBe(200);
