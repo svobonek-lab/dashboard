@@ -73,3 +73,11 @@ keys and stores them as sensitive Vercel variables without printing their
 values. The connector key is specific to this branch, so any connector
 credentials saved through this Preview must remain synthetic staging data and
 cannot be decrypted by a different deployment using another key.
+
+## Public form and lead processing on the exact candidate
+
+The public form acceptance uses app commit `53c27ac71f4db2b53251f34719ec82cbb9a1b693`, the same app code as the reviewed lead-write candidate. Vercel Preview deployment `dpl_5Eokzp3wJBRQq14kxmw7USDovRZC` proved the commit, Preview target and client project ref `xwzweltjvreqhjpbjrxa` before browser writes. The browser checks the authenticated subject and tenant of the three synthetic staging accounts against the expected fixture IDs before submitting.
+
+The fixture A route is `/inquiry/e2e-synthetic-company-a`. Company B has no active public form. The first staging attempt exposed a missing branding lookup required by the candidate. The [staging-only SQL](../supabase/staging/20261121_public_form_branding_staging.sql) restricts that lookup to the two fixtures and only returns public display fields when the form is enabled. A disposable PostgreSQL verification checks the return fields, unavailable fixtures and the lack of a direct anonymous company-table read. The current deployed application code is unchanged.
+
+The workflow verifies the staging service credential before creating a Preview. The browser step receives only the staging publishable key and fixture login data. Email delivery is optional in the work plan and is outside this Preview's scope. Record the outbox response and database queue separately from provider delivery. Synthetic recipient addresses are not real inboxes.

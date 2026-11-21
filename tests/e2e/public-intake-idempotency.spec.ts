@@ -104,6 +104,7 @@ test('the synthetic public form and the three roles process one lead end to end'
     const visitor = await publicContext.newPage();
     const owner = await ownerContext.newPage();
     const employee = await employeeContext.newPage();
+    for (const page of [visitor, owner, employee]) page.setDefaultTimeout(15_000);
     const [ownerToken, employeeToken, ownerB] = await Promise.all(
       (['OWNER_A', 'EMPLOYEE_A', 'OWNER_B'] as const).map(account => accessToken(browser, account)),
     );
@@ -134,19 +135,19 @@ test('the synthetic public form and the three roles process one lead end to end'
     await visitor.getByRole('checkbox').check();
     const reply = visitor.waitForResponse(r => r.url() === `${preview}/api/public-intake` && r.request().method() === 'POST');
     const dispatch = visitor.waitForResponse(r => r.url() === `${preview}/api/outbox-dispatch` && r.request().method() === 'POST');
-    await submit.dblclick();
-    const result = await reply;
+    const [result, dispatchResult] = await Promise.all([reply, dispatch, submit.dblclick()]);
+    console.info(`Intake browser responses: form=${result.status()}, dispatch=${dispatchResult.status()}`);
     expect(result.status(), 'the real intake API must accept').toBe(200);
     expect(await result.json()).toEqual({ status: 'accepted' });
     const body = result.request().postDataJSON() as Record<string, unknown>;
     await expect(visitor.getByRole('heading', { name: 'Poptávka byla přijata' })).toBeVisible();
-    const outbox = await (await dispatch).json() as { success?: boolean; code?: string; processedCount?: number; queued?: boolean };
+    const outbox = await dispatchResult.json() as { success?: boolean; code?: string; processedCount?: number; queued?: boolean };
     expect(outbox.success).not.toBe(true);
     expect(outbox.processedCount).toBe(0);
     console.info(`Intake dispatch evidence: ${outbox.code ?? 'unreported'}, processed=0, queued=${outbox.queued === true}`);
 
     const endpoint = `${preview}/api/public-intake`;
-    const replay = await request.post(endpoint, { data: body });
+    const replay = await request.post(endpoint, { data: body, timeout: 15_000 });
     expect(replay.status()).toBe(200);
     expect(await replay.json()).toEqual({ status: 'accepted' });
     const query = new URLSearchParams({ select: 'id,company_id,source,status,assigned_to', customer: `eq.${customer}` });
@@ -157,11 +158,11 @@ test('the synthetic public form and the three roles process one lead end to end'
     expect(await restGet(request, ownerB, 'app_leads', query.toString())).toEqual([]);
     expect(await restGet(request, ownerB, 'app_lead_events', `lead_id=eq.${id}&select=id`)).toEqual([]);
 
-    const missing = await request.post(endpoint, { data: { ...body, request_key: randomUUID(), phone: '' } });
+    const missing = await request.post(endpoint, { data: { ...body, request_key: randomUUID(), phone: '' }, timeout: 15_000 });
     expect(missing.status()).toBe(400);
     expect(await missing.json()).toEqual({ error: 'invalid_public_intake' });
     for (const key of [`invalid-${run}`, 'e2e-synthetic-company-b']) {
-      const denied = await request.post(endpoint, { data: { ...body, public_key: key, request_key: randomUUID() } });
+      const denied = await request.post(endpoint, { data: { ...body, public_key: key, request_key: randomUUID() }, timeout: 15_000 });
       expect(denied.status()).toBe(503);
       expect(await denied.json()).toEqual({ error: 'public_intake_unavailable' });
     }
@@ -169,7 +170,7 @@ test('the synthetic public form and the three roles process one lead end to end'
     let rateLimited = false;
     let accepted = 0;
     for (let i = 0; i < 6; i++) {
-      const burst = await request.post(endpoint, { data: { ...body, customer: `Synthetic burst ${run}`, request_key: `test-${run}-${i}` } });
+      const burst = await request.post(endpoint, { data: { ...body, customer: `Synthetic burst ${run}`, request_key: `test-${run}-${i}` }, timeout: 15_000 });
       if (burst.status() === 429) {
         expect(await burst.json()).toEqual({ error: 'rate_limited' });
         expect(burst.headers()['retry-after']).toBe('600');
