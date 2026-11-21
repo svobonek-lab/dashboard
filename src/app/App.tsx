@@ -300,7 +300,9 @@ function AppContent() {
       );
     } catch (e: any) {
       console.error('Failed to sync status with database', e);
-      showToast('Nepodařilo se uložit změnu stavu. Data zůstala beze změny.', 'error');
+      const message = 'Nepodařilo se uložit změnu stavu. Obnovte stránku a zkontrolujte aktuální stav.';
+      if (dbUser?.role === 'employee') throw new Error(message, { cause: e });
+      showToast(message, 'error');
     }
   };
 
