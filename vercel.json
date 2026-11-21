@@ -15,7 +15,8 @@
       "codex/staging-gmail-invitations": false,
       "codex/lead-notes-files-acceptance": false,
       "codex/lead-notes-release-proposal": false,
-      "codex/lead-write-contract": false
+      "codex/lead-write-contract": false,
+      "codex/lead-write-evidence": false
     }
   },
   "crons": [

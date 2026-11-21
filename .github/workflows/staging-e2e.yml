@@ -214,7 +214,8 @@ jobs:
       github.repository == 'svobonek-lab/dashboard' &&
       github.event_name == 'workflow_dispatch' &&
       inputs.runner_mode == 'lead-attachments-configure' &&
-      github.ref == 'refs/heads/codex/lead-notes-files-acceptance'
+      (github.ref == 'refs/heads/codex/lead-notes-files-acceptance' ||
+       github.ref == 'refs/heads/codex/lead-write-contract')
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -228,12 +229,12 @@ jobs:
         run: node scripts/configure-staging-preview-env.mjs
         env:
           GITHUB_REF: ${{ github.ref }}
-          STAGING_PREVIEW_GIT_BRANCH: codex/lead-notes-files-acceptance
+          STAGING_PREVIEW_GIT_BRANCH: ${{ github.ref_name }}
           STAGING_SUPABASE_URL: ${{ vars.STAGING_SUPABASE_URL }}
           STAGING_SUPABASE_PROJECT_REF: ${{ vars.STAGING_SUPABASE_PROJECT_REF }}
           PRODUCTION_SUPABASE_PROJECT_REF: ${{ vars.PRODUCTION_SUPABASE_PROJECT_REF }}
           STAGING_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.STAGING_SUPABASE_PUBLISHABLE_KEY }}
-          STAGING_SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.STAGING_SUPABASE_SERVICE_ROLE_KEY }}
+          STAGING_SUPABASE_SERVICE_ROLE_KEY: ${{ github.ref_name == 'codex/lead-notes-files-acceptance' && secrets.STAGING_SUPABASE_SERVICE_ROLE_KEY || '' }}
           VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}

@@ -349,6 +349,30 @@ jobs:
         if: always()
         run: docker rm --force lead-notes-files-postgres
 
+  lead-write-contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - name: Verify the hosted staging lead contract on disposable PostgreSQL
+        run: |
+          pg=$(docker run --detach --rm --env POSTGRES_PASSWORD=disposable-local postgres:17-alpine)
+          trap 'docker stop "$pg" >/dev/null' EXIT
+          for attempt in {1..30}; do
+            if docker exec "$pg" pg_isready -U postgres >/dev/null; then break; fi
+            sleep 1
+          done
+          apply_sql() { docker exec -i "$pg" psql -q -v ON_ERROR_STOP=1 -U postgres < "$1"; }
+          apply_sql supabase/tests/staging_lead_status_setup.sql
+          apply_sql supabase/staging/20261028_staging_lead_status_rpc.sql
+          apply_sql supabase/tests/lead_write_contract_setup.sql
+          apply_sql supabase/staging/20261121_lead_write_contract.sql
+          docker exec "$pg" psql -q -v ON_ERROR_STOP=1 -U postgres -c 'REVOKE USAGE ON SCHEMA auth FROM app_lead_rpc_writer'
+          apply_sql supabase/staging/20261121_lead_write_hosted_auth_acl.sql
+          apply_sql supabase/tests/lead_write_contract_verify.sql
+
   stripe-billing-contract:
     runs-on: ubuntu-latest
     timeout-minutes: 10
