@@ -6,6 +6,14 @@ The acceptance target is isolated StavbaCore Staging `xwzweltjvreqhjpbjrxa`, on 
 
 Read-only staging metadata inspection on 2026-11-18 found RLS enabled on `app_lead_notes`, `app_lead_files`, `storage.objects` and `storage.buckets`. The private `lead-files` bucket permits JPEG, PNG, WebP, HEIC and PDF up to 15,728,640 bytes. `authenticated` has SELECT, INSERT and DELETE grants on both metadata tables. Policies scope notes, files and Storage objects to owner or assigned employee; employee DELETE additionally requires authorship and the 15-minute window. These catalog facts do not prove the browser flow.
 
+The same-company unassigned probe used one staging-only fixture: lead `e5f4eab8-291b-4ba8-913f-20a036d6a709` in synthetic company A `3a51a21e-5b13-48d1-87e9-a5915b46d37d`. Its title was `StavbaFlow E2E Unassigned Attachment Lead` and `assigned_to` was null. It was inserted through the isolated staging database on 2026-11-19 because `authenticated` has no `INSERT` or `DELETE` grant on `app_leads`; a stale staging service-role secret returned HTTP 401. The test checked title, company and assignment before writing any note or file, and removed its own notes and files. After successful acceptance on 2026-11-21, read-only checks confirmed zero notes, file metadata and Storage objects for this lead; the exact fixture lead and GitHub variable `STAGING_UNASSIGNED_LEAD_ID` were then removed. Rerunning this scenario requires a new isolated staging fixture and variable. Never use the shared Preview server runtime to seed it.
+
+The synthetic company A currently has `subscription_status=canceled` from billing acceptance, so `SubscriptionGuard` correctly hides its workspace. For each attachment browser run, record that original status, set only company A to `active` in isolated staging with a conditional update, and restore `canceled` immediately after the run, even when the run fails. This temporary change and restoration were verified for runs `44553798565` and `44554933932`. Do not change Stripe or another company's entitlement for this test.
+
+Run `44554933932` verified owner and assigned employee notes, PDF and JPEG, reload, private signed reads, metadata authors and company B isolation. Its cleanup assertion used an authenticated object GET immediately after a successful Storage DELETE. The GET returned a cached 200 while the Storage catalog already showed that object absent. The test now checks object existence through the Storage `info` endpoint, which is distinct from cached file delivery. Three files from synthetic run `00c49be4` were removed by staging cleanup run `44902468698`; read-only catalog checks confirmed zero notes, metadata and Storage objects for that run.
+
+The exact-commit Preview `dpl_H9NGkb7VqCNna6B4tZ8gquox7PxH` for `e880550` passed all three Playwright scenarios in run `44902944937` on 2026-11-21. This includes the 15,728,640-byte private Storage upload/read, 15,728,641-byte and unsupported MIME rejection, owner and employee notes/PDF/JPEG after reload, signed reads, company B and unassigned employee denial, failed preview and interrupted upload, partial delete failure and authorized deletes. The synthetic company's original `canceled` status was restored, and read-only staging checks found no recent synthetic attachment rows or objects after cleanup.
+
 ## Exact Preview procedure
 
 1. Review the PR diff and verify `vercel.json` disables automatic Git deployment for this branch.
@@ -13,6 +21,7 @@ Read-only staging metadata inspection on 2026-11-18 found RLS enabled on `app_le
 3. Deliberately create a Vercel Preview for the reviewed commit. Record its deployment ID, commit SHA and HTTPS URL. Confirm its built client targets staging using `scripts/assert-staging-e2e-env.mjs` before any browser writes.
 4. Manually dispatch `staging-e2e.yml` on that branch with `runner_mode=lead-attachments-acceptance` and `lead_attachments_preview_url` set to that exact Preview URL. The provenance check requires the deployment metadata to match the workflow commit SHA, branch and Vercel project. The preflight then rejects a Production Supabase target. Record the run URL, result and synthetic fixture IDs.
 5. If a check fails, inspect the trace and repair the code or fixture. Repeat against a new exact Preview SHA; do not treat an older Preview or a green unit suite as acceptance.
+6. To remove residue from a known synthetic run, dispatch `runner_mode=lead-attachments-cleanup` with `lead_attachments_cleanup_run_id` set to its exact eight-character lowercase hex ID. This authenticates as the staging owner, restricts paths to company A and lead A, removes only matching Storage objects through the Storage API, then deletes their metadata and matching synthetic notes. Confirm both catalogs are empty for that run. Never use this mode for customer data or a different staging lead.
 
 ## Required evidence matrix
 
@@ -25,7 +34,7 @@ Read-only staging metadata inspection on 2026-11-18 found RLS enabled on `app_le
 | Interrupted upload and signed URL failure | No metadata after interrupted upload; exact-path cleanup checked; one failed preview leaves notes and other files visible |
 | Zero-row RLS DELETE and Storage delete failure | No success on zero-row delete; partial failure message after Storage delete error; orphan identified and cleaned |
 
-The current Playwright script and unit tests cover part of this matrix. Mark each row verified only after inspecting its live run. In particular, old-age owner delete and exact-boundary Storage upload require live staging evidence beyond the current script.
+The live run verifies the exact-boundary Storage upload. The fourth Playwright scenario created a synthetic employee-owned note and PDF, waited 16 minutes, confirmed that the employee could delete neither through UI nor RLS, and confirmed that the owner could delete both. Exact-commit Preview `dpl_7LV4275AyYbRkmmVzTNY97uLGDtX` at `a5e9792` passed all four scenarios in run `44903705701`. The synthetic company was restored to `canceled`, and read-only staging checks showed zero recent notes, file metadata and Storage objects after cleanup.
 
 ## Exact-path orphan cleanup
 

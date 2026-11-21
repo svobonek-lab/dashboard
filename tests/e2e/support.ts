@@ -29,7 +29,7 @@ export async function signIn(page: Page, account: 'OWNER_A' | 'EMPLOYEE_A' | 'OW
   await page.goto('/login');
   await page.getByPlaceholder('jmeno@firma.cz').fill(email);
   await page.locator('input[type="password"]').fill(password);
-  await page.getByRole('button', { name: 'Pokračovat do workspace' }).click();
+  await page.getByRole('button', { name: 'Přihlásit se', exact: true }).click();
   await page.waitForURL((url) => !url.pathname.endsWith('/login'), { timeout: 20_000 });
 }
 

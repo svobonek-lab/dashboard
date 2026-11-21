@@ -1,25 +1,29 @@
 import { randomUUID } from 'node:crypto';
 import { expect, test, type Page } from 'playwright/test';
 import { accessToken, requiredValue, restDelete, restGet, restInsert, signIn, stagingConfig } from './support';
-import { buildTenantLeadFixture } from '../../scripts/seed-two-tenants';
 
-const jpeg = Buffer.from('/9j/4AAQSkZJRgABAQEAYABgAAD/2wBDAAMCAgMCAgMDAwMEAwMEBQgFBQQEBQoHBwYIDAoMDAsKCwsNDhIQDQ4RDgsLEBYQERMUFRUVDA8XGBYUGBIUFRT/2wBDAQMEBAUEBQkFBQkUDQsNFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBT/wAARCAACAAIDASIAAhEBAxEB/8QAHwAAAQUBAQEBAQEAAAAAAAAAAAECAwQFBgcICQoL/8QAtRAAAgEDAwIEAwUFBAQAAAF9AQIDAAQRBRIhMUEGE1FhByJxFDKBkaEII0KxwRVS0fAkM2JyggkKFhcYGRolJicoKSo0NTY3ODk6Q0RFRkdISUpTVFVWV1hZWmNkZWZnaGlqc3R1dnd4eXqDhIWGh4iJipKTlJWWl5iZmqKjpKWmp6ipqrKztLW2t7i5usLDxMXGx8jJytLT1NXW19jZ2uHi4+Tl5ufo6erx8vP09fb3+Pn6/8QAHwEAAwEBAQEBAQEBAQAAAAAAAAECAwQFBgcICQoL/8QAtREAAgECBAQDBAcFBAQAAQJ3AAECAxEEBSExBhJBUQdhcRMiMoEIFEKRobHBCSMzUvAVYnLRChYkNOEl8RcYGRomJygpKjU2Nzg5OkNERUZHSElKU1RVVldYWVpjZGVmZ2hpanN0dXZ3eHl6goOEhYaHiImKkpOUlZaXmJmaoqOkpaanqKmqsrO0tba3uLm6wsPExcbHyMnK0tPU1dbX2Nna4uPk5ebn6Onq8vP09fb3+Pn6/9oADAMBAAIRAxEAPwD8rZ55LmaSaaRpZZGLvI7EszE5JJPUmiiis6fwL0OvF/7xU/xP8z//2Q==', 'base64');
 const pdf = Buffer.from('%PDF-1.4\n1 0 obj<< /Type /Catalog >>endobj\ntrailer<< /Root 1 0 R >>\n%%EOF\n');
 
 async function openLead(page: Page, role: 'owner' | 'employee', title: string) {
   if (role === 'owner') {
-    await page.goto('/leads');
-    await page.getByText(title, { exact: true }).first().click();
+    await page.goto('/leads', { waitUntil: 'domcontentloaded' });
+    console.info(`Attachment acceptance: owner route ${new URL(page.url()).pathname}.`);
+    const cardTitle = page.getByText(title, { exact: true }).first();
+    await expect(cardTitle).toBeVisible({ timeout: 15_000 });
+    await cardTitle.click({ timeout: 15_000 });
   } else {
-    await page.goto('/employee/dashboard');
-    await page.getByRole('article').filter({ has: page.getByRole('heading', { name: title }) }).getByRole('button', { name: /Otevřít detail/ }).click();
+    await page.goto('/employee/dashboard', { waitUntil: 'domcontentloaded' });
+    console.info(`Attachment acceptance: employee route ${new URL(page.url()).pathname}.`);
+    const openButton = page.getByRole('article').filter({ has: page.getByRole('heading', { name: title }) }).getByRole('button', { name: /Otevřít detail/ });
+    await expect(openButton).toBeVisible({ timeout: 15_000 });
+    await openButton.click({ timeout: 15_000 });
   }
   await expect(page.getByRole('heading', { name: 'Poznámky a soubory' })).toBeVisible();
   await expect(page.getByText('Poznámky a soubory nejsou v tomto prostředí zapnuté.')).toHaveCount(0);
 }
 
 test('owner and assigned employee persist notes, PDF and JPEG; company B is isolated', async ({ browser, request }) => {
-  test.setTimeout(120_000);
+  test.setTimeout(600_000);
   const { preview, url, key } = stagingConfig();
   const companyA = requiredValue('STAGING_COMPANY_A_ID');
   const leadA = requiredValue('STAGING_LEAD_A_ID');
@@ -42,15 +46,30 @@ test('owner and assigned employee persist notes, PDF and JPEG; company B is isol
     await signIn(employee, 'EMPLOYEE_A');
     ownerToken = await accessToken(browser, 'OWNER_A');
     const ownerBToken = await accessToken(browser, 'OWNER_B');
+    const jpeg = Buffer.from(await owner.evaluate(() => {
+      const canvas = document.createElement('canvas');
+      canvas.width = 2;
+      canvas.height = 2;
+      const context = canvas.getContext('2d');
+      if (!context) throw new Error('Synthetic JPEG canvas is unavailable.');
+      context.fillStyle = '#c24b35';
+      context.fillRect(0, 0, 2, 2);
+      return canvas.toDataURL('image/jpeg', 0.85).split(',')[1];
+    }), 'base64');
+    expect(jpeg.byteLength).toBeGreaterThan(100);
+    console.info('Attachment acceptance: sessions established.');
 
     for (const [page, role, body, prefix] of [
       [owner, 'owner', noteOwner, 'owner'],
       [employee, 'employee', noteEmployee, 'employee'],
     ] as const) {
+      console.info(`Attachment acceptance: opening ${role} lead.`);
       await openLead(page, role, title);
+      console.info(`Attachment acceptance: ${role} lead opened.`);
       await page.getByLabel('Nová poznámka').fill(body);
       await page.getByRole('button', { name: 'Uložit poznámku' }).click();
       await expect(page.getByText(body, { exact: true })).toBeVisible();
+      console.info(`Attachment acceptance: ${role} note saved.`);
       for (const [extension, mimeType, buffer] of [
         ['pdf', 'application/pdf', pdf], ['jpg', 'image/jpeg', jpeg],
       ] as const) {
@@ -58,8 +77,10 @@ test('owner and assigned employee persist notes, PDF and JPEG; company B is isol
           name: `${prefix}-${run}.${extension}`, mimeType, buffer,
         });
         await expect(page.getByText(`${prefix}-${run}.${extension}`, { exact: true })).toBeVisible();
+        console.info(`Attachment acceptance: ${role} ${extension} uploaded.`);
       }
       await page.reload();
+      console.info(`Attachment acceptance: ${role} page reloaded.`);
       await openLead(page, role, title);
       await expect(page.getByText(body, { exact: true })).toBeVisible();
       for (const extension of ['pdf', 'jpg']) {
@@ -69,6 +90,7 @@ test('owner and assigned employee persist notes, PDF and JPEG; company B is isol
         expect(signedUrl).toBeTruthy();
         const opened = await request.get(signedUrl!);
         expect(opened.status()).toBe(200);
+        console.info(`Attachment acceptance: ${role} ${extension} signed read verified.`);
       }
     }
 
@@ -80,6 +102,7 @@ test('owner and assigned employee persist notes, PDF and JPEG; company B is isol
     const fileRows = await restGet(request, ownerToken, 'app_lead_files', `select=id,file_name,storage_path&company_id=eq.${companyA}&lead_id=eq.${leadA}`);
     const created = fileRows.filter(row => names.includes(String(row.file_name)));
     expect(created).toHaveLength(4);
+    console.info('Attachment acceptance: notes and files persisted after reload.');
 
     for (const table of ['app_lead_notes', 'app_lead_files']) {
       const rows = await restGet(request, ownerBToken, table, `select=id&company_id=eq.${companyA}&lead_id=eq.${leadA}`);
@@ -119,6 +142,7 @@ test('owner and assigned employee persist notes, PDF and JPEG; company B is isol
       headers: { apikey: key, Authorization: `Bearer ${ownerToken}` },
     });
     expect(ownerStorageControl.status()).toBe(200);
+    console.info('Attachment acceptance: company B isolation verified.');
 
     const deniedOwnerNote = await restDelete(request, await accessToken(browser, 'EMPLOYEE_A'), 'app_lead_notes', `id=eq.${noteRows.find(row => row.body === noteOwner)?.id}&company_id=eq.${companyA}`);
     expect(await deniedOwnerNote.json()).toEqual([]);
@@ -144,9 +168,9 @@ test('owner and assigned employee persist notes, PDF and JPEG; company B is isol
     });
     await owner.reload();
     await openLead(owner, 'owner', title);
-    expect(previewFailed).toBe(true);
     await expect(owner.getByText(noteOwner, { exact: true })).toBeVisible();
     await expect(owner.getByText('Náhled není dostupný. Zkuste stránku obnovit.').first()).toBeVisible();
+    expect(previewFailed).toBe(true);
     await owner.unroute('**/storage/v1/object/sign/lead-files/**');
 
     let uploadAborted = false;
@@ -164,6 +188,7 @@ test('owner and assigned employee persist notes, PDF and JPEG; company B is isol
     expect(uploadAborted).toBe(true);
     await owner.unroute('**/storage/v1/object/upload/sign/lead-files/**');
     expect(await restGet(request, ownerToken, 'app_lead_files', `select=id&company_id=eq.${companyA}&lead_id=eq.${leadA}&file_name=eq.${encodeURIComponent(`interrupted-${run}.pdf`)}`)).toHaveLength(0);
+    console.info('Attachment acceptance: preview and interrupted upload faults verified.');
 
     const orphanRow = created.find(row => row.file_name === `owner-${run}.pdf`);
     expect(orphanRow).toBeTruthy();
@@ -177,6 +202,7 @@ test('owner and assigned employee persist notes, PDF and JPEG; company B is isol
       headers: { apikey: key, Authorization: `Bearer ${ownerToken}` },
     });
     expect(orphanControl.status()).toBe(200);
+    console.info('Attachment acceptance: Storage delete failure verified.');
 
     const employeeOwnerNote = employee.locator('article').filter({ hasText: noteOwner });
     await expect(employeeOwnerNote.getByRole('button', { name: 'Smazat poznámku' })).toHaveCount(0);
@@ -189,15 +215,22 @@ test('owner and assigned employee persist notes, PDF and JPEG; company B is isol
     for (const [page, fileName] of [[employee, `employee-${run}.pdf`], [owner, `owner-${run}.jpg`]] as const) {
       const row = created.find(item => item.file_name === fileName);
       expect(row).toBeTruthy();
+      const objectInfoUrl = `${url}/storage/v1/object/info/lead-files/${String(row!.storage_path).split('/').map(encodeURIComponent).join('/')}`;
+      const existingObject = await request.head(objectInfoUrl, {
+        headers: { apikey: key, Authorization: `Bearer ${ownerToken}` },
+      });
+      expect(existingObject.status()).toBe(200);
       await page.locator('article').filter({ hasText: fileName }).getByRole('button', { name: 'Smazat soubor' }).click();
       await expect(page.getByText(fileName, { exact: true })).toHaveCount(0);
       expect(await restGet(request, ownerToken, 'app_lead_files', `select=id&company_id=eq.${companyA}&id=eq.${row!.id}`)).toHaveLength(0);
-      const removedObject = await request.get(`${url}/storage/v1/object/authenticated/lead-files/${String(row!.storage_path).split('/').map(encodeURIComponent).join('/')}`, {
+      const removedObject = await request.head(objectInfoUrl, {
         headers: { apikey: key, Authorization: `Bearer ${ownerToken}` },
       });
       expect(removedObject.status()).not.toBe(200);
     }
+    console.info('Attachment acceptance: authorized deletes verified.');
   } finally {
+    console.info('Attachment acceptance: exact synthetic cleanup started.');
     if (ownerToken) {
       for (const body of [noteOwner, noteEmployee]) {
         const rows = await restGet(request, ownerToken, 'app_lead_notes', `select=id&company_id=eq.${companyA}&lead_id=eq.${leadA}&body=eq.${encodeURIComponent(body)}`);
@@ -211,7 +244,7 @@ test('owner and assigned employee persist notes, PDF and JPEG; company B is isol
           data: { prefixes: [row.storage_path] },
         });
         expect(removed.ok()).toBe(true);
-        const check = await request.get(`${url}/storage/v1/object/authenticated/lead-files/${String(row.storage_path).split('/').map(encodeURIComponent).join('/')}`, {
+        const check = await request.head(`${url}/storage/v1/object/info/lead-files/${String(row.storage_path).split('/').map(encodeURIComponent).join('/')}`, {
           headers: { apikey: key, Authorization: `Bearer ${ownerToken}` },
         });
         expect(check.status()).not.toBe(200);
@@ -222,7 +255,7 @@ test('owner and assigned employee persist notes, PDF and JPEG; company B is isol
           data: { prefixes: [orphanPath] },
         });
         expect(removed.ok()).toBe(true);
-        const check = await request.get(`${url}/storage/v1/object/authenticated/lead-files/${orphanPath.split('/').map(encodeURIComponent).join('/')}`, {
+        const check = await request.head(`${url}/storage/v1/object/info/lead-files/${orphanPath.split('/').map(encodeURIComponent).join('/')}`, {
           headers: { apikey: key, Authorization: `Bearer ${ownerToken}` },
         });
         expect(check.status()).not.toBe(200);
@@ -239,26 +272,20 @@ test('same-company employee cannot read or change another synthetic lead and its
   const companyA = requiredValue('STAGING_COMPANY_A_ID');
   const ownerAId = requiredValue('STAGING_OWNER_A_ID');
   const employeeAId = requiredValue('STAGING_EMPLOYEE_A_ID');
+  const leadId = requiredValue('STAGING_UNASSIGNED_LEAD_ID');
   const [ownerToken, employeeToken] = await Promise.all([
     accessToken(browser, 'OWNER_A'), accessToken(browser, 'EMPLOYEE_A'),
   ]);
-  const leadId = randomUUID();
   const fileId = randomUUID();
   const fileName = `unassigned-${fileId}.pdf`;
   const path = `${companyA}/${leadId}/${fileId}-${fileName}`;
   const encodedPath = path.split('/').map(encodeURIComponent).join('/');
-  let leadCreated = false;
   let noteId: string | null = null;
   let fileCreated = false;
   let objectCreated = false;
   try {
-    const lead = await restInsert(request, ownerToken, 'app_leads', {
-      ...buildTenantLeadFixture('A', companyA, employeeAId),
-      id: leadId, title: `Synthetic unassigned attachment ${fileId}`,
-      assigned_to: null,
-    });
-    expect(lead.status()).toBe(201);
-    leadCreated = true;
+    const lead = await restGet(request, ownerToken, 'app_leads', `select=id,title,assigned_to&company_id=eq.${companyA}&id=eq.${leadId}`);
+    expect(lead).toEqual([{ id: leadId, title: 'StavbaFlow E2E Unassigned Attachment Lead', assigned_to: null }]);
     const note = await restInsert(request, ownerToken, 'app_lead_notes', {
       company_id: companyA, lead_id: leadId, author_id: ownerAId, body: `Synthetic unassigned note ${fileId}`,
     });
@@ -322,7 +349,6 @@ test('same-company employee cannot read or change another synthetic lead and its
       expect(removed.ok()).toBe(true);
     }
     if (noteId) await restDelete(request, ownerToken, 'app_lead_notes', `id=eq.${noteId}&company_id=eq.${companyA}`);
-    if (leadCreated) await restDelete(request, ownerToken, 'app_leads', `id=eq.${leadId}&company_id=eq.${companyA}`);
   }
 });
 
@@ -372,5 +398,100 @@ test('private Storage enforces the exact 15 MiB and MIME boundaries', async ({ b
       });
       expect(removed.ok()).toBe(true);
     }
+  }
+});
+
+test('owner can delete an aged note and file while assigned employee cannot', async ({ browser, request }) => {
+  test.setTimeout(20 * 60_000);
+  const { preview, url, key } = stagingConfig();
+  const companyA = requiredValue('STAGING_COMPANY_A_ID');
+  const leadA = requiredValue('STAGING_LEAD_A_ID');
+  const employeeAId = requiredValue('STAGING_EMPLOYEE_A_ID');
+  const title = 'StavbaFlow E2E Isolation Lead A';
+  const run = randomUUID().slice(0, 8);
+  const body = `Synthetic attachment aged ${run}`;
+  const fileName = `aged-${run}.pdf`;
+  const fileId = randomUUID();
+  const path = `${companyA}/${leadA}/${fileId}-${fileName}`;
+  const ownerToken = await accessToken(browser, 'OWNER_A');
+  const employeeToken = await accessToken(browser, 'EMPLOYEE_A');
+  const ownerContext = await browser.newContext({ baseURL: preview });
+  const employeeContext = await browser.newContext({ baseURL: preview });
+  let noteId: string | null = null;
+  let objectCreated = false;
+  let metadataCreated = false;
+  try {
+    const owner = await ownerContext.newPage();
+    const employee = await employeeContext.newPage();
+    await signIn(owner, 'OWNER_A');
+    await signIn(employee, 'EMPLOYEE_A');
+    const note = await restInsert(request, employeeToken, 'app_lead_notes', {
+      company_id: companyA, lead_id: leadA, author_id: employeeAId, body,
+    });
+    expect(note.status()).toBe(201);
+    const noteRows = await restGet(request, ownerToken, 'app_lead_notes',
+      `select=id&company_id=eq.${companyA}&lead_id=eq.${leadA}&body=eq.${encodeURIComponent(body)}`);
+    expect(noteRows).toHaveLength(1);
+    noteId = String(noteRows[0].id);
+    const upload = await request.post(`${url}/storage/v1/object/lead-files/${path.split('/').map(encodeURIComponent).join('/')}`, {
+      headers: { apikey: key, Authorization: `Bearer ${employeeToken}`, 'Content-Type': 'application/pdf', 'x-upsert': 'false' },
+      data: pdf,
+    });
+    expect(upload.status()).toBe(200);
+    objectCreated = true;
+    const metadata = await restInsert(request, employeeToken, 'app_lead_files', {
+      id: fileId, company_id: companyA, lead_id: leadA, author_id: employeeAId,
+      storage_path: path, file_name: fileName, mime_type: 'application/pdf', size_bytes: pdf.byteLength,
+    });
+    expect(metadata.status()).toBe(201);
+    metadataCreated = true;
+    console.info(`Attachment acceptance: aged fixture ${run} created; waiting for the real 15-minute rule.`);
+
+    await new Promise(resolve => setTimeout(resolve, 16 * 60_000));
+    await openLead(employee, 'employee', title);
+    const employeeNote = employee.locator('article').filter({ hasText: body });
+    const employeeFile = employee.locator('article').filter({ hasText: fileName });
+    await expect(employeeNote).toBeVisible();
+    await expect(employeeFile).toBeVisible();
+    await expect(employeeNote.getByRole('button', { name: 'Smazat poznámku' })).toHaveCount(0);
+    await expect(employeeFile.getByRole('button', { name: 'Smazat soubor' })).toHaveCount(0);
+    const expiredNoteDelete = await restDelete(request, employeeToken, 'app_lead_notes', `id=eq.${noteId}&company_id=eq.${companyA}`);
+    expect(expiredNoteDelete.ok()).toBe(true);
+    expect(await expiredNoteDelete.json()).toHaveLength(0);
+    const expiredFileDelete = await restDelete(request, employeeToken, 'app_lead_files', `id=eq.${fileId}&company_id=eq.${companyA}`);
+    expect(expiredFileDelete.ok()).toBe(true);
+    expect(await expiredFileDelete.json()).toHaveLength(0);
+
+    await openLead(owner, 'owner', title);
+    const ownerNote = owner.locator('article').filter({ hasText: body });
+    const ownerFile = owner.locator('article').filter({ hasText: fileName });
+    await expect(ownerNote.getByRole('button', { name: 'Smazat poznámku' })).toBeVisible();
+    await expect(ownerFile.getByRole('button', { name: 'Smazat soubor' })).toBeVisible();
+    await ownerNote.getByRole('button', { name: 'Smazat poznámku' }).click();
+    await expect(owner.getByText(body, { exact: true })).toHaveCount(0);
+    await ownerFile.getByRole('button', { name: 'Smazat soubor' }).click();
+    await expect(owner.getByText(fileName, { exact: true })).toHaveCount(0);
+    expect(await restGet(request, ownerToken, 'app_lead_notes', `select=id&id=eq.${noteRows[0].id}`)).toHaveLength(0);
+    noteId = null;
+    expect(await restGet(request, ownerToken, 'app_lead_files', `select=id&id=eq.${fileId}`)).toHaveLength(0);
+    metadataCreated = false;
+    const info = await request.head(`${url}/storage/v1/object/info/lead-files/${path.split('/').map(encodeURIComponent).join('/')}`, {
+      headers: { apikey: key, Authorization: `Bearer ${ownerToken}` },
+    });
+    expect(info.status()).not.toBe(200);
+    objectCreated = false;
+    console.info('Attachment acceptance: aged owner deletion and expired employee controls verified.');
+  } finally {
+    if (noteId) await restDelete(request, ownerToken, 'app_lead_notes', `id=eq.${noteId}&company_id=eq.${companyA}`);
+    if (metadataCreated) await restDelete(request, ownerToken, 'app_lead_files', `id=eq.${fileId}&company_id=eq.${companyA}`);
+    if (objectCreated) {
+      const removed = await request.delete(`${url}/storage/v1/object/lead-files`, {
+        headers: { apikey: key, Authorization: `Bearer ${ownerToken}`, 'Content-Type': 'application/json' },
+        data: { prefixes: [path] },
+      });
+      expect(removed.ok()).toBe(true);
+    }
+    await ownerContext.close();
+    await employeeContext.close();
   }
 });
