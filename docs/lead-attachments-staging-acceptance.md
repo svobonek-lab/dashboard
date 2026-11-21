@@ -4,6 +4,8 @@
 
 The acceptance target is isolated StavbaCore Staging `xwzweltjvreqhjpbjrxa`, on the exact reviewed Preview of `codex/lead-notes-files-acceptance`. Production `VITE_LEAD_NOTES_FILES_ENABLED` and `VITE_PRODUCTION_LEAD_NOTES_FILES_APPROVED` remain off. The repository's browser flags only control visibility; Postgres RLS and private Storage policies decide access.
 
+[`DocumentsTab`](../src/features/manage-leads/ui/lead-tabs/DocumentsTab.tsx) loads notes and files for the current company and lead, and shows delete controls based on role, authorship, and age. [`SupabaseRepository`](../src/shared/api/data/SupabaseRepository.ts) reads notes from `app_lead_notes`, stores file metadata in `app_lead_files`, and accesses the private `lead-files` bucket through signed URLs. The [availability check](../src/features/lead-files/model/availability.ts) requires both Production flags and the expected Production Supabase origin.
+
 Read-only staging metadata inspection on 2026-11-18 found RLS enabled on `app_lead_notes`, `app_lead_files`, `storage.objects` and `storage.buckets`. The private `lead-files` bucket permits JPEG, PNG, WebP, HEIC and PDF up to 15,728,640 bytes. `authenticated` has SELECT, INSERT and DELETE grants on both metadata tables. Policies scope notes, files and Storage objects to owner or assigned employee; employee DELETE additionally requires authorship and the 15-minute window. These catalog facts do not prove the browser flow.
 
 The same-company unassigned probe used one staging-only fixture: lead `e5f4eab8-291b-4ba8-913f-20a036d6a709` in synthetic company A `3a51a21e-5b13-48d1-87e9-a5915b46d37d`. Its title was `StavbaFlow E2E Unassigned Attachment Lead` and `assigned_to` was null. It was inserted through the isolated staging database on 2026-11-19 because `authenticated` has no `INSERT` or `DELETE` grant on `app_leads`; a stale staging service-role secret returned HTTP 401. The test checked title, company and assignment before writing any note or file, and removed its own notes and files. After successful acceptance on 2026-11-21, read-only checks confirmed zero notes, file metadata and Storage objects for this lead; the exact fixture lead and GitHub variable `STAGING_UNASSIGNED_LEAD_ID` were then removed. Rerunning this scenario requires a new isolated staging fixture and variable. Never use the shared Preview server runtime to seed it.
@@ -53,4 +55,21 @@ Verify the object was created by this synthetic acceptance run and `metadata_id`
 
 ## Production gate
 
-Review current Production table policies, `storage.objects` policies, bucket limits, grants, tenant helper functions and exact deployed app URL only via the approved project-scoped read-only `supabase-ci` MCP. That connection is unavailable in this session, so the review is pending. No Production flag proposal or change is authorized until staging acceptance passes and a separate release decision is approved.
+On 2026-11-21 at 15:18 UTC, the project-scoped `supabase-ci` MCP returned live Production catalog metadata in a read-only transaction. RLS is enabled on both attachment tables, `storage.objects`, and `storage.buckets`. On the attachment tables, `anon` has no SELECT, INSERT, UPDATE, or DELETE grants. The `authenticated` role has SELECT, INSERT, and DELETE, with no UPDATE. Restrictive policies enforce the JWT company boundary and active membership. Scoped policies allow owners and assigned employees to read and insert. Owners can delete at any age and assigned employees can delete only their own entries within 15 minutes. Before-insert triggers stamp the author and creation time for authenticated inserts.
+
+The `lead-files` bucket is private and limited to 15,728,640 bytes. It accepts JPEG, PNG, WebP, HEIC, and PDF. Storage has underlying table grants, so RLS supplies the access restriction. The Storage policies block anonymous access to this bucket, enforce the JWT company boundary, validate the object path, and check lead assignment and ownership for the relevant operations. The reviewed helper functions use the JWT claim in `app_metadata`, active membership, and lead assignment. The tenant hook function exists with an execution grant for `supabase_auth_admin`. Catalog inspection did not exercise a live Production login or write.
+
+Vercel identified [the Production app](https://dashboard-tau-snowy-61.vercel.app) as Ready at deployment `dpl_HNx7m4YZanV9tHGktnF7oQP7X5cx`, built from `main` commit `96528ada4a35562c27e5c28c52344c428d689cd1` ([PR #195](https://github.com/svobonek-lab/dashboard/pull/195)). The Production environment variable inventory did not list either lead attachments release flag.
+
+## Approved release proposal
+
+The owner approved the release of lead notes and files on 2026-11-21 after the staging acceptance and the Production metadata review. For the Vercel `dashboard` project, prepare the following settings for the **Production** environment:
+
+| Variable | Current | Proposed |
+| --- | --- | --- |
+| `VITE_LEAD_NOTES_FILES_ENABLED` | Unset | `true` |
+| `VITE_PRODUCTION_LEAD_NOTES_FILES_APPROVED` | Unset | `true` |
+
+Vite uses these values at build time. For a separately scheduled release, build the reviewed `main` revision with both values and verify the Ready deployment and application alias in Vercel. With an authorized account, use an existing lead to check that the documents tab loads and renders expected notes and files, if available. Keep the Production smoke check read-only. Use the staging run above as evidence for writes, isolation, and error handling.
+
+For rollback, remove both Production variables to restore the current configuration and use Vercel to roll back the alias to the recorded Ready deployment, after verifying that it is still the intended rollback target. The next Production build should also use the restored configuration. This proposal records the intended settings and leaves execution to the release operator.
