@@ -10,7 +10,9 @@ The same-company unassigned probe uses one staging-only fixture: lead `e5f4eab8-
 
 The synthetic company A currently has `subscription_status=canceled` from billing acceptance, so `SubscriptionGuard` correctly hides its workspace. For each attachment browser run, record that original status, set only company A to `active` in isolated staging with a conditional update, and restore `canceled` immediately after the run, even when the run fails. This temporary change and restoration were verified for runs `44553798565` and `44554933932`. Do not change Stripe or another company's entitlement for this test.
 
-Run `44554933932` verified owner and assigned employee notes, PDF and JPEG, reload, private signed reads, metadata authors and company B isolation. Its cleanup assertion used an authenticated object GET immediately after a successful Storage DELETE. The GET returned a cached 200 while the Storage catalog already showed that object absent. The test now checks object existence through the Storage `info` endpoint, which is distinct from cached file delivery. Three files from synthetic run `00c49be4` remain and must be removed before the next acceptance run.
+Run `44554933932` verified owner and assigned employee notes, PDF and JPEG, reload, private signed reads, metadata authors and company B isolation. Its cleanup assertion used an authenticated object GET immediately after a successful Storage DELETE. The GET returned a cached 200 while the Storage catalog already showed that object absent. The test now checks object existence through the Storage `info` endpoint, which is distinct from cached file delivery. Three files from synthetic run `00c49be4` were removed by staging cleanup run `44902468698`; read-only catalog checks confirmed zero notes, metadata and Storage objects for that run.
+
+The exact-commit Preview `dpl_H9NGkb7VqCNna6B4tZ8gquox7PxH` for `e880550` passed all three Playwright scenarios in run `44902944937` on 2026-11-21. This includes the 15,728,640-byte private Storage upload/read, 15,728,641-byte and unsupported MIME rejection, owner and employee notes/PDF/JPEG after reload, signed reads, company B and unassigned employee denial, failed preview and interrupted upload, partial delete failure and authorized deletes. The synthetic company's original `canceled` status was restored, and read-only staging checks found no recent synthetic attachment rows or objects after cleanup.
 
 ## Exact Preview procedure
 
@@ -32,7 +34,7 @@ Run `44554933932` verified owner and assigned employee notes, PDF and JPEG, relo
 | Interrupted upload and signed URL failure | No metadata after interrupted upload; exact-path cleanup checked; one failed preview leaves notes and other files visible |
 | Zero-row RLS DELETE and Storage delete failure | No success on zero-row delete; partial failure message after Storage delete error; orphan identified and cleaned |
 
-The current Playwright script and unit tests cover part of this matrix. Mark each row verified only after inspecting its live run. In particular, old-age owner delete and exact-boundary Storage upload require live staging evidence beyond the current script.
+The live run verifies the exact-boundary Storage upload. Owner deletion of a record older than 15 minutes remains unverified in the browser; the current test covers recent records only. Retain that release gate until an aged synthetic fixture has been checked.
 
 ## Exact-path orphan cleanup
 
