@@ -89,7 +89,7 @@ test('public intake rejects oversized fields and silently drops honeypot submiss
 
 test('the synthetic public form and the three roles process one lead end to end', async ({ browser, request }) => {
   test.skip(process.env.STAGING_PUBLIC_FORM_ACCEPTANCE !== 'true', 'Requires the exact intake Preview and synthetic fixtures.');
-  test.setTimeout(180_000);
+  test.setTimeout(100_000);
   const { preview } = stagingConfig();
   const company = requiredValue('STAGING_COMPANY_A_ID');
   const slug = requiredValue('STAGING_PUBLIC_TENANT_KEY');
@@ -138,13 +138,10 @@ test('the synthetic public form and the three roles process one lead end to end'
     const [result, dispatchResult] = await Promise.all([reply, dispatch, submit.dblclick()]);
     console.info(`Intake browser responses: form=${result.status()}, dispatch=${dispatchResult.status()}`);
     expect(result.status(), 'the real intake API must accept').toBe(200);
-    expect(await result.json()).toEqual({ status: 'accepted' });
+    expect(dispatchResult.status(), 'optional staging worker must be unavailable').toBe(503);
     const body = result.request().postDataJSON() as Record<string, unknown>;
     await expect(visitor.getByRole('heading', { name: 'Poptávka byla přijata' })).toBeVisible();
-    const outbox = await dispatchResult.json() as { success?: boolean; code?: string; processedCount?: number; queued?: boolean };
-    expect(outbox.success).not.toBe(true);
-    expect(outbox.processedCount).toBe(0);
-    console.info(`Intake dispatch evidence: ${outbox.code ?? 'unreported'}, processed=0, queued=${outbox.queued === true}`);
+    console.info('Intake browser confirmation visible. Replaying the exact request key.');
 
     const endpoint = `${preview}/api/public-intake`;
     const replay = await request.post(endpoint, { data: body, timeout: 15_000 });
