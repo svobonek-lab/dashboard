@@ -85,3 +85,7 @@ numbered chain. Existing per-contract jobs validate selected staging SQL
 contracts independently. The JWT and public-intake files remain proposals and
 are not included in the historical chain. A green job cannot be read as approval
 to deploy either proposal.
+
+# Candidate lead write contract
+
+`20261121_lead_write_contract.sql` — Coverage: proposal only. This staging contract targets the observed restricted staging baseline. Production already has a different event trigger and broader historic browser grants. Reconcile those separately before proposing production application.

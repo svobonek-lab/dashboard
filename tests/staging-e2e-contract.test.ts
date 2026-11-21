@@ -22,6 +22,7 @@ test('staging E2E has isolated scenarios and an opt-in same-repository workflow'
     'billing-blocked-to-granted.spec.ts',
     'employee-assigned-scope.spec.ts',
     'lead-attachments-staging.spec.ts',
+    'lead-write-contract-staging.spec.ts',
     'logout-tenant-cache.spec.ts',
     'owner-critical-flow.spec.ts',
     'owner-menu.spec.ts',

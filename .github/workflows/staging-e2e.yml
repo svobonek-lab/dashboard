@@ -27,6 +27,7 @@ on:
           - preview-redeploy
           - lead-attachments-configure
           - lead-attachments-acceptance
+          - lead-write-contract-acceptance
           - lead-attachments-cleanup
         default: github-hosted
       load_recover_run_id:
@@ -38,7 +39,7 @@ on:
         type: string
         required: false
       lead_attachments_preview_url:
-        description: Exact HTTPS Preview URL of the lead attachments acceptance branch
+        description: Exact HTTPS Preview URL of the lead attachments or lead write acceptance branch
         type: string
         required: false
       lead_attachments_cleanup_run_id:
@@ -64,7 +65,7 @@ jobs:
         inputs.runner_mode != 'load-recover' && inputs.runner_mode != 'preview-configure' &&
         inputs.runner_mode != 'billing-setup' && inputs.runner_mode != 'billing-portal-inspect' &&
         inputs.runner_mode != 'billing-cancel-advance' && inputs.runner_mode != 'billing-past-due' &&
-        inputs.runner_mode != 'billing-recover-b' && inputs.runner_mode != 'billing-recover-b-local' && inputs.runner_mode != 'billing-configure-pilot-price' && inputs.runner_mode != 'billing-blocked-to-granted' && inputs.runner_mode != 'billing-verify-company-c-existing' && inputs.runner_mode != 'preview-redeploy' && inputs.runner_mode != 'lead-attachments-configure' && inputs.runner_mode != 'lead-attachments-acceptance' && inputs.runner_mode != 'lead-attachments-cleanup') ||
+        inputs.runner_mode != 'billing-recover-b' && inputs.runner_mode != 'billing-recover-b-local' && inputs.runner_mode != 'billing-configure-pilot-price' && inputs.runner_mode != 'billing-blocked-to-granted' && inputs.runner_mode != 'billing-verify-company-c-existing' && inputs.runner_mode != 'lead-write-contract-acceptance' && inputs.runner_mode != 'preview-redeploy' && inputs.runner_mode != 'lead-attachments-configure' && inputs.runner_mode != 'lead-attachments-acceptance' && inputs.runner_mode != 'lead-attachments-cleanup') ||
        (github.event.pull_request.head.repo.full_name == github.repository &&
         contains(github.event.pull_request.labels.*.name, 'e2e'))) &&
       ((inputs.runner_mode != 'local-ephemeral' && inputs.runner_mode != 'sentry-only' && inputs.runner_mode != 'billing-portal-inspect') ||
@@ -241,8 +242,10 @@ jobs:
     if: >-
       github.repository == 'svobonek-lab/dashboard' &&
       github.event_name == 'workflow_dispatch' &&
-      inputs.runner_mode == 'lead-attachments-acceptance' &&
-      github.ref == 'refs/heads/codex/lead-notes-files-acceptance'
+      ((inputs.runner_mode == 'lead-attachments-acceptance' &&
+        github.ref == 'refs/heads/codex/lead-notes-files-acceptance') ||
+       (inputs.runner_mode == 'lead-write-contract-acceptance' &&
+        github.ref == 'refs/heads/codex/lead-write-contract'))
     runs-on: ubuntu-latest
     timeout-minutes: 25
     steps:
@@ -256,7 +259,7 @@ jobs:
       - run: npm ci
       - run: npx playwright install --with-deps chromium
       - name: Verify Preview deployment belongs to this reviewed commit
-        run: node scripts/assert-lead-attachments-preview-provenance.mjs
+        run: node scripts/assert-lead-attachments-preview-provenance.mjs ${{ inputs.runner_mode == 'lead-write-contract-acceptance' && '--lead-write-contract' || '' }}
         env:
           STAGING_PREVIEW_URL: ${{ inputs.lead_attachments_preview_url }}
           PRODUCTION_BASE_URL: ${{ vars.PRODUCTION_BASE_URL }}
@@ -264,8 +267,9 @@ jobs:
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
       - name: Run exact Preview browser and REST acceptance
-        run: npx playwright test --config=playwright.staging.config.ts tests/e2e/lead-attachments-staging.spec.ts --workers=1 --retries=0
+        run: npx playwright test --config=playwright.staging.config.ts ${{ inputs.runner_mode == 'lead-write-contract-acceptance' && 'tests/e2e/lead-write-contract-staging.spec.ts' || 'tests/e2e/lead-attachments-staging.spec.ts' }} --workers=1 --retries=0
         env:
+          STAGING_LEAD_WRITE_ACCEPTANCE: ${{ inputs.runner_mode == 'lead-write-contract-acceptance' && 'true' || 'false' }}
           STAGING_PREVIEW_URL: ${{ inputs.lead_attachments_preview_url }}
           PRODUCTION_BASE_URL: ${{ vars.PRODUCTION_BASE_URL }}
           STAGING_SUPABASE_URL: ${{ vars.STAGING_SUPABASE_URL }}

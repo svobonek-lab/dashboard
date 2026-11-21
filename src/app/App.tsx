@@ -277,8 +277,8 @@ function AppContent() {
             const next = prev.map(l => l.id === leadId ? {
               ...l,
               status: newStatus,
-              history: updatedHistory,
-              timeline: updatedTimeline
+              history: isConfigured ? l.history : updatedHistory,
+              timeline: isConfigured ? l.timeline : updatedTimeline
             } : l);
             try {
               writeTenantCache(TENANT_CACHE_NAMES.leads, next, currentOrg?.id);
@@ -290,8 +290,8 @@ function AppContent() {
             setSelectedLead(prev => prev ? {
               ...prev,
               status: newStatus,
-              history: updatedHistory,
-              timeline: updatedTimeline
+              history: isConfigured ? prev.history : updatedHistory,
+              timeline: isConfigured ? prev.timeline : updatedTimeline
             } : null);
           }
 
@@ -315,6 +315,7 @@ function AppContent() {
       const assignedEmployee = employees.find((employee) => employee.id === savedLead.assignedEmployeeId);
       const hydratedLead = {
         ...savedLead,
+        history: isConfigured ? (previousLead?.history ?? savedLead.history) : savedLead.history,
         assignedEmployeeName: assignedEmployee?.name || savedLead.assignedEmployeeName || '',
       };
       setLeads(prev => prev.map(l => l.id === hydratedLead.id ? hydratedLead : l));

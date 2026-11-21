@@ -64,6 +64,18 @@ export interface AppLeadStatusAuditRow {
   created_at: string;
 }
 
+export interface AppLeadEventRow {
+  id: string;
+  lead_id: string;
+  actor_id: string | null;
+  operation: string;
+  old_status: AppLeadRow['status'] | null;
+  new_status: AppLeadRow['status'] | null;
+  old_assigned_to: string | null;
+  new_assigned_to: string | null;
+  created_at: string;
+}
+
 const leadStatus: Record<AppLeadRow['status'], string> = {
   new: 'New',
   contacted: 'Contacted',
@@ -164,6 +176,22 @@ export function toAppAuditLeadHistory(row: AppLeadStatusAuditRow) {
     author: row.actor || 'Uživatel firmy',
   };
 }
+
+export function toAppLeadEventHistory(row: AppLeadEventRow) {
+  const action = row.operation === 'INSERT'
+    ? 'Poptávka vytvořena'
+    : row.old_status && row.new_status && row.old_status !== row.new_status
+      ? `Stav zakázky změněn na: ${leadHistoryStatus[row.new_status]}`
+      : row.operation === 'ASSIGNMENT' || row.old_assigned_to !== row.new_assigned_to
+        ? (row.new_assigned_to ? 'Zakázka přiřazena pracovníkovi' : 'Přiřazení pracovníka zrušeno')
+        : 'Údaje zakázky změněny';
+  return { id: row.id, timestamp: row.created_at, action, author: row.actor_id || 'Uživatel firmy' };
+}
+
+const leadHistoryStatus: Record<AppLeadRow['status'], string> = {
+  new: 'Nová poptávka', contacted: 'Kontaktováno', scheduled: 'Nabídka',
+  in_progress: 'V realizaci', won: 'Dokončeno', lost: 'Nezískáno',
+};
 
 export function isAssignedToMember(row: AppLeadRow, member: AppMemberRow): boolean {
   return row.company_id === member.company_id && row.assigned_to === member.user_id && member.active;
