@@ -1,12 +1,12 @@
 export const pilotTerms = {
-  price: null,
-  setup: null,
-  users: null,
-  files: null,
-  support: null,
-  export: null,
-  exit: null,
-} as Record<'price' | 'setup' | 'users' | 'files' | 'support' | 'export' | 'exit', string | null>;
+  price: '1 990 Kč celkem za 30 dní. Cena zahrnuje případnou DPH. Použitý režim uvedeme v nabídce před objednáním.',
+  setup: 'Osobní zřízení jedné firmy a úvodní zaškolení jsou v ceně.',
+  users: 'Až 5 uživatelů včetně majitele firmy.',
+  files: '0 příloh. Nahrávání souborů není součástí pilotu.',
+  support: 'E-mailem v pracovní dny. Cílová doba první odpovědi je do konce následujícího pracovního dne.',
+  export: 'Majitel si před koncem pilotu stáhne poptávky a seznam týmu jako CSV.',
+  exit: 'Přístup končí po 30 dnech. Pilot se automaticky neprodlužuje a další období se účtuje jen po nové dohodě.',
+};
 
 export function estimatePilotScenario(input: {
   monthlyLeads: number;

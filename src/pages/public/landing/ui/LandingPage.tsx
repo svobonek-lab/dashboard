@@ -397,7 +397,7 @@ export const LandingPage: React.FC = () => {
             ] as const).map(([label, value]) => (
               <div className="grid gap-1 py-3 sm:grid-cols-[1fr_1.3fr] sm:gap-3" key={label}>
                 <dt className="font-semibold text-slate-950">{label}</dt>
-                <dd className="text-slate-600">{value ?? 'Potvrdíme v nabídce'}</dd>
+                <dd className="text-slate-600">{value}</dd>
               </div>
             ))}
           </dl>

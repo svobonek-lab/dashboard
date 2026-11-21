@@ -2,7 +2,7 @@
 
 ## 30denní Managed Cloud pilot s osobním zřízením
 
-Veřejná nabídka používá jediný kontakt k domluvě pilotu. Obchodní podmínky čekají na údaje od provozovatele. Kalkulačka uvádí vlastní předpoklady pro 30 dní a ukáže návratnost až po zadání nákladů. Hero a demo zobrazují stejnou syntetickou firmu a stejné poptávky.
+Veřejná nabídka používá jediný kontakt k domluvě pilotu. Cena 1 990 Kč za 30 dní zahrnuje osobní zřízení a případnou DPH. Provozovatel uvede použitý daňový režim v nabídce před objednáním. Pilot je pro jednu firmu a pět uživatelů včetně majitele, bez příloh a automatického prodloužení. Kalkulačka uvádí předpoklady pro 30 dní a ukáže návratnost po zadání nákladů. Hero a demo zobrazují stejnou syntetickou firmu a stejné poptávky.
 
 | Funkce | Ověřený stav a dopad na nabídku |
 |---|---|

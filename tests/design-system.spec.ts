@@ -161,6 +161,7 @@ test('landing presents the product and keeps contact and pricing accessible', as
     await page.goto('/');
     await expect(page.getByRole('heading', { level: 1, name: /Na stavbě máte dost práce/ })).toBeVisible();
     await expect(page.getByLabel('Ukázka aplikace se syntetickými zakázkami')).toBeVisible();
+    await expect(page.getByText(/1 990 Kč celkem za 30 dní/)).toBeVisible();
     const heroContact = page.getByRole('button', { name: 'Domluvit pilot', exact: true });
     expect((await heroContact.boundingBox())?.height).toBeGreaterThanOrEqual(44);
     for (const name of ['Domluvit pilot StavbaFlow', 'Domluvit pilot', 'Domluvit 30denní pilot', 'Probrat předpoklady pilotu', 'Kontakt k pilotu']) {
