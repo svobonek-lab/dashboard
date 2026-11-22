@@ -1,53 +1,40 @@
-# Supabase backup and restore status
+# Stav záloh a zkouška obnovy StavbaFlow
 
-**Checked:** 2026-11-03 08:36:29 UTC
-**Result:** restore drill blocked by the current Supabase plan; no backup was restored and no project/branch was created.
+## Stav u poskytovatele k 21. listopadu 2026
 
-## Projects and current backup configuration
+| Oblast | Aktuální důkaz | Retence a správce |
+| --- | --- | --- |
+| Databáze staging | Připojený Supabase MCP vrátil `StavbaCore Staging`, `ACTIVE_HEALTHY`, `eu-central-1`, PostgreSQL 17 a tarif `free` pro `svobonek-lab's Org`. Tarif Free neposkytuje plánované denní zálohy. Katalog poskytovatele je třeba doložit samostatně. | Pravidelná retence a jmenovitý správce pravidelných záloh nejsou doloženi. |
+| Databáze produkce | Schválený `supabase-ci` v režimu read-only vrátil PostgreSQL 17.11 a `archive_mode=on`. Katalog záloh, stav PITR, retence a přístupy ke správě záloh přes tento MCP dostupné nejsou. Historický snímek z 3. listopadu uváděl tarif Free. | Aktuální inventář, ruční kopie, retence a jmenovitý správce nejsou ověřeni. |
+| Supabase Storage | Databázové zálohy Supabase obsahují metadata Storage. Data objektů vyžadují samostatnou kopii. Stagingový objekt byl zkopírován a obnoven v tomto cvičení. | Pravidelná kopie bajtů, její retence a odpovědná osoba pro produkci ani staging nejsou doloženy. |
 
-| Environment | Supabase project | Region | Organization plan | Verified backup setup |
-|---|---|---|---|---|
-| Production | `StavbaFlow Production` (`oncmtmrhmjlerbwkrecv`) | `eu-central-1` | Free | Supabase Free does not provide automatic database backups or PITR. No manually exported backup artifact, schedule, or retention location was found in the repository or available project metadata. |
-| Staging | `StavbaCore Staging` (`xwzweltjvreqhjpbjrxa`) | `eu-central-1` | Free | Same organization and plan, so no automatic database backups or PITR. No manually exported backup artifact, schedule, or retention location was found in the repository or available project metadata. |
+[Supabase Database Backups](https://supabase.com/docs/guides/platform/backups) · [Storage object downloads and metadata](https://supabase.com/docs/guides/storage/management/download-objects) · [Management API backup catalog](https://supabase.com/docs/reference/api/v1-list-all-backups)
 
-Both projects are reported `ACTIVE_HEALTHY`. Supabase metadata reports PostgreSQL `17.11.0.002` for Production and `17.6.1.166` for Staging. The organization metadata reports plan `free`. The read-only branch inventory for staging contained only its `main` entry, whose project ref is the staging project's own ref; it did not expose a separate disposable development/restore branch.
+## Doložená obnova jednoho syntetického tenantu
 
-On the current plan, there is **no verified backup retention period**: automatic retention is not available, and manual export retention depends on an operator-managed off-site copy. The repository does not currently identify such a copy or a retention owner. Until a documented export exists, recoverability is unproven for both environments.
+[Staging run 44950352353](https://github.com/svobonek-lab/dashboard/actions/runs/44950352353) vytvořil jednorázovou syntetickou firmu v projektu `xwzweltjvreqhjpbjrxa`, exportoval vybraná aplikační pole a skutečné bajty soukromého PDF a odstranil zdrojovou testovací firmu a její fixture. Snímek začal 21. listopadu 2026 ve 21:13:15.308 UTC. Workflow nemá plánovaný trigger a používá pouze stagingový přístup.
 
-Supabase recommends regular CLI exports for Free-plan projects. The standard `supabase db dump` command excludes managed schemas such as `auth` and `storage`; by default it dumps schema only, not table data or custom roles. Storage object bytes are separate from database backup data. A CLI dump therefore must not be described as a complete application recovery without separately planning Auth/Storage recovery and verifying all required content. Supabase's downloadable Dashboard `.backup` restore guide applies to older projects that still use logical backups; these projects run PostgreSQL 17. The documented paid restore-to-new-project path requires physical backups and is not available under the organization's current Free plan.
+Šifrovaný artefakt `encrypted-staging-recovery` má ID `14725591264`. GitHub API uvádí expiraci **28. listopadu 2026 ve 21:13:19 UTC**. Archiv je šifrovaný AES‑256‑GCM, jeho klíč je zabalen RSA‑OAEP se SHA‑256. Privátní klíč k této zkoušce spravuje lokální profil operátora `svobo` chráněný Windows DPAPI. Archiv pro cvičení je uložený mimo repozitář. Retence GitHub artefaktu se nevztahuje na místní kopii.
 
-## Access and custody
+Obnova proběhla do odděleného loopback Supabase s vlastním PostgreSQL, GoTrue a Storage, v projektu `stavbaflow-recovery-20261121`. Automatické migrace a seed byly vypnuté. Pro prázdný cíl operátor ručně aplikoval [minimální testovací schéma](../supabase/tests/staging_recovery_target.sql) a [schválený kontrakt pro poznámky a soubory](../supabase/staging/20261013_lead_notes_files_contract.sql). Obnovené UUID jsou původní. Každý obnovený účet dostal nové náhodné heslo jen pro zkoušku. Archiv neobsahuje hesla, hashe, existující přihlašovací relace, historii událostí, nastavení celého projektu ani data jiného tenantu.
 
-- The connected Supabase account can list the organization and both projects. The available read-only project/org tools did not provide the organization's member roster or per-project role assignments, so this report cannot truthfully name every person with backup or database access.
-- Supabase Dashboard organization members with project permissions can administer the corresponding project. A named access review must be completed in **Organization → Team** and each project's access controls before a recovery process is approved.
-- No backup artifact or off-site storage ACL was available to inspect. Therefore the current backup custodian, readers, and deletion/retention policy are **not verified**.
-- Database connection passwords, Management API tokens, and privileged project keys grant different levels of access. Do not put any of them in this document, issue text, or a backup filename. Any future backup artifact must be encrypted, access-controlled, and stored outside the application repository.
+| Kontrola | Zdroj | Obnovený cíl |
+| --- | ---: | ---: |
+| Firmy | 1 | 1 |
+| Poptávky | 1 | 1 |
+| Auth identity a členství | 2 | 2 |
+| Poznámky | 1 | 1 |
+| Metadata souborů | 1 | 1 |
+| Bajty soukromého objektu | 1 | 1 |
 
-## Restore drill attempt
+Hodnoty všech exportovaných polí se shodovaly. Majitel a přiřazený zaměstnanec se přihlásili pod obnovenými UUID, načetli přiřazenou poptávku a otevřeli objekt přes krátkodobou podepsanou URL. SHA‑256 souboru souhlasil. Anonymní požadavek nedostal podepsanou URL a veřejná adresa objekt nevydala.
 
-| Timestamp (UTC) | Check | Result |
-|---|---|---|
-| 2026-11-03 08:36:29 | Organization plan | `free`; automatic backups, PITR, and Supabase branching are unavailable on this plan. |
-| 2026-11-03 08:36:29 | Staging branch inventory | Only the project's `main` entry was returned; no disposable restore branch is available. |
-| 2026-11-03 08:36:29 | Backup inventory | No backup-listing tool or manual backup artifact was available in this session. Free-plan automatic backups are not provided. |
-| 2026-11-03 08:36:29 | Restore | **Not run.** Supabase documents restore-to-new-project as a paid-plan feature requiring physical backups; creating a project/branch is also unavailable here without plan support and could incur charges. |
-| 2026-11-03 08:41:45 | Recheck | Organization remains on Free; staging still has no separate branch. PostgreSQL 17 means the legacy downloadable Dashboard `.backup` flow is not the documented restore route for these projects. |
+- **Naměřené RPO cvičení 1,399 s** je stáří bodu obnovy v okamžiku simulované ztráty těsně po sběru snímku. Izolovaná fixture se po dobu sběru neměnila. Čas není garantovaným RPO průběžných záloh.
+- **Naměřené RTO cvičení 16,285 s** je čas od přípravy schématu v běžícím samostatném stacku do ověření posledního přístupu k objektu a dokončení příkazu. Samotné odšifrování, obnova dat, přihlášení a testy přístupu trvaly **1,021 s**. Čas nezahrnuje start Dockeru, stažení image, získání přístupu operátora ani produkční přepnutí.
 
-The requested restore into a new throwaway Supabase project or branch cannot be performed on the verified plan. Per the goal's stop condition, no workaround restore, paid project, branch, migration, or database write was attempted. `scripts/restore-drill.mjs` remains unimplemented: the only current source option described for Free is a manual logical CLI export, which excludes the managed Auth/Storage schemas and does not establish a full restorable application backup; the supported full clone-to-new-project route is gated by paid physical backups. A script that substituted the incomplete export would not prove the requested restore.
+## Zopakování izolované obnovy
 
-## Resume criteria
-
-Resume the drill only after the operator has a plan/feature that supports a disposable restore target and a real staging backup. Before that:
-
-1. Decide whether to upgrade the Supabase organization or establish an approved off-site logical-backup process. A plan change may incur charges and requires the owner's choice.
-2. Record the backup artifact location, encryption, retention, named custodians, and recovery credentials procedure without placing secrets in Git.
-3. Provision a disposable target through the approved Supabase workflow and confirm its ref is distinct from both projects.
-4. Implement/run the drill against that artifact and target, with explicit production-ref refusal; then verify the restored schema and read-only synthetic company A/B membership/lead fixtures.
-
-## References
-
-- [Supabase Database Backups](https://supabase.com/docs/guides/platform/backups) — Free-plan export guidance, paid-plan automatic backup retention, backup contents, and Storage-object limitation.
-- [Supabase Free-plan backup FAQ](https://supabase.com/kb/faqs/platform/free-plan-backups) — no automatic backups on Free; manual CLI exports are available.
-- [Restore to a new project](https://supabase.com/docs/guides/platform/clone-project) — paid plan and physical-backup requirements; restore creates a new project and can incur costs.
-- [Supabase CLI `db dump`](https://supabase.com/docs/reference/cli/supabase-db-dump) — default schema/data/role behavior and exclusions for managed schemas.
-- [Supabase backup and restore with CLI](https://supabase.com/docs/guides/platform/migrating-within-supabase/backup-restore) — manual logical export/import workflow.
+1. Spusť ručně staging workflow s režimem `recovery-export` z větve vymezené ve workflow. Zadej veřejný RSA SPKI klíč v Base64. Privátní klíč drž mimo Git a Actions. Ověř úspěšný export, odstranění fixture a expiraci artefaktu.
+2. Založ nový lokální Supabase projekt mimo repozitář. Vypni automatické migrace i seed před startem. Ověř, že cíl používá loopback port 54321, vlastní DB, Auth a Storage a že v něm nejsou firmy. V cílové databázi ručně použij dvě SQL schémata uvedená výše.
+3. Před spuštěním `node scripts/staging-recovery-restore.mjs` nastav `RECOVERY_TARGET_URL=http://127.0.0.1:54321`, lokální klíče `RECOVERY_TARGET_SERVICE_KEY` a `RECOVERY_TARGET_ANON_KEY`, cestu `RECOVERY_ARCHIVE` a privátní `RECOVERY_PRIVATE_KEY` pouze v prostředí procesu. Po běhu vyčisti procesové proměnné. Do záznamu vlož jen časy, souhrn počtů, ověření SHA‑256 a výsledek přístupových testů.
+4. Pro výpadek služby postupuj podle [incident runbooku](runbook-incident.md#7-výpadek-supabase-a-obnova). Před skutečnou obnovou ověř dostupnost obou zdrojů zálohy a jejich správce. Pro produkci je nutné samostatné rozhodnutí vlastníka na základě ověřeného archivu a bezpečného cíle.

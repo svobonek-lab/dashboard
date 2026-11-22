@@ -6,6 +6,7 @@ const runbook = readFileSync(new URL('../docs/pilot-operator-runbook.md', import
 const stagingRef = 'xwzweltjvreqhjpbjrxa';
 
 test('pilot runbook gives the exact isolated staging URL and project ref', () => {
+  assert.doesNotMatch(runbook, /oncmtmrhmjlerbwkrecv/i);
   const assignments = [...runbook.matchAll(/\b(STAGING_SUPABASE_URL|STAGING_SUPABASE_PROJECT_REF)=([^`\s]+)/g)]
     .map(([, name, value]) => [name, value]);
   assert.deepEqual(assignments, [

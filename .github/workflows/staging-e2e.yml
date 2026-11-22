@@ -31,6 +31,7 @@ on:
           - public-form-acceptance
           - lead-attachments-cleanup
           - recovery-export
+          - recovery-observability-preview
         default: github-hosted
       recovery_public_key:
         description: RSA SPKI public key in base64 for the synthetic recovery archive
@@ -63,6 +64,32 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  recovery-observability-preview:
+    if: >-
+      github.repository == 'svobonek-lab/dashboard' && github.event_name == 'workflow_dispatch' &&
+      github.ref_name == 'codex/staging-recovery-and-alert-evidence' && inputs.runner_mode == 'recovery-observability-preview'
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+      - name: Read authorized staging backup catalog
+        run: node scripts/staging-backup-metadata.mjs
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      - name: Deploy isolated Sentry Preview without emitting a test event
+        run: node scripts/deploy-recovery-observability-preview.mjs
+        env:
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          STAGING_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.STAGING_SUPABASE_PUBLISHABLE_KEY }}
+          STAGING_SENTRY_DSN: ${{ secrets.STAGING_SENTRY_DSN }}
+
   recovery-export:
     if: >-
       github.repository == 'svobonek-lab/dashboard' && github.event_name == 'workflow_dispatch' &&
@@ -97,6 +124,7 @@ jobs:
       github.repository == 'svobonek-lab/dashboard' &&
       ((github.event_name == 'workflow_dispatch' &&
         inputs.runner_mode != 'metadata-only' && inputs.runner_mode != 'load-acceptance' && inputs.runner_mode != 'recovery-export' &&
+        inputs.runner_mode != 'recovery-observability-preview' &&
         inputs.runner_mode != 'public-form-acceptance' &&
         inputs.runner_mode != 'load-recover' && inputs.runner_mode != 'preview-configure' &&
         inputs.runner_mode != 'billing-setup' && inputs.runner_mode != 'billing-portal-inspect' &&
