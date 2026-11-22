@@ -40,3 +40,17 @@ Pause the affected connector from the approved owner workflow if its source mapp
 2. Verify recovery in staging with synthetic data first, then follow the separately approved production release process.
 3. Keep secrets out of the report; rotate exposed credentials using the provider's supported process and update only the authorized environment.
 4. Close the incident only after the owner confirms service recovery and required follow-up work has an issue or pull request. Do not claim customer impact is absent unless the available evidence supports that conclusion.
+
+## 7. Výpadek Supabase a obnova
+
+1. Zaznamenej začátek v UTC, postižený projekt, dopad na DB, Auth a Storage a poslední známou funkční operaci podle provozních metadat. Porovnej [stav poskytovatele](https://status.supabase.com/) se stavem projektu a přesným Vercel deploymentem. Eskaluj vlastníkovi služby. Nezkoušej opakovaně odesílat zápisy s neznámým výsledkem.
+2. Při výpadku poskytovatele ponech incident otevřený a průběžně zaznamenávej stav. Při ztrátě dat ověř čas, původ, integritu a držitele nejnovější dostupné databázové zálohy i samostatné kopie objektů. Pokud některá chybí, eskaluj omezený rozsah obnovy vlastníkovi. [Stav ověřených záloh a měření](backup-restore.md)
+3. Obnov nejprve do odděleného cíle. Porovnej body obnovy, DB počty, Auth návaznosti, poznámky, metadata souborů, SHA‑256 objektů a přístup podle role. Ověř anonymní zamítnutí a zásady izolace. Produkční přepnutí se řídí samostatným schváleným incident postupem.
+4. Zapiš skutečný čas výpadku, použitý bod obnovy, okamžik ověření funkčního provozu a všechny neobnovené operace. Před opakováním zápisů a outboxu ověř jejich výsledek a idempotenci.
+
+## 8. Sentry alert a cesta k incidentu
+
+1. V Sentry otevři pravidlo správného projektu, ověř prostředí, podmínku a cílového příjemce. Pro cvičení použij přesný staging Preview deployment a jedinečný syntetický identifikátor bez zákaznických údajů.
+2. U události ověř `environment=staging` a zaznamenej ID události. U odpovídajícího issue ověř čas a aktivitu konkrétního spuštěného pravidla. Samotný doručený event ponech jako důkaz ingestu.
+3. Pověřený příjemce ověří doručenou notifikaci, otevře z ní odkaz na totéž issue a zaznamená čas přijetí, pravidlo, kanál a identifikátory. Pokud aktivita pravidla nebo doručení nejsou viditelné, nech přejímku otevřenou a zaznamenej, která část byla dosažena.
+4. Z issue pokračuj evidencí v oddílu 1. Pro cvičení připoj výsledek do [záznamu obnovy](backup-restore.md) a označ scénář jako syntetický.

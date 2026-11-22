@@ -1,10 +1,17 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import test from 'node:test';
-import { getSentryWorkspaceTags } from '../src/shared/lib/sentry';
+import { getSentryWorkspaceTags, resolveSentryEnvironment } from '../src/shared/lib/sentry';
 
 const providerSource = readFileSync(new URL('../src/app/providers/OrganizationProvider.tsx', import.meta.url), 'utf8');
 const boundarySource = readFileSync(new URL('../src/app/providers/ErrorBoundary.tsx', import.meta.url), 'utf8');
+
+test('Sentry staging label requires a staging override and the exact staging project', () => {
+  const staging = 'https://xwzweltjvreqhjpbjrxa.supabase.co';
+  assert.equal(resolveSentryEnvironment('production', 'staging', staging), 'staging');
+  assert.equal(resolveSentryEnvironment('production', 'staging', 'https://oncmtmrhmjlerbwkrecv.supabase.co'), 'production');
+  assert.equal(resolveSentryEnvironment('production', undefined, staging), 'production');
+});
 
 test('Sentry workspace tags accept only an internal UUID and approved role', () => {
   assert.deepEqual(getSentryWorkspaceTags({

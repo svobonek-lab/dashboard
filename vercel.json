@@ -18,7 +18,8 @@
       "codex/lead-write-contract": false,
       "codex/lead-write-evidence": false,
       "codex/public-intake-acceptance": false,
-      "codex/managed-cloud-pilot-offer": false
+      "codex/managed-cloud-pilot-offer": false,
+      "codex/staging-recovery-and-alert-evidence": false
     }
   },
   "crons": [
