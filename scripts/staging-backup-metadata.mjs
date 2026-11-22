@@ -7,6 +7,7 @@ const response = await fetch(`https://api.supabase.com/v1/projects/${projectRef}
 });
 if (!response.ok) {
   console.log(JSON.stringify({ projectRef, backupCatalogHttp: response.status }));
+  process.exitCode = 1;
 } else {
   const data = await response.json();
   console.log(JSON.stringify({ projectRef, backupCatalogHttp: response.status,

@@ -77,7 +77,8 @@ jobs:
       - uses: actions/setup-node@v6
         with:
           node-version: '24'
-      - name: Read authorized staging backup catalog
+      - name: Attempt to read the staging backup catalog
+        continue-on-error: true
         run: node scripts/staging-backup-metadata.mjs
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
