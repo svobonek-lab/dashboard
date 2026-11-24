@@ -9,9 +9,11 @@ import outboxSchedulerHandler from './api/outbox-scheduler.js';
 import outboxDispatchHandler from './api/outbox-dispatch.js';
 import emailNotificationStatusHandler from './api/email-notification-status.js';
 import incomingLeadHandler from './api/incoming-lead.js';
+import publicIntakeHandler from './api/public-intake.js';
 import incomingLeadConfigHandler from './api/incoming-lead-config.js';
 import stripeWebhookHandler from './api/_billing/stripe-webhook.js';
 import stripeCheckoutHandler from './api/_billing/stripe-checkout.js';
+import stripeSetupCheckoutHandler from './api/_billing/stripe-setup-checkout.js';
 import stripePortalHandler from './api/_billing/stripe-portal.js';
 import connectorRegisterHandler from './api/_connector/routes/register.js';
 import connectorHeartbeatHandler from './api/_connector/routes/heartbeat.js';
@@ -58,7 +60,8 @@ function apiMiddlewarePlugin(): Plugin {
                     json: (data: any) => {
                       res.setHeader('Content-Type', 'application/json');
                       res.end(JSON.stringify(data));
-                    }
+                    },
+                    end: () => res.end(),
                   };
                 }
               };
@@ -101,6 +104,12 @@ function apiMiddlewarePlugin(): Plugin {
           return;
         }
 
+        const requestPath = req.url ? new URL(req.url, 'http://localhost').pathname : '';
+        if (requestPath === '/api/webhook/lead' && (req.method === 'POST' || req.method === 'OPTIONS')) {
+          handleRoute(publicIntakeHandler);
+          return;
+        }
+
         if (req.url?.startsWith('/api/incoming-lead-config') && req.method === 'GET') {
           handleRoute(incomingLeadConfigHandler);
           return;
@@ -113,6 +122,11 @@ function apiMiddlewarePlugin(): Plugin {
 
         if (req.url === '/api/stripe-checkout' && req.method === 'POST') {
           handleRoute(stripeCheckoutHandler);
+          return;
+        }
+
+        if (req.url === '/api/stripe-setup-checkout' && req.method === 'POST') {
+          handleRoute(stripeSetupCheckoutHandler);
           return;
         }
 

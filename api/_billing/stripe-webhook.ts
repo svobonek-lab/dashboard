@@ -1,6 +1,7 @@
 import Stripe from 'stripe';
 
 import { createServerlessSupabaseClient } from '../_shared/supabaseClient.js';
+import { SETUP_FEE_AMOUNT, SETUP_FEE_OFFER_VERSION } from './stripe-setup-checkout.js';
 
 const MAX_WEBHOOK_BYTES = 1024 * 1024;
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -30,9 +31,26 @@ export interface StripeSubscriptionUpdate {
   legacyRegistration?: boolean;
 }
 
+export interface StripeSetupPaymentUpdate {
+  eventId: string;
+  eventCreatedAt: string;
+  tenantId: string;
+  customerId: string;
+  checkoutSessionId: string;
+  paymentStatus: 'paid';
+  amountTotal: number;
+  currency: 'czk';
+  offerVersion: typeof SETUP_FEE_OFFER_VERSION;
+}
+
+type StripeWebhookAction =
+  | { kind: 'subscription'; update: StripeSubscriptionUpdate }
+  | { kind: 'setup_payment'; update: StripeSetupPaymentUpdate };
+
 interface StripeWebhookDependencies {
   verifyEvent(rawBody: Buffer, signature: string, webhookSecret: string): Stripe.Event;
   applySubscriptionUpdate(update: StripeSubscriptionUpdate): Promise<StripeApplyResult>;
+  applySetupPayment?(update: StripeSetupPaymentUpdate): Promise<StripeApplyResult>;
 }
 
 interface WebhookRequest {
@@ -161,19 +179,47 @@ function subscriptionPeriodEnd(subscription: Stripe.Subscription): string | null
   return periodEnds.length > 0 ? unixTimestamp(Math.max(...periodEnds)) : null;
 }
 
-function toSubscriptionUpdate(event: Stripe.Event): StripeSubscriptionUpdate | null {
+function toStripeWebhookAction(event: Stripe.Event): StripeWebhookAction | null {
   const eventCreatedAt = unixTimestamp(event.created);
   if (!eventCreatedAt) throw new Error('Signed Stripe event has an invalid created timestamp.');
 
   switch (event.type) {
     case 'checkout.session.completed': {
       const session = event.data.object as Stripe.Checkout.Session;
+      if (session.mode === 'payment' && session.metadata?.purchase_type === 'setup_fee') {
+        const metadataTenantId = tenantIdFrom(session.metadata);
+        const referenceTenantId = tenantIdFrom(undefined, session.client_reference_id);
+        const customerId = expandableId(session.customer);
+        if (!metadataTenantId || !referenceTenantId || metadataTenantId !== referenceTenantId
+          || !customerId || !/^cus_[A-Za-z0-9]+$/.test(customerId)
+          || !/^cs_[A-Za-z0-9_]+$/.test(session.id)
+          || session.metadata?.offer_version !== SETUP_FEE_OFFER_VERSION
+          || session.payment_status !== 'paid'
+          || session.amount_total !== SETUP_FEE_AMOUNT
+          || String(session.currency || '').toLowerCase() !== 'czk') {
+          throw new Error('Signed setup Checkout did not match the configured paid offer.');
+        }
+        return {
+          kind: 'setup_payment',
+          update: {
+            eventId: event.id,
+            eventCreatedAt,
+            tenantId: metadataTenantId,
+            customerId,
+            checkoutSessionId: session.id,
+            paymentStatus: 'paid',
+            amountTotal: session.amount_total,
+            currency: 'czk',
+            offerVersion: SETUP_FEE_OFFER_VERSION,
+          },
+        };
+      }
       if (session.mode !== 'subscription') return null;
       const tenantId = checkoutTenantId(session);
       const customerId = expandableId(session.customer);
       const subscriptionId = expandableId(session.subscription);
       if (!tenantId || !customerId || !subscriptionId) throw new Error('Subscription checkout is missing its tenant, customer or subscription binding.');
-      return {
+      return { kind: 'subscription', update: {
         eventId: event.id,
         eventType: event.type,
         eventCreatedAt,
@@ -188,14 +234,14 @@ function toSubscriptionUpdate(event: Stripe.Event): StripeSubscriptionUpdate | n
         paymentStatus: session.payment_status,
         checkoutPlan: String(session.metadata?.plan || ''),
         ...(session.metadata?.onboarding === 'paid_registration' ? { legacyRegistration: true } : {}),
-      };
+      } };
     }
     case 'customer.subscription.updated':
     case 'customer.subscription.deleted': {
       const subscription = event.data.object as Stripe.Subscription;
       const customerId = expandableId(subscription.customer);
       if (!customerId || !subscription.id) throw new Error('Subscription event is missing its customer or subscription binding.');
-      return {
+      return { kind: 'subscription', update: {
         eventId: event.id,
         eventType: event.type,
         eventCreatedAt,
@@ -204,11 +250,37 @@ function toSubscriptionUpdate(event: Stripe.Event): StripeSubscriptionUpdate | n
         subscriptionId: subscription.id,
         subscriptionStatus: event.type === 'customer.subscription.deleted' ? 'canceled' : mapSubscriptionStatus(subscription.status),
         currentPeriodEnd: subscriptionPeriodEnd(subscription),
-      };
+      } };
     }
     default:
       return null;
   }
+}
+
+export async function persistSetupPayment(update: StripeSetupPaymentUpdate): Promise<StripeApplyResult> {
+  const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
+  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!supabaseUrl || !serviceKey) throw new Error('Stripe setup payment persistence is not configured.');
+
+  const service = createServerlessSupabaseClient(supabaseUrl, serviceKey, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
+  const { data, error } = await service.rpc('app_apply_stripe_setup_payment_event', {
+    p_event_id: update.eventId,
+    p_event_created_at: update.eventCreatedAt,
+    p_tenant_id: update.tenantId,
+    p_stripe_customer_id: update.customerId,
+    p_checkout_session_id: update.checkoutSessionId,
+    p_payment_status: update.paymentStatus,
+    p_amount_total: update.amountTotal,
+    p_currency: update.currency,
+    p_offer_version: update.offerVersion,
+  });
+  if (error) throw new Error('Stripe one-time activation was rejected by the database.');
+  if (data !== 'applied' && data !== 'duplicate' && data !== 'stale') {
+    throw new Error('Stripe one-time activation returned an invalid result.');
+  }
+  return data;
 }
 
 export async function persistSubscriptionUpdate(update: StripeSubscriptionUpdate): Promise<StripeApplyResult> {
@@ -293,12 +365,15 @@ export function createStripeWebhookHandler(dependencies: StripeWebhookDependenci
     }
 
     try {
-      const update = toSubscriptionUpdate(event);
-      if (!update) {
+      const action = toStripeWebhookAction(event);
+      if (!action) {
         response.status(200).json({ received: true, result: 'ignored' });
         return;
       }
-      const result = await dependencies.applySubscriptionUpdate(update);
+      const result = action.kind === 'setup_payment'
+        ? await dependencies.applySetupPayment?.(action.update)
+        : await dependencies.applySubscriptionUpdate(action.update);
+      if (!result) throw new Error('Stripe setup payment handler is not configured.');
       response.status(200).json({ received: true, result });
     } catch (error) {
       console.error('Stripe webhook processing failed.', {
@@ -314,4 +389,5 @@ export function createStripeWebhookHandler(dependencies: StripeWebhookDependenci
 export default createStripeWebhookHandler({
   verifyEvent: verifyStripeEvent,
   applySubscriptionUpdate: persistSubscriptionUpdate,
+  applySetupPayment: persistSetupPayment,
 });

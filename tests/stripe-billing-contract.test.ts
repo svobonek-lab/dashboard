@@ -13,6 +13,9 @@ import { buildStagingWebhookEndpointParams, cleanupStagingWebhookEndpoint, creat
 const contract = readFileSync(new URL('../supabase/staging/20261015_stripe_billing_contract.sql', import.meta.url), 'utf8');
 const completion = readFileSync(new URL('../supabase/staging/20261016_stripe_billing_completion.sql', import.meta.url), 'utf8');
 const rebind = readFileSync(new URL('../supabase/migrations/20261031185027_allow_canceled_stripe_subscription_rebind.sql', import.meta.url), 'utf8');
+const setupPayment = readFileSync(new URL('../supabase/migrations/20261124112048_stripe_setup_payment_activation.sql', import.meta.url), 'utf8');
+const setupPaymentAcceptance = readFileSync(new URL('../supabase/tests/stripe_setup_payment_activation_verify.sql', import.meta.url), 'utf8');
+const setupPaymentConcurrency = readFileSync(new URL('../supabase/tests/stripe_setup_payment_activation_concurrency.sh', import.meta.url), 'utf8');
 const workflow = readFileSync(new URL('../.github/workflows/verify.yml', import.meta.url), 'utf8');
 const stagingWorkflow = readFileSync(new URL('../.github/workflows/staging-e2e.yml', import.meta.url), 'utf8');
 const billingAcceptanceSpec = readFileSync(new URL('../tests/e2e/billing-blocked-to-granted.spec.ts', import.meta.url), 'utf8');
@@ -31,6 +34,25 @@ test('Stripe billing contract is service-only, idempotent and rejects cross-tena
   assert.match(contract, /revoke all on function public\.app_apply_stripe_subscription_event/i);
   assert.match(contract, /grant execute on function public\.app_apply_stripe_subscription_event[^;]+to service_role/i);
   assert.doesNotMatch(contract, /grant execute[^;]+to (anon|authenticated)/i);
+});
+
+test('one-time setup activation is exact-price, service-only, idempotent and verified in disposable PostgreSQL CI', () => {
+  assert.match(setupPayment, /amount_total integer not null check \(amount_total = 490000\)/i);
+  assert.match(setupPayment, /currency text not null check \(currency = 'czk'\)/i);
+  assert.match(setupPayment, /security definer\s+set search_path = ''/i);
+  assert.match(setupPayment, /for update/i);
+  assert.match(setupPayment, /return 'duplicate'/i);
+  assert.match(setupPayment, /v_result := 'stale'/i);
+  assert.match(setupPayment, /subscription_status = 'active'/i);
+  assert.match(setupPayment, /revoke all on function public\.app_apply_stripe_setup_payment_event/i);
+  assert.match(setupPayment, /grant execute on function public\.app_apply_stripe_setup_payment_event[^;]+to service_role/i);
+  assert.doesNotMatch(setupPayment, /grant execute[^;]+to (anon|authenticated)/i);
+  assert.match(setupPaymentAcceptance, /reused Checkout session was accepted/i);
+  assert.match(setupPaymentAcceptance, /incorrect payment amount was accepted/i);
+  assert.match(setupPaymentAcceptance, /customer bound to another company was accepted/i);
+  assert.match(setupPaymentConcurrency, /Concurrent setup-payment delivery/);
+  assert.match(workflow, /stripe-billing-contract:[\s\S]*?20261124112048_stripe_setup_payment_activation\.sql[\s\S]*?stripe_setup_payment_activation_verify\.sql/);
+  assert.match(workflow, /stripe_setup_payment_activation_verify\.sql[\s\S]*?stripe_setup_payment_activation_concurrency\.sh/);
 });
 
 test('company C billing acceptance refreshes only the fixed staging Preview before checkout', () => {

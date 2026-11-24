@@ -20,6 +20,7 @@ export type OwnerBillingIdentity = {
   companyId: string;
   customerId: string | null;
   plan: string;
+  subscriptionStatus?: string;
   email?: string;
 };
 
@@ -81,7 +82,7 @@ export async function authorizeOwner(request: CheckoutRequest): Promise<OwnerBil
   const companyId = String(memberships[0].company_id || '');
   const { data: company, error: companyError } = await service
     .from('app_companies')
-    .select('id,active,stripe_customer_id,plan')
+    .select('id,active,stripe_customer_id,plan,subscription_status')
     .eq('id', companyId)
     .eq('active', true)
     .maybeSingle();
@@ -91,6 +92,7 @@ export async function authorizeOwner(request: CheckoutRequest): Promise<OwnerBil
     companyId,
     customerId: typeof company.stripe_customer_id === 'string' ? company.stripe_customer_id : null,
     plan: String(company.plan || 'pilot'),
+    subscriptionStatus: String(company.subscription_status || 'not_configured'),
     email: authData.user.email,
   };
 }
@@ -109,18 +111,18 @@ export function readBillingConfig(): BillingConfig {
   };
 }
 
-function validConfig(config: BillingConfig): boolean {
+export function validBillingConfig(config: BillingConfig): boolean {
   if (process.env.VERCEL_ENV === 'production' && config.mode !== 'live') return false;
   if (!new RegExp(`^(?:sk|rk)_${config.mode}_[A-Za-z0-9]+$`).test(config.secretKey)) return false;
   return Boolean(normalizePublicOrigin(config.publicAppUrl));
 }
 
-async function createCustomer(input: Stripe.CustomerCreateParams, secretKey: string, idempotencyKey: string): Promise<{ id: string }> {
+export async function createStripeCustomer(input: Stripe.CustomerCreateParams, secretKey: string, idempotencyKey: string): Promise<{ id: string }> {
   const stripe = new Stripe(secretKey);
   return stripe.customers.create(input, { idempotencyKey });
 }
 
-async function bindCustomer(companyId: string, customerId: string): Promise<void> {
+export async function bindStripeCustomer(companyId: string, customerId: string): Promise<void> {
   const { service } = supabaseClients();
   const { error } = await service.rpc('app_bind_stripe_customer', {
     p_company_id: companyId,
@@ -129,10 +131,10 @@ async function bindCustomer(companyId: string, customerId: string): Promise<void
   if (error) throw new BillingHttpError('BILLING_CUSTOMER_BIND_FAILED', 502);
 }
 
-async function createSession(input: StripeCheckoutInput, secretKey: string, idempotencyKey: string): Promise<{ url: string | null }> {
+export async function createStripeCheckoutSession(input: StripeCheckoutInput, secretKey: string, idempotencyKey: string): Promise<{ id: string; url: string | null; status: Stripe.Checkout.Session.Status | null }> {
   const stripe = new Stripe(secretKey);
   const session = await stripe.checkout.sessions.create(input, { idempotencyKey });
-  return { url: session.url };
+  return { id: session.id, url: session.url, status: session.status };
 }
 
 function requestId(headers: CheckoutRequest['headers'] = {}): string {
@@ -162,7 +164,7 @@ export function createStripeCheckoutHandler(dependencies: CheckoutDependencies) 
 
     try {
       const config = dependencies.config();
-      if (!validConfig(config)) throw new BillingHttpError('BILLING_NOT_CONFIGURED', 503);
+      if (!validBillingConfig(config)) throw new BillingHttpError('BILLING_NOT_CONFIGURED', 503);
       const owner = await dependencies.authorizeOwner(request);
       const operationId = requestId(request.headers);
       const priceId = priceFor(config, owner.plan);
@@ -210,4 +212,10 @@ export function createStripeCheckoutHandler(dependencies: CheckoutDependencies) 
   };
 }
 
-export default createStripeCheckoutHandler({ authorizeOwner, createCustomer, bindCustomer, createSession, config: readBillingConfig });
+export default createStripeCheckoutHandler({
+  authorizeOwner,
+  createCustomer: createStripeCustomer,
+  bindCustomer: bindStripeCustomer,
+  createSession: async (input, key, idempotencyKey) => createStripeCheckoutSession(input, key, idempotencyKey),
+  config: readBillingConfig,
+});
