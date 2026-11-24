@@ -37,6 +37,7 @@ try {
     return route.continue();
   });
   await page.goto(`${preview}/login`);
+  await page.getByRole('heading', { name: 'Přihlášení do StavbaFlow' }).waitFor();
   const response = page.waitForResponse(result => result.request().postData()?.includes(message) && result.url().includes('/envelope/'),
     { timeout: 15_000 });
   await page.evaluate(value => setTimeout(() => { throw new Error(value); }, 0), message);

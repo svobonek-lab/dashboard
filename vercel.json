@@ -20,7 +20,8 @@
       "codex/public-intake-acceptance": false,
       "codex/managed-cloud-pilot-offer": false,
       "codex/staging-recovery-and-alert-evidence": false,
-      "codex/one-time-checkout-lead-webhook": false
+      "codex/one-time-checkout-lead-webhook": false,
+      "codex/recovery-provider-evidence": false
     }
   },
   "crons": [
