@@ -1,1 +1,1 @@
-export { startBillingPortal, startSubscriptionCheckout } from './api/billingClient';
+export { startBillingPortal, startSetupFeeCheckout, startSubscriptionCheckout } from './api/billingClient';

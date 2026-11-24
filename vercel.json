@@ -19,7 +19,8 @@
       "codex/lead-write-evidence": false,
       "codex/public-intake-acceptance": false,
       "codex/managed-cloud-pilot-offer": false,
-      "codex/staging-recovery-and-alert-evidence": false
+      "codex/staging-recovery-and-alert-evidence": false,
+      "codex/one-time-checkout-lead-webhook": false
     }
   },
   "crons": [
@@ -39,6 +40,10 @@
     {
       "source": "/api/stripe-checkout",
       "destination": "/api/billing?route=checkout"
+    },
+    {
+      "source": "/api/stripe-setup-checkout",
+      "destination": "/api/billing?route=setup-checkout"
     },
     {
       "source": "/api/stripe-webhook",

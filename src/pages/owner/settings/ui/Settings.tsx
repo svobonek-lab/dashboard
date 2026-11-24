@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Bell, Building2, Check, CreditCard, Image as ImageIcon, Mail, MapPin, Phone, Save, Upload } from 'lucide-react';
 import { useOrganization } from '@/entities/session';
 import { canManageCompany } from '@/shared/model/permissions';
-import { startBillingPortal } from '@/features/manage-billing';
+import { startBillingPortal, startSetupFeeCheckout } from '@/features/manage-billing';
 import { crmRepo } from '@/shared/api/crm-repository';
 import { CompanyDataExport } from '@/features/export-company-data';
 
@@ -14,6 +14,10 @@ export const OwnerSettingsPage: React.FC = () => {
   const [state, setState] = useState<{ kind: 'idle' | 'saving' | 'success' | 'error'; message?: string }>({ kind: 'idle' });
   const [billingBusy, setBillingBusy] = useState(false);
   const [billingError, setBillingError] = useState('');
+  const [setupBusy, setSetupBusy] = useState(false);
+  const [setupError, setSetupError] = useState('');
+  const [setupModalOpen, setSetupModalOpen] = useState(false);
+  const setupConfirmRef = useRef<HTMLButtonElement>(null);
   const [byodbMode, setByodbMode] = useState(false);
   const [storageModeLoading, setStorageModeLoading] = useState(true);
   const [storageModeError, setStorageModeError] = useState(false);
@@ -58,6 +62,10 @@ export const OwnerSettingsPage: React.FC = () => {
       .catch(() => setProviderConfigured(false));
   }, []);
 
+  useEffect(() => {
+    if (setupModalOpen) setupConfirmRef.current?.focus();
+  }, [setupModalOpen]);
+
   const save = async (event: React.FormEvent) => {
     event.preventDefault();
     if (!canManageCompany(dbUser?.role) || !currentOrg?.id) { setState({ kind: 'error', message: 'Firemní profil může upravit pouze majitel firmy.' }); return; }
@@ -86,6 +94,18 @@ export const OwnerSettingsPage: React.FC = () => {
     catch (error) { setBillingError(error instanceof Error ? error.message : 'Správu plateb se nepodařilo otevřít.'); setBillingBusy(false); }
   };
 
+  const startSetupPayment = async () => {
+    if (setupBusy) return;
+    setSetupBusy(true);
+    setSetupError('');
+    try {
+      await startSetupFeeCheckout();
+    } catch (error) {
+      setSetupError(error instanceof Error ? error.message : 'Platební stránku se nepodařilo otevřít.');
+      setSetupBusy(false);
+    }
+  };
+
   return (
     <div className="workspace-page mx-auto max-w-4xl">
       <header className="workspace-page-header"><div><p className="workspace-kicker">Nastavení firmy</p><h1 className="workspace-title">Firemní profil</h1><p className="workspace-subtitle">Údaje používané v pracovním prostoru a při komunikaci se zákazníkem.</p></div></header>
@@ -98,7 +118,14 @@ export const OwnerSettingsPage: React.FC = () => {
       {byodbMode && <div role="status" className="rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-800">Firemní údaje se načítají ze zdrojové databáze a její schválené mapy. Název a kontakty ukládáme tam; barvu, logo a e-mailová upozornění lze upravovat v režimu Managed Cloud.</div>}
       <section className="workspace-panel flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between sm:p-7">
         <div className="flex items-start gap-3"><span className="rounded-xl bg-blue-50 p-2 text-blue-700"><CreditCard className="h-5 w-5" /></span><div><h2 className="text-sm font-semibold text-slate-950">Předplatné a fakturace</h2><p className="mt-1 text-xs leading-5 text-slate-500">Stav: {currentOrg?.subscription_status || 'nenastaveno'}, Tarif: {currentOrg?.plan || 'nenastaveno'}</p>{billingError && <p role="alert" className="mt-2 text-xs font-semibold text-rose-700">{billingError}</p>}</div></div>
-        <button type="button" disabled={billingBusy} onClick={openBillingPortal} className="workspace-secondary-action min-h-11 px-4 text-sm font-semibold disabled:opacity-60">{billingBusy ? 'Otevírám…' : 'Spravovat platbu'}</button>
+        <div className="flex flex-wrap gap-2">
+          {dbUser?.role === 'owner' && currentOrg?.subscription_status === 'not_configured' && (
+            <button type="button" onClick={() => { setSetupError(''); setSetupModalOpen(true); }} className="workspace-primary-action min-h-11 px-4 text-sm font-semibold">
+              Aktivovat / upgradovat tarif · 4 900 Kč
+            </button>
+          )}
+          <button type="button" disabled={billingBusy} onClick={openBillingPortal} className="workspace-secondary-action min-h-11 px-4 text-sm font-semibold disabled:opacity-60">{billingBusy ? 'Otevírám…' : 'Spravovat platbu'}</button>
+        </div>
       </section>
       <form onSubmit={save} className="workspace-panel space-y-7 p-5 sm:p-7">
         <section>
@@ -134,6 +161,32 @@ export const OwnerSettingsPage: React.FC = () => {
         <div className="flex justify-end border-t border-slate-100 pt-6"><button type="submit" disabled={state.kind === 'saving' || storageModeLoading || storageModeError || storageModeCompanyId !== (currentOrg?.id ?? null)} className="workspace-primary-action inline-flex min-h-11 items-center justify-center gap-2 px-5 text-sm font-semibold disabled:opacity-60"><Save className="h-4 w-4" />{state.kind === 'saving' ? 'Ukládám…' : storageModeLoading ? 'Ověřuji režim…' : 'Uložit profil'}</button></div>
       </form>
       {currentOrg && <CompanyDataExport companyId={currentOrg.id} role={dbUser?.role} />}
+      {setupModalOpen && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/55 p-4" onClick={() => !setupBusy && setSetupModalOpen(false)}>
+          <section
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="setup-fee-title"
+            tabIndex={-1}
+            onKeyDown={(event) => { if (event.key === 'Escape' && !setupBusy) setSetupModalOpen(false); }}
+            onClick={(event) => event.stopPropagation()}
+            className="w-full max-w-lg rounded-3xl border border-slate-200 bg-white p-6 shadow-2xl sm:p-8"
+          >
+            <p className="text-xs font-bold uppercase tracking-[0.14em] text-blue-700">Jednorázová aktivace</p>
+            <h2 id="setup-fee-title" className="mt-2 text-2xl font-black tracking-tight text-slate-950">Aktivovat StavbaFlow</h2>
+            <p className="mt-3 text-sm leading-6 text-slate-600">Zřízení a aktivace firemního prostoru za pevnou cenu 4 900 Kč. Platba se neopakuje automaticky. Přístup se zapne až po potvrzení zaplacení od Stripe.</p>
+            <div className="mt-5 flex items-end justify-between rounded-2xl border border-slate-200 bg-slate-50 p-4">
+              <span className="text-sm font-semibold text-slate-700">Jednorázově</span>
+              <strong className="text-2xl font-black tabular-nums text-slate-950">4 900 Kč</strong>
+            </div>
+            {setupError && <p role="alert" className="mt-4 rounded-xl border border-rose-200 bg-rose-50 px-3.5 py-3 text-sm font-medium text-rose-700">{setupError}</p>}
+            <div className="mt-6 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+              <button type="button" disabled={setupBusy} onClick={() => setSetupModalOpen(false)} className="workspace-secondary-action min-h-11 px-4 text-sm font-semibold disabled:opacity-60">Zpět</button>
+              <button ref={setupConfirmRef} type="button" disabled={setupBusy} onClick={() => void startSetupPayment()} className="workspace-primary-action min-h-11 px-5 text-sm font-semibold disabled:cursor-wait disabled:opacity-60">{setupBusy ? 'Otevírám Stripe…' : 'Pokračovat k platbě'}</button>
+            </div>
+          </section>
+        </div>
+      )}
     </div>
   );
 };
