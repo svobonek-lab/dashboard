@@ -5,13 +5,13 @@ import test from 'node:test';
 const landing = readFileSync(new URL('../src/pages/public/landing/ui/LandingPage.tsx', import.meta.url), 'utf8');
 const loginPage = readFileSync(new URL('../src/pages/auth/login/ui/LoginPage.tsx', import.meta.url), 'utf8');
 
-test('unaccepted production capabilities are visibly outside the pilot', () => {
-  const heading = landing.indexOf('Mimo první pilot');
+test('unaccepted production capabilities are visibly outside the offer', () => {
+  const heading = landing.indexOf('Co nabídka nezahrnuje');
   const scope = landing.slice(heading, landing.indexOf('</ul>', heading));
   assert.ok(heading >= 0);
   for (const feature of ['CSV import', 'AI zpracování e-mailů', 'BYODB']) {
     const line = scope.split('\n').find(item => item.includes(feature));
-    assert.ok(line?.includes('nejsou součástí prvního pilotu'));
+    assert.ok(line?.includes('nejsou součástí nabídky'));
   }
   assert.match(scope, /Poznámky, přílohy a historie změn čekají na produkční uvolnění/);
 });
@@ -31,9 +31,8 @@ test('landing claim changelog records unsupported features and illustrative calc
   assert.match(changelog, /Ověřený firemní pilot/);
 });
 
-test('the workflow is presented as a pilot scenario, without claiming production acceptance', () => {
-  assert.match(landing, /Plánovaný scénář pilotu/i);
-  assert.match(landing, /před vložením zákaznických dat/i);
+test('the calculator stays clearly illustrative and does not promise production results', () => {
+  assert.match(landing, /orientační scénář založený na vámi zadaných předpokladech/i);
   assert.doesNotMatch(landing, /Změny se zapíšou do historie|Začínáme bezpečným CSV importem|Ověřený pracovní tok/i);
 });
 
@@ -45,13 +44,14 @@ test('landing visibly marks IČO, legal address and VOP incomplete until explici
   assert.match(landing, /VITE_COMPANY_VOP_APPROVED/);
 });
 
-test('the single pilot offer covers commercial terms without promising unavailable checkout', () => {
+test('the monthly free trial offer covers its terms without promising unavailable checkout', () => {
   const pricing = landing.slice(landing.indexOf('id="cenik"'), landing.indexOf('{/* 7. FAQ'));
-  assert.match(pricing, /30denní Managed Cloud pilot s osobním zřízením/);
-  for (const label of ['Cena za 30 dní a režim DPH', 'Jednorázové zřízení', 'Počet uživatelů', 'Soubory a limity', 'Podpora a reakční doba', 'Export dat', 'Ukončení pilotu']) {
+  assert.match(pricing, /30 dní zdarma, potom měsíční předplatné/);
+  assert.match(pricing, /Zřízení je bez poplatku/);
+  for (const label of ['Cena předplatného', 'Zřízení', 'Počet uživatelů', 'Soubory a limity', 'Podpora a reakční doba', 'Export dat', 'Ukončení předplatného']) {
     assert.ok(pricing.includes(label));
   }
-  assert.match(pricing, /Domluvit 30denní pilot/);
+  assert.match(pricing, /Domluvit ukázku/);
   assert.doesNotMatch(pricing, /register-paid|Vybrat tarif|Domluvit tarif/);
 });
 

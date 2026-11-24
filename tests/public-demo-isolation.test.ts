@@ -11,14 +11,18 @@ const ownerDashboard = readFileSync(new URL('../src/widgets/owner-dashboard/ui/O
 const kanban = readFileSync(new URL('../src/features/manage-leads/ui/LeadsKanban.tsx', import.meta.url), 'utf8');
 const companySwitcher = readFileSync(new URL('../src/widgets/company-switcher/ui/CompanySwitcher.tsx', import.meta.url), 'utf8');
 
-test('public demo is static, read-only and sourced from the shared demo fixture', () => {
+test('public demo is interactive, uses synthetic leads and keeps edits in local page state', () => {
   assert.match(state, /PUBLIC_DEMO_LEADS/);
-  assert.match(workspace, /pouze pro čtení/i);
-  assert.doesNotMatch(workspace, /OwnerLayout/);
+  assert.match(workspace, /OwnerLayout/);
+  assert.match(workspace, /demoMode/);
   assert.match(workspace, /aria-label="Public demo"/);
   assert.match(workspace, /OwnerDashboard/);
   assert.match(workspace, /LeadsKanban/);
-  assert.match(workspace, /readOnly/);
+  assert.match(workspace, /LeadDetail/);
+  assert.match(workspace, /onAddLead={addDemoLead}/);
+  assert.match(workspace, /onUpdateLeadStatus={updateDemoStatus}/);
+  assert.match(workspace, /onAddDemoNote/);
+  assert.match(workspace, /onUpdateDemoStatus={updateDemoStatus}/);
   assert.match(ownerDashboard, /!readOnly &&/);
   assert.doesNotMatch(workspace, /localStorage|createDemoLead|moveDemoLead|setLeads|saveCompany/);
   assert.doesNotMatch(workspace, /owner-demo|od-banner|od-board/);

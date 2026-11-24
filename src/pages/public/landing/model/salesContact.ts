@@ -37,7 +37,7 @@ export function getSalesContactMode(env: SalesContactEnv): SalesContactMode {
 }
 
 export function buildSalesContact(targetEmail: string, draft: SalesContactDraft): string {
-  const subject = `StavbaFlow pilot – ${draft.company.trim() || draft.name.trim()}`;
+  const subject = `StavbaFlow – zkušební období pro ${draft.company.trim() || draft.name.trim()}`;
   const body = [
     `Jméno: ${draft.name.trim()}`,
     `Firma: ${draft.company.trim()}`,
@@ -45,7 +45,7 @@ export function buildSalesContact(targetEmail: string, draft: SalesContactDraft)
     `E-mail: ${draft.email.trim()}`,
     `Preferovaný termín: ${draft.preferredTime.trim()}`,
     '',
-    'Mám zájem domluvit 30denní Managed Cloud pilot StavbaFlow s osobním zřízením.'
+    'Mám zájem o 30denní zkušební období StavbaFlow a následné měsíční předplatné bez poplatku za zřízení.'
   ].join('\n');
 
   return `mailto:${targetEmail}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;

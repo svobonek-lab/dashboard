@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { buildSalesContact, getSalesContactMode } from '../src/pages/public/landing';
+import { pilotTerms } from '../src/pages/public/landing/model/pilotOffer.ts';
 import { readFileSync } from 'node:fs';
 
 const landing = readFileSync(new URL('../src/pages/public/landing/ui/LandingPage.tsx', import.meta.url), 'utf8');
@@ -30,7 +31,7 @@ test('email contact prepares an honest draft and does not claim delivery', () =>
   assert.match(decodeURIComponent(contact), /Úterý 13:00/);
 });
 
-test('landing offers one managed pilot and never fakes a booking', () => {
+test('landing presents the monthly free trial and never fakes a booking', () => {
   assert.doesNotMatch(landing, /submit_demo_booking/);
   assert.doesNotMatch(landing, /stavbacore_demo_bookings/);
   assert.doesNotMatch(landing, /Termín ukázky je zarezervován/);
@@ -38,12 +39,12 @@ test('landing offers one managed pilot and never fakes a booking', () => {
   assert.doesNotMatch(landing, /Klient schválí položkový rozpočet/);
   assert.doesNotMatch(landing, /Terén zapisuje materiál a hodiny/);
   assert.doesNotMatch(landing, /Cena tarifu Growth/);
-  assert.match(landing, /Zákazník odešle poptávku/);
-  assert.match(landing, /Majitel ji přidělí/);
-  assert.match(landing, /30denní Managed Cloud pilot s osobním zřízením/);
+  assert.match(landing, /30 dní zdarma, potom měsíční předplatné/);
+  assert.equal(pilotTerms.price, 'Prvních 30 dní zdarma. Poté 1 990 Kč měsíčně bez DPH.');
+  assert.match(landing, /Zřízení je bez poplatku/);
   assert.match(landing, /Odeslání dokončete ve své e-mailové aplikaci/);
   assert.doesNotMatch(landing, /ověřeného 30denního pilotu/i);
-  assert.match(landing, /Přímé SQL\/ERP propojení[^<]*nejsou součástí prvního pilotu/);
+  assert.match(landing, /Přímé SQL\/ERP propojení[^<]*nejsou součástí nabídky/);
   assert.match(landing, /Veřejná kontaktní adresa/);
   assert.match(landing, /legal-identity-placeholder/);
 });

@@ -163,7 +163,7 @@ export const LandingPage: React.FC = () => {
           <nav className="hidden lg:flex items-center gap-4 xl:gap-6 text-sm font-semibold text-slate-700">
             <a href="#jak-to-funguje" className="hover:text-blue-600 transition-colors">Jak to funguje</a>
             <a href="#kalkulacka" className="hover:text-blue-600 transition-colors">Model přínosu</a>
-            <a href="#cenik" className="hover:text-blue-600 transition-colors">Nabídka pilotu</a>
+            <a href="#cenik" className="hover:text-blue-600 transition-colors">Cena</a>
           </nav>
 
           <div data-testid="landing-header-actions" className="flex shrink-0 items-center gap-2 sm:gap-3">
@@ -177,10 +177,10 @@ export const LandingPage: React.FC = () => {
             </button>
             <button
               onClick={openPilotContact}
-              aria-label="Domluvit pilot StavbaFlow"
+              aria-label="Domluvit ukázku StavbaFlow"
               className="min-h-11 min-w-11 px-4 max-[359px]:px-2 py-2 bg-[#2563EB] hover:bg-blue-700 text-white rounded-xl text-sm font-semibold shadow-xs hover:shadow-md transition-all"
             >
-              <span className="max-[359px]:hidden">Domluvit pilot</span>
+              <span className="max-[359px]:hidden">Domluvit ukázku</span>
               <Calendar aria-hidden="true" className="mx-auto hidden h-4 w-4 max-[359px]:block" />
             </button>
           </div>
@@ -200,8 +200,8 @@ export const LandingPage: React.FC = () => {
           <h1>Na stavbě máte dost práce.<br />Mějte jasno i v zakázkách.</h1>
           <p>Poptávky, lidé a rozpracované zakázky na jednom místě. Od prvního telefonu po dokončenou práci víte, kdo má co na starosti.</p>
           <div className="sf-sales-actions">
-            <button type="button" onClick={openPilotContact}>Domluvit pilot</button>
-            {DEMO_DESTINATION.url && <a href={DEMO_DESTINATION.url}>Zobrazit ukázkovou firmu</a>}
+            <button type="button" onClick={openPilotContact}>Domluvit ukázku</button>
+            {DEMO_DESTINATION.url && <a href={DEMO_DESTINATION.url}>Otevřít demo</a>}
           </div>
           <span className="sf-sales-note">Pro majitele v kanceláři i tým v terénu.</span>
         </div>
@@ -226,11 +226,11 @@ export const LandingPage: React.FC = () => {
         <div id="problemy" className="mx-auto grid max-w-7xl gap-8 px-4 py-12 sm:px-6 sm:py-16 lg:grid-cols-[0.95fr_1.05fr] lg:gap-12 lg:px-8">
           <div>
             <h2 className="text-2xl font-semibold tracking-tight text-slate-950 sm:text-3xl">Jak firma zpracuje poptávku</h2>
-            <p className="mt-3 max-w-sm text-slate-600">Plánovaný scénář pilotu vede od první poptávky po změnu stavu. Dostupný rozsah prověříme před vložením zákaznických dat.</p>
+            <p className="mt-3 max-w-sm text-slate-600">Zapište poptávku, přiřaďte odpovědného kolegu a sledujte její stav v průběhu práce.</p>
           </div>
           <ol className="divide-y divide-slate-200 border-y border-slate-200">
             {[
-              ['Zákazník odešle poptávku', 'V pilotu navrhujeme začít u formuláře na webu firmy.'],
+              ['Majitel zapíše poptávku', 'Novou poptávku přidá do firemního prostoru.'],
               ['Majitel ji přidělí', 'Vybere odpovědného pracovníka.'],
               ['Pracovník aktualizuje stav', 'Cílem je přehled o zpracování přidělené zakázky.'],
             ].map(([title, description], index) => (
@@ -362,8 +362,8 @@ export const LandingPage: React.FC = () => {
               <label className="block text-sm">O kolik méně administrativy předpokládáte ({timeSavedPercent} %)
                 <input type="range" min="0" max="100" value={timeSavedPercent} onChange={e => setTimeSavedPercent(Number(e.target.value))} className="mt-2 block w-full accent-blue-400" />
               </label>
-              <label className="block text-sm">Celkové náklady na pilot a zřízení (Kč, volitelné)
-                <input type="number" min="0" step="any" inputMode="decimal" value={scenarioCost} onChange={e => setScenarioCost(e.target.value)} placeholder="Zadejte částku z nabídky" className="mt-2 w-full rounded-xl border border-slate-600 bg-slate-800 px-3 py-2 text-base text-white" />
+              <label className="block text-sm">Měsíční cena předplatného (Kč, volitelné)
+                <input type="number" min="0" step="any" inputMode="decimal" value={scenarioCost} onChange={e => setScenarioCost(e.target.value)} placeholder="Zadejte měsíční cenu" className="mt-2 w-full rounded-xl border border-slate-600 bg-slate-800 px-3 py-2 text-base text-white" />
               </label>
               <dl className="grid gap-2 border-t border-slate-700 pt-4 text-sm">
                 <div className="flex flex-wrap justify-between gap-x-3"><dt>Hrubá marže navíc před náklady</dt><dd className="font-semibold">{scenario.extraMargin.toLocaleString('cs-CZ')} Kč</dd></div>
@@ -371,29 +371,29 @@ export const LandingPage: React.FC = () => {
                 <div className="flex flex-wrap justify-between gap-x-3"><dt>Ilustrativní návratnost</dt><dd className="font-semibold">{scenario.roiPercent === null ? 'Zadejte náklady' : `${scenario.roiPercent.toLocaleString('cs-CZ')} %`}</dd></div>
               </dl>
               <p className="text-sm leading-6 text-slate-300">Ilustrativní výpočet s orientačními hodnotami. Návratnost je marže navíc po odečtení zadaných nákladů, dělená těmito náklady. Časovou úsporu do návratnosti nezapočítáváme.</p>
-              <button type="button" onClick={openPilotContact} className="min-h-12 w-full rounded-xl bg-blue-600 px-4 py-3 text-sm font-semibold text-white hover:bg-blue-700">Probrat předpoklady pilotu</button>
+              <button type="button" onClick={openPilotContact} className="min-h-12 w-full rounded-xl bg-blue-600 px-4 py-3 text-sm font-semibold text-white hover:bg-blue-700">Probrat cenu předplatného</button>
             </section>
           </div>
         </div>
       </section>
 
-      {/* Pilot offer */}
+      {/* Subscription offer */}
       <section id="cenik" className="mx-auto max-w-6xl scroll-mt-20 px-4 py-16 sm:px-6 lg:px-8">
         <article className="grid gap-8 rounded-3xl border border-slate-200 bg-white p-5 shadow-sm sm:p-8 lg:grid-cols-[1fr_1.1fr] lg:p-10">
           <div>
-            <h2 className="text-2xl font-semibold tracking-tight text-slate-950 sm:text-3xl">30denní Managed Cloud pilot s osobním zřízením</h2>
-            <p className="mt-4 max-w-lg leading-7 text-slate-600">Společně vybereme jeden pracovní postup a domluvíme zřízení firemního prostoru v cloudu. Před zahájením dostanete nabídku s cenou, rozsahem a pravidly ukončení.</p>
-            <button type="button" onClick={openPilotContact} className="mt-6 min-h-12 rounded-xl bg-blue-600 px-5 py-3 text-sm font-semibold text-white hover:bg-blue-700">Domluvit 30denní pilot</button>
+            <h2 className="text-2xl font-semibold tracking-tight text-slate-950 sm:text-3xl">30 dní zdarma, potom měsíční předplatné</h2>
+            <p className="mt-4 max-w-lg leading-7 text-slate-600">Vyzkoušejte přehled poptávek, přiřazení odpovědnosti a sledování jejich stavu. Zřízení je bez poplatku. Před aktivací společně potvrdíme rozsah, datum prvního účtování a podmínky ukončení.</p>
+            <button type="button" onClick={openPilotContact} className="mt-6 min-h-12 rounded-xl bg-blue-600 px-5 py-3 text-sm font-semibold text-white hover:bg-blue-700">Domluvit ukázku</button>
           </div>
           <dl className="divide-y divide-slate-200 border-y border-slate-200 text-sm">
             {([
-              ['Cena za 30 dní a režim DPH', pilotTerms.price],
-              ['Jednorázové zřízení', pilotTerms.setup],
+              ['Cena předplatného', pilotTerms.price],
+              ['Zřízení', pilotTerms.setup],
               ['Počet uživatelů', pilotTerms.users],
               ['Soubory a limity', pilotTerms.files],
               ['Podpora a reakční doba', pilotTerms.support],
               ['Export dat', pilotTerms.export],
-              ['Ukončení pilotu', pilotTerms.exit],
+              ['Ukončení předplatného', pilotTerms.exit],
             ] as const).map(([label, value]) => (
               <div className="grid gap-1 py-3 sm:grid-cols-[1fr_1.3fr] sm:gap-3" key={label}>
                 <dt className="font-semibold text-slate-950">{label}</dt>
@@ -403,11 +403,11 @@ export const LandingPage: React.FC = () => {
           </dl>
         </article>
         <details className="mt-6 max-w-4xl text-sm leading-6 text-slate-600">
-          <summary className="cursor-pointer font-semibold text-slate-900">Mimo první pilot</summary>
+          <summary className="cursor-pointer font-semibold text-slate-900">Co nabídka nezahrnuje</summary>
           <p className="mt-2">Tyto části zatím nejsou součástí obchodního slibu:</p>
           <ul className="mt-2 grid gap-x-8 gap-y-1 sm:grid-cols-2">
-            <li>CSV import a AI zpracování e-mailů nejsou součástí prvního pilotu.</li>
-            <li>Přímé SQL/ERP propojení ani provoz nad vlastní databází (BYODB) nejsou součástí prvního pilotu.</li>
+            <li>Automatický CSV import a AI zpracování e-mailů nejsou součástí nabídky.</li>
+            <li>Přímé SQL/ERP propojení ani provoz nad vlastní databází (BYODB) nejsou součástí nabídky.</li>
             <li>Poznámky, přílohy a historie změn čekají na produkční uvolnění.</li>
           </ul>
         </details>
@@ -418,28 +418,28 @@ export const LandingPage: React.FC = () => {
         <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
           <div className="text-center space-y-1">
             <span className="text-[13px] font-semibold text-slate-600">Časté otázky</span>
-            <h2 className="text-2xl sm:text-3xl font-black text-slate-900">Časté otázky k pilotu StavbaFlow</h2>
+            <h2 className="text-2xl sm:text-3xl font-black text-slate-900">Časté otázky k předplatnému StavbaFlow</h2>
           </div>
 
           <div className="space-y-4 text-sm">
             <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 space-y-1.5">
               <h4 className="flex items-start gap-2 font-black text-slate-900 text-sm"><HelpCircle aria-hidden="true" className="mt-0.5 h-4 w-4 shrink-0 text-blue-700" /><span>Jak dostaneme do systému současná data?</span></h4>
               <p className="text-slate-600 leading-relaxed">
-                Před zřízením se domluvíme, která data jsou pro pilot potřeba. Automatický import CSV do nabídky zatím nezahrnujeme.
+                Poptávky lze do systému zadat ručně. Automatický import souborů CSV není součástí nabídky.
               </p>
             </div>
 
             <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 space-y-1.5">
               <h4 className="flex items-start gap-2 font-black text-slate-900 text-sm"><HelpCircle aria-hidden="true" className="mt-0.5 h-4 w-4 shrink-0 text-blue-700" /><span>Co zaměstnanec po přihlášení uvidí?</span></h4>
               <p className="text-slate-600 leading-relaxed">
-                Rozsah rolí a dostupných úkonů projdeme při domluvě pilotu. Demo ukazuje pohled majitele na syntetických datech.
+                Rozsah rolí a dostupných úkonů vám ukážeme před aktivací. Demo používá pouze syntetická data.
               </p>
             </div>
 
             <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 space-y-1.5">
               <h4 className="flex items-start gap-2 font-black text-slate-900 text-sm"><HelpCircle aria-hidden="true" className="mt-0.5 h-4 w-4 shrink-0 text-blue-700" /><span>Je systém připravený na přímé propojení s naší SQL databází?</span></h4>
               <p className="text-slate-600 leading-relaxed">
-                Pilot běží ve spravovaném cloudu. Přímé propojení s vaší databází do této nabídky nezahrnujeme.
+                Služba běží ve spravovaném cloudu. Přímé propojení s vaší databází do nabídky nezahrnujeme.
               </p>
             </div>
           </div>
@@ -460,7 +460,7 @@ export const LandingPage: React.FC = () => {
             <div className="flex flex-wrap gap-4 text-slate-400">
               <button onClick={() => navigate('/login')} className="hover:text-white transition-colors">Přihlášení</button>
               <button onClick={() => DEMO_DESTINATION.url && window.location.assign(DEMO_DESTINATION.url)} disabled={!DEMO_DESTINATION.url} title={DEMO_DESTINATION.error || 'Otevřít skutečné demo StavbaFlow'} className="hover:text-white transition-colors disabled:cursor-not-allowed disabled:opacity-50">Interaktivní demo</button>
-              <button onClick={openPilotContact} className="hover:text-white transition-colors">Kontakt k pilotu</button>
+              <button onClick={openPilotContact} className="hover:text-white transition-colors">Kontakt k nabídce</button>
               <button onClick={() => setActiveLegalModal('vop')} className="hover:text-white transition-colors">VOP</button>
               <button onClick={() => setActiveLegalModal('gdpr')} className="hover:text-white transition-colors">GDPR & Soukromí</button>
               <button onClick={() => setActiveLegalModal('dpa')} className="hover:text-white transition-colors">Zpracovatelská smlouva (DPA)</button>
@@ -576,10 +576,10 @@ export const LandingPage: React.FC = () => {
                     Nezávazná domluva
                   </span>
                   <h3 className="text-lg font-black text-slate-900 mt-0.5">
-                    Domluvit Managed Cloud pilot
+                    Domluvit zkušební období
                   </h3>
                   <p className="text-xs text-slate-500 mt-1">
-                    Probereme váš pracovní postup, rozsah pilotu a podmínky osobního zřízení.
+                    Ukážeme vám systém a potvrdíme cenu předplatného, datum prvního účtování a podmínky ukončení.
                   </p>
                 </div>
 

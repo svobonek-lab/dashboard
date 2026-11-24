@@ -1,12 +1,13 @@
-import React from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { OrganizationContext, type Organization, type OrganizationContextType } from '@/entities/session';
-import { LeadsKanban } from '@/features/manage-leads';
+import { LeadDetail, LeadsKanban } from '@/features/manage-leads';
 import { OwnerDashboard } from '../../../../widgets/owner-dashboard';
+import { OwnerLayout } from '@/widgets/workspace-shell';
 import { generateRealisticEmployees, PUBLIC_DEMO_COMPANY_NAME, PUBLIC_DEMO_LEADS, PUBLIC_DEMO_LEAD_STATES } from '@/features/public-demo';
 import { DEFAULT_DEMO_ORG_ID } from '@/shared/api/supabase';
 import { RouterProvider, useRouter } from '@/shared/lib/router';
 import type { CompanyBranding } from '@/entities/company';
-import type { Lead } from '@/entities/lead';
+import type { Lead, LeadStatus } from '@/entities/lead';
 import { normalizePublicOrigin } from '@/shared/lib/publicUrls';
 
 const landingOrigin = normalizePublicOrigin(import.meta.env.PUBLIC_LANDING_URL, Boolean(import.meta.env.DEV));
@@ -97,46 +98,92 @@ const DEMO_CONTEXT: OrganizationContextType = {
 
 const PublicDemoContent: React.FC = () => {
   const { pathname, navigate } = useRouter();
+  const [demoLeads, setDemoLeads] = useState<Lead[]>(() => DEMO_LEADS.map((lead) => ({ ...lead, history: [...lead.history] })));
+  const [selectedLeadId, setSelectedLeadId] = useState<string | null>(null);
+  const [demoNotes, setDemoNotes] = useState<Record<string, Array<{ id: string; body: string; createdAt: string }>>>({});
   const isKanban = pathname === '/demo/leads';
+  const isDashboard = pathname === '/demo' || pathname === '/demo/';
+  const selectedLead = useMemo(() => demoLeads.find((lead) => lead.id === selectedLeadId) || null, [demoLeads, selectedLeadId]);
+
+  useEffect(() => {
+    if (!isKanban) setSelectedLeadId(null);
+  }, [isKanban]);
+
+  const updateDemoLead = (patch: Partial<Lead> & Pick<Lead, 'id'>) => {
+    setDemoLeads((current) => current.map((lead) => {
+      if (lead.id !== patch.id) return lead;
+      const updated = { ...lead, ...patch };
+      return { ...updated, history: [{ id: `demo-event-${Date.now()}`, timestamp: new Date().toLocaleString('cs-CZ'), action: 'Údaje poptávky upraveny v ukázce', author: 'Ukázkový účet' }, ...lead.history] };
+    }));
+  };
+
+  const updateDemoStatus = (leadId: string, status: LeadStatus) => {
+    setDemoLeads((current) => current.map((lead) => lead.id === leadId
+      ? { ...lead, status, history: [{ id: `demo-event-${Date.now()}`, timestamp: new Date().toLocaleString('cs-CZ'), action: `Stav změněn na ${status}`, author: 'Ukázkový účet' }, ...lead.history] }
+      : lead));
+  };
+
+  const addDemoLead = (lead: Lead) => {
+    const syntheticLead = { ...lead, organization_id: DEMO_ORGANIZATION.id, id: `demo-new-${Date.now()}` };
+    setDemoLeads((current) => [syntheticLead, ...current]);
+    return syntheticLead;
+  };
+
+  const addDemoNote = (leadId: string, body: string) => {
+    setDemoNotes((current) => ({
+      ...current,
+      [leadId]: [{ id: `demo-note-${Date.now()}`, body, createdAt: new Date().toISOString() }, ...(current[leadId] || [])],
+    }));
+  };
 
   return (
     <div className="public-demo" aria-label="Public demo">
-      <p className="sr-only">Veřejné demo je pouze pro čtení a používá výhradně syntetická data.</p>
-      <header className="border-b border-slate-200 bg-white">
-        <div className="mx-auto flex min-h-16 max-w-7xl flex-wrap items-center justify-between gap-3 px-4 py-3 sm:px-6">
-          <a href="/" className="text-base font-bold tracking-tight text-slate-950">StavbaFlow demo</a>
-          <nav aria-label="Veřejné demo" className="flex items-center gap-2">
-            <button type="button" aria-current={!isKanban ? 'page' : undefined} onClick={() => navigate('/demo')} className="rounded-lg px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100">Přehled</button>
-            <button type="button" aria-current={isKanban ? 'page' : undefined} onClick={() => navigate('/demo/leads')} className="rounded-lg px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100">Poptávky</button>
-          </nav>
-          <div className="flex items-center gap-2">
-            {landingOrigin
-              ? <a href={`${landingOrigin}/`} className="rounded-lg px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100">Zpět na web</a>
-              : <a href="/" className="rounded-lg px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100">Opustit demo</a>}
-            <a href="/login" className="rounded-lg border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">Přihlásit se</a>
+      <p className="sr-only">Veřejné demo používá pouze syntetická data. Změny se ukládají jen do dočasného stavu této stránky.</p>
+      <OwnerLayout leads={demoLeads} onSelectLead={(lead) => { setSelectedLeadId(lead.id); navigate('/demo/leads'); }} demoMode>
+        <div className="mb-5 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-600">Ukázková data můžete upravovat. Změny zůstávají pouze v této ukázce a po obnovení stránky se vrátí do původního stavu.</div>
+        <section aria-label="Nabídka StavbaFlow" className="mb-5 flex flex-col gap-3 rounded-2xl border border-blue-200 bg-blue-50 p-4 text-blue-950 sm:flex-row sm:items-center sm:justify-between sm:px-5">
+          <div>
+            <p className="text-sm font-bold">30 dní zdarma · potom 1 990 Kč měsíčně bez DPH</p>
+            <p className="mt-1 text-sm">Zřízení bez poplatku. Měsíční předplatné pro firmu do 5 uživatelů.</p>
           </div>
-        </div>
-      </header>
-      <main className="mx-auto w-full max-w-7xl px-4 py-6 sm:px-6">
-        <div className="mb-5 rounded-xl border border-blue-100 bg-blue-50 px-4 py-3 text-sm text-blue-900">Veřejné demo · pouze syntetická data · pouze pro čtení</div>
+          {landingOrigin && <a href={`${landingOrigin}/#cenik`} className="inline-flex min-h-10 items-center justify-center rounded-lg bg-blue-700 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-800">Zobrazit nabídku</a>}
+        </section>
         {isKanban ? (
-          <LeadsKanban
-            leads={DEMO_LEADS}
-            onSelectLead={() => undefined}
-            onUpdateLeadStatus={() => undefined}
-            readOnly
+          selectedLead ? <LeadDetail
+            lead={selectedLead}
+            employees={DEMO_EMPLOYEES}
+            onBack={() => setSelectedLeadId(null)}
+            onOpenPhoto={() => undefined}
+            onOpenVoiceNotes={() => undefined}
+            onUpdateLead={updateDemoLead}
+            demoMode
+            demoNotes={demoNotes[selectedLead.id] || []}
+            onAddDemoNote={(body) => addDemoNote(selectedLead.id, body)}
+            onUpdateDemoStatus={updateDemoStatus}
+          /> : <LeadsKanban
+            leads={demoLeads}
+            onSelectLead={(lead) => setSelectedLeadId(lead.id)}
+            onUpdateLeadStatus={updateDemoStatus}
+            onAddLead={addDemoLead}
+            author="demo@stavbaflow.cz"
           />
-        ) : (
+        ) : isDashboard ? (
           <OwnerDashboard
             branding={DEMO_BRANDING}
-            leads={DEMO_LEADS}
+            leads={demoLeads}
             employees={DEMO_EMPLOYEES}
             readOnly
-            onSelectLead={() => navigate('/demo/leads')}
-            onNavigateTab={(tab) => navigate(tab === 'leads' ? '/demo/leads' : '/demo')}
+            onSelectLead={(lead) => { setSelectedLeadId(lead.id); navigate('/demo/leads'); }}
+            onNavigateTab={(tab) => navigate(tab === 'leads' ? '/demo/leads' : tab === 'dashboard' ? '/demo' : `/demo/${tab}`)}
           />
+        ) : (
+          <section className="workspace-panel p-6 sm:p-8">
+            <h1 className="text-xl font-bold text-text">Tato část není součástí veřejné ukázky</h1>
+            <p className="mt-2 max-w-2xl text-sm text-muted">V ukázce si můžete projít firemní přehled a poptávky. Ostatní položky menu jsou zde zobrazené kvůli náhledu rozhraní; jejich funkce vyžadují přihlášený firemní účet.</p>
+            <button type="button" onClick={() => navigate('/demo')} className="workspace-primary-action mt-5 inline-flex min-h-11 items-center justify-center px-4 text-sm font-semibold">Zpět na přehled</button>
+          </section>
         )}
-      </main>
+      </OwnerLayout>
     </div>
   );
 };

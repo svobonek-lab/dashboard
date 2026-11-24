@@ -6,14 +6,21 @@ import type { LeadNote, LeadStoredFile } from '../../../../shared/api/crm-reposi
 import { crmRepo } from '../../../../shared/api/crm-repository';
 import { canDeleteLeadAttachment, isLeadAttachmentsEnabled, loadLeadAttachmentLists, mergeScopedRows, resizeImageForUpload, visibleScopedRows } from '../../../lead-files';
 
-interface DocumentsTabProps { lead: Lead; onNotice?: (message: string) => void; }
+interface DemoLeadNote { id: string; body: string; createdAt: string; }
+interface DocumentsTabProps {
+  lead: Lead;
+  onNotice?: (message: string) => void;
+  demoMode?: boolean;
+  demoNotes?: DemoLeadNote[];
+  onAddDemoNote?: (body: string) => void;
+}
 
 const formatDate = (value: string) => new Intl.DateTimeFormat('cs-CZ', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(value));
 const formatSize = (bytes: number) => bytes < 1024 * 1024 ? `${Math.ceil(bytes / 1024)} kB` : `${(bytes / 1024 / 1024).toFixed(1)} MB`;
 
-export const DocumentsTab: React.FC<DocumentsTabProps> = ({ lead, onNotice = () => {} }) => {
+export const DocumentsTab: React.FC<DocumentsTabProps> = ({ lead, onNotice = () => {}, demoMode = false, demoNotes = [], onAddDemoNote }) => {
   const { dbUser } = useOrganization();
-  const attachmentsEnabled = isLeadAttachmentsEnabled(import.meta.env);
+  const attachmentsEnabled = !demoMode && isLeadAttachmentsEnabled(import.meta.env);
   const companyId = lead.organization_id || '';
   const scope = `${companyId}/${lead.id}`;
   const [noteState, setNoteState] = useState({ scope, rows: [] as LeadNote[] });
@@ -45,12 +52,23 @@ export const DocumentsTab: React.FC<DocumentsTabProps> = ({ lead, onNotice = () 
 
   useEffect(() => { if (attachmentsEnabled) void loadAttachments(); }, [attachmentsEnabled, loadAttachments]);
   useEffect(() => {
+    if (!attachmentsEnabled) return;
     const timer = window.setInterval(() => setNow(new Date()), 1000);
     return () => window.clearInterval(timer);
-  }, []);
+  }, [attachmentsEnabled]);
 
   const addNote = async (event: React.FormEvent) => {
     event.preventDefault(); setBusy(true); setError('');
+    if (demoMode) {
+      const body = noteBody.trim();
+      if (body) {
+        onAddDemoNote?.(body);
+        setNoteBody('');
+        onNotice('Poznámka se uložila v této ukázce.');
+      }
+      setBusy(false);
+      return;
+    }
     if (!attachmentsEnabled) { setBusy(false); return; }
     try {
       await crmRepo.addLeadNote(companyId, lead.id, noteBody);
@@ -86,6 +104,21 @@ export const DocumentsTab: React.FC<DocumentsTabProps> = ({ lead, onNotice = () 
     catch (removeError) { await loadAttachments(); setError(removeError instanceof Error ? removeError.message : 'Soubor se nepodařilo smazat.'); }
     finally { setBusy(false); }
   };
+
+  if (demoMode) return <section className="workspace-panel p-5 sm:p-7" aria-labelledby="lead-attachments-title">
+    <p className="workspace-kicker">Ukázkový deník</p>
+    <h2 id="lead-attachments-title" className="mt-1 text-base font-semibold text-slate-950">Poznámky k poptávce</h2>
+    <p className="mt-2 text-sm text-slate-600">Poznámky se ukládají jen dočasně v této ukázce.</p>
+    <form onSubmit={addNote} className="mt-5 space-y-3">
+      <label htmlFor="demo-lead-note" className="block text-xs font-semibold text-slate-700">Nová poznámka</label>
+      <textarea id="demo-lead-note" value={noteBody} onChange={(event) => setNoteBody(event.target.value)} rows={3} maxLength={1000} placeholder="Například: Zavolat zákazníkovi v úterý dopoledne" className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm" />
+      <button type="submit" disabled={!noteBody.trim() || busy} className="workspace-primary-action inline-flex min-h-10 items-center justify-center px-4 text-sm font-semibold disabled:opacity-50">Přidat poznámku</button>
+    </form>
+    <div className="mt-5 space-y-3">
+      {demoNotes.map((note) => <article key={note.id} className="rounded-xl border border-slate-200 bg-white p-4"><p className="whitespace-pre-wrap text-sm text-slate-700">{note.body}</p><time className="mt-2 block text-xs text-slate-400">{formatDate(note.createdAt)}</time></article>)}
+      {!demoNotes.length && <p className="rounded-xl bg-slate-50 p-4 text-center text-sm text-slate-500">Zatím bez poznámek.</p>}
+    </div>
+  </section>;
 
   if (!attachmentsEnabled) return <section className="workspace-panel p-5 sm:p-7" aria-labelledby="lead-attachments-title">
     <p className="workspace-kicker">Dokumentace zakázky</p>

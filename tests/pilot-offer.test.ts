@@ -6,11 +6,13 @@ import { estimatePilotScenario } from '../src/pages/public/landing/model/pilotOf
 const landing = readFileSync(new URL('../src/pages/public/landing/ui/LandingPage.tsx', import.meta.url), 'utf8');
 const demo = readFileSync(new URL('../src/pages/public/demo/ui/PublicDemoWorkspace.tsx', import.meta.url), 'utf8');
 
-test('landing and demo use the same fixture and the pilot has no inactive checkout CTA', () => {
+test('landing and interactive demo share the fixture and show the monthly free-trial offer', () => {
   assert.match(landing, /PUBLIC_DEMO_LEADS/);
   assert.match(demo, /PUBLIC_DEMO_LEADS/);
-  assert.match(landing, /30denní Managed Cloud pilot s osobním zřízením/);
-  assert.doesNotMatch(landing, /register-paid|Domluvit tarif|1\s*990\s*Kč|únor(?:&nbsp;|\s)+2027/);
+  assert.match(landing, /30 dní zdarma, potom měsíční předplatné/);
+  assert.match(demo, /30 dní zdarma/);
+  assert.match(demo, /1 990 Kč měsíčně/);
+  assert.doesNotMatch(landing, /register-paid|Domluvit tarif|únor(?:&nbsp;|\s)+2027/);
 });
 
 test('the illustration compares a chosen 30-day scenario and requires an entered price for ROI', () => {

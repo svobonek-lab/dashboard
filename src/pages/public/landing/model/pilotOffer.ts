@@ -1,11 +1,11 @@
 export const pilotTerms = {
-  price: '1 990 Kč celkem za 30 dní. Cena zahrnuje případnou DPH. Použitý režim uvedeme v nabídce před objednáním.',
-  setup: 'Osobní zřízení jedné firmy a úvodní zaškolení jsou v ceně.',
+  price: 'Prvních 30 dní zdarma. Poté 1 990 Kč měsíčně bez DPH.',
+  setup: 'Zřízení bez poplatku.',
   users: 'Až 5 uživatelů včetně majitele firmy.',
-  files: '0 příloh. Nahrávání souborů není součástí pilotu.',
+  files: 'Přílohy nejsou součástí nabídky.',
   support: 'E-mailem v pracovní dny. Cílová doba první odpovědi je do konce následujícího pracovního dne.',
-  export: 'Majitel si před koncem pilotu stáhne poptávky a seznam týmu jako CSV.',
-  exit: 'Přístup končí po 30 dnech. Pilot se automaticky neprodlužuje a další období se účtuje jen po nové dohodě.',
+  export: 'Majitel si může stáhnout poptávky a seznam týmu jako CSV.',
+  exit: 'Měsíční předplatné lze ukončit. Přesné datum ukončení a účtování potvrdíme před aktivací.',
 };
 
 export function estimatePilotScenario(input: {

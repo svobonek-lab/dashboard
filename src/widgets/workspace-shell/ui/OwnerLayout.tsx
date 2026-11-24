@@ -41,6 +41,7 @@ interface OwnerLayoutProps {
   onSelectLead?: (lead: Lead) => void;
   readOnlyMode?: 'support';
   onExitReadOnly?: () => void;
+  demoMode?: boolean;
 }
 
 export const OwnerLayout: React.FC<OwnerLayoutProps> = ({
@@ -49,6 +50,7 @@ export const OwnerLayout: React.FC<OwnerLayoutProps> = ({
   onSelectLead,
   readOnlyMode,
   onExitReadOnly,
+  demoMode = false,
 }) => {
   const { currentOrg } = useOrganization();
   const branding = currentOrg?.branding || {};
@@ -117,6 +119,7 @@ export const OwnerLayout: React.FC<OwnerLayoutProps> = ({
 
   // Keyboard shortcut listener for Command Palette (Cmd+K / Ctrl+K)
   useEffect(() => {
+    if (demoMode) return;
     const handleKeyDown = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
         e.preventDefault();
@@ -125,10 +128,14 @@ export const OwnerLayout: React.FC<OwnerLayoutProps> = ({
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, []);
+  }, [demoMode]);
 
   const supportBase = readOnlyMode === 'support' ? pathname.split('/').slice(0, 3).join('/') : '';
   const route = (path: string) => {
+    if (demoMode) {
+      const section = path.split('?')[0];
+      return section === '/dashboard' ? '/demo' : `/demo${section}`;
+    }
     if (readOnlyMode === 'support') return `${supportBase}${path}`;
     return path;
   };
@@ -313,13 +320,13 @@ export const OwnerLayout: React.FC<OwnerLayoutProps> = ({
                   {dbUser?.email || user?.email || 'Majitel CRM'}
                 </p>
                 <p className="text-[9px] font-semibold text-muted">
-                  {dbUser?.role === 'super_admin' || dbUser?.role === 'platform_admin' ? 'Správce platformy' : 'Majitel'}
+                  {demoMode ? 'Ukázkové konto' : dbUser?.role === 'super_admin' || dbUser?.role === 'platform_admin' ? 'Správce platformy' : 'Majitel'}
                 </p>
               </div>
             </div>
 
             {/* Logout and Settings Bottom Buttons */}
-            <div className="flex items-center justify-between border-t border-border/60 pt-2.5">
+            {!demoMode && <div className="flex items-center justify-between border-t border-border/60 pt-2.5">
               {!readOnlyMode && <button
                 onClick={() => {
                   setIsMobileDrawerOpen(false);
@@ -345,7 +352,8 @@ export const OwnerLayout: React.FC<OwnerLayoutProps> = ({
                 <LogOut className="w-3.5 h-3.5" />
                 <span>{readOnlyMode ? 'Vrátit se do Adminu' : 'Odhlásit'}</span>
               </button>
-            </div>
+            </div>}
+            {demoMode && <p className="border-t border-border/60 pt-2.5 text-[11px] text-muted">Veřejné demo · pouze ukázková data</p>}
           </div>
         </aside>
 
@@ -388,8 +396,9 @@ export const OwnerLayout: React.FC<OwnerLayoutProps> = ({
 
           {/* Right: Search */}
           <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+            {demoMode && <span className="rounded-full border border-border bg-surface-secondary px-2.5 py-1 text-[11px] font-medium text-muted">Ukázkový režim</span>}
             {/* Search Bar / Command Palette Trigger */}
-            {!readOnlyMode && <button
+            {!readOnlyMode && !demoMode && <button
               onClick={() => setIsCommandPaletteOpen(true)}
               className="hidden lg:flex items-center gap-3 w-72 bg-surface-secondary border border-border rounded-app px-3.5 py-1.5 text-xs text-muted hover:border-brand-primary transition-all text-left cursor-pointer"
             >
@@ -409,7 +418,7 @@ export const OwnerLayout: React.FC<OwnerLayoutProps> = ({
       </div>
 
       {/* Modals & Command Palette */}
-      {!readOnlyMode && <CommandPalette
+      {!readOnlyMode && !demoMode && <CommandPalette
         isOpen={isCommandPaletteOpen}
         onClose={() => setIsCommandPaletteOpen(false)}
         onNavigateTab={(tab) => {

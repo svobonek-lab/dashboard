@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { CheckCircle2, Clock3, Mail, MapPin, Phone, Save, UserRound } from 'lucide-react';
-import type { Lead } from '../../../entities/lead';
+import type { Lead, LeadStatus } from '../../../entities/lead';
 import type { Employee } from '../../../entities/employee';
 import { buildLeadAssignmentPatch } from '../../../entities/lead';
 import { DocumentsTab } from './lead-tabs/DocumentsTab';
@@ -16,6 +16,10 @@ interface LeadDetailProps {
   onUpdateLead: (updated: LeadUpdate) => Promise<unknown> | void;
   canManageAssignment?: boolean;
   canEditOperationalFields?: boolean;
+  demoMode?: boolean;
+  demoNotes?: Array<{ id: string; body: string; createdAt: string }>;
+  onAddDemoNote?: (body: string) => void;
+  onUpdateDemoStatus?: (leadId: string, status: LeadStatus) => void;
 }
 
 const statusLabel: Record<Lead['status'], string> = {
@@ -23,7 +27,7 @@ const statusLabel: Record<Lead['status'], string> = {
   'In Progress': 'V realizaci', Completed: 'Dokončeno', Lost: 'Nezískáno',
 };
 
-export const LeadDetail: React.FC<LeadDetailProps> = ({ lead, employees, onBack, onUpdateLead, canManageAssignment = true, canEditOperationalFields = false }) => {
+export const LeadDetail: React.FC<LeadDetailProps> = ({ lead, employees, onBack, onUpdateLead, canManageAssignment = true, canEditOperationalFields = false, demoMode = false, demoNotes = [], onAddDemoNote, onUpdateDemoStatus }) => {
   const [employeeId, setEmployeeId] = useState(lead.assignedEmployeeId || '');
   const [saveState, setSaveState] = useState<{ kind: 'idle' | 'saving' | 'success' | 'error'; text?: string }>({ kind: 'idle' });
   const activeEmployees = useMemo(() => employees.filter((employee) => employee.active !== false && employee.invitationStatus !== 'Disabled'), [employees]);
@@ -61,6 +65,8 @@ export const LeadDetail: React.FC<LeadDetailProps> = ({ lead, employees, onBack,
         </div>
       </header>
 
+      {demoMode && <label className="workspace-panel flex flex-col gap-2 p-4 text-sm font-semibold text-slate-700 sm:flex-row sm:items-center sm:justify-between">Stav poptávky<select value={lead.status} onChange={(event) => onUpdateDemoStatus?.(lead.id, event.target.value as LeadStatus)} className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 sm:w-64">{(Object.keys(statusLabel) as LeadStatus[]).map((status) => <option key={status} value={status}>{statusLabel[status]}</option>)}</select></label>}
+
       {saveState.kind === 'success' && <div role="status" className="flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-800"><CheckCircle2 className="h-4 w-4" />{saveState.text}</div>}
       {saveState.kind === 'error' && <div role="alert" className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-700">{saveState.text}</div>}
 
@@ -97,13 +103,13 @@ export const LeadDetail: React.FC<LeadDetailProps> = ({ lead, employees, onBack,
       </section>}
 
       <section className="workspace-panel p-5 sm:p-7">
-        <h2 className="text-base font-semibold text-slate-950">Uložená historie</h2>
+        <h2 className="text-base font-semibold text-slate-950">{demoMode ? 'Historie změn v ukázce' : 'Uložená historie'}</h2>
         <div className="mt-4 divide-y divide-slate-100">
           {(lead.history || []).map((event) => <div key={event.id} className="grid gap-1 py-3 text-sm sm:grid-cols-[150px_1fr_auto]"><time className="text-xs text-slate-400">{event.timestamp}</time><span className="font-medium text-slate-800">{event.action}</span><span className="text-xs text-slate-500">{event.author}</span></div>)}
           {!lead.history?.length && <p className="py-7 text-center text-sm text-slate-500">Zatím nejsou uložené žádné události.</p>}
         </div>
       </section>
-      <DocumentsTab lead={lead} />
+      <DocumentsTab lead={lead} demoMode={demoMode} demoNotes={demoNotes} onAddDemoNote={onAddDemoNote} />
     </div>
   );
 };
