@@ -29,6 +29,16 @@ begin
     raise exception 'setup payment activation RPC grants are incorrect';
   end if;
 
+  begin
+    perform public.app_apply_stripe_setup_payment_event(
+      'evt_setupwrongcustomer', '2026-11-24T11:59:59Z',
+      '10000000-0000-4000-8000-000000000001', 'cus_boundb', 'cs_test_wrongcustomer',
+      'paid', 490000, 'czk', 'setup-fee-4900-czk-v1'
+    );
+    raise exception 'customer bound to another company was accepted';
+  exception when sqlstate '23505' then null;
+  end;
+
   v_result := public.app_apply_stripe_setup_payment_event(
     'evt_setuppaid', '2026-11-24T12:00:00Z',
     '10000000-0000-4000-8000-000000000001', 'cus_setup1', 'cs_test_setup1',
@@ -61,16 +71,6 @@ begin
     );
     raise exception 'incorrect payment amount was accepted';
   exception when sqlstate '22023' then null;
-  end;
-
-  begin
-    perform public.app_apply_stripe_setup_payment_event(
-      'evt_setupwrongcustomer', '2026-11-24T12:00:03Z',
-      '10000000-0000-4000-8000-000000000001', 'cus_boundb', 'cs_test_wrongcustomer',
-      'paid', 490000, 'czk', 'setup-fee-4900-czk-v1'
-    );
-    raise exception 'customer bound to another company was accepted';
-  exception when sqlstate '23505' then null;
   end;
 
   v_result := public.app_apply_stripe_setup_payment_event(
