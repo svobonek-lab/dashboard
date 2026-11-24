@@ -25,7 +25,7 @@ These are equivalent alternatives, not two migrations to apply to the same datab
 
 ## Public lead webhook
 
-`POST /api/webhook/lead` accepts `company_slug`, `name`, `phone`, `email`, `service_type`, and `notes`. The tenant slug can be in the JSON body or in the `company_slug` query parameter; `public_key` is also accepted as an alias. The company must have its public form enabled.
+`POST /api/webhook/lead` accepts `company_slug`, `name`, `phone`, `email`, and `service_type`; `notes` is optional. The tenant slug can be in the JSON body or in the `company_slug` query parameter; `public_key` is also accepted as an alias. The company must have its public form enabled. Vercel rewrites this public path to the existing `/api/public-intake` function, so it does not consume an extra serverless function slot.
 
 ```json
 {
@@ -40,7 +40,7 @@ These are equivalent alternatives, not two migrations to apply to the same datab
 
 `name`, `phone`, and `service_type` are required; `email` and `notes` may be empty. An optional `request_key` or `idempotency_key` supports caller-controlled retries. If omitted, an opaque stable key is derived from the normalized fields. A filled `website` honeypot is acknowledged without a write.
 
-The route maps the payload to the existing public-intake handler rather than inserting directly into `app_leads`. That preserves slug-based tenant lookup, the five-submissions-per-IP-per-ten-minutes limit, idempotency, input bounds, and privacy-safe responses. CORS preflight permits forms hosted on other websites.
+The route maps the payload to the existing `app_submit_public_lead` service-role RPC rather than giving the public endpoint direct table access. That preserves slug-based tenant lookup, the five-submissions-per-IP-per-ten-minutes limit, idempotency, input bounds, and privacy-safe responses. CORS preflight permits forms hosted on other websites. Requests are capped at 16 KiB.
 
 ```js
 await fetch('https://app.example.cz/api/webhook/lead', {

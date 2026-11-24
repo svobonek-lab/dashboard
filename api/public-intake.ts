@@ -1,8 +1,14 @@
-import { createHmac } from 'node:crypto';
+import { createHash, createHmac } from 'node:crypto';
 import { isIP } from 'node:net';
 import { createServerlessSupabaseClient } from './_shared/supabaseClient.js';
 
 const FIELD_LIMITS = { customer: 120, phone: 30, email: 254, title: 120, description: 4_000, public_key: 120, request_key: 120 } as const;
+
+export const config = {
+  api: {
+    bodyParser: { sizeLimit: '16kb' },
+  },
+};
 
 type PublicIntakeInput = {
   publicKey: string;
@@ -59,6 +65,53 @@ function parseInput(body: unknown): Omit<PublicIntakeInput, 'clientIpHash'> | nu
   return { publicKey, requestKey, customer, phone, email, title, description, value: amount };
 }
 
+function queryValue(request: any, name: string, url: URL): string {
+  const queryValue = request.query?.[name];
+  const queryStringValue = Array.isArray(queryValue) ? queryValue[0] : queryValue;
+  if (typeof queryStringValue === 'string' && queryStringValue.trim()) return queryStringValue.trim();
+  return url.searchParams.get(name)?.trim() || '';
+}
+
+function isLeadWebhookRequest(request: any): boolean {
+  const url = new URL(request.url || '/', 'https://internal.invalid');
+  return url.pathname === '/api/webhook/lead' || url.searchParams.get('format') === 'lead-webhook';
+}
+
+function adaptLeadWebhookBody(request: any): Record<string, unknown> {
+  const body = request.body as Record<string, unknown> | null;
+  if (!body || typeof body !== 'object' || Array.isArray(body)) return {};
+  const url = new URL(request.url || '/', 'https://internal.invalid');
+  const bodyCompanySlug = body.company_slug ?? body.public_key;
+  const rawCompanySlug = bodyCompanySlug ?? (queryValue(request, 'company_slug', url) || queryValue(request, 'public_key', url));
+  const name = typeof body.name === 'string' ? body.name.trim() : '';
+  const phone = typeof body.phone === 'string' ? body.phone.trim() : '';
+  const email = typeof body.email === 'string' ? body.email.trim() : '';
+  const serviceType = typeof body.service_type === 'string' ? body.service_type.trim() : '';
+  const notes = typeof body.notes === 'string' ? body.notes.trim() : '';
+  if (typeof rawCompanySlug !== 'string' || !/^[a-z0-9][a-z0-9-]{0,119}$/i.test(rawCompanySlug.trim())
+    || !name || !phone || !serviceType
+    || (body.email !== undefined && typeof body.email !== 'string')
+    || (body.notes !== undefined && typeof body.notes !== 'string')) return {};
+
+  const suppliedRequestKey = body.request_key ?? body.idempotency_key;
+  const requestKey = suppliedRequestKey === undefined
+    ? createHash('sha256').update(JSON.stringify([
+      rawCompanySlug.trim().toLowerCase(), name, phone, email.toLowerCase(), serviceType, notes,
+    ])).digest('hex')
+    : suppliedRequestKey;
+
+  return {
+    public_key: rawCompanySlug.trim().toLowerCase(),
+    request_key: requestKey,
+    customer: name,
+    phone,
+    email,
+    title: serviceType,
+    description: notes || serviceType,
+    value: 0,
+  };
+}
+
 async function submitToSupabase(input: PublicIntakeInput): Promise<string | null> {
   const url = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
   const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -112,7 +165,7 @@ export function createPublicIntakeHandler(dependencies: Dependencies = {}) {
       res.status(503).json({ error: 'public_intake_unavailable' });
       return;
     }
-    const input = parseInput(req.body);
+    const input = parseInput(isLeadWebhookRequest(req) ? adaptLeadWebhookBody(req) : req.body);
     if (!input) {
       res.status(400).json({ error: 'invalid_public_intake' });
       return;

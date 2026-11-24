@@ -9,7 +9,7 @@ import outboxSchedulerHandler from './api/outbox-scheduler.js';
 import outboxDispatchHandler from './api/outbox-dispatch.js';
 import emailNotificationStatusHandler from './api/email-notification-status.js';
 import incomingLeadHandler from './api/incoming-lead.js';
-import publicLeadWebhookHandler from './api/webhook/lead.js';
+import publicIntakeHandler from './api/public-intake.js';
 import incomingLeadConfigHandler from './api/incoming-lead-config.js';
 import stripeWebhookHandler from './api/_billing/stripe-webhook.js';
 import stripeCheckoutHandler from './api/_billing/stripe-checkout.js';
@@ -106,7 +106,7 @@ function apiMiddlewarePlugin(): Plugin {
 
         const requestPath = req.url ? new URL(req.url, 'http://localhost').pathname : '';
         if (requestPath === '/api/webhook/lead' && (req.method === 'POST' || req.method === 'OPTIONS')) {
-          handleRoute(publicLeadWebhookHandler);
+          handleRoute(publicIntakeHandler);
           return;
         }
 

@@ -5,6 +5,10 @@ begin
   if to_regclass('public.app_companies') is null
      or not exists (
        select 1 from information_schema.columns
+       where table_schema = 'public' and table_name = 'app_companies' and column_name = 'active'
+     )
+     or not exists (
+       select 1 from information_schema.columns
        where table_schema = 'public' and table_name = 'app_companies' and column_name = 'subscription_status'
      )
      or not exists (
@@ -18,8 +22,12 @@ begin
      or not exists (
        select 1 from information_schema.columns
        where table_schema = 'public' and table_name = 'app_companies' and column_name = 'stripe_event_created_at'
+     )
+     or not exists (
+       select 1 from information_schema.columns
+       where table_schema = 'public' and table_name = 'app_companies' and column_name = 'current_period_end'
      ) then
-    raise exception 'Setup payment contract requires the reviewed Stripe billing columns on app_companies';
+    raise exception 'Setup payment contract requires the active and reviewed Stripe billing columns on app_companies';
   end if;
 end
 $preflight$;

@@ -116,6 +116,72 @@ test('valid requests preserve the stable request key and pass only the HMAC IP h
   assert.deepEqual(res.body, { status: 'accepted' });
 });
 
+test('website lead webhook maps its public payload into the existing tenant-scoped intake contract', async () => {
+  let saved: any;
+  const handler = createPublicIntakeHandler({
+    hashSecret: 'test-secret-012345678901234567890123456789',
+    submit: async (input) => { saved = input; return 'lead-id'; },
+  });
+  const res = responseRecorder();
+  await handler({
+    method: 'POST',
+    url: '/api/public-intake?format=lead-webhook',
+    headers: { 'x-forwarded-for': '203.0.113.8' },
+    body: {
+      company_slug: 'firma-a', name: 'Eva Malá', phone: '+420 777 123 456',
+      email: 'eva@example.cz', service_type: 'Rekonstrukce koupelny',
+      notes: 'Prosím o zaměření.', idempotency_key: 'website-form-42',
+    },
+  }, res);
+  assert.equal(res.code, 200);
+  assert.equal(saved.publicKey, 'firma-a');
+  assert.equal(saved.requestKey, 'website-form-42');
+  assert.equal(saved.customer, 'Eva Malá');
+  assert.equal(saved.phone, '+420 777 123 456');
+  assert.equal(saved.email, 'eva@example.cz');
+  assert.equal(saved.title, 'Rekonstrukce koupelny');
+  assert.equal(saved.description, 'Prosím o zaměření.');
+  assert.equal(saved.value, 0);
+  assert.match(saved.clientIpHash, /^[a-f0-9]{64}$/);
+  assert.deepEqual(res.body, { status: 'accepted' });
+});
+
+test('website lead webhook accepts slug in query, permits optional email and notes, and derives a stable retry key', async () => {
+  let saved: any;
+  const handler = createPublicIntakeHandler({
+    hashSecret: 'test-secret-012345678901234567890123456789',
+    submit: async (input) => { saved = input; return null; },
+  });
+  const request = {
+    method: 'POST',
+    url: '/api/public-intake?format=lead-webhook&company_slug=firma-a',
+    headers: { 'x-forwarded-for': '203.0.113.8' },
+    body: { name: 'Eva Malá', phone: '+420 777 123 456', service_type: 'Oprava střechy' },
+  };
+  const first = responseRecorder();
+  await handler(request, first);
+  const second = responseRecorder();
+  await handler(request, second);
+  assert.equal(first.code, 200);
+  assert.equal(second.code, 200);
+  assert.equal(saved.publicKey, 'firma-a');
+  assert.equal(saved.email, '');
+  assert.equal(saved.description, 'Oprava střechy');
+  assert.match(saved.requestKey, /^[a-f0-9]{64}$/);
+});
+
+test('public lead webhook alias reuses the existing Vercel function and local handler', async () => {
+  const { readFileSync } = await import('node:fs');
+  const deployment = JSON.parse(readFileSync(new URL('../vercel.json', import.meta.url), 'utf8'));
+  const rewrite = deployment.rewrites.find((item: { source: string }) => item.source === '/api/webhook/lead');
+  const vite = readFileSync(new URL('../vite.config.ts', import.meta.url), 'utf8');
+  assert.deepEqual(rewrite, {
+    source: '/api/webhook/lead',
+    destination: '/api/public-intake?format=lead-webhook',
+  });
+  assert.match(vite, /requestPath === '\/api\/webhook\/lead'[\s\S]{0,180}handleRoute\(publicIntakeHandler\)/);
+});
+
 test('public intake response never exposes the created or another company lead', async () => {
   const foreignLeadId = 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb';
   const handler = createPublicIntakeHandler({

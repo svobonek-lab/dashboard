@@ -55,6 +55,10 @@
       "destination": "/api/billing?route=portal"
     },
     {
+      "source": "/api/webhook/lead",
+      "destination": "/api/public-intake?format=lead-webhook"
+    },
+    {
       "source": "/api/(.*)",
       "destination": "/api/$1"
     },

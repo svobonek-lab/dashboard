@@ -6,7 +6,7 @@
 
 **Architecture:** Reuse the existing React/Supabase/Vercel/Stripe architecture. The owner-only server route creates a fixed-price Stripe payment Checkout Session; the existing signed Stripe webhook dispatches payment events to a separate service-only, idempotent database contract. `/api/webhook/lead` translates the requested website-form fields into the established public-intake proxy and its rate-limited database RPC. The existing `/demo` remains the synthetic read-only demo.
 
-**Tech Stack:** React 19, TypeScript, Vite, Vercel Functions, Stripe Node SDK, Supabase Postgres/RPC, Node test suite (inspection only; no test runs in this task).
+**Tech Stack:** React 19, TypeScript, Vite, Vercel Functions, Stripe Node SDK, Supabase Postgres/RPC, Node test suite.
 
 **Spec:** User goal dated 2026-11-24 in the active Codex goal.
 
@@ -33,7 +33,7 @@
 - `api/_billing/stripe-webhook.ts`: route verified payment-mode completion events to a distinct activation contract.
 - `api/billing.ts`, `vite.config.ts`, `vercel.json`: production and local route wiring.
 - `supabase/migrations/*stripe_setup_payment*` and `supabase/staging/*stripe_setup_payment*`: reviewable database proposals; never auto-applied.
-- `api/webhook/lead.ts`: adapter for the requested form payload to existing `api/public-intake.ts` behavior.
+- `api/public-intake.ts`: adapter for the requested form payload to the existing tenant-scoped lead RPC; `/api/webhook/lead` rewrites to this function to preserve the Vercel function-count limit.
 - `src/features/manage-billing/*`, `src/pages/owner/settings/ui/Settings.tsx`: owner-only activation modal and Checkout redirect.
 - `.env.example`, `docs/paid-activation-and-lead-webhook.md`: exact configuration, request contract, architecture and release requirements.
 

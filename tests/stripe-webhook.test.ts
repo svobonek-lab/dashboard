@@ -7,7 +7,9 @@ import {
   createStripeWebhookHandler,
   verifyStripeEvent,
   type StripeSubscriptionUpdate,
+  type StripeSetupPaymentUpdate,
 } from '../api/_billing/stripe-webhook.ts';
+import { SETUP_FEE_OFFER_VERSION } from '../api/_billing/stripe-setup-checkout.ts';
 
 process.env.STRIPE_WEBHOOK_SECRET = 'whsec_unit_test_only';
 
@@ -90,6 +92,31 @@ function subscriptionEvent(type: 'customer.subscription.updated' | 'customer.sub
   } as unknown as Stripe.Event;
 }
 
+function setupPaymentEvent(): Stripe.Event {
+  return {
+    ...checkoutEvent(),
+    id: 'evt_setup1',
+    data: {
+      object: {
+        id: 'cs_test_setup_1',
+        object: 'checkout.session',
+        client_reference_id: '10000000-0000-4000-8000-000000000001',
+        customer: 'cus_setup1',
+        mode: 'payment',
+        payment_status: 'paid',
+        amount_total: 490_000,
+        currency: 'czk',
+        metadata: {
+          tenant_id: '10000000-0000-4000-8000-000000000001',
+          purchase_type: 'setup_fee',
+          offer_version: SETUP_FEE_OFFER_VERSION,
+        },
+      },
+    },
+    type: 'checkout.session.completed',
+  } as unknown as Stripe.Event;
+}
+
 test('cryptographically verifies the exact raw body with the Stripe endpoint secret', () => {
   const rawBody = Buffer.from(JSON.stringify(checkoutEvent()), 'utf8');
   const endpointSecret = 'whsec_test_only_123456789';
@@ -97,6 +124,51 @@ test('cryptographically verifies the exact raw body with the Stripe endpoint sec
 
   assert.equal(verifyStripeEvent(rawBody, signature, endpointSecret).id, 'evt_checkout_1');
   assert.throws(() => verifyStripeEvent(Buffer.concat([rawBody, Buffer.from(' ')]), signature, endpointSecret));
+});
+
+test('verified paid one-time setup Checkout carries only its fixed tenant and offer binding to persistence', async () => {
+  const updates: StripeSetupPaymentUpdate[] = [];
+  const handler = createStripeWebhookHandler({
+    verifyEvent: () => setupPaymentEvent(),
+    applySubscriptionUpdate: async () => { throw new Error('subscription path must not handle one-time payments'); },
+    applySetupPayment: async update => { updates.push(update); return 'applied'; },
+  });
+  const response = responseRecorder();
+  await handler({ method: 'POST', headers: { 'stripe-signature': 'valid' }, body: Buffer.from('{}') }, response);
+  assert.equal(response.statusCode, 200);
+  assert.deepEqual(response.body, { received: true, result: 'applied' });
+  assert.equal(updates.length, 1);
+  assert.equal(updates[0]?.tenantId, '10000000-0000-4000-8000-000000000001');
+  assert.equal(updates[0]?.customerId, 'cus_setup1');
+  assert.equal(updates[0]?.checkoutSessionId, 'cs_test_setup_1');
+  assert.equal(updates[0]?.paymentStatus, 'paid');
+  assert.equal(updates[0]?.amountTotal, 490_000);
+  assert.equal(updates[0]?.currency, 'czk');
+  assert.equal(updates[0]?.offerVersion, SETUP_FEE_OFFER_VERSION);
+});
+
+test('mismatched one-time setup Checkout never reaches activation persistence', async () => {
+  const cases: Array<(event: Stripe.Event) => void> = [
+    event => { (event.data.object as Stripe.Checkout.Session).amount_total = 100; },
+    event => { (event.data.object as Stripe.Checkout.Session).currency = 'eur'; },
+    event => { (event.data.object as Stripe.Checkout.Session).payment_status = 'unpaid'; },
+    event => { (event.data.object as Stripe.Checkout.Session).client_reference_id = '20000000-0000-4000-8000-000000000002'; },
+    event => { (event.data.object as Stripe.Checkout.Session).metadata = { tenant_id: '10000000-0000-4000-8000-000000000001', purchase_type: 'setup_fee', offer_version: 'old-offer' }; },
+  ];
+  for (const mutate of cases) {
+    const event = setupPaymentEvent();
+    mutate(event);
+    let writes = 0;
+    const handler = createStripeWebhookHandler({
+      verifyEvent: () => event,
+      applySubscriptionUpdate: async () => 'applied',
+      applySetupPayment: async () => { writes += 1; return 'applied'; },
+    });
+    const response = responseRecorder();
+    await handler({ method: 'POST', headers: { 'stripe-signature': 'valid' }, body: Buffer.from('{}') }, response);
+    assertProblem(response, 500, 'STRIPE_WEBHOOK_PROCESSING_FAILED');
+    assert.equal(writes, 0);
+  }
 });
 
 test('Vercel lazy parsed-body helper cannot override the original signed request stream',async()=>{
