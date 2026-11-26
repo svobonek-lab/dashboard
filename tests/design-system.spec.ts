@@ -57,13 +57,13 @@ test('public landing, demo, and login fit desktop, tablet, and phone widths', as
       }
       if (route === '/demo') {
         await expect(page.getByRole('heading', { name: /dobrý den/i })).toBeVisible();
-        await expect(page.locator('.workspace-primary-action')).toHaveCount(0);
+        await expect(page.locator('.workspace-primary-action')).toHaveCount(1);
       }
     }
   }
 });
 
-test('public demo remains clearly synthetic, read only, and free of external name-based avatars', async ({ page }) => {
+test('public demo remains clearly synthetic, local-only, and free of external name-based avatars', async ({ page }) => {
   const externalRequests: string[] = [];
   page.on('request', (request) => {
     if (new URL(request.url()).origin !== 'http://127.0.0.1:4177') externalRequests.push(request.url());
@@ -71,11 +71,67 @@ test('public demo remains clearly synthetic, read only, and free of external nam
   await page.route('https://**/*', (route) => route.abort());
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto('/demo/leads');
-  await expect(page.getByText('Veřejné demo · pouze syntetická data · pouze pro čtení')).toBeVisible();
-  await expect(page.getByText('Pouze pro čtení').first()).toBeVisible();
+  await expect(page.getByText('Veřejné demo · pouze syntetická data · změny se neukládají')).toBeVisible();
+  await expect(page.getByRole('button', { name: /Nová zakázka \/ Poptávka/ })).toBeVisible();
   await expect(page.locator('img[src*="dicebear"]')).toHaveCount(0);
   await expect(page.locator('[data-kanban-column]:visible')).toHaveCount(6);
   expect(externalRequests.filter((url) => /dicebear/i.test(url)), 'employee avatars must be generated locally').toEqual([]);
+});
+
+test('public demo lets a visitor open a job, move it and assign a worker without any request leaving the page', async ({ page }) => {
+  const requests: string[] = [];
+  page.on('request', (request) => {
+    const url = new URL(request.url());
+    if (url.origin !== 'http://127.0.0.1:4177') requests.push(request.url());
+    if (request.method() !== 'GET' && request.method() !== 'HEAD') requests.push(`${request.method()} ${request.url()}`);
+  });
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto('/demo');
+
+  // The side navigation mirrors the product and only the working screens are active.
+  const nav = page.getByRole('navigation', { name: 'Hlavní navigace dema' });
+  await expect(nav.getByRole('button', { name: 'Přehled' })).toHaveAttribute('aria-current', 'page');
+  await expect(nav.locator('[aria-disabled="true"]').first()).toBeVisible();
+  await nav.getByRole('button', { name: 'Poptávky' }).click();
+  await expect(page).toHaveURL(/\/demo\/leads$/);
+
+  // Drag a card into another stage.
+  const card = page.locator('#kanban-col-New').getByRole('heading', { name: 'Rekonstrukce koupelny' });
+  await expect(card).toBeVisible();
+  await card.dragTo(page.locator('#kanban-col-Contacted'));
+  await expect(page.locator('#kanban-col-Contacted').getByRole('heading', { name: 'Rekonstrukce koupelny' })).toBeVisible();
+  await expect(page.locator('#kanban-col-New').getByRole('heading', { name: 'Rekonstrukce koupelny' })).toHaveCount(0);
+  await expect(page.getByRole('status')).toContainText('Změna platí jen v tomto demu');
+
+  // Open the job, assign a worker and see it in the history.
+  await page.locator('#kanban-col-Contacted').getByRole('button', { name: 'Otevřít' }).first().click();
+  await expect(page).toHaveURL(/\/demo\/leads\/demo-101$/);
+  await expect(page.getByRole('heading', { level: 1, name: 'Rekonstrukce koupelny' })).toBeVisible();
+  await expect(page.getByText('Stav změněn: Nová poptávka → Kontaktováno')).toBeVisible();
+  await page.getByLabel('Přiřazení').selectOption({ label: 'Tomáš Veselý' });
+  await page.getByRole('button', { name: 'Uložit přiřazení' }).click();
+  await expect(page.getByText('Zakázka je přiřazena: Tomáš Veselý.')).toBeVisible();
+  await expect(page.getByText('Zakázka přiřazena: Tomáš Veselý')).toBeVisible();
+  await expect(page.getByRole('heading', { name: /Soubory|Dokumenty/ })).toHaveCount(0);
+
+  // Notes: write one, see it listed, then remove it. It never leaves the page.
+  await expect(page.getByRole('heading', { name: 'Poznámky', level: 2 })).toBeVisible();
+  await expect(page.getByText('Zatím bez poznámek.')).toBeVisible();
+  await page.getByLabel('Nová poznámka').fill('Zákazník chce dlažbu v šedé barvě, vzorek přiveze v pátek.');
+  await page.getByRole('button', { name: 'Uložit poznámku' }).click();
+  await expect(page.getByRole('article').filter({ hasText: 'dlažbu v šedé barvě' })).toBeVisible();
+  await expect(page.getByRole('status').filter({ hasText: 'Poznámka byla přidána jen do tohoto dema' })).toBeVisible();
+  await expect(page.getByLabel('Nová poznámka')).toHaveValue('');
+  await page.getByRole('button', { name: 'Smazat poznámku' }).click();
+  await expect(page.getByText('Zatím bez poznámek.')).toBeVisible();
+  await page.getByLabel('Nová poznámka').fill('Poznámka, která po obnovení zmizí.');
+  await page.getByRole('button', { name: 'Uložit poznámku' }).click();
+
+  // The change lives in memory only: a reload restores the synthetic data and nothing was sent.
+  await page.reload();
+  await page.getByRole('navigation', { name: 'Hlavní navigace dema' }).getByRole('button', { name: 'Poptávky' }).click();
+  await expect(page.locator('#kanban-col-New').getByRole('heading', { name: 'Rekonstrukce koupelny' })).toBeVisible();
+  expect(requests, 'the demo must not send anything outside the page').toEqual([]);
 });
 
 test('mobile kanban switches stages without clipping the active column', async ({ page }) => {
@@ -358,7 +414,7 @@ test('known public and gated routes have no uncaught page errors or viewport ove
       if (route === '/' || route === '/landing' || route === '/prezentace') {
         await expect(page.getByRole('heading', { level: 1, name: /Na stavbě máte dost práce/i }), route).toBeVisible({ timeout: 12_000 });
       }
-      if (route === '/demo' || route === '/demo/leads') await expect(page.getByText('Veřejné demo · pouze syntetická data · pouze pro čtení')).toBeVisible();
+      if (route === '/demo' || route === '/demo/leads') await expect(page.getByText('Veřejné demo · pouze syntetická data · změny se neukládají')).toBeVisible();
       if (route === '/login' || route.endsWith('/login')) await expect(page.getByRole('heading', { name: /Přihlášení/ })).toBeVisible();
       if (route === '/register-paid') await expect(page.getByRole('heading', { name: /Registrace zde není dostupná/ })).toBeVisible();
       if (['/widget-iframe', '/widget-iframe.html', '/inquiry', '/inquiry/synthetic-company', '/poptavka', '/form', '/form/synthetic-company'].includes(route)) {

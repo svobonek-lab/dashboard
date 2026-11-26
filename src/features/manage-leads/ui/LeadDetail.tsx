@@ -16,6 +16,10 @@ interface LeadDetailProps {
   onUpdateLead: (updated: LeadUpdate) => Promise<unknown> | void;
   canManageAssignment?: boolean;
   canEditOperationalFields?: boolean;
+  /** The notes and files section talks to the backend; the public demo turns it off. */
+  showDocuments?: boolean;
+  /** Extra section rendered at the end of the detail, used by the demo for its local notes. */
+  extraSection?: React.ReactNode;
 }
 
 const statusLabel: Record<Lead['status'], string> = {
@@ -23,7 +27,7 @@ const statusLabel: Record<Lead['status'], string> = {
   'In Progress': 'V realizaci', Completed: 'Dokončeno', Lost: 'Nezískáno',
 };
 
-export const LeadDetail: React.FC<LeadDetailProps> = ({ lead, employees, onBack, onUpdateLead, canManageAssignment = true, canEditOperationalFields = false }) => {
+export const LeadDetail: React.FC<LeadDetailProps> = ({ lead, employees, onBack, onUpdateLead, canManageAssignment = true, canEditOperationalFields = false, showDocuments = true, extraSection }) => {
   const [employeeId, setEmployeeId] = useState(lead.assignedEmployeeId || '');
   const [saveState, setSaveState] = useState<{ kind: 'idle' | 'saving' | 'success' | 'error'; text?: string }>({ kind: 'idle' });
   const activeEmployees = useMemo(() => employees.filter((employee) => employee.active !== false && employee.invitationStatus !== 'Disabled'), [employees]);
@@ -103,7 +107,8 @@ export const LeadDetail: React.FC<LeadDetailProps> = ({ lead, employees, onBack,
           {!lead.history?.length && <p className="py-7 text-center text-sm text-slate-500">Zatím nejsou uložené žádné události.</p>}
         </div>
       </section>
-      <DocumentsTab lead={lead} />
+      {showDocuments && <DocumentsTab lead={lead} />}
+      {extraSection}
     </div>
   );
 };

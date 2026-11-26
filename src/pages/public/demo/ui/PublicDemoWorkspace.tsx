@@ -1,13 +1,28 @@
-import React from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { OrganizationContext, type Organization, type OrganizationContextType } from '@/entities/session';
-import { LeadsKanban } from '@/features/manage-leads';
+import { LeadsKanban, LeadDetail } from '@/features/manage-leads';
 import { OwnerDashboard } from '../../../../widgets/owner-dashboard';
-import { generateRealisticEmployees, PUBLIC_DEMO_COMPANY_NAME, PUBLIC_DEMO_LEADS, PUBLIC_DEMO_LEAD_STATES } from '@/features/public-demo';
+import {
+  addDemoNote,
+  createDemoLeadFromDraft,
+  createInitialDemoNotes,
+  createPublicDemoLeads,
+  DEMO_LEAD_STATUS_LABELS,
+  generateRealisticEmployees,
+  getDemoLeadNotes,
+  moveDemoLeadStatus,
+  patchDemoLead,
+  PUBLIC_DEMO_COMPANY_NAME,
+  removeDemoNote,
+  type DemoNote,
+} from '@/features/public-demo';
 import { DEFAULT_DEMO_ORG_ID } from '@/shared/api/supabase';
 import { RouterProvider, useRouter } from '@/shared/lib/router';
 import type { CompanyBranding } from '@/entities/company';
-import type { Lead } from '@/entities/lead';
+import type { Lead, LeadStatus } from '@/entities/lead';
 import { normalizePublicOrigin } from '@/shared/lib/publicUrls';
+import { DemoNotes } from './DemoNotes';
+import { DemoShell } from './DemoShell';
 
 const landingOrigin = normalizePublicOrigin(import.meta.env.PUBLIC_LANDING_URL, Boolean(import.meta.env.DEV));
 
@@ -35,23 +50,17 @@ const DEMO_ORGANIZATION: Organization = {
   branding: DEMO_BRANDING,
 };
 
-const DEMO_LEADS: Lead[] = PUBLIC_DEMO_LEADS.map(lead => ({
-  organization_id: DEMO_ORGANIZATION.id,
-  id: lead.id, title: lead.project, customerName: lead.customer, city: lead.city, address: lead.city,
-  price: lead.value, status: PUBLIC_DEMO_LEAD_STATES[lead.status].status, priority: 'Medium',
-  description: '', customerPhone: '', customerEmail: '', preferredDate: '',
-  assignedEmployeeId: '', assignedEmployeeName: '', thumbnail: '',
-  photos: [], files: [], checklist: [], timeline: [], aiChat: [], history: [],
-  aiSummary: { jobType: '', complexity: 'Low', estimatedRange: '', assignedEmployee: '', risks: [], recommendedNextStep: '' },
-}));
-
 const DEMO_EMPLOYEES = generateRealisticEmployees(DEMO_BRANDING.city).map((employee) => ({
   ...employee,
   organization_id: DEMO_ORGANIZATION.id,
 }));
 
+const createInitialLeads = (): Lead[] => createPublicDemoLeads(DEMO_ORGANIZATION.id, DEMO_EMPLOYEES);
+
+// Every method that would persist something stays rejected. The visible demo changes live
+// only in React state below and disappear on reload.
 const rejectDemoWrite = async (): Promise<never> => {
-  throw new Error('Veřejné demo je pouze pro čtení.');
+  throw new Error('Veřejné demo nic neukládá.');
 };
 
 const DEMO_CONTEXT: OrganizationContextType = {
@@ -71,7 +80,7 @@ const DEMO_CONTEXT: OrganizationContextType = {
   logout: async () => undefined,
   createOrganization: rejectDemoWrite,
   switchOrganization: rejectDemoWrite,
-  fetchLeads: async () => DEMO_LEADS,
+  fetchLeads: async () => createInitialLeads(),
   saveLead: rejectDemoWrite,
   createLead: rejectDemoWrite,
   updateLeadStatus: rejectDemoWrite,
@@ -95,48 +104,128 @@ const DEMO_CONTEXT: OrganizationContextType = {
   createCustomerAdmin: rejectDemoWrite,
 };
 
+const LEAD_DETAIL_PATH = /^\/demo\/leads\/([^/]+)\/?$/;
+
+function readLeadIdFromPath(pathname: string): string | null {
+  const match = LEAD_DETAIL_PATH.exec(pathname);
+  if (!match) return null;
+  try {
+    return decodeURIComponent(match[1]);
+  } catch {
+    return null;
+  }
+}
+
 const PublicDemoContent: React.FC = () => {
   const { pathname, navigate } = useRouter();
-  const isKanban = pathname === '/demo/leads';
+  const [leads, setLeads] = useState<Lead[]>(createInitialLeads);
+  const [notes, setNotes] = useState<DemoNote[]>(createInitialDemoNotes);
+  const [notice, setNotice] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!notice) return;
+    const timer = window.setTimeout(() => setNotice(null), 3500);
+    return () => window.clearTimeout(timer);
+  }, [notice]);
+
+  const openLead = useCallback((lead: Lead) => navigate(`/demo/leads/${encodeURIComponent(lead.id)}`), [navigate]);
+
+  const handleStatusChange = (leadId: string, status: LeadStatus) => {
+    const lead = leads.find((candidate) => candidate.id === leadId);
+    setLeads((current) => moveDemoLeadStatus(current, leadId, status));
+    if (lead && lead.status !== status) {
+      setNotice(`Zakázka „${lead.title}“ je ve stavu „${DEMO_LEAD_STATUS_LABELS[status]}“. Změna platí jen v tomto demu.`);
+    }
+  };
+
+  const handleAddLead = (draft: Lead): Lead => {
+    const lead = createDemoLeadFromDraft(draft, DEMO_ORGANIZATION.id);
+    setLeads((current) => [lead, ...current]);
+    setNotice(`Zakázka „${lead.title}“ byla přidána jen do tohoto dema.`);
+    return lead;
+  };
+
+  const handleUpdateLead = (patch: Partial<Lead> & Pick<Lead, 'id'>) => {
+    setLeads((current) => patchDemoLead(current, patch));
+  };
+
+  const handleAddNote = (leadId: string, body: string) => {
+    setNotes((current) => addDemoNote(current, leadId, body));
+    setNotice('Poznámka byla přidána jen do tohoto dema.');
+  };
+
+  const handleReset = () => {
+    setLeads(createInitialLeads());
+    setNotes(createInitialDemoNotes());
+    setNotice('Ukázková data byla obnovena.');
+    navigate('/demo/leads');
+  };
+
+  const isLeadsArea = pathname === '/demo/leads' || pathname.startsWith('/demo/leads/');
+  const selectedId = readLeadIdFromPath(pathname);
+  const selectedLead = selectedId ? leads.find((lead) => lead.id === selectedId) ?? null : null;
+  const exitLink = landingOrigin ? { href: `${landingOrigin}/`, label: 'Zpět na web' } : { href: '/', label: 'Opustit demo' };
+
+  let content: React.ReactNode;
+  if (!isLeadsArea) {
+    content = (
+      <OwnerDashboard
+        branding={DEMO_BRANDING}
+        leads={leads}
+        employees={DEMO_EMPLOYEES}
+        onSelectLead={openLead}
+        onNavigateTab={(tab) => navigate(tab === 'leads' || tab === 'projects' ? '/demo/leads' : '/demo')}
+      />
+    );
+  } else if (selectedId && !selectedLead) {
+    content = (
+      <div className="workspace-panel p-6 sm:p-8">
+        <h1 className="workspace-title">Zakázka nenalezena</h1>
+        <p className="mt-2 text-sm text-slate-600">Tato ukázková zakázka už není k dispozici.</p>
+        <button type="button" onClick={() => navigate('/demo/leads')} className="mt-4 rounded-lg border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">Zpět na poptávky</button>
+      </div>
+    );
+  } else if (selectedLead) {
+    content = (
+      <LeadDetail
+        lead={selectedLead}
+        employees={DEMO_EMPLOYEES}
+        onBack={() => navigate('/demo/leads')}
+        onOpenPhoto={() => undefined}
+        onOpenVoiceNotes={() => undefined}
+        onUpdateLead={handleUpdateLead}
+        showDocuments={false}
+        extraSection={(
+          <DemoNotes
+            notes={getDemoLeadNotes(notes, selectedLead.id)}
+            onAdd={(body) => handleAddNote(selectedLead.id, body)}
+            onRemove={(noteId) => setNotes((current) => removeDemoNote(current, noteId))}
+          />
+        )}
+      />
+    );
+  } else {
+    content = (
+      <LeadsKanban
+        leads={leads}
+        onSelectLead={openLead}
+        onUpdateLeadStatus={handleStatusChange}
+        onAddLead={handleAddLead}
+        author="Demo majitel"
+      />
+    );
+  }
 
   return (
     <div className="public-demo" aria-label="Public demo">
-      <p className="sr-only">Veřejné demo je pouze pro čtení a používá výhradně syntetická data.</p>
-      <header className="border-b border-slate-200 bg-white">
-        <div className="mx-auto flex min-h-16 max-w-7xl flex-wrap items-center justify-between gap-3 px-4 py-3 sm:px-6">
-          <a href="/" className="text-base font-bold tracking-tight text-slate-950">StavbaFlow demo</a>
-          <nav aria-label="Veřejné demo" className="flex items-center gap-2">
-            <button type="button" aria-current={!isKanban ? 'page' : undefined} onClick={() => navigate('/demo')} className="rounded-lg px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100">Přehled</button>
-            <button type="button" aria-current={isKanban ? 'page' : undefined} onClick={() => navigate('/demo/leads')} className="rounded-lg px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100">Poptávky</button>
-          </nav>
-          <div className="flex items-center gap-2">
-            {landingOrigin
-              ? <a href={`${landingOrigin}/`} className="rounded-lg px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100">Zpět na web</a>
-              : <a href="/" className="rounded-lg px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100">Opustit demo</a>}
-            <a href="/login" className="rounded-lg border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">Přihlásit se</a>
-          </div>
-        </div>
-      </header>
-      <main className="mx-auto w-full max-w-7xl px-4 py-6 sm:px-6">
-        <div className="mb-5 rounded-xl border border-blue-100 bg-blue-50 px-4 py-3 text-sm text-blue-900">Veřejné demo · pouze syntetická data · pouze pro čtení</div>
-        {isKanban ? (
-          <LeadsKanban
-            leads={DEMO_LEADS}
-            onSelectLead={() => undefined}
-            onUpdateLeadStatus={() => undefined}
-            readOnly
-          />
-        ) : (
-          <OwnerDashboard
-            branding={DEMO_BRANDING}
-            leads={DEMO_LEADS}
-            employees={DEMO_EMPLOYEES}
-            readOnly
-            onSelectLead={() => navigate('/demo/leads')}
-            onNavigateTab={(tab) => navigate(tab === 'leads' ? '/demo/leads' : '/demo')}
-          />
-        )}
-      </main>
+      <p className="sr-only">Veřejné demo používá výhradně syntetická data. Změny se neukládají a po obnovení stránky zmizí.</p>
+      <DemoShell exitLink={exitLink} onReset={handleReset}>
+        <div className="mb-5 rounded-xl border border-blue-100 bg-blue-50 px-4 py-3 text-sm text-blue-900">Veřejné demo · pouze syntetická data · změny se neukládají</div>
+        {content}
+      </DemoShell>
+      <div role="status" aria-live="polite" className="pointer-events-none fixed bottom-4 left-1/2 z-[60] w-[calc(100vw-2rem)] max-w-md -translate-x-1/2 lg:left-[calc(50%+8rem)]">
+        {notice && <p className="pointer-events-auto rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-800 shadow-lg">{notice}</p>}
+      </div>
     </div>
   );
 };

@@ -15,7 +15,7 @@ for (const width of [320, 390, 768, 1440]) {
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(width);
     await page.getByRole('button', { name: 'Interaktivní demo' }).click();
     await expect(page).toHaveURL(`${app}/demo`);
-    await expect(page.getByText('Veřejné demo · pouze syntetická data · pouze pro čtení')).toBeVisible();
+    await expect(page.getByText('Veřejné demo · pouze syntetická data · změny se neukládají')).toBeVisible();
     await page.getByRole('link', { name: 'Zpět na web' }).click();
     await expect(page).toHaveURL(`${landing}/`);
     await page.getByRole('button', { name: 'Přihlásit se' }).click();
